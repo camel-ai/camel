@@ -11,15 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-import json
 import logging
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories.base import MemoryBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.graph_storages import BaseGraphStorage, Neo4jGraph
+from camel.types import OpenAIBackendRole, RoleType
 
 logger = logging.getLogger(__name__)
 
@@ -47,79 +47,154 @@ class GraphDBBlock(MemoryBlock):
         database: Optional[str] = "neo4j",
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
-        self.storage = storage or self.default_graph_storage(
-            url, username, password, database
-        )
-
-    def default_graph_storage(
-        self,
-        url: Optional[str] = None,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        database: Optional[str] = "neo4j",
-    ) -> BaseGraphStorage:
-        if (
-            url is None
-            or username is None
-            or password is None
-            or database is None
-        ):
-            raise ValueError(
-                "url, username, password, and database must all be provided"
-                "and non-None"
-            )
-
-        return Neo4jGraph(url, username, password, database)
+        self.storage = storage or Neo4jGraph(url, username, password, database)
+        self.storage.clear()
 
     def retrieve(
-        self, query: str, params: Optional[Dict[str, Any]] = None
+        self,
+        query_embedding: Optional[List[float]] = None,
+        limit: int = 25,
     ) -> List[ContextRecord]:
-        r"""Retrieves records from the graph database based on a query.
+        r"""Retrieves records from the graph database based on query embedding.
 
         Args:
-            query (str): The query string to execute.
-            params (Optional[Dict[str, Any]]): Parameters for the query.
+            query_embedding (Optional[List[float]]): The embedding vector
+                for similarity search.
+            limit (int): The maximum number of records to retrieve.
+                Defaults to 10.
+            order_by (str): The property to order by in the default query.
+                Defaults to "timestamp".
+            desc (bool): Whether to order in descending order.
+                Defaults to True.
 
         Returns:
-            List[ContextRecord]: A list of context records retrieved from the
-                graph database.
+            List[ContextRecord]: A list of context records retrieved
+                from the graph database.
         """
         try:
-            results = self.storage.query(query, params)
-            scores = self._calculate_scores(query, results)
+            if query_embedding:
+                # Perform a similarity search based on the provided embedding
+                results = self.storage.query(
+                    """
+                    MATCH (n:Message)
+                    WHERE exists(n.embedding)
+                    WITH n, gds.similarity.cosine(
+                        n.embedding, $query_embedding
+                    ) AS similarity
+                    RETURN n, similarity
+                    ORDER BY similarity DESC
+                    LIMIT $limit
+                    """,
+                    {"query_embedding": query_embedding, "limit": limit},
+                )
+            else:
+                # Default retrieval logic when no query embedding is provided
+                results = self.storage.query(
+                    """
+                    MATCH (n:Message)
+                    RETURN n
+                    LIMIT $limit
+                    """,
+                    {"limit": limit},
+                )
+
+            def reconstruct_from_flat(d):
+                # Reconstruct message object and handle Enum conversions
+                reconstructed = {}
+                message = {}
+                for key, value in d.items():
+                    if key == 'embedding':
+                        continue  # Skip the embedding property
+                    if value == '__none__':
+                        value = None  # Convert back to None
+                    if value == '__empty_dict__':
+                        value = {}  # Convert back to an empty dictionary
+                    if key == 'role_at_backend':
+                        value = OpenAIBackendRole[value]
+
+                    # Handle only message-related keys
+                    if key.startswith('message_'):
+                        sub_key = key[len('message_') :]
+                        if sub_key == 'role_type':
+                            value = RoleType[
+                                value
+                            ]  # Convert back to Enum if applicable
+                        message[sub_key] = value
+                    else:
+                        reconstructed[key] = value
+
+                reconstructed['message'] = message
+                return reconstructed
+
             return [
                 ContextRecord(
-                    memory_record=MemoryRecord.from_dict(result), score=score
+                    memory_record=MemoryRecord.from_dict(
+                        reconstruct_from_flat(result["n"])
+                    ),
+                    score=result.get("similarity", 0),
                 )
-                for result, score in zip(results, scores)
+                for result in results
             ]
         except Exception as e:
             logger.error(f"Error retrieving records: {e}")
             return []
 
     def write_records(self, records: List[MemoryRecord]) -> None:
-        """Writes records to the graph database."""
+        """Writes recordes to the graph database."""
         for record in records:
+            properties = record.to_dict()
+
+            def flatten_and_convert(d):
+                for key, value in list(d.items()):
+                    if isinstance(value, Enum):
+                        d[key] = value.name  # Convert Enum to its name
+                    elif value is None:
+                        d[key] = (
+                            '__none__'  # Convert None to a sentinel string
+                        )
+                    elif isinstance(value, dict):
+                        if value:  # If dictionary is not empty
+                            for sub_key, sub_value in flatten_and_convert(
+                                value
+                            ).items():
+                                d[f"{key}_{sub_key}"] = sub_value
+                            del d[key]
+                        else:
+                            d[key] = '__empty_dict__'
+                    elif isinstance(value, list):
+                        d[key] = [
+                            str(i)
+                            if not isinstance(i, (str, int, float, bool))
+                            else i
+                            for i in value
+                        ]
+                    else:
+                        d[key] = (
+                            str(value)
+                            if not isinstance(value, (str, int, float, bool))
+                            else value
+                        )
+                return d
+
+            properties = flatten_and_convert(properties)
+
             content = record.message.content
 
             if not isinstance(content, str):
                 logger.error(
-                    "Expected content to be a string,"
-                    f"got {type(content)}: {content}"
+                    "Expected content to be a string, got"
+                    f" {type(content)}: {content}"
                 )
                 continue
 
-            try:
-                data = json.loads(content)
-                subj = data.get("subject")
-                obj = data.get("object")
-                rel = data.get("relation")
-            except json.JSONDecodeError:
-                logger.error(f"Error parsing content as JSON: {content}")
-                continue
+            embedding = self.embedding.embed(content)
+            properties['embedding'] = embedding
 
-            if subj and obj and rel:
-                self.storage.add_triplet(subj, obj, rel)
+            try:
+                self.storage.add_node(label="Message", properties=properties)
+                logger.info("Node with label 'Message' added successfully.")
+            except Exception as e:
+                logger.error(f"Failed to add node with label 'Message': {e!s}")
 
     def delete_records(self, records: List[MemoryRecord]) -> None:
         """Deletes records to the graph database."""
@@ -134,37 +209,13 @@ class GraphDBBlock(MemoryBlock):
                 continue
 
             try:
-                data = json.loads(content)
-                subj = data.get("subject")
-                obj = data.get("object")
-                rel = data.get("relation")
-            except json.JSONDecodeError:
-                logger.error(f"Error parsing content as JSON: {content}")
-                continue
-
-            if subj and obj and rel:
-                self.storage.delete_triplet(subj, obj, rel)
-
-    def _calculate_scores(self, query: str, results: List[Any]) -> List[float]:
-        query_vector = self.embedding.embed(query)
-        scores = []
-        for result in results:
-            result_text = result.get("content", "")
-            result_vector = self.embedding.embed(result_text)
-            score = self._cosine_similarity(query_vector, result_vector)
-            scores.append(score)
-        return scores
-
-    def _cosine_similarity(
-        self, vec1: List[float], vec2: List[float]
-    ) -> float:
-        # Calculate cosine similarity between two vectors
-        dot_product = sum(a * b for a, b in zip(vec1, vec2))
-        norm_a = sum(a * a for a in vec1) ** 0.5
-        norm_b = sum(b * b for b in vec2) ** 0.5
-        if norm_a == 0 or norm_b == 0:
-            return 0.0
-        return dot_product / (norm_a * norm_b)
+                # Assume that record deletion involves removing
+                # nodes and relationships
+                self.storage.delete_triplet(
+                    subj=content, obj=content, rel="NEXT"
+                )
+            except Exception as e:
+                logger.error(f"Failed to delete record: {e!s}")
 
     def clear(self) -> None:
         """Clears all data from the graph database."""

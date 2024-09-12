@@ -43,6 +43,41 @@ class BaseGraphStorage(ABC):
         pass
 
     @abstractmethod
+    def add_node(
+        self, label: str, properties: Optional[Dict[str, Any]] = None
+    ) -> None:
+        r"""Add a node to the graph database.
+
+        Args:
+            label (str): The label of the node, representing
+                its type or category.
+            properties (Optional[Dict[str, Any]]): A dictionary of properties
+                to be assigned to the node.
+        """
+        pass
+
+    @abstractmethod
+    def add_edge(
+        self,
+        start_node_id: str,
+        end_node_id: str,
+        relationship_type: str,
+        properties: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        r"""Adds an edge (relationship) between two nodes
+            in the graph database.
+
+        Args:
+            start_node_label (str): The label of the start node.
+            end_node_label (str): The label of the end node.
+            relationship_type (str): The type of relationship
+                between the nodes.
+            properties (Optional[Dict[str, Any]]): A dictionary of properties
+                to be assigned to the relationship.
+        """
+        pass
+
+    @abstractmethod
     def add_triplet(self, subj: str, obj: str, rel: str) -> None:
         r"""Adds a relationship (triplet) between two entities in the database.
 
