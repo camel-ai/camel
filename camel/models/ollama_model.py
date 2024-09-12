@@ -76,10 +76,10 @@ class OllamaModel:
             )
             print(
                 f"Ollama server started on http://localhost:11434/v1 "
-                f"for {self.model_type} model"
+                f"for {self.model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start Ollama server: {e}")
+            print(f"Failed to start Ollama server: {e}.")
 
     @property
     def token_counter(self) -> BaseTokenCounter:
