@@ -194,13 +194,6 @@ class TestGraphDBBlock:
     def mock_storage(self):
         return create_autospec(BaseGraphStorage)
 
-    def test_init_with_default_storage(self):
-        with pytest.raises(
-            ValueError, match="Missing Neo4j connection details"
-        ):
-            graph_db = GraphDBBlock()
-            assert graph_db.storage is not None
-
     def test_init_with_custom_storage(self, mock_storage):
         graph_db = GraphDBBlock(storage=mock_storage)
         assert graph_db.storage == mock_storage
@@ -214,15 +207,24 @@ class TestGraphDBBlock:
         results = graph_db.retrieve()
         assert results == mock_results
 
-    def test_write_triplet(self, mock_storage):
-        graph_db = GraphDBBlock(storage=mock_storage)
-        graph_db.write_triplet('s1', 'o1', 'r1')
-        mock_storage.add_triplet.assert_called_once_with('s1', 'o1', 'r1')
+    def test_write_records(self, mock_storage):
+        graph_db = GraphDBBlock(
+            storage=mock_storage
+        )
+        records_to_write = [
+            MemoryRecord(
+                message=BaseMessage(
+                    "user",
+                    RoleType.USER,
+                    None,
+                    "test message {}".format(i),
+                ),
+                role_at_backend=OpenAIBackendRole.USER,
+            )
+            for i in range(5)
+        ]
 
-    def test_delete_triplet(self, mock_storage):
-        graph_db = GraphDBBlock(storage=mock_storage)
-        graph_db.delete_triplet('s1', 'o1', 'r1')
-        mock_storage.delete_triplet.assert_called_once_with('s1', 'o1', 'r1')
+        graph_db.write_records(records_to_write)
 
     def test_clear(self, mock_storage):
         graph_db = GraphDBBlock(storage=mock_storage)

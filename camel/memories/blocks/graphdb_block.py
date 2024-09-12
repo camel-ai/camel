@@ -48,7 +48,6 @@ class GraphDBBlock(MemoryBlock):
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
         self.storage = storage or Neo4jGraph(url, username, password, database)
-        self.storage.clear()
 
     def retrieve(
         self,
