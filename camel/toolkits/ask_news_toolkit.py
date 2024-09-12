@@ -156,11 +156,14 @@ class AskNewsToolkit(BaseToolkit):
                 f"An error occurred while fetching stories: {e!s}."
             )
 
-    def chat_query(self, query: str) -> str:
+    def chat_query(
+        self, query: str, model: str = "meta-llama/Meta-Llama-3-70B-Instruct"
+    ) -> str:
         r"""Send a chat query to the API and retrieve the response.
 
         Args:
             query (str): The content of the user's message.
+            model (str): The model to use for generating the chat response.
 
         Returns:
             str: The content of the response message.
@@ -170,7 +173,9 @@ class AskNewsToolkit(BaseToolkit):
         """
         try:
             response = self.asknews_client.chat.get_chat_completions(
-                messages=[{"role": "user", "content": query}], stream=False
+                model=model,
+                messages=[{"role": "user", "content": query}],
+                stream=False,
             )
 
             # Return the content of the first choice's message
