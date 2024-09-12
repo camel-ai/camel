@@ -32,21 +32,18 @@ class VideoDownloaderToolkit(BaseToolkit):
         self,
         video_url: Optional[str] = None,
         download_directory: Optional[str] = None,
-        chunk_duration: int = 30,
-        split_into_chunks: bool = False,
+        chunk_duration: int = 0,
     ):
         r"""Initialize the VideoDownloaderToolkit.
 
         Args:
             video_url (str, optional): The URL of the video to download.
-            chunk_duration (int, optional): The duration of each chunk in
-                seconds. (default: :obj:`30`)
-            split_into_chunks (bool, optional): If True, split the video into
-                chunks. (default: :obj:`False`)
+            chunk_duration (int, optional): The duration of each video chunk
+                in seconds. If set to 0, the video will not be chunked.
+                (default::obj:`0`).
         """
         self.video_url = video_url
         self.chunk_duration = chunk_duration
-        self.split_into_chunks = split_into_chunks
         self._cookies_path: Optional[str] = None
         self._current_directory: Optional[str] = None
         self._video_extension: Optional[str] = None
@@ -194,7 +191,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             self.video_url = converted_url
 
         try:
-            if self.split_into_chunks and self.chunk_duration is not None:
+            if self.chunk_duration > 0:
                 video_length = self.get_video_length()
                 if video_length == 0:
                     raise ValueError(
@@ -279,7 +276,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             bool: :obj:`True` if the video file(s) exist(s), :obj:`False`
                 otherwise.
         """
-        if self.split_into_chunks:
+        if self.chunk_duration > 0:
             first_chunk_path = os.path.join(
                 self.current_directory, f'video_chunk_0{self.video_extension}'
             )
@@ -318,7 +315,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         if video_length == 0:
             if self.is_video_downloaded():
-                if self.split_into_chunks:
+                if self.chunk_duration > 0:
                     video_length = 0
                     chunk_index = 0
                     while True:
@@ -374,7 +371,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         Returns:
             bytes: The video file content in bytes.
         """
-        if self.split_into_chunks:
+        if self.chunk_duration > 0:
             video_bytes = b""
             chunk_index = 0
 
@@ -433,7 +430,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             timestamps = [(i + 1) * intervals for i in range(timestamps)]
 
         images = []
-        if self.split_into_chunks:
+        if self.chunk_duration > 0:
             for timestamp in timestamps:
                 chunk_index, local_timestamp = (
                     self._get_chunk_index_and_local_timestamp(timestamp)
@@ -506,6 +503,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         return [
             OpenAIFunction(self.download_video),
             OpenAIFunction(self.get_video_bytes),
+            OpenAIFunction(self.get_video_screenshots),
         ]
 
 
