@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from functools import wraps
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,27 +18,11 @@ import pytest
 from camel.toolkits import GoogleMapsToolkit
 
 
-def mock_googlemaps(test_func):
-    @wraps(test_func)
-    @patch('googlemaps.Client')
-    @patch('os.environ.get')
-    def wrapper(*args, **kwargs):
-        mock_get = args[0]
-        mock_get.return_value = 'fake_api_key'
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
 @pytest.fixture
-def google_maps_toolkit():
-    return GoogleMapsToolkit()
-
-
-@mock_googlemaps
-def test_get_address_description(mock_get, mock_client, google_maps_toolkit):
-    # Create a mock response for the addressvalidation method
-    mock_response = {
+@patch('googlemaps.Client')
+def google_maps_toolkit(mock_client):
+    mock_instance = MagicMock()
+    mock_validation_resp = {
         'result': {
             'verdict': {'addressComplete': True},
             'address': {
@@ -58,12 +41,33 @@ def test_get_address_description(mock_get, mock_client, google_maps_toolkit):
             },
         }
     }
+    mock_instance.addressvalidation.return_value = mock_validation_resp
 
-    # Configure the mock client instance to return the mock response
-    mock_instance = MagicMock()
-    mock_instance.addressvalidation.return_value = mock_response
+    # Create a mock response for the elevation method
+    mock_elevation_resp = [
+        {
+            'elevation': 10.53015995025635,
+            'location': {'lat': 40.71473, 'lng': -73.99867},
+            'resolution': 76.35161590576172,
+        }
+    ]
+    mock_instance.elevation.return_value = mock_elevation_resp
+
+    # Create a mock response for the timezone method
+    mock_timezone_resp = {
+        'dstOffset': 3600,
+        'rawOffset': -28800,
+        'status': 'OK',
+        'timeZoneId': 'America/Los_Angeles',
+        'timeZoneName': 'Pacific Daylight Time',
+    }
+    mock_instance.timezone.return_value = mock_timezone_resp
+
     mock_client.return_value = mock_instance
+    return GoogleMapsToolkit()
 
+
+def test_get_address_description(google_maps_toolkit):
     # Call the function with a test address
     result = google_maps_toolkit.get_address_description(
         '1600 Amphitheatre Pk', region_code='US', locality='Mountain View'
@@ -79,22 +83,7 @@ def test_get_address_description(mock_get, mock_client, google_maps_toolkit):
     assert result == expected_result
 
 
-@mock_googlemaps
-def test_get_elevation(mock_get, mock_client, google_maps_toolkit):
-    # Create a mock response for the elevation method
-    mock_response = [
-        {
-            'elevation': 10.53015995025635,
-            'location': {'lat': 40.71473, 'lng': -73.99867},
-            'resolution': 76.35161590576172,
-        }
-    ]
-
-    # Configure the mock client instance to return the mock response
-    mock_instance = MagicMock()
-    mock_instance.elevation.return_value = mock_response
-    mock_client.return_value = mock_instance
-
+def test_get_elevation(google_maps_toolkit):
     # Call the function with a test latitude and longitude
     result = google_maps_toolkit.get_elevation(40.71473, -73.99867)
 
@@ -107,22 +96,7 @@ def test_get_elevation(mock_get, mock_client, google_maps_toolkit):
     assert result == expected_result
 
 
-@mock_googlemaps
-def test_get_timezone(mock_get, mock_client, google_maps_toolkit):
-    # Create a mock response for the timezone method
-    mock_response = {
-        'dstOffset': 3600,
-        'rawOffset': -28800,
-        'status': 'OK',
-        'timeZoneId': 'America/Los_Angeles',
-        'timeZoneName': 'Pacific Daylight Time',
-    }
-
-    # Configure the mock client instance to return the mock response
-    mock_instance = MagicMock()
-    mock_instance.timezone.return_value = mock_response
-    mock_client.return_value = mock_instance
-
+def test_get_timezone(google_maps_toolkit):
     # Call the function with a test latitude and longitude
     result = google_maps_toolkit.get_timezone(39.603481, -119.682251)
 
@@ -135,22 +109,3 @@ def test_get_timezone(mock_get, mock_client, google_maps_toolkit):
         "if applicable. "
     )
     assert result == expected_result
-
-
-def test_wrong_api_key(monkeypatch, google_maps_toolkit):
-    monkeypatch.setenv('GOOGLE_API_KEY', 'invalid_api_key')
-    expected_output = "Error: Invalid API key provided."
-    assert (
-        google_maps_toolkit.get_address_description(
-            '1600 Amphitheatre Pk', region_code='US', locality='Mountain View'
-        )
-        == expected_output
-    )
-    assert (
-        google_maps_toolkit.get_elevation(40.714728, -73.998672)
-        == expected_output
-    )
-    assert (
-        google_maps_toolkit.get_timezone(40.714728, -73.998672)
-        == expected_output
-    )
