@@ -208,9 +208,7 @@ class TestGraphDBBlock:
         assert results == mock_results
 
     def test_write_records(self, mock_storage):
-        graph_db = GraphDBBlock(
-            storage=mock_storage
-        )
+        graph_db = GraphDBBlock(storage=mock_storage)
         records_to_write = [
             MemoryRecord(
                 message=BaseMessage(
