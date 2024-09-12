@@ -17,6 +17,7 @@ from typing import Any, Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
+from camel.utils import dependencies_required
 
 
 def handle_googlemaps_exceptions(
@@ -99,6 +100,7 @@ class GoogleMapsToolkit(BaseToolkit):
     and fetching timezone information using the Google Maps API.
     """
 
+    @dependencies_required('googlemaps')
     def __init__(self) -> None:
         import googlemaps
 
