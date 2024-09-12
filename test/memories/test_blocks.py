@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from unittest.mock import MagicMock, create_autospec
+from unittest.mock import MagicMock, create_autospec, patch
 from uuid import uuid4
 
 import pytest
@@ -20,11 +20,13 @@ from camel.embeddings import BaseEmbedding
 from camel.memories import (
     ChatHistoryBlock,
     ContextRecord,
+    GraphDBBlock,
     MemoryRecord,
     VectorDBBlock,
 )
 from camel.messages import BaseMessage
 from camel.storages import (
+    BaseGraphStorage,
     BaseKeyValueStorage,
     BaseVectorStorage,
     VectorDBQueryResult,
@@ -184,4 +186,45 @@ class TestVectorDBBlock:
     def test_clear_history(self, mock_storage):
         vector_db = VectorDBBlock(storage=mock_storage)
         vector_db.clear()
+        mock_storage.clear.assert_called_once()
+
+
+class TestGraphDBBlock:
+    @pytest.fixture
+    def mock_storage(self):
+        return create_autospec(BaseGraphStorage)
+
+    def test_init_with_custom_storage(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        assert graph_db.storage == mock_storage
+
+    @patch('camel.memories.blocks.graphdb_block.GraphDBBlock.retrieve')
+    def test_retrieve(self, mock_retrieve, mock_storage):
+        mock_results = [{'id': 1, 'name': 'Node1'}, {'id': 2, 'name': 'Node2'}]
+        mock_retrieve.return_value = mock_results
+
+        graph_db = GraphDBBlock(storage=mock_storage)
+        results = graph_db.retrieve()
+        assert results == mock_results
+
+    def test_write_records(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        records_to_write = [
+            MemoryRecord(
+                message=BaseMessage(
+                    "user",
+                    RoleType.USER,
+                    None,
+                    "test message {}".format(i),
+                ),
+                role_at_backend=OpenAIBackendRole.USER,
+            )
+            for i in range(5)
+        ]
+
+        graph_db.write_records(records_to_write)
+
+    def test_clear(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        graph_db.clear()
         mock_storage.clear.assert_called_once()

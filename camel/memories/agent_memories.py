@@ -15,23 +15,28 @@
 from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
-from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
+from camel.memories.blocks import ChatHistoryBlock, GraphDBBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
-from camel.storages import BaseKeyValueStorage, BaseVectorStorage
+from camel.storages import (
+    BaseGraphStorage,
+    BaseKeyValueStorage,
+    BaseVectorStorage,
+)
 from camel.types import OpenAIBackendRole
 
 
 class ChatHistoryMemory(AgentMemory):
     r"""An agent memory wrapper of :obj:`ChatHistoryBlock`.
 
-    Args:
-        context_creator (BaseContextCreator): A model context creator.
-        storage (BaseKeyValueStorage, optional): A storage backend for storing
-            chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
-            will be used. (default: :obj:`None`)
-        window_size (int, optional): The number of recent chat messages to
-            retrieve. If not provided, the entire chat history will be
-            retrieved.  (default: :obj:`None`)
+    .    Args:
+            context_creator (BaseContextCreator): A model context creator.
+            storage (BaseKeyValueStorage, optional): A storage backend for
+                storing chat history.
+                If `None`, an :obj:`InMemoryKeyValueStorage`
+                will be used. (default: :obj:`None`)
+            window_size (int, optional): The number of recent chat messages to
+                retrieve. If not provided, the entire chat history will be
+                retrieved.  (default: :obj:`None`)
     """
 
     def __init__(
@@ -103,10 +108,50 @@ class VectorDBMemory(AgentMemory):
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
 
+    def clear(self) -> None:
+        r"""Clears all data from the vector database."""
+        self._vectordb_block.clear()
+
+
+class GraphDBMemory(AgentMemory):
+    r"""An agent memory wrapper of `GraphDBBlock`. This memory interacts with
+    a graph database to store and retrieve knowledge graphs.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        storage (BaseGraphStorage, optional): A graph storage backend. If
+            `None`, a default implementation will be used. (default: `None`)
+        query (str, optional): The query to retrieve data from the graph
+        database.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseGraphStorage] = None,
+    ) -> None:
+        self._context_creator = context_creator
+        self._graphdb_block = GraphDBBlock(storage=storage)
+        self.query_embedding = None
+
+    def retrieve(self) -> List[ContextRecord]:
+        # Call the retrieve method with the query string
+        return self._graphdb_block.retrieve()
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        self._graphdb_block.write_records(records)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def clear(self) -> None:
+        r"""Clears all data from the graph database."""
+        self._graphdb_block.clear()
+
 
 class LongtermAgentMemory(AgentMemory):
     r"""An implementation of the :obj:`AgentMemory` abstract base class for
-    augumenting ChatHistoryMemory with VectorDBMemory.
+    augumenting ChatHistoryMemory with VectorDBMemory and GraphDBMemory.
     """
 
     def __init__(
@@ -114,10 +159,12 @@ class LongtermAgentMemory(AgentMemory):
         context_creator: BaseContextCreator,
         chat_history_block: Optional[ChatHistoryBlock] = None,
         vector_db_block: Optional[VectorDBBlock] = None,
+        graph_db_block: Optional[GraphDBBlock] = None,
         retrieve_limit: int = 3,
     ) -> None:
         self.chat_history_block = chat_history_block or ChatHistoryBlock()
         self.vector_db_block = vector_db_block or VectorDBBlock()
+        self.graph_db_block = graph_db_block or GraphDBBlock()
         self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator
         self._current_topic: str = ""
@@ -130,7 +177,13 @@ class LongtermAgentMemory(AgentMemory):
         vector_db_retrieve = self.vector_db_block.retrieve(
             self._current_topic, self.retrieve_limit
         )
-        return chat_history[:1] + vector_db_retrieve + chat_history[1:]
+        graph_db_retrieve = self.graph_db_block.retrieve()
+        return (
+            chat_history[:1]
+            + vector_db_retrieve
+            + graph_db_retrieve
+            + chat_history[1:]
+        )
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         r"""Converts the provided chat messages into vector representations and
@@ -141,6 +194,7 @@ class LongtermAgentMemory(AgentMemory):
                 database.
         """
         self.vector_db_block.write_records(records)
+        self.graph_db_block.write_records(records)
         self.chat_history_block.write_records(records)
 
         for record in records:
@@ -151,3 +205,4 @@ class LongtermAgentMemory(AgentMemory):
         r"""Removes all records from the memory."""
         self.chat_history_block.clear()
         self.vector_db_block.clear()
+        self.graph_db_block.clear()

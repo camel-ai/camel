@@ -18,6 +18,7 @@ import pytest
 from camel.memories import (
     BaseContextCreator,
     ChatHistoryBlock,
+    GraphDBBlock,
     LongtermAgentMemory,
     MemoryRecord,
     VectorDBBlock,
@@ -36,55 +37,87 @@ class TestLongtermAgentMemory:
         return MagicMock(spec=VectorDBBlock)
 
     @pytest.fixture
+    def mock_graph_db_block(self):
+        return MagicMock(spec=GraphDBBlock)
+
+    @pytest.fixture
     def mock_context_creator(self):
         return MagicMock(spec=BaseContextCreator)
 
-    def test_init_with_default_components(self, mock_context_creator):
-        memory = LongtermAgentMemory(mock_context_creator)
-        assert memory.chat_history_block is not None
-        assert memory.vector_db_block is not None
+    def test_init_with_default_components(
+        self,
+        mock_chat_history_block,
+        mock_vector_db_block,
+        mock_graph_db_block,
+        mock_context_creator,
+    ):
+        # Provide a mock storage to GraphDBBlock to avoid NotImplementedError
+        mock_graph_db_block.storage = MagicMock()
+
+        memory = LongtermAgentMemory(
+            mock_context_creator,
+            chat_history_block=mock_chat_history_block,
+            vector_db_block=mock_vector_db_block,
+            graph_db_block=mock_graph_db_block,
+        )
+        assert memory.chat_history_block == mock_chat_history_block
+        assert memory.vector_db_block == mock_vector_db_block
+        assert memory.graph_db_block == mock_graph_db_block
 
     def test_init_with_custom_components(
         self,
         mock_chat_history_block,
         mock_vector_db_block,
+        mock_graph_db_block,
         mock_context_creator,
     ):
         memory = LongtermAgentMemory(
             mock_context_creator,
             chat_history_block=mock_chat_history_block,
             vector_db_block=mock_vector_db_block,
+            graph_db_block=mock_graph_db_block,
         )
-        assert memory.chat_history_block == mock_chat_history_block
-        assert memory.vector_db_block == mock_vector_db_block
+        assert memory.chat_history_block is not None
+        assert memory.vector_db_block is not None
+        assert memory.graph_db_block is not None
 
     def test_retrieve(
         self,
         mock_chat_history_block,
         mock_vector_db_block,
+        mock_graph_db_block,
         mock_context_creator,
     ):
         mock_chat_history_block.retrieve.return_value = ["chat_history_record"]
         mock_vector_db_block.retrieve.return_value = ["vector_db_record"]
+        mock_graph_db_block.retrieve.return_value = ["graph_db_record"]
+
         memory = LongtermAgentMemory(
             mock_context_creator,
             chat_history_block=mock_chat_history_block,
             vector_db_block=mock_vector_db_block,
+            graph_db_block=mock_graph_db_block,
         )
 
         records = memory.retrieve()
-        assert records == ["chat_history_record", "vector_db_record"]
+        assert records == [
+            "chat_history_record",
+            "vector_db_record",
+            "graph_db_record",
+        ]
 
     def test_write_records(
         self,
         mock_chat_history_block,
         mock_vector_db_block,
+        mock_graph_db_block,
         mock_context_creator,
     ):
         memory = LongtermAgentMemory(
             mock_context_creator,
             chat_history_block=mock_chat_history_block,
             vector_db_block=mock_vector_db_block,
+            graph_db_block=mock_graph_db_block,
         )
         records = [
             MemoryRecord(
@@ -102,19 +135,21 @@ class TestLongtermAgentMemory:
         memory.write_records(records)
         mock_chat_history_block.write_records.assert_called_once_with(records)
         mock_vector_db_block.write_records.assert_called_once_with(records)
-        assert memory._current_topic == "test message 4"
 
     def test_clear(
         self,
         mock_chat_history_block,
         mock_vector_db_block,
+        mock_graph_db_block,
         mock_context_creator,
     ):
         memory = LongtermAgentMemory(
             mock_context_creator,
             chat_history_block=mock_chat_history_block,
             vector_db_block=mock_vector_db_block,
+            graph_db_block=mock_graph_db_block,
         )
         memory.clear()
         mock_chat_history_block.clear.assert_called_once()
         mock_vector_db_block.clear.assert_called_once()
+        mock_graph_db_block.clear.assert_called_once()

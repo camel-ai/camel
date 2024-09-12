@@ -113,6 +113,7 @@ cohere = { version = "^4.56", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true }
+networkx = "3.2.1"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -277,6 +278,7 @@ types-setuptools = "*"
 types-tqdm = "*"
 types-colorama = "^0"
 types-requests = "^2"
+types-networkx = "^3.2.1.20240820"
 
 [tool.poetry.group.docs]
 optional = true

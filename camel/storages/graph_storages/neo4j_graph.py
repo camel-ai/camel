@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 import os
+import uuid
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
@@ -86,10 +87,10 @@ class Neo4jGraph(BaseGraphStorage):
     @dependencies_required('neo4j')
     def __init__(
         self,
-        url: str,
-        username: str,
-        password: str,
-        database: str = "neo4j",
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        database: Optional[str] = "neo4j",
         timeout: Optional[float] = None,
         truncate: bool = False,
     ) -> None:
@@ -100,6 +101,9 @@ class Neo4jGraph(BaseGraphStorage):
         username = os.environ.get("NEO4J_USERNAME") or username
         password = os.environ.get("NEO4J_PASSWORD") or password
 
+        if url is None or username is None or password is None:
+            raise ValueError("url, username, and password must be provided")
+
         self.driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password)
         )
@@ -108,6 +112,7 @@ class Neo4jGraph(BaseGraphStorage):
         self.truncate = truncate
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
+        self.previous_node_id = None
 
         # Verify connection
         try:
@@ -338,6 +343,135 @@ class Neo4jGraph(BaseGraphStorage):
                 ", ".join(formatted_rels),
             ]
         )
+
+    def add_node(
+        self, label: str, properties: Dict[str, Any] | None = None
+    ) -> None:
+        r"""Adds a node to the Neo4j database.
+
+        Args:
+            label (str): The label for the node, representing
+                its type or category.
+            properties (Optional[Dict[str, Any]]): A dictionary of properties
+                to be assigned to the node.
+        """
+        if properties is None:
+            properties = {}
+
+        # Generate a unique UUID for the node if not present
+        if 'uuid' not in properties:
+            properties['uuid'] = str(uuid.uuid4())
+
+        # Construct the Cypher query to create a node
+        # with given label and properties
+        query = f"CREATE (n:{label} {{"
+        query += ", ".join([f"{key}: ${key}" for key in properties.keys()])
+        query += "}) RETURN n.uuid as node_uuid"
+
+        try:
+            with self.driver.session(database=self.database) as session:
+                result = session.run(query, properties).single()
+                if result:
+                    node_uuid = result["node_uuid"]
+                    self._add_relationship_to_previous(node_uuid)
+                    self.previous_node_id = node_uuid
+                    logger.info(
+                        f"Node with label '{label}' added successfully."
+                    )
+                    return node_uuid
+                else:
+                    logger.error(
+                        f"Failed to add node with label '{label}': "
+                        "No result found."
+                    )
+                    raise ValueError("Node creation failed: No result found.")
+        except Exception as e:
+            logger.error(f"Failed to add node with label '{label}': {e}")
+            raise
+
+    def _add_relationship_to_previous(self, current_node_uuid: str) -> None:
+        if self.previous_node_id is None:
+            return
+
+        query = (
+            "MATCH (prev {uuid: $prev_uuid}), (current {uuid: $current_uuid}) "
+            "CREATE (prev)-[:NEXT]->(current)"
+        )
+
+        try:
+            with self.driver.session(database=self.database) as session:
+                session.run(
+                    query,
+                    {
+                        "prev_uuid": self.previous_node_id,
+                        "current_uuid": current_node_uuid,
+                    },
+                )
+                logger.info(
+                    f"Created relationship from {self.previous_node_id} "
+                    f"to {current_node_uuid}."
+                )
+        except Exception as e:
+            logger.error(f"Failed to create relationship: {e}")
+            raise
+
+    def add_embedding(self, node_id: str, embedding: list) -> None:
+        query = "MATCH (n) WHERE id(n) = $node_id SET n.embedding = $embedding"
+
+        try:
+            with self.driver.session(database=self.database) as session:
+                session.run(
+                    query, {"node_id": node_id, "embedding": embedding}
+                )
+                logger.info(f"Add embedding to node {node_id}")
+        except Exception as e:
+            logger.error(f"Failed to add embedding to node {node_id}: {e}")
+            raise
+
+    def add_edge(
+        self,
+        start_node_id: str,
+        end_node_id: str,
+        relationship_type: str,
+        properties: Dict[str, Any] | None = None,
+    ) -> None:
+        r"""Adds an edge (relationship) between two nodes
+            in the Neo4j database.
+
+        Args:
+            start_node_label (str): The label of the start node.
+            end_node_label (str): The label of the end node.
+            relationship_type (str): The type of relationship
+                between the nodes.
+            properties (Optional[Dict[str, Any]]): A dictionary of properties
+                to be assigned to the relationship.
+        """
+        if properties is None:
+            properties = {}
+
+        # Construct the Cypher query to create a relationship
+        # with given properties
+        query = (
+            f"MATCH (a:{start_node_id}), (b:{end_node_id}) "
+            f"WHERE a.id = $start_node_id AND b.id = $end_node_id "
+            f"CREATE (a)-[r:{relationship_type} {{"
+        )
+        query += ", ".join([f"{key}: ${key}" for key in properties.keys()])
+        query += "}]->(b)"
+
+        try:
+            with self.driver.session(database=self.database) as session:
+                session.run(query, properties)
+            logger.info(
+                f"Edge from '{start_node_id}' to '{end_node_id}' with "
+                f"type '{relationship_type}' added successfully."
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to add edge from '{start_node_id}' "
+                f"to '{end_node_id}': {e}"
+            )
+            raise
 
     def add_triplet(self, subj: str, obj: str, rel: str) -> None:
         r"""Adds a relationship (triplet) between two entities in the database.
@@ -583,3 +717,15 @@ class Neo4jGraph(BaseGraphStorage):
                     ]
                 },
             )
+
+    def clear(self) -> None:
+        """Clears all data from the Neo4j database."""
+        with self.driver.session(database=self.database) as session:
+            try:
+                # Delete all relationships
+                session.run("MATCH ()-[r]-() DELETE r")
+                # Delete all nodes
+                session.run("MATCH (n) DELETE n")
+            except Exception as e:
+                logger.error(f"Error clearing the database: {e}")
+                raise
