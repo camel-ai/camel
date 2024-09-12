@@ -30,7 +30,7 @@ class AskNewsToolkit(BaseToolkit):
 
         The API keys and credentials are retrieved from environment variables.
         """
-        from asknews_sdk import AskNewsSDK
+        from asknews_sdk import AskNewsSDK  # type: ignore[import]
 
         # Initialize the AskNews client using API keys and credentials from
         # environment variables.
