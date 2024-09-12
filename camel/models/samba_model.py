@@ -20,7 +20,11 @@ from typing import Any, Dict, List, Optional, Union
 import httpx
 from openai import OpenAI, Stream
 
-from camel.configs import SAMBA_FAST_API_PARAMS, SAMBA_VERSE_API_PARAMS
+from camel.configs import (
+    SAMBA_CLOUD_API_PARAMS,
+    SAMBA_FAST_API_PARAMS,
+    SAMBA_VERSE_API_PARAMS,
+)
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -59,9 +63,10 @@ class SambaModel:
                 SambaNova service. (default: :obj:`None`)
             url (Optional[str]): The url to the SambaNova service. Current
                 support SambaNova Fast API: :obj:`"https://fast-api.snova.ai/
-                v1/chat/ completions"` and SambaVerse API: :obj:`"https://
-                sambaverse.sambanova.ai/api/predict"`. (default::obj:`"https://
-                fast-api.snova.ai/v1/chat/completions"`)
+                v1/chat/ completions"`, SambaVerse API: :obj:`"https://
+                sambaverse.sambanova.ai/api/predict"` and SambaNova Cloud:
+                :obj:`"https://api.sambanova.ai/v1"`
+                (default::obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
                 GPT_4O_MINI)` will be used.
@@ -75,6 +80,14 @@ class SambaModel:
         self._token_counter = token_counter
         self.model_config_dict = model_config_dict
         self.check_model_config()
+
+        if self._url == "https://api.sambanova.ai/v1":
+            self._client = OpenAI(
+                timeout=60,
+                max_retries=3,
+                base_url=self._url,
+                api_key=self._api_key,
+            )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -111,6 +124,14 @@ class SambaModel:
                         "input into SambaVerse API."
                     )
 
+        elif self._url == "https://api.sambanova.ai/v1":
+            for param in self.model_config_dict:
+                if param not in SAMBA_CLOUD_API_PARAMS:
+                    raise ValueError(
+                        f"Unexpected argument `{param}` is "
+                        "input into SambaCloud API."
+                    )
+
         else:
             raise ValueError(
                 f"{self._url} is not supported, please check the url to the"
@@ -141,7 +162,7 @@ class SambaModel:
     def _run_streaming(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
     ) -> Stream[ChatCompletionChunk]:
-        r"""Handles streaming inference with SambaNova FastAPI.
+        r"""Handles streaming inference with SambaNova's API.
 
         Args:
             messages (List[OpenAIMessage]): A list of messages representing the
@@ -189,6 +210,15 @@ class SambaModel:
             except httpx.HTTPError as e:
                 raise RuntimeError(f"HTTP request failed: {e!s}")
 
+        # Handle SambaNova's Cloud API
+        elif self._url == "https://api.sambanova.ai/v1":
+            response = self._client.chat.completions.create(
+                messages=messages,
+                model=self.model_type,
+                **self.model_config_dict,
+            )
+            return response
+
         elif self._url == "https://sambaverse.sambanova.ai/api/predict":
             raise ValueError(
                 "https://sambaverse.sambanova.ai/api/predict doesn't support"
@@ -198,7 +228,7 @@ class SambaModel:
     def _run_non_streaming(
         self, messages: List[OpenAIMessage]
     ) -> ChatCompletion:
-        r"""Handles non-streaming inference with SambaNova FastAPI.
+        r"""Handles non-streaming inference with SambaNova's API.
 
         Args:
             messages (List[OpenAIMessage]): A list of messages representing the
@@ -250,6 +280,15 @@ class SambaModel:
                 raise RuntimeError(f"HTTP request failed: {e!s}")
             except json.JSONDecodeError as e:
                 raise ValueError(f"Failed to decode JSON response: {e!s}")
+
+        # Handle SambaNova's Cloud API
+        elif self._url == "https://api.sambanova.ai/v1":
+            response = self._client.chat.completions.create(
+                messages=messages,
+                model=self.model_type,
+                **self.model_config_dict,
+            )
+            return response
 
         # Handle SambaNova's Sambaverse API
         else:
