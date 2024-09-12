@@ -25,7 +25,7 @@ from camel.toolkits.openai_function import OpenAIFunction
 
 
 class VideoDownloaderToolkit(BaseToolkit):
-    """A class for downloading videos and optionally splitting them into
+    r"""A class for downloading videos and optionally splitting them into
     chunks."""
 
     def __init__(
@@ -35,15 +35,14 @@ class VideoDownloaderToolkit(BaseToolkit):
         chunk_duration: int = 30,
         split_into_chunks: bool = False,
     ):
-        """
-        Initialize the VideoDownloaderToolkit.
+        r"""Initialize the VideoDownloaderToolkit.
 
         Args:
             video_url (str, optional): The URL of the video to download.
             chunk_duration (int, optional): The duration of each chunk in
-                seconds. Defaults to 30.
+                seconds. (default: :obj:`30`)
             split_into_chunks (bool, optional): If True, split the video into
-                chunks. Defaults to False.
+                chunks. (default: :obj:`False`)
         """
         self.video_url = video_url
         self.chunk_duration = chunk_duration
@@ -58,12 +57,11 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     @property
     def cookies_path(self) -> Optional[str]:
-        """
-        Get the path to the cookies.txt file. Cached after first access.
+        r"""Get the path to the cookies.txt file. Cached after first access.
 
         Returns:
             Optional[str]: The path to the cookies file if it exists, otherwise
-              None.
+              :obj:`None`.
         """
         if self._cookies_path is None:
             project_root = os.getcwd()
@@ -80,8 +78,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     @property
     def current_directory(self) -> str:
-        """
-        Create or retrieve the directory for storing the downloaded video.
+        r"""Create or retrieve the directory for storing the downloaded video.
         Cached after first access.
 
         Returns:
@@ -107,8 +104,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         return self._current_directory
 
     def _set_default_directory(self, directory: str):
-        """
-        Manually set the directory for storing the downloaded video.
+        r"""Manually set the directory for storing the downloaded video.
 
         Args:
             directory (str): The path to the directory.
@@ -125,8 +121,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     @property
     def video_extension(self) -> str:
-        """
-        Retrieve the video file extension. If the extension does not exist,
+        r"""Retrieve the video file extension. If the extension does not exist,
         the video download method will be called to fetch the full video.
 
         Returns:
@@ -159,16 +154,15 @@ class VideoDownloaderToolkit(BaseToolkit):
         return self._video_extension
 
     def extract_youtube_video_url(self, url: str) -> Optional[str]:
-        """
-        Convert an embedded YouTube URL to a standard YouTube video URL.
+        r"""Convert an embedded YouTube URL to a standard YouTube video URL.
         Only applies to YouTube links, otherwise returns None.
 
         Args:
             url (str): The input URL, which could be an embedded YouTube URL.
 
         Returns:
-            Optional[str]: The standard YouTube URL, or None if it's not a
-              YouTube link.
+            Optional[str]: The standard YouTube URL, or :obj:`None` if it's
+                not a YouTube link.
         """
         if "youtube.com/embed/" in url:
             match = re.search(r"embed/([a-zA-Z0-9_-]+)", url)
@@ -180,8 +174,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         return None
 
     def download_video(self, video_url: Optional[str] = None) -> None:
-        """
-        Download the video and optionally split it into chunks.
+        r"""Download the video and optionally split it into chunks.
 
         Args:
             video_url (str, optional): The URL of the video to download.
@@ -239,8 +232,7 @@ class VideoDownloaderToolkit(BaseToolkit):
     def _download_chunk(
         self, start_time: int, end_time: int, chunk_index: int
     ) -> None:
-        """
-        Download a specific chunk of the video.
+        r"""Download a specific chunk of the video.
 
         Args:
             start_time (int): The start time of the chunk in seconds.
@@ -281,11 +273,11 @@ class VideoDownloaderToolkit(BaseToolkit):
             print(f"Error downloading chunk: {e}")
 
     def is_video_downloaded(self) -> bool:
-        """
-        Check if the video has already been downloaded.
+        r"""Check if the video has already been downloaded.
 
         Returns:
-            bool: True if the video file(s) exist(s), False otherwise.
+            bool: :obj:`True` if the video file(s) exist(s), :obj:`False`
+                otherwise.
         """
         if self.split_into_chunks:
             first_chunk_path = os.path.join(
@@ -299,6 +291,17 @@ class VideoDownloaderToolkit(BaseToolkit):
             return os.path.exists(video_path)
 
     def get_video_length(self) -> int:
+        r"""Retrieves the length of a video in seconds, either from the
+        network or from a locally downloaded video file.
+
+        Returns:
+            int: The length of the video in seconds. Returns :obj:`0` if the
+                length cannot be determined.
+
+        Raises:
+            Exception: Prints an error message if there is an issue retrieving
+                the video length from the network.
+        """
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -365,8 +368,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             return 0
 
     def get_video_bytes(self) -> bytes:
-        """
-        Returns the video bytes for the downloaded video. If the video was
+        r"""Returns the video bytes for the downloaded video. If the video was
         downloaded in chunks, the chunks will be read and concatenated.
 
         Returns:
@@ -411,15 +413,13 @@ class VideoDownloaderToolkit(BaseToolkit):
     def get_video_screenshots(
         self, timestamps: Union[List[int], int]
     ) -> List[Image.Image]:
-        """
-        Capture screenshots from the video at specified timestamps or by
+        r"""Capture screenshots from the video at specified timestamps or by
         dividing the video into equal parts if an integer is provided.
 
         Args:
             timestamps (Union[List[int], int]): A list of timestamps (in
-              seconds)
-              from which to capture the screenshots, or an integer specifying
-              the number of evenly spaced screenshots to capture.
+                seconds) from which to capture the screenshots, or an integer
+                specifying the number of evenly spaced screenshots to capture.
 
         Returns:
             List[Image.Image]: A list of screenshots as PIL Image objects.
@@ -458,16 +458,15 @@ class VideoDownloaderToolkit(BaseToolkit):
     def _get_chunk_index_and_local_timestamp(
         self, timestamp: int
     ) -> Tuple[int, int]:
-        """
-        Determine the chunk index and the local timestamp within that chunk for
-          a global timestamp.
+        r"""Determine the chunk index and the local timestamp within that
+        chunk for a global timestamp.
 
         Args:
             timestamp (int): The global timestamp in the video.
 
         Returns:
-            (int, int): The chunk index and the local timestamp within that
-              chunk.
+            Tuple[int, int]: The chunk index and the local timestamp within
+                that chunk.
         """
         chunk_index = timestamp // self.chunk_duration
         local_timestamp = timestamp % self.chunk_duration
@@ -476,8 +475,7 @@ class VideoDownloaderToolkit(BaseToolkit):
     def _capture_screenshot(
         self, video_path: str, timestamp: int
     ) -> Image.Image:
-        """
-        Capture a screenshot from a video file at a specific timestamp.
+        r"""Capture a screenshot from a video file at a specific timestamp.
 
         Args:
             video_path (str): The path to the video file.
@@ -498,9 +496,8 @@ class VideoDownloaderToolkit(BaseToolkit):
         return Image.open(io.BytesIO(out))
 
     def get_tools(self) -> List[OpenAIFunction]:
-        """
-        Returns a list of OpenAIFunction objects representing the functions in
-            the toolkit.
+        r"""Returns a list of OpenAIFunction objects representing the
+        functions in the toolkit.
 
         Returns:
             List[OpenAIFunction]: A list of OpenAIFunction objects representing
@@ -515,24 +512,3 @@ class VideoDownloaderToolkit(BaseToolkit):
 VIDEO_DOWNLOAD_FUNCS: List[OpenAIFunction] = (
     VideoDownloaderToolkit().get_tools()
 )
-
-if __name__ == "__main__":
-    video_url = 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
-    downloader = VideoDownloaderToolkit(
-        video_url=video_url, split_into_chunks=False
-    )
-
-    # Get the video bytes
-    video_bytes = downloader.get_video_bytes()
-    print(f"Video bytes length: {len(video_bytes)}")
-
-    if downloader.is_video_downloaded():
-        print("Video has already been downloaded.")
-
-    print(downloader.get_video_length())
-
-    timestamps = 3
-    image_list = downloader.get_video_screenshots(timestamps)
-
-    for _, img in enumerate(image_list):
-        img.show()
