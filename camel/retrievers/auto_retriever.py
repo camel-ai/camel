@@ -14,9 +14,7 @@
 import datetime
 import os
 import re
-from pathlib import Path
 from typing import Collection, List, Optional, Sequence, Tuple, Union
-from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -27,14 +25,12 @@ from camel.storages import (
     VectorDBQuery,
 )
 from camel.types import StorageType
+from camel.utils import Constants
 
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
-
-DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class AutoRetriever:
@@ -112,35 +108,12 @@ class AutoRetriever:
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+
         if isinstance(content, Element):
             content = content.metadata.file_directory
 
-        # Check if the content is URL
-        parsed_url = urlparse(content)
-        is_url = all([parsed_url.scheme, parsed_url.netloc])
+        collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
 
-        # Convert given path into a collection name, ensuring it only
-        # contains numbers, letters, and underscores
-        if is_url:
-            # For URLs, remove https://, replace /, and any characters not
-            # allowed by Milvus with _
-            collection_name = re.sub(
-                r'[^0-9a-zA-Z]+',
-                '_',
-                content.replace("https://", ""),
-            )
-        elif os.path.exists(content):
-            # For file paths, get the stem and replace spaces with _, also
-            # ensuring only allowed characters are present
-            collection_name = re.sub(r'[^0-9a-zA-Z]+', '_', Path(content).stem)
-        else:
-            # the content is string input
-            collection_name = content[:10]
-
-        # Ensure the collection name does not start or end with underscore
-        collection_name = collection_name.strip("_")
-        # Limit the maximum length of the collection name to 30 characters
-        collection_name = collection_name[:30]
         return collection_name
 
     def _get_file_modified_date_from_file(
@@ -203,9 +176,10 @@ class AutoRetriever:
         self,
         query: str,
         contents: Union[str, List[str], Element, List[Element]],
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
+        max_characters: int = 500,
     ) -> dict[str, Sequence[Collection[str]]]:
         r"""Executes the automatic vector retriever process using vector
         storage.
@@ -223,6 +197,8 @@ class AutoRetriever:
             return_detailed_info (bool, optional): Whether to return detailed
                 information including similarity score, content path and
                 metadata. Defaults to `False`.
+            max_characters (int): Max number of characters in each chunk.
+                Defaults to `500`.
 
         Returns:
             dict[str, Sequence[Collection[str]]]: By default, returns
@@ -287,7 +263,7 @@ class AutoRetriever:
                         storage=vector_storage_instance,
                         embedding_model=self.embedding_model,
                     )
-                    vr.process(content)
+                    vr.process(content=content, max_characters=max_characters)
                 else:
                     vr = VectorRetriever(
                         storage=vector_storage_instance,

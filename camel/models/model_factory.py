@@ -18,13 +18,14 @@ from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
-from camel.models.interlm_xcomposer_model import InternLMXComposerModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_compatibility_model import OpenAICompatibilityModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.reka_model import RekaModel
+from camel.models.samba_model import SambaModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
@@ -93,6 +94,8 @@ class ModelFactory:
                 model_class = GeminiModel
             elif model_platform.is_mistral and model_type.is_mistral:
                 model_class = MistralModel
+            elif model_platform.is_reka and model_type.is_reka:
+                model_class = RekaModel
             elif model_type == ModelType.STUB:
                 model_class = StubModel
             else:
@@ -110,11 +113,10 @@ class ModelFactory:
                 model_class = VLLMModel
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
-            elif model_platform.is_internlm:
-                model_class = InternLMXComposerModel
-                return model_class(model_type, model_config_dict)
             elif model_platform.is_openai_compatibility_model:
                 model_class = OpenAICompatibilityModel
+            elif model_platform.is_samba:
+                model_class = SambaModel
             elif model_platform.is_together:
                 model_class = TogetherAIModel
                 return model_class(

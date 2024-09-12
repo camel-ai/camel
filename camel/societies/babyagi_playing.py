@@ -243,9 +243,6 @@ class BabyAGI:
 
         assistant_response = self.assistant_agent.step(assistant_msg_msg)
         assistant_msg = assistant_response.msgs[0]
-        self.assistant_agent.record_message(assistant_msg)
-        self.task_creation_agent.record_message(assistant_msg)
-        self.task_prioritization_agent.record_message(assistant_msg)
 
         self.solved_subtasks.append(task_name)
         past_tasks = self.solved_subtasks + list(self.subtasks)

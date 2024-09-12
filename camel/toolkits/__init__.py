@@ -28,6 +28,8 @@ from .twitter_toolkit import TWITTER_FUNCS, TwitterToolkit
 from .weather_toolkit import WEATHER_FUNCS, WeatherToolkit
 from .slack_toolkit import SLACK_FUNCS, SlackToolkit
 from .dalle_toolkit import DALLE_FUNCS, DalleToolkit
+from .linkedin_toolkit import LINKEDIN_FUNCS, LinkedInToolkit
+from .reddit_toolkit import REDDIT_FUNCS, RedditToolkit
 
 from .base import BaseToolkit
 from .code_execution import CodeExecutionToolkit
@@ -47,6 +49,8 @@ __all__ = [
     'WEATHER_FUNCS',
     'SLACK_FUNCS',
     'DALLE_FUNCS',
+    'LINKEDIN_FUNCS',
+    'REDDIT_FUNCS',
     'BaseToolkit',
     'GithubToolkit',
     'MathToolkit',
@@ -58,5 +62,7 @@ __all__ = [
     'WeatherToolkit',
     'RetrievalToolkit',
     'OpenAPIToolkit',
+    'LinkedInToolkit',
+    'RedditToolkit',
     'CodeExecutionToolkit',
 ]

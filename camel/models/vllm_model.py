@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
+import subprocess
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -42,7 +44,7 @@ class VLLMModel:
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the model service. (default:
-                :obj:`None`)
+                :obj:`"http://localhost:8000/v1"`)
             api_key (Optional[str]): The API key for authenticating with the
                 model service.
             token_counter (Optional[BaseTokenCounter]): Token counter to use
@@ -51,15 +53,37 @@ class VLLMModel:
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
+        self._url = (
+            url
+            or os.environ.get("VLLM_BASE_URL")
+            or "http://localhost:8000/v1"
+        )
+        if not url and not os.environ.get("VLLM_BASE_URL"):
+            self._start_server()
         # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=url,
+            base_url=self._url,
             api_key=api_key,
         )
         self._token_counter = token_counter
         self.check_model_config()
+
+    def _start_server(self) -> None:
+        r"""Starts the vllm server in a subprocess."""
+        try:
+            subprocess.Popen(
+                ["vllm", "server", "--port", "8000"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            print(
+                f"vllm server started on http://localhost:8000/v1 "
+                f"for {self.model_type} model"
+            )
+        except Exception as e:
+            print(f"Failed to start vllm server: {e}")
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -113,7 +137,7 @@ class VLLMModel:
 
     @property
     def token_limit(self) -> int:
-        """Returns the maximum token limit for the given model.
+        r"""Returns the maximum token limit for the given model.
 
         Returns:
             int: The maximum token limit for the given model.

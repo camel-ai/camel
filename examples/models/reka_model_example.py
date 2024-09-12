@@ -11,41 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 from camel.agents import ChatAgent
+from camel.configs import RekaConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
-ollama_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OLLAMA,
-    model_type="mistral",
-    model_config_dict={"temperature": 0.4},
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.REKA,
+    model_type=ModelType.REKA_FLASH,
+    model_config_dict=RekaConfig(temperature=0.0).as_dict(),
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
+# Define system message
+sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
     content="You are a helpful assistant.",
 )
-agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community 
-    dedicated to the study of autonomous and communicative agents.""",
+    content="""Say hi to CAMEL AI, one open-source community dedicated to the 
+    study of autonomous and communicative agents.""",
 )
-assistant_response = agent.step(user_msg)
-print(assistant_response.msg.content)
 
-"""
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+'''
 ===============================================================================
-Ollama server started on http://localhost:11434/v1 for mistral model
-
-Hi there! *waves* Hi to the amazing team at CAMEL AI - Autonomous and 
-Communicative Agents Laboratory! It's great to connect with you all. I'm 
-excited to learn more about your work in developing autonomous and 
-communicative agents, exploring the intersection of artificial intelligence, 
-robotics, and human-computer interaction. Keep pushing the boundaries of 
-what's possible!
+ Hello CAMEL AI community! 🐫 I'm thrilled to connect with a group so 
+ dedicated to the study of autonomous and communicative agents. Your work is 
+ at the forefront of advancing AI technologies that can interact and operate 
+ independently in complex environments. I look forward to learning from your 
+ insights and contributing to the community in any way I can. Together, let's 
+ continue to push the boundaries of what's possible in AI research and 
+ development! 🚀
 ===============================================================================
-"""
+'''
