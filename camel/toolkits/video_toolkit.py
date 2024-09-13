@@ -22,7 +22,10 @@ from PIL import Image
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
-from camel.utils.commons import generate_temp_directory
+from camel.utils.commons import (
+    file_exists_and_is_identical,
+    generate_temp_directory,
+)
 
 
 class VideoDownloaderToolkit(BaseToolkit):
@@ -68,10 +71,8 @@ class VideoDownloaderToolkit(BaseToolkit):
             project_root = os.getcwd()
             cookies_path = os.path.join(project_root, "cookies.txt")
             if not os.path.exists(cookies_path):
-                print(
-                    f'''Warning: cookies.txt file not found at path
-                      {cookies_path}.'''
-                )
+                print(f'''Warning: cookies.txt file not found at path
+                      {cookies_path}.''')
                 self._cookies_path = None
             else:
                 self._cookies_path = cookies_path
@@ -110,8 +111,10 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     @property
     def video_extension(self) -> str:
-        r"""Retrieve the video file extension. If the extension does not exist,
-        the video download method will be called to fetch the full video.
+        r"""Retrieve the video file extension. First check if the video has
+        been downloaded. If not, download the video. Then check for the full
+        video file,
+        and finally check for chunked video files.
 
         Returns:
             str: The video file extension (e.g., '.mp4', '.webm').
@@ -120,20 +123,31 @@ class VideoDownloaderToolkit(BaseToolkit):
             if not self.is_video_downloaded():
                 self.download_video()
 
-            video_files = [
+            full_video_files = [
                 f
                 for f in os.listdir(self.video_download_path)
                 if re.match(r'full_video\..+', f)
             ]
 
-            if video_files:
-                self._video_extension = os.path.splitext(video_files[0])[1]
+            if full_video_files:
+                self._video_extension = os.path.splitext(full_video_files[0])[
+                    1
+                ]
             else:
-                print(
-                    '''Error: Video download failed, and no video file was 
-                    found.'''
-                )
-                return ""
+                chunk_files = [
+                    f
+                    for f in os.listdir(self.video_download_path)
+                    if re.match(r'video_chunk_0\..+', f)
+                ]
+
+                if chunk_files:
+                    self._video_extension = os.path.splitext(chunk_files[0])[1]
+                else:
+                    print(
+                        '''Error: Video download failed, and no video file was 
+                        found.'''
+                    )
+                    return ""
 
         return self._video_extension
 
@@ -167,10 +181,8 @@ class VideoDownloaderToolkit(BaseToolkit):
             self.video_url = video_url
 
         if not self.video_url:
-            print(
-                '''No video URL provided. Certain functionalities might be 
-                limited.'''
-            )
+            print('''No video URL provided. Certain functionalities might be 
+                limited.''')
             return
 
         converted_url = self.extract_youtube_video_url(self.video_url)
@@ -180,19 +192,61 @@ class VideoDownloaderToolkit(BaseToolkit):
         try:
             if self.chunk_duration > 0:
                 video_length = self.get_video_length()
+                # attempt downloading by time intervals
                 if video_length == 0:
-                    raise ValueError(
-                        """Unable to determine video duration. Please download 
-                            the full video."""
-                    )
+                    chunk_index = 0
+                    start_time = 0
 
-                for chunk_index, start_time in enumerate(
-                    range(0, video_length, self.chunk_duration)
-                ):
-                    end_time = min(
-                        start_time + self.chunk_duration, video_length
-                    )
-                    self._download_chunk(start_time, end_time, chunk_index)
+                    while True:
+                        try:
+                            end_time = start_time + self.chunk_duration
+                            self._download_chunk(
+                                start_time, end_time, chunk_index
+                            )
+
+                            if chunk_index > 0:
+                                chunk_filename = os.path.join(
+                                    self.video_download_path,
+                                    f'video_chunk_{chunk_index}{self.video_extension}',
+                                )
+                                previous_chunk_filename = os.path.join(
+                                    self.video_download_path,
+                                    f'video_chunk_{chunk_index - 1}'
+                                    + f'{self.video_extension}',
+                                )
+                                if file_exists_and_is_identical(
+                                    previous_chunk_filename, chunk_filename
+                                ):
+                                    print(
+                                        f'''Chunk {chunk_index} is identical 
+                                        to chunk {chunk_index - 1}, 
+                                        terminating download.'''
+                                    )
+                                    break
+                            start_time += self.chunk_duration
+                            chunk_index += 1
+                        except Exception as e:
+                            print(
+                                f'''Stopping download at chunk {chunk_index} 
+                                due to error: {e!s}'''
+                            )
+                            break
+                else:
+                    try:
+                        for chunk_index, start_time in enumerate(
+                            range(0, video_length, self.chunk_duration)
+                        ):
+                            end_time = min(
+                                start_time + self.chunk_duration, video_length
+                            )
+                            self._download_chunk(
+                                start_time, end_time, chunk_index
+                            )
+                    except Exception as e:
+                        print(
+                            f'''Error occurred while downloading chunk 
+                            {chunk_index}: {e}'''
+                        )
 
             else:
                 video_template = os.path.join(
@@ -254,79 +308,80 @@ class VideoDownloaderToolkit(BaseToolkit):
                 )
 
         except self.yt_dlp.utils.DownloadError as e:
-            print(f"Error downloading chunk: {e}")
+            raise RuntimeError(f"Error downloading chunk: {e}")
 
     def is_video_downloaded(self) -> bool:
         r"""Check if the video has already been downloaded.
 
         Returns:
-            bool: :obj:`True` if the video file(s) exist(s), :obj:`False`
+            bool: :obj:`True` if any video file(s) exist(s), :obj:`False`
                 otherwise.
         """
         if self.chunk_duration > 0:
-            first_chunk_path = os.path.join(
-                self.video_download_path,
-                f'video_chunk_0{self.video_extension}',
-            )
-            return os.path.exists(first_chunk_path)
+            for filename in os.listdir(self.video_download_path):
+                if filename.startswith('video_chunk_0') and os.path.isfile(
+                    os.path.join(self.video_download_path, filename)
+                ):
+                    return True
         else:
-            video_path = os.path.join(
-                self.video_download_path, f'full_video{self.video_extension}'
-            )
-            return os.path.exists(video_path)
+            for filename in os.listdir(self.video_download_path):
+                if 'full_video' in filename and os.path.isfile(
+                    os.path.join(self.video_download_path, filename)
+                ):
+                    return True
+
+        return False
 
     def get_video_length(self) -> int:
-        r"""Retrieves the length of a video in seconds, either from the
-        network or from a locally downloaded video file.
+        r"""Retrieves the length of a video in seconds, either from a locally
+        downloaded video file or from the network if no local file is
+        available.
 
         Returns:
             int: The length of the video in seconds. Returns :obj:`0` if the
                 length cannot be determined.
-
-        Raises:
-            Exception: Prints an error message if there is an issue retrieving
-                the video length from the network.
         """
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'cookiefile': self.cookies_path,
-        }
+        video_length = 0
 
-        try:
-            with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(self.video_url, download=False)
-                video_length = info_dict.get('duration', 0)
-        except Exception as e:
-            print(f"Error retrieving video length from network: {e}")
-            video_length = 0
+        if self.is_video_downloaded():
+            if self.chunk_duration > 0:
+                chunk_index = 0
+                while True:
+                    chunk_filename = os.path.join(
+                        self.video_download_path,
+                        f'video_chunk_{chunk_index}{self.video_extension}',
+                    )
+                    if not os.path.exists(chunk_filename):
+                        break
+
+                    video_length += self._get_video_length_from_file(
+                        chunk_filename
+                    )
+                    chunk_index += 1
+            else:
+                video_path = os.path.join(
+                    self.video_download_path,
+                    f'full_video{self.video_extension}',
+                )
+                if os.path.exists(video_path):
+                    video_length = self._get_video_length_from_file(video_path)
 
         if video_length == 0:
-            if self.is_video_downloaded():
-                if self.chunk_duration > 0:
-                    video_length = 0
-                    chunk_index = 0
-                    while True:
-                        chunk_filename = os.path.join(
-                            self.video_download_path,
-                            f'video_chunk_{chunk_index}{self.video_extension}',
-                        )
-                        if not os.path.exists(chunk_filename):
-                            break
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'cookiefile': self.cookies_path,
+            }
 
-                        video_length += self._get_video_length_from_file(
-                            chunk_filename
-                        )
-                        chunk_index += 1
-                else:
-                    video_path = os.path.join(
-                        self.video_download_path,
-                        f'full_video{self.video_extension}',
+            try:
+                with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info_dict = ydl.extract_info(
+                        self.video_url, download=False
                     )
-                    if os.path.exists(video_path):
-                        video_length = self._get_video_length_from_file(
-                            video_path
-                        )
+                    video_length = info_dict.get('duration', 0)
+            except Exception as e:
+                print(f"Error retrieving video length from network: {e}")
+                video_length = 0
 
         return video_length
 
@@ -472,12 +527,16 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         import ffmpeg  # type: ignore[import]
 
-        out, _ = (
-            ffmpeg.input(video_path, ss=timestamp)
-            .filter('scale', 320, -1)
-            .output('pipe:', vframes=1, format='image2', vcodec='png')
-            .run(capture_stdout=True, capture_stderr=True)
-        )
+        try:
+            out, _ = (
+                ffmpeg.input(video_path, ss=timestamp)
+                .filter('scale', 320, -1)
+                .output('pipe:', vframes=1, format='image2', vcodec='png')
+                .run(capture_stdout=True, capture_stderr=True)
+            )
+        except ffmpeg.Error as e:
+            print('FFmpeg stderr:', e.stderr.decode('utf-8'))
+
         return Image.open(io.BytesIO(out))
 
     def get_tools(self) -> List[OpenAIFunction]:

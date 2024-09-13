@@ -44,3 +44,13 @@ def test_video_is_downloaded():
     )
     is_downloaded = downloader.is_video_downloaded()
     assert isinstance(is_downloaded, bool)
+
+
+def test_video_screenshots_download():
+    downloader = VideoDownloaderToolkit(
+        video_url='https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_30MB.mp4',
+        chunk_duration=5,
+    )
+    screenshots = downloader.get_video_screenshots([1, 3, 5])
+
+    assert len(screenshots) == 3, "Number of screenshots captured is incorrect"

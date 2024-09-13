@@ -599,3 +599,40 @@ def generate_temp_directory(
     os.makedirs(temp_directory, exist_ok=True)
 
     return temp_directory
+
+
+def calculate_file_hash(file_path: str) -> str:
+    """Calculate the MD5 hash of a file for comparison.
+
+    Args:
+        file_path (str): The path to the file for which the hash will be
+        calculated.
+
+    Returns:
+        str: The MD5 hash value of the file content as a string.
+    """
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+def file_exists_and_is_identical(
+    existing_file: str, new_file_path: str
+) -> bool:
+    """Check if a file already exists and if its content matches a new file.
+
+    Args:
+        existing_file (str): The path to the existing file.
+        new_file_path (str): The path to the newly downloaded file for
+        comparison.
+
+    Returns:
+        bool: True if the files are identical, False otherwise.
+    """
+    if os.path.exists(existing_file):
+        existing_hash = calculate_file_hash(existing_file)
+        new_hash = calculate_file_hash(new_file_path)
+        return existing_hash == new_hash
+    return False
