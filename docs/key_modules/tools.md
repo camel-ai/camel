@@ -1,16 +1,13 @@
-# Tool and Toolkits
+# Tools
 
-> Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
-
-
-## Concepts
+## 1. Concept
+Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
 
 **Tools:** Tools are akin to OpenAI Functions and can be easily converted to that format. In CAMEL, we offer a variety of commonly used tools that you can utilize directly. While built-in tools can be quite useful, it's highly likely that you'll need to define your own tools. This guide for detailed instructions on how to create custom tools.
 
 **Toolkits:** Toolkits are collections of tools that are designed to work well together. 
 
-
-## Tools
+## 2. Get Started
 
 To enhance your agents' capabilities with CAMEL tools, start by installing our additional tools package:
 ```sh
@@ -20,7 +17,7 @@ pip install 'camel-ai[tools]'
 In CAMEL, a tool is an `OpenAIFunction` that LLMs can call.
 
 
-### How to Define Your Own Tool?
+### 2.1 How to Define Your Own Tool?
 
 Developers can create custom tools tailored to their agent’s specific needs:
 
@@ -89,7 +86,7 @@ print(add_tool.get_openai_tool_schema())
    'type': 'object'}}}
 ```
 
-## Toolkits
+### 2.2 Toolkits
 
 Toolkits are collections of tools that are designed to be used together for specific tasks. All Toolkits expose a `get_tools` method which returns a list of tools. You can therefore do:
 
@@ -127,6 +124,6 @@ Here is a list of the available CAMEL tools and their descriptions:
 | RetrievalToolkit | A information retrieval toolkit for retrieving information from a local vector storage system based on a specified query. | 
 
 
-## Conclusion
+## 3. Conclusion
 
 Tools are essential for extending the capabilities of CAMEL agents, empowering them to perform a wide range of tasks and collaborate efficiently.

@@ -1,20 +1,11 @@
 # Memory
 
-## Overview
-
+## 1. Concept
 The Memory module in CAMEL provides a flexible and powerful system for storing, retrieving, and managing information for AI agents. It enables agents to maintain context across conversations and retrieve relevant information from past interactions, enhancing the coherence and relevance of AI responses.
 
-## Getting Started
+## 2. Get Started
 
-### Installation
-
-Ensure you have CAMEL AI installed in your Python environment:
-
-```bash
-pip install camel-ai
-```
-
-### Basic Usage
+### 2.1 Basic Usage
 
 Here's a quick example of how to use the `LongtermAgentMemory`:
 
@@ -114,9 +105,9 @@ print(response.msgs[0].content)
 
 ```
 
-## Core Components
+## 3. Core Components
 
-### MemoryRecord
+### 3.1 MemoryRecord
 
 The basic data unit in the `CAMEL` memory system.
 
@@ -133,7 +124,7 @@ Methods:
 - `to_dict()`: Convert the `MemoryRecord` to a dictionary for serialization
 - `to_openai_message()`: Convert the record to an `OpenAIMessage` object
 
-### ContextRecord
+### 3.2 ContextRecord
 
 The result of memory retrieval from `AgentMemory`, which is used by `ContextCreator` to select records for creating the context for the agent.
 
@@ -142,7 +133,7 @@ Attributes:
 - `memory_record`: A `MemoryRecord`
 - `score`: A float value representing the relevance or importance of the record
 
-### MemoryBlock (Abstract Base Class)
+### 3.3 MemoryBlock (Abstract Base Class)
 
 Serves as the fundamental component within the agent memory system. `MemoryBlock` class follows the "Composite Design pattern" so that you can compose objects into tree structures and then work with these structures as if they were individual objects.
 
@@ -150,7 +141,7 @@ Serves as the fundamental component within the agent memory system. `MemoryBlock
 - `write_record()`: Write a single record to memory
 - `clear()`: Remove all records from memory
 
-### BaseContextCreator (Abstract Base Class)
+### 3.4 BaseContextCreator (Abstract Base Class)
 
 Defines the context creation strategies when retrieval messages exceed the model's context length.
 
@@ -158,7 +149,7 @@ Defines the context creation strategies when retrieval messages exceed the model
 - `token_limit`: The maximum number of tokens allowed in the generated context
 - `create_context()`: Create conversational context from chat history
 
-### AgentMemory (Abstract Base Class)
+### 3.5 AgentMemory (Abstract Base Class)
 
 A specialized form of MemoryBlock designed for direct integration with an agent.
 
@@ -166,9 +157,9 @@ A specialized form of MemoryBlock designed for direct integration with an agent.
 - `get_context_creator()`: Get a context creator
 - `get_context()`: Get chat context with a proper size for the agent
 
-## Memory Block Implementations
+## 4. Memory Block Implementations
 
-### ChatHistoryBlock
+### 4.1 ChatHistoryBlock
 
 Stores all the chat histories and retrieves with optional window size.
 
@@ -185,7 +176,7 @@ Methods:
 
 Use Case: Ideal for maintaining recent conversation context and flow.
 
-### VectorDBBlock
+### 4.2 VectorDBBlock
 
 Uses vector embeddings for maintaining and retrieving information.
 
@@ -208,9 +199,9 @@ Key Differences:
 2. Retrieval Method: `ChatHistoryBlock` retrieves based on recency, `VectorDBBlock` retrieves based on semantic similarity.
 3. Data Representation: `ChatHistoryBlock` stores messages in original form, `VectorDBBlock` converts to vector embeddings.
 
-## Agent Memory Implementations
+## 5. Agent Memory Implementations
 
-### ChatHistoryMemory
+### 5.1 ChatHistoryMemory
 
 An AgentMemory implementation that wraps ChatHistoryBlock.
 
@@ -227,7 +218,7 @@ Methods:
 - `get_context_creator()`: Get the context creator
 - `clear()`: Remove all chat messages
 
-### VectorDBMemory
+### 5.2 VectorDBMemory
 
 An `AgentMemory` implementation that wraps `VectorDBBlock`.
 
@@ -243,7 +234,7 @@ Methods:
 - `write_records()`: Write new records and update current topic
 - `get_context_creator()`: Get the context creator
 
-### LongtermAgentMemory
+### 5.3 LongtermAgentMemory
 
 Combines ChatHistoryMemory and VectorDBMemory for comprehensive memory management.
 
@@ -261,9 +252,9 @@ Methods:
 - `get_context_creator()`: Get the context creator
 - `clear()`: Remove all records from both memory blocks
 
-## Advanced Topics
+## 6. Advanced Topics
 
-### Customizing Context Creator
+### 6.1 Customizing Context Creator
 
 You can create custom context creators by subclassing `BaseContextCreator`:
 
@@ -286,7 +277,7 @@ class MyCustomContextCreator(BaseContextCreator):
 
 ```
 
-### Customizing Vector Database Block
+### 6.2 Customizing Vector Database Block
 
 For `VectorDBBlock`, you can customize it by adjusting the embedding models or vector storages:
 
@@ -301,7 +292,7 @@ vector_db = VectorDBBlock(
 )
 ```
 
-### Performance Considerations
+### 6.3 Performance Considerations
 
 - For large-scale applications, consider using persistent storage backends instead of in-memory storage.
 - Optimize your context creator to balance between context relevance and token limits.
