@@ -26,13 +26,14 @@ Here is the example code to use a chosen model. To utilize a different model, yo
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.configs import ChatGPTConfig
-from camel.message import BaseMessage
+from camel.messages import BaseMessage
+from camel.agents import ChatAgent
 
-# Define the model, here in this case we use GPT3.5
+# Define the model, here in this case we use gpt-4o-mini
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_3_5_TURBO,
-    model_config_dict=ChatGPTConfig().__dict__,
+    model_type=ModelType.GPT_4O_MINI,
+    model_config_dict=ChatGPTConfig().as_dict,
 )
 
 # Define an assitant message
@@ -46,15 +47,15 @@ ChatAgent(system_msg, model=model)
 ```
 
 ## Open source LLMs
-In the current landscape, for those seeking highly stable content generation, OpenAI's GPT-3.5 turbo,  GPT-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
+In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
 
-While proprietary models like GPT-3.5 turbo and GPT-4 have set high standards for content generation, open-source alternatives offer viable solutions for experimentation and practical use. These models, supported by active communities and continuous improvements, provide flexibility and cost-effectiveness for developers and researchers.
+While proprietary models like gpt-4o-mini and gpt-4o have set high standards for content generation, open-source alternatives offer viable solutions for experimentation and practical use. These models, supported by active communities and continuous improvements, provide flexibility and cost-effectiveness for developers and researchers.
 
-You can find the in-detail code tutorial of [how to connect to LLMs](https://www.notion.so/User-Service-Agent-Discord-auto-posting-to-be-confirmed-by-Backend-team-006ee7e719a5448faa0f5987d17273e9?pvs=21), we will walk you through the process of:
+We will walk you through the process of:
 
 1. **Selecting an Open Source LLM**: Understand the strengths and capabilities of various models available in the open-source community. 
 2. **Setting Up the Environment**: Learn how to set up your development environment to integrate these models. This includes installing necessary libraries, configuring runtime environments, and ensuring compatibility with your project requirements.
-3. **Model Integration**: Step-by-step guidance on integrating your chosen LLM into your development workflow. We will cover API configurations, and leveraging pre-trained weights to maximize model performance for tasks.
+3. **Model Integration**: Step-by-step guidance on integrating your chosen LLM into your development workflow. We will cover API configurations to maximize model performance for tasks.
 
 While CAMEL implements some of models in-house, others are integrated through third-party providers. This hybrid approach enables CAMEL to provide a comprehensive and flexible toolkit for building with LLMs.
 
@@ -120,51 +121,42 @@ While CAMEL implements some of models in-house, others are integrated through th
     print(assistant_response.msg.content)
     ```
 
-## Use your local models with FastChat
+## Use Open-Source Models as Backends (ex. using vLLM to set Phi-3 locally)
 
-Currently, we are using FastChat as our local model serving backend framework. Before you have a LLM launched on your local, you need to have FastChat installed.
+Install [vLLM](https://docs.vllm.ai/en/latest/getting_started/installation.html) first.
+
+After setting up vLLM, start an OpenAI compatible server for example by:
+
 ```
-pip install fschat
+python -m vllm.entrypoints.openai.api_server --model microsoft/Phi-3-mini-4k-instruct --api-key vllm --dtype bfloat16
 ```
+Create and run following script (more details please refer to this [example](https://github.com/camel-ai/camel/blob/master/examples/models/vllm_model_example.py)):
 
-To launch the model, please run the following commands in three separate terminals. Here we pick llama-2 as an example. Please note the model-path could be a huggingface style model string (in the example below, it is `meta-llama/Llama-2-7b-chat-hf`, just like how you use their .from_pretrained() method!) or a simply a absolute or relative path. 
+
 ```
-# Launch the controller
-python -m fastchat.serve.controller
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
 
-# Launch the model worker(s)
-python3 -m fastchat.serve.model_worker --model-path meta-llama/Llama-2-7b-chat-hf
-
-# Launch the RESTful API server
-python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
-```
-
-After you have the model successfully launched, you need to specify the following values in `OpenSourceConfig`  and pass it as one of the agent key word arguments when initializing a role play session.
-```
-from camel.configs import ChatGPTConfig, OpenSourceConfig
-
-agent_kwargs = {
-        role: dict(
-            model=ModelFactory.create(
-                model_platform=ModelPlatformType.OPENSOURCE,
-                model_type=ModelType.LLAMA_2,
-                model_config_dict=OpenSourceConfig(
-                    model_path="meta-llama/Llama-2-7b-chat-hf",
-                    server_url="http://localhost:8000/v1",
-                    api_params=ChatGPTConfig(temperature=0),
-                ).__dict__,
-            ),
-    )
-    for role in ["assistant", "user", "task-specify"]
-}
-
-role_play_session = RolePlaying(
-    assistant_role_name="Python Programmer",
-    assistant_agent_kwargs=agent_kwargs["assistant"],
-    user_role_name="Stock Trader",
-    user_agent_kwargs=agent_kwargs["user"],
-    task_prompt=task_prompt,
-    with_task_specify=True,
-    task_specify_agent_kwargs=agent_kwargs["task-specify"],
+vllm_model = ModelFactory.create(
+    model_platform=ModelPlatformType.VLLM,
+    model_type="microsoft/Phi-3-mini-4k-instruct",
+    url="http://localhost:8000/v1",
+    model_config_dict={"temperature": 0.0},
+    api_key="vllm",
 )
+
+assistant_sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content="You are a helpful assistant.",
+)
+agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
+
+user_msg = BaseMessage.make_user_message(
+    role_name="User",
+    content="Say hi to CAMEL AI",
+)
+assistant_response = agent.step(user_msg)
+print(assistant_response.msg.content)
 ```
