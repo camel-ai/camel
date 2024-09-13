@@ -30,7 +30,7 @@ def main():
     ).as_dict()
     search_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O,
         model_config_dict=search_agent_model_conf_dict,
     )
     search_agent = ChatAgent(
@@ -49,7 +49,7 @@ def main():
     ).as_dict()
     tour_guide_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O,
         model_config_dict=tour_guide_agent_model_conf_dict,
     )
 
@@ -67,7 +67,12 @@ def main():
         BaseMessage.make_assistant_message(
             role_name="Traveler",
             content="You can ask questions about your travel plans",
-        )
+        ),
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O,
+            model_config_dict=ChatGPTConfig().as_dict(),
+        ),
     )
 
     workforce = Workforce('A travel group')
@@ -92,7 +97,7 @@ def main():
 
     task = workforce.process_task(human_task)
 
-    print('Final Result of Origin task:\n', task.result)
+    print('Final Result of Original task:\n', task.result)
 
 
 if __name__ == "__main__":

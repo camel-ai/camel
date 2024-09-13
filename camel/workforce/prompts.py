@@ -15,55 +15,45 @@ from camel.prompts import TextPrompt
 
 # ruff: noqa: E501
 CREATE_NODE_PROMPT = TextPrompt(
-    """You need to use the given information to create a new workforce for solving the category of tasks of the given one.
+    """You need to use the given information to create a new worker node that contains a single agent for solving the category of tasks of the given one.
 The content of the given task is:
 
 ==============================
 {content}
 ==============================
 
-Following is the information of the existing workforces. The format is <ID>: <description>.
+Following is the information of the existing worker nodes. The format is <ID>:<description>:<additional_info>.
 
 ==============================
 {child_nodes_info}
 ==============================
 
 You must return the following information:
-1. The role of the agent working in the workforce, e.g. "programmer", "researcher", "product owner". This should be enclosed within the <role></role> tags.
-2. The system message that will be sent to the agent, enclosed within the <sys_msg></sys_msg> tags.
-3. The description of the workforce, enclosed within the <description></description> tags.
+1. The role of the agent working in the worker node, e.g. "programmer", "researcher", "product owner".
+2. The system message that will be sent to the agent in the node.
+3. The description of the new worker node itself.
 
-Also, all of the info should be enclosed within a <workforce> tag. For example:
-
-<workforce>
-<role>programmer</role>
-<sys_msg>You are a python programmer.</sys_msg>
-<description>a python programmer.</description>
-</workforce>
-
-You should ensure that the workforce created is capable of solving all the tasks in the same category as the given one, don't make it too specific.
-Also, there should be no big overlap between the new workforce and the existing ones.
-The information returned should be concise and clear. Each pair of tag can only appear once.
+You should ensure that the node created is capable of solving all the tasks in the same category as the given one, don't make it too specific.
+Also, there should be no big overlap between the new work node and the existing ones.
+The information returned should be concise and clear.
 """
 )
 
 ASSIGN_TASK_PROMPT = TextPrompt(
-    """You need to assign the task to a workforce.
+    """You need to assign the task to a worker node.
 The content of the task is:
 
 ==============================
 {content}
 ==============================
 
-Following is the information of the existing workforces. The format is <ID>: <description>.
+Following is the information of the existing worker nodes. The format is <ID>:<description>:<additional_info>.
 
 ==============================
 {child_nodes_info}
 ==============================
 
-You must return the ID of the workforce that you think is most capable of doing the task. The ID should be enclosed within the <id></id> tags, for example:
-
-<id>1</id>
+You must return the ID of the worker node that you think is most capable of doing the task.
 """
 )
 
@@ -82,11 +72,7 @@ The content of the task that you need to do is:
 ==============================
 
 You are asked to return the result of the given task.
-If you think you can COMPLETELY finish it, you MUST return the result enclosed within the <result></result> tags, for example:
-
-<result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
-
-Otherwise, if you think you can't COMPLETELY finish the task, you MUST return <failed></failed> tags.
+However, if you think you can't finish the task, you MUST set the fail flag and leave the result empty.
 """
 )
 
@@ -124,11 +110,7 @@ Here is their chat history on the task:
 ==============================
 
 Now you should summarize the scenario and return the result of the task.
-The result MUST be enclosed within the <result></result> tags, for example:
-
-<result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
-
-You should keep important details and remove unrelated information.
+However, if you think they didn't finish the task, you MUST set the fail flag and leave the result empty.
 """
 )
 
@@ -153,6 +135,5 @@ You must return the subtasks in the format of a numbered list within <tasks> tag
 <task>Subtask 2</task>
 </tasks>
 
-Though it's not a must, you should try your best effort to make each subtask 
-achievable for a worker. The tasks should be clear and concise.
+Though it's not a must, you should try your best effort to make each subtask achievable for a worker. The tasks should be clear and concise.
 """

@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
+import ast
 from typing import Dict, List, Optional
 
 from colorama import Fore
@@ -22,12 +23,12 @@ from camel.messages.base import BaseMessage
 from camel.societies import RolePlaying
 from camel.tasks.task import Task, TaskState
 from camel.utils import print_text_animated
-from camel.workforce.utils import parse_task_result_resp
-from camel.workforce.worker import Worker
-from camel.workforce.workforce_prompt import (
+from camel.workforce.prompts import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMARIZE_PROMPT,
 )
+from camel.workforce.utils import TaskResult
+from camel.workforce.worker import Worker
 
 
 class RolePlayingWorker(Worker):
@@ -92,88 +93,87 @@ class RolePlayingWorker(Worker):
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
         """
-        try:
-            dependency_tasks_info = self._get_dep_tasks_info(dependencies)
-            prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
-                content=task.content,
-                dependency_task_info=dependency_tasks_info,
+        dependency_tasks_info = self._get_dep_tasks_info(dependencies)
+        prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
+            content=task.content,
+            dependency_task_info=dependency_tasks_info,
+        )
+        role_play_session = RolePlaying(
+            assistant_role_name=self.assistant_role_name,
+            user_role_name=self.user_role_name,
+            assistant_agent_kwargs=self.assistant_agent_kwargs,
+            user_agent_kwargs=self.user_agent_kwargs,
+            task_prompt=prompt,
+            with_task_specify=False,
+        )
+        n = 0
+        input_msg = role_play_session.init_chat()
+        chat_history = []
+        while n < self.chat_turn_limit:
+            n += 1
+            assistant_response, user_response = role_play_session.step(
+                input_msg
             )
-            role_play_session = RolePlaying(
-                assistant_role_name=self.assistant_role_name,
-                user_role_name=self.user_role_name,
-                assistant_agent_kwargs=self.assistant_agent_kwargs,
-                user_agent_kwargs=self.user_agent_kwargs,
-                task_prompt=prompt,
-                with_task_specify=False,
+
+            if assistant_response.terminated:
+                reason = assistant_response.info['termination_reasons']
+                print(
+                    f"{Fore.GREEN}AI Assistant terminated. Reason: "
+                    f"{reason}.{Fore.RESET}"
+                )
+                break
+
+            if user_response.terminated:
+                reason = user_response.info['termination_reasons']
+                print(
+                    f"{Fore.GREEN}AI User terminated. Reason: {reason}."
+                    f"{Fore.RESET}"
+                )
+                break
+
+            print_text_animated(
+                f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
+                f"{Fore.RESET}\n",
+                delay=0.005,
             )
-            n = 0
-            input_msg = role_play_session.init_chat()
-            chat_history = []
-            while n < self.chat_turn_limit:
-                n += 1
-                assistant_response, user_response = role_play_session.step(
-                    input_msg
-                )
+            chat_history.append(f"AI User: {user_response.msg.content}")
 
-                if assistant_response.terminated:
-                    reason = assistant_response.info['termination_reasons']
-                    print(
-                        f"{Fore.GREEN}AI Assistant terminated. Reason: "
-                        f"{reason}.{Fore.RESET}"
-                    )
-                    break
-
-                if user_response.terminated:
-                    reason = user_response.info['termination_reasons']
-                    print(
-                        f"{Fore.GREEN}AI User terminated. Reason: {reason}."
-                        f"{Fore.RESET}"
-                    )
-                    break
-
-                print_text_animated(
-                    f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
-                    f"{Fore.RESET}\n",
-                    delay=0.005,
-                )
-                chat_history.append(f"AI User: {user_response.msg.content}")
-
-                print_text_animated(
-                    f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
-                )
-
-                for func_record in assistant_response.info['tool_calls']:
-                    print(func_record)
-
-                print_text_animated(
-                    f"\n{Fore.GREEN}{assistant_response.msg.content}"
-                    f"{Fore.RESET}\n",
-                    delay=0.005,
-                )
-                chat_history.append(
-                    f"AI Assistant: {assistant_response.msg.content}"
-                )
-
-                if "CAMEL_TASK_DONE" in user_response.msg.content:
-                    break
-
-                input_msg = assistant_response.msg
-
-            chat_history_str = "\n".join(chat_history)
-            prompt = ROLEPLAY_SUMMARIZE_PROMPT.format(
-                user_role=self.user_role_name,
-                assistant_role=self.assistant_role_name,
-                content=task.content,
-                chat_history=chat_history_str,
+            print_text_animated(
+                f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
             )
-            req = BaseMessage.make_user_message(
-                role_name="User",
-                content=prompt,
+
+            for func_record in assistant_response.info['tool_calls']:
+                print(func_record)
+
+            print_text_animated(
+                f"\n{Fore.GREEN}{assistant_response.msg.content}"
+                f"{Fore.RESET}\n",
+                delay=0.005,
             )
-            response = self.summarize_agent.step(req)
-            task.result = parse_task_result_resp(response.msg.content)
-            print(f"Task result: {task.result}\n")
-            return TaskState.DONE
-        except Exception as e:
-            print(f"{self} failed to process task {task.id}. error: {e}")
-            return TaskState.FAILED
+            chat_history.append(
+                f"AI Assistant: {assistant_response.msg.content}"
+            )
+
+            if "CAMEL_TASK_DONE" in user_response.msg.content:
+                break
+
+            input_msg = assistant_response.msg
+
+        chat_history_str = "\n".join(chat_history)
+        prompt = ROLEPLAY_SUMMARIZE_PROMPT.format(
+            user_role=self.user_role_name,
+            assistant_role=self.assistant_role_name,
+            content=task.content,
+            chat_history=chat_history_str,
+        )
+        req = BaseMessage.make_user_message(
+            role_name="User",
+            content=prompt,
+        )
+        response = self.summarize_agent.step(req, output_schema=TaskResult)
+        result_dict = ast.literal_eval(response.msg.content)
+        task_result = TaskResult(**result_dict)
+        task.result = task_result.content
+
+        print(f"Task result: {task.result}\n")
+        return TaskState.DONE

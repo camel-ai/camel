@@ -13,17 +13,18 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
+import ast
 from typing import Any, List
 
 from colorama import Fore
 
-from camel.agents.base import BaseAgent
+from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
 from camel.utils import print_text_animated
-from camel.workforce.utils import parse_task_result_resp
+from camel.workforce.prompts import PROCESS_TASK_PROMPT
+from camel.workforce.utils import TaskResult
 from camel.workforce.worker import Worker
-from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
 
 
 class SingleAgentWorker(Worker):
@@ -31,13 +32,13 @@ class SingleAgentWorker(Worker):
 
     Args:
         description (str): Description of the node.
-        worker (BaseAgent): Worker of the node. A single agent.
+        worker (ChatAgent): Worker of the node. A single agent.
     """
 
     def __init__(
         self,
         description: str,
-        worker: BaseAgent,
+        worker: ChatAgent,
     ) -> None:
         super().__init__(description)
         self.worker = worker
@@ -65,31 +66,41 @@ class SingleAgentWorker(Worker):
             TaskState: `TaskState.DONE` if processed successfully, otherwise
                 `TaskState.FAILED`.
         """
+        dependency_tasks_info = self._get_dep_tasks_info(dependencies)
+        prompt = PROCESS_TASK_PROMPT.format(
+            content=task.content,
+            dependency_tasks_info=dependency_tasks_info,
+        )
+        req = BaseMessage.make_user_message(
+            role_name="User",
+            content=prompt,
+        )
         try:
-            dependency_tasks_info = self._get_dep_tasks_info(dependencies)
-            prompt = PROCESS_TASK_PROMPT.format(
-                content=task.content,
-                dependency_tasks_info=dependency_tasks_info,
-            )
-            req = BaseMessage.make_user_message(
-                role_name="User",
-                content=prompt,
-            )
-            response = self.worker.step(req)
-
-            print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
-
-            for func_record in response.info['tool_calls']:
-                print(func_record)
-
-            task.result = parse_task_result_resp(response.msg.content)
-            print_text_animated(
-                f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======'
-            )
-            return TaskState.DONE
+            response = self.worker.step(req, output_schema=TaskResult)
         except Exception as e:
             print(
-                f"{Fore.RED}{self} failed to process task {task.id}. "
-                f"Error: {e}{Fore.RESET}\n======"
+                f"{Fore.RED}Error occurred while processing task {task.id}:"
+                f"\n{e}{Fore.RESET}"
             )
             return TaskState.FAILED
+
+        print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
+
+        for func_record in response.info['tool_calls']:
+            print(func_record)
+
+        result_dict = ast.literal_eval(response.msg.content)
+        task_result = TaskResult(**result_dict)
+
+        if task_result.failed:
+            print(
+                f"{Fore.RED}{self} failed to process task {task.id}.\n======"
+            )
+            return TaskState.FAILED
+
+        task.result = task_result.content
+        print_text_animated(
+            f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======',
+            delay=0.005,
+        )
+        return TaskState.DONE

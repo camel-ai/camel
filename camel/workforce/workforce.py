@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
+import ast
 import asyncio
 import logging
 from collections import deque
@@ -20,7 +21,7 @@ from typing import Deque, Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents import BaseAgent, ChatAgent
+from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
@@ -28,20 +29,20 @@ from camel.tasks.task import Task, TaskState
 from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce.base import BaseNode
-from camel.workforce.role_playing_worker import RolePlayingWorker
-from camel.workforce.single_agent_worker import SingleAgentWorker
-from camel.workforce.task_channel import TaskChannel
-from camel.workforce.utils import (
-    check_if_running,
-    parse_assign_task_resp,
-    parse_create_node_resp,
-)
-from camel.workforce.worker import Worker
-from camel.workforce.workforce_prompt import (
+from camel.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
     WF_TASK_DECOMPOSE_PROMPT,
 )
+from camel.workforce.role_playing_worker import RolePlayingWorker
+from camel.workforce.single_agent_worker import SingleAgentWorker
+from camel.workforce.task_channel import TaskChannel
+from camel.workforce.utils import (
+    TaskAssignResult,
+    WorkerConf,
+    check_if_running,
+)
+from camel.workforce.worker import Worker
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,22 @@ class Workforce(BaseNode):
     to solve tasks. It can assign tasks to workder nodes and also take
     strategies such as create new worker, decompose tasks, etc. to handle
     situations when the task fails.
+
+    Args:
+        description (str): Description of the node.
+        children (Optional[List[BaseNode]], optional): List of child nodes
+            under this node. Each child node can be a worker node or
+            another workforce node. (default: :obj:`None`)
+        coordinator_agent_kwargs (Optional[Dict], optional): Keyword
+            arguments for the coordinator agent, e.g. `model`, `api_key`,
+            `tools`, etc. (default: :obj:`None`)
+        task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
+            the task agent, e.g. `model`, `api_key`, `tools`, etc.
+            (default: :obj:`None`)
+        new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
+            for the worker agent that will be created during runtime to
+            handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -61,24 +78,6 @@ class Workforce(BaseNode):
         task_agent_kwargs: Optional[Dict] = None,
         new_worker_agent_kwargs: Optional[Dict] = None,
     ) -> None:
-        r"""Initialize the workforce.
-
-        Args:
-            description (str): Description of the node.
-            children (Optional[List[BaseNode]], optional): List of child nodes
-                under this node. Each child node can be a worker node or
-                another workforce node. Defaults to `None`.
-            coordinator_agent_kwargs (Optional[Dict], optional): Keyword
-                arguments for the coordinator agent, e.g. `model`, `api_key`,
-                `tools`, etc. Defaults to `None`.
-            task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
-                the task agent, e.g. `model`, `api_key`, `tools`, etc.
-                Defaults to `None`.
-            new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
-                for the worker agent that will be created during runtime to
-                handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
-                Defaults to `None`.
-        """
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
@@ -143,6 +142,7 @@ class Workforce(BaseNode):
         self.reset()
         self._task = task
         task.state = TaskState.FAILED
+        self._pending_tasks.append(task)
         # The agent tend to be overconfident on the whole task, so we
         # decompose the task into subtasks first
         subtasks = self._decompose_task(task)
@@ -155,13 +155,13 @@ class Workforce(BaseNode):
 
     @check_if_running(False)
     def add_single_agent_worker(
-        self, description: str, worker: BaseAgent
+        self, description: str, worker: ChatAgent
     ) -> Workforce:
         r"""Add a worker node to the workforce that uses a single agent.
 
         Args:
             description (str): Description of the worker node.
-            worker (BaseAgent): The agent to be added.
+            worker (ChatAgent): The agent to be added.
 
         Returns:
             Workforce: The workforce node itself.
@@ -244,25 +244,35 @@ class Workforce(BaseNode):
 
     def _get_child_nodes_info(self) -> str:
         r"""Get the information of all the child nodes under this node."""
-        return '\n'.join(
-            f'{child.node_id}: {child.description}' for child in self._children
-        )
+        info = ""
+        for child in self._children:
+            if isinstance(child, Workforce):
+                additional_info = "A Workforce node"
+            elif isinstance(child, SingleAgentWorker):
+                additional_info = "tools: " + (
+                    ", ".join(child.worker.func_dict.keys())
+                )
+            elif isinstance(child, RolePlayingWorker):
+                additional_info = "A Role playing node"
+            else:
+                additional_info = "Unknown node"
+            info += (
+                f"<{child.node_id}>:<{child.description}>:<"
+                f"{additional_info}>\n"
+            )
+        return info
 
     def _find_assignee(
         self,
         task: Task,
-        failed_log: Optional[str] = None,
     ) -> str:
-        r"""Assigns a task to a child node if capable, otherwise create a
-        new worker node.
+        r"""Assigns a task to a worker node with the best capability.
 
         Parameters:
             task (Task): The task to be assigned.
-            failed_log (Optional[str]): Optional log of a previous failed
-                attempt.
 
         Returns:
-            str: ID of the assigned node.
+            str: ID of the worker node to be assigned.
         """
         self.coordinator_agent.reset()
         prompt = ASSIGN_TASK_PROMPT.format(
@@ -273,13 +283,13 @@ class Workforce(BaseNode):
             role_name="User",
             content=prompt,
         )
-        response = self.coordinator_agent.step(req)
-        try:
-            logger.info(f"Selected node: {response.msg.content}")
-            assignee_id = parse_assign_task_resp(response.msg.content)
-        except ValueError:
-            assignee_id = self._create_worker_node_for_task(task).node_id
-        return assignee_id
+
+        response = self.coordinator_agent.step(
+            req, output_schema=TaskAssignResult
+        )
+        result_dict = ast.literal_eval(response.msg.content)
+        task_assign_result = TaskAssignResult(**result_dict)
+        return task_assign_result.assignee_id
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         await self._channel.post_task(task, self.node_id, assignee_id)
@@ -306,8 +316,9 @@ class Workforce(BaseNode):
             role_name="User",
             content=prompt,
         )
-        response = self.coordinator_agent.step(req)
-        new_node_conf = parse_create_node_resp(response.msg.content)
+        response = self.coordinator_agent.step(req, output_schema=WorkerConf)
+        result_dict = ast.literal_eval(response.msg.content)
+        new_node_conf = WorkerConf(**result_dict)
 
         new_agent = self._create_new_agent(
             new_node_conf.role,
@@ -351,7 +362,7 @@ class Workforce(BaseNode):
 
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.GPT_4O,
             model_config_dict=model_config_dict,
         )
 

@@ -11,66 +11,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
 from functools import wraps
 from typing import Callable
 
-
-class NodeConf:
-    def __init__(self, role: str, sys_msg: str, description: str):
-        self.role = role
-        self.sys_msg = sys_msg
-        self.description = description
+from pydantic import BaseModel, Field
 
 
-# TODO: integrate structured response directly instead of parsing
-def parse_create_node_resp(response: str) -> NodeConf:
-    r"""Parses the response of the new workforce creation from the manager
-    agent."""
-    config = re.search(r"(<workforce>.*</workforce>)", response, re.DOTALL)
-    if config is None:
-        raise ValueError("No workforce configuration found in the response.")
-    config_raw = config.group(1)
-
-    try:
-        import xml.etree.ElementTree as ET
-
-        root = ET.fromstring(config_raw)
-        workforce_info = {child.tag: child.text for child in root}
-    except Exception as e:
-        raise ValueError(f"Failed to parse workforce configuration: {e}")
-
-    if (
-        "role" not in workforce_info
-        or "sys_msg" not in workforce_info
-        or "description" not in workforce_info
-    ):
-        raise ValueError("Missing required fields in workforce configuration.")
-
-    return NodeConf(
-        role=workforce_info["role"] or "",
-        sys_msg=workforce_info["sys_msg"] or "",
-        description=workforce_info["description"] or "",
+class WorkerConf(BaseModel):
+    role: str = Field(
+        description="The role of the agent working in the work node."
+    )
+    sys_msg: str = Field(
+        description="The system message that will be sent to the agent in "
+        "the node."
+    )
+    description: str = Field(
+        description="The description of the new work node itself."
     )
 
 
-def parse_assign_task_resp(response: str) -> str:
-    r"""Parses the response of the task assignment from the manager agent."""
-    assignee_id = re.search(r"<id>(.*)</id>", response)
-    if assignee_id is None:
-        raise ValueError("No assignee found in the response.")
-    return assignee_id.group(1)
+class TaskResult(BaseModel):
+    content: str = Field(description="The result of the task.")
+    failed: bool = Field(
+        description="Flag indicating whether the task processing failed."
+    )
 
 
-def parse_task_result_resp(response: str) -> str:
-    r"""Parses the result of the task from the signle agent workforce."""
-    task_result = re.search(r"<result>(.*)</result>", response, re.DOTALL)
-    failed_tag = re.search(r"<failed></failed>", response)
-    if failed_tag:
-        raise ValueError("The task processing failed.")
-    if task_result is None:
-        raise ValueError("No result found in the response.")
-    return task_result.group(1)
+class TaskAssignResult(BaseModel):
+    assignee_id: str = Field(
+        description="The ID of the workforce that is assigned to the task."
+    )
 
 
 def check_if_running(running: bool) -> Callable:
