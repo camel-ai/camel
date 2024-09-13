@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import hashlib
 import importlib
 import os
 import platform
@@ -570,3 +571,69 @@ def handle_http_error(response: requests.Response) -> str:
         return "Too Many Requests. You have hit the rate limit."
     else:
         return "HTTP Error"
+
+
+def generate_temp_directory(
+    file_url: str | None, base_folder: str = "temp_files"
+) -> str:
+    """Generate the directory path for storing temporary files based on the
+    file URL. If file_url is None, a default folder under base_folder is used.
+
+    Args:
+        file_url (str | None): The URL of the file. If None, use a default
+        folder.
+        base_folder (str): The base folder name for storing the temporary
+        files.
+
+    Returns:
+        str: The path to the directory where the file will be stored.
+    """
+    project_root = os.getcwd()
+
+    if file_url:
+        file_hash = hashlib.md5(file_url.encode('utf-8')).hexdigest()
+        temp_directory = os.path.join(project_root, base_folder, file_hash)
+    else:
+        # Use a default folder name when file_url is None
+        temp_directory = os.path.join(project_root, base_folder, "default")
+
+    os.makedirs(temp_directory, exist_ok=True)
+
+    return temp_directory
+
+
+def calculate_file_hash(file_path: str) -> str:
+    """Calculate the MD5 hash of a file for comparison.
+
+    Args:
+        file_path (str): The path to the file for which the hash will be
+        calculated.
+
+    Returns:
+        str: The MD5 hash value of the file content as a string.
+    """
+    hash_md5 = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+def file_exists_and_is_identical(
+    existing_file: str, new_file_path: str
+) -> bool:
+    """Check if a file already exists and if its content matches a new file.
+
+    Args:
+        existing_file (str): The path to the existing file.
+        new_file_path (str): The path to the newly downloaded file for
+        comparison.
+
+    Returns:
+        bool: True if the files are identical, False otherwise.
+    """
+    if os.path.exists(existing_file):
+        existing_hash = calculate_file_hash(existing_file)
+        new_hash = calculate_file_hash(new_file_path)
+        return existing_hash == new_hash
+    return False

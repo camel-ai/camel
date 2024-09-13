@@ -29,6 +29,7 @@ from .weather_toolkit import WeatherToolkit, WEATHER_FUNCS
 from .slack_toolkit import SlackToolkit
 from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
 from .linkedin_toolkit import LinkedInToolkit
+from .video_toolkit import VIDEO_DOWNLOAD_FUNCS, VideoDownloaderToolkit
 from .reddit_toolkit import RedditToolkit
 
 from .code_execution import CodeExecutionToolkit
@@ -39,6 +40,18 @@ __all__ = [
     'get_openai_function_schema',
     'get_openai_tool_schema',
     'openapi_security_config',
+    'MATH_FUNCS',
+    'MAP_FUNCS',
+    'OPENAPI_FUNCS',
+    'RETRIEVAL_FUNCS',
+    'SEARCH_FUNCS',
+    'TWITTER_FUNCS',
+    'WEATHER_FUNCS',
+    'SLACK_FUNCS',
+    'DALLE_FUNCS',
+    'LINKEDIN_FUNCS',
+    'VIDEO_DOWNLOAD_FUNCS',
+    'BaseToolkit',
     'GithubToolkit',
     'MathToolkit',
     'GoogleMapsToolkit',
@@ -52,6 +65,7 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    'VideoDownloaderToolkit',
     'MATH_FUNCS',
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',
