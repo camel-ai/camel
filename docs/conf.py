@@ -27,11 +27,9 @@ sys.path.insert(0, os.path.abspath('..'))
 project = ''
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.2.0'
+release = 'V0.2.0'
 
-html_favicon = (
-    'misc/favicon.png'
-)
+html_favicon = 'misc/favicon.png'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -68,9 +66,8 @@ html_theme_options = {
 }
 
 html_search_language = {
-  "en",
-  "zh",
-  
+    "en",
+    "zh",
 }
 
 html_static_path = ['_static']
