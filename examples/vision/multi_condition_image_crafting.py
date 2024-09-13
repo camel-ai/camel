@@ -18,7 +18,7 @@ from camel.configs import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import DALLE_FUNCS
+from camel.toolkits import DalleToolkit
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -40,7 +40,7 @@ def main(image_paths: list[str]) -> list[str]:
         content=sys_msg,
     )
 
-    model_config = ChatGPTConfig(tools=[*DALLE_FUNCS])
+    model_config = ChatGPTConfig(tools=DalleToolkit().get_tools())
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -51,7 +51,7 @@ def main(image_paths: list[str]) -> list[str]:
     dalle_agent = ChatAgent(
         system_message=assistant_sys_msg,
         model=model,
-        tools=DALLE_FUNCS,
+        tools=DalleToolkit().get_tools(),
     )
 
     image_list = [Image.open(image_path) for image_path in image_paths]

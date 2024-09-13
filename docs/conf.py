@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = ''
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = 'V0.1.6.6'
+release = '0.2.0'
 
 html_favicon = (
     'misc/favicon.png'
