@@ -29,6 +29,8 @@ class ModelType(Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    O1_PREVIEW = "o1-preview"
+    O1_MINI = "o1-mini"
 
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
@@ -86,16 +88,15 @@ class ModelType(Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
-    # SambaNova Model
-    SAMBA_LLAMA_3_1_405B = "llama3-405b"
-    SAMBA_LLAMA_3_1_70B = "llama3-70b"
-    SAMBA_LLAMA_3_1_8B = "llama3-8b"
-
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
             return self.value
-        return "gpt-3.5-turbo"
+        return "gpt-4o-mini"
+
+    @property
+    def supports_tool_calling(self) -> bool:
+        return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
     def is_openai(self) -> bool:
@@ -106,6 +107,8 @@ class ModelType(Enum):
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
         }
 
     @property
@@ -219,14 +222,6 @@ class ModelType(Enum):
         }
 
     @property
-    def is_samba(self) -> bool:
-        return self in {
-            ModelType.SAMBA_LLAMA_3_1_405B,
-            ModelType.SAMBA_LLAMA_3_1_70B,
-            ModelType.SAMBA_LLAMA_3_1_8B,
-        }
-
-    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -279,6 +274,8 @@ class ModelType(Enum):
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
             ModelType.GPT_4_TURBO,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.QWEN_2,
@@ -288,9 +285,6 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
-            ModelType.SAMBA_LLAMA_3_1_405B,
-            ModelType.SAMBA_LLAMA_3_1_70B,
-            ModelType.SAMBA_LLAMA_3_1_8B,
         }:
             return 131_072
         elif self in {
