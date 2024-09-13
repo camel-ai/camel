@@ -2,8 +2,3 @@ img {
   width: auto;
   height: 24px; 
 }
-
-text-foreground {
-  color: #037ef3;
-  color: hsl(var(--foreground))
-}
