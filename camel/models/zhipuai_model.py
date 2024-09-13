@@ -52,7 +52,7 @@ class ZhipuAIModel(BaseModelBackend):
                 :obj:`None`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO)` will be used.
+                GPT_4O_MINI)` will be used.
         """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
@@ -105,7 +105,7 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):

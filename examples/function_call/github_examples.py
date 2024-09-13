@@ -119,8 +119,8 @@ def solve_issue(
     ).as_dict()
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OpenAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=assistant_model_config_dict,
     )
 

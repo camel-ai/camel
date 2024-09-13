@@ -119,8 +119,8 @@ def translate_content(
             model_config = ChatGPTConfig(stream=True)
 
         model = ModelFactory.create(
-            model_platform=ModelPlatformType.OpenAI,
-            model_type=ModelType.GPT_3_5_TURBO,
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
             model_config=model_config,
         )
 

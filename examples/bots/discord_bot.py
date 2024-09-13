@@ -116,7 +116,7 @@ class DiscordBot:
         if self.auto_retriever:
             retrieved_content = self.auto_retriever.run_vector_retriever(
                 query=user_raw_msg,
-                vector_storage_local_path=self.content_input_paths,
+                contents=self.contents,
                 top_k=self.top_k,
                 return_detailed_info=self.return_detailed_info,
             )
