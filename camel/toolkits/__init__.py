@@ -21,14 +21,14 @@ from .open_api_specs.security_config import openapi_security_config
 
 from .google_maps_toolkit import GoogleMapsToolkit
 from .math_toolkit import MathToolkit
-from .open_api_toolkit import OpenAPIToolkit
+from .open_api_toolkit import OpenAPIToolkit, OPENAPI_FUNCS
 from .retrieval_toolkit import RetrievalToolkit
 from .search_toolkit import SearchToolkit
 from .twitter_toolkit import TwitterToolkit
 from .weather_toolkit import WeatherToolkit
 from .slack_toolkit import SlackToolkit
-from .dalle_toolkit import DalleToolkit
-from .linkedin_toolkit import LinkedInToolkit
+from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
+from .linkedin_toolkit import LinkedInToolkit, LINKEDIN_FUNCS
 from .reddit_toolkit import RedditToolkit
 
 from .base import BaseToolkit
@@ -54,4 +54,7 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    "DALLE_FUNCS",
+    "LINKEDIN_FUNCS",
+    "OPENAPI_FUNCS",
 ]

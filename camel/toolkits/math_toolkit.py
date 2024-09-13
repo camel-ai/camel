@@ -18,48 +18,57 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
 
 
-class MathToolkit(BaseToolkit):
-    r"""A class representing a toolkit for mathematical operations.
+def add(a: int, b: int) -> int:
+    r"""Adds two numbers.
 
-    This class provides methods for basic mathematical operations such as
-    addition, subtraction, and multiplication.
+    Args:
+        a (int): The first number to be added.
+        b (int): The second number to be added.
+
+    Returns:
+        int: The sum of the two numbers.
     """
+    return a + b
 
-    def add(self, a: int, b: int) -> int:
-        r"""Adds two numbers.
 
-        Args:
-            a (int): The first number to be added.
-            b (int): The second number to be added.
+def sub(a: int, b: int) -> int:
+    r"""Do subtraction between two numbers.
 
-        Returns:
-            integer: The sum of the two numbers.
-        """
-        return a + b
+    Args:
+        a (int): The minuend in subtraction.
+        b (int): The subtrahend in subtraction.
 
-    def sub(self, a: int, b: int) -> int:
-        r"""Do subtraction between two numbers.
+    Returns:
+        int: The result of subtracting :paramref:`b` from :paramref:`a`.
+    """
+    return a - b
 
-        Args:
-            a (int): The minuend in subtraction.
-            b (int): The subtrahend in subtraction.
 
-        Returns:
-            integer: The result of subtracting :obj:`b` from :obj:`a`.
-        """
-        return a - b
+def mul(a: int, b: int) -> int:
+    r"""Multiplies two integers.
 
-    def mul(self, a: int, b: int) -> int:
-        r"""Multiplies two integers.
+    Args:
+        a (int): The multiplier in the multiplication.
+        b (int): The multiplicand in the multiplication.
 
-        Args:
-            a (int): The multiplier in the multiplication.
-            b (int): The multiplicand in the multiplication.
+    Returns:
+        int: The product of the two numbers.
+    """
+    return a * b
 
-        Returns:
-            integer: The product of the two numbers.
-        """
-        return a * b
+
+MATH_FUNCS = [
+    OpenAIFunction(add),
+    OpenAIFunction(sub),
+    OpenAIFunction(mul),
+]
+
+
+class MathToolkit(BaseToolkit):
+    r"""A class representing a toolkit for mathematical operations. This
+    class provides methods for basic mathematical operations such as addition,
+    subtraction, and multiplication.
+    """
 
     def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the
@@ -69,8 +78,4 @@ class MathToolkit(BaseToolkit):
             List[OpenAIFunction]: A list of OpenAIFunction objects
                 representing the functions in the toolkit.
         """
-        return [
-            OpenAIFunction(self.add),
-            OpenAIFunction(self.sub),
-            OpenAIFunction(self.mul),
-        ]
+        return MATH_FUNCS
