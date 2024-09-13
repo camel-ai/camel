@@ -11,24 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-"""
-please set the below os environment:
-export AZURE_OPENAI_ENDPOINT=""
-export AZURE_API_VERSION=""
-export AZURE_OPENAI_API_KEY=""
-export AZURE_DEPLOYMENT_NAME=""
-"""
-
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.AZURE,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig(temperature=0.2).as_dict(),
+o1_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.O1_PREVIEW,  # Or ModelType.O1_MINI
+    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
 )
 
 # Define system message
@@ -38,21 +31,15 @@ sys_msg = BaseMessage.make_assistant_message(
 )
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=o1_model)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents.""",
+    content="""Write a bash script that takes a matrix represented as a string 
+    with format '[1,2],[3,4],[5,6]' and prints the transpose in the same 
+    format.""",
 )
 
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
-'''
-===============================================================================
-Hello CAMEL AI! It's great to hear about your open-source community dedicated
-to the study of autonomous and communicative agents. If you have any
-questions or need assistance, feel free to ask!
-===============================================================================
-'''

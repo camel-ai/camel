@@ -16,14 +16,14 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import MATH_FUNCS, SEARCH_FUNCS
+from camel.toolkits import MathToolkit, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
 def main():
     # Set the tools for the external_tools
-    internal_tools = SEARCH_FUNCS
-    external_tools = MATH_FUNCS
+    internal_tools = SearchToolkit().get_tools()
+    external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
     model_config_dict = ChatGPTConfig(
@@ -33,7 +33,7 @@ def main():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config_dict,
     )
 

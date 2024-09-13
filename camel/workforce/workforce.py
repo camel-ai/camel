@@ -26,7 +26,7 @@ from camel.configs import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task, TaskState
-from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
+from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce.base import BaseNode
 from camel.workforce.prompts import (
@@ -352,7 +352,7 @@ class Workforce(BaseNode):
         function_list = [
             *SEARCH_FUNCS,
             *WEATHER_FUNCS,
-            *MAP_FUNCS,
+            *GoogleMapsToolkit().get_tools(),
         ]
 
         model_config_dict = ChatGPTConfig(

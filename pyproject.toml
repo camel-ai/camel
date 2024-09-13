@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.8"
+version = "0.2.0"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -29,7 +29,7 @@ documentation = "https://docs.camel-ai.org"
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12"
 numpy = "^1"
-openai = "^1.2.3"
+openai = "^1.45.0"
 groq = "^0.5.0"
 anthropic = "^0.29.0"
 tiktoken = "^0.7.0"

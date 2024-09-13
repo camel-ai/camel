@@ -17,9 +17,12 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
-from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
+from camel.toolkits import MathToolkit, SearchToolkit, WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
+from camel.workforce.manager_node import ManagerNode
+from camel.workforce.role_playing_node import RolePlayingNode
+from camel.workforce.single_agent_node import SingleAgentNode
+from camel.workforce.workforce import Workforce
 
 
 def main():
@@ -36,18 +39,21 @@ def main():
     guide_agent = ChatAgent(guide_sysmsg)
     planner_agent = ChatAgent(planner_sysmsg)
 
-    function_list = [
-        *SEARCH_FUNCS,
-        *WEATHER_FUNCS,
-        *MAP_FUNCS,
+    guide_worker_node = SingleAgentNode('tour guide', guide_agent)
+    planner_worker_node = SingleAgentNode('planner', planner_agent)
+
+    tools_list = [
+        *MathToolkit().get_tools(),
+        *WeatherToolkit().get_tools(),
+        *SearchToolkit().get_tools(),
     ]
     user_model_config = ChatGPTConfig(temperature=0.0)
     assistant_model_config = ChatGPTConfig(
-        tools=function_list,
+        tools=tools_list,
         temperature=0.0,
     )
     model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_3_5_TURBO
+    model_type = ModelType.GPT_4O_MINI
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(
@@ -56,7 +62,7 @@ def main():
             model_type=model_type,
             model_config_dict=assistant_model_config.as_dict(),
         ),
-        tools=function_list,
+        tools=tools_list,
     )
     user_agent_kwargs = dict(
         model=ModelFactory.create(
@@ -65,26 +71,33 @@ def main():
             model_config_dict=user_model_config.as_dict(),
         ),
     )
-
-    workforce = Workforce('a travel group')
-    workforce.add_role_playing_worker(
+    research_rp_worker_node = RolePlayingNode(
         'research Group',
         assistant_role_name,
         user_role_name,
         assistant_agent_kwargs,
         user_agent_kwargs,
         1,
-    ).add_single_agent_worker(
-        'tour guide', guide_agent
-    ).add_single_agent_worker('planner', planner_agent)
+    )
 
     human_task = Task(
         content="research history of Paris and plan a tour.",
         id='0',
     )
+
+    root_node = ManagerNode(
+        description='a travel group',
+        children=[
+            guide_worker_node,
+            planner_worker_node,
+            research_rp_worker_node,
+        ],
+    )
+
+    workforce = Workforce(root_node)
     task = workforce.process_task(human_task)
 
-    print('Final result of original task:\n', task.result)
+    print('Final Result of Origin task:\n', task.result)
 
 
 if __name__ == "__main__":

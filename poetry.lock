@@ -446,13 +446,13 @@ files = [
 
 [[package]]
 name = "azure-core"
-version = "1.30.2"
+version = "1.31.0"
 description = "Microsoft Azure Core Library for Python"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "azure-core-1.30.2.tar.gz", hash = "sha256:a14dc210efcd608821aa472d9fb8e8d035d29b68993819147bc290a8ac224472"},
-    {file = "azure_core-1.30.2-py3-none-any.whl", hash = "sha256:cf019c1ca832e96274ae85abd3d9f752397194d9fea3b41487290562ac8abe4a"},
+    {file = "azure_core-1.31.0-py3-none-any.whl", hash = "sha256:22954de3777e0250029360ef31d80448ef1be13b80a459bff80ba7073379e2cd"},
+    {file = "azure_core-1.31.0.tar.gz", hash = "sha256:656a0dd61e1869b1506b7c6a3b31d62f15984b1a573d6326f6aa2f3e4123284b"},
 ]
 
 [package.dependencies]
@@ -546,13 +546,13 @@ lxml = ["lxml"]
 
 [[package]]
 name = "botocore"
-version = "1.35.17"
+version = "1.35.18"
 description = "Low-level, data-driven core of boto 3."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.17-py3-none-any.whl", hash = "sha256:a93f773ca93139529b5d36730b382dbee63ab4c7f26129aa5c84835255ca999d"},
-    {file = "botocore-1.35.17.tar.gz", hash = "sha256:0d35d03ea647b5d464c7f77bdab6fb23ae5d49752b13cf97ab84444518c7b1bd"},
+    {file = "botocore-1.35.18-py3-none-any.whl", hash = "sha256:1027083aeb1fe74057273410fd768e018e22f85adfbd717b5a69f578f7812b80"},
+    {file = "botocore-1.35.18.tar.gz", hash = "sha256:e59da8b91ab06683d2725b6cbbb0383b30c68a241c3c63363f4c5bff59b3c0c0"},
 ]
 
 [package.dependencies]
@@ -2480,13 +2480,13 @@ files = [
 
 [[package]]
 name = "huggingface-hub"
-version = "0.24.6"
+version = "0.24.7"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "huggingface_hub-0.24.6-py3-none-any.whl", hash = "sha256:a990f3232aa985fe749bc9474060cbad75e8b2f115f6665a9fda5b9c97818970"},
-    {file = "huggingface_hub-0.24.6.tar.gz", hash = "sha256:cc2579e761d070713eaa9c323e3debe39d5b464ae3a7261c39a9195b27bb8000"},
+    {file = "huggingface_hub-0.24.7-py3-none-any.whl", hash = "sha256:a212c555324c8a7b1ffdd07266bb7e7d69ca71aa238d27b7842d65e9a26ac3e5"},
+    {file = "huggingface_hub-0.24.7.tar.gz", hash = "sha256:0ad8fb756e2831da0ac0491175b960f341fe06ebcf80ed6f8728313f95fc0207"},
 ]
 
 [package.dependencies]
@@ -3239,13 +3239,13 @@ files = [
 
 [[package]]
 name = "litellm"
-version = "1.44.24"
+version = "1.45.0"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.44.24-py3-none-any.whl", hash = "sha256:c0aa7f943c031660ad25b72c9ca14accbea6e6e6c79186eb172e1ee69a868eda"},
-    {file = "litellm-1.44.24.tar.gz", hash = "sha256:657c7c5365e90427356bea63cf5dcac81752f5ba6c7f205ec9c5c3ea15d57fb9"},
+    {file = "litellm-1.45.0-py3-none-any.whl", hash = "sha256:87d712beabc6cbf24437557186c5b266729f3139bf7dd2e54573e1e9845b905a"},
+    {file = "litellm-1.45.0.tar.gz", hash = "sha256:21285496e72b9b16ff9d3d1332965c3d1a9b0ae8dbb26f27a7080af28a117174"},
 ]
 
 [package.dependencies]
@@ -3254,7 +3254,7 @@ click = "*"
 importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
 jsonschema = ">=4.22.0,<5.0.0"
-openai = ">=1.40.0"
+openai = ">=1.45.0"
 pydantic = ">=2.0.0,<3.0.0"
 python-dotenv = ">=0.2.0"
 requests = ">=2.31.0,<3.0.0"
@@ -3888,13 +3888,13 @@ files = [
 
 [[package]]
 name = "narwhals"
-version = "1.7.0"
+version = "1.8.0"
 description = "Extremely lightweight compatibility layer between dataframe libraries"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "narwhals-1.7.0-py3-none-any.whl", hash = "sha256:40d8c0457743540276d6e8b2add31affa1c8936035d378838000c281d8f5921f"},
-    {file = "narwhals-1.7.0.tar.gz", hash = "sha256:2d769c9dd23bd355632a813eb65d5cae6bad595c4058387acfb7fa86db50a0e9"},
+    {file = "narwhals-1.8.0-py3-none-any.whl", hash = "sha256:73bde7b1721e1d95f749f6aacec12bc616fcccae5a926064d641c93e133fd548"},
+    {file = "narwhals-1.8.0.tar.gz", hash = "sha256:b1572b8781273e5712ee76144b9b6f412f2b71f39d63053853322cc98201eeaa"},
 ]
 
 [package.extras]
@@ -4334,13 +4334,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.44.1"
+version = "1.45.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.44.1-py3-none-any.whl", hash = "sha256:07e2c2758d1c94151c740b14dab638ba0d04bcb41a2e397045c90e7661cdf741"},
-    {file = "openai-1.44.1.tar.gz", hash = "sha256:e0ffdab601118329ea7529e684b606a72c6c9d4f05be9ee1116255fcf5593874"},
+    {file = "openai-1.45.0-py3-none-any.whl", hash = "sha256:2f1f7b7cf90f038a9f1c24f0d26c0f1790c102ec5acd07ffd70a9b7feac1ff4e"},
+    {file = "openai-1.45.0.tar.gz", hash = "sha256:731207d10637335413aa3c0955f8f8df30d7636a4a0f9c381f2209d32cf8de97"},
 ]
 
 [package.dependencies]
@@ -7864,13 +7864,13 @@ types-setuptools = "*"
 
 [[package]]
 name = "types-regex"
-version = "2024.7.24.20240726"
+version = "2024.9.11.20240912"
 description = "Typing stubs for regex"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-regex-2024.7.24.20240726.tar.gz", hash = "sha256:f9cbebe607f53860bf5979de1e2a80cc04faf4849ee324461f982a3d46276d76"},
-    {file = "types_regex-2024.7.24.20240726-py3-none-any.whl", hash = "sha256:c436d7eace8e6c33cec31630135c804c15cd4ef110baf9cdd370ac6e376ff661"},
+    {file = "types-regex-2024.9.11.20240912.tar.gz", hash = "sha256:2c298bcf06a63b6a8254984698e32b74059d360ba6576e3d28bcde698c78e2e5"},
+    {file = "types_regex-2024.9.11.20240912-py3-none-any.whl", hash = "sha256:2ee9a15b5a9a4d6e9a8589e60d3f36bbae5f224393f15611c965e6d2a797107d"},
 ]
 
 [[package]]
@@ -8196,13 +8196,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.2.2"
+version = "2.2.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472"},
-    {file = "urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"},
+    {file = "urllib3-2.2.3-py3-none-any.whl", hash = "sha256:ca899ca043dcb1bafa3e262d73aa25c465bfb49e0bd9dd5d59f1d0acba2f8fac"},
+    {file = "urllib3-2.2.3.tar.gz", hash = "sha256:e7d814a81dad81e6caf2ec9fdedb284ecc9c73076b62654547cc64ccdcae26e9"},
 ]
 
 [package.extras]
@@ -8748,13 +8748,13 @@ multidict = ">=4.0"
 
 [[package]]
 name = "zipp"
-version = "3.20.1"
+version = "3.20.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "zipp-3.20.1-py3-none-any.whl", hash = "sha256:9960cd8967c8f85a56f920d5d507274e74f9ff813a0ab8889a5b5be2daf44064"},
-    {file = "zipp-3.20.1.tar.gz", hash = "sha256:c22b14cc4763c5a5b04134207736c107db42e9d3ef2d9779d465f5f1bcba572b"},
+    {file = "zipp-3.20.2-py3-none-any.whl", hash = "sha256:a817ac80d6cf4b23bf7f2828b7cabf326f15a001bea8b1f9b49631780ba28350"},
+    {file = "zipp-3.20.2.tar.gz", hash = "sha256:bc9eb26f4506fda01b81bcde0ca78103b6e62f991b381fec825435c836edbc29"},
 ]
 
 [package.extras]
@@ -8781,4 +8781,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.12"
-content-hash = "6523d043b581b6ee34173acff861a3cd3ffd6ca7cde3c10994b5b44b601d31c7"
+content-hash = "79101cf513497b1ca1f684696a90149abc8eb7c4b21041f78b0aeb52cbee8c12"
