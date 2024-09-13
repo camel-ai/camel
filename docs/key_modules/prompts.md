@@ -84,81 +84,7 @@ Certainly! To make the task of getting a promotion more specific, you can break 
    - **Technical Skills:** Identify any technical skills that are necessary for the promotion and create a plan to acquire or improve them (e.g., mastering a new programming language, learning about system architecture, etc.).
    - **Soft Skills:** Focus on improving soft skills such as leadership, communication, and teamwork.
 
-### 3.
-...... (omiting the following)
-```
-
-## 3. Supported Prompt Templates
-
-### 3.1 AISocietyPromptTemplateDict
-    
-This class defines prompts used in the `AI Society` task with role playing and task handling. For more information about AI Society usage, please refer to corresponding documentation. Template text prompts (defined as attributes) include:
-
-- **GENERATE_ASSISTANTS**: Prompt to list specified number of roles that the AI assistant can play.
-- **GENERATE_USERS**: Prompt to list common groups of internet users or occupations.
-- **GENERATE_TASKS**: Prompt to list diverse tasks for AI assistants.
-- **TASK_SPECIFY_PROMPT**: Specifies a task in more detail with spcified assistant role and user role.
-- **ASSISTANT_PROMPT**: Rules of the conversation and
-instructions for completing tasks.
-- **USER_PROMPT**: Rules of the conversation and instructions for giving instructions to the AI assistant.
-- **CRITIC_PROMPT**: Provides selection criteria for critics when choosing proposals from other roles.
-### 3.2 CodePromptTemplateDict
-    
-This class defines prompts for code-related tasks including generating programming languages, domains, tasks, and provide guidelines for AI assistants and users in coding scenarios. Template text prompts include:
-
-- **GENERATE_LANGUAGES**: Prompt to list specified number of computer programming languages.
-- **GENERATE_DOMAINS**: Prompt to list common fields of study that programming could help with.
-- **GENERATE_TASKS**: Prompt to list diverse tasks that AI assistant can assist for programmers.
-- **TASK_SPECIFY_PROMPT**: Prompt to specify a task in more detail.
-- **ASSISTANT_PROMPT**: Rules of the conversation and instructions for completing tasks.
-- **USER_PROMPT**: Outlines rules for conversation and for users instructing AI coders.
-### 3.3 EvaluationPromptTemplateDict
-    
-This class defines prompts that generate questions to evaluate knowledge. Template text prompt includes:
-
-- **GENERATE_QUESTIONS**: Prompt to generate a set of questions for evaluating knowledge emergence with preliminary knowledge in specific fields. You may provide some examples to enhance its generation quality.
-### 3.4 GenerateTextEmbeddingDataPromptTemplateDict
-    
-This class defines prompts for generating text embedding tasks. These prompts are used to create synthetic data for improving text embeddings. Template text prompts include:
-
-- **GENERATE_TASKS**: Prompt to generate specified number of synthetic text_embedding tasks.
-- **ASSISTANT_PROMPT**: Prompt to generate synthetic user queries in JSON format, positive documents, and hard negative documents for specified tasks.
-### 3.5 MisalignmentPromptTemplateDict
-    
-This class defines some misleading prompts to break the AI model alignments. Template text prompts include:
-
-- **DAN_PROMPT**: Prompt to role-playing as DAN (Do Anything Now) for jailbreaking. All the following templates in this dictionary includes DAN_PROMPT.
-- **GENERATE_TASKS**: Prompt to list unique malicious tasks that AI assistant can do.
-- **TASK_SPECIFY_PROMPT**: Prompt to specify a malicious task in more detail.
-- **ASSISTANT_PROMPT**: Rules and instructions for AI assistants when completing tasks.
-- **USER_PROMPT**: Outlines rules for conversation and for users instructing AI coders in misalignment tasks.
-### 3.6 ObjectRecognitionPromptTemplateDict
-    
-This class defines a prompt for object recognition tasks:
-
-- **ASSISTANT_PROMPT**: Prompt to detect all objects in images without redundant outputs.
-### 3.7 RoleDescriptionPromptTemplateDict
-    
-This class inherits from `AISocietyPromptTemplateDict` aiming to add descriptions to its prompts.
-
-- **ROLE_DESCRIPTION_PROMPT**: Describes the roles and responsibilities.
-### 3.8 SolutionExtractionPromptTemplateDict
-    
-This class prompts the AI model to focus on finding solution with particular knowledge.
-
-- **ASSISTANT_PROMPT**: Rules of finding and presenting solutions.
-### 3.9 TranslationPromptTemplateDict
-    
-This class prompts a translation AI assistant from English to specified language.
-
-- **ASSISTANT_PROMPT**: Rules of completing translation tasks.
-### 3.10 VideoDescriptionPromptTemplateDict
-    
-This class prompts the AI model to describe a video in words.
-
-- **ASSISTANT_PROMPT**: Rules of completing video description tasks.
-
-## 4.1 Introduction to `CodePrompt` Class
+## 3. Introduction to `CodePrompt` Class
 
 In this part, we will explore the `CodePrompt` class, which is a class that represents a code prompt. It extends the `TextPrompt` class, which in turn extends the built-in `str` class. The `CodePrompt` class provides additional functionality related to code execution and handling.
 
@@ -225,7 +151,7 @@ print(output)
 ```
 
 
-## 4.2 Write Your Prompts with the `TextPrompt` Class
+## 4. Write Your Prompts with the `TextPrompt` Class
 
 In this part, we will explore the `TextPrompt` class and understand its functionalities. The `TextPrompt` class is a subclass of the built-in `str` class and provides additional features for working with text prompts. We will cover the following topics:
 
@@ -343,3 +269,74 @@ print(prompt5.key_words)
 ```
 
 In the above example, we demonstrate concatenation using the `+` operator, joining using the `join` method, and applying the `upper` method to a `TextPrompt` instance. The resulting prompts are also instances of `TextPrompt`.
+
+
+## 5. Supported Prompt Templates
+
+### 5.1 AISocietyPromptTemplateDict
+    
+This class defines prompts used in the `AI Society` task with role playing and task handling. For more information about AI Society usage, please refer to corresponding documentation. Template text prompts (defined as attributes) include:
+
+- **GENERATE_ASSISTANTS**: Prompt to list specified number of roles that the AI assistant can play.
+- **GENERATE_USERS**: Prompt to list common groups of internet users or occupations.
+- **GENERATE_TASKS**: Prompt to list diverse tasks for AI assistants.
+- **TASK_SPECIFY_PROMPT**: Specifies a task in more detail with spcified assistant role and user role.
+- **ASSISTANT_PROMPT**: Rules of the conversation and
+instructions for completing tasks.
+- **USER_PROMPT**: Rules of the conversation and instructions for giving instructions to the AI assistant.
+- **CRITIC_PROMPT**: Provides selection criteria for critics when choosing proposals from other roles.
+### 5.2 CodePromptTemplateDict
+    
+This class defines prompts for code-related tasks including generating programming languages, domains, tasks, and provide guidelines for AI assistants and users in coding scenarios. Template text prompts include:
+
+- **GENERATE_LANGUAGES**: Prompt to list specified number of computer programming languages.
+- **GENERATE_DOMAINS**: Prompt to list common fields of study that programming could help with.
+- **GENERATE_TASKS**: Prompt to list diverse tasks that AI assistant can assist for programmers.
+- **TASK_SPECIFY_PROMPT**: Prompt to specify a task in more detail.
+- **ASSISTANT_PROMPT**: Rules of the conversation and instructions for completing tasks.
+- **USER_PROMPT**: Outlines rules for conversation and for users instructing AI coders.
+### 5.3 EvaluationPromptTemplateDict
+    
+This class defines prompts that generate questions to evaluate knowledge. Template text prompt includes:
+
+- **GENERATE_QUESTIONS**: Prompt to generate a set of questions for evaluating knowledge emergence with preliminary knowledge in specific fields. You may provide some examples to enhance its generation quality.
+### 5.4 GenerateTextEmbeddingDataPromptTemplateDict
+    
+This class defines prompts for generating text embedding tasks. These prompts are used to create synthetic data for improving text embeddings. Template text prompts include:
+
+- **GENERATE_TASKS**: Prompt to generate specified number of synthetic text_embedding tasks.
+- **ASSISTANT_PROMPT**: Prompt to generate synthetic user queries in JSON format, positive documents, and hard negative documents for specified tasks.
+### 5.5 MisalignmentPromptTemplateDict
+    
+This class defines some misleading prompts to break the AI model alignments. Template text prompts include:
+
+- **DAN_PROMPT**: Prompt to role-playing as DAN (Do Anything Now) for jailbreaking. All the following templates in this dictionary includes DAN_PROMPT.
+- **GENERATE_TASKS**: Prompt to list unique malicious tasks that AI assistant can do.
+- **TASK_SPECIFY_PROMPT**: Prompt to specify a malicious task in more detail.
+- **ASSISTANT_PROMPT**: Rules and instructions for AI assistants when completing tasks.
+- **USER_PROMPT**: Outlines rules for conversation and for users instructing AI coders in misalignment tasks.
+### 5.6 ObjectRecognitionPromptTemplateDict
+    
+This class defines a prompt for object recognition tasks:
+
+- **ASSISTANT_PROMPT**: Prompt to detect all objects in images without redundant outputs.
+### 5.7 RoleDescriptionPromptTemplateDict
+    
+This class inherits from `AISocietyPromptTemplateDict` aiming to add descriptions to its prompts.
+
+- **ROLE_DESCRIPTION_PROMPT**: Describes the roles and responsibilities.
+### 5.8 SolutionExtractionPromptTemplateDict
+    
+This class prompts the AI model to focus on finding solution with particular knowledge.
+
+- **ASSISTANT_PROMPT**: Rules of finding and presenting solutions.
+### 5.9 TranslationPromptTemplateDict
+    
+This class prompts a translation AI assistant from English to specified language.
+
+- **ASSISTANT_PROMPT**: Rules of completing translation tasks.
+### 5.10 VideoDescriptionPromptTemplateDict
+    
+This class prompts the AI model to describe a video in words.
+
+- **ASSISTANT_PROMPT**: Rules of completing video description tasks.
