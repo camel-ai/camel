@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import OllamaConfig
-from camel.models import OllamaModel
+from camel.configs import OpenSourceConfig, RekaConfig
+from camel.models import RekaModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -25,34 +25,37 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
+        ModelType.REKA_CORE,
+        ModelType.REKA_EDGE,
+        ModelType.REKA_FLASH,
     ],
 )
-def test_ollama_model(model_type: ModelType):
-    model_config_dict = OllamaConfig().as_dict()
-    model = OllamaModel(model_type.value, model_config_dict)
-    assert model.model_type == model_type.value
+def test_reka_model(model_type):
+    model_config_dict = RekaConfig().as_dict()
+    model = RekaModel(model_type, model_config_dict)
+    assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type, str)
-    assert isinstance(model.token_limit, int)
+    assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_ollama_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_reka_model_unexpected_argument():
+    model_type = ModelType.REKA_CORE
+    model_config = OpenSourceConfig(
+        model_path="vicuna-7b-v1.5",
+        server_url="http://localhost:8000/v1",
+    )
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Ollama model backend."
+                "input into Reka model backend."
             )
         ),
     ):
-        _ = OllamaModel(model_type, model_config_dict)
+        _ = RekaModel(model_type, model_config_dict)
