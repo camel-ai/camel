@@ -86,7 +86,3 @@ class RetrievalToolkit(BaseToolkit):
         return [
             OpenAIFunction(self.information_retrieval),
         ]
-
-
-# add the function to OpenAIFunction list
-RETRIEVAL_FUNCS: List[OpenAIFunction] = RetrievalToolkit().get_tools()

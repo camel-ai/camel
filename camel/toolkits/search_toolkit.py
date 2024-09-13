@@ -321,6 +321,3 @@ class SearchToolkit(BaseToolkit):
             OpenAIFunction(self.search_duckduckgo),
             OpenAIFunction(self.query_wolfram_alpha),
         ]
-
-
-SEARCH_FUNCS: List[OpenAIFunction] = SearchToolkit().get_tools()

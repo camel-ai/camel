@@ -17,7 +17,7 @@ from typing import Any, Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
-from camel.utils import api_keys_required, dependencies_required
+from camel.utils import dependencies_required
 
 
 def handle_googlemaps_exceptions(
@@ -105,10 +105,16 @@ class GoogleMapsToolkit(BaseToolkit):
         import googlemaps
 
         api_key = os.environ.get('GOOGLE_API_KEY')
-        if api_key:
-            self.gmaps = googlemaps.Client(key=api_key)
+        if not api_key:
+            raise ValueError(
+                "`GOOGLE_API_KEY` not found in environment variables. "
+                "`GOOGLE_API_KEY` API keys are generated in the `Credentials` "
+                "page of the `APIs & Services` tab of "
+                "https://console.cloud.google.com/apis/credentials."
+            )
 
-    @api_keys_required("GOOGLE_API_KEY")
+        self.gmaps = googlemaps.Client(key=api_key)
+
     @handle_googlemaps_exceptions
     def get_address_description(
         self,
@@ -136,10 +142,6 @@ class GoogleMapsToolkit(BaseToolkit):
                 information on address completion, formatted address,
                 geographical coordinates (latitude and longitude), and metadata
                 types true for the address.
-
-        Raises:
-            ImportError: If the `googlemaps` library is not installed.
-            Exception: For unexpected errors during the address validation.
         """
         addressvalidation_result = self.gmaps.addressvalidation(
             [address],
@@ -193,7 +195,6 @@ class GoogleMapsToolkit(BaseToolkit):
 
         return description
 
-    @api_keys_required("GOOGLE_API_KEY")
     @handle_googlemaps_exceptions
     def get_elevation(self, lat: float, lng: float) -> str:
         r"""Retrieves elevation data for a given latitude and longitude.
@@ -236,7 +237,6 @@ class GoogleMapsToolkit(BaseToolkit):
 
         return description
 
-    @api_keys_required("GOOGLE_API_KEY")
     @handle_googlemaps_exceptions
     def get_timezone(self, lat: float, lng: float) -> str:
         r"""Retrieves timezone information for a given latitude and longitude.
@@ -300,6 +300,3 @@ class GoogleMapsToolkit(BaseToolkit):
             OpenAIFunction(self.get_elevation),
             OpenAIFunction(self.get_timezone),
         ]
-
-
-MAP_FUNCS: List[OpenAIFunction] = GoogleMapsToolkit().get_tools()

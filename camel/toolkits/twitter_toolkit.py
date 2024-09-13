@@ -517,6 +517,3 @@ class TwitterToolkit(BaseToolkit):
             return "HTTP Exception"
         else:
             return "Unexpected Exception"
-
-
-TWITTER_FUNCS: List[OpenAIFunction] = TwitterToolkit().get_tools()

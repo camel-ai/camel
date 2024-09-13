@@ -168,6 +168,3 @@ class WeatherToolkit(BaseToolkit):
         return [
             OpenAIFunction(self.get_weather_data),
         ]
-
-
-WEATHER_FUNCS: List[OpenAIFunction] = WeatherToolkit().get_tools()

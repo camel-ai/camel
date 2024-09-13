@@ -67,13 +67,15 @@ Woohoo, your first agent is ready to play with you!
 ### Tool Usage
 ```python
 # Import the necessary functions
-from camel.toolkits import MATH_FUNCS, SEARCH_FUNCS
+from camel.toolkits import MathToolkit, SearchToolkit
 
 # Initialize the agent with list of tools
 agent = ChatAgent(
     system_message=sys_msg,        
-    tools=[*MATH_FUNCS, *SEARCH_FUNCS]
-    )
+    tools = [
+        *MathToolkit().get_tools(),
+        *SearchToolkit().get_tools(),
+    ])
 
 # Check if tools are enabled
 agent.is_tools_added()

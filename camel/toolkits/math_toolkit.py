@@ -74,6 +74,3 @@ class MathToolkit(BaseToolkit):
             OpenAIFunction(self.sub),
             OpenAIFunction(self.mul),
         ]
-
-
-MATH_FUNCS: List[OpenAIFunction] = MathToolkit().get_tools()
