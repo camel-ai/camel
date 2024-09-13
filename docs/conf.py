@@ -30,7 +30,7 @@ author = 'CAMEL-AI.org'
 release = 'V0.1.6.6'
 
 html_favicon = (
-    '/Users/douglas/Desktop/Eigent Code/camel/misc/favicon.png'
+    'misc/favicon.png'
 )
 
 # -- General configuration ---------------------------------------------------
