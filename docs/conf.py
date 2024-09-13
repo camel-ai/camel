@@ -24,13 +24,13 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-project = 'CAMEL'
-copyright = '2023, CAMEL-AI.org'
+project = ''
+copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
 release = '0.2.0'
 
 html_favicon = (
-    'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
+    'misc/favicon.png'
 )
 
 # -- General configuration ---------------------------------------------------
@@ -46,6 +46,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'recommonmark',
+    'sphinxawesome_theme',
 ]
 
 templates_path = ['_templates']
@@ -53,13 +54,26 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+html_permalinks_icon = "<span>^</span>"
+html_theme = "sphinxawesome_theme"
 
-html_theme = 'sphinx_book_theme'
-
+# Update theme options for sphinx_awesome_theme
 html_theme_options = {
-    "logo": {
-        "text": f"CAMEL {release}",
-        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
-        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
-    }
+    "navbar_start": ["navbar-logo"],
+    "navbar_center": ["navbar-nav"],
+    "navbar_end": ["navbar-icon-links"],
+    "navbar_persistent": ["search-button"],
+    "logo_light": "_static/logo_primary.jpg",
+    "logo_dark": "_static/logo_primary.jpg",
 }
+
+html_search_language = {
+  "en",
+  "zh",
+  
+}
+
+html_static_path = ['_static']
+html_css_files = [
+    'custom.css',
+]

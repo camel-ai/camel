@@ -32,24 +32,6 @@ test-trackers = ["comet-ml", "dvclive", "tensorboard", "wandb"]
 testing = ["bitsandbytes", "datasets", "diffusers", "evaluate", "parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist", "scikit-learn", "scipy", "timm", "torchdata (>=0.8.0)", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
 
 [[package]]
-name = "accessible-pygments"
-version = "0.0.5"
-description = "A collection of accessible pygments styles"
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "accessible_pygments-0.0.5-py3-none-any.whl", hash = "sha256:88ae3211e68a1d0b011504b2ffc1691feafce124b845bd072ab6f9f66f34d4b7"},
-    {file = "accessible_pygments-0.0.5.tar.gz", hash = "sha256:40918d3e6a2b619ad424cb91e556bd3bd8865443d9f22f1dcdf79e33c8046872"},
-]
-
-[package.dependencies]
-pygments = ">=1.5"
-
-[package.extras]
-dev = ["pillow", "pkginfo (>=1.10)", "playwright", "pre-commit", "setuptools", "twine (>=5.0)"]
-tests = ["hypothesis", "pytest"]
-
-[[package]]
 name = "agentops"
 version = "0.3.9"
 description = "Python SDK for developing AI agent evals and observability"
@@ -446,13 +428,13 @@ files = [
 
 [[package]]
 name = "azure-core"
-version = "1.30.2"
+version = "1.31.0"
 description = "Microsoft Azure Core Library for Python"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "azure-core-1.30.2.tar.gz", hash = "sha256:a14dc210efcd608821aa472d9fb8e8d035d29b68993819147bc290a8ac224472"},
-    {file = "azure_core-1.30.2-py3-none-any.whl", hash = "sha256:cf019c1ca832e96274ae85abd3d9f752397194d9fea3b41487290562ac8abe4a"},
+    {file = "azure_core-1.31.0-py3-none-any.whl", hash = "sha256:22954de3777e0250029360ef31d80448ef1be13b80a459bff80ba7073379e2cd"},
+    {file = "azure_core-1.31.0.tar.gz", hash = "sha256:656a0dd61e1869b1506b7c6a3b31d62f15984b1a573d6326f6aa2f3e4123284b"},
 ]
 
 [package.dependencies]
@@ -546,13 +528,13 @@ lxml = ["lxml"]
 
 [[package]]
 name = "botocore"
-version = "1.35.17"
+version = "1.35.18"
 description = "Low-level, data-driven core of boto 3."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.17-py3-none-any.whl", hash = "sha256:a93f773ca93139529b5d36730b382dbee63ab4c7f26129aa5c84835255ca999d"},
-    {file = "botocore-1.35.17.tar.gz", hash = "sha256:0d35d03ea647b5d464c7f77bdab6fb23ae5d49752b13cf97ab84444518c7b1bd"},
+    {file = "botocore-1.35.18-py3-none-any.whl", hash = "sha256:1027083aeb1fe74057273410fd768e018e22f85adfbd717b5a69f578f7812b80"},
+    {file = "botocore-1.35.18.tar.gz", hash = "sha256:e59da8b91ab06683d2725b6cbbb0383b30c68a241c3c63363f4c5bff59b3c0c0"},
 ]
 
 [package.dependencies]
@@ -3239,13 +3221,13 @@ files = [
 
 [[package]]
 name = "litellm"
-version = "1.44.25"
+version = "1.44.28"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.44.25-py3-none-any.whl", hash = "sha256:c5bae63f2d6683c6c7dba0fdb313e5a0b60b3c70cc67e588a64a87ebdf01eede"},
-    {file = "litellm-1.44.25.tar.gz", hash = "sha256:8ff8326a5f33183684819eba88d89ecbecedbb19c35baea6a3b84bf1c0795e5e"},
+    {file = "litellm-1.44.28-py3-none-any.whl", hash = "sha256:a4476c1f076b7996a97bd5d51e53760be482f1ec888c0c626c7877d5c6ff0849"},
+    {file = "litellm-1.44.28.tar.gz", hash = "sha256:9a9055ce3f655201e4527786c219eaa98579c0134c031418bc38744fed3cd265"},
 ]
 
 [package.dependencies]
@@ -3254,7 +3236,7 @@ click = "*"
 importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
 jsonschema = ">=4.22.0,<5.0.0"
-openai = ">=1.40.0"
+openai = ">=1.45.0"
 pydantic = ">=2.0.0,<3.0.0"
 python-dotenv = ">=0.2.0"
 requests = ">=2.31.0,<3.0.0"
@@ -3888,13 +3870,13 @@ files = [
 
 [[package]]
 name = "narwhals"
-version = "1.7.0"
+version = "1.8.0"
 description = "Extremely lightweight compatibility layer between dataframe libraries"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "narwhals-1.7.0-py3-none-any.whl", hash = "sha256:40d8c0457743540276d6e8b2add31affa1c8936035d378838000c281d8f5921f"},
-    {file = "narwhals-1.7.0.tar.gz", hash = "sha256:2d769c9dd23bd355632a813eb65d5cae6bad595c4058387acfb7fa86db50a0e9"},
+    {file = "narwhals-1.8.0-py3-none-any.whl", hash = "sha256:73bde7b1721e1d95f749f6aacec12bc616fcccae5a926064d641c93e133fd548"},
+    {file = "narwhals-1.8.0.tar.gz", hash = "sha256:b1572b8781273e5712ee76144b9b6f412f2b71f39d63053853322cc98201eeaa"},
 ]
 
 [package.extras]
@@ -5282,34 +5264,6 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
-name = "pydata-sphinx-theme"
-version = "0.15.4"
-description = "Bootstrap-based Sphinx theme from the PyData community"
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "pydata_sphinx_theme-0.15.4-py3-none-any.whl", hash = "sha256:2136ad0e9500d0949f96167e63f3e298620040aea8f9c74621959eda5d4cf8e6"},
-    {file = "pydata_sphinx_theme-0.15.4.tar.gz", hash = "sha256:7762ec0ac59df3acecf49fd2f889e1b4565dbce8b88b2e29ee06fdd90645a06d"},
-]
-
-[package.dependencies]
-accessible-pygments = "*"
-Babel = "*"
-beautifulsoup4 = "*"
-docutils = "!=0.17.0"
-packaging = "*"
-pygments = ">=2.7"
-sphinx = ">=5"
-typing-extensions = "*"
-
-[package.extras]
-a11y = ["pytest-playwright"]
-dev = ["pandoc", "pre-commit", "pydata-sphinx-theme[doc,test]", "pyyaml", "sphinx-theme-builder[cli]", "tox"]
-doc = ["ablog (>=0.11.8)", "colorama", "graphviz", "ipykernel", "ipyleaflet", "ipywidgets", "jupyter_sphinx", "jupyterlite-sphinx", "linkify-it-py", "matplotlib", "myst-parser", "nbsphinx", "numpy", "numpydoc", "pandas", "plotly", "rich", "sphinx-autoapi (>=3.0.0)", "sphinx-copybutton", "sphinx-design", "sphinx-favicon (>=1.0.1)", "sphinx-sitemap", "sphinx-togglebutton", "sphinxcontrib-youtube (>=1.4.1)", "sphinxext-rediraffe", "xarray"]
-i18n = ["Babel", "jinja2"]
-test = ["pytest", "pytest-cov", "pytest-regressions", "sphinx[test]"]
-
-[[package]]
 name = "pydub"
 version = "0.25.1"
 description = "Manipulate audio with an simple and easy high level interface"
@@ -5708,7 +5662,7 @@ typing-extensions = ">=4.9.0"
 name = "python-dotenv"
 version = "1.0.1"
 description = "Read key-value pairs from a .env file and set them as environment variables"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "python-dotenv-1.0.1.tar.gz", hash = "sha256:e324ee90a023d808f1959c46bcbc04446a10ced277783dc6ee09987c37ec10ca"},
@@ -7095,24 +7049,20 @@ lint = ["docutils-stubs", "flake8 (>=3.5.0)", "flake8-simplify", "isort", "mypy 
 test = ["cython", "filelock", "html5lib", "pytest (>=4.6)"]
 
 [[package]]
-name = "sphinx-book-theme"
-version = "1.1.3"
-description = "A clean book theme for scientific explanations and documentation with Sphinx"
+name = "sphinxawesome-theme"
+version = "4.1.0"
+description = "An awesome theme for the Sphinx documentation generator"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "sphinx_book_theme-1.1.3-py3-none-any.whl", hash = "sha256:a554a9a7ac3881979a87a2b10f633aa2a5706e72218a10f71be38b3c9e831ae9"},
-    {file = "sphinx_book_theme-1.1.3.tar.gz", hash = "sha256:1f25483b1846cb3d353a6bc61b3b45b031f4acf845665d7da90e01ae0aef5b4d"},
+    {file = "sphinxawesome_theme-4.1.0-py3-none-any.whl", hash = "sha256:fb6b4ba63583199d6c1d837ffc0fea8d63e4bc3537be9b27c563d82dcf3b25c2"},
+    {file = "sphinxawesome_theme-4.1.0.tar.gz", hash = "sha256:827b810ce314adb3146ccbce4787d6a6fa94de6dea7c61ef081a239ba70a1d25"},
 ]
 
 [package.dependencies]
-pydata-sphinx-theme = ">=0.15.2"
-sphinx = ">=5"
-
-[package.extras]
-code-style = ["pre-commit"]
-doc = ["ablog", "folium", "ipywidgets", "matplotlib", "myst-nb", "nbclient", "numpy", "numpydoc", "pandas", "plotly", "sphinx-copybutton", "sphinx-design", "sphinx-examples", "sphinx-tabs", "sphinx-thebe", "sphinx-togglebutton", "sphinxcontrib-bibtex", "sphinxcontrib-youtube", "sphinxext-opengraph"]
-test = ["beautifulsoup4", "coverage", "defusedxml", "myst-nb", "pytest", "pytest-cov", "pytest-regressions", "sphinx_thebe"]
+beautifulsoup4 = ">=4.9.1,<5.0.0"
+python-dotenv = ">=0.19,<1.1"
+sphinx = ">4"
 
 [[package]]
 name = "sphinxcontrib-applehelp"
@@ -8746,13 +8696,13 @@ multidict = ">=4.0"
 
 [[package]]
 name = "zipp"
-version = "3.20.1"
+version = "3.20.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "zipp-3.20.1-py3-none-any.whl", hash = "sha256:9960cd8967c8f85a56f920d5d507274e74f9ff813a0ab8889a5b5be2daf44064"},
-    {file = "zipp-3.20.1.tar.gz", hash = "sha256:c22b14cc4763c5a5b04134207736c107db42e9d3ef2d9779d465f5f1bcba572b"},
+    {file = "zipp-3.20.2-py3-none-any.whl", hash = "sha256:a817ac80d6cf4b23bf7f2828b7cabf326f15a001bea8b1f9b49631780ba28350"},
+    {file = "zipp-3.20.2.tar.gz", hash = "sha256:bc9eb26f4506fda01b81bcde0ca78103b6e62f991b381fec825435c836edbc29"},
 ]
 
 [package.extras]
@@ -8779,4 +8729,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.12"
-content-hash = "79101cf513497b1ca1f684696a90149abc8eb7c4b21041f78b0aeb52cbee8c12"
+content-hash = "cd43a6775cbab87a9fefe3856a531adf1a71e4bcec83b63cc85d6cc669bc4930"

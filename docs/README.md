@@ -16,7 +16,7 @@ To build the documentation:
 2. Install Sphinx, Sphinx theme and `recommonmark` (Sphinx extension that enables Markdown support) by running the following command in your terminal or command prompt:
 ```bash
 pip install sphinx
-pip install sphinx_book_theme
+pip install sphinxawesome-theme
 pip install sphinx-autobuild
 pip install recommonmark
 ```
