@@ -34,7 +34,7 @@ parametrize = pytest.mark.parametrize(
     [
         (ModelPlatformType.OPENAI, ModelType.GPT_3_5_TURBO),
         (ModelPlatformType.OPENAI, ModelType.GPT_4_TURBO),
-        (ModelPlatformType.OPENSOURCE, ModelType.STUB),
+        (ModelPlatformType.OPEN_SOURCE, ModelType.STUB),
     ],
 )
 
@@ -62,7 +62,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         # Test Stub model
         # Stub model uses StubTokenCounter as default
         (
-            ModelPlatformType.OPENSOURCE,
+            ModelPlatformType.OPEN_SOURCE,
             ModelType.STUB,
             ChatGPTConfig().as_dict(),
             None,
@@ -70,7 +70,7 @@ parameterize_token_counter = pytest.mark.parametrize(
             None,
         ),
         (
-            ModelPlatformType.OPENSOURCE,
+            ModelPlatformType.OPEN_SOURCE,
             ModelType.STUB,
             ChatGPTConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_4),
@@ -97,7 +97,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         ),
         # Test OpenSource model (take VICUNA as an example)
         (
-            ModelPlatformType.OPENSOURCE,
+            ModelPlatformType.OPEN_SOURCE,
             ModelType.VICUNA,
             OpenSourceConfig(
                 model_path="lmsys/vicuna-7b-v1.5",
@@ -108,7 +108,7 @@ parameterize_token_counter = pytest.mark.parametrize(
             ModelType.VICUNA,
         ),
         (
-            ModelPlatformType.OPENSOURCE,
+            ModelPlatformType.OPEN_SOURCE,
             ModelType.VICUNA,
             OpenSourceConfig(
                 model_path="lmsys/vicuna-7b-v1.5",

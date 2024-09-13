@@ -26,23 +26,26 @@ class MistralConfig(BaseConfig):
 
     reference: https://github.com/mistralai/client-python/blob/9d238f88c41689821d7b08570f13b43426f97fd6/src/mistralai/client.py#L195
 
+    #TODO: Support stream mode
+
     Args:
         temperature (Optional[float], optional): temperature the temperature
             to use for sampling, e.g. 0.5.
-        max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. Defaults to None.
         top_p (Optional[float], optional): the cumulative probability of
             tokens to generate, e.g. 0.9. Defaults to None.
+        max_tokens (Optional[int], optional): the maximum number of tokens to
+            generate, e.g. 100. Defaults to None.
+        min_tokens (Optional[int], optional): the minimum number of tokens to
+            generate, e.g. 100. Defaults to None.
+        stop (Optional[Union[str,list[str]]]): Stop generation if this token
+            is detected. Or if one of these tokens is detected when providing
+            a string list.
         random_seed (Optional[int], optional): the random seed to use for
             sampling, e.g. 42. Defaults to None.
-        safe_mode (bool, optional): deprecated, use safe_prompt instead.
-            Defaults to False.
         safe_prompt (bool, optional): whether to use safe prompt, e.g. true.
             Defaults to False.
         response_format (Union[Dict[str, str], ResponseFormat): format of the
             response.
-        tools (Optional[list[OpenAIFunction]], optional): a list of tools to
-            use.
         tool_choice (str, optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
@@ -53,10 +56,11 @@ class MistralConfig(BaseConfig):
     """
 
     temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
     top_p: Optional[float] = None
+    max_tokens: Optional[int] = None
+    min_tokens: Optional[int] = None
+    stop: Optional[Union[str, list[str]]] = None
     random_seed: Optional[int] = None
-    safe_mode: bool = False
     safe_prompt: bool = False
     response_format: Optional[Union[Dict[str, str], Any]] = None
     tool_choice: Optional[str] = "auto"
@@ -65,12 +69,12 @@ class MistralConfig(BaseConfig):
     @classmethod
     def fields_type_checking(cls, response_format):
         if response_format and not isinstance(response_format, dict):
-            from mistralai.models.chat_completion import ResponseFormat
+            from mistralai.models import ResponseFormat
 
             if not isinstance(response_format, ResponseFormat):
                 raise ValueError(
                     f"The tool {response_format} should be an instance "
-                    "of `mistralai.models.chat_completion.ResponseFormat`."
+                    "of `mistralai.models.ResponseFormat`."
                 )
         return response_format
 

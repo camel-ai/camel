@@ -19,8 +19,7 @@ from camel.types import ModelPlatformType
 
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
-    model_type="camelai-llama3",
-    url="http://localhost:11434/v1",
+    model_type="mistral",
     model_config_dict={"temperature": 0.4},
 )
 
@@ -40,6 +39,8 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
+Ollama server started on http://localhost:11434/v1 for mistral model
+
 Hi there! *waves* Hi to the amazing team at CAMEL AI - Autonomous and 
 Communicative Agents Laboratory! It's great to connect with you all. I'm 
 excited to learn more about your work in developing autonomous and 
