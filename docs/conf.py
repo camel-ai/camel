@@ -24,13 +24,13 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-project = 'CAMEL'
-copyright = '2023, CAMEL-AI.org'
+project = ''
+copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.1.6.6'
+release = 'V0.1.6.6'
 
 html_favicon = (
-    'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
+    '/Users/douglas/Desktop/Eigent Code/camel/misc/favicon.png'
 )
 
 # -- General configuration ---------------------------------------------------
@@ -63,8 +63,17 @@ html_theme_options = {
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["navbar-icon-links"],
     "navbar_persistent": ["search-button"],
-    "logo_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
-    "logo_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_dark.png",
-    "text": f"CAMEL {release}",
-    }
+    "logo_light": "_static/logo_primary.jpg",
+    "logo_dark": "_static/logo_primary.jpg",
+}
 
+html_search_language = {
+  "en",
+  "zh",
+  
+}
+
+html_static_path = ['_static']
+html_css_files = [
+    'custom.css',
+]
