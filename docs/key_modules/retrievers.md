@@ -89,7 +89,7 @@ ar = AutoRetriever(vector_storage_local_path="camel/retrievers",storage_type=Sto
 
 # Run the auto vector retriever
 retrieved_info = ar.run_vector_retriever(
-    content_input_paths=[
+    contents=[
         "https://www.camel-ai.org/",  # Example remote url
     ],
     query="What is CAMEL-AI",

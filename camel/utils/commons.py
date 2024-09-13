@@ -20,6 +20,7 @@ import subprocess
 import time
 import zipfile
 from functools import wraps
+from http import HTTPStatus
 from typing import (
     Any,
     Callable,
@@ -28,6 +29,7 @@ from typing import (
     Mapping,
     Optional,
     Set,
+    Type,
     TypeVar,
     cast,
 )
@@ -328,12 +330,12 @@ def get_pydantic_major_version() -> int:
         return 0
 
 
-def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
+def get_pydantic_object_schema(pydantic_params: Type[BaseModel]) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
 
     Args:
-        pydantic_params (BaseModel): The Pydantic model to retrieve the schema
-            for.
+        pydantic_params (Type[BaseModel]): The Pydantic model class to retrieve
+            the schema for.
 
     Returns:
         dict: The JSON schema of the Pydantic model.
@@ -353,7 +355,7 @@ def func_string_to_callable(code: str):
     """
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
-    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT)
+    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT)
     return func
 
 
@@ -396,7 +398,7 @@ def json_to_function_code(json_obj: Dict) -> str:
 
     # function template
     function_code = f'''
-def {Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT}({args_str}):
+def {Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT}({args_str}):
     r"""Return response with a specified json format.
     Args:
 {docstring_args_str}
@@ -485,3 +487,86 @@ def is_docker_running() -> bool:
         return result.returncode == 0
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
+
+try:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import (
+            ToolEvent,
+            record,
+        )
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    ToolEvent = None
+
+
+def agentops_decorator(func):
+    r"""Decorator that records the execution of a function if ToolEvent is
+    available.
+
+    Parameters:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function which records its execution details.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if ToolEvent:
+            tool_event = ToolEvent(name=func.__name__, params=kwargs)
+            result = func(*args, **kwargs)
+            tool_event.returns = result
+            record(tool_event)
+            return result
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+class AgentOpsMeta(type):
+    r"""Metaclass that automatically decorates all callable attributes with
+    the agentops_decorator,
+    except for the 'get_tools' method.
+
+    Methods:
+    __new__(cls, name, bases, dct):
+        Creates a new class with decorated methods.
+    """
+
+    def __new__(cls, name, bases, dct):
+        if ToolEvent:
+            for attr, value in dct.items():
+                if callable(value) and attr != 'get_tools':
+                    dct[attr] = agentops_decorator(value)
+        return super().__new__(cls, name, bases, dct)
+
+
+# Mock trak agent decorator for AgentOps
+def track_agent(*args, **kwargs):
+    def noop(f):
+        return f
+
+    return noop
+
+
+def handle_http_error(response: requests.Response) -> str:
+    r"""Handles the HTTP errors based on the status code of the response.
+
+    Args:
+        response (requests.Response): The HTTP response from the API call.
+
+    Returns:
+        str: The error type, based on the status code.
+    """
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
+        return "Unauthorized. Check your access token."
+    elif response.status_code == HTTPStatus.FORBIDDEN:
+        return "Forbidden. You do not have permission to perform this action."
+    elif response.status_code == HTTPStatus.NOT_FOUND:
+        return "Not Found. The resource could not be located."
+    elif response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+        return "Too Many Requests. You have hit the rate limit."
+    else:
+        return "HTTP Error"

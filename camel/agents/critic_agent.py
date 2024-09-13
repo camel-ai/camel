@@ -24,7 +24,19 @@ from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
 from camel.utils import get_first_int, print_text_animated
 
+# AgentOps decorator setting
+try:
+    import os
 
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
+@track_agent(name="CriticAgent")
 class CriticAgent(ChatAgent):
     r"""A class for the critic agent that assists in selecting an option.
 
@@ -111,7 +123,6 @@ class CriticAgent(ChatAgent):
                 raise RuntimeError("Critic step failed.")
 
             critic_msg = critic_response.msg
-            self.record_message(critic_msg)
             if self.verbose:
                 print_text_animated(
                     self.logger_color + "\n> Critic response: "

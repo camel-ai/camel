@@ -81,7 +81,7 @@ def test_open_source_model_run(model_type):
 
 @pytest.mark.model_backend
 def test_open_source_model_close_source_model_type():
-    model_type = ModelType.GPT_3_5_TURBO
+    model_type = ModelType.GPT_4O_MINI
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -93,7 +93,7 @@ def test_open_source_model_close_source_model_type():
         ValueError,
         match=re.escape(
             (
-                "Model `ModelType.GPT_3_5_TURBO` is not a supported"
+                "Model `ModelType.GPT_4O_MINI` is not a supported"
                 " open-source model."
             )
         ),

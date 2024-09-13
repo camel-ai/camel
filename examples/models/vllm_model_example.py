@@ -20,7 +20,6 @@ from camel.types import ModelPlatformType
 vllm_model = ModelFactory.create(
     model_platform=ModelPlatformType.VLLM,
     model_type="microsoft/Phi-3-mini-4k-instruct",
-    url="http://localhost:8000/v1",
     model_config_dict={"temperature": 0.0},
     api_key="vllm",
 )
@@ -40,6 +39,9 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
+vllm server started on http://localhost:8000/v1 for microsoft/
+Phi-3-mini-4k-instruct model
+
 Hello! I'm Phi, an AI developed by Microsoft. How can I help you today?
 ===============================================================================
 """

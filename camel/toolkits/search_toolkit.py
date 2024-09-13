@@ -65,7 +65,7 @@ class SearchToolkit(BaseToolkit):
         return result
 
     def search_duckduckgo(
-        self, query: str, source: str = "text", max_results: int = 10
+        self, query: str, source: str = "text", max_results: int = 5
     ) -> List[Dict[str, Any]]:
         r"""Use DuckDuckGo search engine to search information for
         the given query.
@@ -78,7 +78,7 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to be searched.
             source (str): The type of information to query (e.g., "text",
                 "images", "videos"). Defaults to "text".
-            max_results (int): Max number of results, defaults to `10`.
+            max_results (int): Max number of results, defaults to `5`.
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -152,7 +152,7 @@ class SearchToolkit(BaseToolkit):
         return responses
 
     def search_google(
-        self, query: str, num_result_pages: int = 10
+        self, query: str, num_result_pages: int = 5
     ) -> List[Dict[str, Any]]:
         r"""Use Google search engine to search information for the given query.
 
@@ -196,7 +196,7 @@ class SearchToolkit(BaseToolkit):
         # Different language may get different result
         search_language = "en"
         # How many pages to return
-        num_result_pages = 10
+        num_result_pages = num_result_pages
         # Constructing the URL
         # Doc: https://developers.google.com/custom-search/v1/using_rest
         url = (

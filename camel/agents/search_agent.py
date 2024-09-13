@@ -20,7 +20,19 @@ from camel.prompts import TextPrompt
 from camel.types import RoleType
 from camel.utils import create_chunks
 
+# AgentOps decorator setting
+try:
+    import os
 
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
+@track_agent(name="SearchAgent")
 class SearchAgent(ChatAgent):
     r"""An agent that summarizes text based on a query and evaluates the
     relevance of an answer.
