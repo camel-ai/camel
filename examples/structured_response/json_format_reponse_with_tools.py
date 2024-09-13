@@ -19,14 +19,14 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import (
-    MATH_FUNCS,
-    SEARCH_FUNCS,
+    MathToolkit,
+    SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
 
-function_list = [
-    *MATH_FUNCS,
-    *SEARCH_FUNCS,
+tools_list = [
+    *MathToolkit().get_tools(),
+    *SearchToolkit().get_tools(),
 ]
 assistant_model_config = ChatGPTConfig(
     temperature=0.0,
@@ -48,7 +48,7 @@ model = ModelFactory.create(
 camel_agent = ChatAgent(
     assistant_sys_msg,
     model=model,
-    tools=function_list,
+    tools=tools_list,
 )
 
 

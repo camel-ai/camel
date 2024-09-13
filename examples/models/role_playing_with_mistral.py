@@ -21,8 +21,8 @@ from camel.configs import MistralConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import (
-    MATH_FUNCS,
-    SEARCH_FUNCS,
+    MathToolkit,
+    SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
@@ -41,9 +41,9 @@ def main(
 
     user_model_config = MistralConfig(temperature=0.2)
 
-    function_list = [
-        *MATH_FUNCS,
-        *SEARCH_FUNCS,
+    tools_list = [
+        *MathToolkit().get_tools(),
+        *SearchToolkit().get_tools(),
     ]
     assistant_model_config = MistralConfig(
         temperature=0.2,
@@ -58,7 +58,7 @@ def main(
                 model_type=model_type,
                 model_config_dict=assistant_model_config.as_dict(),
             ),
-            tools=function_list,
+            tools=tools_list,
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(

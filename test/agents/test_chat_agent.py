@@ -33,9 +33,9 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
-    MATH_FUNCS,
-    SEARCH_FUNCS,
+    MathToolkit,
     OpenAIFunction,
+    SearchToolkit,
 )
 from camel.types import (
     ChatCompletion,
@@ -161,8 +161,8 @@ def test_chat_agent_step_with_structure_response():
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools():
-    internal_tools = SEARCH_FUNCS
-    external_tools = MATH_FUNCS
+    internal_tools = SearchToolkit().get_tools()
+    external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
     model_config_dict = ChatGPTConfig(
@@ -172,7 +172,7 @@ def test_chat_agent_step_with_external_tools():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config_dict,
     )
 
@@ -431,7 +431,7 @@ def test_function_enabled():
     agent_with_funcs = ChatAgent(
         system_message=system_message,
         model=model,
-        tools=MATH_FUNCS,
+        tools=MathToolkit().get_tools(),
     )
 
     assert not agent_no_func.is_tools_added()
@@ -455,10 +455,10 @@ def test_tool_calling_sync():
     agent = ChatAgent(
         system_message=system_message,
         model=model,
-        tools=MATH_FUNCS,
+        tools=MathToolkit().get_tools(),
     )
 
-    ref_funcs = MATH_FUNCS
+    ref_funcs = MathToolkit().get_tools()
 
     assert len(agent.func_dict) == len(ref_funcs)
 
@@ -491,7 +491,7 @@ async def test_tool_calling_math_async():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    math_funcs = sync_funcs_to_async(MATH_FUNCS)
+    math_funcs = sync_funcs_to_async(MathToolkit().get_tools())
     model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,

@@ -15,7 +15,7 @@ from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import OPENAPI_FUNCS
+from camel.toolkits import OpenAPIToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
@@ -24,7 +24,7 @@ sys_msg = BaseMessage.make_assistant_message(
 )
 
 # Set model config
-tools = [*OPENAPI_FUNCS]
+tools = OpenAPIToolkit().get_tools()
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
 ).as_dict()

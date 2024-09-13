@@ -17,7 +17,7 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
-from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
+from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce.manager_node import ManagerNode
 from camel.workforce.single_agent_node import SingleAgentNode
@@ -26,10 +26,10 @@ from camel.workforce.workforce import Workforce
 
 def main():
     # set the tools for the tool_agent
-    function_list = [
+    tools_list = [
         *SEARCH_FUNCS,
         *WEATHER_FUNCS,
-        *MAP_FUNCS,
+        *GoogleMapsToolkit().get_tools(),
     ]
     # configure the model of tool_agent
     model_config_dict = ChatGPTConfig(
@@ -38,7 +38,7 @@ def main():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config_dict,
     )
 
@@ -49,7 +49,7 @@ def main():
             content="You are a helpful assistant",
         ),
         model=model,
-        tools=function_list,
+        tools=tools_list,
     )
     # set tour_guide_agent
     tour_guide_agent = ChatAgent(

@@ -19,7 +19,7 @@ from camel.human import Human
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.toolkits import MATH_FUNCS
+from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 model = ModelFactory.create(
@@ -137,11 +137,11 @@ def test_role_playing_step(
 
 @pytest.mark.model_backend
 def test_role_playing_with_function():
-    tools = [*MATH_FUNCS]
+    tools = MathToolkit().get_tools()
     assistant_model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=assistant_model_config.as_dict(),
     )
 

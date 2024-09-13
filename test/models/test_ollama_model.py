@@ -25,10 +25,10 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
         ModelType.GPT_4,
         ModelType.GPT_4_TURBO,
         ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
 def test_ollama_model(model_type: ModelType):

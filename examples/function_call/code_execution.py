@@ -33,7 +33,7 @@ assistant_model_config = ChatGPTConfig(
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=assistant_model_config.as_dict(),
 )
 
