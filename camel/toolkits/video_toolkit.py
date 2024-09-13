@@ -171,7 +171,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             return url
         return None
 
-    def download_video(self, video_url: Optional[str] = None) -> None:
+    def download_video(self, video_url: Optional[str] = None) -> None | str:
         r"""Download the video and optionally split it into chunks.
 
         Args:
@@ -181,91 +181,83 @@ class VideoDownloaderToolkit(BaseToolkit):
             self.video_url = video_url
 
         if not self.video_url:
-            print('''No video URL provided. Certain functionalities might be 
-                limited.''')
-            return
+            return '''No video URL provided. Certain functionalities might be 
+                limited.'''
 
         converted_url = self.extract_youtube_video_url(self.video_url)
         if converted_url:
             self.video_url = converted_url
 
-        try:
-            if self.chunk_duration > 0:
-                video_length = self.get_video_length()
-                # attempt downloading by time intervals
-                if video_length == 0:
-                    chunk_index = 0
-                    start_time = 0
+        if self.chunk_duration > 0:
+            video_length = self.get_video_length()
+            # attempt downloading by time intervals
+            if video_length == 0:
+                chunk_index = 0
+                start_time = 0
 
-                    while True:
-                        try:
-                            end_time = start_time + self.chunk_duration
-                            self._download_chunk(
-                                start_time, end_time, chunk_index
-                            )
-
-                            if chunk_index > 0:
-                                chunk_filename = os.path.join(
-                                    self.video_download_path,
-                                    f'video_chunk_{chunk_index}{self.video_extension}',
-                                )
-                                previous_chunk_filename = os.path.join(
-                                    self.video_download_path,
-                                    f'video_chunk_{chunk_index - 1}'
-                                    + f'{self.video_extension}',
-                                )
-                                if file_exists_and_is_identical(
-                                    previous_chunk_filename, chunk_filename
-                                ):
-                                    print(
-                                        f'''Chunk {chunk_index} is identical 
-                                        to chunk {chunk_index - 1}, 
-                                        terminating download.'''
-                                    )
-                                    break
-                            start_time += self.chunk_duration
-                            chunk_index += 1
-                        except Exception as e:
-                            print(
-                                f'''Stopping download at chunk {chunk_index} 
-                                due to error: {e!s}'''
-                            )
-                            break
-                else:
+                while True:
                     try:
-                        for chunk_index, start_time in enumerate(
-                            range(0, video_length, self.chunk_duration)
-                        ):
-                            end_time = min(
-                                start_time + self.chunk_duration, video_length
+                        end_time = start_time + self.chunk_duration
+                        self._download_chunk(start_time, end_time, chunk_index)
+
+                        if chunk_index > 0:
+                            chunk_filename = os.path.join(
+                                self.video_download_path,
+                                f'video_chunk_{chunk_index}{self.video_extension}',
                             )
-                            self._download_chunk(
-                                start_time, end_time, chunk_index
+                            previous_chunk_filename = os.path.join(
+                                self.video_download_path,
+                                f'video_chunk_{chunk_index - 1}'
+                                + f'{self.video_extension}',
                             )
+                            if file_exists_and_is_identical(
+                                previous_chunk_filename, chunk_filename
+                            ):
+                                print(
+                                    f'''Chunk {chunk_index} is identical 
+                                    to chunk {chunk_index - 1}, 
+                                    terminating download.'''
+                                )
+                                break
+                        start_time += self.chunk_duration
+                        chunk_index += 1
                     except Exception as e:
                         print(
-                            f'''Error occurred while downloading chunk 
-                            {chunk_index}: {e}'''
+                            f'''Stopping download at chunk {chunk_index} 
+                            due to error: {e!s}'''
                         )
-
+                        break
             else:
-                video_template = os.path.join(
-                    self.video_download_path, 'full_video.%(ext)s'
-                )
-                ydl_opts = {
-                    'format': 'bestvideo+bestaudio/best',
-                    'outtmpl': video_template,
-                    'force_generic_extractor': True,
-                }
+                try:
+                    for chunk_index, start_time in enumerate(
+                        range(0, video_length, self.chunk_duration)
+                    ):
+                        end_time = min(
+                            start_time + self.chunk_duration, video_length
+                        )
+                        self._download_chunk(start_time, end_time, chunk_index)
+                except Exception as e:
+                    return f'''Error occurred while downloading chunk 
+                        {chunk_index}: {e}'''
 
-                if self.cookies_path:
-                    ydl_opts['cookiefile'] = self.cookies_path
+        else:
+            video_template = os.path.join(
+                self.video_download_path, 'full_video.%(ext)s'
+            )
+            ydl_opts = {
+                'format': 'bestvideo+bestaudio/best',
+                'outtmpl': video_template,
+                'force_generic_extractor': True,
+            }
 
+            if self.cookies_path:
+                ydl_opts['cookiefile'] = self.cookies_path
+            try:
                 with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([self.video_url])
-
-        except self.yt_dlp.utils.DownloadError as e:
-            print(f"Error downloading video: {e}")
+            except self.yt_dlp.utils.DownloadError as e:
+                return f"Error downloading video: {e}"
+        return None
 
     def _download_chunk(
         self, start_time: int, end_time: int, chunk_index: int
