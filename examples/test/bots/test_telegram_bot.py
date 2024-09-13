@@ -22,7 +22,7 @@ from examples.bots.telegram_bot import TelegramBot
 class TestTelegramBot(unittest.TestCase):
     def setUp(self):
         self.chat_agent_mock = MagicMock(spec=ChatAgent)
-        self.telegram_token = "fake_token"
+        self.telegram_token = "123456789:fake_token"
 
     def test_init_token_provided_uses_provided_token(self):
         bot = TelegramBot(

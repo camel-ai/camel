@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List, Optional
+import warnings
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -24,9 +25,12 @@ from camel.storages import (
     VectorDBQuery,
     VectorRecord,
 )
+from camel.utils import Constants
 
-DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 
 class VectorRetriever(BaseRetriever):
@@ -68,8 +72,9 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: str,
+        content: Union[str, Element],
         chunk_type: str = "chunk_by_title",
+        max_characters: int = 500,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
@@ -77,21 +82,35 @@ class VectorRetriever(BaseRetriever):
         vector storage.
 
         Args:
-            contents (str): Local file path, remote URL or string content.
+            content (Union[str, Element]): Local file path, remote URL,
+                string content or Element object.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
+            max_characters (int): Max number of characters in each chunk.
+                Defaults to `500`.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
-        # Check if the content is URL
-        parsed_url = urlparse(content)
-        is_url = all([parsed_url.scheme, parsed_url.netloc])
-        if is_url or os.path.exists(content):
-            elements = self.uio.parse_file_or_url(content, **kwargs)
+        if isinstance(content, Element):
+            elements = [content]
         else:
-            elements = [self.uio.create_element_from_text(text=content)]
-        chunks = self.uio.chunk_elements(
-            chunk_type=chunk_type, elements=elements
-        )
+            # Check if the content is URL
+            parsed_url = urlparse(content)
+            is_url = all([parsed_url.scheme, parsed_url.netloc])
+            if is_url or os.path.exists(content):
+                elements = self.uio.parse_file_or_url(content, **kwargs) or []
+            else:
+                elements = [self.uio.create_element_from_text(text=content)]
+        if elements:
+            chunks = self.uio.chunk_elements(
+                chunk_type=chunk_type,
+                elements=elements,
+                max_characters=max_characters,
+            )
+        if not elements:
+            warnings.warn(
+                f"No elements were extracted from the content: {content}"
+            )
+            return
         # Iterate to process and store embeddings, set batch of 50
         for i in range(0, len(chunks), 50):
             batch_chunks = chunks[i : i + 50]
@@ -103,7 +122,12 @@ class VectorRetriever(BaseRetriever):
             # Prepare the payload for each vector record, includes the content
             # path, chunk metadata, and chunk text
             for vector, chunk in zip(batch_vectors, batch_chunks):
-                content_path_info = {"content path": content}
+                if isinstance(content, str):
+                    content_path_info = {"content path": content}
+                elif isinstance(content, Element):
+                    content_path_info = {
+                        "content path": content.metadata.file_directory
+                    }
                 chunk_metadata = {"metadata": chunk.metadata.to_dict()}
                 chunk_text = {"text": str(chunk)}
                 combined_dict = {
@@ -121,8 +145,8 @@ class VectorRetriever(BaseRetriever):
     def query(
         self,
         query: str,
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
     ) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
@@ -133,7 +157,8 @@ class VectorRetriever(BaseRetriever):
                 for filtering results. Defaults to
                 `DEFAULT_SIMILARITY_THRESHOLD`.
             top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to 1.
+                retriever. Must be a positive integer. Defaults to
+                `DEFAULT_TOP_K_RESULTS`.
 
         Returns:
             List[Dict[str, Any]]: Concatenated list of the query results.

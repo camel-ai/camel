@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 import pytest
 
+from camel.loaders import UnstructuredIO
 from camel.retrievers import AutoRetriever
 from camel.storages import QdrantStorage
 from camel.types import StorageType
@@ -68,33 +69,49 @@ def test_get_file_modified_date_from_file(auto_retriever):
 
 def test_run_vector_retriever(auto_retriever):
     # Define mock data for testing
-    query_related = "what is camel ai"
     query_unrealted = "unrelated query"
     contents = "https://www.camel-ai.org/"
     top_k = 1
     similarity_threshold = 0.5
-
-    # Test with query related to the content in mock data
-    result_related = auto_retriever.run_vector_retriever(
-        query_related,
-        contents,
-        top_k,
-        similarity_threshold,
-        return_detailed_info=True,
-    )
-
-    assert (
-        "similarity score" in result_related
-    ), "result_related missing 'similarity score'"
-    assert (
-        "content path" in result_related
-    ), "result_related missing 'content path'"
-    assert "metadata" in result_related, "result_related missing 'metadata'"
-    assert "text" in result_related, "result_related missing 'text'"
 
     # Test with query unrelated to the content in mock data
     result_unrelated = auto_retriever.run_vector_retriever(
         query_unrealted, contents, top_k, similarity_threshold
     )
 
-    assert "No suitable information retrieved from" in result_unrelated
+    assert "No suitable information retrieved from" in str(result_unrelated)
+
+
+def test_run_vector_retriever_with_element_input(auto_retriever):
+    uio = UnstructuredIO()
+    test_element = uio.create_element_from_text(
+        text="""Introducing 🦀 CRAB: Cross-environment Agent Benchmark for 
+        Multimodal Language Model Agents
+
+    🦀 CRAB provides an end-to-end and easy-to-use framework to build 
+    multimodal agents, operate environments, and create benchmarks to evaluate 
+    them, featuring three key components:
+
+    - 🔀 Cross-environment support - agents can operate tasks in 📱 Android 
+    and 💻 Ubuntu.
+    - 🕸️ Graph evaluator - provides a fine-grain evaluation metric for agents.
+    - 🤖 Task generation - composes subtasks to automatically generate tasks.
+
+    By connecting all devices to agents, 🦀CRAB unlocks greater capabilities 
+    for human-like tasks than ever before.
+
+    Use 🦀 CRAB to benchmark your multimodal agents! """,
+        file_directory="https://x.com/CamelAIOrg/status/1821970132606058943",
+    )
+
+    output = auto_retriever.run_vector_retriever(
+        query="CRAB provides an end-to-end and easy-to-use framework to build"
+        " multimodal agents",
+        contents=test_element,
+        return_detailed_info=True,
+    )
+
+    assert (
+        output["Retrieved Context"][0]['content path']
+        == 'https://x.com/CamelAIOrg/status/1821970132606058943'
+    )

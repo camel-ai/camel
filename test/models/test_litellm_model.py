@@ -25,11 +25,10 @@ from camel.utils import LiteLLMTokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
         ModelType.GPT_4,
-        ModelType.GPT_4_32K,
         ModelType.GPT_4_TURBO,
         ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
 def test_litellm_model(model_type: ModelType):

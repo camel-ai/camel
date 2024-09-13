@@ -14,9 +14,7 @@
 import datetime
 import os
 import re
-from pathlib import Path
-from typing import List, Optional, Tuple, Union
-from urllib.parse import urlparse
+from typing import Collection, List, Optional, Sequence, Tuple, Union
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -27,9 +25,12 @@ from camel.storages import (
     VectorDBQuery,
 )
 from camel.types import StorageType
+from camel.utils import Constants
 
-DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 
 class AutoRetriever:
@@ -97,41 +98,22 @@ class AutoRetriever:
             f"Unsupported vector storage type: {self.storage_type}"
         )
 
-    def _collection_name_generator(self, content: str) -> str:
+    def _collection_name_generator(self, content: Union[str, Element]) -> str:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
-            contents (str): Local file path, remote URL or string content.
+            content (Union[str, Element]): Local file path, remote URL,
+                string content or Element object.
 
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
-        # Check if the content is URL
-        parsed_url = urlparse(content)
-        is_url = all([parsed_url.scheme, parsed_url.netloc])
 
-        # Convert given path into a collection name, ensuring it only
-        # contains numbers, letters, and underscores
-        if is_url:
-            # For URLs, remove https://, replace /, and any characters not
-            # allowed by Milvus with _
-            collection_name = re.sub(
-                r'[^0-9a-zA-Z]+',
-                '_',
-                content.replace("https://", ""),
-            )
-        elif os.path.exists(content):
-            # For file paths, get the stem and replace spaces with _, also
-            # ensuring only allowed characters are present
-            collection_name = re.sub(r'[^0-9a-zA-Z]+', '_', Path(content).stem)
-        else:
-            # the content is string input
-            collection_name = content[:10]
+        if isinstance(content, Element):
+            content = content.metadata.file_directory
 
-        # Ensure the collection name does not start or end with underscore
-        collection_name = collection_name.strip("_")
-        # Limit the maximum length of the collection name to 30 characters
-        collection_name = collection_name[:30]
+        collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
+
         return collection_name
 
     def _get_file_modified_date_from_file(
@@ -193,18 +175,19 @@ class AutoRetriever:
     def run_vector_retriever(
         self,
         query: str,
-        contents: Union[str, List[str]],
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        contents: Union[str, List[str], Element, List[Element]],
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
-    ) -> str:
+        max_characters: int = 500,
+    ) -> dict[str, Sequence[Collection[str]]]:
         r"""Executes the automatic vector retriever process using vector
         storage.
 
         Args:
             query (str): Query string for information retriever.
-            contents (Union[str, List[str]]): Local file paths, remote URLs or
-                string contents.
+            contents (Union[str, List[str], Element, List[Element]]): Local
+                file paths, remote URLs, string contents or Element objects.
             top_k (int, optional): The number of top results to return during
                 retrieve. Must be a positive integer. Defaults to
                 `DEFAULT_TOP_K_RESULTS`.
@@ -214,11 +197,14 @@ class AutoRetriever:
             return_detailed_info (bool, optional): Whether to return detailed
                 information including similarity score, content path and
                 metadata. Defaults to `False`.
+            max_characters (int): Max number of characters in each chunk.
+                Defaults to `500`.
 
         Returns:
-            string: By default, returns only the text information. If
-                `return_detailed_info` is `True`, return detailed information
-                including similarity score, content path and metadata.
+            dict[str, Sequence[Collection[str]]]: By default, returns
+                only the text information. If `return_detailed_info` is
+                `True`, return detailed information including similarity
+                score, content path and metadata.
 
         Raises:
             ValueError: If there's an vector storage existing with content
@@ -229,7 +215,9 @@ class AutoRetriever:
         if not contents:
             raise ValueError("content cannot be empty.")
 
-        contents = [contents] if isinstance(contents, str) else contents
+        contents = (
+            [contents] if isinstance(contents, (str, Element)) else contents
+        )
 
         all_retrieved_info = []
         for content in contents:
@@ -245,6 +233,7 @@ class AutoRetriever:
                 file_is_modified = False  # initialize with a default value
                 if (
                     vector_storage_instance.status().vector_count != 0
+                    and isinstance(content, str)
                     and os.path.exists(content)
                 ):
                     # Get original modified date from file
@@ -274,7 +263,7 @@ class AutoRetriever:
                         storage=vector_storage_instance,
                         embedding_model=self.embedding_model,
                     )
-                    vr.process(content)
+                    vr.process(content=content, max_characters=max_characters)
                 else:
                     vr = VectorRetriever(
                         storage=vector_storage_instance,
@@ -308,20 +297,17 @@ class AutoRetriever:
         # Select the 'top_k' results
         all_retrieved_info = all_retrieved_info_sorted[:top_k]
 
-        retrieved_infos = "\n".join(str(info) for info in all_retrieved_info)
-        retrieved_infos_text = "\n".join(
-            info['text'] for info in all_retrieved_info if 'text' in info
-        )
+        text_retrieved_info = [item['text'] for item in all_retrieved_info]
 
-        detailed_info = (
-            f"Original Query:\n{{ {query} }}\n"
-            f"Retrieved Context:\n{retrieved_infos}"
-        )
+        detailed_info = {
+            "Original Query": query,
+            "Retrieved Context": all_retrieved_info,
+        }
 
-        text_info = (
-            f"Original Query:\n{{ {query} }}\n"
-            f"Retrieved Context:\n{retrieved_infos_text}"
-        )
+        text_info = {
+            "Original Query": query,
+            "Retrieved Context": text_retrieved_info,
+        }
 
         if return_detailed_info:
             return detailed_info

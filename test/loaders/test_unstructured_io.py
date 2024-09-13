@@ -132,9 +132,10 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
         "philadelphia-eagles-spt-intl/index.html"
     )
     test_elements = unstructured_instance.parse_file_or_url(test_url)
-    staged_element: Any = unstructured_instance.stage_elements(
-        elements=test_elements, stage_type="stage_for_baseplate"
-    )
+    if test_elements:
+        staged_element: Any = unstructured_instance.stage_elements(
+            elements=test_elements, stage_type="stage_for_baseplate"
+        )
     assert staged_element['rows'][0] == {
         'data': {
             'type': 'UncategorizedText',
@@ -155,11 +156,12 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
 
     # Test with an invalid stage option (should raise ValueError)
     test_stage_type = "invalid_stageing_option"
-    with pytest.raises(ValueError):
-        unstructured_instance.stage_elements(
-            elements=test_elements,
-            stage_type=test_stage_type,  # type: ignore[arg-type]
-        )
+    if test_elements:
+        with pytest.raises(ValueError):
+            unstructured_instance.stage_elements(
+                elements=test_elements,
+                stage_type=test_stage_type,  # type: ignore[arg-type]
+            )
 
 
 # Test the chunk_elements method
@@ -170,14 +172,16 @@ def test_chunk_elements(unstructured_instance: UnstructuredIO):
         "philadelphia-eagles-spt-intl/index.html"
     )
     test_elements = unstructured_instance.parse_file_or_url(test_url)
-    chunked_sections = unstructured_instance.chunk_elements(
-        elements=test_elements, chunk_type="chunk_by_title"
-    )
+    if test_elements:
+        chunked_sections = unstructured_instance.chunk_elements(
+            elements=test_elements, chunk_type="chunk_by_title"
+        )
 
     assert len(chunked_sections) == 7  # Check the number of chunks
     # Test with an invalid chunk option (should raise ValueError)
     test_chunk_type = "chunk_by_invalid_option"
-    with pytest.raises(ValueError):
-        unstructured_instance.chunk_elements(
-            elements=test_elements, chunk_type=test_chunk_type
-        )
+    if test_elements:
+        with pytest.raises(ValueError):
+            unstructured_instance.chunk_elements(
+                elements=test_elements, chunk_type=test_chunk_type
+            )

@@ -18,25 +18,26 @@ from camel.embeddings import MistralEmbedding
 
 
 @patch.dict(os.environ, {"MISTRAL_API_KEY": "fake_api_key"})
-@patch('mistralai.client.MistralClient', autospec=True)
-def test_embed_list(mock_mistral_client):
+@patch('mistralai.Mistral', autospec=True)
+def test_embed_list(mock_mistral):
     # Set up the mock client and its return values
-    mock_client_instance = mock_mistral_client.return_value
-    mock_client_instance.embeddings.return_value.data = [
-        MagicMock(embedding=[0.1, 0.2, 0.3]),
-        MagicMock(embedding=[0.4, 0.5, 0.6]),
-    ]
+    mock_client_instance = mock_mistral.return_value
+    mock_embeddings = MagicMock()
+    mock_embeddings.create.return_value = MagicMock(
+        data=[
+            MagicMock(embedding=[0.1, 0.2, 0.3]),
+            MagicMock(embedding=[0.4, 0.5, 0.6]),
+        ]
+    )
+    mock_client_instance.embeddings = mock_embeddings
 
-    # Instantiate the MistralEmbedding and call embed_list
     embedding = MistralEmbedding()
     result = embedding.embed_list(["text1", "text2"])
 
-    # Validate that embeddings method was called with correct parameters
-    mock_client_instance.embeddings.assert_called_once_with(
-        input=["text1", "text2"], model="mistral-embed"
+    mock_client_instance.embeddings.create.assert_called_once_with(
+        inputs=["text1", "text2"], model="mistral-embed"
     )
 
-    # Validate the result against the mocked data
     assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
 
 
