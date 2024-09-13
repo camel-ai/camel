@@ -232,6 +232,3 @@ class RedditToolkit(BaseToolkit):
             OpenAIFunction(self.perform_sentiment_analysis),
             OpenAIFunction(self.track_keyword_discussions),
         ]
-
-
-REDDIT_FUNCS: List[OpenAIFunction] = RedditToolkit().get_tools()

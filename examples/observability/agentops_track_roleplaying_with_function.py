@@ -30,13 +30,13 @@ agentops.init(tags=["CAMEL X AgentOps"])
 # Import toolkits after init of agentops so that the tool useage would be
 # tracked
 from camel.toolkits import (  # noqa: E402
-    MATH_FUNCS,
-    SEARCH_FUNCS,
+    MathToolkit,
+    SearchToolkit,
 )
 
 # Set up role playing session
 model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_3_5_TURBO
+model_type = ModelType.GPT_4O_MINI
 chat_turn_limit = 10
 task_prompt = (
     "Assume now is 2024 in the Gregorian calendar, "
@@ -48,12 +48,12 @@ task_prompt = (
 
 user_model_config = ChatGPTConfig(temperature=0.0)
 
-function_list = [
-    *MATH_FUNCS,
-    *SEARCH_FUNCS,
+tools_list = [
+    *MathToolkit().get_tools(),
+    *SearchToolkit().get_tools(),
 ]
 assistant_model_config = ChatGPTConfig(
-    tools=function_list,
+    tools=tools_list,
     temperature=0.0,
 )
 
@@ -66,7 +66,7 @@ role_play_session = RolePlaying(
             model_type=model_type,
             model_config_dict=assistant_model_config.as_dict(),
         ),
-        tools=function_list,
+        tools=tools_list,
     ),
     user_agent_kwargs=dict(
         model=ModelFactory.create(
