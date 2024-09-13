@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import hashlib
 import importlib
 import os
 import platform
@@ -569,3 +570,32 @@ def handle_http_error(response: requests.Response) -> str:
         return "Too Many Requests. You have hit the rate limit."
     else:
         return "HTTP Error"
+
+
+def generate_temp_directory(
+    file_url: str | None, base_folder: str = "temp_files"
+) -> str:
+    """Generate the directory path for storing temporary files based on the
+    file URL. If file_url is None, a default folder under base_folder is used.
+
+    Args:
+        file_url (str | None): The URL of the file. If None, use a default
+        folder.
+        base_folder (str): The base folder name for storing the temporary
+        files.
+
+    Returns:
+        str: The path to the directory where the file will be stored.
+    """
+    project_root = os.getcwd()
+
+    if file_url:
+        file_hash = hashlib.md5(file_url.encode('utf-8')).hexdigest()
+        temp_directory = os.path.join(project_root, base_folder, file_hash)
+    else:
+        # Use a default folder name when file_url is None
+        temp_directory = os.path.join(project_root, base_folder, "default")
+
+    os.makedirs(temp_directory, exist_ok=True)
+
+    return temp_directory

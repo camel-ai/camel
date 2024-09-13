@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import hashlib
+import importlib
 import io
 import os
 import re
@@ -22,6 +22,7 @@ from PIL import Image
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
+from camel.utils.commons import generate_temp_directory
 
 
 class VideoDownloaderToolkit(BaseToolkit):
@@ -38,16 +39,19 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         Args:
             video_url (str, optional): The URL of the video to download.
+            download_directory (str, optional): The directory where the video
+                will be downloaded. If not provided, a default directory will
+                be used.
             chunk_duration (int, optional): The duration of each video chunk
                 in seconds. If set to 0, the video will not be chunked.
-                (default::obj:`0`).
+                (default: :obj:`0`).
         """
         self.video_url = video_url
         self.chunk_duration = chunk_duration
         self._cookies_path: Optional[str] = None
-        self._current_directory: Optional[str] = None
+        self._video_download_path: Optional[str] = None
         self._video_extension: Optional[str] = None
-        self.yt_dlp = __import__('yt_dlp')
+        self.yt_dlp = importlib.import_module('yt_dlp')
 
         if download_directory and self.video_url:
             self._set_default_directory(download_directory)
@@ -74,47 +78,35 @@ class VideoDownloaderToolkit(BaseToolkit):
         return self._cookies_path
 
     @property
-    def current_directory(self) -> str:
-        r"""Create or retrieve the directory for storing the downloaded video.
+    def video_download_path(self) -> str:
+        """Create or retrieve the directory for storing the downloaded video.
         Cached after first access.
 
         Returns:
             str: The path to the directory where the video will be stored.
         """
-        if self._current_directory is None:
-            if not self.video_url:
-                raise ValueError("video_url is not set.")
+        if self._video_download_path is None:
+            self._video_download_path = generate_temp_directory(self.video_url)
 
-            video_hash = hashlib.md5(
-                self.video_url.encode('utf-8')
-            ).hexdigest()
-            project_root = os.getcwd()
-            video_directory = os.path.join(
-                project_root, "temp_video", video_hash
-            )
+        return self._video_download_path
 
-            if not os.path.exists(video_directory):
-                os.makedirs(video_directory)
-
-            self._current_directory = video_directory
-
-        return self._current_directory
-
-    def _set_default_directory(self, directory: str):
+    def _set_default_directory(self, directory: str) -> str | None:
         r"""Manually set the directory for storing the downloaded video.
 
         Args:
             directory (str): The path to the directory.
+
+        Returns:
+            str | None: Returns an error message if the path is invalid, or
+            None if successful.
         """
         if not os.path.isabs(directory):
-            raise ValueError(
-                "Please provide an absolute path for the directory."
-            )
+            return "Error: Please provide an absolute path for the directory."
 
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        os.makedirs(directory, exist_ok=True)
 
-        self._current_directory = directory
+        self._video_download_path = directory
+        return None
 
     @property
     def video_extension(self) -> str:
@@ -125,28 +117,23 @@ class VideoDownloaderToolkit(BaseToolkit):
             str: The video file extension (e.g., '.mp4', '.webm').
         """
         if self._video_extension is None:
+            if not self.is_video_downloaded():
+                self.download_video()
+
             video_files = [
                 f
-                for f in os.listdir(self.current_directory)
+                for f in os.listdir(self.video_download_path)
                 if re.match(r'full_video\..+', f)
             ]
 
             if video_files:
                 self._video_extension = os.path.splitext(video_files[0])[1]
             else:
-                # If no video file is found, proceed to download the video
-                self.download_video()
-                video_files = [
-                    f
-                    for f in os.listdir(self.current_directory)
-                    if re.match(r'full_video\..+', f)
-                ]
-                if video_files:
-                    self._video_extension = os.path.splitext(video_files[0])[1]
-                else:
-                    raise FileNotFoundError(
-                        "Video download failed, and no video file was found."
-                    )
+                print(
+                    '''Error: Video download failed, and no video file was 
+                    found.'''
+                )
+                return ""
 
         return self._video_extension
 
@@ -209,7 +196,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
             else:
                 video_template = os.path.join(
-                    self.current_directory, 'full_video.%(ext)s'
+                    self.video_download_path, 'full_video.%(ext)s'
                 )
                 ydl_opts = {
                     'format': 'bestvideo+bestaudio/best',
@@ -237,7 +224,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             chunk_index (int): The index of the chunk.
         """
         video_template = os.path.join(
-            self.current_directory, f'video_chunk_{chunk_index}.%(ext)s'
+            self.video_download_path, f'video_chunk_{chunk_index}.%(ext)s'
         )
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
@@ -278,12 +265,13 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         if self.chunk_duration > 0:
             first_chunk_path = os.path.join(
-                self.current_directory, f'video_chunk_0{self.video_extension}'
+                self.video_download_path,
+                f'video_chunk_0{self.video_extension}',
             )
             return os.path.exists(first_chunk_path)
         else:
             video_path = os.path.join(
-                self.current_directory, f'full_video{self.video_extension}'
+                self.video_download_path, f'full_video{self.video_extension}'
             )
             return os.path.exists(video_path)
 
@@ -320,7 +308,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                     chunk_index = 0
                     while True:
                         chunk_filename = os.path.join(
-                            self.current_directory,
+                            self.video_download_path,
                             f'video_chunk_{chunk_index}{self.video_extension}',
                         )
                         if not os.path.exists(chunk_filename):
@@ -332,7 +320,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                         chunk_index += 1
                 else:
                     video_path = os.path.join(
-                        self.current_directory,
+                        self.video_download_path,
                         f'full_video{self.video_extension}',
                     )
                     if os.path.exists(video_path):
@@ -377,7 +365,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
             while True:
                 chunk_filename = os.path.join(
-                    self.current_directory,
+                    self.video_download_path,
                     f'video_chunk_{chunk_index}{self.video_extension}',
                 )
                 if not os.path.exists(chunk_filename):
@@ -395,7 +383,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             return video_bytes
 
         video_path = os.path.join(
-            self.current_directory, f'full_video{self.video_extension}'
+            self.video_download_path, f'full_video{self.video_extension}'
         )
 
         if not os.path.exists(video_path):
@@ -436,7 +424,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                     self._get_chunk_index_and_local_timestamp(timestamp)
                 )
                 chunk_filename = os.path.join(
-                    self.current_directory,
+                    self.video_download_path,
                     f'video_chunk_{chunk_index}{self.video_extension}',
                 )
                 images.append(
@@ -444,7 +432,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                 )
         else:
             video_path = os.path.join(
-                self.current_directory, f'full_video{self.video_extension}'
+                self.video_download_path, f'full_video{self.video_extension}'
             )
             images = [
                 self._capture_screenshot(video_path, ts) for ts in timestamps

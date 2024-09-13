@@ -17,16 +17,14 @@ from camel.toolkits.video_toolkit import VideoDownloaderToolkit
 def test_video_download_initialization():
     downloader = VideoDownloaderToolkit(
         video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-        split_into_chunks=False,
     )
     assert downloader.video_url is not None
-    assert downloader.split_into_chunks is False
+    assert downloader.chunk_duration == 0
 
 
 def test_video_bytes_download():
     downloader = VideoDownloaderToolkit(
         video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-        split_into_chunks=False,
     )
     video_bytes = downloader.get_video_bytes()
     assert len(video_bytes) > 0
@@ -35,7 +33,6 @@ def test_video_bytes_download():
 def test_video_length():
     downloader = VideoDownloaderToolkit(
         video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-        split_into_chunks=False,
     )
     video_length = downloader.get_video_length()
     assert video_length > 0
@@ -44,7 +41,6 @@ def test_video_length():
 def test_video_is_downloaded():
     downloader = VideoDownloaderToolkit(
         video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-        split_into_chunks=False,
     )
     is_downloaded = downloader.is_video_downloaded()
     assert isinstance(is_downloaded, bool)
