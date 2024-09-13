@@ -141,3 +141,6 @@ class DalleToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [OpenAIFunction(self.get_dalle_img)]
+
+
+DALLE_FUNCS: List[OpenAIFunction] = DalleToolkit().get_tools()

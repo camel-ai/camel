@@ -20,18 +20,17 @@ from .openai_function import (
 from .open_api_specs.security_config import openapi_security_config
 
 from .google_maps_toolkit import GoogleMapsToolkit
-from .math_toolkit import MathToolkit
+from .math_toolkit import MathToolkit, MATH_FUNCS
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
-from .search_toolkit import SearchToolkit
+from .search_toolkit import SearchToolkit, SEARCH_FUNCS
 from .twitter_toolkit import TwitterToolkit
-from .weather_toolkit import WeatherToolkit
+from .weather_toolkit import WeatherToolkit, WEATHER_FUNCS
 from .slack_toolkit import SlackToolkit
-from .dalle_toolkit import DalleToolkit
+from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
 
-from .base import BaseToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 
@@ -40,7 +39,6 @@ __all__ = [
     'get_openai_function_schema',
     'get_openai_tool_schema',
     'openapi_security_config',
-    'BaseToolkit',
     'GithubToolkit',
     'MathToolkit',
     'GoogleMapsToolkit',
@@ -54,4 +52,8 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    'MATH_FUNCS',
+    'SEARCH_FUNCS',
+    'WEATHER_FUNCS',
+    'DALLE_FUNCS',
 ]

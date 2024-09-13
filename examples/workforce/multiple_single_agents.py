@@ -17,7 +17,7 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
-from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
+from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce.manager_node import ManagerNode
 from camel.workforce.single_agent_node import SingleAgentNode
@@ -27,9 +27,9 @@ from camel.workforce.workforce import Workforce
 def main():
     # set the tools for the tool_agent
     tools_list = [
-        *SearchToolkit.get_tools(),
-        *WeatherToolkit.get_tools(),
-        *GoogleMapsToolkit.get_tools(),
+        *SEARCH_FUNCS,
+        *WEATHER_FUNCS,
+        *GoogleMapsToolkit().get_tools(),
     ]
     # configure the model of tool_agent
     model_config_dict = ChatGPTConfig(
