@@ -142,10 +142,6 @@ class GoogleMapsToolkit(BaseToolkit):
                 information on address completion, formatted address,
                 geographical coordinates (latitude and longitude), and metadata
                 types true for the address.
-
-        Raises:
-            ImportError: If the `googlemaps` library is not installed.
-            Exception: For unexpected errors during the address validation.
         """
         addressvalidation_result = self.gmaps.addressvalidation(
             [address],
@@ -304,6 +300,3 @@ class GoogleMapsToolkit(BaseToolkit):
             OpenAIFunction(self.get_elevation),
             OpenAIFunction(self.get_timezone),
         ]
-
-
-MAP_FUNCS: List[OpenAIFunction] = GoogleMapsToolkit().get_tools()
