@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType
 # Take calling model from DashScope as an example
 # Refer: https://dashscope.console.aliyun.com/overview
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAICOMPATIBILITYMODEL,
+    model_platform=ModelPlatformType.OPENAI_COMPATIBILITY_MODEL,
     model_type="qwen-plus",
     api_key="sk-xxxx",
     url="https://dashscope.aliyuncs.com/compatible-mode/v1",
