@@ -112,7 +112,8 @@ class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
     Args:
-        system_message (BaseMessage): The system message for the chat agent.
+        system_message (BaseMessage, optional): The system message
+            for the chat agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
@@ -141,7 +142,7 @@ class ChatAgent(BaseAgent):
 
     def __init__(
         self,
-        system_message: BaseMessage,
+        system_message: Optional[BaseMessage] = None,
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -151,10 +152,14 @@ class ChatAgent(BaseAgent):
         external_tools: Optional[List[OpenAIFunction]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
-        self.orig_sys_message: BaseMessage = system_message
-        self.system_message = system_message
-        self.role_name: str = system_message.role_name
-        self.role_type: RoleType = system_message.role_type
+        self.orig_sys_message: Optional[BaseMessage] = system_message
+        self._system_message: Optional[BaseMessage] = system_message
+        self.role_name: str = (
+            system_message.role_name if system_message else "assistant"
+        )
+        self.role_type: RoleType = (
+            system_message.role_type if system_message else RoleType.ASSISTANT
+        )
         self.model_backend: BaseModelBackend = (
             model
             if model is not None
@@ -215,6 +220,8 @@ class ChatAgent(BaseAgent):
         Returns:
             BaseMessage: The system message of this agent.
         """
+        if self._system_message is None:
+            raise ValueError("System message has not been set.")
         return self._system_message
 
     @system_message.setter
@@ -225,6 +232,8 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): The message to be set as the
                 new system message of this agent.
         """
+        if message is None:
+            raise ValueError("Cannot set system message to None.")
         self._system_message = message
 
     def is_tools_added(self) -> bool:
@@ -264,11 +273,14 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = self.orig_sys_message.content + (
-            "\nRegardless of the input language, "
-            f"you must output text in {output_language}."
-        )
-        self.system_message = self.system_message.create_new_instance(content)
+        if self.orig_sys_message is not None:
+            content = self.orig_sys_message.content + (
+                "\nRegardless of the input language, "
+                f"you must output text in {output_language}."
+            )
+            self.system_message = self.system_message.create_new_instance(
+                content=content
+            )
         return self.system_message
 
     def get_info(
@@ -314,12 +326,13 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        system_record = MemoryRecord(
-            message=self.system_message,
-            role_at_backend=OpenAIBackendRole.SYSTEM,
-        )
         self.memory.clear()
-        self.memory.write_record(system_record)
+        if self.system_message:
+            system_record = MemoryRecord(
+                message=self.system_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+            )
+            self.memory.write_record(system_record)
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
