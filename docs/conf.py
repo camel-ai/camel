@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'CAMEL'
-copyright = '2023, CAMEL-AI.org'
+copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
 release = '0.2.0'
 
