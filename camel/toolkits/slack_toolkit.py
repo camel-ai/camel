@@ -303,6 +303,3 @@ class SlackToolkit(BaseToolkit):
             OpenAIFunction(self.send_slack_message),
             OpenAIFunction(self.delete_slack_message),
         ]
-
-
-SLACK_FUNCS: List[OpenAIFunction] = SlackToolkit().get_tools()

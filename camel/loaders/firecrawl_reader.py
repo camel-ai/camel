@@ -17,6 +17,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from camel.utils import api_keys_required
+
 
 class Firecrawl:
     r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
@@ -30,6 +32,7 @@ class Firecrawl:
         https://docs.firecrawl.dev/introduction
     """
 
+    @api_keys_required("FIRECRAWL_API_KEY")
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -211,3 +214,24 @@ class Firecrawl:
             return scrape_result.get("markdown", "")
         except Exception as e:
             raise RuntimeError(f"Failed to perform tidy scrape: {e}")
+
+    def map_site(
+        self, url: str, params: Optional[Dict[str, Any]] = None
+    ) -> list:
+        r"""Map a website to retrieve all accessible URLs.
+
+        Args:
+            url (str): The URL of the site to map.
+            params (Optional[Dict[str, Any]]): Additional parameters for the
+                map request. Defaults to `None`.
+
+        Returns:
+            list: A list containing the URLs found on the site.
+
+        Raises:
+            RuntimeError: If the mapping process fails.
+        """
+        try:
+            return self.app.map_url(url=url, params=params)
+        except Exception as e:
+            raise RuntimeError(f"Failed to map the site: {e}")
