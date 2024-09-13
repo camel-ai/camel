@@ -18,7 +18,7 @@ from camel.types import ModelPlatformType, ModelType, TaskType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().__dict__,
+    model_config_dict=ChatGPTConfig().as_dict(),
 )
 task_specify_agent = TaskSpecifyAgent(
     model=model, task_type=TaskType.AI_SOCIETY
@@ -54,7 +54,7 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().__dict__,
+    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 my_prompt_template = TextPrompt(
@@ -157,3 +157,189 @@ This class prompts a translation AI assistant from English to specified language
 This class prompts the AI model to describe a video in words.
 
 - **ASSISTANT_PROMPT**: Rules of completing video description tasks.
+
+## 4.1 Introduction to `CodePrompt` Class
+
+In this part, we will explore the `CodePrompt` class, which is a class that represents a code prompt. It extends the `TextPrompt` class, which in turn extends the built-in `str` class. The `CodePrompt` class provides additional functionality related to code execution and handling.
+
+### Importing the `CodePrompt` Class
+
+To use the `CodePrompt` class, you need to import it. Here's an example of how to import the class:
+
+```python
+from camel.prompts import CodePrompt
+```
+
+### Creating a `CodePrompt` Instance
+
+To create a `CodePrompt` instance, you can simply instantiate the class, providing the code string and the code type as an input argument.
+
+```python
+code_prompt = CodePrompt("a = 1 + 1", code_type="python")
+```
+
+In this example, we create a `CodePrompt` instance with the code string `"a = 1 + 1"`. We also specify the code type as `"python"`. The code type can be set to `None` if not needed.
+
+### Accessing the Code and Code Type
+
+Once you have a `CodePrompt` instance, you can access the code string and code type as following:
+
+- `code_prompt`: Accesses the code string of the prompt.
+- `code_type`: Accesses the type of code associated with the prompt.
+
+```python
+print(code_prompt)
+# >>> "a = 1 + 1"
+
+print(code_prompt.code_type)
+# >>> "python"
+```
+
+### Modifying the Code Type
+
+If you need to change the code type associated with a `CodePrompt` instance, you can use the `set_code_type` method. This method takes a code type as a parameter and updates the code type of the instance.
+
+```python
+code_prompt = CodePrompt("a = 1 + 1")
+print(code_prompt.code_type)
+# >>> None
+
+code_prompt.set_code_type("python")
+print(code_prompt.code_type) 
+# >>> "python"
+```
+
+In this example, we change the code type of the `CodePrompt` instance from `None` to `"python"`.
+
+### Executing the Code
+
+The `CodePrompt` class provides a method called `execute` that allows you to execute the code string associated with the prompt. It returns a string containing the stdout and stderr.
+
+```python
+code_prompt = CodePrompt("a = 1 + 1\nb = a + 1\nprint(a,b)", code_type="python")
+output = code_prompt.execute()
+# Running code? [Y/n]: y
+print(output)
+# >>> 2 3
+
+```
+
+
+## 4.2 Write Your Prompts with the `TextPrompt` Class
+
+In this part, we will explore the `TextPrompt` class and understand its functionalities. The `TextPrompt` class is a subclass of the built-in `str` class and provides additional features for working with text prompts. We will cover the following topics:
+
+- Introduction to the `TextPrompt` class
+- Using the `TextPrompt` class
+
+### Introduction to the `TextPrompt` class
+
+The `TextPrompt` class represents a text prompt and extends the functionality of the `str` class. It provides a property called `key_words`, which returns a set of strings representing the key words in the prompt.
+
+Here's an example of how to use the `TextPrompt` class:
+
+```python
+from camel.prompts import TextPrompt
+
+prompt = TextPrompt('Please enter your name and age: {name}, {age}')
+print(prompt)  
+>>> 'Please enter your name and age: {name}, {age}'
+```
+
+In the above example, we create a `TextPrompt` instance with a format string containing key words for name and age. We can print `TextPrompt` like Python `str`.
+
+### Using the `TextPrompt` class
+
+Once we have created a `TextPrompt` instance, we can use various methods and properties provided by the class to manipulate and work with the text prompt.
+
+### The `key_words` property
+
+The `key_words` property returns a set of strings representing the key words in the prompt.
+
+```python
+from camel.prompts import TextPrompt
+
+prompt = TextPrompt('Please enter your name and age: {name}, {age}')
+print(prompt.key_words)
+>>> {'name', 'age'}
+```
+
+In the above example, the `key_words` property returns a set of strings representing the key words in the prompt, which in this case are 'name' and 'age'.
+
+### The `format` method
+
+The `format` method overrides the built-in `str.format` method to allow for partial formatting values in the format string. It replaces the key words in the format string with the provided values.
+
+```python
+from camel.prompts import TextPrompt
+
+prompt = TextPrompt('Your name and age are: {name}, {age}')
+
+name, age = 'John', 30
+formatted_prompt = prompt.format(name=name, age=age)
+print(formatted_prompt)  
+>>> "Your name and age are: John, 30"
+```
+
+In the above example, we use the `format` method to replace the key words `{name}` and `{age}` with the values 'John' and 30, respectively.
+
+We can also perform partial formatting by providing only some of the values:
+
+```python
+from camel.prompts import TextPrompt
+
+prompt = TextPrompt('Your name and age are: {name}, {age}')
+
+name = 'John'
+partial_formatted_prompt = prompt.format(name=name)
+print(partial_formatted_prompt)  
+>>> "Your name and age are: John, {age}"
+```
+
+In the above example, we provide only the value for the `name` key word, while the `age` key word remains as it is. This will be helpful when we want to format different key words of `TextPrompt` in different agents.
+
+### Manipulating `TextPrompt` instances
+
+We can perform various string manipulation operations on `TextPrompt` instances, such as concatenation, joining, and applying string methods like Python `str`.
+
+```python
+from camel.prompts import TextPrompt
+
+prompt1 = TextPrompt('Hello, {name}!')
+prompt2 = TextPrompt('Welcome, {name}!')
+
+# Concatenation
+prompt3 = prompt1 + ' ' + prompt2
+print(prompt3)  
+>>> "Hello, {name}! Welcome, {name}!"
+
+print(isinstance(prompt3, TextPrompt))
+>>> True
+
+print(prompt3.key_words)
+>>> {'name'}
+
+# Joining
+prompt4 = TextPrompt(' ').join([prompt1, prompt2])
+print(prompt4)
+>>> "Hello, {name}! Welcome, {name}!"
+
+print(isinstance(prompt4, TextPrompt))
+>>> True
+
+print(prompt4.key_words)
+>>> {'name'}
+
+# Applying string methods
+prompt5 = prompt4.upper()
+print(prompt5)
+>>> "HELLO, {NAME}! WELCOME, {NAME}!"
+
+print(isinstance(prompt5, TextPrompt))
+>>> True
+
+print(prompt5.key_words)
+>>> {'NAME'}
+```
+
+In the above example, we demonstrate concatenation using the `+` operator, joining using the `join` method, and applying the `upper` method to a `TextPrompt` instance. The resulting prompts are also instances of `TextPrompt`.

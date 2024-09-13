@@ -33,10 +33,18 @@ Main Documentation
    :caption: Key Modules
    :name: key_modules
 
+   key_modules/models.md
+   key_modules/messages.md
+   key_modules/memory.md
+   key_modules/tools.md
+   key_modules/prompts.md
+   key_modules/tasks.md
    key_modules/loaders.md
    key_modules/storages.md
    key_modules/embeddings.md
    key_modules/retrievers.md
+   key_modules/interpreters.md
+   key_modules/workforce.md
 
 .. toctree::
    :maxdepth: 1
