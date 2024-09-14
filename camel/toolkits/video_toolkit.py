@@ -51,10 +51,11 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         self.video_url = video_url
         self.chunk_duration = chunk_duration
+        self.yt_dlp = importlib.import_module('yt_dlp')
+        self._chunk_durations: list[int] = []
         self._cookies_path: Optional[str] = None
         self._video_download_path: Optional[str] = None
         self._video_extension: Optional[str] = None
-        self.yt_dlp = importlib.import_module('yt_dlp')
 
         if download_directory and self.video_url:
             self._set_default_directory(download_directory)
@@ -213,11 +214,19 @@ class VideoDownloaderToolkit(BaseToolkit):
                             if file_exists_and_is_identical(
                                 previous_chunk_filename, chunk_filename
                             ):
+                                chunk_index -= 1
                                 print(
                                     f'''Chunk {chunk_index} is identical 
                                     to chunk {chunk_index - 1}, 
                                     terminating download.'''
                                 )
+                                try:
+                                    os.remove(chunk_filename)
+                                except Exception:
+                                    print(
+                                        "Warning: could not remove chunk"
+                                        + f"{chunk_index}"
+                                    )
                                 break
                         start_time += self.chunk_duration
                         chunk_index += 1
@@ -337,6 +346,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         if self.is_video_downloaded():
             if self.chunk_duration > 0:
+                self._chunk_durations = []
                 chunk_index = 0
                 while True:
                     chunk_filename = os.path.join(
@@ -346,9 +356,11 @@ class VideoDownloaderToolkit(BaseToolkit):
                     if not os.path.exists(chunk_filename):
                         break
 
-                    video_length += self._get_video_length_from_file(
+                    chunk_duration = self._get_video_length_from_file(
                         chunk_filename
                     )
+                    video_length += chunk_duration
+                    self._chunk_durations.append(chunk_duration)
                     chunk_index += 1
             else:
                 video_path = os.path.join(
@@ -459,14 +471,17 @@ class VideoDownloaderToolkit(BaseToolkit):
         if not self.is_video_downloaded():
             self.download_video()
 
+        video_length = self.get_video_length()
         if isinstance(timestamps, int):
-            video_length = self.get_video_length()
             intervals = video_length // (timestamps + 1)
             timestamps = [(i + 1) * intervals for i in range(timestamps)]
 
+        valid_timestamps = [
+            timestamp for timestamp in timestamps if timestamp < video_length
+        ]
         images = []
         if self.chunk_duration > 0:
-            for timestamp in timestamps:
+            for timestamp in valid_timestamps:
                 chunk_index, local_timestamp = (
                     self._get_chunk_index_and_local_timestamp(timestamp)
                 )
@@ -490,19 +505,36 @@ class VideoDownloaderToolkit(BaseToolkit):
     def _get_chunk_index_and_local_timestamp(
         self, timestamp: int
     ) -> Tuple[int, int]:
-        r"""Determine the chunk index and the local timestamp within that
-        chunk for a global timestamp.
+        r"""
+        Determine the chunk index and the local timestamp within that
+        chunk based on a global timestamp.
+
+        This method calculates which chunk in a list of chunks corresponds
+        to a given global timestamp and returns both the chunk index and the
+        local timestamp within that chunk.
 
         Args:
-            timestamp (int): The global timestamp in the video.
+            timestamp (int): The global timestamp representing a position in
+            the entire video.
 
         Returns:
-            Tuple[int, int]: The chunk index and the local timestamp within
-                that chunk.
+            Tuple[int, int]: The index of the chunk and the local timestamp
+                            within that chunk.
+
+        Raises:
+            ValueError: If the timestamp exceeds the total video length, which
+                        should not happen under normal circumstances.
         """
-        chunk_index = timestamp // self.chunk_duration
-        local_timestamp = timestamp % self.chunk_duration
-        return chunk_index, local_timestamp
+        cumulative_duration = 0
+        for chunk_index, chunk_duration in enumerate(self._chunk_durations):
+            if cumulative_duration + chunk_duration > timestamp:
+                local_timestamp = timestamp - cumulative_duration
+                return chunk_index, local_timestamp
+            cumulative_duration += chunk_duration
+
+        raise ValueError(
+            "Timestamp exceeds total video length, which should not happen"
+        )
 
     def _capture_screenshot(
         self, video_path: str, timestamp: int

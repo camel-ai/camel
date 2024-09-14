@@ -76,9 +76,7 @@ def main() -> None:
 
         print(f"Trying to download video from: {video_url}")
         try:
-            downloader = VideoDownloaderToolkit(
-                video_url=video_url, split_into_chunks=False
-            )
+            downloader = VideoDownloaderToolkit(video_url=video_url)
             image_list = downloader.get_video_screenshots(3)
             if image_list and len(image_list) > 0:
                 print(
