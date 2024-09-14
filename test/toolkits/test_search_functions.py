@@ -55,20 +55,38 @@ def test_search_wiki_with_ambiguity(search_toolkit):
 
 
 def test_google_api():
-    # Check the Google search api
+    # Mock the Google search api
 
-    # https://developers.google.com/custom-search/v1/overview
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    # https://cse.google.com/cse/all
-    SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+    # Mock environment variables
+    with patch.dict(
+        os.environ,
+        {
+            'GOOGLE_API_KEY': 'fake_api_key',
+            'SEARCH_ENGINE_ID': 'fake_search_engine_id',
+        },
+    ):
+        # Create a MagicMock object for the response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
 
-    url = (
-        f"https://www.googleapis.com/customsearch/v1?"
-        f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
-    )
-    result = requests.get(url)
+        # Mock the requests.get method
+        with patch('requests.get', return_value=mock_response) as mock_get:
+            # Define the expected URL
+            GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+            SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+            url = (
+                f"https://www.googleapis.com/customsearch/v1?"
+                f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
+            )
 
-    assert result.status_code == 200
+            # Call the function under test
+            result = requests.get(url)
+
+            # Assert that requests.get was called with the correct URL
+            mock_get.assert_called_with(url)
+
+            # Assert that the status_code is as expected
+            assert result.status_code == 200
 
 
 def test_duckduckgo_api():
