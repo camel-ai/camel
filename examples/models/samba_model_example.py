@@ -37,7 +37,7 @@ sambaverse_api_model = ModelFactory.create(
     url="https://sambaverse.sambanova.ai/api/predict",
 )
 
-sambacloud_api_model = ModelFactory.create(
+samba_cloud_api_model = ModelFactory.create(
     model_platform=ModelPlatformType.SAMBA,
     model_type="Meta-Llama-3.1-405B-Instruct",
     model_config_dict=SambaCloudAPIConfig(max_tokens=800).as_dict(),
@@ -68,8 +68,8 @@ camel_agent_sambaverse_api = ChatAgent(
     system_message=sys_msg, model=sambaverse_api_model
 )
 
-camel_agent_sambacloud_api = ChatAgent(
-    system_message=sys_msg, model=sambacloud_api_model
+camel_agent_samba_cloud_api = ChatAgent(
+    system_message=sys_msg, model=samba_cloud_api_model
 )
 
 # Get response information
@@ -103,7 +103,7 @@ of assistance.
 '''
 
 # Get response information
-response = camel_agent_sambacloud_api.step(user_msg)
+response = camel_agent_samba_cloud_api.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================

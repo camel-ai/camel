@@ -49,7 +49,6 @@ def main():
     ]
     user_model_config = ChatGPTConfig(temperature=0.0)
     assistant_model_config = ChatGPTConfig(
-        tools=tools_list,
         temperature=0.0,
     )
     model_platform = ModelPlatformType.OPENAI
