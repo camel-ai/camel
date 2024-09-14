@@ -421,11 +421,10 @@ def test_function_enabled():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(tools=MathToolkit().get_tools())
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
@@ -446,11 +445,10 @@ def test_tool_calling_sync():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(tools=MathToolkit().get_tools())
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -492,11 +490,10 @@ async def test_tool_calling_math_async():
         content="You are a help assistant.",
     )
     math_funcs = sync_funcs_to_async(MathToolkit().get_tools())
-    model_config = ChatGPTConfig(tools=[*math_funcs])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -548,12 +545,10 @@ async def test_tool_calling_async():
         await asyncio.sleep(second)
         return second
 
-    model_config = ChatGPTConfig(tools=[OpenAIFunction(async_sleep)])
-
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     agent = ChatAgent(

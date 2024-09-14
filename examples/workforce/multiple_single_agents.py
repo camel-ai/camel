@@ -33,7 +33,6 @@ def main():
     ]
     # configure the model of tool_agent
     model_config_dict = ChatGPTConfig(
-        tools=tools_list,
         temperature=0.0,
     ).as_dict()
 

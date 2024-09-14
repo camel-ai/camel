@@ -43,12 +43,10 @@ def main():
         content="Draw a picture of a camel.",
     )
 
-    model_config = ChatGPTConfig(tools=DalleToolkit().get_tools())
-
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     dalle_agent = ChatAgent(

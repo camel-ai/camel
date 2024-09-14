@@ -43,15 +43,27 @@ Main Documentation
    key_modules/storages.md
    key_modules/embeddings.md
    key_modules/retrievers.md
-   key_modules/interpreters.md
    key_modules/workforce.md
 
 .. toctree::
    :maxdepth: 1
-   :caption: Tutorial and Cookbooks
-   :name: tutorials_and_cookbooks
+   :caption: Cookbooks
+   :name: cookbooks
 
-   tutorials_and_cookbooks/agents_with_rag.md
+   cookbooks/create_your_first_agent.ipynb
+   cookbooks/create_your_first_agents_society.ipynb
+   cookbooks/agents_society.ipynb
+   cookbooks/agents_message.ipynb
+   cookbooks/agents_with_tools.ipynb
+   cookbooks/agents_with_tools_from_Composio.ipynb
+   cookbooks/agents_with_memory.ipynb
+   cookbooks/agents_with_rag.ipynb
+   cookbooks/agents_prompting.ipynb
+   cookbooks/task_generation.ipynb
+   cookbooks/knowledge_graph.ipynb
+   cookbooks/roleplaying_scraper.ipynb
+   cookbooks/video_analysis.ipynb
+   cookbooks/agents_tracking.ipynb
 
 .. toctree::
    :maxdepth: 1
