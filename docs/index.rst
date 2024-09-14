@@ -43,7 +43,6 @@ Main Documentation
    key_modules/storages.md
    key_modules/embeddings.md
    key_modules/retrievers.md
-   key_modules/interpreters.md
    key_modules/workforce.md
 
 .. toctree::
