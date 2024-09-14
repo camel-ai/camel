@@ -70,18 +70,20 @@ class AmazonS3Storage(BaseObjectStorage):
             aws_key_id = None
             aws_secret_key = None
 
-        import boto3
+        import botocore.session
         from botocore import UNSIGNED
         from botocore.config import Config
 
+        session = botocore.session.get_session()
+
         if not anonymous:
-            self._client = boto3.client(
+            self._client = session.create_client(
                 "s3",
                 aws_access_key_id=aws_key_id,
                 aws_secret_access_key=aws_secret_key,
             )
         else:
-            self._client = boto3.client(
+            self._client = session.create_client(
                 "s3", config=Config(signature_version=UNSIGNED)
             )
 
@@ -165,11 +167,10 @@ class AmazonS3Storage(BaseObjectStorage):
             local_file_path (Path): The path to the local file to be uploaded.
             remote_file_key (str): The path to the object in the bucket.
         """
-        self._client.upload_file(
-            Bucket=self._bucket_name,
-            Key=remote_file_key,
-            Filename=local_file_path,
-        )
+        with open(local_file_path, "rb") as f:
+            self._client.put_object(
+                Bucket=self._bucket_name, Key=remote_file_key, Body=f
+            )
 
     def _download_file(
         self,
@@ -182,11 +183,12 @@ class AmazonS3Storage(BaseObjectStorage):
             local_file_path (Path): The path to the local file to be saved.
             remote_file_key (str): The key of the object in the bucket.
         """
-        self._client.download_file(
+        file = self._client.get_object(
             Bucket=self._bucket_name,
             Key=remote_file_key,
-            Filename=local_file_path,
         )
+        with open(local_file_path, "wb") as f:
+            f.write(file["Body"].read())
 
     def _object_exists(self, file_key: str) -> bool:
         r"""

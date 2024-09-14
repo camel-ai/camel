@@ -288,6 +288,9 @@ class OpenAITokenCounter(BaseTokenCounter):
         elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
             self.tokens_per_message = 3
             self.tokens_per_name = 1
+        elif "o1" in self.model:
+            self.tokens_per_message = 2
+            self.tokens_per_name = 1
         else:
             # flake8: noqa :E501
             raise NotImplementedError(

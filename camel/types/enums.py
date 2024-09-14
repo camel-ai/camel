@@ -26,10 +26,11 @@ class RoleType(Enum):
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
-    GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    O1_PREVIEW = "o1-preview"
+    O1_MINI = "o1-mini"
 
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
@@ -73,7 +74,7 @@ class ModelType(Enum):
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
-    # Mistral AI Model
+    # Mistral AI models
     MISTRAL_LARGE = "mistral-large-latest"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_CODESTRAL = "codestral-latest"
@@ -82,13 +83,20 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
 
+    # Reka models
+    REKA_CORE = "reka-core"
+    REKA_FLASH = "reka-flash"
+    REKA_EDGE = "reka-edge"
+
     @property
     def value_for_tiktoken(self) -> str:
-        return (
-            self.value
-            if self is not ModelType.STUB and not isinstance(self, str)
-            else "gpt-3.5-turbo"
-        )
+        if self.is_openai:
+            return self.value
+        return "gpt-4o-mini"
+
+    @property
+    def supports_tool_calling(self) -> bool:
+        return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
     def is_openai(self) -> bool:
@@ -96,10 +104,11 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
         }
 
     @property
@@ -110,7 +119,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
         }
@@ -193,7 +201,25 @@ class ModelType(Enum):
 
     @property
     def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is Gemini model.
+
+        Returns:
+            bool: Whether this type of models is gemini.
+        """
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this type of models is Reka model.
+
+        Returns:
+            bool: Whether this type of models is Reka.
+        """
+        return self in {
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
+        }
 
     @property
     def token_limit(self) -> int:
@@ -211,6 +237,9 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
         }:
             return 4_096
         elif self in {
@@ -231,7 +260,6 @@ class ModelType(Enum):
         }:
             return 16_384
         elif self in {
-            ModelType.GPT_4_32K,
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
@@ -246,6 +274,8 @@ class ModelType(Enum):
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
             ModelType.GPT_4_TURBO,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.QWEN_2,
@@ -440,7 +470,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
-    OPENSOURCE = "opensource"
+    OPEN_SOURCE = "open-source"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -448,7 +478,10 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
-    OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
+    REKA = "reka"
+    TOGETHER = "together"
+    OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    SAMBA = "samba-nova"
 
     @property
     def is_openai(self) -> bool:
@@ -481,6 +514,11 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.VLLM
 
     @property
+    def is_together(self) -> bool:
+        r"""Returns whether this platform is together."""
+        return self is ModelPlatformType.TOGETHER
+
+    @property
     def is_litellm(self) -> bool:
         r"""Returns whether this platform is litellm."""
         return self is ModelPlatformType.LITELLM
@@ -498,18 +536,28 @@ class ModelPlatformType(Enum):
     @property
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
-        return self is ModelPlatformType.OPENSOURCE
+        return self is ModelPlatformType.OPEN_SOURCE
 
     @property
     def is_openai_compatibility_model(self) -> bool:
         r"""Returns whether this is a platform supporting openai
         compatibility"""
-        return self is ModelPlatformType.OPENAICOMPATIBILITYMODEL
+        return self is ModelPlatformType.OPENAI_COMPATIBILITY_MODEL
 
     @property
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this platform is Reka."""
+        return self is ModelPlatformType.REKA
+
+    @property
+    def is_samba(self) -> bool:
+        r"""Returns whether this platform is Samba Nova."""
+        return self is ModelPlatformType.SAMBA
 
 
 class AudioModelType(Enum):
