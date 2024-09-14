@@ -70,6 +70,7 @@ class SingleAgentWorker(Worker):
         prompt = PROCESS_TASK_PROMPT.format(
             content=task.content,
             dependency_tasks_info=dependency_tasks_info,
+            additional_info=task.additional_info,
         )
         req = BaseMessage.make_user_message(
             role_name="User",
@@ -86,8 +87,8 @@ class SingleAgentWorker(Worker):
 
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
-        for func_record in response.info['tool_calls']:
-            print(func_record)
+        # for func_record in response.info['tool_calls']:
+        #     print(func_record)
 
         result_dict = ast.literal_eval(response.msg.content)
         task_result = TaskResult(**result_dict)

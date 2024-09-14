@@ -97,6 +97,7 @@ class RolePlayingWorker(Worker):
         prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
             content=task.content,
             dependency_task_info=dependency_tasks_info,
+            additional_info=task.additional_info,
         )
         role_play_session = RolePlaying(
             assistant_role_name=self.assistant_role_name,
@@ -165,6 +166,7 @@ class RolePlayingWorker(Worker):
             assistant_role=self.assistant_role_name,
             content=task.content,
             chat_history=chat_history_str,
+            additional_info=task.additional_info,
         )
         req = BaseMessage.make_user_message(
             role_name="User",

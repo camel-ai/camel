@@ -118,6 +118,7 @@ class Workforce(BaseNode):
         decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
+            additional_info=task.additional_info,
         )
         self.task_agent.reset()
         subtasks = task.decompose(self.task_agent, decompose_prompt)
@@ -278,6 +279,7 @@ class Workforce(BaseNode):
         prompt = ASSIGN_TASK_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
+            additional_info=task.additional_info,
         )
         req = BaseMessage.make_user_message(
             role_name="User",
@@ -311,6 +313,7 @@ class Workforce(BaseNode):
         prompt = CREATE_NODE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
+            additional_info=task.additional_info,
         )
         req = BaseMessage.make_user_message(
             role_name="User",

@@ -22,6 +22,12 @@ The content of the given task is:
 {content}
 ==============================
 
+Here are some additional information about the task:
+
+==============================
+{additional_info}
+==============================
+
 Following is the information of the existing worker nodes. The format is <ID>:<description>:<additional_info>.
 
 ==============================
@@ -45,6 +51,12 @@ The content of the task is:
 
 ==============================
 {content}
+==============================
+
+Here are some additional information about the task:
+
+==============================
+{additional_info}
 ==============================
 
 Following is the information of the existing worker nodes. The format is <ID>:<description>:<additional_info>.
@@ -71,6 +83,12 @@ The content of the task that you need to do is:
 {content}
 ==============================
 
+Here are some additional information about the task:
+
+==============================
+{additional_info}
+==============================
+
 You are asked to return the result of the given task.
 However, if you think you can't finish the task, you MUST set the fail flag and leave the result empty.
 """
@@ -91,6 +109,12 @@ The content of the task that you need to do is:
 {content}
 ==============================
 
+Here are some additional information about the task:
+
+==============================
+{additional_info}
+==============================
+
 You must return the result of the given task.
 """
 )
@@ -101,6 +125,12 @@ Here is the content of the task they are trying to solve:
 
 ==============================
 {task_content}
+==============================
+
+Here are some additional information about the task:
+
+==============================
+{additional_info}
 ==============================
 
 Here is their chat history on the task:
@@ -120,6 +150,12 @@ The content of the task is:
 
 ==============================
 {content}
+==============================
+
+There are some additional information about the task:
+
+==============================
+{additional_info}
 ==============================
 
 Following are the available workers, given in the format <ID>: <description>.

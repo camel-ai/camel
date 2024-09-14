@@ -95,6 +95,8 @@ class Task(BaseModel):
 
     failure_count: int = 0
 
+    additional_info: Optional[str] = None
+
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.
@@ -223,6 +225,8 @@ class Task(BaseModel):
         )
         response = agent.step(msg)
         tasks = task_parser(response.msg.content, self.id)
+        for task in tasks:
+            task.additional_info = self.additional_info
         return tasks
 
     def compose(
@@ -250,6 +254,7 @@ class Task(BaseModel):
         content = template.format(
             role_name=role_name,
             content=self.content,
+            additional_info=self.additional_info,
             other_results=sub_tasks_result,
         )
         msg = BaseMessage.make_user_message(
