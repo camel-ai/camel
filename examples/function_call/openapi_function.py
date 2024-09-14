@@ -26,7 +26,6 @@ sys_msg = BaseMessage.make_assistant_message(
 # Set model config
 tools = OpenAPIToolkit().get_tools()
 model_config_dict = ChatGPTConfig(
-    tools=tools,
     temperature=0.0,
 ).as_dict()
 
@@ -40,7 +39,7 @@ model = ModelFactory.create(
 camel_agent = ChatAgent(
     system_message=sys_msg,
     model=model,
-    tools=OpenAPIToolkit().get_tools(),
+    tools=tools,
 )
 camel_agent.reset()
 

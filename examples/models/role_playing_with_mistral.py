@@ -46,7 +46,6 @@ def main(
         *SearchToolkit().get_tools(),
     ]
     assistant_model_config = MistralConfig(
-        tools=tools_list,
         temperature=0.2,
     )
 

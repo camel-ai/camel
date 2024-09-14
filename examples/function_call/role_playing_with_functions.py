@@ -48,7 +48,6 @@ def main(
         *SearchToolkit().get_tools(),
     ]
     assistant_model_config = ChatGPTConfig(
-        tools=tools_list,
         temperature=0.0,
     )
 
