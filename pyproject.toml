@@ -43,7 +43,7 @@ eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 jupyter_client = "^8.6.2"
 ipykernel = "^6.0.0"
-
+pandoc = "*"
 pillow = "^10.2.0"
 
 # model-platforms
@@ -281,10 +281,11 @@ types-requests = "^2"
 [tool.poetry.group.docs]
 optional = true
 [tool.poetry.group.docs.dependencies]
-sphinx = "^6"
+sphinx = "^7"
 sphinx_book_theme = "*"
-recommonmark = "*"
 docutils = "<0.20.0"
+myst-parser = "*"
+nbsphinx = "*"
 
 [tool.ruff]
 line-length = 79

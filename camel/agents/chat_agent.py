@@ -181,6 +181,16 @@ class ChatAgent(BaseAgent):
             tool.get_function_name(): tool.func for tool in all_tools
         }
 
+        # If the user hasn't configured tools in `BaseModelBackend`,
+        # the tools set from `ChatAgent` will be used.
+        # This design simplifies the interface while retaining tool-running
+        # capabilities for `BaseModelBackend`.
+        if all_tools and not self.model_backend.model_config_dict['tools']:
+            tool_schema_list = [
+                tool.get_openai_tool_schema() for tool in all_tools
+            ]
+            self.model_backend.model_config_dict['tools'] = tool_schema_list
+
         self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit

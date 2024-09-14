@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 project = 'CAMEL'
-copyright = '2023, CAMEL-AI.org'
+copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
 release = '0.2.0'
 
@@ -36,16 +36,15 @@ html_favicon = (
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
-}
+source_suffix = ['.rst', '.md']
+
 
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    'recommonmark',
+    'myst_parser',
+    'nbsphinx',
 ]
 
 templates_path = ['_templates']

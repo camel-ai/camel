@@ -1,17 +1,12 @@
-# Working with the `BaseMessage` Class
+# Message
 
-In this tutorial, we will explore the `BaseMessage` class. The topics covered include:
-
-1. Introduction to the `BaseMessage` class.
-2. Creating a `BaseMessage` instance.
-3. Understanding the properties of the `BaseMessage` class.
-4. Using the methods of the `BaseMessage` class.
-
-## Introduction
+## 1. Concept
 
 The `BaseMessage` class is the base class for message objects used in the CAMEL chat system. It is designed to provide a consistent structure for the messages in the system and allow for easy conversion between different message types.
 
-## Creating a `BaseMessage` Instance
+## 2. Get Started
+
+### 2.1 Creating a `BaseMessage` Instance
 
 To create a `BaseMessage` instance, you need to provide the following arguments:
 
@@ -57,7 +52,7 @@ Additionally, the BaseMessage class provides class methods to easily create user
     )
     ```
 
-## Using the Methods of the `BaseMessage` Class
+### 2.2 Using the Methods of the `BaseMessage` Class
 
 The `BaseMessage` class offers several methods:
 
@@ -116,4 +111,5 @@ The `BaseMessage` class offers several methods:
 
 These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
 
+## 3. Conclusion
 In this session, we introduced the `BaseMessage` class and its conversion to different types of messages. These components play essential roles in the CAMEL chat system, facilitating the creation, management, and interpretation of messages with clarity.

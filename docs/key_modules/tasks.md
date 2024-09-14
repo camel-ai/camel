@@ -1,10 +1,11 @@
 # Task
 
+## 1. Concept
 > In the CAMEL framework, a task is a specific assignment that can be delegated to an agent and resolved by that agent. Tasks represent a higher-level concept than prompts and should be managed by other modules such as the Planner and Workforce. There are two key characteristics of a task: 
 > 1. A task can be collaborative, requiring multiple agents to work together. 
 > 2. A task can be decomposed and evolved.
 
-## Task Attributes
+### 1.1 Task Attributes
 
 | Attribute | Type | Description |
 | ----- | ----- | ----- |
@@ -16,7 +17,7 @@
 | subtasks | A list of Task | A list of sub tasks related the original Task. |
 | result | string | The Task result. |
 
-## Task Methods
+### 1.2 Task Methods
 
 | Method | Type | Description |
 | ----- | ----- | ----- |
@@ -35,11 +36,11 @@
 | compose | instance | Compose task result by the sub-tasks. |
 | get_depth | instance | Get task depth while the root depth is 1. |
 
-## Creating a Task
+## 2. Get Started
 
 Creating a task involves defining its goal (content) and id:
 
-### Example of Task definition
+### 2.1 Example of Task definition
 
 ```python
 from camel.tasks import Task
@@ -50,7 +51,7 @@ task = Task(
 )
 ```
 
-### Example of multiple Tasks with a hierarchical structure.
+### 2.2 Example of multiple Tasks with a hierarchical structure.
 
 ```python
 # Creating the root task
@@ -87,7 +88,7 @@ print(root_task.to_string())
     Task 3: Set the table
 ```
 
-## Decomposing and composing a Task
+## 3. Decomposing and composing a Task
 
 Decomposing or composing a task involves defining its responsible agent, prompt template and agent response parser. Here is an example:
 
@@ -132,7 +133,7 @@ task.compose(agent=agent, template=TASK_COMPOSE_PROMPT)
 print(task.result)
 ```
 
-## TaskManager
+## 4. TaskManager
 
 TaskManager is used to manage tasks.
 
@@ -180,5 +181,5 @@ print(evolved_task.to_string())
 >>>Task 0.0: Weng earns $12 an hour for babysitting. Yesterday, she babysat for 1 hour and 45 minutes. If she also received a $5 bonus for exceptional service, how much did she earn in total for that day?
 ```
 
-## Conclusion
+## 5. Conclusion
 We offers a structured approach to task management, enabling efficient delegation and resolution of tasks by agents. With features such as task decomposition, composition, and hierarchical task structures, CAMEL provides the tools necessary to manage complex workflows. Whether handling simple tasks or intricate, multi-level assignments, CAMEL's task management capabilities ensure that tasks are executed effectively and collaboratively, enhancing overall productivity.
