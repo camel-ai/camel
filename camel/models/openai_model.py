@@ -93,6 +93,8 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # o1-preview and o1-mini have Beta limitations 
+        # reference: https://platform.openai.com/docs/guides/reasoning
         if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
             # Remove system message that is not supported in o1 model.
             messages = [msg for msg in messages if msg.get("role") != "system"]
