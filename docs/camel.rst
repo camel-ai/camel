@@ -1,4 +1,4 @@
-Camel Package
+camel package
 =============
 
 Subpackages
@@ -8,20 +8,27 @@ Subpackages
    :maxdepth: 4
 
    camel.agents
-   camel.prompts
+   camel.configs
+   camel.embeddings
+   camel.interpreters
+   camel.loaders
    camel.memories
+   camel.messages
+   camel.models
+   camel.prompts
+   camel.responses
+   camel.retrievers
+   camel.societies
    camel.storages
+   camel.tasks
+   camel.terminators
+   camel.toolkits
+   camel.types
+   camel.utils
+   camel.workforce
 
 Submodules
 ----------
-
-camel.configs module
---------------------
-
-.. automodule:: camel.configs
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 camel.generators module
 -----------------------
@@ -35,30 +42,6 @@ camel.human module
 ------------------
 
 .. automodule:: camel.human
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.messages module
----------------------
-
-.. automodule:: camel.messages
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.types module
--------------------
-
-.. automodule:: camel.types
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.utils module
-------------------
-
-.. automodule:: camel.utils
    :members:
    :undoc-members:
    :show-inheritance:
