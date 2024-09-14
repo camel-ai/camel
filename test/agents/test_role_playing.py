@@ -138,11 +138,10 @@ def test_role_playing_step(
 @pytest.mark.model_backend
 def test_role_playing_with_function():
     tools = MathToolkit().get_tools()
-    assistant_model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=assistant_model_config.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     role_playing = RolePlaying(
