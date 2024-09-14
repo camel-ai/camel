@@ -13,12 +13,13 @@ To build the documentation:
 
 1. [Install CAMEL](https://github.com/camel-ai/camel/blob/master/README.md) from source.
 
-2. Install Sphinx, Sphinx theme, Sphinx autobuild and `myst_parser` by running the following command in your terminal or command prompt:
+2. Install required dependencies running the following command in your terminal or command prompt:
 ```bash
 pip install sphinx
 pip install sphinx_book_theme
 pip install sphinx-autobuild
 pip install myst_parser
+pip install nbsphinx
 ```
 
 3. Build the document and launch the HTML documentation.

@@ -285,6 +285,7 @@ sphinx = "^7"
 sphinx_book_theme = "*"
 docutils = "<0.20.0"
 myst-parser = "*"
+nbsphinx = "*"
 
 [tool.ruff]
 line-length = 79
