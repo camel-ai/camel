@@ -151,7 +151,7 @@ class ChatAgent(BaseAgent):
         external_tools: Optional[List[OpenAIFunction]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
-        self.orig_sys_message: Optional[BaseMessage] = system_message
+        self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
@@ -274,14 +274,11 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        if self.orig_sys_message is not None:
-            content = self.orig_sys_message.content + (
-                "\nRegardless of the input language, "
-                f"you must output text in {output_language}."
-            )
-            self.system_message = self.system_message.create_new_instance(
-                content=content
-            )
+        content = self.orig_sys_message.content + (
+            "\nRegardless of the input language, "
+            f"you must output text in {output_language}."
+        )
+        self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
     def get_info(
@@ -327,13 +324,12 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
+        system_record = MemoryRecord(
+            message=self.system_message,
+            role_at_backend=OpenAIBackendRole.SYSTEM,
+        )
         self.memory.clear()
-        if self.system_message:
-            system_record = MemoryRecord(
-                message=self.system_message,
-                role_at_backend=OpenAIBackendRole.SYSTEM,
-            )
-            self.memory.write_record(system_record)
+        self.memory.write_record(system_record)
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
