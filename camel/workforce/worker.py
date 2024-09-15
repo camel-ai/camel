@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -23,8 +24,10 @@ from camel.workforce.base import BaseNode
 from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import check_if_running
 
+logger = logging.getLogger(__name__)
 
-class WorkerNode(BaseNode, ABC):
+
+class Worker(BaseNode, ABC):
     r"""A worker node that works on tasks. It is the basic unit of task
     processing in the workforce system.
 
@@ -33,14 +36,14 @@ class WorkerNode(BaseNode, ABC):
 
     """
 
-    # TODO: Make RolePlaying and Agent scceed from one parent class, so that
-    #   we don't need two different classes for the worker node.
-
     def __init__(
         self,
         description: str,
     ) -> None:
         super().__init__(description)
+
+    def __repr__(self):
+        return f"Worker node {self.node_id} ({self.description})"
 
     @abstractmethod
     async def _process_task(
@@ -52,6 +55,7 @@ class WorkerNode(BaseNode, ABC):
             'DONE' if the task is successfully processed,
             'FAILED' if the processing fails.
         """
+        pass
 
     async def _get_assigned_task(self) -> Task:
         r"""Get the task assigned to this node from the channel."""
@@ -80,27 +84,26 @@ class WorkerNode(BaseNode, ABC):
             indefinitely.
         """
         self._running = True
-        print(f"{Fore.GREEN}Worker node {self.node_id} started.{Fore.RESET}")
+        logger.info(f"{self} started.")
 
         while True:
-            # get the earliest task assigned to this node
+            # Get the earliest task assigned to this node
             task = await self._get_assigned_task()
             print(
-                f'worker node {self.node_id} get task:',
-                task.id,
-                task.content,
+                f"{Fore.YELLOW}{self} get task {task.id}: {task.content}"
+                f"{Fore.RESET}"
             )
-            # get the Task instance of dependencies
+            # Get the Task instance of dependencies
             dependency_ids = await self._channel.get_dependency_ids()
             task_dependencies = [
                 await self._channel.get_task_by_id(dep_id)
                 for dep_id in dependency_ids
             ]
 
-            # process the task
+            # Process the task
             task_state = await self._process_task(task, task_dependencies)
 
-            # update the result and status of the task
+            # Update the result and status of the task
             task.set_state(task_state)
 
             await self._channel.return_task(task.id)

@@ -381,10 +381,17 @@ def json_to_function_code(json_obj: Dict) -> str:
     docstring_args = []
     return_keys = []
 
+    prop_to_python = {
+        'string': 'str',
+        'number': 'float',
+        'integer': 'int',
+        'boolean': 'bool',
+    }
+
     for prop in required:
         description = properties[prop]['description']
         prop_type = properties[prop]['type']
-        python_type = 'str' if prop_type == 'string' else prop_type
+        python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
         docstring_args.append(
             f"        {prop} ({python_type}): {description}."
