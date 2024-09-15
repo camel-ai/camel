@@ -49,7 +49,6 @@ class Firecrawl:
         self,
         url: str,
         params: Optional[Dict[str, Any]] = None,
-        wait_until_done: bool = True,
         **kwargs: Any,
     ) -> Any:
         r"""Crawl a URL and all accessible subpages. Customize the crawl by
@@ -61,11 +60,11 @@ class Firecrawl:
             params (Optional[Dict[str, Any]]): Additional parameters for the
                 crawl request. Defaults to `None`.
             **kwargs (Any): Additional keyword arguments, such as
-                `poll_interval`, `idempotency_key`, etc.
+                `poll_interval`, `idempotency_key`.
 
         Returns:
-            Any: The list content of the URL if `wait_until_done` is True;
-                otherwise, a string job ID.
+            Any: The crawl job ID or the crawl results if waiting until 
+                completion.
 
         Raises:
             RuntimeError: If the crawling process fails.
@@ -159,7 +158,6 @@ class Firecrawl:
         self,
         url: str,
         output_schema: Optional[BaseModel] = None,
-        prompt: Optional[str] = None,
     ) -> Dict:
         r"""Use LLM to extract structured data from given URL.
 
@@ -169,8 +167,6 @@ class Firecrawl:
                 that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
-            prompt (Optional[str]): Prompt to let llm chooses the structure of 
-                the data.
 
         Returns:
             Dict: The content of the URL.
@@ -184,36 +180,13 @@ class Firecrawl:
                 {
                     'formats': ['extract'],
                     'extract': {
-                        'schema': output_schema.model_json_schema() if output_schema else {},
-                        "prompt": str(prompt),
+                        'schema': output_schema.model_json_schema()
                     },
                 },
             )
             return data.get("extract", {})
         except Exception as e:
             raise RuntimeError(f"Failed to perform structured scrape: {e}")
-
-    def tidy_scrape(self, url: str) -> str:
-        r"""Only return the main content of the page, excluding headers,
-        navigation bars, footers, etc. in Markdown format.
-
-        Args:
-            url (str): The URL to read.
-
-        Returns:
-            str: The markdown content of the URL.
-
-        Raises:
-            RuntimeError: If the scrape process fails.
-        """
-
-        try:
-            scrape_result = self.app.scrape_url(
-                url, {'onlyMainContent': True}
-            )
-            return scrape_result.get("markdown", "")
-        except Exception as e:
-            raise RuntimeError(f"Failed to perform tidy scrape: {e}")
 
     def map_site(
         self, url: str, params: Optional[Dict[str, Any]] = None
