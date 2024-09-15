@@ -62,3 +62,16 @@ html_theme_options = {
         "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
     }
 }
+
+nbsphinx_execute = 'never'
+nbsphinx_allow_errors = True
+nbsphinx_prolog = r"""
+.. raw:: html
+
+    <style>
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        display: none;
+    }
+    </style>
+"""
