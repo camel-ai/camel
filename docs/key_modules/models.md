@@ -8,17 +8,41 @@ The model is the brain of the intelligent agent, responsible for processing all 
 
 The following table lists currently supported model platforms by CAMEL.
 
-| Model Platform | Representative Model| Multi-modality |
+| Model Platform | Available Models| Multi-modality |
 | ----- | ----- | ----- |
 | OpenAI | gpt-4o | Y |
+| OpenAI | gpt-4o-mini | Y |
+| OpenAI | o1-preview | N |
+| OpenAI | o1-mini | N |
+| OpenAI | gpt-4-turbo | Y |
+| OpenAI | gpt-4 | Y |
+| OpenAI | gpt-3.5-turbo | N |
 | Azure OpenAI | gpt-4o | Y |
+| Azure OpenAI | gpt-4-turbo | Y |
+| Azure OpenAI | gpt-4 | Y |
+| Azure OpenAI | gpt-3.5-turbo | Y |
 | Mistral AI | mistral-large-2 | N |
+| Mistral AI | open-mistral-nemo | N |
+| Mistral AI | codestral | N |
+| Mistral AI | open-mistral-7b | N |
+| Mistral AI | open-mixtral-8x7b | N |
+| Mistral AI | open-mixtral-8x22b | N |
+| Mistral AI | open-codestral-mamba | N |
 | Anthropic | claude-3-5-sonnet-20240620 | Y |
+| Anthropic | claude-3-haiku-20240307 | Y |
+| Anthropic | claude-3-sonnet-20240229 | Y |
+| Anthropic | claude-3-opus-20240229 | Y |
+| Anthropic | claude-2.0 | N |
 | Gemini | gemini-1.5-pro | Y |
+| Gemini | ggemini-1.5-flash | Y |
 | ZhipuAI | glm-4v | Y |
+| ZhipuAI | glm-4 | N |
+| ZhipuAI | glm-3-turbo | N |
 | Reka | reka-core | Y |
+| Reka | reka-flash | Y |
+| Reka | reka-edge | Y |
 | Nividia | nemotron-4-340b-reward | N |
-| SambaNova| https://sambaverse.sambanova.ai/models | ----- |
+| SambaNova| https://community.sambanova.ai/t/supported-models/193 | ----- |
 | Groq | https://console.groq.com/docs/models | ----- |
 | Ollama | https://ollama.com/library | ----- |
 | vLLM | https://docs.vllm.ai/en/latest/models/supported_models.html | ----- |
