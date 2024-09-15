@@ -60,8 +60,6 @@ class Firecrawl:
             url (str): The URL to crawl.
             params (Optional[Dict[str, Any]]): Additional parameters for the
                 crawl request. Defaults to `None`.
-            wait_until_done (bool): Whether to wait until the crawl job is
-                completed. Defaults to `True`.
             **kwargs (Any): Additional keyword arguments, such as
                 `poll_interval`, `idempotency_key`, etc.
 
@@ -78,13 +76,8 @@ class Firecrawl:
                 url=url,
                 params=params,
                 **kwargs,
-                wait_until_done=wait_until_done,
             )
-            return (
-                crawl_response
-                if wait_until_done
-                else crawl_response.get("jobId")
-            )
+            return crawl_response
         except Exception as e:
             raise RuntimeError(f"Failed to crawl the URL: {e}")
 
@@ -103,7 +96,9 @@ class Firecrawl:
         """
 
         try:
-            crawl_result = self.app.crawl_url(url=url)
+            crawl_result = self.app.crawl_url(url,
+                    {'formats': ['markdown']},
+                )
             if not isinstance(crawl_result, list):
                 raise ValueError("Unexpected response format")
             markdown_contents = [
@@ -160,15 +155,22 @@ class Firecrawl:
         except Exception as e:
             raise RuntimeError(f"Failed to scrape the URL: {e}")
 
-    def structured_scrape(self, url: str, output_schema: BaseModel) -> Dict:
+    def structured_scrape(
+        self,
+        url: str,
+        output_schema: Optional[BaseModel] = None,
+        prompt: Optional[str] = None,
+    ) -> Dict:
         r"""Use LLM to extract structured data from given URL.
 
         Args:
             url (str): The URL to read.
-            output_schema (BaseModel): A pydantic model
+            output_schema (Optional[BaseModel]): A pydantic model
                 that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
+            prompt (Optional[str]): Prompt to let llm chooses the structure of 
+                the data.
 
         Returns:
             Dict: The content of the URL.
@@ -180,16 +182,14 @@ class Firecrawl:
             data = self.app.scrape_url(
                 url,
                 {
-                    'extractorOptions': {
-                        "mode": "llm-extraction",
-                        "extractionPrompt": "Based on the information on "
-                        "the page, extract the information from the schema.",
-                        'extractionSchema': output_schema.model_json_schema(),
+                    'formats': ['extract'],
+                    'extract': {
+                        'schema': output_schema.model_json_schema() if output_schema else {},
+                        "prompt": str(prompt),
                     },
-                    'pageOptions': {'onlyMainContent': True},
                 },
             )
-            return data.get("llm_extraction", {})
+            return data.get("extract", {})
         except Exception as e:
             raise RuntimeError(f"Failed to perform structured scrape: {e}")
 
@@ -209,7 +209,7 @@ class Firecrawl:
 
         try:
             scrape_result = self.app.scrape_url(
-                url, {'scrapeOptions': {'onlyMainContent': True}}
+                url, {'onlyMainContent': True}
             )
             return scrape_result.get("markdown", "")
         except Exception as e:
