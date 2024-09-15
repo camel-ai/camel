@@ -83,7 +83,6 @@ class TaskChannel:
         self._task_dict: Dict[str, Packet] = {}
 
     async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
-        await self.get_channel_debug_info()
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
