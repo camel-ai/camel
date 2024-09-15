@@ -18,7 +18,7 @@ from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks import Task
-from camel.toolkits import SEARCH_FUNCS
+from camel.toolkits import OpenAIFunction, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
 
@@ -74,15 +74,16 @@ def main():
         """  # noqa: E501
     )
 
-    researcher_model_config_dict = ChatGPTConfig(
-        temperature=0.0,
-        tools=SEARCH_FUNCS,
-    )
+    search_toolkit = SearchToolkit()
+    search_tools = [
+        OpenAIFunction(search_toolkit.search_google),
+        OpenAIFunction(search_toolkit.search_duckduckgo),
+    ]
 
     researcher_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=researcher_model_config_dict.as_dict(),
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     researcher_agent = ChatAgent(
@@ -93,7 +94,7 @@ def main():
             "latest innovations and trends.",
         ),
         model=researcher_model,
-        tools=SEARCH_FUNCS,
+        tools=search_tools,
     )
 
     vc_persona = (
@@ -224,9 +225,9 @@ def main():
     task = Task(
         content="Evaluate the hackathon project. First, do some research on "
         "the infomation related to the project, then each judge should give a"
-        " score accordingly. Finally, summarize and list the "
-        "opinions from each judge, along with the score, separately, and "
-        "also calculate the total score and give a final result.",
+        " score accordingly. Finally, list the opinions from each judge while"
+        " preserving the judge's unique identity, along with the score and"
+        " judge name, and also give a final summary of the opinions.",
         additional_info=proj_content,
         id="0",
     )

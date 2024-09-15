@@ -87,9 +87,6 @@ class SingleAgentWorker(Worker):
 
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
-        # for func_record in response.info['tool_calls']:
-        #     print(func_record)
-
         result_dict = ast.literal_eval(response.msg.content)
         task_result = TaskResult(**result_dict)
 

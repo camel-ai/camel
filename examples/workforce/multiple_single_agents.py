@@ -17,21 +17,28 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
-from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
+from camel.toolkits import (
+    WEATHER_FUNCS,
+    GoogleMapsToolkit,
+    OpenAIFunction,
+    SearchToolkit,
+)
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
 
 
 def main():
+    search_toolkit = SearchToolkit()
+    search_tools = [
+        OpenAIFunction(search_toolkit.search_google),
+        OpenAIFunction(search_toolkit.search_duckduckgo),
+    ]
+
     # Set up web searching agent
-    search_agent_model_conf_dict = ChatGPTConfig(
-        tools=[*SEARCH_FUNCS, *WEATHER_FUNCS],
-        temperature=0.0,
-    ).as_dict()
     search_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=search_agent_model_conf_dict,
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -39,18 +46,14 @@ def main():
             content="You can search online for information",
         ),
         model=search_agent_model,
-        tools=[*SEARCH_FUNCS, *WEATHER_FUNCS],
+        tools=[*search_tools, *WEATHER_FUNCS],
     )
 
     # Set up tour guide agent
-    tour_guide_agent_model_conf_dict = ChatGPTConfig(
-        tools=[*GoogleMapsToolkit().get_tools()],
-        temperature=0.0,
-    ).as_dict()
     tour_guide_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=tour_guide_agent_model_conf_dict,
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     tour_guide_agent = ChatAgent(
@@ -59,7 +62,7 @@ def main():
             content="You are a tour guide",
         ),
         model=tour_guide_agent_model,
-        tools=[*GoogleMapsToolkit().get_tools()],
+        tools=GoogleMapsToolkit().get_tools(),
     )
 
     # Set up traveler agent
