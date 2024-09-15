@@ -16,10 +16,9 @@ from string import Template
 from typing import Any, Dict, List, Optional
 
 from nebula3.data.ResultSet import ResultSet
-from nebula3.gclient.net.base import BaseExecutor
-from nebula3.gclient.net.SessionPool import SessionPool
+from nebula3.gclient.net.base import BaseExecutor  # type:ignore[import]
+from nebula3.gclient.net.SessionPool import SessionPool  # type:ignore[import]
 
-# TODO: SORT IMPORTS
 from camel.storages.graph_storages import (
     BaseGraphStorage,
     ChunkNode,
@@ -176,7 +175,14 @@ class NebulaGraphBkb(BaseGraphStorage):
             ]
 
         # cypher string like: map{`follow`: "degree", `serve`: "start_year,end_year"}
-        self._edge_prop_map_cypher_string = "map{{0}}".format()
+        self._edge_prop_map_cypher_string = "map{{{0}}}".format(
+            ", ".join(
+                [
+                    f"`{edge_type}`: \"{','.join(rel_prop_names)}\""
+                    for edge_type, rel_prop_names in self._edge_prop_map.items()
+                ]
+            )
+        )
 
         # build tag_prop_names map
         self._tag_prop_names_map = {}

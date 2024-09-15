@@ -114,29 +114,8 @@ def remove_empty_values(input_dict):
     Remove entries with empty values from the dictionary.
 
     Parameters:
-    input_dict (dict): The dictionary from which empty values need to be removed.
-
-    Returns:
-    dict: A new dictionary with all empty values removed.
-    """
-    # Create a new dictionary excluding empty values
-    return {key: value for key, value in input_dict.items() if value}
-list.append(_cast_value(item))
-        casted_value.set_lVal(NList(values=byte_list))
-    elif isinstance(value, dict):
-        # TODO: add support for NMap
-        raise TypeError("Unsupported type: dict")
-    else:
-        raise TypeError(f"Unsupported type: {type(value)}")
-    return casted_value
-
-
-def remove_empty_values(input_dict):
-    """
-    Remove entries with empty values from the dictionary.
-
-    Parameters:
-    input_dict (dict): The dictionary from which empty values need to be removed.
+    input_dict (dict): The dictionary from which empty values need to be
+    removed.
 
     Returns:
     dict: A new dictionary with all empty values removed.
