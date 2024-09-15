@@ -57,13 +57,13 @@ def sub(a: int, b: int) -> int:
 ```
 
 
-Add these 2 customized functions as CAMEL's OpenAIFunction list
+Add these 2 customized functions as CAMEL's FunctionTool list
 ```python
-from camel.functions.openai_function import OpenAIFunction
+from camel.functions.openai_function import FunctionTool
 
 
-MATH_FUNCS: list[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [add, sub]
+MATH_FUNCS: list[FunctionTool] = [
+    FunctionTool(func) for func in [add, sub]
 ]
 ```
 

@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from openai import Stream
 
     from camel.terminators import ResponseTerminator
-    from camel.toolkits import OpenAIFunction
+    from camel.toolkits import FunctionTool
 
 
 logger = logging.getLogger(__name__)
@@ -128,8 +128,8 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        tools (List[OpenAIFunction], optional): List of available
-            :obj:`OpenAIFunction`. (default: :obj:`None`)
+        tools (List[FunctionTool], optional): List of available
+            :obj:`FunctionTool`. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
@@ -143,7 +143,7 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
-        tools: Optional[List[OpenAIFunction]] = None,
+        tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
         self.orig_sys_message: BaseMessage = system_message
@@ -357,7 +357,7 @@ class ChatAgent(BaseAgent):
             # If the user provides the output_schema parameter and does not
             # specify the use of tools, then in the model config of the
             # chatgent, call the model specified by tools with
-            # return_json_response of OpenAIFunction format, and return a
+            # return_json_response of FunctionTool format, and return a
             # structured response with the user-specified output schema.
             if output_schema is not None and len(self.func_dict) == 0:
                 self._add_output_schema_to_tool_list(output_schema)
@@ -393,7 +393,7 @@ class ChatAgent(BaseAgent):
                 # generated response as the input for the structure,
                 # simultaneously calling the return_json_response function.
                 # Call the model again with return_json_response in the format
-                # of OpenAIFunction as the last tool, returning a structured
+                # of FunctionTool as the last tool, returning a structured
                 # response with the user-specified output schema.
                 if output_schema is not None and all(
                     record.func_name
@@ -645,7 +645,7 @@ class ChatAgent(BaseAgent):
             output_schema (BaseModel): The schema representing the expected
                 output structure.
         """
-        from camel.toolkits import OpenAIFunction
+        from camel.toolkits import FunctionTool
 
         # step 1 extract the output_schema info as json.
         schema_json = get_pydantic_object_schema(output_schema)
@@ -657,7 +657,7 @@ class ChatAgent(BaseAgent):
         func_callable = func_string_to_callable(func_str)
 
         # step 4 add return_json_func into tools
-        func = OpenAIFunction(func_callable)
+        func = FunctionTool(func_callable)
         tools = [func]
         self.func_dict[func.get_function_name()] = func.func
         if self.model_type.is_openai:

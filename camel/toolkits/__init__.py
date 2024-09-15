@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 # ruff: noqa: I001
 from .openai_function import (
-    OpenAIFunction,
+    FunctionTool,
     get_openai_function_schema,
     get_openai_tool_schema,
 )
@@ -35,7 +35,7 @@ from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 
 __all__ = [
-    'OpenAIFunction',
+    'FunctionTool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     'openapi_security_config',

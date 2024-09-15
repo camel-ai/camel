@@ -19,7 +19,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import GithubToolkit, OpenAIFunction
+from camel.toolkits import FunctionTool, GithubToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
@@ -60,7 +60,7 @@ def write_weekly_pr_summary(repo_name, model=None):
         """,
     )
     assistant_model_config_dict = ChatGPTConfig(
-        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)], temperature=0.0
+        tools=[FunctionTool(toolkit.retrieve_pull_requests)], temperature=0.0
     ).as_dict()
 
     assistant_model = ModelFactory.create(
@@ -72,7 +72,7 @@ def write_weekly_pr_summary(repo_name, model=None):
     agent = ChatAgent(
         assistant_sys_msg,
         model=assistant_model,
-        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)],
+        tools=[FunctionTool(toolkit.retrieve_pull_requests)],
     )
     agent.reset()
 

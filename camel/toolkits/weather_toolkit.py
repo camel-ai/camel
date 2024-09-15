@@ -15,7 +15,7 @@ import os
 from typing import List, Literal
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.openai_function import FunctionTool
 
 
 class WeatherToolkit(BaseToolkit):
@@ -157,17 +157,17 @@ class WeatherToolkit(BaseToolkit):
             )
             return error_message
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.get_weather_data),
+            FunctionTool(self.get_weather_data),
         ]
 
 
-WEATHER_FUNCS: List[OpenAIFunction] = WeatherToolkit().get_tools()
+WEATHER_FUNCS: List[FunctionTool] = WeatherToolkit().get_tools()

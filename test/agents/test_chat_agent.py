@@ -32,7 +32,7 @@ from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
-from camel.toolkits import MATH_FUNCS, OpenAIFunction
+from camel.toolkits import MATH_FUNCS, FunctionTool
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
@@ -533,7 +533,7 @@ async def test_tool_calling_async():
         await asyncio.sleep(second)
         return second
 
-    model_config = ChatGPTConfig(tools=[OpenAIFunction(async_sleep)])
+    model_config = ChatGPTConfig(tools=[FunctionTool(async_sleep)])
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -544,7 +544,7 @@ async def test_tool_calling_async():
     agent = ChatAgent(
         system_message=system_message,
         model=model,
-        tools=[OpenAIFunction(async_sleep)],
+        tools=[FunctionTool(async_sleep)],
     )
 
     assert len(agent.func_dict) == 1
