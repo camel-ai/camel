@@ -13,9 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-
-from typing import Any, Dict, List, Optional, Union, Tuple, Set, Protocol, runtime_checkable
+from abc import abstractmethod
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -79,6 +85,7 @@ class GraphElement(BaseModel):
             raise ImportError("""The 'unstructured' package is required to use
                               the 'source' attribute.""")
 
+
 class LabelledNode(BaseModel):
     """An entity in a graph."""
 
@@ -99,6 +106,7 @@ class LabelledNode(BaseModel):
         """Get the node id."""
         ...
 
+
 class EntityNode(LabelledNode):
     """An entity in a graph."""
 
@@ -117,14 +125,18 @@ class EntityNode(LabelledNode):
         """Get the node id."""
         return self.name.replace('"', " ")
 
+
 class ChunkNode(LabelledNode):
     """A text chunk in a graph, to support vector search on node"""
 
     text: str = Field(description="The text content of the chunk.")
     id_: Optional[str] = Field(
-        default=None, description="The id of the node. Defaults to a hash of the text."
+        default=None,
+        description="The id of the node. Defaults to a hash of the text.",
     )
-    label: str = Field(default="text_chunk", description="The label of the node.")
+    label: str = Field(
+        default="text_chunk", description="The label of the node."
+    )
     properties: Dict[str, Any] = Field(default_factory=dict)
 
     def __str__(self) -> str:
@@ -135,6 +147,7 @@ class ChunkNode(LabelledNode):
     def id(self) -> str:
         """Get the node id."""
         return str(hash(self.text)) if self.id_ is None else self.id_
+
 
 class Relation(BaseModel):
     """A relation connecting two entities in a graph."""
@@ -157,4 +170,3 @@ class Relation(BaseModel):
 
 
 Triplet = Tuple[LabelledNode, Relation, LabelledNode]
-

@@ -1,7 +1,22 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import datetime
-from typing import Dict, Any, Optional, Tuple
-from nebula3.common.ttypes import Value, NList, Date, Time, DateTime
-from nebula3.gclient.net.base import BaseExecutor
+from typing import Any, Dict, Tuple
+
+from nebula3.common.ttypes import Date, DateTime, NList, Time, Value
+
+
 def url_scheme_parse(url) -> Tuple[str, int]:
     """
     Parse the URL scheme and host from the URL.
@@ -14,7 +29,9 @@ def url_scheme_parse(url) -> Tuple[str, int]:
     """
     scheme, address = url.split("://")
     if scheme not in ["nebula", "nebula3"]:
-        raise ValueError(f"Invalid scheme {scheme}. Expected 'nebula' or 'nebula3'.")
+        raise ValueError(
+            f"Invalid scheme {scheme}. Expected 'nebula' or 'nebula3'."
+        )
     host, port = address.split(":")
     if not host:
         raise ValueError("Invalid host. Expected a hostname or IP address.")
@@ -23,6 +40,7 @@ def url_scheme_parse(url) -> Tuple[str, int]:
     if not port.isdigit():
         raise ValueError("Invalid port. Expected a number.")
     return host, int(port)
+
 
 def build_param_map(params: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -37,6 +55,7 @@ def build_param_map(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             byte_params[k] = _cast_value(v)
     return byte_params
+
 
 def _cast_value(value: Any) -> Value:
     """Cast the value to nebula Value type.
@@ -88,6 +107,29 @@ def _cast_value(value: Any) -> Value:
     else:
         raise TypeError(f"Unsupported type: {type(value)}")
     return casted_value
+
+
+def remove_empty_values(input_dict):
+    """
+    Remove entries with empty values from the dictionary.
+
+    Parameters:
+    input_dict (dict): The dictionary from which empty values need to be removed.
+
+    Returns:
+    dict: A new dictionary with all empty values removed.
+    """
+    # Create a new dictionary excluding empty values
+    return {key: value for key, value in input_dict.items() if value}
+list.append(_cast_value(item))
+        casted_value.set_lVal(NList(values=byte_list))
+    elif isinstance(value, dict):
+        # TODO: add support for NMap
+        raise TypeError("Unsupported type: dict")
+    else:
+        raise TypeError(f"Unsupported type: {type(value)}")
+    return casted_value
+
 
 def remove_empty_values(input_dict):
     """

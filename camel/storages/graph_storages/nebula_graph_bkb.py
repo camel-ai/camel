@@ -12,17 +12,28 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
-from typing import Any, Dict, List, Optional
-#TODO: SORT IMPORTS
-from camel.storages.graph_storages import BaseGraphStorage, LabelledNode, ChunkNode, EntityNode, Triplet, Relation
-from camel.storages.graph_storages.utils import url_scheme_parse, build_param_map, remove_empty_values
-from camel.utils import dependencies_required
 from string import Template
+from typing import Any, Dict, List, Optional
 
-from nebula3.common import ttypes
-from nebula3.gclient.net.SessionPool import SessionPool
-from nebula3.gclient.net.base import BaseExecutor
 from nebula3.data.ResultSet import ResultSet
+from nebula3.gclient.net.base import BaseExecutor
+from nebula3.gclient.net.SessionPool import SessionPool
+
+# TODO: SORT IMPORTS
+from camel.storages.graph_storages import (
+    BaseGraphStorage,
+    ChunkNode,
+    EntityNode,
+    LabelledNode,
+    Relation,
+    Triplet,
+)
+from camel.storages.graph_storages.utils import (
+    build_param_map,
+    remove_empty_values,
+    url_scheme_parse,
+)
+from camel.utils import dependencies_required
 
 BASE_ENTITY_LABEL: str = "entity"
 QUOTE = '"'
@@ -84,18 +95,18 @@ class NebulaGraphBkb(BaseGraphStorage):
 
     @dependencies_required('nebula3')
     def __init__(
-            self,
-            space: str,
-            client: Optional[BaseExecutor] = None,
-            username: str = "root",
-            password: str = "nebula",
-            url: str = "nebula://localhost:9669",
-            overwrite: bool = False,
-            edge_types=None,
-            rel_prop_names=None,
-            tags=None,
-            tag_prop_names=None,
-            include_vid: bool = True,
+        self,
+        space: str,
+        client: Optional[BaseExecutor] = None,
+        username: str = "root",
+        password: str = "nebula",
+        url: str = "nebula://localhost:9669",
+        overwrite: bool = False,
+        edge_types=None,
+        rel_prop_names=None,
+        tags=None,
+        tag_prop_names=None,
+        include_vid: bool = True,
     ) -> None:
         """Initialize NebulaGraph graph store.
 
@@ -135,7 +146,9 @@ class NebulaGraphBkb(BaseGraphStorage):
                 "should be provided, yet with same length."
             )
         if len(self._edge_types) == 0:
-            raise ValueError("Length of `edge_types` should be greater than 0.")
+            raise ValueError(
+                "Length of `edge_types` should be greater than 0."
+            )
 
         if tag_prop_names is None or len(self._tags) != len(tag_prop_names):
             raise ValueError(
@@ -149,24 +162,21 @@ class NebulaGraphBkb(BaseGraphStorage):
         # for building query
         self._edge_dot_rel = [
             f"`{edge_type}`.`{rel_prop_name}`"
-            for edge_type, rel_prop_name in zip(self._edge_types, self._rel_prop_names)
+            for edge_type, rel_prop_name in zip(
+                self._edge_types, self._rel_prop_names
+            )
         ]
 
         self._edge_prop_map = {}
-        for edge_type, rel_prop_name in zip(self._edge_types, self._rel_prop_names):
+        for edge_type, rel_prop_name in zip(
+            self._edge_types, self._rel_prop_names
+        ):
             self._edge_prop_map[edge_type] = [
                 prop.strip() for prop in rel_prop_name.split(",")
             ]
 
         # cypher string like: map{`follow`: "degree", `serve`: "start_year,end_year"}
-        self._edge_prop_map_cypher_string = (
-            "map{{0}}".format(", ".join(
-                [
-                    f"`{edge_type}`: \"{','.join(rel_prop_names)}\""
-                    for edge_type, rel_prop_names in self._edge_prop_map.items()
-                ]
-            ))
-        )
+        self._edge_prop_map_cypher_string = "map{{0}}".format()
 
         # build tag_prop_names map
         self._tag_prop_names_map = {}
@@ -192,7 +202,7 @@ class NebulaGraphBkb(BaseGraphStorage):
         except Exception as e:
             raise ValueError(
                 f"Could not refresh schema. Please ensure that the NebulaGraph "
-                f"is properly configured and accessible. Error: {str(e)}"
+                f"is properly configured and accessible. Error: {e!s}"
             )
 
     @property
@@ -228,9 +238,9 @@ class NebulaGraphBkb(BaseGraphStorage):
         return self.structured_schema
 
     def get(
-            self,
-            properties: Optional[dict] = None,
-            ids: Optional[List[str]] = None,
+        self,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
         if not (properties or ids):
@@ -239,9 +249,9 @@ class NebulaGraphBkb(BaseGraphStorage):
             return self._get(properties, ids)
 
     def _get(
-            self,
-            properties: Optional[dict] = None,
-            ids: Optional[List[str]] = None,
+        self,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
         cypher_statement = "MATCH (e:Node__) "
@@ -250,8 +260,8 @@ class NebulaGraphBkb(BaseGraphStorage):
         params = {}
 
         if ids:
-            cypher_statement += f"id(e) in $all_id "
-            params[f"all_id"] = ids
+            cypher_statement += "id(e) in $all_id "
+            params["all_id"] = ids
         if properties:
             for i, prop in enumerate(properties):
                 cypher_statement += f"e.Prop__.`{prop}` == $property_{i} AND "
@@ -298,13 +308,15 @@ class NebulaGraphBkb(BaseGraphStorage):
         return self._get()
 
     def get_triplets(
-            self,
-            entity_names: Optional[List[str]] = None,
-            relation_names: Optional[List[str]] = None,
-            properties: Optional[dict] = None,
-            ids: Optional[List[str]] = None,
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
-        cypher_statement = "MATCH (e:`Entity__`)-[r:`Relation__`]->(t:`Entity__`) "
+        cypher_statement = (
+            "MATCH (e:`Entity__`)-[r:`Relation__`]->(t:`Entity__`) "
+        )
         if not (entity_names or relation_names or properties or ids):
             return []
         else:
@@ -313,17 +325,17 @@ class NebulaGraphBkb(BaseGraphStorage):
 
         if entity_names:
             cypher_statement += (
-                f"e.Entity__.name in $entities OR t.Entity__.name in $entities"
+                "e.Entity__.name in $entities OR t.Entity__.name in $entities"
             )
-            params[f"entities"] = entity_names
+            params["entities"] = entity_names
         if relation_names:
-            cypher_statement += f"r.label in $relations "
-            params[f"relations"] = relation_names
+            cypher_statement += "r.label in $relations "
+            params["relations"] = relation_names
         if properties:
             pass
         if ids:
-            cypher_statement += f"id(e) in $all_id OR id(t) in $all_id"
-            params[f"all_id"] = ids
+            cypher_statement += "id(e) in $all_id OR id(t) in $all_id"
+            params["all_id"] = ids
         if properties:
             v0_matching = ""
             v1_matching = ""
@@ -340,7 +352,7 @@ class NebulaGraphBkb(BaseGraphStorage):
                 f"({v0_matching}) OR ({edge_matching}) OR ({v1_matching})"
             )
 
-        return_statement = f"""
+        return_statement = """
         RETURN id(e) AS source_id, e.Node__.label AS source_type,
                 properties(e.Props__) AS source_properties,
                 r.label AS type,
@@ -377,11 +389,11 @@ class NebulaGraphBkb(BaseGraphStorage):
         return triples
 
     def get_rel_map(
-            self,
-            graph_nodes: List[LabelledNode],
-            depth: int = 2,
-            limit: int = 30,
-            ignore_rels: Optional[List[str]] = None,
+        self,
+        graph_nodes: List[LabelledNode],
+        depth: int = 2,
+        limit: int = 30,
+        ignore_rels: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get depth-aware rel map."""
         triples = []
@@ -446,12 +458,14 @@ class NebulaGraphBkb(BaseGraphStorage):
         return keys, values_k, values_params
 
     def structured_query(
-            self, query: str, param_map: Optional[Dict[str, Any]] = None
+        self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
         if not param_map:
             result = self._client.execute(query)
         else:
-            result = self._client.execute_parameter(query, build_param_map(param_map))
+            result = self._client.execute_parameter(
+                query, build_param_map(param_map)
+            )
         if not result.is_succeeded():
             raise Exception(
                 "NebulaGraph query failed:",
@@ -502,7 +516,8 @@ class NebulaGraphBkb(BaseGraphStorage):
             self.structured_query(
                 insert_query,
                 param_map={
-                    f"chunk_{i}": chunk.text for i, chunk in enumerate(chunk_list)
+                    f"chunk_{i}": chunk.text
+                    for i, chunk in enumerate(chunk_list)
                 },
             )
 
@@ -522,7 +537,8 @@ class NebulaGraphBkb(BaseGraphStorage):
             self.structured_query(
                 insert_query,
                 param_map={
-                    f"entity_{i}": entity.name for i, entity in enumerate(entity_list)
+                    f"entity_{i}": entity.name
+                    for i, entity in enumerate(entity_list)
                 },
             )
 
@@ -538,9 +554,7 @@ class NebulaGraphBkb(BaseGraphStorage):
                 stmt,
                 param_map=values_params,
             )
-            stmt = (
-                f'INSERT VERTEX Node__ (label) VALUES "{entity.id}":("{entity.label}");'
-            )
+            stmt = f'INSERT VERTEX Node__ (label) VALUES "{entity.id}":("{entity.label}");'
             self.structured_query(stmt)
 
     def _execute(self, query: str) -> ResultSet:
@@ -602,7 +616,7 @@ class NebulaGraphBkb(BaseGraphStorage):
 
             # build relationships types
             sample_edge = self._execute(
-                 rel_query_sample_edge.substitute(edge_type=edge_type_name)
+                rel_query_sample_edge.substitute(edge_type=edge_type_name)
             ).column_values("sample_edge")
             if len(sample_edge) == 0:
                 continue
@@ -625,8 +639,12 @@ class NebulaGraphBkb(BaseGraphStorage):
         )
         # Update the structured schema
         self.structured_schema = {
-            "node_props": {tag["tag"]: tag["properties"] for tag in tags_schema},
-            "edge_props": {edge["edge"]: edge["properties"] for edge in edge_types_schema},
+            "node_props": {
+                tag["tag"]: tag["properties"] for tag in tags_schema
+            },
+            "edge_props": {
+                edge["edge"]: edge["properties"] for edge in edge_types_schema
+            },
             "relationships": relationships,
         }
 
@@ -667,7 +685,7 @@ class NebulaGraphBkb(BaseGraphStorage):
         logger.debug(f"upsert_triplet()\nDML query: {dml_query}")
         result = self._execute(dml_query)
         assert (
-                result and result.is_succeeded()
+            result and result.is_succeeded()
         ), f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
 
     def delete_triplet(self, subj: str, rel: str, obj: str) -> None:
@@ -702,7 +720,7 @@ class NebulaGraphBkb(BaseGraphStorage):
         logger.debug(f"delete()\nDML query: {dml_query}")
         result = self._execute(dml_query)
         assert (
-                result and result.is_succeeded()
+            result and result.is_succeeded()
         ), f"Failed to delete triplet: {subj} {rel} {obj}, query: {dml_query}"
         # Get isolated vertices to be deleted
         # MATCH (s) WHERE id(s) IN ["player700"] AND NOT (s)-[]-()
@@ -726,5 +744,5 @@ class NebulaGraphBkb(BaseGraphStorage):
 
         result = self._execute(dml_query)
         assert (
-                result and result.is_succeeded()
+            result and result.is_succeeded()
         ), f"Failed to delete isolated vertices: {isolated}, query: {dml_query}"
