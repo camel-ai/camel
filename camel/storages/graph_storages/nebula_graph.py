@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from nebula3.Config import Config
-from nebula3.gclient.net import ConnectionPool, Session
+from nebula3.Config import Config  # type:ignore[import]
+from nebula3.gclient.net import ConnectionPool, Session  # type:ignore[import]
 
 from camel.storages.graph_storages.base import BaseGraphStorage
 from camel.storages.graph_storages.graph_element import (
@@ -67,7 +67,9 @@ class NebulaGraph(BaseGraphStorage):
         session.execute(f"use {self.space};")
         return session
 
-    def query(self, query: str) -> List[Dict[str, Any]]:
+    def query(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Query the graph store with statement and parameters.
 
         Args:
@@ -82,7 +84,7 @@ class NebulaGraph(BaseGraphStorage):
         try:
             # Get the session
             session = self._get_session()
-            result_set = session.execute(query)
+            result_set = session.execute(query, params)
             return result_set
 
         except Exception as e:
