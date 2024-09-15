@@ -14,7 +14,13 @@
 import datetime
 from typing import Any, Dict, Tuple
 
-from nebula3.common.ttypes import Date, DateTime, NList, Time, Value
+from nebula3.common.ttypes import (  # type: ignore[import]
+    Date,
+    DateTime,
+    NList,
+    Time,
+    Value,
+)
 
 
 def url_scheme_parse(url) -> Tuple[str, int]:

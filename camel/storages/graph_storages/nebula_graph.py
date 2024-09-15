@@ -84,7 +84,7 @@ class NebulaGraph(BaseGraphStorage):
         try:
             # Get the session
             session = self._get_session()
-            result_set = session.execute(query, params)
+            result_set = session.execute(query)
             return result_set
 
         except Exception as e:
