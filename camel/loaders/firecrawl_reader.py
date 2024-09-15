@@ -209,7 +209,7 @@ class Firecrawl:
 
         try:
             scrape_result = self.app.scrape_url(
-                url, {'pageOptions': {'onlyMainContent': True}}
+                url, {'scrapeOptions': {'onlyMainContent': True}}
             )
             return scrape_result.get("markdown", "")
         except Exception as e:
