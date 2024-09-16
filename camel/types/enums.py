@@ -81,6 +81,11 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
 
+    # CogVideo Model
+    COGVIDEO = "cogvideo"
+    COGVIDEOX_5B = "cogvideox-5b"
+    COGVIDEOX_2B = "cogvideox-2b"
+
     @property
     def value_for_tiktoken(self) -> str:
         return (
@@ -191,6 +196,19 @@ class ModelType(Enum):
     @property
     def is_gemini(self) -> bool:
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+
+    @property
+    def is_cogvideo(self) -> bool:
+        r"""Returns whether this type of models is CogVideo-released model.
+
+        Returns:
+            bool: Whether this type of models is CogVideo.
+        """
+        return self in {
+            ModelType.COGVIDEO,
+            ModelType.COGVIDEOX_2B,
+            ModelType.COGVIDEOX_5B
+        }
 
     @property
     def token_limit(self) -> int:
@@ -361,6 +379,7 @@ class TaskType(Enum):
     MULTI_CONDITION_IMAGE_CRAFT = "multi_condition_image_craft"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"
+    VIDEO_GENERATION = "video_generation"
 
 
 class VectorDistance(Enum):
@@ -461,6 +480,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
     INTERNLM = "internlm"
+    COGVIDEO = "cogvideo"
 
     @property
     def is_openai(self) -> bool:
@@ -532,6 +552,11 @@ class ModelPlatformType(Enum):
     def is_internlm(self) -> bool:
         r"""Returns whether this platform is InternLM."""
         return self in [ModelPlatformType.INTERNLM]
+    
+    @property
+    def is_cogvideo(self) -> bool:
+        r"""Returns whether this platform is CogVideo"""
+        return self in [ModelPlatformType.COGVIDEO]
 
 
 class AudioModelType(Enum):
