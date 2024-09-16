@@ -20,6 +20,7 @@ from nebula3.gclient.net import ConnectionPool, Session  # type:ignore[import]
 from camel.storages.graph_storages.base import BaseGraphStorage
 from camel.storages.graph_storages.graph_element import (
     GraphElement,
+    Node,
 )
 from camel.utils.commons import dependencies_required
 
@@ -170,7 +171,7 @@ class NebulaGraph(BaseGraphStorage):
         nodes = self.extract_nodes(graph_elements)
         for node in nodes:
             self.ensure_tag_exists(node['type'])
-            self.add_node(node['id'], node['type'])
+            self.add_node(node['id'], node['type'], node['properties'])
 
         relationships = self.extract_relationships(graph_elements)
         for rel in relationships:
@@ -225,12 +226,33 @@ class NebulaGraph(BaseGraphStorage):
         else:
             print(f'execute SHOW TAGS failed: {result.error_msg()}')
 
-    def add_node(self, node_id, tag_name):
-        # Add node
-        insert_stmt = f'INSERT VERTEX `{tag_name}`() VALUES "{node_id}":()'
-        res = self.query(insert_stmt)
-        if not res.is_succeeded():
-            print(f'add node `{node_id}` failed: {res.error_msg()}')
+    def add_node(self, node_id, tag_name, properties):
+        """
+        Adds a node with the specified tag and properties.
+
+        :param node_id: The ID of the node to be added.
+        :param tag_name: The tag name of the node.
+        :param properties: A dictionary of properties and their values.
+        """
+        prop_names = ", ".join(properties.keys())
+        prop_values = ", ".join(
+            f'"{v}"' if isinstance(v, str) else str(v)
+            for v in properties.values()
+        )
+
+        insert_stmt = f'INSERT VERTEX {tag_name}({prop_names}) VALUES "{node_id}":({prop_values})'
+
+        # print(f'add node `{node_id}` with tag `{tag_name}`')
+        # print(insert_stmt)
+
+        try:
+            res = self.query(insert_stmt)
+            if not res.is_succeeded():
+                print(f'Add node `{node_id}` failed: {res.error_msg()}')
+            # else:
+            #     print(f'Node `{node_id}` added successfully.')
+        except Exception as e:
+            print(f'Error while adding node `{node_id}`: {e}')
 
     def extract_nodes(self, graph_elements):
         nodes = []
@@ -239,7 +261,13 @@ class NebulaGraph(BaseGraphStorage):
             for node in graph_element.nodes:
                 node_key = (node.id, node.type)
                 if node_key not in seen_nodes:
-                    nodes.append({'id': node.id, 'type': node.type})
+                    nodes.append(
+                        {
+                            'id': node.id,
+                            'type': node.type,
+                            'properties': node.properties,
+                        }
+                    )
                     seen_nodes.add(node_key)
         return nodes
 
@@ -323,11 +351,9 @@ class NebulaGraph(BaseGraphStorage):
 
     def add_triplet(
         self,
-        subj: str,
-        obj: str,
+        subj: Node,  # type: ignore[override]
+        obj: Node,  # type: ignore[override]
         rel: str,
-        subj_tag: str = "",
-        obj_tag: str = "",
     ) -> None:
         r"""Adds a relationship (triplet) between two entities in the Nebula
         Graph database.
@@ -339,12 +365,14 @@ class NebulaGraph(BaseGraphStorage):
             subj_tag (str): The tag type for the subject entity.
             obj_tag (str): The tag type for the object entity.
         """
-        self.ensure_tag_exists(subj_tag)
-        self.ensure_tag_exists(obj_tag)
-        self.add_node(subj, subj_tag)
-        self.add_node(obj, obj_tag)
+        self.ensure_tag_exists(subj.type)
+        self.ensure_tag_exists(obj.type)
+        self.add_node(subj.id, subj.type, subj.properties)
+        self.add_node(obj.id, obj.type, obj.properties)
 
-        insert_stmt = f'INSERT EDGE `{rel}`() VALUES "{subj}"->"{obj}":();'
+        insert_stmt = (
+            f'INSERT EDGE `{rel}`() VALUES "{subj.id}"->"{obj.id}":();'
+        )
         self.query(insert_stmt)
 
     def delete_triplet(self, subj: str, obj: str, rel: str) -> None:
