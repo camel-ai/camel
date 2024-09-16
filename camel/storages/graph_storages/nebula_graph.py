@@ -14,6 +14,7 @@
 from typing import Any, Dict, List, Optional
 
 from nebula3.Config import Config  # type:ignore[import]
+from nebula3.data.ResultSet import ResultSet  # type:ignore[import]
 from nebula3.gclient.net import ConnectionPool, Session  # type:ignore[import]
 
 from camel.storages.graph_storages.base import BaseGraphStorage
@@ -67,18 +68,25 @@ class NebulaGraph(BaseGraphStorage):
         session.execute(f"use {self.space};")
         return session
 
+    @property
+    def get_client(self) -> Any:
+        r"""Get the underlying graph storage client."""
+        return self
+
     def query(
         self, query: str, params: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> ResultSet:
         """Query the graph store with statement and parameters.
 
         Args:
             query (str): The query to be executed.
-            params (Optional[Dict[str, Any]]): A dictionary of parameters to be used in the query.
+            params (Optional[Dict[str, Any]]): A dictionary of parameters to
+            be used in the query.
                                                 Defaults to `None`.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries representing rows of results.
+            List[Dict[str, Any]]: A list of dictionaries representing rows of
+            results.
         """
         session = None
         try:
@@ -179,7 +187,8 @@ class NebulaGraph(BaseGraphStorage):
         res = self.query(insert_stmt)
         if not res.is_succeeded():
             print(
-                f'create  relationship `{src_id}` -> `{dst_id}` failed: {res.error_msg()}'
+                f'create relationship `{src_id}` -> `{dst_id}`'
+                + f'failed: {res.error_msg()}'
             )
 
     def ensure_edge_type_exists(self, edge_type):
@@ -195,9 +204,7 @@ class NebulaGraph(BaseGraphStorage):
                 create_edge_stmt = f'CREATE EDGE `{edge_type}`()'
                 res = self.query(create_edge_stmt)
                 if not res.is_succeeded():
-                    print(
-                        f'create Edge Type `{edge_type}` failed: {res.error_msg()}'
-                    )
+                    print(f'create Edge failed: {res.error_msg()}')
         else:
             print(f'execute SHOW EDGES failed: {result.error_msg()}')
 
@@ -313,3 +320,63 @@ class NebulaGraph(BaseGraphStorage):
     def get_constraints(self):
         # Nebula currently does not support constraint queries, return empty
         return []
+
+    def add_triplet(
+        self,
+        subj: str,
+        obj: str,
+        rel: str,
+        subj_tag: str = "",
+        obj_tag: str = "",
+    ) -> None:
+        r"""Adds a relationship (triplet) between two entities in the Nebula
+        Graph database.
+
+        Args:
+            subj (str): The identifier for the subject entity.
+            obj (str): The identifier for the object entity.
+            rel (str): The relationship between the subject and object.
+            subj_tag (str): The tag type for the subject entity.
+            obj_tag (str): The tag type for the object entity.
+        """
+        self.ensure_tag_exists(subj_tag)
+        self.ensure_tag_exists(obj_tag)
+        self.add_node(subj, subj_tag)
+        self.add_node(obj, obj_tag)
+
+        insert_stmt = f'INSERT EDGE `{rel}`() VALUES "{subj}"->"{obj}":();'
+        self.query(insert_stmt)
+
+    def delete_triplet(self, subj: str, obj: str, rel: str) -> None:
+        r"""Deletes a specific triplet (relationship between two entities)
+        from the Nebula Graph database.
+
+        Args:
+            subj (str): The identifier for the subject entity.
+            obj (str): The identifier for the object entity.
+            rel (str): The relationship between the subject and object.
+        """
+        delete_edge_query = f'DELETE EDGE `{rel}` "{subj}"->"{obj}";'
+        self.query(delete_edge_query)
+
+        if not self._check_edges(subj):
+            self._delete_entity(subj)
+        if not self._check_edges(obj):
+            self._delete_entity(obj)
+
+    def _delete_entity(self, entity_id: str) -> None:
+        """Delete an entity (vertex) from the graph."""
+        delete_vertex_query = f'DELETE VERTEX "{entity_id}";'
+        self.query(delete_vertex_query)
+
+    def _check_edges(self, entity_id: str) -> bool:
+        """Check if an entity has any remaining edges."""
+        query = (
+            f'GO FROM "{entity_id}" OVER * YIELD DISTINCT 1 AS edge_exists;'
+        )
+        res = self.query(query)
+
+        if not res.is_succeeded():
+            return False
+
+        return res.row_size() > 0
