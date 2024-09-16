@@ -55,6 +55,9 @@ nebula_graph.ensure_tag_exists("team")
 nebula_graph.ensure_edge_type_exists("BelongsTo")
 
 # Step 4: Check if the node 'Lionel Messi' exists
+query = 'DELETE VERTEX "player_lm"'
+nebula_graph.query(query)
+
 if check_node_exists(nebula_graph, "Lionel Messi"):
     print("Node 'Lionel Messi' already exists.")
 else:
@@ -62,12 +65,12 @@ else:
 
 # Step 5: Create and add graph elements for 'Lionel Messi'
 player_node = Node(
-    id="Lionel Messi",
+    id="player_lm",
     type="player",
     properties={"name": "Lionel Messi", "age": 36},
 )
 team_node = Node(
-    id="Paris Saint-Germain",
+    id="Paris_Saint-Germain",
     type="team",
     properties={"name": "Paris Saint-Germain"},
 )
@@ -111,15 +114,8 @@ else:
 print(
     "Attempting to delete Lionel Messi -> Paris Saint-Germain relationship..."
 )
-try:
-    nebula_graph.delete_triplet(
-        "Lionel Messi", "Paris Saint-Germain", "BelongsTo"
-    )
-    print(
-        "Triplet 'Lionel Messi' -> 'Paris Saint-Germain' (BelongsTo) deleted successfully."
-    )
-except Exception as e:
-    print(f"Failed to delete triplet: {e}")
+
+nebula_graph.delete_triplet("player_lm", "Paris_Saint-Germain", "BelongsTo")
 
 # Step 8: Re-check node and relationship existence after deletion
 
@@ -168,6 +164,15 @@ else:
 
 """
 ===============================================================================
-
+Node 'Lionel Messi' does not exist. Proceeding to add it...
+Adding Lionel Messi -> Paris Saint-Germain relationship...
+Node 'Lionel Messi' added successfully.
+Failed to add relationship 'Lionel Messi -> Paris Saint-Germain'.
+Attempting to delete Lionel Messi -> Paris Saint-Germain relationship...
+Node 'Lionel Messi' deleted successfully.
+Relationship 'Lionel Messi -> Paris Saint-Germain' (BelongsTo) deleted successfully.
+Adding Lionel Messi -> Barcelona relationship...
+Node 'Lionel Messi' added successfully.
+Failed to add relationship 'Lionel Messi -> Barcelona'.
  ==============================================================================
 """

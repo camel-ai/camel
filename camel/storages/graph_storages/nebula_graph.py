@@ -399,9 +399,7 @@ class NebulaGraph(BaseGraphStorage):
 
     def _check_edges(self, entity_id: str) -> bool:
         """Check if an entity has any remaining edges."""
-        query = (
-            f'GO FROM "{entity_id}" OVER * YIELD DISTINCT 1 AS edge_exists;'
-        )
+        query = f'DELETE VERTEX "{entity_id}"'
         res = self.query(query)
 
         if not res.is_succeeded():
