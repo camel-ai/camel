@@ -38,9 +38,9 @@ def main():
     )
 
     neo4j_storage = Neo4jGraph(
-        url="neo4j+s://374fb81c.databases.neo4j.io:7687",
+        url="neo4j+s://",
         username="neo4j",
-        password="aBCrAgg-ZbEzzk9UhR8203KS_kNrydVwnwtNVCQ3ii4",
+        password="",
     )
 
     memory = GraphDBMemory(
