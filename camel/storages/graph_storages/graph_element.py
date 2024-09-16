@@ -13,7 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List, Union
+from abc import abstractmethod
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -76,3 +84,89 @@ class GraphElement(BaseModel):
         if Element is None:
             raise ImportError("""The 'unstructured' package is required to use
                               the 'source' attribute.""")
+
+
+class LabelledNode(BaseModel):
+    """An entity in a graph."""
+
+    label: str = Field(default="node", description="The label of the node.")
+    embedding: Optional[List[float]] = Field(
+        default=None, description="The embeddings of the node."
+    )
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+    @abstractmethod
+    def __str__(self) -> str:
+        """Return the string representation of the node."""
+        ...
+
+    @property
+    @abstractmethod
+    def id(self) -> str:
+        """Get the node id."""
+        ...
+
+
+class EntityNode(LabelledNode):
+    """An entity in a graph."""
+
+    name: str = Field(description="The name of the entity.")
+    label: str = Field(default="entity", description="The label of the node.")
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+    def __str__(self) -> str:
+        """Return the string representation of the node."""
+        if self.properties:
+            return f"{self.name} ({self.properties})"
+        return self.name
+
+    @property
+    def id(self) -> str:
+        """Get the node id."""
+        return self.name.replace('"', " ")
+
+
+class ChunkNode(LabelledNode):
+    """A text chunk in a graph, to support vector search on node"""
+
+    text: str = Field(description="The text content of the chunk.")
+    id_: Optional[str] = Field(
+        default=None,
+        description="The id of the node. Defaults to a hash of the text.",
+    )
+    label: str = Field(
+        default="text_chunk", description="The label of the node."
+    )
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+    def __str__(self) -> str:
+        """Return the string representation of the node."""
+        return self.text
+
+    @property
+    def id(self) -> str:
+        """Get the node id."""
+        return str(hash(self.text)) if self.id_ is None else self.id_
+
+
+class Relation(BaseModel):
+    """A relation connecting two entities in a graph."""
+
+    label: str
+    source_id: str
+    target_id: str
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+    def __str__(self) -> str:
+        """Return the string representation of the relation."""
+        if self.properties:
+            return f"{self.label} ({self.properties})"
+        return self.label
+
+    @property
+    def id(self) -> str:
+        """Get the relation id."""
+        return self.label
+
+
+Triplet = Tuple[LabelledNode, Relation, LabelledNode]
