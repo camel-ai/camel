@@ -13,10 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+import requests
+import httpx
+from typing import Any, Dict, Optional
 
 from camel.types import ModelType
-from camel.utils import BaseTokenCounter
 
 class CogVideoModel:
     r"""API in a unified BaseModelBackend interface."""
@@ -25,20 +26,55 @@ class CogVideoModel:
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        endpoint: Optional[str] = "http://localhost:8000/generate",
-        timeout: Optional[int] = 30,
+        url: Optional[str] = "http://localhost:8000/generate",
         use_gpu: bool = True,
     ) -> None:
-        r"""Constructor for LiteLLM backend
+        r"""Constructor for CogVideo backend
 
         Reference: https://github.com/THUDM/CogVideo
 
         Args:
             model_type (ModelType): Model for which backend is created such as CogVideoX-2B, CogVideoX-5B, etc.
             model_config_dict (Dict[str, Any]): A dictionary of parameters for the model configuration.
-            url (Optional[str]): The url to the mdoel service. (default: :obj; 'None')
+            url (Optional[str]): The URL to the model service. (default: 'http://localhost:8000/generate')
+            use_gpu (bool): Whether to use GPU for inference. (default: True)
         """
-        pass
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
+        self._url = url or os.environ.get("COGVIDEO_API_BASE_URL")
+        if not self._url:
+            raise ValueError("COGVIDEO_API_BASE_URL should be set.")
+        self._use_gpu = use_gpu
 
-    def run(prompt: str = ""):
-        pass
+    async def run(self, prompt: str, **kwargs: Any) -> str:
+        r"""Run the CogVideo model to generate a video from a text prompt.
+
+        Args:
+            prompt (str): The text prompt to generate the video.
+            **kwargs (Any): Additional arguments for the model request.
+
+        Returns:
+            str: The path or URL to the generated video.
+
+        Raises:
+            Exception: If there is an error in the request or response.
+        """
+        data = {
+            "prompt": prompt,
+            "model_type": self.model_type,
+            "use_gpu": self._use_gpu,
+            **self.model_config_dict,
+            **kwargs
+        }
+
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(self._url, json=data)
+                response.raise_for_status()
+                video_url = response.json().get("video_url")
+                if not video_url:
+                    raise ValueError("No video URL returned by the model service.")
+                return video_url
+            
+            except requests.exceptions.RequestException as e:
+                raise Exception("Error during CogVideo API call") from e

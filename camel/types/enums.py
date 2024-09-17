@@ -83,8 +83,8 @@ class ModelType(Enum):
 
     # CogVideo Model
     COGVIDEO = "cogvideo"
-    COGVIDEOX_5B = "cogvideox-5b"
     COGVIDEOX_2B = "cogvideox-2b"
+    COGVIDEOX_5B = "cogvideox-5b"
 
     @property
     def value_for_tiktoken(self) -> str:

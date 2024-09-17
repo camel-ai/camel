@@ -30,6 +30,7 @@ from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .zhipuai_model import ZhipuAIModel
+from .cogvideo_model import CogVideoModel
 
 __all__ = [
     'BaseModelBackend',
@@ -51,4 +52,5 @@ __all__ = [
     'InternLMXComposerModel',
     'OpenAICompatibilityModel',
     'TogetherAIModel',
+    'CogVideoModel'
 ]
