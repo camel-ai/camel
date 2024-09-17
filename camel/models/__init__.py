@@ -14,6 +14,7 @@
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
+from .cogvideo_model import CogVideoModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .interlm_xcomposer_model import InternLMXComposerModel
@@ -30,7 +31,6 @@ from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .zhipuai_model import ZhipuAIModel
-from .cogvideo_model import CogVideoModel
 
 __all__ = [
     'BaseModelBackend',
@@ -52,5 +52,5 @@ __all__ = [
     'InternLMXComposerModel',
     'OpenAICompatibilityModel',
     'TogetherAIModel',
-    'CogVideoModel'
+    'CogVideoModel',
 ]

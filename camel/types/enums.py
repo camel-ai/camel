@@ -207,7 +207,7 @@ class ModelType(Enum):
         return self in {
             ModelType.COGVIDEO,
             ModelType.COGVIDEOX_2B,
-            ModelType.COGVIDEOX_5B
+            ModelType.COGVIDEOX_5B,
         }
 
     @property
@@ -552,7 +552,7 @@ class ModelPlatformType(Enum):
     def is_internlm(self) -> bool:
         r"""Returns whether this platform is InternLM."""
         return self in [ModelPlatformType.INTERNLM]
-    
+
     @property
     def is_cogvideo(self) -> bool:
         r"""Returns whether this platform is CogVideo"""

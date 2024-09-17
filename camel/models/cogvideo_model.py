@@ -13,14 +13,16 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-import requests
-import httpx
 from typing import Any, Dict, Optional
+
+import httpx
+import requests
 
 from camel.types import ModelType
 
+
 class CogVideoModel:
-    r"""API in a unified BaseModelBackend interface."""
+    r"""CogVideo model API backend."""
 
     def __init__(
         self,
@@ -34,9 +36,12 @@ class CogVideoModel:
         Reference: https://github.com/THUDM/CogVideo
 
         Args:
-            model_type (ModelType): Model for which backend is created such as CogVideoX-2B, CogVideoX-5B, etc.
-            model_config_dict (Dict[str, Any]): A dictionary of parameters for the model configuration.
-            url (Optional[str]): The URL to the model service. (default: 'http://localhost:8000/generate')
+            model_type (ModelType): Model for which backend is created
+                such as CogVideoX-2B, CogVideoX-5B, etc.
+            model_config_dict (Dict[str, Any]): A dictionary of parameters
+                for the model configuration.
+            url (Optional[str]): The URL to the model service.
+                (default: 'http://localhost:8000/generate')
             use_gpu (bool): Whether to use GPU for inference. (default: True)
         """
         self.model_type = model_type
@@ -64,8 +69,11 @@ class CogVideoModel:
             "model_type": self.model_type,
             "use_gpu": self._use_gpu,
             **self.model_config_dict,
-            **kwargs
+            **kwargs,
         }
+
+        if not isinstance(self._url, str):
+            raise ValueError("URL should be a string.")
 
         async with httpx.AsyncClient() as client:
             try:
@@ -73,8 +81,10 @@ class CogVideoModel:
                 response.raise_for_status()
                 video_url = response.json().get("video_url")
                 if not video_url:
-                    raise ValueError("No video URL returned by the model service.")
+                    raise ValueError(
+                        "No video URL returned by the model service."
+                    )
                 return video_url
-            
+
             except requests.exceptions.RequestException as e:
                 raise Exception("Error during CogVideo API call") from e

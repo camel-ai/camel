@@ -17,14 +17,12 @@ import asyncio
 from camel.models import CogVideoModel
 from camel.types import ModelType
 
+
 async def main():
     # Initialize the CogVideo model
     model = CogVideoModel(
         model_type=ModelType.COGVIDEOX_5B,
-        model_config_dict={
-            "video_length": 4,
-            "frame_rate": 8
-        }
+        model_config_dict={"video_length": 4, "frame_rate": 8},
     )
 
     # Define the text prompt fro video generation
@@ -37,8 +35,10 @@ async def main():
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
 if __name__ == "__main__":
-    # Note: To run this code, you need to have a CogVideo server running locally
-    # or remotely that provides endpoints for this model. Ensure that the server
-    # is accessible at the specified URL in the CogVideoModel class.
+    # Note: To run this code, you need to have a CogVideo server running
+    # locally or remotely that provides endpoints for this model.
+    # Ensure that the server is accessible at the specified URL
+    # in the CogVideoModel class.
     asyncio.run(main())
