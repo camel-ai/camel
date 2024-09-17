@@ -193,8 +193,14 @@ def get_model_encoding(value_for_tiktoken: str):
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
-        print("Model not found. Using cl100k_base encoding.")
-        encoding = tiktoken.get_encoding("cl100k_base")
+        if value_for_tiktoken in [
+            ModelType.O1_MINI.value,
+            ModelType.O1_PREVIEW.value,
+        ]:
+            encoding = tiktoken.get_encoding("o200k_base")
+        else:
+            print("Model not found. Using cl100k_base encoding.")
+            encoding = tiktoken.get_encoding("cl100k_base")
     return encoding
 
 
@@ -287,6 +293,9 @@ class OpenAITokenCounter(BaseTokenCounter):
             self.tokens_per_name = -1
         elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
             self.tokens_per_message = 3
+            self.tokens_per_name = 1
+        elif "o1" in self.model:
+            self.tokens_per_message = 2
             self.tokens_per_name = 1
         else:
             # flake8: noqa :E501

@@ -20,6 +20,7 @@ import subprocess
 import time
 import zipfile
 from functools import wraps
+from http import HTTPStatus
 from typing import (
     Any,
     Callable,
@@ -28,6 +29,7 @@ from typing import (
     Mapping,
     Optional,
     Set,
+    Type,
     TypeVar,
     cast,
 )
@@ -328,12 +330,12 @@ def get_pydantic_major_version() -> int:
         return 0
 
 
-def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
+def get_pydantic_object_schema(pydantic_params: Type[BaseModel]) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
 
     Args:
-        pydantic_params (BaseModel): The Pydantic model to retrieve the schema
-            for.
+        pydantic_params (Type[BaseModel]): The Pydantic model class to retrieve
+            the schema for.
 
     Returns:
         dict: The JSON schema of the Pydantic model.
@@ -353,7 +355,7 @@ def func_string_to_callable(code: str):
     """
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
-    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT)
+    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT)
     return func
 
 
@@ -379,10 +381,17 @@ def json_to_function_code(json_obj: Dict) -> str:
     docstring_args = []
     return_keys = []
 
+    prop_to_python = {
+        'string': 'str',
+        'number': 'float',
+        'integer': 'int',
+        'boolean': 'bool',
+    }
+
     for prop in required:
         description = properties[prop]['description']
         prop_type = properties[prop]['type']
-        python_type = 'str' if prop_type == 'string' else prop_type
+        python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
         docstring_args.append(
             f"        {prop} ({python_type}): {description}."
@@ -396,7 +405,7 @@ def json_to_function_code(json_obj: Dict) -> str:
 
     # function template
     function_code = f'''
-def {Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT}({args_str}):
+def {Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT}({args_str}):
     r"""Return response with a specified json format.
     Args:
 {docstring_args_str}
@@ -547,3 +556,24 @@ def track_agent(*args, **kwargs):
         return f
 
     return noop
+
+
+def handle_http_error(response: requests.Response) -> str:
+    r"""Handles the HTTP errors based on the status code of the response.
+
+    Args:
+        response (requests.Response): The HTTP response from the API call.
+
+    Returns:
+        str: The error type, based on the status code.
+    """
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
+        return "Unauthorized. Check your access token."
+    elif response.status_code == HTTPStatus.FORBIDDEN:
+        return "Forbidden. You do not have permission to perform this action."
+    elif response.status_code == HTTPStatus.NOT_FOUND:
+        return "Not Found. The resource could not be located."
+    elif response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+        return "Too Many Requests. You have hit the rate limit."
+    else:
+        return "HTTP Error"

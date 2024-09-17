@@ -25,14 +25,12 @@ from camel.storages import (
     VectorDBQuery,
     VectorRecord,
 )
+from camel.utils import Constants
 
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
-
-DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class VectorRetriever(BaseRetriever):
@@ -76,6 +74,7 @@ class VectorRetriever(BaseRetriever):
         self,
         content: Union[str, Element],
         chunk_type: str = "chunk_by_title",
+        max_characters: int = 500,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
@@ -87,6 +86,8 @@ class VectorRetriever(BaseRetriever):
                 string content or Element object.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
+            max_characters (int): Max number of characters in each chunk.
+                Defaults to `500`.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         if isinstance(content, Element):
@@ -101,7 +102,9 @@ class VectorRetriever(BaseRetriever):
                 elements = [self.uio.create_element_from_text(text=content)]
         if elements:
             chunks = self.uio.chunk_elements(
-                chunk_type=chunk_type, elements=elements
+                chunk_type=chunk_type,
+                elements=elements,
+                max_characters=max_characters,
             )
         if not elements:
             warnings.warn(
@@ -142,8 +145,8 @@ class VectorRetriever(BaseRetriever):
     def query(
         self,
         query: str,
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
     ) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
@@ -154,7 +157,8 @@ class VectorRetriever(BaseRetriever):
                 for filtering results. Defaults to
                 `DEFAULT_SIMILARITY_THRESHOLD`.
             top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to 1.
+                retriever. Must be a positive integer. Defaults to
+                `DEFAULT_TOP_K_RESULTS`.
 
         Returns:
             List[Dict[str, Any]]: Concatenated list of the query results.

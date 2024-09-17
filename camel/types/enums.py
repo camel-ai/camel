@@ -29,6 +29,8 @@ class ModelType(Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    O1_PREVIEW = "o1-preview"
+    O1_MINI = "o1-mini"
 
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
@@ -72,7 +74,7 @@ class ModelType(Enum):
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
-    # Mistral AI Model
+    # Mistral AI models
     MISTRAL_LARGE = "mistral-large-latest"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_CODESTRAL = "codestral-latest"
@@ -86,13 +88,20 @@ class ModelType(Enum):
     COGVIDEOX_2B = "cogvideox-2b"
     COGVIDEOX_5B = "cogvideox-5b"
 
+    # Reka models
+    REKA_CORE = "reka-core"
+    REKA_FLASH = "reka-flash"
+    REKA_EDGE = "reka-edge"
+
     @property
     def value_for_tiktoken(self) -> str:
-        return (
-            self.value
-            if self is not ModelType.STUB and not isinstance(self, str)
-            else "gpt-3.5-turbo"
-        )
+        if self.is_openai:
+            return self.value
+        return "gpt-4o-mini"
+
+    @property
+    def supports_tool_calling(self) -> bool:
+        return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
     def is_openai(self) -> bool:
@@ -103,6 +112,8 @@ class ModelType(Enum):
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
         }
 
     @property
@@ -195,6 +206,11 @@ class ModelType(Enum):
 
     @property
     def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is Gemini model.
+
+        Returns:
+            bool: Whether this type of models is gemini.
+        """
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
 
     @property
@@ -208,6 +224,17 @@ class ModelType(Enum):
             ModelType.COGVIDEO,
             ModelType.COGVIDEOX_2B,
             ModelType.COGVIDEOX_5B,
+
+    def is_reka(self) -> bool:
+        r"""Returns whether this type of models is Reka model.
+
+        Returns:
+            bool: Whether this type of models is Reka.
+        """
+        return self in {
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
         }
 
     @property
@@ -226,6 +253,9 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
         }:
             return 4_096
         elif self in {
@@ -260,6 +290,8 @@ class ModelType(Enum):
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
             ModelType.GPT_4_TURBO,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.QWEN_2,
@@ -434,20 +466,6 @@ class OpenAIVisionDetailType(Enum):
     HIGH = "high"
 
 
-class MultiModalModelType(Enum, metaclass=OpenAIImageTypeMeta):
-    r"""Image types supported by the multimodal model."""
-
-    # Align with OpenAI's specifications
-    # https://platform.openai.com/docs/guides/vision
-    PNG = "png"
-    JPEG = "jpeg"
-    JPG = "jpg"
-    WEBP = "webp"
-    GIF = "gif"
-
-    MP4 = "mp4"
-
-
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
@@ -477,10 +495,12 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
+    REKA = "reka"
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
     INTERNLM = "internlm"
     COGVIDEO = "cogvideo"
+    SAMBA = "samba-nova"
 
     @property
     def is_openai(self) -> bool:
@@ -549,9 +569,14 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.GEMINI
 
     @property
-    def is_internlm(self) -> bool:
-        r"""Returns whether this platform is InternLM."""
-        return self in [ModelPlatformType.INTERNLM]
+    def is_reka(self) -> bool:
+        r"""Returns whether this platform is Reka."""
+        return self is ModelPlatformType.REKA
+
+    @property
+    def is_samba(self) -> bool:
+        r"""Returns whether this platform is Samba Nova."""
+        return self is ModelPlatformType.SAMBA
 
     @property
     def is_cogvideo(self) -> bool:
