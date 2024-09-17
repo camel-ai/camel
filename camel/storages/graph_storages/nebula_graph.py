@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
@@ -31,8 +30,8 @@ from camel.storages.graph_storages.graph_element import (
 from camel.utils.commons import dependencies_required
 
 
-@dependencies_required('nebula3')
 class NebulaGraph(BaseGraphStorage):
+    @dependencies_required('nebula3')
     def __init__(
         self, host, username, password, space, port=9669, timeout=10000
     ):
@@ -295,7 +294,7 @@ class NebulaGraph(BaseGraphStorage):
         tag_name: str,
         properties: Optional[Dict[str, Any]] = None,
     ) -> None:
-        r"""Add a node with the specified tag and properties.
+        """Add a node with the specified tag and properties.
 
         Args:
             node_id (str): The ID of the node.
@@ -303,23 +302,43 @@ class NebulaGraph(BaseGraphStorage):
             properties (Optional[Dict[str, Any]]): A dictionary of node
                 properties.
         """
-
-        if properties:
-            prop_names = ", ".join(properties.keys())
-            prop_values = ", ".join(
-                f'"{v}"' if isinstance(v, str) else str(v)
-                for v in properties.values()
-            )
-            insert_stmt = f'INSERT VERTEX [IF NOT EXISTS] {tag_name}({prop_names}) VALUES "{node_id}":({prop_values})'
-        else:
-            insert_stmt = f'INSERT VERTEX [IF NOT EXISTS] {tag_name}() VALUES "{node_id}":()'
-
         try:
+            if properties:
+                # Prepare property names, values, and definitions
+                prop_names = ", ".join(properties.keys())
+                prop_values = ", ".join(
+                    f'"{v}"' if isinstance(v, str) else str(v)
+                    for v in properties.values()
+                )
+                prop_definitions = ", ".join(
+                    f"{prop} string" for prop in properties.keys()
+                )
+
+                # Create tag if it doesn't exist
+                create_prop_stmt = f'ALTER TAG IF NOT EXISTS {tag_name} ADD ({prop_definitions})'
+                self.query(create_prop_stmt)
+
+                # Insert node with properties
+                insert_stmt = (
+                    f'INSERT VERTEX IF NOT EXISTS {tag_name}({prop_names}) '
+                    f'VALUES "{node_id}":({prop_values})'
+                )
+            else:
+                # Insert node without properties
+                insert_stmt = (
+                    f'INSERT VERTEX IF NOT EXISTS {tag_name}() '
+                    f'VALUES "{node_id}":()'
+                )
+
+            # Execute the query and handle response
             res = self.query(insert_stmt)
             if not res.is_succeeded():
-                print(f'Add node `{node_id}` failed: {res.error_msg()}')
+                raise RuntimeError(
+                    f"Add node `{node_id}` failed: {res.error_msg()}"
+                )
+
         except Exception as e:
-            print(f'Error while adding node `{node_id}`: {e}')
+            print(f"Error while adding node `{node_id}`: {e}")
 
     def extract_nodes(self, graph_elements: List[Any]) -> List[Dict]:
         r"""Extracts unique nodes from graph elements.
@@ -374,7 +393,6 @@ class NebulaGraph(BaseGraphStorage):
         self.structured_schema = self.get_structured_schema
 
     @property
-    @abstractmethod
     def get_structured_schema(self) -> Dict[str, Any]:
         r"""Generates a structured schema consisting of node and relationship
         properties, relationships, and metadata.
