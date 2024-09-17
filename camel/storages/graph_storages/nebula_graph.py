@@ -31,6 +31,7 @@ from camel.storages.graph_storages.graph_element import (
 from camel.utils.commons import dependencies_required
 
 
+@dependencies_required('nebula3')
 class NebulaGraph(BaseGraphStorage):
     def __init__(
         self, host, username, password, space, port=9669, timeout=10000
@@ -55,6 +56,8 @@ class NebulaGraph(BaseGraphStorage):
         self.port = port
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
+        self.connection_pool = self._init_connection_pool()
+        self.session = self._get_session()
 
     def _init_connection_pool(self) -> "ConnectionPool":
         r"""Initialize the connection pool.
@@ -81,7 +84,6 @@ class NebulaGraph(BaseGraphStorage):
 
         return connection_pool
 
-    @dependencies_required('nebula3')
     def _get_session(self) -> "Session":
         r"""Get a session from the connection pool.
 
@@ -91,7 +93,7 @@ class NebulaGraph(BaseGraphStorage):
         Raises:
             Exception: If session creation or space usage fails.
         """
-        session = self._init_connection_pool().get_session(
+        session = self.connection_pool.get_session(
             self.username, self.password
         )
         if not session:
@@ -121,11 +123,9 @@ class NebulaGraph(BaseGraphStorage):
         Raises:
             ValueError: If the query execution fails.
         """
-        session = None
         try:
             # Get the session
-            session = self._get_session()
-            result_set = session.execute(query)
+            result_set = self.session.execute(query)
             return result_set
 
         except Exception as e:
@@ -383,15 +383,8 @@ class NebulaGraph(BaseGraphStorage):
             Dict[str, Any]: A dictionary representing the structured schema.
         """
         _, node_properties = self.get_node_properties()
-
-        # 2. Get relationship properties and types
         _, rel_properties = self.get_relationship_properties()
-
-        # 3. Get relationship types
         relationships = self.get_relationship_types()
-
-        # 4. Get metadata (e.g., constraints and indexes)
-        constraint = self.get_constraints()
         index = self.get_indexes()
 
         # Build structured_schema
@@ -403,7 +396,7 @@ class NebulaGraph(BaseGraphStorage):
                 el["type"]: el["properties"] for el in rel_properties
             },
             "relationships": relationships,
-            "metadata": {"constraint": constraint, "index": index},
+            "metadata": {"index": index},
         }
 
         return structured_schema
@@ -449,15 +442,6 @@ class NebulaGraph(BaseGraphStorage):
             indexes.append(index_name)
 
         return indexes
-
-    def get_constraints(self):
-        r"""Fetches constraints (Nebula currently does not support constraint
-        queries).
-
-        Returns:
-            List[Any]: An empty list, as constraints are not supported.
-        """
-        return []
 
     def add_triplet(
         self,
@@ -514,12 +498,22 @@ class NebulaGraph(BaseGraphStorage):
             entity_id (str): The identifier of the entity.
 
         Returns:
-            bool: True if the entity has edges, False otherwise.
+            bool: :obj:`True` if the entity has edges, :obj:`False` otherwise.
         """
-        query = f'DELETE VERTEX "{entity_id}"'
-        res = self.query(query)
+        # Combine the outgoing and incoming edge count query
+        check_query = f"""
+        (GO FROM {entity_id} OVER * YIELD count(*) as out_count) 
+        UNION 
+        (GO FROM {entity_id} REVERSELY OVER * YIELD count(*) as in_count)
+        """
 
-        if not res.is_succeeded():
+        # Execute the query
+        result = self.query(check_query)
+
+        # Check if the result contains non-zero edges
+        if result.is_succeeded():
+            rows = result.rows()
+            total_count = sum(int(row.values[0].get_iVal()) for row in rows)
+            return total_count > 0
+        else:
             return False
-
-        return res.row_size() > 0
