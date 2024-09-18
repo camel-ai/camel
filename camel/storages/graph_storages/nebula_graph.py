@@ -187,7 +187,17 @@ class NebulaGraph(BaseGraphStorage):
     def ensure_edge_type_exists(
         self,
         edge_type: str,
-    ):
+    ) -> None:
+        r"""Ensures that a specified edge type exists in the NebulaGraph
+        database. If the edge type already exists, this method does nothing.
+
+        Args:
+            edge_type (str): The name of the edge type to be created.
+
+        Raises:
+            Exception: If the edge type creation fails after multiple retry
+                attempts, an exception is raised with the error message.
+        """
         create_edge_stmt = f'CREATE EDGE IF NOT EXISTS {edge_type}()'
 
         for attempt in range(MAX_RETRIES):
@@ -204,7 +214,7 @@ class NebulaGraph(BaseGraphStorage):
                     f"{MAX_RETRIES} attempts: {res.error_msg()}"
                 )
 
-    def ensure_tag_exists(self, tag_name: str):
+    def ensure_tag_exists(self, tag_name: str) -> None:
         r"""Ensures a tag is created in the NebulaGraph database. If the tag
         already exists, it does nothing.
 
