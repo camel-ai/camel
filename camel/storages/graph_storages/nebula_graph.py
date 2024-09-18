@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+import time
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 if TYPE_CHECKING:
     from nebula3.data.ResultSet import (  # type: ignore[import-untyped]
@@ -29,6 +30,9 @@ from camel.storages.graph_storages.graph_element import (
 )
 from camel.utils.commons import dependencies_required
 
+MAX_RETRIES = 5
+RETRY_DELAY = 3
+
 
 class NebulaGraph(BaseGraphStorage):
     @dependencies_required('nebula3')
@@ -41,7 +45,8 @@ class NebulaGraph(BaseGraphStorage):
             host (str): The host address of the NebulaGraph service.
             username (str): The username for authentication.
             password (str): The password for authentication.
-            space (str): The graph space to use.
+            space (str): The graph space to use. If it doesn't exist, a new
+                one will be created.
             port (int, optional): The port number for the connection.
                 (default: :obj:`9669`)
             timeout (int, optional): The connection timeout in milliseconds.
@@ -100,10 +105,24 @@ class NebulaGraph(BaseGraphStorage):
 
         # Use the specified space
         session.execute(
-            f"CREATE SPACE IF NOT EXISTS {self.space} (vid_type=FIXED_STRING(30));"
+            f"CREATE SPACE IF NOT EXISTS {self.space} "
+            "(vid_type=FIXED_STRING(30));"
         )
-        session.execute(f"USE {self.space};")
-        return session
+
+        for attempt in range(MAX_RETRIES):
+            res = session.execute(f"USE {self.space};")
+
+            if res.is_succeeded():
+                return session
+
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+            else:
+                # Final attempt failed, raise an exception
+                raise Exception(
+                    f"Failed to execute `{self.space}` after "
+                    f"{MAX_RETRIES} attempts: {res.error_msg()}"
+                )
 
     @property
     def get_client(self) -> Any:
@@ -129,70 +148,6 @@ class NebulaGraph(BaseGraphStorage):
 
         except Exception as e:
             raise ValueError(f"Query execution error: {e!s}")
-
-    def get_node_properties(self) -> Tuple[List[str], List[Dict[str, Any]]]:
-        r"""Retrieve node properties from the graph.
-
-        Returns:
-            Tuple[List[str], List[Dict[str, Any]]]: A tuple where the first
-                element is a list of node schema properties, and the second
-                element is a list of dictionaries representing node structures.
-        """
-        # Query all tags
-        result = self.query('SHOW TAGS')
-        node_schema_props = []
-        node_structure_props = []
-
-        # Iterate through each tag to get its properties
-        for row in result.rows():
-            tag_name = row.values[0].get_sVal().decode('utf-8')
-            describe_result = self.query(f'DESCRIBE TAG {tag_name}')
-            properties = []
-
-            for prop_row in describe_result.rows():
-                prop_name = prop_row.values[0].get_sVal().decode('utf-8')
-                node_schema_props.append(f"{tag_name}.{prop_name}")
-                properties.append(prop_name)
-
-            node_structure_props.append(
-                {"labels": tag_name, "properties": properties}
-            )
-
-        return node_schema_props, node_structure_props
-
-    def get_relationship_properties(
-        self,
-    ) -> Tuple[List[str], List[Dict[str, Any]]]:
-        r"""Retrieve relationship (edge) properties from the graph.
-
-        Returns:
-            Tuple[List[str], List[Dict[str, Any]]]: A tuple where the first
-                element is a list of relationship schema properties, and the
-                second element is a list of dictionaries representing
-                relationship structures.
-        """
-
-        # Query all edge types
-        result = self.query('SHOW EDGES')
-        rel_schema_props = []
-        rel_structure_props = []
-
-        # Iterate through each edge type to get its properties
-        for row in result.rows():
-            edge_name = row.values[0].get_sVal().decode('utf-8')
-            describe_result = self.query(f'DESCRIBE EDGE {edge_name}')
-            properties = []
-
-            for prop_row in describe_result.rows():
-                prop_name = prop_row.values[0].get_sVal().decode('utf-8')
-                rel_schema_props.append(f"{edge_name}.{prop_name}")
-                properties.append(prop_name)
-
-            rel_structure_props.append(
-                {"type": edge_name, "properties": properties}
-            )
-
-        return rel_schema_props, rel_structure_props
 
     def get_relationship_types(self) -> List[str]:
         r"""Retrieve relationship types from the graph.
@@ -221,126 +176,95 @@ class NebulaGraph(BaseGraphStorage):
             graph_elements (List[GraphElement]): A list of graph elements
                 containing nodes and relationships.
         """
-        nodes = self.extract_nodes(graph_elements)
+        nodes = self._extract_nodes(graph_elements)
         for node in nodes:
-            self.ensure_tag_exists(node['type'])
-            self.add_node(node['id'], node['type'], node['properties'])
+            self.add_node(node['id'], node['type'])
 
         relationships = self._extract_relationships(graph_elements)
         for rel in relationships:
-            self.ensure_edge_type_exists(rel['type'])
-            self.add_relationship(
-                rel['subj']['id'], rel['obj']['id'], rel['type']
-            )
+            self.add_triplet(rel['subj']['id'], rel['obj']['id'], rel['type'])
 
-    def add_relationship(
-        self, src_id: str, dst_id: str, edge_type: str
-    ) -> None:
-        r"""Add a relationship (edge) between two nodes in the graph.
+    def ensure_edge_type_exists(
+        self,
+        edge_type: str,
+    ):
+        create_edge_stmt = f'CREATE EDGE IF NOT EXISTS {edge_type}()'
+
+        for attempt in range(MAX_RETRIES):
+            res = self.query(create_edge_stmt)
+            if res.is_succeeded():
+                return  # Tag creation succeeded, exit the method
+
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+            else:
+                # Final attempt failed, raise an exception
+                raise Exception(
+                    f"Failed to create tag `{edge_type}` after "
+                    f"{MAX_RETRIES} attempts: {res.error_msg()}"
+                )
+
+    def ensure_tag_exists(self, tag_name: str):
+        r"""Ensures a tag is created in the NebulaGraph database. If the tag
+        already exists, it does nothing.
 
         Args:
-            src_id (str): The source node ID.
-            dst_id (str): The destination node ID.
-            edge_type (str): The relationship (edge) type.
+            tag_name (str): The name of the tag to be created.
+
+        Raises:
+            Exception: If the tag creation fails after retries, an exception
+                is raised with the error message.
         """
-        # Add relationship
-        insert_stmt = (
-            f'INSERT EDGE `{edge_type}`() VALUES "{src_id}"->"{dst_id}":()'
-        )
-        res = self.query(insert_stmt)
-        if not res.is_succeeded():
-            print(
-                f'create relationship `{src_id}` -> `{dst_id}`'
-                + f'failed: {res.error_msg()}'
-            )
 
-    def ensure_edge_type_exists(self, edge_type):
-        # Check if Edge Type exists
-        result = self.query('SHOW EDGES')
-        if result.is_succeeded():
-            edges = [
-                row.values[0].get_sVal().decode('utf-8')
-                for row in result.rows()
-            ]
-            if edge_type not in edges:
-                # Create a new Edge Type
-                create_edge_stmt = f'CREATE EDGE `{edge_type}`()'
-                res = self.query(create_edge_stmt)
-                if not res.is_succeeded():
-                    print(f'create Edge failed: {res.error_msg()}')
-        else:
-            print(f'execute SHOW EDGES failed: {result.error_msg()}')
+        create_tag_stmt = f'CREATE TAG IF NOT EXISTS {tag_name}()'
 
-    def ensure_tag_exists(self, tag_name):
-        # Check if Tag exists
-        result = self.query('SHOW TAGS')
-        if result.is_succeeded():
-            tags = [
-                row.values[0].get_sVal().decode('utf-8')
-                for row in result.rows()
-            ]
-            if tag_name not in tags:
-                # Create a new Tag
-                create_tag_stmt = f'CREATE TAG `{tag_name}`()'
-                res = self.query(create_tag_stmt)
-                if not res.is_succeeded():
-                    print(f'create Tag `{tag_name}` failed: {res.error_msg()}')
-        else:
-            print(f'execute SHOW TAGS failed: {result.error_msg()}')
+        for attempt in range(MAX_RETRIES):
+            res = self.query(create_tag_stmt)
+            if res.is_succeeded():
+                return  # Tag creation succeeded, exit the method
+
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+            else:
+                # Final attempt failed, raise an exception
+                raise Exception(
+                    f"Failed to create tag `{tag_name}` after "
+                    f"{MAX_RETRIES} attempts: {res.error_msg()}"
+                )
 
     def add_node(
         self,
         node_id: str,
         tag_name: str,
-        properties: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Add a node with the specified tag and properties.
+        r"""Add a node with the specified tag and properties.
 
         Args:
             node_id (str): The ID of the node.
             tag_name (str): The tag name of the node.
-            properties (Optional[Dict[str, Any]]): A dictionary of node
-                properties.
         """
-        try:
-            if properties:
-                # Prepare property names, values, and definitions
-                prop_names = ", ".join(properties.keys())
-                prop_values = ", ".join(
-                    f'"{v}"' if isinstance(v, str) else str(v)
-                    for v in properties.values()
-                )
-                prop_definitions = ", ".join(
-                    f"{prop} string" for prop in properties.keys()
-                )
+        self.ensure_tag_exists(tag_name)
 
-                # Create tag if it doesn't exist
-                create_prop_stmt = f'ALTER TAG IF NOT EXISTS {tag_name} ADD ({prop_definitions})'
-                self.query(create_prop_stmt)
+        # Insert node without properties
+        insert_stmt = (
+            f'INSERT VERTEX IF NOT EXISTS {tag_name}() VALUES "{node_id}":()'
+        )
 
-                # Insert node with properties
-                insert_stmt = (
-                    f'INSERT VERTEX IF NOT EXISTS {tag_name}({prop_names}) '
-                    f'VALUES "{node_id}":({prop_values})'
-                )
-            else:
-                # Insert node without properties
-                insert_stmt = (
-                    f'INSERT VERTEX IF NOT EXISTS {tag_name}() '
-                    f'VALUES "{node_id}":()'
-                )
-
-            # Execute the query and handle response
+        for attempt in range(MAX_RETRIES):
             res = self.query(insert_stmt)
-            if not res.is_succeeded():
-                raise RuntimeError(
-                    f"Add node `{node_id}` failed: {res.error_msg()}"
+            if res.is_succeeded():
+                return  # Tag creation succeeded, exit the method
+
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+            else:
+                # Final attempt failed, raise an exception
+                raise Exception(
+                    f"Failed to add node `{node_id}` after"
+                    f" {MAX_RETRIES} attempts: {res.error_msg()}"
                 )
 
-        except Exception as e:
-            print(f"Error while adding node `{node_id}`: {e}")
-
-    def extract_nodes(self, graph_elements: List[Any]) -> List[Dict]:
+    def _extract_nodes(self, graph_elements: List[Any]) -> List[Dict]:
         r"""Extracts unique nodes from graph elements.
 
         Args:
@@ -477,11 +401,23 @@ class NebulaGraph(BaseGraphStorage):
         """
         self.ensure_tag_exists(subj)
         self.ensure_tag_exists(obj)
+        self.ensure_edge_type_exists(rel)
         self.add_node(node_id=subj, tag_name=subj)
         self.add_node(node_id=obj, tag_name=obj)
 
-        insert_stmt = f'INSERT EDGE `{rel}`() VALUES "{subj}"->"{obj}":();'
-        self.query(insert_stmt)
+        # Avoid latenicy
+        time.sleep(1)
+
+        insert_stmt = (
+            f'INSERT EDGE IF NOT EXISTS {rel}() VALUES "{subj}"->"{obj}":();'
+        )
+
+        res = self.query(insert_stmt)
+        if not res.is_succeeded():
+            raise Exception(
+                f'create relationship `]{subj}` -> `{obj}`'
+                + f'failed: {res.error_msg()}'
+            )
 
     def delete_triplet(self, subj: str, obj: str, rel: str) -> None:
         r"""Deletes a specific triplet (relationship between two entities)
@@ -492,7 +428,7 @@ class NebulaGraph(BaseGraphStorage):
             obj (str): The identifier for the object entity.
             rel (str): The relationship between the subject and object.
         """
-        delete_edge_query = f'DELETE EDGE `{rel}` "{subj}"->"{obj}";'
+        delete_edge_query = f'DELETE EDGE {rel} "{subj}"->"{obj}";'
         self.query(delete_edge_query)
 
         if not self._check_edges(subj):
@@ -535,3 +471,67 @@ class NebulaGraph(BaseGraphStorage):
             return total_count > 0
         else:
             return False
+
+    def get_node_properties(self) -> Tuple[List[str], List[Dict[str, Any]]]:
+        r"""Retrieve node properties from the graph.
+
+        Returns:
+            Tuple[List[str], List[Dict[str, Any]]]: A tuple where the first
+                element is a list of node schema properties, and the second
+                element is a list of dictionaries representing node structures.
+        """
+        # Query all tags
+        result = self.query('SHOW TAGS')
+        node_schema_props = []
+        node_structure_props = []
+
+        # Iterate through each tag to get its properties
+        for row in result.rows():
+            tag_name = row.values[0].get_sVal().decode('utf-8')
+            describe_result = self.query(f'DESCRIBE TAG {tag_name}')
+            properties = []
+
+            for prop_row in describe_result.rows():
+                prop_name = prop_row.values[0].get_sVal().decode('utf-8')
+                node_schema_props.append(f"{tag_name}.{prop_name}")
+                properties.append(prop_name)
+
+            node_structure_props.append(
+                {"labels": tag_name, "properties": properties}
+            )
+
+        return node_schema_props, node_structure_props
+
+    def get_relationship_properties(
+        self,
+    ) -> Tuple[List[str], List[Dict[str, Any]]]:
+        r"""Retrieve relationship (edge) properties from the graph.
+
+        Returns:
+            Tuple[List[str], List[Dict[str, Any]]]: A tuple where the first
+                element is a list of relationship schema properties, and the
+                second element is a list of dictionaries representing
+                relationship structures.
+        """
+
+        # Query all edge types
+        result = self.query('SHOW EDGES')
+        rel_schema_props = []
+        rel_structure_props = []
+
+        # Iterate through each edge type to get its properties
+        for row in result.rows():
+            edge_name = row.values[0].get_sVal().decode('utf-8')
+            describe_result = self.query(f'DESCRIBE EDGE {edge_name}')
+            properties = []
+
+            for prop_row in describe_result.rows():
+                prop_name = prop_row.values[0].get_sVal().decode('utf-8')
+                rel_schema_props.append(f"{edge_name}.{prop_name}")
+                properties.append(prop_name)
+
+            rel_structure_props.append(
+                {"type": edge_name, "properties": properties}
+            )
+
+        return rel_schema_props, rel_structure_props
