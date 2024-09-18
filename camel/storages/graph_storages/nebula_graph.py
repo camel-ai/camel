@@ -127,7 +127,7 @@ class NebulaGraph(BaseGraphStorage):
     @property
     def get_client(self) -> Any:
         r"""Get the underlying graph storage client."""
-        return self
+        return self.session
 
     def query(self, query: str) -> "ResultSet":  # type:ignore[override]
         r"""Execute a query on the graph store.

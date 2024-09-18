@@ -25,7 +25,7 @@ from camel.storages.graph_storages.graph_element import (
 host = '127.0.0.1'
 username = 'root'
 password = 'nebula'
-space = 'new_space156'
+space = 'space_name'
 
 nebula_graph = NebulaGraph(host, username, password, space)
 
@@ -59,12 +59,12 @@ print(nebula_graph.get_structured_schema)
 ==============================================================================
 """
 
+# Delete triplet
 nebula_graph.delete_triplet(
     subj="CAMEL_AI", obj="Agent_Framework", rel="contribute_to"
 )
 
-
-# Create and add graph elements for 'Lionel Messi'
+# Create and add graph element
 node_camel = Node(
     id="CAMEL_AI",
     type="Agent_Framework",
