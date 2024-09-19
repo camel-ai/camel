@@ -64,7 +64,7 @@ try:
     chat_response = toolkit.chat_query(
         "What's going on in the latest tech news?"
     )
-    print(f"Chat Response: {chat_response}")
+    # print(f"Chat Response: {chat_response}")
     print("chat_query executed successfully.")
 except Exception as e:
     print(f"An error occurred in chat_query: {e}")
@@ -73,7 +73,7 @@ except Exception as e:
 try:
     print("Running get_news for AI advancements...")
     news = toolkit.get_news("Give me the latest news about AI advancements.")
-    print(news)
+    # print(news)
     print("get_news executed successfully.")
 except Exception as e:
     print(f"An error occurred in get_news: {e}")
@@ -92,11 +92,11 @@ try:
         max_articles=10,
     )
 
-    for story in stories["stories"]:
-        print(f"Headline: {story['headline']}")
-        for update in story["updates"]:
-            print(f"  Update Headline: {update['headline']}")
-            print(f"  Story Content: {update['story']}")
+    # for story in stories["stories"]:
+    #     print(f"Headline: {story['headline']}")
+    #     for update in story["updates"]:
+    #         print(f"  Update Headline: {update['headline']}")
+    #         print(f"  Story Content: {update['story']}")
     print("get_stories executed successfully.")
 except Exception as e:
     print(f"An error occurred in get_stories: {e}")
@@ -107,7 +107,7 @@ try:
     forecast_response = toolkit.get_forecast(
         "Will Trump and Biden shake hands during the debate?"
     )
-    print(f"Forecast Response: {forecast_response}")
+    # print(f"Forecast Response: {forecast_response}")
     print("get_forecast executed successfully.")
 except Exception as e:
     print(f"An error occurred in get_forecast: {e}")
@@ -119,11 +119,11 @@ try:
         keywords=["sentiment", "bitcoin", "halving"], return_type="both"
     )
 
-    if isinstance(reddit_response, tuple):
-        print(f"Reddit Response (String): {reddit_response[0]}")
-        print(f"Reddit Response (Dict): {reddit_response[1]}")
-    else:
-        print(f"Reddit Response: {reddit_response}")
+    # if isinstance(reddit_response, tuple):
+    #     print(f"Reddit Response (String): {reddit_response[0]}")
+    #     print(f"Reddit Response (Dict): {reddit_response[1]}")
+    # else:
+    #     print(f"Reddit Response: {reddit_response}")
     print("search_reddit executed successfully.")
 except Exception as e:
     print(f"An error occurred in search_reddit: {e}")
@@ -139,7 +139,19 @@ try:
         date_to="2024-03-24T23:00:00Z",
         return_type="string",
     )
-    print(f"Sentiment Data (String):\n{sentiment_data_string}")
+    # print(f"Sentiment Data (String):\n{sentiment_data_string}")
     print("finance_query executed successfully.")
 except Exception as e:
     print(f"An error occurred in finance_query: {e}")
+
+"""
+get_news executed successfully.
+Running get_stories for Technology and Science...
+get_stories executed successfully.
+Running get_forecast for the Trump-Biden handshake query...
+An error occurred in get_forecast: An error occurred while fetching the forecast: 'AskNewsSDK' object has no attribute 'forecast'.
+Running search_reddit for sentiment, bitcoin, and halving...
+An error occurred in search_reddit: An error occurred while searching Reddit: 'RedditResponse' object has no attribute 'as_dict'.
+Running finance_query for Amazon sentiment data...
+An error occurred in finance_query: An error occurred while fetching asset sentiment data: ForbiddenError: 403000 - Invalid Permissions.
+"""
