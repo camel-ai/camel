@@ -11,13 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
-from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.toolkits import OPENAPI_FUNCS
-from camel.toolkits.ask_news_toolkit import ASKNEWS_FUNCS, AskNewsToolkit
-from camel.types import ModelPlatformType, ModelType
+from camel.toolkits.ask_news_toolkit import AskNewsToolkit
 
 # # Define system message
 # sys_msg = BaseMessage.make_assistant_message(

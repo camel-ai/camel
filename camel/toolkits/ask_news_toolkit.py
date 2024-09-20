@@ -39,11 +39,52 @@ class AskNewsToolkit(BaseToolkit):
 
         if scopes is None:
             scopes = ["chat", "news", "stories", "analytics"]
+        client_id = os.environ.get("ASKNEWS_CLIENT_ID")
+        client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
+        if not client_id or not client_secret:
+            raise ValueError(
+                "`client_id` or `client_secret` not found in environment "
+                "variables. Get `client_id & client_secret` here: "
+                "`https://docs.asknews.app/`."
+            )
         self.asknews_client = AskNewsSDK(
-            client_id=os.environ.get("ASKNEWS_CLIENT_ID"),
-            client_secret=os.environ.get("ASKNEWS_CLIENT_SECRET"),
+            client_id,
+            client_secret,
             scopes=scopes,
         )
+
+    def _process_response(self, response, return_type: str):
+        r"""Process the response based on the specified return type.
+
+        This helper method processes the API response and returns the content
+        in the specified format, which could be a string, a dictionary, or
+        both.
+
+        Args:
+            response: The response object returned by the API call.
+            return_type (str): Specifies the format of the return value. It
+            can be "string" to return the response as a string, "dicts" to
+            return it as a dictionary, or "both" to return both formats as a
+            tuple.
+
+        Returns:
+            Union[str, dict, Tuple[str, dict]]: The processed response,
+            formatted according to the return_type argument. If "string",
+            returns the response as a string. If "dicts", returns the response
+            as a dictionary. If "both", returns a tuple containing both
+            formats.
+
+        Raises:
+            ValueError: If the return_type provided is invalid.
+        """
+        if return_type == "string":
+            return response.as_string
+        elif return_type == "dicts":
+            return response.as_dicts
+        elif return_type == "both":
+            return (response.as_string, response.as_dicts)
+        else:
+            raise ValueError(f"Invalid return_type: {return_type}")
 
     def get_news(
         self,
@@ -56,13 +97,14 @@ class AskNewsToolkit(BaseToolkit):
 
         Args:
             query (str): The search query for fetching relevant news or
-                stories.
+            stories.
             n_articles (int): Number of articles to include in the response.
-                Default is 10.
+                (default: :obj:`10`)
             return_type (Literal["string", "dicts", "both"]): The format of the
-             return value. Default is "string".
+                return value. (default: :obj:`"string"`)
             method (Literal["nl", "kw"]): The search method, either "nl" for
-                natural language or "kw" for keyword search. Default is "nl".
+                natural language or "kw" for keyword search. (default:
+                :obj:`"nl"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
@@ -77,14 +119,7 @@ class AskNewsToolkit(BaseToolkit):
                 method=method,
             )
 
-            if return_type == "string":
-                news_content = response.as_string
-            elif return_type == "dicts":
-                news_content = response.as_dicts
-            elif return_type == "both":
-                news_content = (response.as_string, response.as_dicts)
-
-            return news_content
+            return self._process_response(response, return_type)
 
         except Exception as e:
             raise Exception(
@@ -101,7 +136,7 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             keywords (list): The keywords to search for on Reddit.
             return_type (Literal["string", "dicts", "both"]): The format of the
-                return value. Default is "string".
+                return value. (default: :obj:`"string"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
@@ -115,14 +150,7 @@ class AskNewsToolkit(BaseToolkit):
                 keywords=keywords
             )
 
-            if return_type == "string":
-                reddit_content = response.as_string
-            elif return_type == "dicts":
-                reddit_content = response.as_dicts
-            elif return_type == "both":
-                reddit_content = (response.as_string, response.as_dicts)
-
-            return reddit_content
+            return self._process_response(response, return_type)
 
         except Exception as e:
             raise Exception(
@@ -145,16 +173,18 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             categories (list): The categories to filter stories by.
             continent (str): The continent to filter stories by.
-            sort_by (str): The field to sort the stories by. Default is
-             "coverage".
-            sort_type (str): The sort order. Default is "desc" (descending).
-            reddit (int): Number of Reddit threads to include. Default is 3.
-            expand_updates (bool): Whether to include detailed updates. Default
-             is True.
+            sort_by (str): The field to sort the stories by.
+            (default: :obj:`"coverage"`)
+            sort_type (str): The sort order.
+            (default: :obj:`"desc"`, descending)
+            reddit (int): Number of Reddit threads to include.
+            (default: :obj:`3`)
+            expand_updates (bool): Whether to include detailed updates.
+            (default: :obj:`True`)
             max_updates (int): Maximum number of recent updates per story.
-             Default is 2.
-            max_articles (int): Maximum number of articles associated with each
-                update. Default is 10.
+            (default: :obj:`2`)
+            max_articles (int): Maximum number of articles associated with
+            each update. (default: :obj:`10`)
 
         Returns:
             dict: A dictionary containing the stories and their associated
@@ -205,7 +235,7 @@ class AskNewsToolkit(BaseToolkit):
         metric: str,
         date_from: str,
         date_to: str,
-        return_type: Literal["list", "string"] = "list",
+        return_type: Literal["list", "string"] = "string",
     ) -> Union[list, str]:
         r"""Fetch asset sentiment data for a given asset, metric, and date
         range.
@@ -218,7 +248,7 @@ class AskNewsToolkit(BaseToolkit):
             date_to (str): The end date and time for the data in ISO 8601
             format.
             return_type (Literal["list", "string"]): The format of the return
-            value. Default is "list".
+            value. (default: :obj:`"string"`)
 
         Returns:
             Union[list, str]: A list of dictionaries containing the datetime
@@ -269,6 +299,7 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             query (str): The content of the user's message.
             model (str): The model to use for generating the chat response.
+            (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
 
         Returns:
             str: The content of the response message.
@@ -301,11 +332,12 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             queries (List[str]): A list of search queries.
             return_type (Literal["string", "dicts", "both"]): The format of the
-                return value. Default is "string".
+                return value. (default: :obj:`"string"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-            containing the search results, or an error message if the process fails.
+            containing the search results, or an error message if the process
+            fails.
         """
         try:
             response = self.asknews_client.chat.live_web_search(
@@ -323,7 +355,8 @@ class AskNewsToolkit(BaseToolkit):
 
         except Exception as e:
             raise Exception(
-                f"An error occurred while performing the web search for '{queries}': {e!s}."
+                "An error occurred while performing the web search for "
+                + f"'{queries}': {e!s}."
             )
 
     def get_tools(self) -> List[OpenAIFunction]:
