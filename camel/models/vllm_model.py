@@ -11,79 +11,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-import subprocess
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from vllm import LLM, SamplingParams
+from vllm.multimodal.utils import fetch_image
 
-from camel.configs import VLLM_API_PARAMS
+from camel.configs import VLLM_API_PARAMS, VLLMConfig
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
-# flake8: noqa: E501
-class VLLMModel:
-    r"""vLLM service interface."""
-
+class VLLMModel(BaseModelBackend):
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        url: Optional[str] = None,
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for vLLM backend with OpenAI compatibility.
-
-        # Reference: https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
-
-        Args:
-            model_type (str): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`"http://localhost:8000/v1"`)
-            api_key (Optional[str]): The API key for authenticating with the
-                model service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        self._url = (
-            url
-            or os.environ.get("VLLM_BASE_URL")
-            or "http://localhost:8000/v1"
-        )
-        if not url and not os.environ.get("VLLM_BASE_URL"):
-            self._start_server()
-        # Use OpenAI cilent as interface call vLLM
-        self._client = OpenAI(
-            timeout=60,
-            max_retries=3,
-            base_url=self._url,
+        super().__init__(
+            model_type=model_type,
+            model_config_dict=model_config_dict,
             api_key=api_key,
+            url=url,
         )
         self._token_counter = token_counter
-        self.check_model_config()
-
-    def _start_server(self) -> None:
-        r"""Starts the vllm server in a subprocess."""
-        try:
-            subprocess.Popen(
-                ["vllm", "server", "--port", "8000"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            print(
-                f"vllm server started on http://localhost:8000/v1 "
-                f"for {self.model_type} model."
-            )
-        except Exception as e:
-            print(f"Failed to start vllm server: {e}.")
+        self.config = VLLMConfig(**model_config_dict)
+        self.llm = LLM(
+            model=self.config.model,
+            trust_remote_code=self.config.trust_remote_code,
+            max_model_len=self.config.max_model_len,
+            limit_mm_per_prompt=self.config.limit_mm_per_prompt,
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -97,66 +59,84 @@ class VLLMModel:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to vLLM API.
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> Union[ChatCompletion, ChatCompletionChunk]:
+        question = messages[-1]['content']
+        image_urls = self.config.image_urls
+        image_data = [fetch_image(url) for url in image_urls]
 
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
+        sampling_params = SamplingParams(
+            temperature=self.config.temperature,
+            max_tokens=self.config.max_tokens,
+            stop_token_ids=self.config.stop_token_ids,
+        )
+
+        if self.config.method == "generate":
+            placeholders = "\n".join(
+                f"<|image_{i}|>" for i, _ in enumerate(image_urls, start=1)
+            )
+            prompt = (
+                f"<|user|>\n{placeholders}\n{question}<|end|>\n<|assistant|>\n"
+            )
+            outputs = self.llm.generate(
+                {"prompt": prompt, "multi_modal_data": {"image": image_data}},
+                sampling_params=sampling_params,
+            )
+        elif self.config.method == "chat":
+            outputs = self.llm.chat(
+                [
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": question}]
+                        + [
+                            {"type": "image_url", "image_url": {"url": url}}
+                            for url in image_urls
+                        ],
+                    }
+                ],
+                sampling_params=sampling_params,
+            )
+        else:
+            raise ValueError(f"Invalid method: {self.config.method}")
+
+        # Convert vLLM output to OpenAI-like format
+        response = ChatCompletion(
+            id="vllm_response",
+            object="chat.completion",
+            created=0,
+            model=self.config.model,
+            choices=[
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": outputs[0].outputs[0].text,
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            usage={
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+            },
+        )
+        return response
+
+    def check_model_config(self):
         for param in self.model_config_dict:
             if param not in VLLM_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into vLLM model backend."
+                    "input into VLLM model backend."
                 )
-
-    def run(
-        self,
-        messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
-        )
-        return response
 
     @property
     def token_limit(self) -> int:
-        r"""Returns the maximum token limit for the given model.
-
-        Returns:
-            int: The maximum token limit for the given model.
-        """
-        max_tokens = self.model_config_dict.get("max_tokens")
-        if isinstance(max_tokens, int):
-            return max_tokens
-        print(
-            "Must set `max_tokens` as an integer in `model_config_dict` when"
-            " setting up the model. Using 4096 as default value."
-        )
-        return 4096
+        return self.config.max_model_len
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)
+        return False  # VLLM doesn't support streaming in this implementation

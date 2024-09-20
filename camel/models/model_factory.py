@@ -96,6 +96,8 @@ class ModelFactory:
                 model_class = MistralModel
             elif model_platform.is_reka and model_type.is_reka:
                 model_class = RekaModel
+            elif model_platform.is_vllm and model_type.is_vllm:
+                model_class = VLLMModel
             elif model_type == ModelType.STUB:
                 model_class = StubModel
             else:
@@ -109,8 +111,6 @@ class ModelFactory:
                 return model_class(
                     model_type, model_config_dict, url, token_counter
                 )
-            elif model_platform.is_vllm:
-                model_class = VLLMModel
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
             elif model_platform.is_openai_compatibility_model:

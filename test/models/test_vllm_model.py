@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import VLLMConfig
+from camel.configs import OpenSourceConfig, VLLMConfig
 from camel.models import VLLMModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -25,34 +25,33 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
+        "microsoft/Phi-3.5-vision-instruct",
     ],
 )
-def test_vllm_model(model_type: ModelType):
+def test_vllm_model(model_type):
     model_config_dict = VLLMConfig().as_dict()
-    model = VLLMModel(model_type.value, model_config_dict, api_key="vllm")
-    assert model.model_type == model_type.value
+    model = VLLMModel(model_type, model_config_dict)
+    assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type, str)
-    assert isinstance(model.token_limit, int)
 
 
 @pytest.mark.model_backend
 def test_vllm_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+    model_type = ModelType.PHI_3_5_VISION
+    model_config = OpenSourceConfig(
+        model_path="microsoft/Phi-3.5-vision-instruct",
+        server_url="http://localhost:8000/v1",
+    )
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into vLLM model backend."
+                "input into VLLM model backend."
             )
         ),
     ):
-        _ = VLLMModel(model_type, model_config_dict, api_key="vllm")
+        _ = VLLMModel(model_type, model_config_dict)

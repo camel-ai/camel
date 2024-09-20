@@ -88,6 +88,9 @@ class ModelType(Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # VLLM models
+    PHI_3_5_VISION = "microsoft/Phi-3.5-vision-instruct"
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -222,6 +225,17 @@ class ModelType(Enum):
         }
 
     @property
+    def is_vllm(self) -> bool:
+        r"""Returns whether this type of models is a VLLM model.
+
+        Returns:
+            bool: Whether this type of models is VLLM.
+        """
+        return self in {
+            ModelType.PHI_3_5_VISION,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -240,6 +254,7 @@ class ModelType(Enum):
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
             ModelType.REKA_FLASH,
+            ModelType.PHI_3_5_VISION,
         }:
             return 4_096
         elif self in {
