@@ -30,7 +30,7 @@ from .slack_toolkit import SLACK_FUNCS, SlackToolkit
 from .dalle_toolkit import DALLE_FUNCS, DalleToolkit
 from .linkedin_toolkit import LINKEDIN_FUNCS, LinkedInToolkit
 from .ask_news_toolkit import ASKNEWS_FUNCS, AskNewsToolkit
-
+from .async_ask_news_toolkit import ASYNC_ASKNEWS_FUNCS, AsyncAskNewsToolkit
 from .base import BaseToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -65,4 +65,6 @@ __all__ = [
     'LinkedInToolkit',
     'AskNewsToolkit',
     'CodeExecutionToolkit',
+    'ASYNC_ASKNEWS_FUNCS',
+    'AsyncAskNewsToolkit',
 ]
