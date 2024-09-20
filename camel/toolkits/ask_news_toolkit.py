@@ -37,8 +37,6 @@ class AskNewsToolkit(BaseToolkit):
         """
         from asknews_sdk import AskNewsSDK  # type: ignore[import]
 
-        # Initialize the AskNews client using API keys and credentials from
-        # environment variables.
         if scopes is None:
             scopes = ["chat", "news", "stories", "analytics"]
         self.asknews_client = AskNewsSDK(
@@ -91,6 +89,44 @@ class AskNewsToolkit(BaseToolkit):
         except Exception as e:
             raise Exception(
                 f"An error occurred while fetching news for '{query}': {e!s}."
+            )
+
+    def search_reddit(
+        self,
+        keywords: list,
+        return_type: Literal["string", "dicts", "both"] = "string",
+    ) -> Union[str, dict, Tuple[str, dict]]:
+        r"""Search Reddit based on the provided keywords.
+
+        Args:
+            keywords (list): The keywords to search for on Reddit.
+            return_type (Literal["string", "dicts", "both"]): The format of the
+                return value. Default is "string".
+
+        Returns:
+            Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
+            string, dictionary, or both.
+
+        Raises:
+            Exception: If there is an error while searching Reddit.
+        """
+        try:
+            response = self.asknews_client.news.search_reddit(
+                keywords=keywords
+            )
+
+            if return_type == "string":
+                reddit_content = response.as_string
+            elif return_type == "dicts":
+                reddit_content = response.as_dicts
+            elif return_type == "both":
+                reddit_content = (response.as_string, response.as_dicts)
+
+            return reddit_content
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while searching Reddit: {e!s}."
             )
 
     def get_stories(
@@ -163,74 +199,6 @@ class AskNewsToolkit(BaseToolkit):
                 f"An error occurred while fetching stories: {e!s}."
             )
 
-    def chat_query(
-        self, query: str, model: str = "meta-llama/Meta-Llama-3-70B-Instruct"
-    ) -> str:
-        r"""Send a chat query to the API and retrieve the response.
-
-        Args:
-            query (str): The content of the user's message.
-            model (str): The model to use for generating the chat response.
-
-        Returns:
-            str: The content of the response message.
-
-        Raises:
-            Exception: If there is an error while processing the chat query.
-        """
-        try:
-            response = self.asknews_client.chat.get_chat_completions(
-                model=model,
-                messages=[{"role": "user", "content": query}],
-                stream=False,
-            )
-
-            # Return the content of the first choice's message
-            return response.choices[0].message.content
-
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while processing the chat query: {e!s}."
-            )
-
-    def search_reddit(
-        self,
-        keywords: list,
-        return_type: Literal["string", "dicts", "both"] = "string",
-    ) -> Union[str, dict, Tuple[str, dict]]:
-        r"""Search Reddit based on the provided keywords.
-
-        Args:
-            keywords (list): The keywords to search for on Reddit.
-            return_type (Literal["string", "dicts", "both"]): The format of the
-                return value. Default is "string".
-
-        Returns:
-            Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
-            string, dictionary, or both.
-
-        Raises:
-            Exception: If there is an error while searching Reddit.
-        """
-        try:
-            response = self.asknews_client.news.search_reddit(
-                keywords=keywords
-            )
-
-            if return_type == "string":
-                reddit_content = response.as_string
-            elif return_type == "dicts":
-                reddit_content = response.as_dicts
-            elif return_type == "both":
-                reddit_content = (response.as_string, response.as_dicts)
-
-            return reddit_content
-
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while searching Reddit: {e!s}."
-            )
-
     def finance_query(
         self,
         asset: str,
@@ -293,6 +261,71 @@ class AskNewsToolkit(BaseToolkit):
                 f"data: {e!s}."
             )
 
+    def chat_query(
+        self, query: str, model: str = "meta-llama/Meta-Llama-3-70B-Instruct"
+    ) -> str:
+        r"""Send a chat query to the API and retrieve the response.
+
+        Args:
+            query (str): The content of the user's message.
+            model (str): The model to use for generating the chat response.
+
+        Returns:
+            str: The content of the response message.
+
+        Raises:
+            Exception: If there is an error while processing the chat query.
+        """
+        try:
+            response = self.asknews_client.chat.get_chat_completions(
+                model=model,
+                messages=[{"role": "user", "content": query}],
+                stream=False,
+            )
+
+            # Return the content of the first choice's message
+            return response.choices[0].message.content
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while processing the chat query: {e!s}."
+            )
+
+    def get_web_search(
+        self,
+        queries: List[str],
+        return_type: Literal["string", "dicts", "both"] = "string",
+    ) -> Union[str, dict, Tuple[str, dict]]:
+        r"""Perform a live web search based on the given queries.
+
+        Args:
+            queries (List[str]): A list of search queries.
+            return_type (Literal["string", "dicts", "both"]): The format of the
+                return value. Default is "string".
+
+        Returns:
+            Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
+            containing the search results, or an error message if the process fails.
+        """
+        try:
+            response = self.asknews_client.chat.live_web_search(
+                queries=queries
+            )
+
+            if return_type == "string":
+                search_content = response.as_string
+            elif return_type == "dicts":
+                search_content = response.as_dicts
+            elif return_type == "both":
+                search_content = (response.as_string, response.as_dicts)
+
+            return search_content
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while performing the web search for '{queries}': {e!s}."
+            )
+
     def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the functions
           in the toolkit.
@@ -303,10 +336,11 @@ class AskNewsToolkit(BaseToolkit):
         """
         return [
             OpenAIFunction(self.get_news),
-            OpenAIFunction(self.get_stories),
-            OpenAIFunction(self.chat_query),
             OpenAIFunction(self.search_reddit),
+            OpenAIFunction(self.get_stories),
             OpenAIFunction(self.finance_query),
+            OpenAIFunction(self.chat_query),
+            OpenAIFunction(self.get_web_search),
         ]
 
 

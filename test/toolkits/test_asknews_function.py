@@ -89,3 +89,14 @@ def test_finance_query(ask_news_toolkit):
         print("finance_query test passed.")
     except Exception as e:
         pytest.fail(f"finance_query raised an exception: {e}")
+
+
+def test_get_web_search(ask_news_toolkit):
+    try:
+        search_results = ask_news_toolkit.get_web_search(
+            queries=["Eagles vs Falcons"]
+        )
+        assert search_results is not None
+        print("get_web_search test passed.")
+    except Exception as e:
+        pytest.fail(f"get_web_search raised an exception: {e}")
