@@ -135,11 +135,14 @@ except Exception as e:
     print(f"An error occurred in finance_query: {e}")
 
 """
+Running chat_query for tech news...
+chat_query executed successfully.
+Running get_news for AI advancements...
 get_news executed successfully.
 Running get_stories for Technology and Science...
 get_stories executed successfully.
 Running search_reddit for sentiment, bitcoin, and halving...
-An error occurred in search_reddit: An error occurred while searching Reddit: 'RedditResponse' object has no attribute 'as_dict'.
+search_reddit executed successfully.
 Running finance_query for Amazon sentiment data...
-An error occurred in finance_query: An error occurred while fetching asset sentiment data: ForbiddenError: 403000 - Invalid Permissions.
+finance_query executed successfully.
 """

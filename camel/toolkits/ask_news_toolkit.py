@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Literal, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
@@ -25,8 +25,13 @@ class AskNewsToolkit(BaseToolkit):
     based on user queries using the AskNews API.
     """
 
-    def __init__(self):
+    def __init__(self, scopes: Optional[List[str]] = None):
         r"""Initialize the AskNewsToolkit with API clients.
+
+        Args:
+            scopes (Optional[List[str]]): A list of API scopes to specify which
+                functionalities the client should access.
+                (default: :list:`["chat", "news", "stories"]`)
 
         The API keys and credentials are retrieved from environment variables.
         """
@@ -34,10 +39,12 @@ class AskNewsToolkit(BaseToolkit):
 
         # Initialize the AskNews client using API keys and credentials from
         # environment variables.
+        if scopes is None:
+            scopes = ["chat", "news", "stories", "analytics"]
         self.asknews_client = AskNewsSDK(
             client_id=os.environ.get("ASKNEWS_CLIENT_ID"),
             client_secret=os.environ.get("ASKNEWS_CLIENT_SECRET"),
-            scopes=["chat", "news", "stories"],
+            scopes=scopes,
         )
 
     def get_news(
@@ -75,9 +82,9 @@ class AskNewsToolkit(BaseToolkit):
             if return_type == "string":
                 news_content = response.as_string
             elif return_type == "dicts":
-                news_content = response.as_dict
+                news_content = response.as_dicts
             elif return_type == "both":
-                news_content = (response.as_string, response.as_dict)
+                news_content = (response.as_string, response.as_dicts)
 
             return news_content
 
@@ -213,9 +220,9 @@ class AskNewsToolkit(BaseToolkit):
             if return_type == "string":
                 reddit_content = response.as_string
             elif return_type == "dicts":
-                reddit_content = response.as_dict
+                reddit_content = response.as_dicts
             elif return_type == "both":
-                reddit_content = (response.as_string, response.as_dict)
+                reddit_content = (response.as_string, response.as_dicts)
 
             return reddit_content
 
@@ -260,21 +267,21 @@ class AskNewsToolkit(BaseToolkit):
                 date_to=date_to,
             )
 
-            time_series_data = response.data["timeseries"]
+            time_series_data = response.data.timeseries
 
             if return_type == "list":
                 return time_series_data
             elif return_type == "string":
                 header = (
-                    f"Sentiment analysis for '{asset}' on the '{metric}' "
-                    "metric from {date_from} to {date_to}. The values "
-                    "represent the aggregated sentiment from news sources "
-                    "during each specified time period.\n"
+                    f"This is the sentiment analysis for '{asset}' based "
+                    + f"on the '{metric}' metric from {date_from} to {date_to}"
+                    + ". The values reflect the aggregated sentiment from news"
+                    + " sources for each given time period.\n"
                 )
                 descriptive_text = "\n".join(
                     [
-                        f"On {entry['datetime']}, the sentiment value was "
-                        f"{entry['value']}."
+                        f"On {entry.datetime}, the sentiment value was "
+                        f"{entry.value}."
                         for entry in time_series_data
                     ]
                 )
