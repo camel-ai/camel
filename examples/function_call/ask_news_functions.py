@@ -101,16 +101,6 @@ try:
 except Exception as e:
     print(f"An error occurred in get_stories: {e}")
 
-# Example usage of the get_forecast method
-try:
-    print("Running get_forecast for the Trump-Biden handshake query...")
-    forecast_response = toolkit.get_forecast(
-        "Will Trump and Biden shake hands during the debate?"
-    )
-    # print(f"Forecast Response: {forecast_response}")
-    print("get_forecast executed successfully.")
-except Exception as e:
-    print(f"An error occurred in get_forecast: {e}")
 
 # Example usage of the search_reddit method
 try:
@@ -148,8 +138,6 @@ except Exception as e:
 get_news executed successfully.
 Running get_stories for Technology and Science...
 get_stories executed successfully.
-Running get_forecast for the Trump-Biden handshake query...
-An error occurred in get_forecast: An error occurred while fetching the forecast: 'AskNewsSDK' object has no attribute 'forecast'.
 Running search_reddit for sentiment, bitcoin, and halving...
 An error occurred in search_reddit: An error occurred while searching Reddit: 'RedditResponse' object has no attribute 'as_dict'.
 Running finance_query for Amazon sentiment data...

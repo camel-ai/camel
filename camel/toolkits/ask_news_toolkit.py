@@ -186,28 +186,6 @@ class AskNewsToolkit(BaseToolkit):
                 f"An error occurred while processing the chat query: {e!s}."
             )
 
-    def get_forecast(self, query: str) -> str:
-        r"""Get a forecast for a given query.
-
-        Args:
-            query (str): The query for which to get the forecast.
-
-        Returns:
-            str: The forecast response.
-
-        Raises:
-            Exception: If there is an error while fetching the forecast.
-        """
-        try:
-            forecast = self.asknews_client.forecast.get_forecast(query=query)
-
-            return forecast
-
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching the forecast: {e!s}."
-            )
-
     def search_reddit(
         self,
         keywords: list,
@@ -320,7 +298,6 @@ class AskNewsToolkit(BaseToolkit):
             OpenAIFunction(self.get_news),
             OpenAIFunction(self.get_stories),
             OpenAIFunction(self.chat_query),
-            OpenAIFunction(self.get_forecast),
             OpenAIFunction(self.search_reddit),
             OpenAIFunction(self.finance_query),
         ]
