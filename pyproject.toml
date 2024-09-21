@@ -113,6 +113,7 @@ cohere = { version = "^4.56", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true }
+datacommons = "^1.4.3"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
