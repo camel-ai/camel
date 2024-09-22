@@ -14,9 +14,6 @@
 from typing import Any, Dict, List, Optional, Union
 import datacommons
 import datacommons_pandas as dc
-from typing import Union, List, Dict, Optional, Any
-import datacommons
-import datacommons_pandas as dc
 
 
 class DataCommonsToolkit:
@@ -399,3 +396,4 @@ class DataCommonsToolkit:
                 f"statistical variable: {e!s}"
             )
             return {}
+
