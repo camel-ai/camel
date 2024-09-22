@@ -88,7 +88,7 @@ def test_get_openai_tool_schema():
                     },
                     'default_enum_para': {
                         'default': 'critic',
-                        'allOf': [{'$ref': '#/definitions/RoleType'}],
+                        '$ref': '#/definitions/RoleType',
                         'description': 'default_enum_para desc',
                     },
                 },
@@ -161,7 +161,7 @@ def test_get_openai_tool_schema():
                         'description': 'datatime_para desc',
                     },
                     'default_enum_para': {
-                        'allOf': [{'$ref': '#/$defs/RoleType'}],
+                        '$ref': '#/$defs/RoleType',
                         'default': 'critic',
                         'description': 'default_enum_para desc',
                     },
