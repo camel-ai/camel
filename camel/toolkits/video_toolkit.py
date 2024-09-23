@@ -59,7 +59,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             self._set_default_directory(download_directory)
 
     def _reset_video_info(self, video_url: str) -> None:
-        """Reset video information including download path, extension, and
+        r"""Reset video information including download path, extension, and
         current URL.
 
         Args:
@@ -91,7 +91,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     @property
     def video_download_path(self) -> str:
-        """Create or retrieve the directory for storing the downloaded video.
+        r"""Create or retrieve the directory for storing the downloaded video.
         Cached after first access.
 
         Returns:
@@ -162,7 +162,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         return self._video_extension
 
     def validate_and_process_url(self, url: str) -> Dict[str, Optional[str]]:
-        """Validate and process the given URL.
+        r"""Validate and process the given URL.
 
         Args:
             url (str): The input URL to be validated.
