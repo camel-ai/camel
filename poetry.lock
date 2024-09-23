@@ -9111,4 +9111,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<3.12"
-content-hash = "03ee11047eab0683a44a057d74f7eb4f66ab2b2480439f523d2b4d2c9673bbe0"
+content-hash = "62248af424893c44dfd4266a4caf97fefd5a328abbd45e420afecfebf8072946"
