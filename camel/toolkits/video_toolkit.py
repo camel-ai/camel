@@ -16,7 +16,7 @@ import io
 import os
 import re
 import subprocess
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -34,14 +34,12 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     def __init__(
         self,
-        video_url: str,
         download_directory: Optional[str] = None,
         chunk_duration: int = 0,
     ):
         r"""Initialize the VideoDownloaderToolkit.
 
         Args:
-            video_url (str): The URL of the video to download. (required)
             download_directory (str, optional): The directory where the video
                 will be downloaded. If not provided, a default directory will
                 be used.
@@ -49,20 +47,28 @@ class VideoDownloaderToolkit(BaseToolkit):
                 in seconds. If set to 0, the video will not be chunked.
                 (default: :obj:`0`).
         """
-        self.video_url = video_url
         self.chunk_duration = chunk_duration
         self.yt_dlp = importlib.import_module('yt_dlp')
         self._chunk_durations: list[int] = []
         self._cookies_path: Optional[str] = None
         self._video_download_path: Optional[str] = None
         self._video_extension: Optional[str] = None
+        self._current_url = "current_url"
 
-        if download_directory and self.video_url:
+        if download_directory:
             self._set_default_directory(download_directory)
 
-        converted_youtube_url = self._extract_youtube_video_url(self.video_url)
-        if converted_youtube_url:
-            self.video_url = converted_youtube_url
+    def _reset_video_info(self, video_url: str) -> None:
+        """Reset video information including download path, extension, and
+        current URL.
+
+        Args:
+            video_url (str): The new video URL to set and reset relevant
+            attributes.
+        """
+        self._video_download_path = None
+        self._video_extension = None
+        self._current_url = video_url
 
     @property
     def cookies_path(self) -> Optional[str]:
@@ -92,7 +98,9 @@ class VideoDownloaderToolkit(BaseToolkit):
             str: The path to the directory where the video will be stored.
         """
         if self._video_download_path is None:
-            self._video_download_path = generate_temp_directory(self.video_url)
+            self._video_download_path = generate_temp_directory(
+                self._current_url
+            )
 
         return self._video_download_path
 
@@ -153,6 +161,39 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         return self._video_extension
 
+    def validate_and_process_url(self, url: str) -> Dict[str, Optional[str]]:
+        """Validate and process the given URL.
+
+        Args:
+            url (str): The input URL to be validated.
+
+        Returns:
+            Dict[str, Optional[str]]: A dictionary containing the processed
+            URL (or empty string if invalid), a message indicating the result
+            of the validation, and a boolean `is_valid`.
+        """
+        url_info = {"url": "", "message": "", "is_valid": False}
+
+        if not url or not isinstance(url, str):
+            url_info["message"] = "Invalid URL: Input is empty or not a string"
+            return url_info
+
+        youtube_url = self._extract_youtube_video_url(url)
+        if youtube_url:
+            url = youtube_url
+
+        # Additional checks for general URL validation (e.g., HTTP/HTTPS)
+        if not re.match(r'^(http|https)://', url):
+            url_info["message"] = (
+                "Invalid URL: URL must start with http:// or https://"
+            )
+            return url_info
+
+        url_info["url"] = url
+        url_info["message"] = "Valid URL"
+        url_info["is_valid"] = True
+        return url_info
+
     def _extract_youtube_video_url(self, url: str) -> Optional[str]:
         r"""Convert an embedded YouTube URL to a standard YouTube video URL.
         Only applies to YouTube links, otherwise returns None.
@@ -173,10 +214,28 @@ class VideoDownloaderToolkit(BaseToolkit):
             return url
         return None
 
-    def download_video(self) -> None:
-        r"""Download the video and optionally split it into chunks."""
+    def download_video(
+        self,
+        video_url: str,
+    ) -> None | str:
+        r"""Download the video and optionally split it into chunks.
+
+        Args:
+            video_url (str): The URL of the video to download. (required)
+
+        Returns:
+            str | None: Returns an error message if the download fails, or
+            None if the download is successful.
+        """
+        url_info = self.validate_and_process_url(video_url)
+        if not url_info['is_valid']:
+            return f"Error: {url_info['message']}"
+        processed_url = url_info['url']
+
+        self._reset_video_info(processed_url)
+
         if self.chunk_duration > 0:
-            video_length = self.get_video_length()
+            video_length = self.get_video_length(processed_url)
             # attempt downloading by time intervals
             if video_length == 0:
                 chunk_index = 0
@@ -185,7 +244,9 @@ class VideoDownloaderToolkit(BaseToolkit):
                 while True:
                     try:
                         end_time = start_time + self.chunk_duration
-                        self._download_chunk(start_time, end_time, chunk_index)
+                        self._download_chunk(
+                            processed_url, start_time, end_time, chunk_index
+                        )
 
                         if chunk_index > 0:
                             chunk_filename = os.path.join(
@@ -230,7 +291,9 @@ class VideoDownloaderToolkit(BaseToolkit):
                         end_time = min(
                             start_time + self.chunk_duration, video_length
                         )
-                        self._download_chunk(start_time, end_time, chunk_index)
+                        self._download_chunk(
+                            processed_url, start_time, end_time, chunk_index
+                        )
                 except Exception as e:
                     return f'''Error occurred while downloading chunk 
                         {chunk_index}: {e}'''
@@ -249,17 +312,18 @@ class VideoDownloaderToolkit(BaseToolkit):
                 ydl_opts['cookiefile'] = self.cookies_path
             try:
                 with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([self.video_url])
+                    ydl.download([processed_url])
             except self.yt_dlp.utils.DownloadError as e:
                 return f"Error downloading video: {e}"
         return None
 
     def _download_chunk(
-        self, start_time: int, end_time: int, chunk_index: int
+        self, video_url: str, start_time: int, end_time: int, chunk_index: int
     ) -> None:
         r"""Download a specific chunk of the video.
 
         Args:
+            video_url (str): The URL of the video to download. (required)
             start_time (int): The start time of the chunk in seconds.
             end_time (int): The end time of the chunk in seconds.
             chunk_index (int): The index of the chunk.
@@ -284,8 +348,8 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         try:
             with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(self.video_url, download=False)
-                ydl.download([self.video_url])
+                info_dict = ydl.extract_info(video_url, download=False)
+                ydl.download([video_url])
                 video_filename = ydl.prepare_filename(info_dict)
 
             if not os.path.exists(video_filename):
@@ -319,10 +383,16 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         return False
 
-    def get_video_length(self) -> int:
+    def get_video_length(
+        self,
+        video_url: str,
+    ) -> int:
         r"""Retrieves the length of a video in seconds, either from a locally
         downloaded video file or from the network if no local file is
         available.
+
+        Args:
+            video_url (str): The URL of the video to download. (required)
 
         Returns:
             int: The length of the video in seconds. Returns :obj:`0` if the
@@ -365,9 +435,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
             try:
                 with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info_dict = ydl.extract_info(
-                        self.video_url, download=False
-                    )
+                    info_dict = ydl.extract_info(video_url, download=False)
                     video_length = info_dict.get('duration', 0)
             except Exception as e:
                 print(f"Error retrieving video length from network: {e}")
@@ -397,15 +465,21 @@ class VideoDownloaderToolkit(BaseToolkit):
             print(f"Error calculating video length from file: {e}")
             return 0
 
-    def get_video_bytes(self) -> bytes:
+    def get_video_bytes(
+        self,
+        video_url: str,
+    ) -> bytes:
         r"""Returns the video bytes for the downloaded video. If the video was
         downloaded in chunks, the chunks will be read and concatenated.
+
+        Args:
+            video_url (str): The URL of the video to download. (required)
 
         Returns:
             bytes: The video file content in bytes.
         """
         if not self.is_video_downloaded():
-            self.download_video()
+            self.download_video(video_url)
 
         video_bytes = b""
 
@@ -437,12 +511,13 @@ class VideoDownloaderToolkit(BaseToolkit):
         return video_bytes
 
     def get_video_screenshots(
-        self, timestamps: Union[List[int], int]
+        self, video_url: str, timestamps: Union[List[int], int]
     ) -> List[Image.Image]:
         r"""Capture screenshots from the video at specified timestamps or by
         dividing the video into equal parts if an integer is provided.
 
         Args:
+            video_url (str): The URL of the video to download. (required)
             timestamps (Union[List[int], int]): A list of timestamps (in
                 seconds) from which to capture the screenshots, or an integer
                 specifying the number of evenly spaced screenshots to capture.
@@ -451,9 +526,9 @@ class VideoDownloaderToolkit(BaseToolkit):
             List[Image.Image]: A list of screenshots as PIL Image objects.
         """
         if not self.is_video_downloaded():
-            self.download_video()
+            self.download_video(video_url)
 
-        video_length = self.get_video_length()
+        video_length = self.get_video_length(video_url)
         if isinstance(timestamps, int):
             intervals = video_length // (timestamps + 1)
             timestamps = [(i + 1) * intervals for i in range(timestamps)]

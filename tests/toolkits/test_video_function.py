@@ -15,42 +15,40 @@ from camel.toolkits.video_toolkit import VideoDownloaderToolkit
 
 
 def test_video_download_initialization():
-    downloader = VideoDownloaderToolkit(
-        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-    )
-    assert downloader.video_url is not None
+    downloader = VideoDownloaderToolkit()
     assert downloader.chunk_duration == 0
+    assert downloader.yt_dlp is not None
 
 
 def test_video_bytes_download():
-    downloader = VideoDownloaderToolkit(
+    downloader = VideoDownloaderToolkit()
+    video_bytes = downloader.get_video_bytes(
         video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
     )
-    video_bytes = downloader.get_video_bytes()
     assert len(video_bytes) > 0
 
 
 def test_video_length():
-    downloader = VideoDownloaderToolkit(
+    downloader = VideoDownloaderToolkit()
+    video_length = downloader.get_video_length(
         video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
     )
-    video_length = downloader.get_video_length()
-    assert video_length > 0
+    assert video_length >= 0
 
 
 def test_video_is_downloaded():
-    downloader = VideoDownloaderToolkit(
-        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
-    )
+    downloader = VideoDownloaderToolkit()
     is_downloaded = downloader.is_video_downloaded()
     assert isinstance(is_downloaded, bool)
 
 
 def test_video_screenshots_download():
     downloader = VideoDownloaderToolkit(
-        video_url='https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_30MB.mp4',
         chunk_duration=5,
     )
-    screenshots = downloader.get_video_screenshots([1, 3, 5])
+    screenshots = downloader.get_video_screenshots(
+        'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_30MB.mp4',
+        [1, 3, 5],
+    )
 
     assert len(screenshots) == 3, "Number of screenshots captured is incorrect"

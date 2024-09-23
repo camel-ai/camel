@@ -23,10 +23,10 @@ from camel.types.enums import RoleType, TaskType
 video_url = (
     'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
 )
-downloader = VideoDownloaderToolkit(video_url=video_url)
+downloader = VideoDownloaderToolkit()
 
 # Get the video bytes
-video_bytes = downloader.get_video_bytes()
+video_bytes = downloader.get_video_bytes(video_url)
 
 sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
     TaskType.VIDEO_DESCRIPTION, RoleType.ASSISTANT

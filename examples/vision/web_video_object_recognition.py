@@ -77,9 +77,9 @@ def detect_image_obj(image_list) -> None:
 
 def main() -> None:
     video_url = 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
-    downloader = VideoDownloaderToolkit(video_url=video_url)
+    downloader = VideoDownloaderToolkit()
 
-    image_list = downloader.get_video_screenshots(3)
+    image_list = downloader.get_video_screenshots(video_url, 3)
 
     detect_image_obj(image_list)
 
