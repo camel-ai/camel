@@ -34,14 +34,14 @@ class VideoDownloaderToolkit(BaseToolkit):
 
     def __init__(
         self,
-        video_url: Optional[str] = None,
+        video_url: str,
         download_directory: Optional[str] = None,
         chunk_duration: int = 0,
     ):
         r"""Initialize the VideoDownloaderToolkit.
 
         Args:
-            video_url (str, optional): The URL of the video to download.
+            video_url (str): The URL of the video to download. (required)
             download_directory (str, optional): The directory where the video
                 will be downloaded. If not provided, a default directory will
                 be used.
@@ -59,6 +59,10 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         if download_directory and self.video_url:
             self._set_default_directory(download_directory)
+
+        converted_youtube_url = self._extract_youtube_video_url(self.video_url)
+        if converted_youtube_url:
+            self.video_url = converted_youtube_url
 
     @property
     def cookies_path(self) -> Optional[str]:
@@ -121,9 +125,6 @@ class VideoDownloaderToolkit(BaseToolkit):
             str: The video file extension (e.g., '.mp4', '.webm').
         """
         if self._video_extension is None:
-            if not self.is_video_downloaded():
-                self.download_video()
-
             full_video_files = [
                 f
                 for f in os.listdir(self.video_download_path)
@@ -152,7 +153,7 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         return self._video_extension
 
-    def extract_youtube_video_url(self, url: str) -> Optional[str]:
+    def _extract_youtube_video_url(self, url: str) -> Optional[str]:
         r"""Convert an embedded YouTube URL to a standard YouTube video URL.
         Only applies to YouTube links, otherwise returns None.
 
@@ -172,23 +173,8 @@ class VideoDownloaderToolkit(BaseToolkit):
             return url
         return None
 
-    def download_video(self, video_url: Optional[str] = None) -> None | str:
-        r"""Download the video and optionally split it into chunks.
-
-        Args:
-            video_url (str, optional): The URL of the video to download.
-        """
-        if video_url:
-            self.video_url = video_url
-
-        if not self.video_url:
-            return '''No video URL provided. Certain functionalities might be 
-                limited.'''
-
-        converted_url = self.extract_youtube_video_url(self.video_url)
-        if converted_url:
-            self.video_url = converted_url
-
+    def download_video(self) -> None:
+        r"""Download the video and optionally split it into chunks."""
         if self.chunk_duration > 0:
             video_length = self.get_video_length()
             # attempt downloading by time intervals
@@ -418,6 +404,9 @@ class VideoDownloaderToolkit(BaseToolkit):
         Returns:
             bytes: The video file content in bytes.
         """
+        if not self.is_video_downloaded():
+            self.download_video()
+
         video_bytes = b""
 
         if self.chunk_duration > 0:
