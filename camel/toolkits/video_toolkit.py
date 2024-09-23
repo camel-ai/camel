@@ -418,11 +418,13 @@ class VideoDownloaderToolkit(BaseToolkit):
         Returns:
             bytes: The video file content in bytes.
         """
+        video_bytes = b""
+
         if self.chunk_duration > 0:
-            video_bytes = b""
             chunk_index = 0
 
-            while True:
+            files = os.listdir(self.video_download_path)
+            for chunk_index in range(len(files)):
                 chunk_filename = os.path.join(
                     self.video_download_path,
                     f'video_chunk_{chunk_index}{self.video_extension}',
@@ -433,24 +435,15 @@ class VideoDownloaderToolkit(BaseToolkit):
                 with open(chunk_filename, "rb") as chunk_file:
                     video_bytes += chunk_file.read()
 
-                chunk_index += 1
-
-            if chunk_index == 0:
-                self.download_video()
-                return self.get_video_bytes()
-
             return video_bytes
 
         video_path = os.path.join(
             self.video_download_path, f'full_video{self.video_extension}'
         )
 
-        if not os.path.exists(video_path):
-            self.download_video()
-            return self.get_video_bytes()
-
-        with open(video_path, "rb") as video_file:
-            video_bytes = video_file.read()
+        if os.path.exists(video_path):
+            with open(video_path, "rb") as video_file:
+                video_bytes = video_file.read()
 
         return video_bytes
 
@@ -572,7 +565,6 @@ class VideoDownloaderToolkit(BaseToolkit):
                 the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.download_video),
             OpenAIFunction(self.get_video_bytes),
             OpenAIFunction(self.get_video_screenshots),
         ]
