@@ -126,8 +126,7 @@ class VideoDownloaderToolkit(BaseToolkit):
     def video_extension(self) -> str:
         r"""Retrieve the video file extension. First check if the video has
         been downloaded. If not, download the video. Then check for the full
-        video file,
-        and finally check for chunked video files.
+        video file, and finally check for chunked video files.
 
         Returns:
             str: The video file extension (e.g., '.mp4', '.webm').
