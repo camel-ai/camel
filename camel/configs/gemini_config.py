@@ -86,7 +86,7 @@ class GeminiConfig(BaseConfig):
 
     @model_validator(mode="before")
     @classmethod
-    def fields_type_checking(cls, data: Any):
+    def model_type_checking(cls, data: Any):
         if isinstance(data, dict):
             response_schema = data.get("response_schema")
             safety_settings = data.get("safety_settings")
