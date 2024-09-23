@@ -1,217 +1,163 @@
 # Workforce
 
-> Workforce is a system where multiple agents/role-playing systems work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve problems.
+> Workforce is a system where multiple agents work together to solve tasks.
+> By using Workforce, users can quickly set up a multi-agent task solving
+> system with customized configurations. In this section, we will give a
+> brief view on the architecture of workforce, and how you can configure
+> and utilize it to solve tasks.
 
-> *The current Workforce in CAMEL is still in beta version. We are working on the stable version of Workforce, which will have a simpler user interface and better performance. If you have any suggestions or questions, please feel free to contact us or [create an issue](https://github.com/camel-ai/camel/issues/new?assignees=lightaime&labels=bug&projects=&template=bug_report.yml&title=%5BBUG%5D+).*
+## System Design
 
-## Architecture
+### Architecture
 
-Workforce follows a tree-shaped architecture, with one or more managers (internal nodes) managing multiple fine-tuned workers with different roles (leaf nodes). A manager is responsible of managing and coordinating its child nodes and can also be a child of another manager; a worker, on the other hand, must be a child node of a manager.
+Workforce follows a hierarchical architecture. A workforce can consist of
+multiple worker nodes, and each of the worker nodes will contain an agent
+as the worker. The worker nodes are managed by a coordinator agent inside the
+workforce, and the coordinator agent will assign tasks to the worker nodes
+according to the description of the worker nodes, along with their tool sets.
 
-> For now, CAMEL only supports the mode with one manager as root and multiple workers as direct leaf nodes of the root.
+Alongside the coordinator agent, there is also a task planner agent inside the
+workforce. The task planner agent will take the responsibility of decomposing
+and composing tasks, so that the workforce can solve the task step by step.
 
-All manager and worker nodes share a single channel, where they can post and receive tasks, broadcast task results, etc.
+### Communication Mechanism
 
-## Workflow
+The communication inside the workforce is based on the task channel. The
+initialization of workforce will create a channel that will be shared by
+all the nodes. Tasks will later be posted into this channel, and each
+worker node will listen to the channel, accept tasks that are assigned
+to it from this channel to solve.
 
-In this section we are going to talk about how workforce works under the hood, briefly.
+When a task is solved, the worker node will post the result back to the
+channel, and the result will reside in the channel as a 'dependency' for
+other tasks, which will be shared by all the worker nodes.
 
-As mentioned above, workforce is a system to solve tasks. Based on this, intrinsically, we make the initial input to a workforce as be a `Task` instance describing the main task that should be solved. This task will then be passed into the root of the workforce as the initial task of it.
+With this mechanism, the workforce can solve tasks in a collaborative and
+efficient way.
 
-After starting up, the first thing that the root manager will do is decomposing the main task into multiple subtasks, so that it can be solved step by step.
+### Failure Handling
 
-Afterwards, the manager will assign each of them to a worker that is most capable of doing this task, according to the global information it has, such as the description of each worker it manages. The subtasks are not posted all in a time. Instead, due to the dependency relationships, it will only post tasks with all the dependencies (also tasks) completed.
+In the workforce, we have a mechanism to handle failures. When a task fails,
+the coordinator agent will take actions to fix it. The actions can be either
+decomposing the task into smaller ones and assign them again, or creating a
+new worker that is capable of doing the task.
 
-Each worker will take the assigned tasks and try to complete it. If the task is successfully done, the worker will update the result of the task and notify the manager, so that the manager can post new tasks that depends on it.
+For now, the coordinator will make decisions based on the number of times the
+task has been decomposed. If the task has already been decomposed for more
+than a certain number of times, the coordinator will take the new worker
+creation action; if not, the coordinator will simply take the decomposition
+action.
 
-However, task can fail. We don’t want to see this happen, but things go wrong. Fortunately, managers can fix this. When a task fails, the worker will report the failure to the manager, and manager can take one of the following actions:
+There will also be cases where a task just simply cannot be solved by
+agents. Under this circumstance, to prevent the workforce from being stuck
+in a infinite agent creation loop, the workforce will be halted if one task
+has been failed for a certain number of times (3 by default).
 
-1. decompose the task into smaller ones and assign them again
-2. create a new worker that is capable of doing the task
+### A Simple Example of the Workflow
 
-For now, if the task has already been decomposed a lot of times, the manager will take the new worker creation action; if not, the manager will simply take the decomposition action.
+Here is a diagram illustrating the workflow with a simple example.
 
-When all the subtasks are finished, their results will be composed into a single, comprehensive result and then get updated into the main task instance and returned to the user.
+![Workforce Example](https://lh3.googleusercontent.com/pw/AP1GczMFbGi7pInBgiXoPbS8lOfIuGijWoo3EeRlz0OWPe7im1FWYXnD1xnbQpEbD_p4DVHtpWhQQHicGaEc1RaoyaEqg9396oGNPQYi4XQ8U3SBRxQV53KSrqzcE9RBMkGv7PgMMxXWVEiWA5rVe6oE9C8=w1315-h1324-s-no?authuser=0)
 
-### A Diagram with Simple Example
+## Get Started
 
-[Here](https://photos.app.goo.gl/dmFEiqyaidGVu5RXA) is a diagram illustrating the workflow with a simple example.
+In this section, we will show you how to create a workforce instance, add
+worker nodes to the workforce, and finally, how to start the workforce to
+solve tasks.
 
-## How to use Workforce: A Step-by-Step Guide
+### Create a Workforce Instance
 
-On this part, we will give you a step-by-step guide on how to use workforce to solve a task. You can see the full example used [here](https://github.com/camel-ai/camel/blob/master/examples/workforce/role_playing_with_agents.py).
-
-### Configuration of Worker Nodes
-
-A lot of the chores lie in the configurations of the worker nodes: we leave the full configuration freedom of each worker node to users, and we believe this is necessary to meet the desired performance and flexibility.
-
-Therefore, inevitably there would be a lot of configurations that need to be done - and it takes up about 80 percent of the code. From this example, we can see that we first created two agents taking different roles
+To start using Workforce, you need to first create a workforce instance, and
+then add worker nodes to the workforce. Here is an example of how you can do
+this:
 
 ```python
-guide_sysmsg = BaseMessage.make_assistant_message(
-    role_name="tour guide",
-    content="You have to lead everyone to have fun",
-)
+from camel.workforce import Workforce
 
-planner_sysmsg = BaseMessage.make_assistant_message(
-    role_name="planner",
-    content="good at tour plan.",
-)
-
-guide_agent = ChatAgent(guide_sysmsg)
-planner_agent = ChatAgent(planner_sysmsg)
+# Create a workforce instance
+workforce = Workforce("A Simple Workforce")
 ```
 
-Then we wrapped them as two worker nodes with descriptions
+Now we get a workforce instance with description "A Simple Workforce".
+However, there is no worker node in the workforce yet.
+
+> **Note: How to further customize the workforce**
+>
+> You can quickly create a workforce instance with default configurations
+> by just providing the description of the workforce. However, you can also
+> configure the workforce with more details, such as providing a list of
+> worker nodes directly instead of adding them one by one, or configuring
+> the coordinator agent and task planner agent by passing the configurations
+> to the workforce instance.
+
+### Add Worker Nodes
+
+After creating the workforce instance, you can add worker nodes to the
+workforce. To add a worker node, you need to first create worker agents
+that actually do the work.
+
+Suppose we have already created an `ChatAgent` that can do web searches 
+called `search_agent`. Now we can add this worker agent to the workforce.
 
 ```python
-guide_worker_node = SingleAgentNode('tour guide', guide_agent)
-planner_worker_node = SingleAgentNode('planner', planner_agent)
-```
-
-Similarly, we also created some configurations for a `RolePlaying`.
-
-```python
-function_list = [
-    *SEARCH_FUNCS,
-    *WEATHER_FUNCS,
-    *MAP_FUNCS,
-]
-user_model_config = ChatGPTConfig(temperature=0.0)
-assistant_model_config = ChatGPTConfig(
-    tools=function_list,
-    temperature=0.0,
-)
-model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_4O_MINI
-assistant_role_name = "Searcher"
-user_role_name = "Professor"
-assistant_agent_kwargs = dict(
-    model=ModelFactory.create(
-        model_platform=model_platform,
-        model_type=model_type,
-        model_config_dict=assistant_model_config.as_dict(),
-    ),
-    tools=function_list,
-)
-user_agent_kwargs = dict(
-    model=ModelFactory.create(
-        model_platform=model_platform,
-        model_type=model_type,
-        model_config_dict=user_model_config.as_dict(),
-    ),
-)
-```
-
-And send these configurations into a worker node that uses `RolePlaying`.
-
-```python
-research_rp_worker_node = RolePlayingNode(
-    'research Group',
-    assistant_role_name,
-    user_role_name,
-    assistant_agent_kwargs,
-    user_agent_kwargs,
-    1,
+# Add the worker agent to the workforce
+workforce.add_single_agent_worker(
+    "An agent that can do web searches",
+    worker=search_agent,
 )
 ```
 
-> Note here, we didn’t directly create a `RolePlaying` instance and wrap it inside a worker node but passed its configurations into a worker node. This is because `RolePlaying` is designed to be recreated for each task, therefore the instantiation will be managed by the worker node itself, which is different from the `SingleAgentNode`.
-
-If you make it here, congratulations! You have finished the configuration, and it’s the first and biggest step. Finishing this means you are almost done.
-
-### Create Task
-
-The task is what a workforce will solve. To create a task, simply pass in the content and the initial id.
+The adding function follows the fluent interface design pattern, so you can
+add multiple worker agents to the workforce in one line, like the following:
 
 ```python
-human_task = Task(
-    content="research history of Paris and plan a tour.",
-    id='0',
+workforce.add_single_agent_worker(
+    "An agent that can do web searches",
+    worker=search_agent,
+).add_single_agent_worker(
+    "Another agent",
+    worker=another_agent,
+).add_single_agent_worker(
+    "Yet another agent",
+    worker=yet_another_agent,
 )
 ```
 
-### Create Manager Node
+Now we have some worker agents in the workforce. It's time to create a task and
+let the workforce solve it.
 
-To make these worker nodes collaborate with each other, we need to create a manager node to coordinate them by passing in these worker nodes as the `children`.
+> **Note: The description is NOT trivial**
+> 
+> When adding an agent to the workforce as a worker node, the first argument
+> is the description of the worker node. Though it seems trivial, it is 
+> actually very important. The description will be used by the coordinator
+> agent as the basis to assign tasks to the worker nodes. Therefore, it is
+> recommended to provide a clear and concise description of the worker node.
+
+### Start the Workforce
+
+After adding worker nodes to the workforce, you can start the workforce to
+solve tasks. First we can define a task:
 
 ```python
-root_node = ManagerNode(
-    description='a travel group',
-    children=[
-        guide_worker_node,
-        planner_worker_node,
-        research_rp_worker_node,
-    ],
+from camel.tasks import Task
+
+# the id of the task can be any string to mark the task
+task = Task(
+    content="Make a travel plan for a 3-day trip to Paris.",
+    id="0",
 )
 ```
 
-> Note that, inside the manager node there will also be two agents, `coordinator_agent` and `task_planner` who will help on the coordination. To configure these, pass  `coordinator_agent_kwargs` and `task_agent_kwargs` into `ManagerNode`. Check the API docs for more information.
-
-### Create Workforce & Process Task
-
-Because we only have one layer in the current design of the workforce, this manager node also works as the root of the workforce.
-
-We can create a workforce by passing the root node, and then call `process_task()` to start the workforce to work on the task.
+Then we can start the workforce with the task:
 
 ```python
-workforce = Workforce(root_node)
-task = workforce.process_task(human_task)
+task = workforce.process_task(task)
 ```
 
-Finally, we can get the result of the task by checking `task.result`.
+The final result of the task will be stored in the `result` attribute of the
+task object. You can check the result by:
 
 ```python
-print('Final Result of Origin task:\n', task.result)
-```
-
-Here is one example of the output:
-
-```markdown
->>>
-Here is the finalized tour plan for your visit to historical sites in Paris, ensuring all logistics are accounted for:
-
-**Tour Itinerary:**
-
-**8:30 AM - 9:30 AM: Eiffel Tower**
-- Start your day early at the Eiffel Tower. Allocate about 1 hour to explore the area and take photos. Consider pre-booking tickets to avoid long queues.
-
-**10:00 AM - 10:30 AM: Arc de Triomphe**
-- Travel to the Arc de Triomphe (approximately 30 minutes by walking or metro). Spend about 30 minutes here to admire the architecture and take in the views from the top if you choose to climb.
-
-**11:00 AM - 12:30 PM: Montmartre (Basilica of the Sacré-Cœur)**
-- Head to Montmartre (about 30 minutes travel time). Spend around 1.5 hours exploring the Basilica and the charming streets of this historic district.
-
-**1:00 PM - 2:00 PM: Lunch**
-- Enjoy lunch at a nearby café in Montmartre or head towards the Panthéon area.
-
-**2:30 PM - 3:30 PM: Panthéon**
-- After lunch, visit the Panthéon (approximately 30 minutes travel time). Allocate about 1 hour to explore this mausoleum and its impressive architecture.
-
-**4:00 PM - 5:00 PM: Sainte-Chapelle**
-- Travel to Sainte-Chapelle (about 15 minutes). Spend around 1 hour admiring the stunning stained glass windows.
-
-**5:15 PM - 6:15 PM: Notre-Dame Cathedral**
-- Walk to Notre-Dame Cathedral (approximately 5 minutes). Spend about 1 hour here. Note that access may be limited due to restoration work.
-
-**6:30 PM - 7:00 PM: Place de la Bastille**
-- Head to Place de la Bastille (about 15 minutes). Spend around 30 minutes exploring the square and its significance.
-
-**7:15 PM - 8:00 PM: Les Invalides**
-- Travel to Les Invalides (approximately 20 minutes). Allocate about 45 minutes to explore the complex and visit Napoleon's tomb.
-
-**8:30 PM - 10:00 PM: The Louvre Museum**
-- Head to The Louvre Museum (about 20 minutes). Spend around 1.5 hours exploring the museum. If possible, book a timed entry ticket to avoid long waits.
-
-**10:30 PM - 11:45 PM: Palace of Versailles**
-- End your day with a visit to the Palace of Versailles. Note that this may require a separate trip, as it is located outside of central Paris. Allocate sufficient time for travel (approximately 1 hour) and plan to arrive before closing.
-
-**Transportation:**
-- Use a combination of walking and public transport (metro and buses) for efficient travel between sites. Consider purchasing a day pass for unlimited travel on public transport.
-
-**Additional Notes:**
-- Check the opening hours and any potential closures in advance to ensure a smooth experience.
-- Pre-book tickets for popular sites to avoid long queues.
-
-This itinerary allows you to efficiently visit each site while enjoying the rich history and culture of Paris. 
+print(task.result)
 ```
