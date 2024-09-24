@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.toolkits.data_commons import DataCommonsToolkit
-from camel.loaders import UnstructuredIO
 
 # Initialize the DataCommonsToolkit
 dc_toolkit = DataCommonsToolkit()
@@ -112,7 +111,7 @@ place = "geoId/06"
 stat_var = "Count_Person"
 date = "2021"
 value = dc_toolkit.get_stat_value(place, stat_var, date)
-print(f"\nPopulation of California in 2021:")
+print("\nPopulation of California in 2021:")
 print(value)
 
 '''
