@@ -93,7 +93,7 @@ class MistralModel(BaseModelBackend):
                         "name": tool_call.function.name,  # type: ignore[union-attr]
                         "arguments": tool_call.function.arguments,  # type: ignore[union-attr]
                     },
-                    type=tool_call.TYPE,  # type: ignore[union-attr]
+                    type=tool_call.type,  # type: ignore[union-attr]
                 )
                 for tool_call in response.choices[0].message.tool_calls
             ]

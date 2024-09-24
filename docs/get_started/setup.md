@@ -23,7 +23,7 @@ Some features require extra dependencies:
 ### [Option 2] Install from Source
 #### Install from Source with Poetry
 ```bash
-# Make sure your python version is later than 3.9
+# Make sure your python version is later than 3.10
 # You can use pyenv to manage multiple python verisons in your sytstem
 
 # Clone github repo
@@ -61,7 +61,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.6.7 https://github.com/camel-ai/camel.git
+git clone -b v0.2.1a https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel

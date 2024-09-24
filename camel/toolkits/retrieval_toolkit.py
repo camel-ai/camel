@@ -11,12 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Union
+from typing import List, Optional, Union
 
 from camel.retrievers import AutoRetriever
 from camel.toolkits import OpenAIFunction
 from camel.toolkits.base import BaseToolkit
 from camel.types import StorageType
+from camel.utils import Constants
 
 
 class RetrievalToolkit(BaseToolkit):
@@ -26,8 +27,19 @@ class RetrievalToolkit(BaseToolkit):
     storage system based on a specified query.
     """
 
+    def __init__(self, auto_retriever: Optional[AutoRetriever] = None) -> None:
+        r"""Initializes a new instance of the RetrievalToolkit class."""
+        self.ar = auto_retriever or AutoRetriever(
+            vector_storage_local_path="camel/temp_storage",
+            storage_type=StorageType.QDRANT,
+        )
+
     def information_retrieval(
-        self, query: str, contents: Union[str, List[str]]
+        self,
+        query: str,
+        contents: Union[str, List[str]],
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
     ) -> str:
         r"""Retrieves information from a local vector storage based on the
         specified query. This function connects to a local vector storage
@@ -39,6 +51,12 @@ class RetrievalToolkit(BaseToolkit):
             query (str): The question or query for which an answer is required.
             contents (Union[str, List[str]]): Local file paths, remote URLs or
                 string contents.
+            top_k (int, optional): The number of top results to return during
+                retrieve. Must be a positive integer. Defaults to
+                `DEFAULT_TOP_K_RESULTS`.
+            similarity_threshold (float, optional): The similarity threshold
+                for filtering results. Defaults to
+                `DEFAULT_SIMILARITY_THRESHOLD`.
 
         Returns:
             str: The information retrieved in response to the query, aggregated
@@ -46,16 +64,14 @@ class RetrievalToolkit(BaseToolkit):
 
         Example:
             # Retrieve information about CAMEL AI.
-            information_retrieval(query = "what is CAMEL AI?",
-                                contents="https://www.camel-ai.org/")
+            information_retrieval(query = "How to contribute to CAMEL AI?",
+                                contents="https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md")
         """
-        auto_retriever = AutoRetriever(
-            vector_storage_local_path="camel/temp_storage",
-            storage_type=StorageType.QDRANT,
-        )
-
-        retrieved_info = auto_retriever.run_vector_retriever(
-            query=query, contents=contents, top_k=3
+        retrieved_info = self.ar.run_vector_retriever(
+            query=query,
+            contents=contents,
+            top_k=top_k,
+            similarity_threshold=similarity_threshold,
         )
         return str(retrieved_info)
 
@@ -70,7 +86,3 @@ class RetrievalToolkit(BaseToolkit):
         return [
             OpenAIFunction(self.information_retrieval),
         ]
-
-
-# add the function to OpenAIFunction list
-RETRIEVAL_FUNCS: List[OpenAIFunction] = RetrievalToolkit().get_tools()

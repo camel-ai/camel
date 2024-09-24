@@ -12,18 +12,10 @@ camel.messages.base module
    :undoc-members:
    :show-inheritance:
 
-camel.messages.chat\_messages module
-------------------------------------
+camel.messages.func\_message module
+-----------------------------------
 
-.. automodule:: camel.messages.chat_messages
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.messages.system\_messages module
---------------------------------------
-
-.. automodule:: camel.messages.system_messages
+.. automodule:: camel.messages.func_message
    :members:
    :undoc-members:
    :show-inheritance:
