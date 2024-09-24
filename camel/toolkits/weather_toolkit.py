@@ -151,9 +151,7 @@ def get_weather_data(
         return error_message
 
 
-WEATHER_FUNCS = [
-    OpenAIFunction(get_weather_data),
-]
+WEATHER_FUNCS = [OpenAIFunction(get_weather_data)]
 
 
 class WeatherToolkit(BaseToolkit):
