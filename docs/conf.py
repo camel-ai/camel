@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.2.0'
+release = '0.2.1a'
 
 html_favicon = (
     'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
@@ -62,3 +62,16 @@ html_theme_options = {
         "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
     }
 }
+
+nbsphinx_execute = 'never'
+nbsphinx_allow_errors = True
+nbsphinx_prolog = r"""
+.. raw:: html
+
+    <style>
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        display: none;
+    }
+    </style>
+"""

@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .graph_storages.base import BaseGraphStorage
+from .graph_storages.nebula_graph import NebulaGraph
 from .graph_storages.neo4j_graph import Neo4jGraph
 from .key_value_storages.base import BaseKeyValueStorage
 from .key_value_storages.in_memory import InMemoryKeyValueStorage
@@ -40,4 +41,5 @@ __all__ = [
     'MilvusStorage',
     'BaseGraphStorage',
     'Neo4jGraph',
+    'NebulaGraph',
 ]

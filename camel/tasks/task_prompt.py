@@ -39,6 +39,10 @@ The root task is:
 
 {content}
 
+The additional information of the task is:
+
+{additional_info}
+
 The related tasks result and status:
 
 {other_results}

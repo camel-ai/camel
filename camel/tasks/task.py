@@ -93,6 +93,10 @@ class Task(BaseModel):
 
     result: Optional[str] = ""
 
+    failure_count: int = 0
+
+    additional_info: Optional[str] = None
+
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.
@@ -193,7 +197,7 @@ class Task(BaseModel):
     def decompose(
         self,
         agent: ChatAgent,
-        template: TextPrompt = TASK_DECOMPOSE_PROMPT,
+        prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
         r"""Decompose a task to a list of sub-tasks. It can be used for data
@@ -201,8 +205,8 @@ class Task(BaseModel):
 
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
-            template (TextPrompt): The prompt template to decompose
-                task. If not provided, the default template will be used.
+            prompt (str, optional): A prompt to decompose the task. If not
+                provided, the default prompt will be used.
             task_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response. If not provided,
                 the default parse_response will be used.
@@ -212,7 +216,7 @@ class Task(BaseModel):
         """
 
         role_name = agent.role_name
-        content = template.format(
+        content = prompt or TASK_DECOMPOSE_PROMPT.format(
             role_name=role_name,
             content=self.content,
         )
@@ -221,6 +225,8 @@ class Task(BaseModel):
         )
         response = agent.step(msg)
         tasks = task_parser(response.msg.content, self.id)
+        for task in tasks:
+            task.additional_info = self.additional_info
         return tasks
 
     def compose(
@@ -248,6 +254,7 @@ class Task(BaseModel):
         content = template.format(
             role_name=role_name,
             content=self.content,
+            additional_info=self.additional_info,
             other_results=sub_tasks_result,
         )
         msg = BaseMessage.make_user_message(
