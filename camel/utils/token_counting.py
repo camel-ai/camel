@@ -193,8 +193,14 @@ def get_model_encoding(value_for_tiktoken: str):
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
-        print("Model not found. Using cl100k_base encoding.")
-        encoding = tiktoken.get_encoding("cl100k_base")
+        if value_for_tiktoken in [
+            ModelType.O1_MINI.value,
+            ModelType.O1_PREVIEW.value,
+        ]:
+            encoding = tiktoken.get_encoding("o200k_base")
+        else:
+            print("Model not found. Using cl100k_base encoding.")
+            encoding = tiktoken.get_encoding("cl100k_base")
     return encoding
 
 

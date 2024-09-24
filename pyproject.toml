@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.9"
+version = "0.2.1a"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -43,7 +43,7 @@ eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 jupyter_client = "^8.6.2"
 ipykernel = "^6.0.0"
-
+pandoc = "*"
 pillow = "^10.2.0"
 
 # model-platforms
@@ -67,7 +67,7 @@ beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
-duckduckgo-search = { version = "^6.1.0", optional = true }
+duckduckgo-search = { version = "^6.2.12", optional = true }
 newspaper3k = { version = "^0.2.8", optional = true }
 wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
@@ -101,6 +101,7 @@ pymilvus = { version = "^2.4.0", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
+nebula3-python = { version = "3.8.2", optional = true }
 
 # key-value-storages
 redis = { version = "^5.0.6", optional = true }
@@ -176,6 +177,7 @@ vector-databases = [
 
 graph-storages = [
     "neo4j",
+    "nebula3-python",
 ]
 
 kv-stroages = [
@@ -240,6 +242,7 @@ all = [
     "sentence-transformers",
     # graph-storages
     "neo4j",
+    "nebula3-python",
     # retrievers
     "rank-bm25",
     # model platforms
@@ -281,10 +284,11 @@ types-requests = "^2"
 [tool.poetry.group.docs]
 optional = true
 [tool.poetry.group.docs.dependencies]
-sphinx = "^6"
+sphinx = "^7"
 sphinx_book_theme = "*"
-recommonmark = "*"
 docutils = "<0.20.0"
+myst-parser = "*"
+nbsphinx = "*"
 
 [tool.ruff]
 line-length = 79

@@ -61,7 +61,7 @@ class Packet:
         publisher_id: str,
         assignee_id: Optional[str] = None,
         status: PacketStatus = PacketStatus.SENT,
-    ):
+    ) -> None:
         self.task = task
         self.publisher_id = publisher_id
         self.assignee_id = assignee_id
@@ -83,7 +83,6 @@ class TaskChannel:
         self._task_dict: Dict[str, Packet] = {}
 
     async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
-        await self.print_channel()
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
@@ -167,7 +166,6 @@ class TaskChannel:
                 raise ValueError(f"Task {task_id} not found.")
             return self._task_dict[task_id].task
 
-    async def print_channel(self):
+    async def get_channel_debug_info(self) -> str:
         async with self._condition:
-            print(self._task_dict)
-            print(self._task_id_list)
+            return str(self._task_dict) + '\n' + str(self._task_id_list)
