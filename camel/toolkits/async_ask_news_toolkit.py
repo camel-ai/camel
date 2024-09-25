@@ -92,7 +92,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         query: str,
         n_articles: int = 10,
         return_type: Literal["string", "dicts", "both"] = "string",
-        method: Literal["nl", "kw"] = "nl",
+        method: Literal["nl", "kw"] = "kw",
     ) -> Union[str, dict, Tuple[str, dict]]:
         r"""Fetch news or stories based on a user query.
 
@@ -105,7 +105,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 return value. (default: :obj:`"string"`)
             method (Literal["nl", "kw"]): The search method, either "nl" for
                 natural language or "kw" for keyword search. (default:
-                :obj:`"nl"`)
+                :obj:`"kw"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
