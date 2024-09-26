@@ -426,7 +426,7 @@ class ChatAgent(BaseAgent):
             or isinstance(self.model_type, str)
             and "lama" in self.model_type
         ):
-            if self.model_backend.model_config_dict['tools']:
+            if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
                 tool_sys_msg = BaseMessage.make_assistant_message(
