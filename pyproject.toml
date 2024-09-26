@@ -118,6 +118,23 @@ mock = { version = "^5", optional = true }
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
 
+rag = [
+    "sentence-transformers",
+    "qdrant-client",
+    "pymilvus",
+    "neo4j",
+    "nebula3-python",
+    "rank-bm25",
+    "cohere",
+    "unstructured",
+]
+
+search_tools = [
+    "duckduckgo-search",
+    "wikipedia",
+    "wolframalpha",
+]
+
 model-platforms = [
     "litellm",
     "google-generativeai",
