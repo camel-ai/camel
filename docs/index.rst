@@ -23,10 +23,10 @@ Main Documentation
    :caption: Agents
    :name: agents
 
-   agents/single_agent.md
-   agents/role_playing.md
-   agents/embodied_agents.md
-   agents/critic_agents_and_tree_search.md
+   cookbooks/create_your_first_agent.ipynb
+   cookbooks/create_your_first_agents_society.ipynb
+   cookbooks/embodied_agents.ipynb
+   cookbooks/critic_agents_and_tree_search.ipynb
 
 .. toctree::
    :maxdepth: 1
