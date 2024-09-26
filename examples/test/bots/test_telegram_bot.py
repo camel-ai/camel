@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from examples.bots.telegram_bot import TelegramBot
+from camel.bots.telegram_bot import TelegramBot
 
 
 class TestTelegramBot(unittest.TestCase):
