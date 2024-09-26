@@ -16,7 +16,6 @@ import os
 import time
 from typing import Any, Dict, List, Union
 
-from requests.exceptions import RequestException
 import requests
 
 from camel.toolkits import OpenAIFunction
@@ -44,7 +43,8 @@ class WhatsAppToolkit(BaseToolkit):
         Args:
             retries (int): Number of times to retry the request in case of
                 failure. Defaults to 3.
-            delay (int): Time in seconds to wait between retries. Defaults to 1.
+            delay (int): Time in seconds to wait between retries.
+            Defaults to 1.
         """
         self.retries = retries
         self.delay = delay
@@ -57,7 +57,8 @@ class WhatsAppToolkit(BaseToolkit):
         if not all([self.access_token, self.phone_number_id]):
             raise ValueError(
                 "WhatsApp API credentials are not set. "
-                "Please set the WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID environment variables."
+                "Please set the WHATSAPP_ACCESS_TOKEN and "
+                "WHATSAPP_PHONE_NUMBER_ID environment variables."
             )
 
     def _retry_request(self, func, *args, **kwargs):
@@ -94,8 +95,9 @@ class WhatsAppToolkit(BaseToolkit):
             message (str): The text message to send.
 
         Returns:
-            Union[Dict[str, Any], str]: A dictionary containing the API response
-                if successful, or an error message string if failed.
+            Union[Dict[str, Any], str]: A dictionary containing
+            the API response if successful,
+            or an error message string if failed.
         """
         url = f"{self.base_url}/{self.version}/{self.phone_number_id}/messages"
         headers = {
@@ -116,16 +118,20 @@ class WhatsAppToolkit(BaseToolkit):
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            return f"Failed to send message: {str(e)}"
+            return f"Failed to send message: {e!s}"
 
     def get_message_templates(self) -> Union[List[Dict[str, Any]], str]:
         """Retrieves all message templates for the WhatsApp Business account.
 
         Returns:
             Union[List[Dict[str, Any]], str]: A list of dictionaries containing
-                template information if successful, or an error message string if failed.
+                template information if successful, or an error message string
+                if failed.
         """
-        url = f"{self.base_url}/{self.version}/{self.phone_number_id}/message_templates"
+        url = (
+            f"{self.base_url}/{self.version}/{self.phone_number_id}"
+            "/message_templates"
+        )
         headers = {"Authorization": f"Bearer {self.access_token}"}
 
         try:
@@ -133,18 +139,27 @@ class WhatsAppToolkit(BaseToolkit):
             response.raise_for_status()
             return response.json().get("data", [])
         except Exception as e:
-            return f"Failed to retrieve message templates: {str(e)}"
+            return f"Failed to retrieve message templates: {e!s}"
 
     def get_business_profile(self) -> Union[Dict[str, Any], str]:
         """Retrieves the WhatsApp Business profile information.
 
         Returns:
-            Union[Dict[str, Any], str]: A dictionary containing the business profile
-                information if successful, or an error message string if failed.
+            Union[Dict[str, Any], str]: A dictionary containing the business
+                profile information if successful, or an error message string
+                if failed.
         """
-        url = f"{self.base_url}/{self.version}/{self.phone_number_id}/whatsapp_business_profile"
+        url = (
+            f"{self.base_url}/{self.version}/{self.phone_number_id}"
+            "/whatsapp_business_profile"
+        )
         headers = {"Authorization": f"Bearer {self.access_token}"}
-        params = {"fields": "about,address,description,email,profile_picture_url,websites,vertical"}
+        params = {
+            "fields": (
+                "about,address,description,email,profile_picture_url,"
+                "websites,vertical"
+            )
+        }
 
         try:
             response = self._retry_request(
@@ -153,7 +168,7 @@ class WhatsAppToolkit(BaseToolkit):
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            return f"Failed to retrieve business profile: {str(e)}"
+            return f"Failed to retrieve business profile: {e!s}"
 
     def get_tools(self) -> List[OpenAIFunction]:
         """Returns a list of OpenAIFunction objects representing the
