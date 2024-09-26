@@ -17,19 +17,20 @@ In this section, we will take a spite of the task-oriented `RolyPlaying()` class
 ## Quick Start
 
 ### Step 0: Preparations
+
 ```python
 # Import necessary classes
 from camel.societies import RolePlaying
-from camel.types import TaskType, ModelType, ModelPlatformType
+from camel.types import TaskType, PredefinedModelType, ModelPlatformType
 from camel.models import ModelFactory
 
 # Set the LLM model type and model config
 model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_3_5_TURBO
+model_type = PredefinedModelType.GPT_3_5_TURBO
 model_config = ChatGPTConfig(
     temperature=0.8,  # the sampling temperature; the higher the more random
-    n=3,              # the no. of completion choices to generate for each input
-    )
+    n=3,  # the no. of completion choices to generate for each input
+)
 
 # Create the backend model
 model = ModelFactory.create(

@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from camel.configs import REKA_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
+from camel.types import ChatCompletion, PredefinedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -43,7 +43,7 @@ class RekaModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -52,8 +52,8 @@ class RekaModel(BaseModelBackend):
         r"""Constructor for Reka backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of REKA_* series.
+            model_type (PredefinedModelType): Model for which a backend is
+                created, one of REKA_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into `Reka.chat.create`.
             api_key (Optional[str]): The API key for authenticating with the
@@ -162,7 +162,7 @@ class RekaModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(
-                model=ModelType.GPT_4O_MINI
+                model=PredefinedModelType.GPT_4O_MINI
             )
         return self._token_counter
 

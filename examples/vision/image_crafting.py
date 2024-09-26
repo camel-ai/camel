@@ -19,7 +19,7 @@ from camel.prompts import PromptTemplateGenerator
 from camel.toolkits import DalleToolkit
 from camel.types import (
     ModelPlatformType,
-    ModelType,
+    PredefinedModelType,
     RoleType,
     TaskType,
 )
@@ -45,7 +45,7 @@ def main():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
 

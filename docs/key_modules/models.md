@@ -55,7 +55,7 @@ Here is the example code to use a chosen model. To utilize a different model, yo
 
 ```python
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.agents import ChatAgent
@@ -63,14 +63,14 @@ from camel.agents import ChatAgent
 # Define the model, here in this case we use gpt-4o-mini
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=PredefinedModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 # Define an assitant message
 system_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
+    role_name="Assistant",
+    content="You are a helpful assistant.",
 )
 
 # Initialize the agent

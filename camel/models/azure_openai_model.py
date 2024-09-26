@@ -19,7 +19,11 @@ from openai import AzureOpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    PredefinedModelType,
+)
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 
@@ -30,7 +34,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -40,8 +44,8 @@ class AzureOpenAIModel(BaseModelBackend):
         r"""Constructor for OpenAI backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of GPT_* series.
+            model_type (PredefinedModelType): Model for which a backend is
+                created, one of GPT_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the

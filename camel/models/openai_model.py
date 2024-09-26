@@ -19,7 +19,11 @@ from openai import OpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    PredefinedModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -32,7 +36,7 @@ class OpenAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -41,8 +45,8 @@ class OpenAIModel(BaseModelBackend):
         r"""Constructor for OpenAI backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of GPT_* series.
+            model_type (PredefinedModelType): Model for which a backend is
+                created, one of GPT_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
@@ -95,7 +99,10 @@ class OpenAIModel(BaseModelBackend):
         """
         # o1-preview and o1-mini have Beta limitations
         # reference: https://platform.openai.com/docs/guides/reasoning
-        if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
+        if self.model_type in [
+            PredefinedModelType.O1_MINI,
+            PredefinedModelType.O1_PREVIEW,
+        ]:
             # Remove system message that is not supported in o1 model.
             messages = [msg for msg in messages if msg.get("role") != "system"]
 

@@ -18,7 +18,12 @@ from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
-from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
+from camel.types import (
+    OpenAIBackendRole,
+    PredefinedModelType,
+    RoleType,
+    TaskType,
+)
 
 
 class _CamelJSONEncoder(json.JSONEncoder):
@@ -29,7 +34,7 @@ class _CamelJSONEncoder(json.JSONEncoder):
     CAMEL_ENUMS: ClassVar[Dict[str, EnumMeta]] = {
         "RoleType": RoleType,
         "TaskType": TaskType,
-        "ModelType": ModelType,
+        "ModelType": PredefinedModelType,
         "OpenAIBackendRole": OpenAIBackendRole,
     }
 

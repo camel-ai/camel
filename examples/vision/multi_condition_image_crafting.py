@@ -21,7 +21,7 @@ from camel.models import ModelFactory
 from camel.toolkits import DalleToolkit
 from camel.types import (
     ModelPlatformType,
-    ModelType,
+    PredefinedModelType,
     RoleType,
     TaskType,
 )
@@ -42,7 +42,7 @@ def main(image_paths: list[str]) -> list[str]:
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
 

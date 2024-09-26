@@ -20,7 +20,11 @@ from openai import OpenAI, Stream
 from camel.configs import ZHIPUAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    PredefinedModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -33,7 +37,7 @@ class ZhipuAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -42,8 +46,8 @@ class ZhipuAIModel(BaseModelBackend):
         r"""Constructor for ZhipuAI backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                such as GLM_* series.
+            model_type (PredefinedModelType): Model for which a backend is
+                created, such as GLM_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
@@ -105,7 +109,9 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+            self._token_counter = OpenAITokenCounter(
+                PredefinedModelType.GPT_4O_MINI
+            )
         return self._token_counter
 
     def check_model_config(self):

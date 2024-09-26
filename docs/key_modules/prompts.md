@@ -13,11 +13,11 @@ CAMEL provides various and comprehensive prompt templates for users to easily cr
 from camel.agents import TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, TaskType
+from camel.types import ModelPlatformType, PredefinedModelType, TaskType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=PredefinedModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 task_specify_agent = TaskSpecifyAgent(
@@ -49,11 +49,11 @@ from camel.agents import TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.prompts import TextPrompt
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=PredefinedModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 

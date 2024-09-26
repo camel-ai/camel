@@ -15,7 +15,7 @@ from mock import patch
 
 import examples.code.role_playing
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 
 
 def test_code_role_playing_example():
@@ -23,7 +23,7 @@ def test_code_role_playing_example():
         examples.code.role_playing.main(
             ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.STUB,
+                model_type=PredefinedModelType.STUB,
                 model_config_dict={},
             ),
             chat_turn_limit=2,

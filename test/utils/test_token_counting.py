@@ -14,7 +14,7 @@
 import pytest
 from PIL import Image
 
-from camel.types import ModelType, OpenAIVisionDetailType
+from camel.types import OpenAIVisionDetailType, PredefinedModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -32,8 +32,8 @@ def test_openai_count_token_from_image(
 ):
     image = Image.new("RGB", (width, height), "black")
     assert (
-        OpenAITokenCounter(ModelType.GPT_4O_MINI)._count_tokens_from_image(
-            image, detail
-        )
+        OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI
+        )._count_tokens_from_image(image, detail)
         == token_cost
     )

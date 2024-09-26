@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 from camel.configs import MISTRAL_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
+from camel.types import ChatCompletion, PredefinedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -46,7 +46,7 @@ class MistralModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -55,8 +55,8 @@ class MistralModel(BaseModelBackend):
         r"""Constructor for Mistral backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of MISTRAL_* series.
+            model_type (PredefinedModelType): Model for which a backend is
+                created, one of MISTRAL_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into `MistralClient.chat`.
             api_key (Optional[str]): The API key for authenticating with the
@@ -193,7 +193,7 @@ class MistralModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(
-                model=ModelType.GPT_4O_MINI
+                model=PredefinedModelType.GPT_4O_MINI
             )
         return self._token_counter
 

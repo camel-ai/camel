@@ -17,7 +17,7 @@ import pytest
 
 from camel.configs import AnthropicConfig, OpenSourceConfig
 from camel.models import AnthropicModel
-from camel.types import ModelType
+from camel.types import PredefinedModelType
 from camel.utils import AnthropicTokenCounter
 
 
@@ -25,16 +25,16 @@ from camel.utils import AnthropicTokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.CLAUDE_INSTANT_1_2,
-        ModelType.CLAUDE_2_0,
-        ModelType.CLAUDE_2_1,
-        ModelType.CLAUDE_3_OPUS,
-        ModelType.CLAUDE_3_SONNET,
-        ModelType.CLAUDE_3_HAIKU,
-        ModelType.CLAUDE_3_5_SONNET,
+        PredefinedModelType.CLAUDE_INSTANT_1_2,
+        PredefinedModelType.CLAUDE_2_0,
+        PredefinedModelType.CLAUDE_2_1,
+        PredefinedModelType.CLAUDE_3_OPUS,
+        PredefinedModelType.CLAUDE_3_SONNET,
+        PredefinedModelType.CLAUDE_3_HAIKU,
+        PredefinedModelType.CLAUDE_3_5_SONNET,
     ],
 )
-def test_anthropic_model(model_type: ModelType):
+def test_anthropic_model(model_type: PredefinedModelType):
     model_config_dict = AnthropicConfig().as_dict()
     model = AnthropicModel(model_type, model_config_dict)
     assert model.model_type == model_type
@@ -46,7 +46,7 @@ def test_anthropic_model(model_type: ModelType):
 
 @pytest.mark.model_backend
 def test_anthropic_model_unexpected_argument():
-    model_type = ModelType.CLAUDE_2_0
+    model_type = PredefinedModelType.CLAUDE_2_0
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

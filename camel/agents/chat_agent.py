@@ -48,8 +48,8 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelPlatformType,
-    ModelType,
     OpenAIBackendRole,
+    PredefinedModelType,
     RoleType,
 )
 from camel.utils import (
@@ -163,7 +163,7 @@ class ChatAgent(BaseAgent):
             if model is not None
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
+                model_type=PredefinedModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig().as_dict(),
             )
         )
@@ -171,7 +171,7 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: ModelType = self.model_backend.model_type
+        self.model_type: PredefinedModelType = self.model_backend.model_type
 
         # tool registration
         external_tools = external_tools or []
@@ -421,7 +421,7 @@ class ChatAgent(BaseAgent):
                 and information about the chat session.
         """
         if (
-            isinstance(self.model_type, ModelType)
+            isinstance(self.model_type, PredefinedModelType)
             and "lama" in self.model_type.value
             or isinstance(self.model_type, str)
             and "lama" in self.model_type
@@ -1174,7 +1174,7 @@ class ChatAgent(BaseAgent):
         Returns:
             dict: Usage dictionary.
         """
-        if isinstance(self.model_type, ModelType):
+        if isinstance(self.model_type, PredefinedModelType):
             encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         else:
             encoding = get_model_encoding("gpt-4o-mini")

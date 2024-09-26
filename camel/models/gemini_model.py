@@ -20,7 +20,7 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionMessage,
     Choice,
-    ModelType,
+    PredefinedModelType,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -40,7 +40,7 @@ class GeminiModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -49,7 +49,8 @@ class GeminiModel(BaseModelBackend):
         r"""Constructor for Gemini backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created.
+            model_type (PredefinedModelType): Model for which a backend is
+                created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into generate_content().
             api_key (Optional[str]): The API key for authenticating with the

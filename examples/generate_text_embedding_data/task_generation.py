@@ -18,7 +18,7 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, TaskType
+from camel.types import ModelPlatformType, PredefinedModelType, TaskType
 
 
 def main() -> None:
@@ -37,7 +37,7 @@ def main() -> None:
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     )
     agent = ChatAgent(

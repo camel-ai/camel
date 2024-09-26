@@ -30,7 +30,7 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -44,7 +44,7 @@ class ModelFactory:
     @staticmethod
     def create(
         model_platform: ModelPlatformType,
-        model_type: Union[ModelType, str],
+        model_type: Union[PredefinedModelType, str],
         model_config_dict: Dict,
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
@@ -55,8 +55,8 @@ class ModelFactory:
         Args:
             model_platform (ModelPlatformType): Platform from which the model
                 originates.
-            model_type (Union[ModelType, str]): Model for which a backend is
-                created can be a `str` for open source platforms.
+            model_type (Union[PredefinedModelType, str]): Model for which a
+                backend is created. Can be a `str` for open source platforms.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
             token_counter (Optional[BaseTokenCounter]): Token counter to use
@@ -68,13 +68,13 @@ class ModelFactory:
             url (Optional[str]): The url to the model service.
 
         Raises:
-            ValueError: If there is not backend for the model.
+            ValueError: If there is no backend for the model.
 
         Returns:
             BaseModelBackend: The initialized backend.
         """
         model_class: Any
-        if isinstance(model_type, ModelType):
+        if isinstance(model_type, PredefinedModelType):
             if model_platform.is_open_source and model_type.is_open_source:
                 model_class = OpenSourceModel
                 return model_class(
@@ -96,7 +96,7 @@ class ModelFactory:
                 model_class = MistralModel
             elif model_platform.is_reka and model_type.is_reka:
                 model_class = RekaModel
-            elif model_type == ModelType.STUB:
+            elif model_type == PredefinedModelType.STUB:
                 model_class = StubModel
             else:
                 raise ValueError(

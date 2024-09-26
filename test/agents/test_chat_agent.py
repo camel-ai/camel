@@ -40,8 +40,8 @@ from camel.toolkits import (
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
-    ModelType,
     OpenAIBackendRole,
+    PredefinedModelType,
     RoleType,
     TaskType,
 )
@@ -52,7 +52,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_type=PredefinedModelType.GPT_4O_MINI,
             model_config_dict=ChatGPTConfig().as_dict(),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
@@ -72,7 +72,8 @@ def test_chat_agent(model):
     assistant = ChatAgent(system_msg, model=model)
 
     assert str(assistant) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
+        "ChatAgent(doctor, "
+        f"RoleType.ASSISTANT, {PredefinedModelType.GPT_4O_MINI})"
     )
 
     assistant.reset()
@@ -172,7 +173,7 @@ def test_chat_agent_step_with_external_tools():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=model_config_dict,
     )
 
@@ -264,7 +265,7 @@ def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=model_config.as_dict(),
     )
     system_msg = BaseMessage(
@@ -292,7 +293,7 @@ def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=model_config.as_dict(),
     )
     system_msg = BaseMessage(
@@ -340,7 +341,7 @@ def test_chat_agent_stream_output():
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=stream_model_config.as_dict(),
     )
     stream_assistant = ChatAgent(system_msg, model=model)
@@ -423,7 +424,7 @@ def test_function_enabled():
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent_no_func = ChatAgent(system_message=system_message)
@@ -447,7 +448,7 @@ def test_tool_calling_sync():
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
@@ -492,7 +493,7 @@ async def test_tool_calling_math_async():
     math_funcs = sync_funcs_to_async(MathToolkit().get_tools())
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
@@ -547,7 +548,7 @@ async def test_tool_calling_async():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig().as_dict(),
     )
 
@@ -613,7 +614,7 @@ def test_chat_agent_vision():
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(

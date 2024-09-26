@@ -17,7 +17,11 @@ from typing import Any, Dict, List, Optional, Union
 from openai import OpenAI, Stream
 
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    PredefinedModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -91,7 +95,9 @@ class OpenAICompatibilityModel:
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+            self._token_counter = OpenAITokenCounter(
+                PredefinedModelType.GPT_4O_MINI
+            )
         return self._token_counter
 
     @property

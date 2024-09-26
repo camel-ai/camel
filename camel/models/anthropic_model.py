@@ -19,7 +19,7 @@ from anthropic import NOT_GIVEN, Anthropic
 from camel.configs import ANTHROPIC_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
+from camel.types import ChatCompletion, PredefinedModelType
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -32,7 +32,7 @@ class AnthropicModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -41,8 +41,8 @@ class AnthropicModel(BaseModelBackend):
         r"""Constructor for Anthropic backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of CLAUDE_* series.
+            model_type (PredefinedModelType): Model for which a backend is
+                created, one of CLAUDE_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into Anthropic.messages.create().
             api_key (Optional[str]): The API key for authenticating with the

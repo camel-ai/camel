@@ -22,7 +22,7 @@ from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    ModelType,
+    PredefinedModelType,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -36,7 +36,7 @@ class GroqModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: PredefinedModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -80,7 +80,9 @@ class GroqModel(BaseModelBackend):
         # Make sure you have the access to these open-source model in
         # HuggingFace
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+            self._token_counter = OpenAITokenCounter(
+                PredefinedModelType.GPT_4O_MINI
+            )
         return self._token_counter
 
     @api_keys_required("GROQ_API_KEY")

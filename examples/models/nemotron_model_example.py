@@ -13,9 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.models import NemotronModel
-from camel.types import ModelType
+from camel.types import PredefinedModelType
 
-nemotro = NemotronModel(model_type=ModelType.NEMOTRON_4_REWARD)
+nemotro = NemotronModel(model_type=PredefinedModelType.NEMOTRON_4_REWARD)
 
 message = [
     {"role": "user", "content": "I am going to Paris, what should I see?"},

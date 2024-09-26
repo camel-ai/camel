@@ -16,17 +16,17 @@ from mock import patch
 import examples.role_description.role_generation
 import examples.role_description.role_playing_with_role_description
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 
 model_gpt = ModelFactory.create(
     ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
+    model_type=PredefinedModelType.GPT_4O,
     model_config_dict={},
 )
 
 model_stub = ModelFactory.create(
     ModelPlatformType.OPENAI,
-    model_type=ModelType.STUB,
+    model_type=PredefinedModelType.STUB,
     model_config_dict={},
 )
 

@@ -72,22 +72,23 @@ You may overwrite the system message and configure the critic differently based 
 
 ### 🕹 Step 3: Using Critic Agents for Task Solving
 Our `RolePlaying()` class provide a simple way for you to add the critic in the loop. Below we provide a basic pipeline.
+
 ```python
 # Import necessary classes
 from camel.societies import RolePlaying
 from camel.configs import ChatGPTConfig
-from camel.types import TaskType, ModelType, ModelPlatformType
+from camel.types import TaskType, PredefinedModelType, ModelPlatformType
 from colorama import Fore
 from camel.utils import print_text_animated
 from camel.models import ModelFactory
 
 # Set the LLM model type and model config
 model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_3_5_TURBO
+model_type = PredefinedModelType.GPT_3_5_TURBO
 model_config = ChatGPTConfig(
     temperature=0.8,  # the sampling temperature; the higher the more random
-    n=3,              # the no. of completion choices to generate for each input
-    )
+    n=3,  # the no. of completion choices to generate for each input
+)
 
 # Create the backend model
 model = ModelFactory.create(

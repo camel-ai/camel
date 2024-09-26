@@ -18,7 +18,7 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.workforce import Workforce
 
 
@@ -43,7 +43,7 @@ def main():
     ]
 
     model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_3_5_TURBO
+    model_type = PredefinedModelType.GPT_3_5_TURBO
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(

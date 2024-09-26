@@ -23,7 +23,11 @@ from typing import TYPE_CHECKING, List, Optional
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
+from camel.types import (
+    OpenAIImageType,
+    OpenAIVisionDetailType,
+    PredefinedModelType,
+)
 
 if TYPE_CHECKING:
     from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
@@ -40,14 +44,16 @@ SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
 
 
-def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
+def messages_to_prompt(
+    messages: List[OpenAIMessage], model: PredefinedModelType
+) -> str:
     r"""Parse the message list into a single prompt following model-specific
     formats.
 
     Args:
         messages (List[OpenAIMessage]): Message list with the chat history
             in OpenAI API format.
-        model (ModelType): Model type for which messages will be parsed.
+        model (PredefinedModelType): Model type for which messages will be parsed.
 
     Returns:
         str: A single prompt summarizing all the messages.
@@ -56,10 +62,10 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
 
     ret: str
     if model in [
-        ModelType.LLAMA_2,
-        ModelType.LLAMA_3,
-        ModelType.GROQ_LLAMA_3_8B,
-        ModelType.GROQ_LLAMA_3_70B,
+        PredefinedModelType.LLAMA_2,
+        PredefinedModelType.LLAMA_3,
+        PredefinedModelType.GROQ_LLAMA_3_8B,
+        PredefinedModelType.GROQ_LLAMA_3_70B,
     ]:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
@@ -83,7 +89,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role
         return ret
-    elif model in [ModelType.VICUNA, ModelType.VICUNA_16K]:
+    elif model in [PredefinedModelType.VICUNA, PredefinedModelType.VICUNA_16K]:
         seps = [" ", "</s>"]
         role_map = {"user": "USER", "assistant": "ASSISTANT"}
 
@@ -102,7 +108,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role + ":"
         return ret
-    elif model == ModelType.GLM_4_OPEN_SOURCE:
+    elif model == PredefinedModelType.GLM_4_OPEN_SOURCE:
         system_prompt = f"[gMASK]<sop><|system|>\n{system_message}"
         ret = system_prompt
         for msg in messages[1:]:
@@ -118,7 +124,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += "<|" + role + "|>" + "\n"
         return ret
-    elif model == ModelType.QWEN_2:
+    elif model == PredefinedModelType.QWEN_2:
         system_prompt = f"<|im_start|>system\n{system_message}<|im_end|>"
         ret = system_prompt + "\n"
         for msg in messages[1:]:
@@ -141,7 +147,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += '<|im_start|>' + role + '\n'
         return ret
-    elif model == ModelType.GROQ_MIXTRAL_8_7B:
+    elif model == PredefinedModelType.GROQ_MIXTRAL_8_7B:
         # Mistral/Mixtral format
         system_prompt = f"<s>[INST] {system_message} [/INST]\n"
         ret = system_prompt
@@ -159,7 +165,10 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 )
 
         return ret.strip()
-    elif model in [ModelType.GROQ_GEMMA_7B_IT, ModelType.GROQ_GEMMA_2_9B_IT]:
+    elif model in [
+        PredefinedModelType.GROQ_GEMMA_7B_IT,
+        PredefinedModelType.GROQ_GEMMA_2_9B_IT,
+    ]:
         # Gemma format
         ret = f"<bos>{system_message}\n"
         for msg in messages:
@@ -194,8 +203,8 @@ def get_model_encoding(value_for_tiktoken: str):
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
         if value_for_tiktoken in [
-            ModelType.O1_MINI.value,
-            ModelType.O1_PREVIEW.value,
+            PredefinedModelType.O1_MINI.value,
+            PredefinedModelType.O1_PREVIEW.value,
         ]:
             encoding = tiktoken.get_encoding("o200k_base")
         else:
@@ -222,11 +231,11 @@ class BaseTokenCounter(ABC):
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType, model_path: str):
+    def __init__(self, model_type: PredefinedModelType, model_path: str):
         r"""Constructor for the token counter for open-source models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
+            model_type (PredefinedModelType): Model type for which tokens will be
                 counted.
             model_path (str): The path to the model files, where the tokenizer
                 model should be located.
@@ -274,11 +283,11 @@ class OpenSourceTokenCounter(BaseTokenCounter):
 
 
 class OpenAITokenCounter(BaseTokenCounter):
-    def __init__(self, model: ModelType):
+    def __init__(self, model: PredefinedModelType):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model (ModelType): Model type for which tokens will be counted.
+            model (PredefinedModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
         self.model_type = model
@@ -404,11 +413,11 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
+    def __init__(self, model_type: PredefinedModelType):
         r"""Constructor for the token counter for Anthropic models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
+            model_type (PredefinedModelType): Model type for which tokens will be
                 counted.
         """
 
@@ -435,7 +444,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
+    def __init__(self, model_type: PredefinedModelType):
         r"""Constructor for the token counter for Gemini models."""
         import google.generativeai as genai
 
@@ -521,11 +530,11 @@ class LiteLLMTokenCounter:
 
 
 class MistralTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
+    def __init__(self, model_type: PredefinedModelType):
         r"""Constructor for the token counter for Mistral models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
+            model_type (PredefinedModelType): Model type for which tokens will be
                 counted.
         """
         from mistral_common.tokens.tokenizers.mistral import (  # type:ignore[import-not-found]
@@ -538,7 +547,10 @@ class MistralTokenCounter(BaseTokenCounter):
         model_name = (
             "codestral-22b"
             if self.model_type
-            in {ModelType.MISTRAL_CODESTRAL, ModelType.MISTRAL_CODESTRAL_MAMBA}
+            in {
+                PredefinedModelType.MISTRAL_CODESTRAL,
+                PredefinedModelType.MISTRAL_CODESTRAL_MAMBA,
+            }
             else self.model_type.value
         )
 

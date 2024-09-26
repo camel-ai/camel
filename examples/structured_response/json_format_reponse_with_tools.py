@@ -22,7 +22,7 @@ from camel.toolkits import (
     MathToolkit,
     SearchToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 
 tools_list = [
     *MathToolkit().get_tools(),
@@ -40,7 +40,7 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=PredefinedModelType.GPT_4O_MINI,
     model_config_dict=assistant_model_config.as_dict(),
 )
 

@@ -23,7 +23,7 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
-class ModelType(Enum):
+class PredefinedModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo"
@@ -88,6 +88,8 @@ class ModelType(Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    OPEN_SOURCE = "open-source"
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -102,13 +104,13 @@ class ModelType(Enum):
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
-            ModelType.GPT_3_5_TURBO,
-            ModelType.GPT_4,
-            ModelType.GPT_4_TURBO,
-            ModelType.GPT_4O,
-            ModelType.GPT_4O_MINI,
-            ModelType.O1_PREVIEW,
-            ModelType.O1_MINI,
+            PredefinedModelType.GPT_3_5_TURBO,
+            PredefinedModelType.GPT_4,
+            PredefinedModelType.GPT_4_TURBO,
+            PredefinedModelType.GPT_4O,
+            PredefinedModelType.GPT_4O_MINI,
+            PredefinedModelType.O1_PREVIEW,
+            PredefinedModelType.O1_MINI,
         }
 
     @property
@@ -117,31 +119,32 @@ class ModelType(Enum):
         from Azure.
         """
         return self in {
-            ModelType.GPT_3_5_TURBO,
-            ModelType.GPT_4,
-            ModelType.GPT_4_TURBO,
-            ModelType.GPT_4O,
+            PredefinedModelType.GPT_3_5_TURBO,
+            PredefinedModelType.GPT_4,
+            PredefinedModelType.GPT_4_TURBO,
+            PredefinedModelType.GPT_4O,
         }
 
     @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether this type of models is an ZhipuAI model."""
         return self in {
-            ModelType.GLM_3_TURBO,
-            ModelType.GLM_4,
-            ModelType.GLM_4V,
+            PredefinedModelType.GLM_3_TURBO,
+            PredefinedModelType.GLM_4,
+            PredefinedModelType.GLM_4V,
         }
 
     @property
     def is_open_source(self) -> bool:
         r"""Returns whether this type of models is open-source."""
         return self in {
-            ModelType.LLAMA_2,
-            ModelType.LLAMA_3,
-            ModelType.QWEN_2,
-            ModelType.GLM_4_OPEN_SOURCE,
-            ModelType.VICUNA,
-            ModelType.VICUNA_16K,
+            PredefinedModelType.LLAMA_2,
+            PredefinedModelType.LLAMA_3,
+            PredefinedModelType.QWEN_2,
+            PredefinedModelType.GLM_4_OPEN_SOURCE,
+            PredefinedModelType.VICUNA,
+            PredefinedModelType.VICUNA_16K,
+            PredefinedModelType.OPEN_SOURCE,
         }
 
     @property
@@ -152,40 +155,40 @@ class ModelType(Enum):
             bool: Whether this type of models is anthropic.
         """
         return self in {
-            ModelType.CLAUDE_INSTANT_1_2,
-            ModelType.CLAUDE_2_0,
-            ModelType.CLAUDE_2_1,
-            ModelType.CLAUDE_3_OPUS,
-            ModelType.CLAUDE_3_SONNET,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_SONNET,
+            PredefinedModelType.CLAUDE_INSTANT_1_2,
+            PredefinedModelType.CLAUDE_2_0,
+            PredefinedModelType.CLAUDE_2_1,
+            PredefinedModelType.CLAUDE_3_OPUS,
+            PredefinedModelType.CLAUDE_3_SONNET,
+            PredefinedModelType.CLAUDE_3_HAIKU,
+            PredefinedModelType.CLAUDE_3_5_SONNET,
         }
 
     @property
     def is_groq(self) -> bool:
         r"""Returns whether this type of models is served by Groq."""
         return self in {
-            ModelType.GROQ_LLAMA_3_1_8B,
-            ModelType.GROQ_LLAMA_3_1_70B,
-            ModelType.GROQ_LLAMA_3_1_405B,
-            ModelType.GROQ_LLAMA_3_8B,
-            ModelType.GROQ_LLAMA_3_70B,
-            ModelType.GROQ_MIXTRAL_8_7B,
-            ModelType.GROQ_GEMMA_7B_IT,
-            ModelType.GROQ_GEMMA_2_9B_IT,
+            PredefinedModelType.GROQ_LLAMA_3_1_8B,
+            PredefinedModelType.GROQ_LLAMA_3_1_70B,
+            PredefinedModelType.GROQ_LLAMA_3_1_405B,
+            PredefinedModelType.GROQ_LLAMA_3_8B,
+            PredefinedModelType.GROQ_LLAMA_3_70B,
+            PredefinedModelType.GROQ_MIXTRAL_8_7B,
+            PredefinedModelType.GROQ_GEMMA_7B_IT,
+            PredefinedModelType.GROQ_GEMMA_2_9B_IT,
         }
 
     @property
     def is_mistral(self) -> bool:
         r"""Returns whether this type of models is served by Mistral."""
         return self in {
-            ModelType.MISTRAL_LARGE,
-            ModelType.MISTRAL_NEMO,
-            ModelType.MISTRAL_CODESTRAL,
-            ModelType.MISTRAL_7B,
-            ModelType.MISTRAL_MIXTRAL_8x7B,
-            ModelType.MISTRAL_MIXTRAL_8x22B,
-            ModelType.MISTRAL_CODESTRAL_MAMBA,
+            PredefinedModelType.MISTRAL_LARGE,
+            PredefinedModelType.MISTRAL_NEMO,
+            PredefinedModelType.MISTRAL_CODESTRAL,
+            PredefinedModelType.MISTRAL_7B,
+            PredefinedModelType.MISTRAL_MIXTRAL_8x7B,
+            PredefinedModelType.MISTRAL_MIXTRAL_8x22B,
+            PredefinedModelType.MISTRAL_CODESTRAL_MAMBA,
         }
 
     @property
@@ -196,7 +199,7 @@ class ModelType(Enum):
             bool: Whether this type of models is nvidia.
         """
         return self in {
-            ModelType.NEMOTRON_4_REWARD,
+            PredefinedModelType.NEMOTRON_4_REWARD,
         }
 
     @property
@@ -206,7 +209,10 @@ class ModelType(Enum):
         Returns:
             bool: Whether this type of models is gemini.
         """
-        return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+        return self in {
+            PredefinedModelType.GEMINI_1_5_FLASH,
+            PredefinedModelType.GEMINI_1_5_PRO,
+        }
 
     @property
     def is_reka(self) -> bool:
@@ -216,9 +222,9 @@ class ModelType(Enum):
             bool: Whether this type of models is Reka.
         """
         return self in {
-            ModelType.REKA_CORE,
-            ModelType.REKA_EDGE,
-            ModelType.REKA_FLASH,
+            PredefinedModelType.REKA_CORE,
+            PredefinedModelType.REKA_EDGE,
+            PredefinedModelType.REKA_FLASH,
         }
 
     @property
@@ -228,78 +234,84 @@ class ModelType(Enum):
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GLM_4V:
+        if self is PredefinedModelType.GLM_4V:
             return 1024
-        elif self is ModelType.VICUNA:
+        elif self is PredefinedModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
         elif self in {
-            ModelType.LLAMA_2,
-            ModelType.NEMOTRON_4_REWARD,
-            ModelType.STUB,
-            ModelType.REKA_CORE,
-            ModelType.REKA_EDGE,
-            ModelType.REKA_FLASH,
+            PredefinedModelType.LLAMA_2,
+            PredefinedModelType.NEMOTRON_4_REWARD,
+            PredefinedModelType.STUB,
+            PredefinedModelType.REKA_CORE,
+            PredefinedModelType.REKA_EDGE,
+            PredefinedModelType.REKA_FLASH,
         }:
             return 4_096
         elif self in {
-            ModelType.GPT_4,
-            ModelType.GROQ_LLAMA_3_8B,
-            ModelType.GROQ_LLAMA_3_70B,
-            ModelType.GROQ_GEMMA_7B_IT,
-            ModelType.GROQ_GEMMA_2_9B_IT,
-            ModelType.LLAMA_3,
-            ModelType.GLM_3_TURBO,
-            ModelType.GLM_4,
-            ModelType.GLM_4_OPEN_SOURCE,
+            PredefinedModelType.GPT_4,
+            PredefinedModelType.GROQ_LLAMA_3_8B,
+            PredefinedModelType.GROQ_LLAMA_3_70B,
+            PredefinedModelType.GROQ_GEMMA_7B_IT,
+            PredefinedModelType.GROQ_GEMMA_2_9B_IT,
+            PredefinedModelType.LLAMA_3,
+            PredefinedModelType.GLM_3_TURBO,
+            PredefinedModelType.GLM_4,
+            PredefinedModelType.GLM_4_OPEN_SOURCE,
         }:
             return 8_192
         elif self in {
-            ModelType.GPT_3_5_TURBO,
-            ModelType.VICUNA_16K,
+            PredefinedModelType.GPT_3_5_TURBO,
+            PredefinedModelType.VICUNA_16K,
         }:
             return 16_384
         elif self in {
-            ModelType.MISTRAL_CODESTRAL,
-            ModelType.MISTRAL_7B,
-            ModelType.MISTRAL_MIXTRAL_8x7B,
-            ModelType.GROQ_MIXTRAL_8_7B,
+            PredefinedModelType.MISTRAL_CODESTRAL,
+            PredefinedModelType.MISTRAL_7B,
+            PredefinedModelType.MISTRAL_MIXTRAL_8x7B,
+            PredefinedModelType.GROQ_MIXTRAL_8_7B,
         }:
             return 32_768
-        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+        elif self in {PredefinedModelType.MISTRAL_MIXTRAL_8x22B}:
             return 64_000
-        elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+        elif self in {
+            PredefinedModelType.CLAUDE_2_0,
+            PredefinedModelType.CLAUDE_INSTANT_1_2,
+        }:
             return 100_000
         elif self in {
-            ModelType.GPT_4O,
-            ModelType.GPT_4O_MINI,
-            ModelType.GPT_4_TURBO,
-            ModelType.O1_PREVIEW,
-            ModelType.O1_MINI,
-            ModelType.MISTRAL_LARGE,
-            ModelType.MISTRAL_NEMO,
-            ModelType.QWEN_2,
+            PredefinedModelType.GPT_4O,
+            PredefinedModelType.GPT_4O_MINI,
+            PredefinedModelType.GPT_4_TURBO,
+            PredefinedModelType.O1_PREVIEW,
+            PredefinedModelType.O1_MINI,
+            PredefinedModelType.MISTRAL_LARGE,
+            PredefinedModelType.MISTRAL_NEMO,
+            PredefinedModelType.QWEN_2,
         }:
             return 128_000
         elif self in {
-            ModelType.GROQ_LLAMA_3_1_8B,
-            ModelType.GROQ_LLAMA_3_1_70B,
-            ModelType.GROQ_LLAMA_3_1_405B,
+            PredefinedModelType.GROQ_LLAMA_3_1_8B,
+            PredefinedModelType.GROQ_LLAMA_3_1_70B,
+            PredefinedModelType.GROQ_LLAMA_3_1_405B,
         }:
             return 131_072
         elif self in {
-            ModelType.CLAUDE_2_1,
-            ModelType.CLAUDE_3_OPUS,
-            ModelType.CLAUDE_3_SONNET,
-            ModelType.CLAUDE_3_HAIKU,
-            ModelType.CLAUDE_3_5_SONNET,
+            PredefinedModelType.CLAUDE_2_1,
+            PredefinedModelType.CLAUDE_3_OPUS,
+            PredefinedModelType.CLAUDE_3_SONNET,
+            PredefinedModelType.CLAUDE_3_HAIKU,
+            PredefinedModelType.CLAUDE_3_5_SONNET,
         }:
             return 200_000
         elif self in {
-            ModelType.MISTRAL_CODESTRAL_MAMBA,
+            PredefinedModelType.MISTRAL_CODESTRAL_MAMBA,
         }:
             return 256_000
-        elif self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}:
+        elif self in {
+            PredefinedModelType.GEMINI_1_5_FLASH,
+            PredefinedModelType.GEMINI_1_5_PRO,
+        }:
             return 1_048_576
         else:
             raise ValueError("Unknown model type")
@@ -313,28 +325,28 @@ class ModelType(Enum):
         Returns:
             bool: Whether the model type matches the model name.
         """
-        if self is ModelType.VICUNA:
+        if self is PredefinedModelType.VICUNA:
             pattern = r'^vicuna-\d+b-v\d+\.\d+$'
             return bool(re.match(pattern, model_name))
-        elif self is ModelType.VICUNA_16K:
+        elif self is PredefinedModelType.VICUNA_16K:
             pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
             return bool(re.match(pattern, model_name))
-        elif self is ModelType.LLAMA_2:
+        elif self is PredefinedModelType.LLAMA_2:
             return (
                 self.value in model_name.lower()
                 or "llama2" in model_name.lower()
             )
-        elif self is ModelType.LLAMA_3:
+        elif self is PredefinedModelType.LLAMA_3:
             return (
                 self.value in model_name.lower()
                 or "llama3" in model_name.lower()
             )
-        elif self is ModelType.QWEN_2:
+        elif self is PredefinedModelType.QWEN_2:
             return (
                 self.value in model_name.lower()
                 or "qwen2" in model_name.lower()
             )
-        elif self is ModelType.GLM_4_OPEN_SOURCE:
+        elif self is PredefinedModelType.GLM_4_OPEN_SOURCE:
             return (
                 'glm-4' in model_name.lower() or "glm4" in model_name.lower()
             )

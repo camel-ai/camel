@@ -20,7 +20,7 @@ from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import GithubToolkit, OpenAIFunction
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 
@@ -63,7 +63,7 @@ def write_weekly_pr_summary(repo_name, model=None):
 
     assistant_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_type=PredefinedModelType.GPT_4O,
         model_config_dict=assistant_model_config_dict,
     )
 
@@ -117,7 +117,7 @@ def solve_issue(
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=assistant_model_config_dict,
     )
 

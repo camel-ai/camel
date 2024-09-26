@@ -30,7 +30,7 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     CompletionUsage,
-    ModelType,
+    PredefinedModelType,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -98,7 +98,9 @@ class SambaModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+            self._token_counter = OpenAITokenCounter(
+                PredefinedModelType.GPT_4O_MINI
+            )
         return self._token_counter
 
     def check_model_config(self):

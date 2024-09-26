@@ -119,12 +119,12 @@ You can connect the agent with external database (as long-term memory) in which 
     # Import the necessary classes
 
     from camel.configs import ChatGPTConfig, OpenSourceConfig
-    from camel.types import ModelType, ModelPlatformType
+    from camel.types import PredefinedModelType, ModelPlatformType
     from camel.models import ModelFactory
 
     # Set the LLM model type and model config
     model_platform = ModelPlatformType.OPEN_SOURCE
-    model_type = ModelType.LLAMA_2
+    model_type = PredefinedModelType.LLAMA_2
     model_config=OpenSourceConfig(
         model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
         server_url='http://localhost:8000/v1')      # The url with the set port number
