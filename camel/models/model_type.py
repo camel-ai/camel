@@ -29,7 +29,7 @@ class Modeltype:
                 self.type = PredefinedModelType.OPEN_SOURCE
             self.value = value
         else:
-            raise ValueError(f"Invalid type for _ModelType: {value}")
+            raise ValueError(f"Invalid type for ModelType: {value}")
 
     def __str__(self):
         return self.value
@@ -117,7 +117,7 @@ class Modeltype:
 
     """
     The following method will delegate the attribute access to the 
-    PredefinedModelType class if the attribute is not found in the _ModelType 
+    PredefinedModelType class if the attribute is not found in the ModelType 
     class.
     """
 
