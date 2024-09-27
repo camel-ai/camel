@@ -96,8 +96,6 @@ class ModelFactory:
                 model_class = MistralModel
             elif model_platform.is_reka and model_type.is_reka:
                 model_class = RekaModel
-            elif model_platform.is_samba and model_type.is_samba:
-                model_class = SambaModel
             elif model_type == ModelType.STUB:
                 model_class = StubModel
             else:
@@ -117,6 +115,8 @@ class ModelFactory:
                 model_class = LiteLLMModel
             elif model_platform.is_openai_compatibility_model:
                 model_class = OpenAICompatibilityModel
+            elif model_platform.is_samba:
+                model_class = SambaModel
             elif model_platform.is_together:
                 model_class = TogetherAIModel
                 return model_class(

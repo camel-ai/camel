@@ -29,12 +29,11 @@ tools = toolkit.get_tools()
 # set up LLM model
 assistant_model_config = ChatGPTConfig(
     temperature=0.0,
-    tools=tools,
 )
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=assistant_model_config.as_dict(),
 )
 
