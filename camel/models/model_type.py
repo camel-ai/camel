@@ -17,7 +17,7 @@ from typing import Union
 from camel.types import PredefinedModelType
 
 
-class _ModelType:
+class Modeltype:
     def __init__(self, value: Union[str, PredefinedModelType]) -> None:
         if isinstance(value, PredefinedModelType):
             self.type = value
@@ -121,5 +121,5 @@ class _ModelType:
     class.
     """
 
-    def __getattr__(self, item):
-        return getattr(self.type, item)
+    def __getattr__(self, attr):
+        return getattr(self.type, attr)
