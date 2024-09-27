@@ -492,7 +492,7 @@ class ModelPlatformType(Enum):
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
-    OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
 
     @property
@@ -554,7 +554,7 @@ class ModelPlatformType(Enum):
     def is_openai_compatibility_model(self) -> bool:
         r"""Returns whether this is a platform supporting openai
         compatibility"""
-        return self is ModelPlatformType.OPENAI_COMPATIBILITY_MODEL
+        return self is ModelPlatformType.OPENAI_COMPATIBLE_MODEL
 
     @property
     def is_gemini(self) -> bool:

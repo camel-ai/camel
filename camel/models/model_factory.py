@@ -22,7 +22,7 @@ from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
-from camel.models.openai_compatibility_model import OpenAICompatibilityModel
+from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -114,7 +114,7 @@ class ModelFactory:
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
             elif model_platform.is_openai_compatibility_model:
-                model_class = OpenAICompatibilityModel
+                model_class = OpenAICompatibleModel
             elif model_platform.is_samba:
                 model_class = SambaModel
             elif model_platform.is_together:

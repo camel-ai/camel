@@ -28,7 +28,7 @@ from camel.utils import (
 )
 
 
-class OpenAICompatibilityModel:
+class OpenAICompatibleModel:
     r"""Constructor for model backend supporting OpenAI compatibility."""
 
     def __init__(
