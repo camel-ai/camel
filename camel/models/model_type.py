@@ -17,7 +17,7 @@ from typing import Union
 from camel.types import PredefinedModelType
 
 
-class Modeltype:
+class ModelType:
     def __init__(self, value: Union[str, PredefinedModelType]) -> None:
         if isinstance(value, PredefinedModelType):
             self.type = value
