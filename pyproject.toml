@@ -381,6 +381,8 @@ module = [
     "mistralai",
     "reka-api",
     "agentops",
-    "botocore.*"
+    "botocore.*",
+    "arxiv",
+    "arxiv2text",
 ]
 ignore_missing_imports = true
