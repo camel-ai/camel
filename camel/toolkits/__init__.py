@@ -33,6 +33,7 @@ from .linkedin_toolkit import LINKEDIN_FUNCS, LinkedInToolkit
 from .base import BaseToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
+from .arxiv_toolkit import ArxivToolkit
 
 __all__ = [
     'OpenAIFunction',
@@ -62,4 +63,5 @@ __all__ = [
     'OpenAPIToolkit',
     'LinkedInToolkit',
     'CodeExecutionToolkit',
+    'ArxivToolkit',
 ]

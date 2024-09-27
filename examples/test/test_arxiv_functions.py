@@ -16,27 +16,79 @@ from unittest.mock import MagicMock, patch
 
 from camel.toolkits import ArxivToolkit
 
-# We need to mock the entire praw module
-praw_mock = MagicMock()
-praw_mock.Reddit = MagicMock()
 
-def test_search_paper():
-    arxivToolkit = ArxivToolkit()
-    query = "attention is all you need"
-    searched_results = arxivToolkit.search_paper(query, 1)
-    print(searched_results)
-    assert len(searched_results) == 1
+@patch('arxiv.Client')
+def test_arxiv_toolkit_init(mock_client):
+    toolkit = ArxivToolkit()
+    mock_client.assert_called_once()
+    assert isinstance(toolkit.client, MagicMock)
 
-def test_get_tools(arxiv_toolkit):
-    from camel.toolkits import OpenAIFunction
 
-    tools = arxiv_toolkit.get_tools()
+@patch('arxiv.Search')
+@patch('arxiv.Client')
+def test_get_search_results(mock_client, mock_search):
+    toolkit = ArxivToolkit()
+    mock_client_instance = mock_client.return_value
+
+    mock_client_instance.results.return_value = iter([MagicMock()])
+
+    query = "multi-agent"
+    result_generator = toolkit._get_search_results(query, max_results=1)
+
+    mock_search.assert_called_once_with(query=query, id_list=[], max_results=1)
+    assert list(result_generator)
+
+
+@patch('arxiv2text.arxiv_to_text')
+@patch('arxiv.Search')
+@patch('arxiv.Client')
+def test_search_papers(mock_client, mock_search, mock_arxiv_to_text):
+    toolkit = ArxivToolkit()
+    mock_client_instance = mock_client.return_value
+    mock_arxiv_to_text.return_value = "Extracted text"
+
+    # Mock paper data
+    mock_paper = MagicMock()
+    mock_paper.title = "Sample Paper"
+    mock_paper.updated.date.return_value.isoformat.return_value = "2024-09-01"
+    mock_paper.authors = [MagicMock(name="Guohao Li")]
+    mock_paper.entry_id = "1234"
+    mock_paper.summary = "This is a summary."
+    mock_paper.pdf_url = "http://example.com/sample.pdf"
+
+    mock_client_instance.results.return_value = iter([mock_paper])
+
+    query = "multi-agent"
+    papers = toolkit.search_papers(query, max_results=1)
+
+    assert len(papers) == 1
+    assert papers[0]["title"] == "Sample Paper"
+    assert papers[0]["paper_text"] == "Extracted text"
+
+
+@patch('arxiv.Client')
+@patch('arxiv.Search')
+def test_download_papers(mock_search, mock_client):
+    toolkit = ArxivToolkit()
+    mock_client_instance = mock_client.return_value
+
+    # Mock paper with download_pdf method and proper title
+    mock_paper = MagicMock()
+    mock_paper.title = "Sample Paper"
+    mock_client_instance.results.return_value = iter([mock_paper])
+
+    query = "quantum computing"
+    toolkit.download_papers(query, max_results=1, output_dir="./downloads")
+
+    mock_paper.download_pdf.assert_called_once_with(
+        dirpath="./downloads", filename="Sample Paper.pdf"
+    )
+
+
+def test_get_tools():
+    toolkit = ArxivToolkit()
+    tools = toolkit.get_tools()
+
     assert len(tools) == 2
-    assert all(isinstance(tool, OpenAIFunction) for tool in tools)
-
-def test_download_papers():
-    arxivToolkit = ArxivToolkit()
-    query1 = "attention is all you need"
-    result = arxivToolkit.download_papers(pdf_urls=["https://arxiv.org/pdf/1706.03762", "http://arxiv.org/pdf/2409.03757v1"])
-    print(result)
-test_download_papers()
+    assert tools[0].func == toolkit.search_papers
+    assert tools[1].func == toolkit.download_papers

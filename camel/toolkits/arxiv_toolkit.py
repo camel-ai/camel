@@ -1,98 +1,139 @@
-from typing import List, Literal
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.interpreters import InternalPythonInterpreter
-from camel.toolkits import OpenAIFunction
+from typing import Dict, Generator, List, Optional
+
+from camel.toolkits import BaseToolkit, OpenAIFunction
 from camel.utils import dependencies_required
-from pydantic import BaseModel
-
-from .base import BaseToolkit
-import arxiv
-from arxiv2text import arxiv_to_text
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
-
-class ArxivMetaData(BaseModel):
-    entry_id: str
-    updated_date: str
-    title: str
-    authors: list[str]
-    comment: str
-    def __str__(self) -> str:
-        return (
-            f"Paper Url: {self.entry_id}\n"
-            f"title: {self.title}"
-            f"Updated Time: {self.updated_date}\n"
-            f"Authors: {" ".join(self.authors)}\n"
-            f"Comment: {self.comment}\n"
-        )
 
 
 class ArxivToolkit(BaseToolkit):
+    r"""A toolkit for interacting with the arXiv API to search and download
+    academic papers.
+    """
 
     @dependencies_required('arxiv')
     def __init__(self) -> None:
-        super().__init__()
-        arxiv = self._import_arxiv_or_raise()
+        r"""Initializes the ArxivToolkit and sets up the arXiv client."""
+        import arxiv
+
         self.client = arxiv.Client()
-        self.current_search = {}
-        self.cached_paper = {}
 
-    def search_paper(self, 
-                     query: str, 
-                     max_results: int=10,
-                     sort_by: object=arxiv.SortCriterion.SubmittedDate) -> list[ArxivMetaData]:
-        search_result = arxiv.Search(
-            query = query,
-            max_results = max_results,
-            sort_by = sort_by
+    def _get_search_results(
+        self,
+        query: str,
+        paper_ids: Optional[List[str]] = None,
+        max_results: Optional[int] = 5,
+    ) -> Generator:
+        r"""Retrieves search results from the arXiv API based on the provided
+        query and optional paper IDs.
+
+        Args:
+            query (str): The search query string used to search for papers on
+                arXiv.
+            paper_ids (List[str], optional): A list of specific arXiv paper
+                IDs to search for. (default::obj: `None`)
+            max_results (int, optional): The maximum number of search results
+                to retrieve. (default::obj: `5`)
+
+        Returns:
+            Generator: A generator that yields results from the arXiv search
+                query, which includes metadata about each paper matching the
+                query.
+        """
+        import arxiv
+
+        paper_ids = paper_ids or []
+        search_query = arxiv.Search(
+            query=query,
+            id_list=paper_ids,
+            max_results=max_results,
+        )
+        return self.client.results(search_query)
+
+    def search_papers(
+        self,
+        query: str,
+        paper_ids: Optional[List[str]] = None,
+        max_results: Optional[int] = 5,
+    ) -> List[Dict[str, str]]:
+        r"""Searches for academic papers on arXiv using a query string and
+        optional paper IDs.
+
+        Args:
+            query (str): The search query string.
+            paper_ids (List[str], optional): A list of specific arXiv paper
+                IDs to search for. (default::obj: `None`)
+            max_results (int, optional): The maximum number of search results
+                to return. (default::obj: `5`)
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, each containing
+                information about a paper,
+            including title, published date, authors, entry ID, summary, and
+                extracted text from the paper.
+        """
+        from arxiv2text import arxiv_to_text
+
+        search_results = self._get_search_results(
+            query, paper_ids, max_results
+        )
+        papers_data = []
+
+        for paper in search_results:
+            paper_info = {
+                "title": paper.title,
+                "published_date": paper.updated.date().isoformat(),
+                "authors": [author.name for author in paper.authors],
+                "entry_id": paper.entry_id,
+                "summary": paper.summary,
+                "paper_text": arxiv_to_text(paper.pdf_url),
+            }
+            papers_data.append(paper_info)
+
+        return papers_data
+
+    def download_papers(
+        self,
+        query: str,
+        paper_ids: Optional[List[str]] = None,
+        max_results: Optional[int] = 5,
+        output_dir: Optional[str] = "./",
+    ) -> None:
+        r"""Downloads PDFs of academic papers from arXiv based on the provided
+        query.
+
+        Args:
+            query (str): The search query string.
+            paper_ids (List[str], optional): A list of specific arXiv paper
+                IDs to download. (default::obj: `None`)
+            max_results (int, optional): The maximum number of search results
+                to download. (default::obj: `5`)
+            output_dir (str, optional): The directory to save the downloaded
+                PDFs. Defaults to the current directory.
+        """
+        search_results = self._get_search_results(
+            query, paper_ids, max_results
         )
 
-        arxiv_results = self.client.results(search_result)
-        results = []
-        for r in arxiv_results:
-            results.append(ArxivMetaData(
-                entry_id=r.entry_id,
-                updated_date=r.updated.strftime("%Y-%m-%d %H:%M:%S"),
-                authors=[a.name for a in r.authors],
-                comment=r.comment,
-            ))
-            self.cached_paper[r.entry_id] = r
-        return results
-    # can be modified to str
-    def _download_single_paper(self, 
-                               title: str) -> str:
-        search_result = arxiv.Search(
-            query = title,
-            max_results = 1,
-        )
-        
-        arxiv_results = self.client.results(search_result)
-        assert len(arxiv_results) <= 1
-        if arxiv_results:
-            return arxiv_to_text(arxiv_results(arxiv_results[0].pdf_url))
-        return ""
+        for paper in search_results:
+            paper.download_pdf(
+                dirpath=output_dir, filename=f"{paper.title}" + ".pdf"
+            )
 
-    def download_papers(self, titles: List[str]) -> List[str]:
-        def download_with_error_handling(title: str) -> str:
-            try:
-                return self._download_single_paper(title)
-            except Exception as e:
-                print(f"Error downloading paper '{title}': {str(e)}")
-                return ""
-
-        async def async_download_all():
-            with ThreadPoolExecutor() as executor:
-                loop = asyncio.get_event_loop()
-                tasks = [
-                    loop.run_in_executor(executor, download_with_error_handling, title)
-                    for title in titles
-                ]
-                return await asyncio.gather(*tasks)
-
-        return asyncio.run(async_download_all())
-    
     def get_tools(self) -> List[OpenAIFunction]:
         return [
-            OpenAIFunction(self.search_paper),
+            OpenAIFunction(self.search_papers),
             OpenAIFunction(self.download_papers),
         ]

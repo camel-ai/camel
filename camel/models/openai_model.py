@@ -62,7 +62,7 @@ class OpenAIModel(BaseModelBackend):
             timeout=60,
             max_retries=3,
             base_url=self._url,
-           api_key=self._api_key,
+            api_key=self._api_key,
         )
 
     @property
