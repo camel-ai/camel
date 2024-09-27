@@ -35,7 +35,7 @@ class Modeltype:
         return self.value
 
     def __repr__(self):
-        return f"_ModelType({self.value})"
+        return f"ModelType({self.value})"
 
     """
     The following properties are duplicated from the PredefinedModelType class.
