@@ -36,9 +36,7 @@ class GoogleScholarToolkit(BaseToolkit):
         from scholarly import scholarly
 
         self.scholarly = scholarly
-        search_query = scholarly.search_author(author_name)
-        # Retrieve the first result from the iterator
-        self.first_author_result = next(search_query)
+        self.author_name = author_name
 
     def get_author_detailed_info(
         self,
@@ -49,7 +47,10 @@ class GoogleScholarToolkit(BaseToolkit):
             dict: A dictionary containing detailed information about the
                 author.
         """
-        author = self.scholarly.fill(self.first_author_result)
+        search_query = self.scholarly.search_author(self.author_name)
+        # Retrieve the first result from the iterator
+        first_author_result = next(search_query)
+        author = self.scholarly.fill(first_author_result)
         return author
 
     def get_author_publications(
