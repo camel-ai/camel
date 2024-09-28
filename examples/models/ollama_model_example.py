@@ -39,7 +39,7 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Ollama server started on http://localhost:11434/v1 for mistral model
+Ollama server started on http://localhost:11434/v1 for llama3.2 model
 
 Hello CAMEL AI community!
 

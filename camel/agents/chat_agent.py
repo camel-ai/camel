@@ -188,7 +188,7 @@ class ChatAgent(BaseAgent):
         # the tools set from `ChatAgent` will be used.
         # This design simplifies the interface while retaining tool-running
         # capabilities for `BaseModelBackend`.
-        if all_tools and not self.model_backend.model_config_dict['tools']:
+        if all_tools and not self.model_backend.model_config_dict.get("tools"):
             tool_schema_list = [
                 tool.get_openai_tool_schema() for tool in all_tools
             ]
@@ -506,10 +506,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
-            ):
+            if output_schema is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -598,10 +595,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
-            ):
+            if output_schema is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -708,7 +702,7 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None and self.model_type.supports_tool_calling:
+        if output_schema is not None:
             (
                 output_messages,
                 finish_reasons,
