@@ -188,7 +188,7 @@ class ChatAgent(BaseAgent):
         # the tools set from `ChatAgent` will be used.
         # This design simplifies the interface while retaining tool-running
         # capabilities for `BaseModelBackend`.
-        if all_tools and not self.model_backend.model_config_dict['tools']:
+        if all_tools and not self.model_backend.model_config_dict.get("tools"):
             tool_schema_list = [
                 tool.get_openai_tool_schema() for tool in all_tools
             ]
@@ -426,7 +426,7 @@ class ChatAgent(BaseAgent):
             or isinstance(self.model_type, str)
             and "lama" in self.model_type
         ):
-            if self.model_backend.model_config_dict['tools']:
+            if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
                 tool_sys_msg = BaseMessage.make_assistant_message(

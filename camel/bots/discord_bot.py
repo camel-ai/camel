@@ -19,6 +19,11 @@ from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
 from camel.utils import dependencies_required
 
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
+
 if TYPE_CHECKING:
     from discord import Message
 
@@ -36,12 +41,15 @@ class DiscordBot:
             contents for RAG.
         top_k (int): Top choice for the RAG response.
         return_detailed_info (bool): If show detailed info of the RAG response.
+        contents (Union[str, List[str], Element, List[Element]], optional):
+            Local file paths, remote URLs, string contents or Element objects.
     """
 
     @dependencies_required('discord')
     def __init__(
         self,
         chat_agent: ChatAgent,
+        contents: Union[str, List[str], Element, List[Element]] = None,
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
         auto_retriever: Optional[AutoRetriever] = None,
@@ -56,6 +64,7 @@ class DiscordBot:
         self.vector_storage_local_path = vector_storage_local_path
         self.top_k = top_k
         self.return_detailed_info = return_detailed_info
+        self.contents = contents
 
         if not self.token:
             raise ValueError(

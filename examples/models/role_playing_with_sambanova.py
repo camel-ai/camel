@@ -39,7 +39,7 @@ def main(
         "and then add 10 more years to this age."
     )
 
-    user_model_config = SambaCloudAPIConfig(temperature=0.2, max_tokens=2200)
+    user_model_config = SambaCloudAPIConfig(temperature=0.2, max_tokens=1800)
 
     tools_list = [
         *MathToolkit().get_tools(),
