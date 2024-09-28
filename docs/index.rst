@@ -64,6 +64,7 @@ Main Documentation
    cookbooks/roleplaying_scraper.ipynb
    cookbooks/video_analysis.ipynb
    cookbooks/agents_tracking.ipynb
+   cookbooks/workforce_judge_committee.ipynb
 
 .. toctree::
    :maxdepth: 1

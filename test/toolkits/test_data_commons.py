@@ -1,18 +1,20 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the “License”);
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an “AS IS” BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import patch
+
 from camel.toolkits.data_commons import DataCommonsToolkit
+
 
 def test_query_data_commons():
     dc_toolkit = DataCommonsToolkit()
@@ -37,6 +39,7 @@ def test_query_data_commons():
         assert result == expected_result
     print("test_query_data_commons passed successfully")
 
+
 def test_get_triples():
     dc_toolkit = DataCommonsToolkit()
     dcids = ['dc/c3j78rpyssdmf', 'dc/7hfhd2ek8ppd2']
@@ -60,8 +63,11 @@ def test_get_triples():
         result = dc_toolkit.get_triples(dcids)
         assert result == expected_result
         mock_get_triples.assert_called()
-        assert mock_get_triples.call_args[0][0] == dcids  # Check that dcids were passed correctly
+        assert (
+            mock_get_triples.call_args[0][0] == dcids
+        )  # Check that dcids were passed correctly
     print("test_get_triples passed successfully")
+
 
 def test_get_property_labels():
     dc_toolkit = DataCommonsToolkit()
@@ -71,7 +77,9 @@ def test_get_property_labels():
         'dc/7hfhd2ek8ppd2': ['biosampleOntology'],
     }
 
-    with patch('datacommons_pandas.get_property_labels') as mock_get_property_labels:
+    with patch(
+        'datacommons_pandas.get_property_labels'
+    ) as mock_get_property_labels:
         mock_get_property_labels.return_value = expected_result
         result = dc_toolkit.get_property_labels(dcids, out=True)
         print("Expected result:", expected_result)
@@ -79,6 +87,7 @@ def test_get_property_labels():
         assert result == expected_result
         mock_get_property_labels.assert_called_once_with(dcids, out=True)
     print("test_get_property_labels passed successfully")
+
 
 def test_get_property_values():
     dc_toolkit = DataCommonsToolkit()
@@ -96,6 +105,7 @@ def test_get_property_values():
         mock_get_property_values.assert_called_once_with(dcids, prop)
     print("test_get_property_values passed successfully")
 
+
 def test_get_places_in():
     dc_toolkit = DataCommonsToolkit()
     dcids = ["geoId/15", "geoId/02"]
@@ -112,6 +122,7 @@ def test_get_places_in():
         mock_get_places_in.assert_called_once_with(dcids, place_type)
     print("test_get_places_in passed successfully")
 
+
 def test_get_stat_value():
     dc_toolkit = DataCommonsToolkit()
     place = "geoId/12086"  # Miami-Dade County
@@ -125,6 +136,7 @@ def test_get_stat_value():
         assert result == expected_result
         mock_get_stat_value.assert_called_once_with(place, stat_var, unit=unit)
     print("test_get_stat_value passed successfully")
+
 
 def test_get_stat_all():
     dc_toolkit = DataCommonsToolkit()
@@ -181,6 +193,7 @@ def test_get_stat_all():
         assert result == expected_result
         mock_get_stat_all.assert_called_once_with(places, stat_vars)
     print("test_get_stat_all passed successfully")
+
 
 if __name__ == '__main__':
     test_query_data_commons()
