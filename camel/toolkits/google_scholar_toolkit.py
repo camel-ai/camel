@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import re
 from typing import List, Optional
 
 from camel.toolkits import OpenAIFunction
@@ -22,21 +23,38 @@ class GoogleScholarToolkit(BaseToolkit):
     publications from Google Scholar.
 
     Attributes:
-        author_name (str): The name of the author to search for.
+        author_identifier (Union[str, None]): The author's Google Scholar URL
+            or name of the author to search for.
+        is_author_name (bool): Flag to indicate if the identifier is a name.
+            (default: :obj:`False`)
         scholarly (module): The scholarly module for querying Google Scholar.
-        first_author_result (dict): The first search result for the author.
     """
 
-    def __init__(self, author_name: str) -> None:
-        r"""Initializes the GoogleScholarToolkit with the author's name.
+    def __init__(
+        self, author_identifier: str, is_author_name: bool = False
+    ) -> None:
+        r"""Initializes the GoogleScholarToolkit with the author's identifier.
 
         Args:
-            author_name (str): The name of the author to search for.
+            author_identifier (str): The author's Google Scholar URL or name
+                of the author to search for.
+            is_author_name (bool): Flag to indicate if the identifier is a
+                name. (default: :obj:`False`)
         """
         from scholarly import scholarly
 
         self.scholarly = scholarly
-        self.author_name = author_name
+        self.author_identifier = author_identifier
+        self.is_author_name = is_author_name
+
+    def _extract_author_id(self) -> Optional[str]:
+        r"""Extracts the author ID from a Google Scholar URL if provided.
+
+        Returns:
+            Optional[str]: The extracted author ID, or None if not found.
+        """
+        match = re.search(r'user=([A-Za-z0-9-]+)', self.author_identifier)
+        return match.group(1) if match else None
 
     def get_author_detailed_info(
         self,
@@ -47,9 +65,14 @@ class GoogleScholarToolkit(BaseToolkit):
             dict: A dictionary containing detailed information about the
                 author.
         """
-        search_query = self.scholarly.search_author(self.author_name)
-        # Retrieve the first result from the iterator
-        first_author_result = next(search_query)
+        if self.is_author_name:
+            search_query = self.scholarly.search_author(self.author_identifier)
+            # Retrieve the first result from the iterator
+            first_author_result = next(search_query)
+        else:
+            author_id = self._extract_author_id()
+            first_author_result = self.scholarly.search_author_id(id=author_id)
+
         author = self.scholarly.fill(first_author_result)
         return author
 

@@ -16,13 +16,28 @@ from unittest.mock import patch
 from camel.toolkits import GoogleScholarToolkit, OpenAIFunction
 
 
-def test_get_author_detailed_info():
+def test_get_author_detailed_info_by_name():
     with patch('scholarly.scholarly') as mock_scholarly:
         mock_scholarly.fill.return_value = {
             'name': 'Author Name',
             'publications': [],
         }
         toolkit = GoogleScholarToolkit('Author Name')
+
+        author_info = toolkit.get_author_detailed_info()
+        assert author_info['name'] == 'Author Name'
+        assert author_info['publications'] == []
+
+
+def test_get_author_detailed_info_by_url():
+    with patch('scholarly.scholarly') as mock_scholarly:
+        mock_scholarly.fill.return_value = {
+            'name': 'Author Name',
+            'publications': [],
+        }
+        toolkit = GoogleScholarToolkit(
+            'https://scholar.google.com/citations?user=J9K-D0sAAAAJ'
+        )
 
         author_info = toolkit.get_author_detailed_info()
         assert author_info['name'] == 'Author Name'
