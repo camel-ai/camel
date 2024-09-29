@@ -19,10 +19,10 @@ from openai import AzureOpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
 )
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
@@ -30,32 +30,30 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface.
     Doc: https://learn.microsoft.com/en-us/azure/ai-services/openai/
+
+    Args:
+        model_type (ModelType): Model for which a backend is created,
+            one of GPT_* series.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into openai.ChatCompletion.create().
+        api_key (Optional[str]): The API key for authenticating with the
+            OpenAI service. (default: :obj:`None`)
+        url (Optional[str]): The url to the OpenAI service. (default:
+            :obj:`None`)
+        api_version (Optional[str]): The api version for the model.
+        azure_deployment_name (Optional[str]): The deployment name you
+            chose when you deployed an azure model. (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         api_version: Optional[str] = None,
         azure_deployment_name: Optional[str] = None,
     ) -> None:
-        r"""Constructor for OpenAI backend.
-
-        Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created, one of GPT_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                OpenAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the OpenAI service. (default:
-                :obj:`None`)
-            api_version (Optional[str]): The api version for the model.
-            azure_deployment_name (Optional[str]): The deployment name you
-                chose when you deployed an azure model. (default: :obj:`None`)
-        """
         super().__init__(model_type, model_config_dict, api_key, url)
         self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
         self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
@@ -105,7 +103,7 @@ class AzureOpenAIModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(self.model_type.type)
         return self._token_counter
 
     @api_keys_required("AZURE_OPENAI_API_KEY", "AZURE_API_VERSION")

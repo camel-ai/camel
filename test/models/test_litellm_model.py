@@ -17,6 +17,7 @@ import pytest
 
 from camel.configs import LiteLLMConfig, OpenSourceConfig
 from camel.models import LiteLLMModel
+from camel.models.model_type import ModelType
 from camel.types import PredefinedModelType
 from camel.utils import LiteLLMTokenCounter
 
@@ -33,7 +34,7 @@ from camel.utils import LiteLLMTokenCounter
 )
 def test_litellm_model(model_type: PredefinedModelType):
     model_config_dict = LiteLLMConfig().as_dict()
-    model = LiteLLMModel(model_type.value, model_config_dict)
+    model = LiteLLMModel(ModelType(model_type), model_config_dict)
     assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, LiteLLMTokenCounter)

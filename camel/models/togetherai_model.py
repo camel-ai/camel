@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import TOGETHERAI_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -31,34 +32,32 @@ from camel.utils import (
 )
 
 
+# TODO: Add function calling support
 class TogetherAIModel:
     r"""Constructor for Together AI backend with OpenAI compatibility.
-    TODO: Add function calling support
+
+    Args:
+        model_type (ModelType): Model for which a backend is created, supported
+            model can be found here: https://docs.together.ai/docs/chat-models
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into openai.ChatCompletion.create().
+        api_key (Optional[str]): The API key for authenticating with the
+            Together service. (default: :obj:`None`)
+        url (Optional[str]): The url to the Together AI service. (default:
+            :obj:`"https://api.together.xyz/v1"`)
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `OpenAITokenCounter(ModelType.
+            GPT_4O_MINI)` will be used.
     """
 
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for TogetherAI backend.
-
-        Args:
-            model_type (str): Model for which a backend is created, supported
-                model can be found here: https://docs.together.ai/docs/chat-models
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                Together service. (default: :obj:`None`)
-            url (Optional[str]): The url to the Together AI service. (default:
-                :obj:`"https://api.together.xyz/v1"`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._token_counter = token_counter
@@ -92,7 +91,7 @@ class TogetherAIModel:
         # Reference: https://docs.together.ai/docs/openai-api-compatibility
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self.model_type.value,
             **self.model_config_dict,
         )
         return response

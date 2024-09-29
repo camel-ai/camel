@@ -11,16 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.configs import Gemini_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionMessage,
     Choice,
-    PredefinedModelType,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -33,35 +34,31 @@ if TYPE_CHECKING:
 
 
 class GeminiModel(BaseModelBackend):
-    r"""Gemini API in a unified BaseModelBackend interface."""
+    r"""Gemini API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into generate_content().
+        api_key (Optional[str]): The API key for authenticating with the
+            gemini service. (default: :obj:`None`)
+        url (Optional[str]): The url to the gemini service.
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `GeminiTokenCounter` will be
+            used.
+    """
 
     # NOTE: Currently "stream": True is not supported with Gemini due to the
     # limitation of the current camel design.
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Gemini backend.
-
-        Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into generate_content().
-            api_key (Optional[str]): The API key for authenticating with the
-                gemini service. (default: :obj:`None`)
-            url (Optional[str]): The url to the gemini service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `GeminiTokenCounter` will be
-                used.
-        """
-        import os
-
         import google.generativeai as genai
         from google.generativeai.types.generation_types import GenerationConfig
 
@@ -92,7 +89,7 @@ class GeminiModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = GeminiTokenCounter(self.model_type)
+            self._token_counter = GeminiTokenCounter(self.model_type.type)
         return self._token_counter
 
     @api_keys_required("GOOGLE_API_KEY")

@@ -171,7 +171,7 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: PredefinedModelType = self.model_backend.model_type
+        self.model_type = self.model_backend.model_type
 
         # tool registration
         external_tools = external_tools or []
@@ -506,10 +506,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
-            ):
+            if output_schema is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -598,10 +595,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
-            ):
+            if output_schema is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -708,7 +702,7 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None and self.model_type.supports_tool_calling:
+        if output_schema is not None:
             (
                 output_messages,
                 finish_reasons,

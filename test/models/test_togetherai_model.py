@@ -15,6 +15,7 @@ import pytest
 
 from camel.configs import TogetherAIConfig
 from camel.models import TogetherAIModel
+from camel.models.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -27,6 +28,6 @@ from camel.utils import OpenAITokenCounter
 )
 def test_litellm_model(model_type: str):
     model_config_dict = TogetherAIConfig().as_dict()
-    model = TogetherAIModel(model_type, model_config_dict)
+    model = TogetherAIModel(ModelType(model_type), model_config_dict)
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)

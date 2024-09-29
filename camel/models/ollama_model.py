@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import OLLAMA_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -28,29 +29,29 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
 class OllamaModel:
-    r"""Ollama service interface."""
+    r"""Ollama service interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into openai.ChatCompletion.create().
+        url (Optional[str]): The url to the model service. (default:
+            :obj:`"http://localhost:11434/v1"`)
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
+
+    References:
+        https://github.com/ollama/ollama/blob/main/docs/openai.md
+    """
 
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Ollama backend with OpenAI compatibility.
-
-        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
-
-        Args:
-            model_type (str): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`"http://localhost:11434/v1"`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._url = (
@@ -132,7 +133,7 @@ class OllamaModel:
 
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self.model_type.value,
             **self.model_config_dict,
         )
         return response

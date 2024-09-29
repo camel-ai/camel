@@ -18,10 +18,10 @@ from openai import OpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -32,30 +32,27 @@ from camel.utils import (
 class OpenSourceModel(BaseModelBackend):
     r"""Class for interace with OpenAI-API-compatible servers running
     open-source models.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Dict[str, Any]): A dictionary that will be fed
+            into :obj:`openai.ChatCompletion.create()`.
+        api_key (Optional[str]): The API key for authenticating with the
+            model service. (ignored for open-source models)
+        url (Optional[str]): The url to the model service.
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `OpenSourceTokenCounter` will
+            be used.
     """
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for model backends of Open-source models.
-
-        Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into :obj:`openai.ChatCompletion.create()`.
-            api_key (Optional[str]): The API key for authenticating with the
-                model service. (ignored for open-source models)
-            url (Optional[str]): The url to the model service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenSourceTokenCounter` will
-                be used.
-        """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -112,7 +109,7 @@ class OpenSourceModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = OpenSourceTokenCounter(
-                self.model_type, self.model_path
+                self.model_type.type, self.model_path
             )
         return self._token_counter
 

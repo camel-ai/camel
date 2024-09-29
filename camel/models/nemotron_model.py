@@ -17,7 +17,8 @@ from typing import List, Optional
 from openai import OpenAI
 
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, PredefinedModelType
+from camel.models.model_type import ModelType
+from camel.types import ChatCompletion
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
@@ -25,26 +26,24 @@ from camel.utils import (
 
 
 class NemotronModel:
-    r"""Nemotron model API backend with OpenAI compatibility."""
+    r"""Nemotron model API backend with OpenAI compatibility.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        api_key (Optional[str]): The API key for authenticating with the
+            Nvidia service. (default: :obj:`None`)
+        url (Optional[str]): The url to the Nvidia service. (default:
+            :obj:`None`)
+    """
 
     # NOTE: Nemotron model doesn't support additional model config like OpenAI.
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        r"""Constructor for Nvidia backend.
-
-        Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created.
-            api_key (Optional[str]): The API key for authenticating with the
-                Nvidia service. (default: :obj:`None`)
-            url (Optional[str]): The url to the Nvidia service. (default:
-                :obj:`None`)
-        """
         self.model_type = model_type
         self._url = url or os.environ.get("NVIDIA_API_BASE_URL")
         self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")

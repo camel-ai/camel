@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -32,31 +33,29 @@ from camel.utils import (
 
 
 class OpenAIModel(BaseModelBackend):
-    r"""OpenAI API in a unified BaseModelBackend interface."""
+    r"""OpenAI API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created,
+            one of GPT_* series.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into openai.ChatCompletion.create().
+        api_key (Optional[str]): The API key for authenticating with the
+            OpenAI service. (default: :obj:`None`)
+        url (Optional[str]): The url to the OpenAI service. (default:
+            :obj:`None`)
+        token_counter (Optional[BaseTokenCounter]): Token counter to use for
+            the model. If not provided, `OpenAITokenCounter` will be used.
+    """
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for OpenAI backend.
-
-        Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created, one of GPT_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                OpenAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the OpenAI service. (default:
-                :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will
-                be used.
-        """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -78,7 +77,7 @@ class OpenAIModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(self.model_type.type)
         return self._token_counter
 
     @api_keys_required("OPENAI_API_KEY")

@@ -26,6 +26,7 @@ from camel.configs import (
     SAMBA_VERSE_API_PARAMS,
 )
 from camel.messages import OpenAIMessage
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -40,37 +41,36 @@ from camel.utils import (
 
 
 class SambaModel:
-    r"""SambaNova service interface."""
+    r"""SambaNova service interface.
+
+    Args:
+        model_type (ModelType): Model for which a SambaNova backend is
+            created. Supported models via Fast API: `https://sambanova.ai/
+            fast-api?api_ref=128521`. Supported models via SambaVerse API
+            is listed in `https://sambaverse.sambanova.ai/models`.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into API request.
+        api_key (Optional[str]): The API key for authenticating with the
+            SambaNova service. (default: :obj:`None`)
+        url (Optional[str]): The url to the SambaNova service. Current
+            support SambaNova Fast API: :obj:`"https://fast-api.snova.ai/
+            v1/chat/ completions"`, SambaVerse API: :obj:`"https://
+            sambaverse.sambanova.ai/api/predict"` and SambaNova Cloud:
+            :obj:`"https://api.sambanova.ai/v1"`
+            (default::obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `OpenAITokenCounter(ModelType.
+            GPT_4O_MINI)` will be used.
+    """
 
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for SambaNova backend.
-
-        Args:
-            model_type (str): Model for which a SambaNova backend is
-                created. Supported models via Fast API: `https://sambanova.ai/
-                fast-api?api_ref=128521`. Supported models via SambaVerse API
-                is listed in `https://sambaverse.sambanova.ai/models`.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into API request.
-            api_key (Optional[str]): The API key for authenticating with the
-                SambaNova service. (default: :obj:`None`)
-            url (Optional[str]): The url to the SambaNova service. Current
-                support SambaNova Fast API: :obj:`"https://fast-api.snova.ai/
-                v1/chat/ completions"`, SambaVerse API: :obj:`"https://
-                sambaverse.sambanova.ai/api/predict"` and SambaNova Cloud:
-                :obj:`"https://api.sambanova.ai/v1"`
-                (default::obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
         self.model_type = model_type
         self._api_key = api_key or os.environ.get("SAMBA_API_KEY")
         self._url = url or os.environ.get(
@@ -190,7 +190,7 @@ class SambaModel:
                 "messages": messages,
                 "max_tokens": self.token_limit,
                 "stop": self.model_config_dict.get("stop"),
-                "model": self.model_type,
+                "model": self.model_type.value,
                 "stream": True,
                 "stream_options": self.model_config_dict.get("stream_options"),
             }
@@ -216,7 +216,7 @@ class SambaModel:
         elif self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
-                model=self.model_type,
+                model=self.model_type.value,
                 **self.model_config_dict,
             )
             return response
@@ -257,7 +257,7 @@ class SambaModel:
                 "messages": messages,
                 "max_tokens": self.token_limit,
                 "stop": self.model_config_dict.get("stop"),
-                "model": self.model_type,
+                "model": self.model_type.value,
                 "stream": True,
                 "stream_options": self.model_config_dict.get("stream_options"),
             }
@@ -287,7 +287,7 @@ class SambaModel:
         elif self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
-                model=self.model_type,
+                model=self.model_type.value,
                 **self.model_config_dict,
             )
             return response
@@ -297,7 +297,7 @@ class SambaModel:
             headers = {
                 "Content-Type": "application/json",
                 "key": str(self._api_key),
-                "modelName": self.model_type,
+                "modelName": self.model_type.value,
             }
 
             data = {
@@ -326,7 +326,7 @@ class SambaModel:
                     },
                     "select_expert": {
                         "type": "str",
-                        "value": self.model_type.split('/')[1],
+                        "value": self.model_type.value.split('/')[1],
                     },
                     "stop_sequences": {
                         "type": "str",
@@ -455,7 +455,7 @@ class SambaModel:
             id=None,
             choices=choices,
             created=int(time.time()),
-            model=self.model_type,
+            model=self.model_type.value,
             object="chat.completion",
             # SambaVerse API only provide `total_tokens`
             usage=CompletionUsage(

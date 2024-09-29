@@ -287,7 +287,7 @@ class OpenAITokenCounter(BaseTokenCounter):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model (PredefinedModelType): Model type for which tokens will be counted.
+            model (ModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
         self.model_type = model
@@ -417,8 +417,8 @@ class AnthropicTokenCounter(BaseTokenCounter):
         r"""Constructor for the token counter for Anthropic models.
 
         Args:
-            model_type (PredefinedModelType): Model type for which tokens will be
-                counted.
+            model_type (PredefinedModelType): Model type for which tokens will
+                be counted.
         """
 
         self.model_type = model_type

@@ -17,10 +17,10 @@ from typing import Any, Dict, List, Optional, Union
 from openai import Stream
 
 from camel.messages import OpenAIMessage
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
 )
 from camel.utils import BaseTokenCounter
 
@@ -32,7 +32,7 @@ class BaseModelBackend(ABC):
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -41,8 +41,7 @@ class BaseModelBackend(ABC):
         r"""Constructor for the model backend.
 
         Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created.
+            model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A config dictionary.
             api_key (Optional[str]): The API key for authenticating with the
                 model service.

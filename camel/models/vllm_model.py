@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import VLLM_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -29,32 +30,32 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 # flake8: noqa: E501
 class VLLMModel:
-    r"""vLLM service interface."""
+    r"""vLLM service interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Dict[str, Any]): A dictionary that will be fed
+            into openai.ChatCompletion.create().
+        url (Optional[str]): The url to the model service. (default:
+            :obj:`"http://localhost:8000/v1"`)
+        api_key (Optional[str]): The API key for authenticating with the
+            model service.
+        token_counter (Optional[BaseTokenCounter]): Token counter to use for
+            the model. If not provided, `OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
+
+    References:
+        https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
+    """
 
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for vLLM backend with OpenAI compatibility.
-
-        # Reference: https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
-
-        Args:
-            model_type (str): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`"http://localhost:8000/v1"`)
-            api_key (Optional[str]): The API key for authenticating with the
-                model service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._url = (
@@ -84,7 +85,7 @@ class VLLMModel:
             )
             print(
                 f"vllm server started on http://localhost:8000/v1 "
-                f"for {self.model_type} model."
+                f"for {self.model_type.value} model."
             )
         except Exception as e:
             print(f"Failed to start vllm server: {e}.")
@@ -136,7 +137,7 @@ class VLLMModel:
 
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self.model_type.value,
             **self.model_config_dict,
         )
         return response

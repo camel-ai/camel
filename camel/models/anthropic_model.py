@@ -19,7 +19,8 @@ from anthropic import NOT_GIVEN, Anthropic
 from camel.configs import ANTHROPIC_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.types import ChatCompletion, PredefinedModelType
+from camel.models.model_type import ModelType
+from camel.types import ChatCompletion
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -28,31 +29,30 @@ from camel.utils import (
 
 
 class AnthropicModel(BaseModelBackend):
-    r"""Anthropic API in a unified BaseModelBackend interface."""
+    r"""Anthropic API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created,
+            one of CLAUDE_* series.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into Anthropic.messages.create().
+        api_key (Optional[str]): The API key for authenticating with the
+            Anthropic service. (default: :obj:`None`)
+        url (Optional[str]): The url to the Anthropic service. (default:
+            :obj:`None`)
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `AnthropicTokenCounter` will
+            be used.
+    """
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Anthropic backend.
-
-        Args:
-            model_type (PredefinedModelType): Model for which a backend is
-                created, one of CLAUDE_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into Anthropic.messages.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                Anthropic service. (default: :obj:`None`)
-            url (Optional[str]): The url to the Anthropic service. (default:
-                :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `AnthropicTokenCounter` will
-                be used.
-        """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -89,7 +89,7 @@ class AnthropicModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = AnthropicTokenCounter(self.model_type)
+            self._token_counter = AnthropicTokenCounter(self.model_type.type)
         return self._token_counter
 
     def count_tokens_from_prompt(self, prompt: str) -> int:

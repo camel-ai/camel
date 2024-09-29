@@ -18,6 +18,7 @@ from openai import Stream
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -47,11 +48,11 @@ class StubTokenCounter(BaseTokenCounter):
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
 
-    model_type = PredefinedModelType.STUB
+    model_type = ModelType(PredefinedModelType.STUB)
 
     def __init__(
         self,
-        model_type: PredefinedModelType,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,

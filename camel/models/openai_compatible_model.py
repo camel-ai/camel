@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 from openai import OpenAI, Stream
 
 from camel.messages import OpenAIMessage
+from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -29,30 +30,29 @@ from camel.utils import (
 
 
 class OpenAICompatibleModel:
-    r"""Constructor for model backend supporting OpenAI compatibility."""
+    r"""Constructor for model backend supporting OpenAI compatibility.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Dict[str, Any]): A dictionary that will
+            be fed into openai.ChatCompletion.create().
+        api_key (str): The API key for authenticating with the
+            model service. (default: :obj:`None`)
+        url (str): The url to the model service. (default:
+            :obj:`None`)
+        token_counter (Optional[BaseTokenCounter]): Token counter to use
+            for the model. If not provided, `OpenAITokenCounter(ModelType.
+            GPT_4O_MINI)` will be used.
+    """
 
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: str,
         url: str,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for model backend.
-
-        Args:
-            model_type (str): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (str): The API key for authenticating with the
-                model service. (default: :obj:`None`)
-            url (str): The url to the model service. (default:
-                :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._token_counter = token_counter
@@ -80,7 +80,7 @@ class OpenAICompatibleModel:
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self.model_type.value,
             **self.model_config_dict,
         )
         return response

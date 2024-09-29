@@ -17,6 +17,7 @@ import pytest
 
 from camel.configs import AnthropicConfig, OpenSourceConfig
 from camel.models import AnthropicModel
+from camel.models.model_type import ModelType
 from camel.types import PredefinedModelType
 from camel.utils import AnthropicTokenCounter
 
@@ -36,7 +37,7 @@ from camel.utils import AnthropicTokenCounter
 )
 def test_anthropic_model(model_type: PredefinedModelType):
     model_config_dict = AnthropicConfig().as_dict()
-    model = AnthropicModel(model_type, model_config_dict)
+    model = AnthropicModel(ModelType(model_type), model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, AnthropicTokenCounter)
