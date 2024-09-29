@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import VLLM_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
@@ -29,20 +30,22 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
 # flake8: noqa: E501
-class VLLMModel:
+class VLLMModel(BaseModelBackend):
     r"""vLLM service interface.
 
     Args:
         model_type (ModelType): Model for which a backend is created.
         model_config_dict (Dict[str, Any]): A dictionary that will be fed
             into openai.ChatCompletion.create().
-        url (Optional[str]): The url to the model service. (default:
-            :obj:`"http://localhost:8000/v1"`)
-        api_key (Optional[str]): The API key for authenticating with the
-            model service.
-        token_counter (Optional[BaseTokenCounter]): Token counter to use for
-            the model. If not provided, `OpenAITokenCounter(
+        url (Optional[str], optional): The url to the model service. If not
+            provided, :obj:`"http://localhost:8000/v1"` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service. (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
 
     References:
         https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html
@@ -56,8 +59,9 @@ class VLLMModel:
         api_key: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._url = (
             url
             or os.environ.get("VLLM_BASE_URL")

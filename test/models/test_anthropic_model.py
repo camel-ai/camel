@@ -26,18 +26,18 @@ from camel.utils import AnthropicTokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        PredefinedModelType.CLAUDE_INSTANT_1_2,
-        PredefinedModelType.CLAUDE_2_0,
-        PredefinedModelType.CLAUDE_2_1,
-        PredefinedModelType.CLAUDE_3_OPUS,
-        PredefinedModelType.CLAUDE_3_SONNET,
-        PredefinedModelType.CLAUDE_3_HAIKU,
-        PredefinedModelType.CLAUDE_3_5_SONNET,
+        ModelType(PredefinedModelType.CLAUDE_INSTANT_1_2),
+        ModelType(PredefinedModelType.CLAUDE_2_0),
+        ModelType(PredefinedModelType.CLAUDE_2_1),
+        ModelType(PredefinedModelType.CLAUDE_3_OPUS),
+        ModelType(PredefinedModelType.CLAUDE_3_SONNET),
+        ModelType(PredefinedModelType.CLAUDE_3_HAIKU),
+        ModelType(PredefinedModelType.CLAUDE_3_5_SONNET),
     ],
 )
-def test_anthropic_model(model_type: PredefinedModelType):
+def test_anthropic_model(model_type: ModelType):
     model_config_dict = AnthropicConfig().as_dict()
-    model = AnthropicModel(ModelType(model_type), model_config_dict)
+    model = AnthropicModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, AnthropicTokenCounter)
@@ -47,7 +47,7 @@ def test_anthropic_model(model_type: PredefinedModelType):
 
 @pytest.mark.model_backend
 def test_anthropic_model_unexpected_argument():
-    model_type = PredefinedModelType.CLAUDE_2_0
+    model_type = ModelType(PredefinedModelType.CLAUDE_2_0)
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

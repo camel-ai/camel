@@ -31,6 +31,7 @@ from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.models.model_type import ModelType
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     MathToolkit,
@@ -73,7 +74,7 @@ def test_chat_agent(model):
 
     assert str(assistant) == (
         "ChatAgent(doctor, "
-        f"RoleType.ASSISTANT, {PredefinedModelType.GPT_4O_MINI})"
+        f"RoleType.ASSISTANT, {ModelType(PredefinedModelType.GPT_4O_MINI)})"
     )
 
     assistant.reset()

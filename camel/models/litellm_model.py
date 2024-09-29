@@ -15,12 +15,13 @@ from typing import Any, Dict, List, Optional
 
 from camel.configs import LITELLM_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import ChatCompletion
 from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 
 
-class LiteLLMModel:
+class LiteLLMModel(BaseModelBackend):
     r"""Constructor for LiteLLM backend with OpenAI compatibility.
 
     Args:
@@ -28,12 +29,13 @@ class LiteLLMModel:
             such as GPT-3.5-turbo, Claude-2, etc.
         model_config_dict (Dict[str, Any]): A dictionary of parameters for
             the model configuration.
-        api_key (Optional[str]): The API key for authenticating with the
-            model service. (default: :obj:`None`)
-        url (Optional[str]): The url to the model service. (default:
-            :obj:`None`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `LiteLLMTokenCounter` will be used.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`LiteLLMTokenCounter` will
+            be used. (default: :obj:`None`)
     """
 
     # NOTE: Currently stream mode is not supported.
@@ -46,8 +48,9 @@ class LiteLLMModel:
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._client = None
         self._token_counter = token_counter
         self.check_model_config()
@@ -93,18 +96,16 @@ class LiteLLMModel:
         return self._client
 
     @property
-    def token_counter(self) -> LiteLLMTokenCounter:
+    def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
 
         Returns:
-            LiteLLMTokenCounter: The token counter following the model's
+            BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = LiteLLMTokenCounter(  # type: ignore[assignment]
-                self.model_type.value
-            )
-        return self._token_counter  # type: ignore[return-value]
+            self._token_counter = LiteLLMTokenCounter(self.model_type.value)
+        return self._token_counter
 
     def run(
         self,

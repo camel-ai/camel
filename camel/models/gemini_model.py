@@ -38,18 +38,20 @@ class GeminiModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into generate_content().
-        api_key (Optional[str]): The API key for authenticating with the
-            gemini service. (default: :obj:`None`)
-        url (Optional[str]): The url to the gemini service.
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `GeminiTokenCounter` will be
-            used.
-    """
+        model_config_dict (Dict[str, Any]): A dictionary that will be fed into
+            generate_content().
+        api_key (Optional[str], optional): The API key for authenticating with
+            the gemini service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the gemini service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`GeminiTokenCounter` will
+            be used. (default: :obj:`None`)
 
-    # NOTE: Currently "stream": True is not supported with Gemini due to the
-    # limitation of the current camel design.
+    Notes:
+        Currently :obj:`"stream": True` is not supported with Gemini due to the
+        limitation of the current camel design.
+    """
 
     def __init__(
         self,

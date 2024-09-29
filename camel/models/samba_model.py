@@ -26,6 +26,7 @@ from camel.configs import (
     SAMBA_VERSE_API_PARAMS,
 )
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
@@ -40,7 +41,7 @@ from camel.utils import (
 )
 
 
-class SambaModel:
+class SambaModel(BaseModelBackend):
     r"""SambaNova service interface.
 
     Args:
@@ -50,17 +51,18 @@ class SambaModel:
             is listed in `https://sambaverse.sambanova.ai/models`.
         model_config_dict (Dict[str, Any]): A dictionary that will
             be fed into API request.
-        api_key (Optional[str]): The API key for authenticating with the
-            SambaNova service. (default: :obj:`None`)
-        url (Optional[str]): The url to the SambaNova service. Current
-            support SambaNova Fast API: :obj:`"https://fast-api.snova.ai/
-            v1/chat/ completions"`, SambaVerse API: :obj:`"https://
-            sambaverse.sambanova.ai/api/predict"` and SambaNova Cloud:
-            :obj:`"https://api.sambanova.ai/v1"`
-            (default::obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `OpenAITokenCounter(ModelType.
-            GPT_4O_MINI)` will be used.
+        api_key (Optional[str], optional): The API key for authenticating
+            with the SambaNova service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the SambaNova service.
+            Current support SambaNova Fast API:
+            :obj:`"https://fast-api.snova.ai/v1/chat/ completions"`,
+            SambaVerse API:
+            :obj:`"https://sambaverse.sambanova.ai/api/predict"` and
+            SambaNova Cloud:
+            :obj:`"https://api.sambanova.ai/v1"` (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
     """
 
     def __init__(
@@ -71,7 +73,9 @@ class SambaModel:
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._api_key = api_key or os.environ.get("SAMBA_API_KEY")
         self._url = url or os.environ.get(
             "SAMBA_API_BASE_URL",

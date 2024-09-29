@@ -41,13 +41,14 @@ class ZhipuAIModel(BaseModelBackend):
             GLM_* series.
         model_config_dict (Dict[str, Any]): A dictionary that will be fed
             into openai.ChatCompletion.create().
-        api_key (Optional[str]): The API key for authenticating with the
-            ZhipuAI service. (default: :obj:`None`)
-        url (Optional[str]): The url to the ZhipuAI service. (default:
-            :obj:`None`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use for
-            the model. If not provided, `OpenAITokenCounter(
+        api_key (Optional[str], optional): The API key for authenticating with
+            the ZhipuAI service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the ZhipuAI service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
     """
 
     def __init__(

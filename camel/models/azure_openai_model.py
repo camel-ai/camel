@@ -29,20 +29,23 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface.
-    Doc: https://learn.microsoft.com/en-us/azure/ai-services/openai/
 
     Args:
-        model_type (ModelType): Model for which a backend is created,
-            one of GPT_* series.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
-        api_key (Optional[str]): The API key for authenticating with the
-            OpenAI service. (default: :obj:`None`)
-        url (Optional[str]): The url to the OpenAI service. (default:
-            :obj:`None`)
-        api_version (Optional[str]): The api version for the model.
-        azure_deployment_name (Optional[str]): The deployment name you
-            chose when you deployed an azure model. (default: :obj:`None`)
+        model_type (ModelType): Model for which a backend is created, one of
+            GPT_* series.
+        model_config_dict (Dict[str, Any]): A dictionary that will be fed into
+            openai.ChatCompletion.create().
+        api_key (Optional[str], optional): The API key for authenticating with
+            the OpenAI service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the OpenAI service.
+            (default: :obj:`None`)
+        api_version (Optional[str], optional): The api version for the model.
+            (default: :obj:`None`)
+        azure_deployment_name (Optional[str], optional): The deployment name
+            you chose when you deployed an azure model. (default: :obj:`None`)
+
+    References:
+        https://learn.microsoft.com/en-us/azure/ai-services/openai/
     """
 
     def __init__(

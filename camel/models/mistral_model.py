@@ -49,11 +49,13 @@ class MistralModel(BaseModelBackend):
             MISTRAL_* series.
         model_config_dict (Dict[str, Any]): A dictionary that will be fed into
             `MistralClient.chat`.
-        api_key (Optional[str]): The API key for authenticating with the
-            mistral service. (default: :obj:`None`)
-        url (Optional[str]): The url to the mistral service.
-        token_counter (Optional[BaseTokenCounter]): Token counter to use for
-            the model. If not provided, `OpenAITokenCounter` will be used.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the mistral service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the mistral service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter` will
+            be used. (default: :obj:`None`)
     """
 
     def __init__(

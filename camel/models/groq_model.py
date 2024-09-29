@@ -39,13 +39,14 @@ class GroqModel(BaseModelBackend):
         model_type (ModelType): Model for which a backend is created.
         model_config_dict (Dict[str, Any]): A dictionary of parameters for
             the model configuration.
-        api_key (Optional[str]): The API key for authenticating with the
-            Groq service. (default: :obj:`None`).
-        url (Optional[str]): The url to the Groq service. (default:
-            :obj:`"https://api.groq.com/openai/v1"`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `OpenAITokenCounter(ModelType.
-            GPT_4O_MINI)` will be used.
+        api_key (Optional[str], optional): The API key for authenticating
+            with the Groq service. (default: :obj:`None`).
+        url (Optional[str], optional): The url to the Groq service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
     """
 
     def __init__(

@@ -477,7 +477,7 @@ class GeminiTokenCounter(BaseTokenCounter):
         return self._client.count_tokens(converted_messages).total_tokens
 
 
-class LiteLLMTokenCounter:
+class LiteLLMTokenCounter(BaseTokenCounter):
     def __init__(self, model_type: str):
         r"""Constructor for the token counter for LiteLLM models.
 

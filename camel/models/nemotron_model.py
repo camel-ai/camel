@@ -17,6 +17,7 @@ from typing import List, Optional
 from openai import OpenAI
 
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import ChatCompletion
 from camel.utils import (
@@ -25,18 +26,19 @@ from camel.utils import (
 )
 
 
-class NemotronModel:
+class NemotronModel(BaseModelBackend):
     r"""Nemotron model API backend with OpenAI compatibility.
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        api_key (Optional[str]): The API key for authenticating with the
-            Nvidia service. (default: :obj:`None`)
-        url (Optional[str]): The url to the Nvidia service. (default:
-            :obj:`None`)
-    """
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Nvidia service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Nvidia service.
+            (default: :obj:`None`)
 
-    # NOTE: Nemotron model doesn't support additional model config like OpenAI.
+    Notes:
+        Nemotron model doesn't support additional model config like OpenAI.
+    """
 
     def __init__(
         self,
@@ -44,7 +46,7 @@ class NemotronModel:
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        self.model_type = model_type
+        super().__init__(model_type, {}, api_key, url)
         self._url = url or os.environ.get("NVIDIA_API_BASE_URL")
         self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         if not self._url or not self._api_key:
@@ -77,3 +79,14 @@ class NemotronModel:
             model=self.model_type.value,
         )
         return response
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        raise NotImplementedError(
+            "Nemotron model doesn't support token counter."
+        )
+
+    def check_model_config(self):
+        raise NotImplementedError(
+            "Nemotron model doesn't support model config."
+        )

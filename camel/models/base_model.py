@@ -27,7 +27,18 @@ from camel.utils import BaseTokenCounter
 
 class BaseModelBackend(ABC):
     r"""Base class for different model backends.
-    May be OpenAI API, a local LLM, a stub for unit tests, etc.
+    It may be OpenAI API, a local LLM, a stub for unit tests, etc.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Dict[str, Any]): A config dictionary.
+        api_key (Optional[str], optional): The API key for authenticating
+            with the model service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token
+            counter to use for the model. If not provided,
+            :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
     """
 
     def __init__(
@@ -38,18 +49,6 @@ class BaseModelBackend(ABC):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for the model backend.
-
-        Args:
-            model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A config dictionary.
-            api_key (Optional[str]): The API key for authenticating with the
-                model service.
-            url (Optional[str]): The url to the model service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will
-                be used.
-        """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._api_key = api_key

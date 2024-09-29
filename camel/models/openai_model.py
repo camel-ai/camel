@@ -36,16 +36,17 @@ class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (ModelType): Model for which a backend is created,
-            one of GPT_* series.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
-        api_key (Optional[str]): The API key for authenticating with the
-            OpenAI service. (default: :obj:`None`)
-        url (Optional[str]): The url to the OpenAI service. (default:
-            :obj:`None`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use for
-            the model. If not provided, `OpenAITokenCounter` will be used.
+        model_type (ModelType): Model for which a backend is created, one of
+            GPT_* series.
+        model_config_dict (Dict[str, Any]): A dictionary that will be fed into
+            :obj:`openai.ChatCompletion.create()`.
+        api_key (Optional[str], optional): The API key for authenticating
+            with the OpenAI service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the OpenAI service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter` will
+            be used. (default: :obj:`None`)
     """
 
     def __init__(

@@ -20,9 +20,11 @@ from camel.types import PredefinedModelType
 class ModelType:
     _cache: ClassVar[Dict[str, "ModelType"]] = {}
 
-    def __new__(
-        cls, value: Union[str, PredefinedModelType], *args, **kwargs
-    ) -> "ModelType":
+    def __new__(cls, *args, **kwargs) -> "ModelType":
+        if not args:
+            return super().__new__(cls)
+
+        value: Union[PredefinedModelType, str] = args[0]
         if isinstance(value, PredefinedModelType):
             value_str = value.value
         elif isinstance(value, str):

@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import TOGETHERAI_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
@@ -33,7 +34,7 @@ from camel.utils import (
 
 
 # TODO: Add function calling support
-class TogetherAIModel:
+class TogetherAIModel(BaseModelBackend):
     r"""Constructor for Together AI backend with OpenAI compatibility.
 
     Args:
@@ -41,13 +42,14 @@ class TogetherAIModel:
             model can be found here: https://docs.together.ai/docs/chat-models
         model_config_dict (Dict[str, Any]): A dictionary that will
             be fed into openai.ChatCompletion.create().
-        api_key (Optional[str]): The API key for authenticating with the
-            Together service. (default: :obj:`None`)
-        url (Optional[str]): The url to the Together AI service. (default:
-            :obj:`"https://api.together.xyz/v1"`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `OpenAITokenCounter(ModelType.
-            GPT_4O_MINI)` will be used.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Together service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Together AI service.
+            If not provided, "https://api.together.xyz/v1" will be used.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
     """
 
     def __init__(
@@ -58,8 +60,9 @@ class TogetherAIModel:
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._token_counter = token_counter
         self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
         self._url = url or os.environ.get("TOGETHER_API_BASE_URL")

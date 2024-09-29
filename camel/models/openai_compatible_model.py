@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 from openai import OpenAI, Stream
 
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
@@ -29,7 +30,7 @@ from camel.utils import (
 )
 
 
-class OpenAICompatibleModel:
+class OpenAICompatibleModel(BaseModelBackend):
     r"""Constructor for model backend supporting OpenAI compatibility.
 
     Args:
@@ -37,12 +38,12 @@ class OpenAICompatibleModel:
         model_config_dict (Dict[str, Any]): A dictionary that will
             be fed into openai.ChatCompletion.create().
         api_key (str): The API key for authenticating with the
-            model service. (default: :obj:`None`)
-        url (str): The url to the model service. (default:
-            :obj:`None`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `OpenAITokenCounter(ModelType.
-            GPT_4O_MINI)` will be used.
+            model service.
+        url (str): The url to the model service.
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -53,8 +54,9 @@ class OpenAICompatibleModel:
         url: str,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._token_counter = token_counter
         self._client = OpenAI(
             timeout=60,
@@ -125,3 +127,6 @@ class OpenAICompatibleModel:
             " setting up the model. Using 4096 as default value."
         )
         return 4096
+
+    def check_model_config(self):
+        pass

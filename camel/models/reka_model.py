@@ -47,11 +47,13 @@ class RekaModel(BaseModelBackend):
             one of REKA_* series.
         model_config_dict (Dict[str, Any]): A dictionary that will
             be fed into `Reka.chat.create`.
-        api_key (Optional[str]): The API key for authenticating with the
-            Reka service. (default: :obj:`None`)
-        url (Optional[str]): The url to the Reka service.
-        token_counter (Optional[BaseTokenCounter]): Token counter to use for
-            the model. If not provided, `OpenAITokenCounter` will be used.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Reka service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Reka service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter` will
+            be used. (default: :obj:`None`)
     """
 
     def __init__(

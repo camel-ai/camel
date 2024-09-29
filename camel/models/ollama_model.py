@@ -19,6 +19,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import OLLAMA_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
@@ -28,18 +29,19 @@ from camel.types import (
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
-class OllamaModel:
+class OllamaModel(BaseModelBackend):
     r"""Ollama service interface.
 
     Args:
         model_type (ModelType): Model for which a backend is created.
         model_config_dict (Dict[str, Any]): A dictionary that will
             be fed into openai.ChatCompletion.create().
-        url (Optional[str]): The url to the model service. (default:
-            :obj:`"http://localhost:11434/v1"`)
-        token_counter (Optional[BaseTokenCounter]): Token counter to use
-            for the model. If not provided, `OpenAITokenCounter(
+        url (Optional[str], optional): The url to the model service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
 
     References:
         https://github.com/ollama/ollama/blob/main/docs/openai.md
@@ -52,8 +54,9 @@ class OllamaModel:
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
+        super().__init__(
+            model_type, model_config_dict, None, url, token_counter
+        )
         self._url = (
             url
             or os.environ.get("OLLAMA_BASE_URL")

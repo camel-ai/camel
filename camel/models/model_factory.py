@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Type, Union
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
@@ -20,6 +20,7 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.model_type import ModelType
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -59,13 +60,15 @@ class ModelFactory:
                 backend is created. Can be a `str` for open source platforms.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO) will be used if the model platform didn't
-                provide official token counter.
-            api_key (Optional[str]): The API key for authenticating with the
-                model service.
-            url (Optional[str]): The url to the model service.
+            token_counter (Optional[BaseTokenCounter], optional): Token
+                counter to use for the model. If not provided,
+                :obj:`OpenAITokenCounter(PredefinedModelType.GPT_3_5_TURBO)`
+                will be used if the model platform didn't provide official
+                token counter. (default: :obj:`None`)
+            api_key (Optional[str], optional): The API key for authenticating
+                with the model service. (default: :obj:`None`)
+            url (Optional[str], optional): The url to the model service.
+                (default: :obj:`None`)
 
         Raises:
             ValueError: If there is no backend for the model.
@@ -73,41 +76,13 @@ class ModelFactory:
         Returns:
             BaseModelBackend: The initialized backend.
         """
-        model_class: Any
-        if isinstance(model_type, PredefinedModelType):
-            if model_platform.is_open_source and model_type.is_open_source:
-                model_class = OpenSourceModel
-                return model_class(
-                    model_type, model_config_dict, url, token_counter
-                )
-            if model_platform.is_openai and model_type.is_openai:
-                model_class = OpenAIModel
-            elif model_platform.is_azure and model_type.is_azure_openai:
-                model_class = AzureOpenAIModel
-            elif model_platform.is_anthropic and model_type.is_anthropic:
-                model_class = AnthropicModel
-            elif model_type.is_groq:
-                model_class = GroqModel
-            elif model_platform.is_zhipuai and model_type.is_zhipuai:
-                model_class = ZhipuAIModel
-            elif model_platform.is_gemini and model_type.is_gemini:
-                model_class = GeminiModel
-            elif model_platform.is_mistral and model_type.is_mistral:
-                model_class = MistralModel
-            elif model_platform.is_reka and model_type.is_reka:
-                model_class = RekaModel
-            elif model_type == PredefinedModelType.STUB:
-                model_class = StubModel
-            else:
-                raise ValueError(
-                    f"Unknown pair of model platform `{model_platform}` "
-                    f"and model type `{model_type}`."
-                )
-        elif isinstance(model_type, str):
+        model_class: Optional[Type[BaseModelBackend]] = None
+        parsed_model_type = ModelType(model_type)
+
+        if parsed_model_type.is_open_source:
             if model_platform.is_ollama:
-                model_class = OllamaModel
-                return model_class(
-                    model_type, model_config_dict, url, token_counter
+                return OllamaModel(
+                    parsed_model_type, model_config_dict, url, token_counter
                 )
             elif model_platform.is_vllm:
                 model_class = VLLMModel
@@ -119,16 +94,33 @@ class ModelFactory:
                 model_class = SambaModel
             elif model_platform.is_together:
                 model_class = TogetherAIModel
-                return model_class(
-                    model_type, model_config_dict, api_key, token_counter
-                )
-            else:
-                raise ValueError(
-                    f"Unknown pair of model platform `{model_platform}` "
-                    f"and model type `{model_type}`."
-                )
-        else:
-            raise ValueError(f"Invalid model type `{model_type}` provided.")
+            elif model_platform.is_open_source:
+                model_class = OpenSourceModel
+        elif model_platform.is_openai and parsed_model_type.is_openai:
+            model_class = OpenAIModel
+        elif model_platform.is_azure and parsed_model_type.is_azure_openai:
+            model_class = AzureOpenAIModel
+        elif model_platform.is_anthropic and parsed_model_type.is_anthropic:
+            model_class = AnthropicModel
+        elif parsed_model_type.is_groq:
+            model_class = GroqModel
+        elif model_platform.is_zhipuai and parsed_model_type.is_zhipuai:
+            model_class = ZhipuAIModel
+        elif model_platform.is_gemini and parsed_model_type.is_gemini:
+            model_class = GeminiModel
+        elif model_platform.is_mistral and parsed_model_type.is_mistral:
+            model_class = MistralModel
+        elif model_platform.is_reka and parsed_model_type.is_reka:
+            model_class = RekaModel
+        elif parsed_model_type.type == PredefinedModelType.STUB:
+            model_class = StubModel
+
+        if model_class is None:
+            raise ValueError(
+                f"Unknown pair of model platform `{model_platform}` "
+                f"and model type `{parsed_model_type.value}`."
+            )
+
         return model_class(
-            model_type, model_config_dict, api_key, url, token_counter
+            parsed_model_type, model_config_dict, api_key, url, token_counter
         )
