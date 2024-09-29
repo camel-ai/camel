@@ -12,13 +12,34 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Union
+from typing import ClassVar, Dict, Union
 
 from camel.types import PredefinedModelType
 
 
 class ModelType:
+    _cache: ClassVar[Dict[str, "ModelType"]] = {}
+
+    def __new__(
+        cls, value: Union[str, PredefinedModelType], *args, **kwargs
+    ) -> "ModelType":
+        if isinstance(value, PredefinedModelType):
+            value_str = value.value
+        elif isinstance(value, str):
+            value_str = value
+        else:
+            raise ValueError(f"Invalid type for ModelType: {value}")
+        if value_str in cls._cache:
+            return cls._cache[value_str]
+        instance = super().__new__(cls)
+        cls._cache[value_str] = instance
+        return instance
+
     def __init__(self, value: Union[str, PredefinedModelType]) -> None:
+        # If type attr is set, then the instance is from cache
+        if hasattr(self, "type"):
+            return
+
         if isinstance(value, PredefinedModelType):
             self.type = value
             self.value = value.value
@@ -36,11 +57,6 @@ class ModelType:
 
     def __repr__(self):
         return f"ModelType({self.value})"
-
-    """
-    The following properties are duplicated from the PredefinedModelType class.
-    This is used to support the autocompletion in IDEs.
-    """
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -114,12 +130,3 @@ class ModelType:
             bool: Whether the model type matches the model name.
         """
         return self.type.validate_model_name(model_name)
-
-    """
-    The following method will delegate the attribute access to the 
-    PredefinedModelType class if the attribute is not found in the ModelType 
-    class.
-    """
-
-    def __getattr__(self, attr):
-        return getattr(self.type, attr)
