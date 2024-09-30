@@ -72,7 +72,7 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: Union[str, Element],
+        content: Union[str, Element, List[Element]],
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
         **kwargs: Any,
@@ -92,6 +92,10 @@ class VectorRetriever(BaseRetriever):
         """
         if isinstance(content, Element):
             elements = [content]
+        elif isinstance(content, List) and all(
+            isinstance(elem, Element) for elem in content
+        ):
+            elements = content
         else:
             # Check if the content is URL
             parsed_url = urlparse(content)
