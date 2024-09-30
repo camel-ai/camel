@@ -30,8 +30,7 @@ from .slack_toolkit import SlackToolkit
 from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
-from .ask_news_toolkit import AskNewsToolkit
-from .async_ask_news_toolkit import AsyncAskNewsToolkit
+from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
