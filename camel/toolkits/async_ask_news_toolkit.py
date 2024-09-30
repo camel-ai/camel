@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 from typing import List, Literal, Optional, Tuple, Union
+from warnings import warn
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
@@ -43,10 +44,10 @@ class AsyncAskNewsToolkit(BaseToolkit):
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
         if not client_id or not client_secret:
-            raise ValueError(
+            warn(
                 "`client_id` or `client_secret` not found in environment "
-                "variables. Get `client_id & client_secret` here: "
-                "`https://docs.asknews.app/`."
+                + "variables. Get `client_id & client_secret` here: "
+                + "`https://docs.asknews.app/`."
             )
         self.asknews_client = AsyncAskNewsSDK(
             client_id,
@@ -130,14 +131,21 @@ class AsyncAskNewsToolkit(BaseToolkit):
     async def search_reddit(
         self,
         keywords: list,
+        n_threads: int = 5,
         return_type: Literal["string", "dicts", "both"] = "string",
+        method: Literal["nl", "kw"] = "kw",
     ) -> Union[str, dict, Tuple[str, dict]]:
         r"""Search Reddit based on the provided keywords.
 
         Args:
             keywords (list): The keywords to search for on Reddit.
+            n_threads (int): Number of Reddit threads to summarize and return.
+                (default: :obj:`5`)
             return_type (Literal["string", "dicts", "both"]): The format of the
                 return value. (default: :obj:`"string"`)
+            method (Literal["nl", "kw"]): The search method, either "nl" for
+            natural language or "kw" for keyword search. (default:
+            :obj:`"kw"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
@@ -148,7 +156,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         """
         try:
             response = await self.asknews_client.news.search_reddit(
-                keywords=keywords
+                keywords=keywords, n_threads=n_threads, method=method
             )
 
             return self._process_response(response, return_type)
@@ -163,7 +171,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
         categories: list,
         continent: str,
         sort_by: str = "coverage",
-        sort_type: str = "desc",
         reddit: int = 3,
         expand_updates: bool = True,
         max_updates: int = 2,
@@ -176,8 +183,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
             continent (str): The continent to filter stories by.
             sort_by (str): The field to sort the stories by.
             (default: :obj:`"coverage"`)
-            sort_type (str): The sort order.
-            (default: :obj:`"desc"`, descending)
             reddit (int): Number of Reddit threads to include.
             (default: :obj:`3`)
             expand_updates (bool): Whether to include detailed updates.
@@ -199,7 +204,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 categories=categories,
                 continent=continent,
                 sort_by=sort_by,
-                sort_type=sort_type,
                 reddit=reddit,
                 expand_updates=expand_updates,
                 max_updates=max_updates,
@@ -253,7 +257,9 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
         Returns:
             Union[list, str]: A list of dictionaries containing the datetime
-            and value or a string describing all datetime and value pairs.
+            and value or a string describing all datetime and value pairs for
+            providing quantified time-series data for news sentiment on topics
+            of interest.
 
         Raises:
             Exception: If there is an error while fetching the sentiment data.
