@@ -420,12 +420,7 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        if (
-            isinstance(self.model_type, PredefinedModelType)
-            and "lama" in self.model_type.value
-            or isinstance(self.model_type, str)
-            and "lama" in self.model_type
-        ):
+        if "lama" in self.model_type.value:
             if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
@@ -595,7 +590,10 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if output_schema is not None:
+            if (
+                output_schema is not None
+                and self.model_type.supports_tool_calling
+            ):
                 (
                     output_messages,
                     finish_reasons,
@@ -702,7 +700,7 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None:
+        if output_schema is not None and self.model_type.supports_tool_calling:
             (
                 output_messages,
                 finish_reasons,

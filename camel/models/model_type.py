@@ -24,13 +24,15 @@ class ModelType:
         if not args:
             return super().__new__(cls)
 
+        # If args are passed in, meaning that this instance is being created
+        # by user with calling ModelType(...) directly
         value: Union[PredefinedModelType, str] = args[0]
         if isinstance(value, PredefinedModelType):
             value_str = value.value
         elif isinstance(value, str):
             value_str = value
         else:
-            raise ValueError(f"Invalid type for ModelType: {value}")
+            raise ValueError(f"Invalid type for ModelType: {value}.")
         if value_str in cls._cache:
             return cls._cache[value_str]
         instance = super().__new__(cls)
@@ -52,7 +54,7 @@ class ModelType:
                 self.type = PredefinedModelType.OPEN_SOURCE
             self.value = value
         else:
-            raise ValueError(f"Invalid type for ModelType: {value}")
+            raise ValueError(f"Invalid type for ModelType: {value}.")
 
     def __str__(self):
         return self.value
@@ -69,6 +71,11 @@ class ModelType:
     def is_open_source(self) -> bool:
         r"""Returns whether this type of models is open-source."""
         return self.type.is_open_source
+
+    @property
+    def supports_tool_calling(self):
+        r"""Returns whether this type of models supports tool calling."""
+        return self.type.supports_tool_calling
 
     @property
     def is_openai(self) -> bool:
