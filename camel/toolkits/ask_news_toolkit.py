@@ -64,16 +64,16 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             response: The response object returned by the API call.
             return_type (str): Specifies the format of the return value. It
-            can be "string" to return the response as a string, "dicts" to
-            return it as a dictionary, or "both" to return both formats as a
-            tuple.
+                can be "string" to return the response as a string, "dicts" to
+                return it as a dictionary, or "both" to return both formats as
+                a tuple.
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The processed response,
-            formatted according to the return_type argument. If "string",
-            returns the response as a string. If "dicts", returns the response
-            as a dictionary. If "both", returns a tuple containing both
-            formats.
+                formatted according to the return_type argument. If "string",
+                returns the response as a string. If "dicts", returns the
+                response as a dictionary. If "both", returns a tuple
+                containing both formats.
 
         Raises:
             ValueError: If the return_type provided is invalid.
@@ -98,7 +98,7 @@ class AskNewsToolkit(BaseToolkit):
 
         Args:
             query (str): The search query for fetching relevant news or
-            stories.
+                stories.
             n_articles (int): Number of articles to include in the response.
                 (default: :obj:`10`)
             return_type (Literal["string", "dicts", "both"]): The format of the
@@ -109,8 +109,8 @@ class AskNewsToolkit(BaseToolkit):
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-            containing the news or story content, or an error message if the
-            process fails.
+                containing the news or story content, or an error message if
+                the process fails.
         """
         try:
             response = self.asknews_client.news.search_news(
@@ -143,12 +143,12 @@ class AskNewsToolkit(BaseToolkit):
             return_type (Literal["string", "dicts", "both"]): The format of the
                 return value. (default: :obj:`"string"`)
             method (Literal["nl", "kw"]): The search method, either "nl" for
-            natural language or "kw" for keyword search. (default:
-            :obj:`"kw"`)
+                natural language or "kw" for keyword search.
+                (default::obj:`"kw"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
-            string, dictionary, or both.
+                string, dictionary, or both.
 
         Raises:
             Exception: If there is an error while searching Reddit.
@@ -181,19 +181,19 @@ class AskNewsToolkit(BaseToolkit):
             categories (list): The categories to filter stories by.
             continent (str): The continent to filter stories by.
             sort_by (str): The field to sort the stories by.
-            (default: :obj:`"coverage"`)
+                (default: :obj:`"coverage"`)
             reddit (int): Number of Reddit threads to include.
-            (default: :obj:`3`)
+                (default: :obj:`3`)
             expand_updates (bool): Whether to include detailed updates.
-            (default: :obj:`True`)
+                (default: :obj:`True`)
             max_updates (int): Maximum number of recent updates per story.
-            (default: :obj:`2`)
+                (default: :obj:`2`)
             max_articles (int): Maximum number of articles associated with
-            each update. (default: :obj:`10`)
+                each update. (default: :obj:`10`)
 
         Returns:
             dict: A dictionary containing the stories and their associated
-             data.
+                data.
 
         Raises:
             Exception: If there is an error while fetching the stories.
@@ -248,17 +248,17 @@ class AskNewsToolkit(BaseToolkit):
             asset (str): The asset for which to fetch sentiment data.
             metric (str): The sentiment metric to analyze.
             date_from (str): The start date and time for the data in ISO 8601
-            format.
+                format.
             date_to (str): The end date and time for the data in ISO 8601
-            format.
+                format.
             return_type (Literal["list", "string"]): The format of the return
-            value. (default: :obj:`"string"`)
+                value. (default: :obj:`"string"`)
 
         Returns:
             Union[list, str]: A list of dictionaries containing the datetime
-            and value or a string describing all datetime and value pairs for
-            providing quantified time-series data for news sentiment on topics
-            of interest.
+                and value or a string describing all datetime and value pairs
+                for providing quantified time-series data for news sentiment
+                on topics of interest.
 
         Raises:
             Exception: If there is an error while fetching the sentiment data.
@@ -305,7 +305,7 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             query (str): The content of the user's message.
             model (str): The model to use for generating the chat response.
-            (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
+                (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
 
         Returns:
             str: The content of the response message.
@@ -342,8 +342,8 @@ class AskNewsToolkit(BaseToolkit):
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-            containing the search results, or an error message if the process
-            fails.
+                containing the search results, or an error message if the
+                process fails.
         """
         try:
             response = self.asknews_client.chat.live_web_search(
@@ -371,7 +371,7 @@ class AskNewsToolkit(BaseToolkit):
 
         Returns:
             List[OpenAIFunction]: A list of OpenAIFunction objects representing
-             the functions in the toolkit.
+                the functions in the toolkit.
         """
         return [
             OpenAIFunction(self.get_news),
@@ -387,19 +387,18 @@ class AsyncAskNewsToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the AskNews API
     asynchronously.
 
-    This class provides methods for fetching news, stories, and other content
-    based on user queries using the AskNews API.
+    This class provides methods for fetching news, stories, and other
+    content based on user queries using the AskNews API.
     """
 
     def __init__(self, scopes: Optional[List[str]] = None):
-        r"""Initialize the AsyncAskNewsToolkit with API clients.
+        r"""Initialize the AsyncAskNewsToolkit with API clients.The API keys
+        and credentials are retrieved from environment variables.
 
         Args:
             scopes (Optional[List[str]]): A list of API scopes to specify which
                 functionalities the client should access.
                 (default: :list:`["chat", "news", "stories"]`)
-
-        The API keys and credentials are retrieved from environment variables.
         """
         from asknews_sdk import AsyncAskNewsSDK  # type: ignore[import]
 
@@ -429,16 +428,16 @@ class AsyncAskNewsToolkit(BaseToolkit):
         Args:
             response: The response object returned by the API call.
             return_type (str): Specifies the format of the return value. It
-            can be "string" to return the response as a string, "dicts" to
-            return it as a dictionary, or "both" to return both formats as a
-            tuple.
+                can be "string" to return the response as a string, "dicts" to
+                return it as a dictionary, or "both" to return both formats as
+                a tuple.
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The processed response,
-            formatted according to the return_type argument. If "string",
-            returns the response as a string. If "dicts", returns the response
-            as a dictionary. If "both", returns a tuple containing both
-            formats.
+                formatted according to the return_type argument. If "string",
+                returns the response as a string. If "dicts", returns the
+                response as a dictionary. If "both", returns a tuple
+                containing both formats.
 
         Raises:
             ValueError: If the return_type provided is invalid.
@@ -463,7 +462,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
         Args:
             query (str): The search query for fetching relevant news or
-            stories.
+                stories.
             n_articles (int): Number of articles to include in the response.
                 (default: :obj:`10`)
             return_type (Literal["string", "dicts", "both"]): The format of the
@@ -474,8 +473,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-            containing the news or story content, or an error message if the
-            process fails.
+                containing the news or story content, or an error message if
+                process fails.
         """
         try:
             response = await self.asknews_client.news.search_news(
@@ -508,12 +507,12 @@ class AsyncAskNewsToolkit(BaseToolkit):
             return_type (Literal["string", "dicts", "both"]): The format of the
                 return value. (default: :obj:`"string"`)
             method (Literal["nl", "kw"]): The search method, either "nl" for
-            natural language or "kw" for keyword search. (default:
-            :obj:`"kw"`)
+                natural language or "kw" for keyword search.
+                (default::obj:`"kw"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
-            string, dictionary, or both.
+                string, dictionary, or both.
 
         Raises:
             Exception: If there is an error while searching Reddit.
@@ -534,7 +533,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
         self,
         categories: list,
         continent: str,
-        sort_by: str = "coverage",
         reddit: int = 3,
         expand_updates: bool = True,
         max_updates: int = 2,
@@ -545,20 +543,18 @@ class AsyncAskNewsToolkit(BaseToolkit):
         Args:
             categories (list): The categories to filter stories by.
             continent (str): The continent to filter stories by.
-            sort_by (str): The field to sort the stories by.
-            (default: :obj:`"coverage"`)
             reddit (int): Number of Reddit threads to include.
-            (default: :obj:`3`)
+                (default: :obj:`3`)
             expand_updates (bool): Whether to include detailed updates.
-            (default: :obj:`True`)
+                (default: :obj:`True`)
             max_updates (int): Maximum number of recent updates per story.
-            (default: :obj:`2`)
+                (default: :obj:`2`)
             max_articles (int): Maximum number of articles associated with
-            each update. (default: :obj:`10`)
+                each update. (default: :obj:`10`)
 
         Returns:
             dict: A dictionary containing the stories and their associated
-             data.
+                data.
 
         Raises:
             Exception: If there is an error while fetching the stories.
@@ -567,7 +563,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
             response = await self.asknews_client.stories.search_stories(
                 categories=categories,
                 continent=continent,
-                sort_by=sort_by,
                 reddit=reddit,
                 expand_updates=expand_updates,
                 max_updates=max_updates,
@@ -613,17 +608,17 @@ class AsyncAskNewsToolkit(BaseToolkit):
             asset (str): The asset for which to fetch sentiment data.
             metric (str): The sentiment metric to analyze.
             date_from (str): The start date and time for the data in ISO 8601
-            format.
+                format.
             date_to (str): The end date and time for the data in ISO 8601
-            format.
+                format.
             return_type (Literal["list", "string"]): The format of the return
-            value. (default: :obj:`"string"`)
+                value. (default: :obj:`"string"`)
 
         Returns:
             Union[list, str]: A list of dictionaries containing the datetime
-            and value or a string describing all datetime and value pairs for
-            providing quantified time-series data for news sentiment on topics
-            of interest.
+                and value or a string describing all datetime and value pairs
+                for providing quantified time-series data for news sentiment
+                on topics of interest.
 
         Raises:
             Exception: If there is an error while fetching the sentiment data.
@@ -670,7 +665,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         Args:
             query (str): The content of the user's message.
             model (str): The model to use for generating the chat response.
-            (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
+                (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
 
         Returns:
             str: The content of the response message.
@@ -707,8 +702,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-            containing the search results, or an error message if the process
-            fails.
+                containing the search results, or an error message if the
+                process fails.
         """
         try:
             response = await self.asknews_client.chat.live_web_search(
@@ -736,7 +731,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
         Returns:
             List[OpenAIFunction]: A list of OpenAIFunction objects representing
-             the functions in the toolkit.
+                the functions in the toolkit.
         """
         return [
             OpenAIFunction(self.get_news),
