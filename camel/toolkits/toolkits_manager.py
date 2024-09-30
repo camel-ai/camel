@@ -22,6 +22,7 @@ class ToolManager:
         Initializes the ToolManager and loads all available toolkits.
         """
         self.toolkits = {}
+        self.toolkit_classes = {}
         self._load_toolkits()
 
     def _load_toolkits(self):
@@ -54,8 +55,8 @@ class ToolManager:
 
     def _load_toolkit_class(self):
         r"""
-        todo:Dynamically loads all toolkits class for user to define their own
-        toolkit by setting the keys or other conifgs.
+        todo:Dynamically loads all toolkits class to self.toolkit_classes for
+        user to define their own toolkit by setting the keys or other conifgs.
         """
         pass
 
