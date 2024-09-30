@@ -9,10 +9,12 @@ from camel.toolkits.openai_function import OpenAIFunction
 
 class ToolManager:
     r"""
-    A class representing a manager for dynamically loading and accessing toolkits.
+    A class representing a manager for dynamically loading and accessing
+    toolkits.
 
-    The ToolManager loads all callable toolkits from the `camel.toolkits` package
-    and provides methods to list, retrieve, and search them as OpenAIFunction objects.
+    The ToolManager loads all callable toolkits from the `camel.toolkits`
+    package and provides methods to list, retrieve, and search them as
+    OpenAIFunction objects.
     """
 
     def __init__(self):
@@ -26,8 +28,9 @@ class ToolManager:
         r"""
         Dynamically loads all toolkits from the `camel.toolkits` package.
 
-        It iterates through all modules in the package, checking for the presence
-        of an `__all__` attribute to explicitly control what functions to export.
+        It iterates through all modules in the package, checking for the
+        presence of an `__all__` attribute to explicitly control what
+        functions to export.
         If `__all__` is not present, it ignores any function starting with `_`.
         """
         package = importlib.import_module('camel.toolkits')
@@ -49,6 +52,19 @@ class ToolManager:
                     ):
                         self.toolkits[name] = func
 
+    def _load_toolkit_class(self):
+        r"""
+        todo:Dynamically loads all toolkits class for user to define their own
+        toolkit by setting the keys or other conifgs.
+        """
+        pass
+
+    def add_toolkit(self, tookit: Callable):
+        r"""
+        todo: let user add toolkit to the toolkits list
+        """
+        pass
+
     def list_toolkits(self):
         r"""
         Lists the names of all available toolkits.
@@ -58,7 +74,7 @@ class ToolManager:
         """
         return list(self.toolkits.keys())
 
-    def get_toolkit(self, name: str) -> OpenAIFunction:
+    def get_toolkit(self, name: str) -> OpenAIFunction | str:
         r"""
         Retrieves the specified toolkit as an OpenAIFunction object.
 
@@ -74,7 +90,29 @@ class ToolManager:
         toolkit = self.toolkits.get(name)
         if toolkit:
             return OpenAIFunction(toolkit)
-        raise ValueError(f"Toolkit '{name}' not found.")
+        return f"Toolkit '{name}' not found."
+
+    def get_toolkits(self, names: list[str]) -> list[OpenAIFunction] | str:
+        r"""
+        Retrieves the specified toolkit as an OpenAIFunction object.
+
+        Args:
+            name (str): The name of the toolkit function to retrieve.
+
+        Returns:
+            OpenAIFunctions (list): The toolkits wrapped as an OpenAIFunction.
+
+        Raises:
+            ValueError: If the specified toolkit is not found.
+        """
+        toolkits: list[OpenAIFunction] = []
+        for name in names:
+            current_toolkit = self.toolkits.get(name)
+            if current_toolkit:
+                toolkits.append(OpenAIFunction(current_toolkit))
+        if len(toolkits) > 0:
+            return toolkits
+        return f"Toolkit '{name}' not found."
 
     def _default_search_algorithm(
         self, keyword: str, description: str
@@ -87,7 +125,8 @@ class ToolManager:
             description (str): The description to search within.
 
         Returns:
-            bool: True if a match is found based on similarity, False otherwise.
+            bool: True if a match is found based on similarity, False
+            otherwise.
         """
         ratio = difflib.SequenceMatcher(
             None, keyword.lower(), description.lower()
@@ -102,16 +141,19 @@ class ToolManager:
         algorithm: Optional[Callable[[str, str], bool]] = None,
     ) -> List[str]:
         r"""
-        Searches for toolkits based on a keyword in their descriptions using the provided search algorithm.
+        Searches for toolkits based on a keyword in their descriptions using
+        the provided search algorithm.
 
         Args:
             keyword (str): The keyword to search for in toolkit descriptions.
-            algorithm (Callable[[str, str], bool], optional): A custom search algorithm function
+            algorithm (Callable[[str, str], bool], optional): A custom search
+            algorithm function
                 that accepts the keyword and description and returns a boolean.
                 Defaults to fuzzy matching.
 
         Returns:
-            List[str]: A list of toolkit names whose descriptions match the keyword.
+            List[str]: A list of toolkit names whose descriptions match the
+            keyword.
         """
         if algorithm is None:
             algorithm = self._default_search_algorithm
