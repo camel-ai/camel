@@ -26,7 +26,7 @@ from camel.utils import (
 
 
 class OpenAICompatibilityModel:
-    r"""LLM API served by OpenAI-compatible providers. Function as model backend."""
+    r"""LLM API served by OpenAI-compatible providers."""
 
     def __init__(
         self,
@@ -53,7 +53,8 @@ class OpenAICompatibilityModel:
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("OPENAI_COMPATIBILIY_API_KEY")
+        self._api_key = api_key or os.environ.get(
+            "OPENAI_COMPATIBILIY_API_KEY")
         if self._url is None:
             raise ValueError(
                 "For OpenAI-compatible models, you must provide the `url`."
