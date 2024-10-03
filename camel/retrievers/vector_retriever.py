@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, IO
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -72,7 +72,7 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: Union[str, Element],
+        content: Union[str, Element, IO[bytes]],
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
         **kwargs: Any,
@@ -92,6 +92,9 @@ class VectorRetriever(BaseRetriever):
         """
         if isinstance(content, Element):
             elements = [content]
+        elif isinstance(content, IO[bytes]):
+            from unstructured.partition.auto import partition
+            elements = partition(file=content, **kwargs)
         else:
             # Check if the content is URL
             parsed_url = urlparse(content)
