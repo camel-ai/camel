@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Union, IO
+from typing import IO, Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -92,12 +92,13 @@ class VectorRetriever(BaseRetriever):
         """
         if isinstance(content, Element):
             elements = [content]
-        elif isinstance(content, IO[bytes]):
+        elif isinstance(content, IO):
             from unstructured.partition.auto import partition
+
             try:
                 elements = partition(file=content, **kwargs)
             except Exception:
-                warnings.warn(f"Failed to partition the IO[bytes]")
+                warnings.warn("Failed to partition the IO[bytes]")
                 return
         else:
             # Check if the content is URL
