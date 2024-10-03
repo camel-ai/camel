@@ -94,7 +94,11 @@ class VectorRetriever(BaseRetriever):
             elements = [content]
         elif isinstance(content, IO[bytes]):
             from unstructured.partition.auto import partition
-            elements = partition(file=content, **kwargs)
+            try:
+                elements = partition(file=content, **kwargs)
+            except Exception:
+                warnings.warn(f"Failed to partition the IO[bytes]")
+                return
         else:
             # Check if the content is URL
             parsed_url = urlparse(content)
