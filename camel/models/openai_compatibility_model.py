@@ -54,7 +54,8 @@ class OpenAICompatibilityModel:
         self.model_config_dict = model_config_dict
         self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
         self._api_key = api_key or os.environ.get(
-            "OPENAI_COMPATIBILIY_API_KEY")
+            "OPENAI_COMPATIBILIY_API_KEY"
+        )
         if self._url is None:
             raise ValueError(
                 "For OpenAI-compatible models, you must provide the `url`."
