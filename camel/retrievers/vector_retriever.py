@@ -93,13 +93,7 @@ class VectorRetriever(BaseRetriever):
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IO):
-            from unstructured.partition.auto import partition
-
-            try:
-                elements = partition(file=content, **kwargs)
-            except Exception:
-                warnings.warn("Failed to partition the IO[bytes]")
-                return
+            elements = self.uio.parse_bytes(file=content, **kwargs)
         else:
             # Check if the content is URL
             parsed_url = urlparse(content)
