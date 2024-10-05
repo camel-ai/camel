@@ -109,7 +109,7 @@ class UnstructuredIO:
                 specified.
 
         Notes:
-            Available document types:
+            Supported file types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
 
@@ -165,7 +165,12 @@ class UnstructuredIO:
 
         Returns:
             Union[List[Element], None]: List of elements after parsing the file
-                if successful, otherwise None.
+                if successful, otherwise `None`.
+
+        Notes:
+            Supported file types:
+                "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+                "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
 
         References:
             https://docs.unstructured.io/open-source/core-functionality/partitioning
