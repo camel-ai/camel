@@ -16,6 +16,7 @@ Main Documentation
    :caption: Get Started
    :name: getting_started
 
+   get_started/installation.md
    get_started/setup.md
 
 .. toctree::
