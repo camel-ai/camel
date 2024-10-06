@@ -306,13 +306,13 @@ class SearchToolkit(BaseToolkit):
                     result += (sub.plaintext or "None") + '\n'
 
         return result.rstrip()
-    
+
     def tavily_search(
         self, query: str, num_results: int = 5, **kwargs
     ) -> List[Dict[str, Any]]:
         r"""Use Tavily Search API to search information for the given query.
 
-        !! This function is not tested, please test it, and configure env !!
+        !! A formal test is not done yet !!
 
         Args:
             query (str): The query to be searched.
@@ -404,19 +404,3 @@ class SearchToolkit(BaseToolkit):
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = SearchToolkit().get_tools()
-
-if __name__ == "__main__":
-    # Quick test for Tavily search
-    toolkit = SearchToolkit()
-
-    # Example query for testing
-    query = "Can you tell me the weather in Tokyo?"
-    num_results = 3
-
-    # Perform the search
-    try:
-        results = toolkit.tavily_search(query, num_results)
-        print("Tavily Search Results:")
-        print(results)
-    except Exception as e:
-        print(f"An error occurred during testing: {e}")
