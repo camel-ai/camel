@@ -305,7 +305,86 @@ class SearchToolkit(BaseToolkit):
                 for sub in pod.subpods:
                     result += (sub.plaintext or "None") + '\n'
 
-        return result.rstrip()  # Remove trailing whitespace
+        return result.rstrip()
+    
+    def tavily_search(
+        self, query: str, num_results: int = 5, **kwargs
+    ) -> List[Dict[str, Any]]:
+        r"""Use Tavily Search API to search information for the given query.
+
+        !! This function is not tested, please test it, and configure env !!
+
+        Args:
+            query (str): The query to be searched.
+            num_results (int): The number of search results to retrieve
+                (default is 10).
+            **kwargs: Additional optional parameters supported by Tavily's API:
+                - search_depth (str): "basic" or "advanced" search depth.
+                - topic (str): The search category, e.g., "general" or "news."
+                - days (int): Time frame in days for news-related searches.
+                - max_results (int): Max number of results to return
+                  (overrides `num_results`).
+                See https://docs.tavily.com/docs/python-sdk/tavily-search/
+                api-reference for details.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing search
+            results. Each dictionary contains:
+                - 'result_id' (int): The result's index.
+                - 'title' (str): The title of the result.
+                - 'description' (str): A brief description of the result.
+                - 'long_description' (str): Detailed information, if available.
+                - 'url' (str): The URL of the result.
+                - 'content' (str): Relevant content from the search result.
+                - 'images' (list): A list of related images (if
+                  `include_images` is True).
+                - 'published_date' (str): Publication date for news topics
+                  (if available).
+
+        Example:
+            {
+                'result_id': 1,
+                'title': 'OpenAI',
+                'description': 'An AI research organization...',
+                'long_description': 'OpenAI is a non-profit...',
+                'url': 'https://www.openai.com',
+                'content': 'OpenAI focuses on AI safety...',
+                'images': ['https://image.url/1.jpg'],
+                'published_date': '2024-09-15'
+            }
+        """
+        from tavily import (
+            InvalidAPIKeyError,
+            MissingAPIKeyError,
+            TavilyClient,
+            UsageLimitExceededError,
+        )
+
+        Tavily_API_KEY = os.getenv("TAVILY_API_KEY")
+        if not Tavily_API_KEY:
+            raise ValueError(
+                "`TAVILY_API_KEY` not found in environment variables. "
+                "Get `TAVILY_API_KEY` here: `https://www.tavily.com/api/`."
+            )
+
+        client = TavilyClient(Tavily_API_KEY)
+
+        try:
+            results = client.search(query, max_results=num_results, **kwargs)
+            return results
+        except MissingAPIKeyError:
+            return [{"error": "Missing API key."}]
+        except InvalidAPIKeyError:
+            return [{"error": "Invalid API key."}]
+        except UsageLimitExceededError:
+            return [
+                {
+                    "error": "Usage limit exceeded. Check your plan's "
+                    "usage limits."
+                }
+            ]
+        except Exception as e:
+            return [{"error": f"An unexpected error occurred: {e!s}"}]
 
     def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the
@@ -320,7 +399,24 @@ class SearchToolkit(BaseToolkit):
             OpenAIFunction(self.search_google),
             OpenAIFunction(self.search_duckduckgo),
             OpenAIFunction(self.query_wolfram_alpha),
+            OpenAIFunction(self.tavily_search),
         ]
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = SearchToolkit().get_tools()
+
+if __name__ == "__main__":
+    # Quick test for Tavily search
+    toolkit = SearchToolkit()
+
+    # Example query for testing
+    query = "Can you tell me the weather in Tokyo?"
+    num_results = 3
+
+    # Perform the search
+    try:
+        results = toolkit.tavily_search(query, num_results)
+        print("Tavily Search Results:")
+        print(results)
+    except Exception as e:
+        print(f"An error occurred during testing: {e}")
