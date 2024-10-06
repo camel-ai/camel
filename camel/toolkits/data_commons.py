@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import datacommons
-import datacommons_pandas as dc
+import datacommons_pandas
 
 
 class DataCommonsToolkit:
@@ -34,13 +34,16 @@ class DataCommonsToolkit:
     """
 
     @staticmethod
-    def query_data_commons(query_string, select_function=None):
+    def query_data_commons(
+        query_string: str,
+        select_function: Optional[Callable[[Dict[str, Any]], bool]] = None,
+    ) -> List[Dict[str, Any]]:
         r"""Query the Data Commons knowledge graph using SPARQL.
 
         Args:
         query_string (str): A SPARQL query string.
         select_function (callable, optional): A function to select rows to be
-            returned. It should take a dict as input and return a boolean.
+        returned. It should take a dict as input and return a boolean.
 
         Returns:
         list: A list of dictionaries, each representing a node matching the
@@ -180,7 +183,7 @@ class DataCommonsToolkit:
         https://docs.datacommons.org/api/python/stat_series.html
         """
         try:
-            result = dc.get_stat_series(
+            result = datacommons_pandas.get_stat_series(
                 place,
                 stat_var,
                 measurement_method,
@@ -201,7 +204,9 @@ class DataCommonsToolkit:
             return {}
 
     @staticmethod
-    def get_property_labels(dcids, out=True):
+    def get_property_labels(
+        dcids: Union[str, List[str]], out: bool = True
+    ) -> Dict[str, List[str]]:
         r"""Retrieves and analyzes property labels for given DCIDs.
 
         Args:
@@ -215,7 +220,7 @@ class DataCommonsToolkit:
         https://docs.datacommons.org/api/python/property_label.html
         """
         try:
-            result = dc.get_property_labels(dcids, out)
+            result = datacommons.get_property_labels(dcids, out)
             if len(result) == 0:
                 print(f"No data found for dcids '{dcids}'.")
                 return {}
@@ -256,7 +261,7 @@ class DataCommonsToolkit:
         https://docs.datacommons.org/api/python/property_value.html
         """
         try:
-            result = dc.get_property_values(
+            result = datacommons.get_property_values(
                 dcids, prop, out, value_type, limit
             )
             if len(result) == 0:
@@ -285,7 +290,7 @@ class DataCommonsToolkit:
         https://docs.datacommons.org/api/python/place_in.html
         """
         try:
-            result = dc.get_places_in(dcids, place_type)
+            result = datacommons.get_places_in(dcids, place_type)
             if len(result) == 0:
                 print(
                     f"No data found for dcids '{dcids}' and place type "
@@ -336,7 +341,7 @@ class DataCommonsToolkit:
         https://docs.datacommons.org/api/python/stat_value.html
         """
         try:
-            result = dc.get_stat_value(
+            result = datacommons.get_stat_value(
                 place,
                 stat_var,
                 date,
@@ -382,7 +387,7 @@ class DataCommonsToolkit:
         https://docs.datacommons.org/api/python/stat_all.html
         """
         try:
-            result = dc.get_stat_all(places, stat_vars)
+            result = datacommons.get_stat_all(places, stat_vars)
             if len(result) == 0:
                 print(
                     f"No data found for places '{places}' and statistical "
