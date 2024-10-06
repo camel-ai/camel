@@ -20,8 +20,8 @@ from camel.utils import dependencies_required
 
 # Conditionally import telebot types only for type checking
 if TYPE_CHECKING:
-    from telebot.types import (
-        Message,  # type: ignore[import-not-found]
+    from telebot.types import (  # type: ignore[import-untyped]
+        Message,
     )
 
 
@@ -51,7 +51,7 @@ class TelegramBot:
         else:
             self.token = telegram_token
 
-        import telebot  # type: ignore[import-not-found]
+        import telebot  # type: ignore[import-untyped]
 
         self.bot = telebot.TeleBot(token=self.token)
 

@@ -17,7 +17,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from camel.agents import ChatAgent
-from examples.bots.discord_bot import DiscordBot
+from camel.bots.discord_bot import DiscordBot
 
 
 class TestDiscordBot(unittest.TestCase):

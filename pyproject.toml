@@ -92,6 +92,7 @@ nltk = { version = "3.8.1", optional = true }
 praw = { version = "^7.7.1", optional = true }
 textblob = { version = "^0.18.0.post0", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
+datacommons_pandas = { version = "^0.0.3", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -117,6 +118,23 @@ mock = { version = "^5", optional = true }
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
+
+rag = [
+    "sentence-transformers",
+    "qdrant-client",
+    "pymilvus",
+    "neo4j",
+    "nebula3-python",
+    "rank-bm25",
+    "cohere",
+    "unstructured",
+]
+
+search_tools = [
+    "duckduckgo-search",
+    "wikipedia",
+    "wolframalpha",
+]
 
 model-platforms = [
     "litellm",
@@ -169,7 +187,7 @@ tools = [
     "praw",
     "textblob",
     "datacommons",
-    "tavily",
+    "datacommons_pandas",
 ]
 
 vector-databases = [
@@ -257,7 +275,7 @@ all = [
     "google-cloud-storage",
     "botocore",
     "datacommons",
-    "tavily",
+    "datacommons_pandas",
 ]
 
 [tool.poetry.group.dev]
@@ -397,6 +415,6 @@ module = [
     "praw",
     "textblob",
     "datacommons",
-    "tavily",
+    "datacommons_pandas",
 ]
 ignore_missing_imports = true
