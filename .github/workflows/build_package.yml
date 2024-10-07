@@ -2,7 +2,7 @@ name: Build Package
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
 
 jobs:
   build:
