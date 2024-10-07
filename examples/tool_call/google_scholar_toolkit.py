@@ -26,7 +26,7 @@ sys_msg = BaseMessage.make_assistant_message(
 
 # Set model config
 tools = GoogleScholarToolkit(
-    author_identifier="https://scholar.google.com/citations?user=J9K-D0sAAAAJ"
+    author_identifier="https://scholar.google.com/citations?user=JicYPdAAAAAJ&hl=en&oi=ao"
 ).get_tools()
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
@@ -54,20 +54,36 @@ usr_msg = BaseMessage.make_user_message(
 
 # Get response information
 response = camel_agent.step(usr_msg)
-print(response.info['tool_calls'])
+print(str(response.info['tool_calls'])[:2000])
 """
 ===============================================================================
 [FunctionCallingRecord(func_name='get_author_detailed_info', args={}, result=
 {'container_type': 'Author', 'filled': ['basics', 'indices', 'counts', 
-'coauthors', 'publications', 'public_access'], 'scholar_id': 'J9K-D0sAAAAJ', 
+'coauthors', 'publications', 'public_access'], 'scholar_id': 'JicYPdAAAAAJ', 
 'source': <AuthorSource.AUTHOR_PROFILE_PAGE: 'AUTHOR_PROFILE_PAGE'>, 'name': 
-'Guohao Li', 'url_picture': 'https://scholar.googleusercontent.com/citations?
-view_op=view_photo&user=J9K-D0sAAAAJ&citpid=6', 'affiliation': 'University of 
-Oxford, CAMEL-AI.org', 'organization': 273144080909810983, 'interests': 
-['Autonomous Agents', 'Graph Neural Networks', 'Computer Vision', 'Embodied 
-AI'], 'email_domain': '@robots.ox.ac.uk', 'homepage': 'http://ghli.org/', 
-'citedby': 3780, 'citedby5y': 3776, 'hindex': 14, 'hindex5y': 14, 
-'i10index': ..
+'Geoffrey Hinton', 'url_picture': 'https://scholar.googleusercontent.com/
+citations?view_op=view_photo&user=JicYPdAAAAAJ&citpid=2', 'affiliation': 
+'Emeritus Prof. Computer Science, University of Toronto', 'organization': 
+8515235176732148308, 'interests': ['machine learning', 'psychology', 
+'artificial intelligence', 'cognitive science', 'computer science'], 
+'email_domain': '@cs.toronto.edu', 'homepage': 'http://www.cs.toronto.edu/
+~hinton', 'citedby': 853541, 'citedby5y': 560063, 'hindex': 186, 'hindex5y': 
+137, 'i10index': 483, 'i10index5y': 368, 'cites_per_year': {1989: 2627, 1990: 
+3589, 1991: 3766, 1992: 4091, 1993: 4573, 1994: 4499, 1995: 4090, 1996: 3935, 
+1997: 3740, 1998: 3744, 1999: 3559, 2000: 3292, 2001: 3398, 2002: 3713, 2003: 
+3670, 2004: 3393, 2005: 3813, 2006: 4168, 2007: 4558, 2008: 4349, 2009: 4784, 
+2010: 5238, 2011: 5722, 2012: 6746, 2013: 9900, 2014: 12751, 2015: 18999, 
+2016: 29932, 2017: 43675, 2018: 63544, 2019: 80800, 2020: 90523, 2021: 101735, 
+2022: 104036, 2023: 106452, 2024: 76413}, 'coauthors': [{'container_type': 
+'Author', 'filled': [], 'scholar_id': 'm1qAiOUAAAAJ', 'source': <AuthorSource.
+CO_AUTHORS_LIST: 'CO_AUTHORS_LIST'>, 'name': 'Terrence Sejnowski', 
+'affiliation': 'Francis Crick Professor, Salk Institute, Distingished 
+Professor, UC San Diego'}, {'container_type': 'Author', 'filled': [], 
+'scholar_id': 'RnoIxUwAAAAJ', 'source': <AuthorSource.CO_AUTHORS_LIST: 
+'CO_AUTHORS_LIST'>, 'name': 'Vinod Nair', 'affiliation': 'Research Scientist, 
+DeepMind'}, {'container_type': 'Author', 'filled': [], 'scholar_id': 
+'ghbWy-0AAAAJ', 'source': <AuthorSource.CO_AUTHORS_LIST: 'CO_AUTHORS_LIST'>, 
+'name': 'George E. Dahl', 'affiliation': 'Google Inc.'}, {'container_
 ===============================================================================
 """
 
@@ -77,41 +93,24 @@ usr_msg = BaseMessage.make_user_message(
 )
 
 # Get response information
-response = camel_agent.step(usr_msg)
-print(response.info['tool_calls'])
+# response = camel_agent.step(usr_msg)
+# print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
 [FunctionCallingRecord(func_name='get_author_publications', args={}, result=
-['DeepGCNs: Can GCNs Go as Deep as CNNs?', 'DeeperGCN: Training Deeper GCNs 
-with Generalized Aggregation Functions', 'Camel: Communicative agents for" 
-mind" exploration of large language model society', 'Training Graph Neural 
-Networks with 1000 Layers', 'SGAS: Sequential Greedy Architecture Search', 
-'PU-GCN: Point Cloud Upsampling using Graph Convolutional Networks', 'Flag: 
-Adversarial data augmentation for graph neural networks', 'ASSANet: An 
-Anisotropic Separable Set Abstraction for Efficient Point Cloud Representation 
-Learning', 'Mindstorms in natural language-based societies of mind', 'OIL: 
-Observational Imitation Learning', 'Diffusion-based scene graph to image 
-generation with masked contrastive pre-training', 'Can Large Language Model 
-Agents Simulate Human Trust Behaviors?', 'How To Not Train Your Dragon: 
-Training-free Embodied Object Goal Navigation with Semantic Frontiers', 'Brave 
-the wind and the waves: Discovering robust and generalizable graph lottery 
-tickets', 'The snowflake hypothesis: Training deep GNN with one node one 
-receptive field', 'Learning a controller fusion network by online trajectory 
-filtering for vision-based uav racing', 'LC-NAS: Latency constrained neural 
-architecture search for point cloud networks', 'When NAS Meets Trees: An 
-Efficient Algorithm for Neural Architecture Search', 'Leveraging 2D molecular 
-graph pretraining for improved 3D conformer generation with graph neural 
-networks', 'Learning scene flow in 3d point clouds with noisy pseudo labels', 
-'DeepGCNs: Making GCNs Go as Deep as CNNs', 'The heterophilic snowflake 
-hypothesis: Training and empowering gnns for heterophilic graphs', 'Technology 
-for memory-efficient and parameter-efficient graph neural networks', 
-'Knowledge-aware Global Reasoning for Situation Recognition', 'CRAB: 
-Cross-environment Agent Benchmark for Multimodal Language Model Agents', 
-'UnrealNAS: Can We Search Neural Architectures with Unreal Data?', 'The 
-Snowflake Hypothesis: Training and Powering GNN with One Node One Receptive 
-Field', 'All Nodes are created Not Equal: Node-Specific Layer Aggregation and 
-Filtration for GNN', 'Towards Structured Intelligence with Deep Graph Neural 
-Networks', 'DEEPERBIGGERBETTER FOR OGB-LSC AT KDD CUP 2021'])]
+['Imagenet classification with deep convolutional neural networks', 'Deep 
+learning', 'Learning internal representations by error-propagation', 'Dropout: 
+a simple way to prevent neural networks from overfitting', 'Visualizing data 
+using t-SNE', 'Learning representations by back-propagating errors', 'Learning 
+multiple layers of features from tiny images', 'Rectified linear units improve 
+restricted boltzmann machines', 'Reducing the dimensionality of data with 
+neural networks', 'A fast learning algorithm for deep belief nets', 
+'Distilling the Knowledge in a Neural Network', 'A simple framework for 
+contrastive learning of visual representations', 'Deep neural networks for 
+acoustic modeling in speech recognition: The shared views of four research 
+groups', 'Layer normalization', 'Speech recognition with deep recurrent neural 
+networks', 'Improving neural networks by preventing co-adaptation of feature 
+detectors', 'Lec
 ===============================================================================
 """
 
