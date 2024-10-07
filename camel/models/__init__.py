@@ -16,6 +16,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
+from .huggingface_model import HuggingFaceModel
 from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
@@ -49,6 +50,7 @@ __all__ = [
     'OllamaModel',
     'VLLMModel',
     'GeminiModel',
+    'HuggingFaceModel',
     'OpenAICompatibilityModel',
     'RekaModel',
     'SambaModel',

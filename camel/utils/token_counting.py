@@ -18,7 +18,7 @@ import base64
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from anthropic import Anthropic
 from PIL import Image
@@ -587,3 +587,64 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         return mistral_request
+
+class HuggingFaceMultimodalTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: str):
+        r"""Initialize the token counter with a specific model's tokenizer.
+
+        Args:
+            model_type (str): The name of the model to use for tokenization.
+                This can be a Hugging Face model name or a path to a local model.
+        """
+        from transformers import AutoTokenizer
+
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_type)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to load tokenizer for model '{model_type}': {e!s}"
+            )
+
+    def count_tokens_from_messages(
+        self, messages: List[Dict[str, Union[str, Dict]]]
+    ) -> int:
+        """
+        Count the number of tokens in a list of messages, including support for multimodal content.
+
+        Args:
+            messages (List[Dict]): A list of message dictionaries. Each message can have:
+                - 'role': str (e.g., "user", "assistant", "system")
+                - 'content': str or List[Dict] for multimodal content
+
+        Returns:
+            int: The total number of tokens for all messages.
+        """
+        total_tokens = 0
+
+        for message in messages:
+            # Count tokens for the role
+            total_tokens += len(self.tokenizer.encode(message['role']))
+
+            # Handle content based on its type
+            content = message['content']
+            if isinstance(content, str):
+                # Text content
+                total_tokens += len(self.tokenizer.encode(content))
+            elif isinstance(content, list):
+                # Multimodal content
+                for item in content:
+                    if item['type'] == 'text':
+                        total_tokens += len(
+                            self.tokenizer.encode(item['text'])
+                        )
+                    elif item['type'] == 'image_url':
+                        # For image URLs, we count a fixed number of tokens
+                        # This is an approximation and may need adjustment based on the specific model
+                        total_tokens += 100  # Placeholder value
+                    elif item['type'] == 'image':
+                        # For raw image data (base64 encoded), we can estimate based on the data size
+                        image_data = base64.b64decode(item['image_data'])
+                        # Assuming 1 token per 4 bytes of image data (this is an approximation)
+                        total_tokens += len(image_data) // 4
+
+        return total_tokens
