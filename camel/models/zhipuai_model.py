@@ -59,15 +59,11 @@ class ZhipuAIModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
+        api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
-        if not self._url or not self._api_key:
-            raise ValueError(
-                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
-            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,

@@ -46,9 +46,9 @@ class NemotronModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
+        url = url or os.environ.get("NVIDIA_API_BASE_URL")
+        api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         super().__init__(model_type, {}, api_key, url)
-        self._url = url or os.environ.get("NVIDIA_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         if not self._url or not self._api_key:
             raise ValueError(
                 "NVIDIA_API_BASE_URL and NVIDIA_API_KEY should be set."
@@ -59,7 +59,6 @@ class NemotronModel(BaseModelBackend):
             base_url=self._url,
             api_key=self._api_key,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     @api_keys_required("NVIDIA_API_KEY")
     def run(

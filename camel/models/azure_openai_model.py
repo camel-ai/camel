@@ -43,6 +43,9 @@ class AzureOpenAIModel(BaseModelBackend):
             (default: :obj:`None`)
         azure_deployment_name (Optional[str], optional): The deployment name
             you chose when you deployed an azure model. (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter`
+            will be used. (default: :obj:`None`)
 
     References:
         https://learn.microsoft.com/en-us/azure/ai-services/openai/
@@ -56,10 +59,14 @@ class AzureOpenAIModel(BaseModelBackend):
         url: Optional[str] = None,
         api_version: Optional[str] = None,
         azure_deployment_name: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        super().__init__(model_type, model_config_dict, api_key, url)
-        self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
-        self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
+        api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
+
         self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
         self.azure_deployment_name = azure_deployment_name or os.environ.get(
             "AZURE_DEPLOYMENT_NAME"
@@ -85,7 +92,6 @@ class AzureOpenAIModel(BaseModelBackend):
                 "Must provide either the `azure_deployment_name` argument "
                 "or `AZURE_DEPLOYMENT_NAME` environment variable."
             )
-        self.model = str(self.azure_deployment_name)
 
         self._client = AzureOpenAI(
             azure_endpoint=str(self._url),
@@ -95,7 +101,6 @@ class AzureOpenAIModel(BaseModelBackend):
             timeout=60,
             max_retries=3,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -127,7 +132,7 @@ class AzureOpenAIModel(BaseModelBackend):
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model,
+            model=self.azure_deployment_name,  # type:ignore[arg-type]
             **self.model_config_dict,
         )
         return response

@@ -53,12 +53,12 @@ class AnthropicModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        self.client = Anthropic(api_key=api_key, base_url=url)
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
-        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py

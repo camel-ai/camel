@@ -54,16 +54,16 @@ class OllamaModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        super().__init__(
-            model_type, model_config_dict, None, url, token_counter
-        )
-        self._url = (
+        if not url and not os.environ.get("OLLAMA_BASE_URL"):
+            self._start_server()
+        url = (
             url
             or os.environ.get("OLLAMA_BASE_URL")
             or "http://localhost:11434/v1"
         )
-        if not url and not os.environ.get("OLLAMA_BASE_URL"):
-            self._start_server()
+        super().__init__(
+            model_type, model_config_dict, None, url, token_counter
+        )
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
             timeout=60,
@@ -71,8 +71,6 @@ class OllamaModel(BaseModelBackend):
             base_url=self._url,
             api_key="ollama",  # required but ignored
         )
-        self._token_counter = token_counter
-        self.check_model_config()
 
     def _start_server(self) -> None:
         r"""Starts the Ollama server in a subprocess."""

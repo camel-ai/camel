@@ -63,16 +63,14 @@ class RekaModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        from reka.client import Reka
+
+        api_key = api_key or os.environ.get("REKA_API_KEY")
+        url = url or os.environ.get("REKA_SERVER_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("REKA_API_KEY")
-        self._url = url or os.environ.get("REKA_SERVER_URL")
-
-        from reka.client import Reka
-
         self._client = Reka(api_key=self._api_key, base_url=self._url)
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'

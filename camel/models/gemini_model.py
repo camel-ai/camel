@@ -64,10 +64,10 @@ class GeminiModel(BaseModelBackend):
         import google.generativeai as genai
         from google.generativeai.types.generation_types import GenerationConfig
 
+        api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
         self._client = genai.GenerativeModel(self.model_type.value)
 
@@ -143,8 +143,8 @@ class GeminiModel(BaseModelBackend):
         return self.model_config_dict.get('stream', False)
 
     def to_gemini_req(self, messages: List[OpenAIMessage]) -> 'ContentsType':
-        r"""Converts the request from the OpenAI API format to
-            the Gemini API request format.
+        r"""Converts the request from the OpenAI API format to the Gemini API
+        request format.
 
         Args:
             messages: The request object from the OpenAI API.

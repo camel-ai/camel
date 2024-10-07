@@ -62,7 +62,7 @@ class ModelFactory:
                 the backend constructor.
             token_counter (Optional[BaseTokenCounter], optional): Token
                 counter to use for the model. If not provided,
-                :obj:`OpenAITokenCounter(PredefinedModelType.GPT_3_5_TURBO)`
+                :obj:`OpenAITokenCounter(PredefinedModelType.GPT_4O_MINI)`
                 will be used if the model platform didn't provide official
                 token counter. (default: :obj:`None`)
             api_key (Optional[str], optional): The API key for authenticating
@@ -70,11 +70,11 @@ class ModelFactory:
             url (Optional[str], optional): The url to the model service.
                 (default: :obj:`None`)
 
-        Raises:
-            ValueError: If there is no backend for the model.
-
         Returns:
             BaseModelBackend: The initialized backend.
+
+        Raises:
+            ValueError: If there is no backend for the model.
         """
         model_class: Optional[Type[BaseModelBackend]] = None
         parsed_model_type = ModelType(model_type)

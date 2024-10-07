@@ -33,7 +33,6 @@ from camel.utils import (
 )
 
 
-# TODO: Add function calling support
 class TogetherAIModel(BaseModelBackend):
     r"""Constructor for Together AI backend with OpenAI compatibility.
 
@@ -60,18 +59,19 @@ class TogetherAIModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        api_key = api_key or os.environ.get("TOGETHER_API_KEY")
+        url = url or os.environ.get(
+            "TOGETHER_API_BASE_URL", "https://api.together.xyz/v1"
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._token_counter = token_counter
-        self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
-        self._url = url or os.environ.get("TOGETHER_API_BASE_URL")
 
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url=self._url or "https://api.together.xyz/v1",
+            base_url=self._url,
         )
 
     @api_keys_required("TOGETHER_API_KEY")

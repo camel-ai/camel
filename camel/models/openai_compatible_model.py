@@ -57,7 +57,6 @@ class OpenAICompatibleModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._token_counter = token_counter
         self._client = OpenAI(
             timeout=60,
             max_retries=3,

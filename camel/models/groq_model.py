@@ -57,18 +57,17 @@ class GroqModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        url = url or os.environ.get("GROQ_API_BASE_URL")
+        api_key = api_key or os.environ.get("GROQ_API_KEY")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or os.environ.get("GROQ_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("GROQ_API_KEY")
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url or "https://api.groq.com/openai/v1",
         )
-        self._token_counter = token_counter
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -84,7 +83,7 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(
                 PredefinedModelType.GPT_4O_MINI
             )
-        return self._token_counter
+        return self.token_counter
 
     @api_keys_required("GROQ_API_KEY")
     def run(

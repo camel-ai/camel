@@ -59,16 +59,17 @@ class VLLMModel(BaseModelBackend):
         api_key: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
-        )
-        self._url = (
+        if not url and not os.environ.get("VLLM_BASE_URL"):
+            self._start_server()
+        url = (
             url
             or os.environ.get("VLLM_BASE_URL")
             or "http://localhost:8000/v1"
         )
-        if not url and not os.environ.get("VLLM_BASE_URL"):
-            self._start_server()
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
+
         # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
             timeout=60,
@@ -76,8 +77,6 @@ class VLLMModel(BaseModelBackend):
             base_url=self._url,
             api_key=api_key,
         )
-        self._token_counter = token_counter
-        self.check_model_config()
 
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""

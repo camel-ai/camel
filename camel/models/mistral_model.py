@@ -66,16 +66,14 @@ class MistralModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        from mistralai import Mistral
+
+        api_key = api_key or os.environ.get("MISTRAL_API_KEY")
+        url = url or os.environ.get("MISTRAL_SERVER_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("MISTRAL_API_KEY")
-        self._url = url or os.environ.get("MISTRAL_SERVER_URL")
-
-        from mistralai import Mistral
-
         self._client = Mistral(api_key=self._api_key, server_url=self._url)
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     def _to_openai_response(
         self, response: 'ChatCompletionResponse'

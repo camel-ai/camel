@@ -48,14 +48,12 @@ class LiteLLMModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        from litellm import completion
+
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._client = None
-        self._token_counter = token_counter
-        self.check_model_config()
-        self._url = url
-        self._api_key = api_key
+        self.client = completion
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -86,14 +84,6 @@ class LiteLLMModel(BaseModelBackend):
             system_fingerprint=response.system_fingerprint,
             usage=response.usage,
         )
-
-    @property
-    def client(self):
-        if self._client is None:
-            from litellm import completion
-
-            self._client = completion
-        return self._client
 
     @property
     def token_counter(self) -> BaseTokenCounter:
