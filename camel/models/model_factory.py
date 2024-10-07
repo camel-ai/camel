@@ -20,7 +20,6 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
-from camel.models.model_type import ModelType
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -32,6 +31,7 @@ from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -88,7 +88,7 @@ class ModelFactory:
                 model_class = VLLMModel
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
-            elif model_platform.is_openai_compatibility_model:
+            elif model_platform.is_openai_compatible_model:
                 model_class = OpenAICompatibleModel
             elif model_platform.is_samba:
                 model_class = SambaModel

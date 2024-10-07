@@ -17,12 +17,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from camel.configs import Gemini_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionMessage,
     Choice,
 )
+from camel.types.model_type import ModelType
 from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,

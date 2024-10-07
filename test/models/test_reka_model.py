@@ -17,8 +17,8 @@ import pytest
 
 from camel.configs import OpenSourceConfig, RekaConfig
 from camel.models import RekaModel
-from camel.models.model_type import ModelType
 from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 

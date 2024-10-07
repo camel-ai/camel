@@ -19,11 +19,11 @@ from openai import AzureOpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
 )
+from camel.types.model_type import ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 

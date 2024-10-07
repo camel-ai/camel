@@ -15,7 +15,7 @@ import pytest
 
 from camel.configs import TogetherAIConfig
 from camel.models import TogetherAIModel
-from camel.models.model_type import ModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 

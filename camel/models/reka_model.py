@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.configs import REKA_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models.model_type import ModelType
 from camel.types import ChatCompletion, PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,

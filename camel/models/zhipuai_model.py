@@ -20,12 +20,12 @@ from openai import OpenAI, Stream
 from camel.configs import ZHIPUAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     PredefinedModelType,
 )
+from camel.types.model_type import ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,

@@ -17,8 +17,8 @@ import pytest
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import OpenAIModel
-from camel.models.model_type import ModelType
 from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 

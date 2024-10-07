@@ -27,8 +27,8 @@ import pytest
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import AzureOpenAIModel, ModelFactory
-from camel.models.model_type import ModelType
 from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 

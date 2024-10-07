@@ -31,7 +31,6 @@ from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.models.model_type import ModelType
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     MathToolkit,
@@ -46,6 +45,7 @@ from camel.types import (
     RoleType,
     TaskType,
 )
+from camel.types.model_type import ModelType
 from camel.utils.async_func import sync_funcs_to_async
 
 parametrize = pytest.mark.parametrize(

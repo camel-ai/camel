@@ -18,11 +18,11 @@ from openai import OpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models.model_type import ModelType
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
 )
+from camel.types.model_type import ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenSourceTokenCounter,

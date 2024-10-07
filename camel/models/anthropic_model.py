@@ -19,8 +19,8 @@ from anthropic import NOT_GIVEN, Anthropic
 from camel.configs import ANTHROPIC_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.models.model_type import ModelType
 from camel.types import ChatCompletion
+from camel.types.model_type import ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,

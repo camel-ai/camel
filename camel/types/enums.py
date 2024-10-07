@@ -551,7 +551,7 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.OPEN_SOURCE
 
     @property
-    def is_openai_compatibility_model(self) -> bool:
+    def is_openai_compatible_model(self) -> bool:
         r"""Returns whether this is a platform supporting openai
         compatibility"""
         return self is ModelPlatformType.OPENAI_COMPATIBLE_MODEL

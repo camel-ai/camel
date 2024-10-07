@@ -20,8 +20,8 @@ from camel.configs import (
     OpenSourceConfig,
 )
 from camel.models import OpenSourceModel
-from camel.models.model_type import ModelType
 from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenSourceTokenCounter, check_server_running
 
 MODEL_PATH_MAP = {

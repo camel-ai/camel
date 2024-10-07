@@ -17,8 +17,8 @@ import pytest
 
 from camel.configs import LiteLLMConfig, OpenSourceConfig
 from camel.models import LiteLLMModel
-from camel.models.model_type import ModelType
 from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import LiteLLMTokenCounter
 
 

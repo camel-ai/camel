@@ -20,7 +20,7 @@ from camel.configs import (
     SambaFastAPIConfig,
 )
 from camel.models import SambaModel
-from camel.models.model_type import ModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 

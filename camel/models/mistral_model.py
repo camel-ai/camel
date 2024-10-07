@@ -14,7 +14,7 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from camel.models.model_type import ModelType
+from camel.types.model_type import ModelType
 
 if TYPE_CHECKING:
     from mistralai.models import (
