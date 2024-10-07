@@ -14,6 +14,7 @@
 import uuid
 import warnings
 from typing import (
+    IO,
     Any,
     Dict,
     List,
@@ -108,7 +109,7 @@ class UnstructuredIO:
                 specified.
 
         Notes:
-            Available document types:
+            Supported file types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
 
@@ -151,6 +152,41 @@ class UnstructuredIO:
             except Exception:
                 warnings.warn(f"Failed to partition the file: {input_path}")
                 return None
+
+    @staticmethod
+    def parse_bytes(
+        file: IO[bytes], **kwargs: Any
+    ) -> Union[List[Element], None]:
+        r"""Parses a bytes stream and converts its contents into elements.
+
+        Args:
+            file (IO[bytes]): The file in bytes format to be parsed.
+            **kwargs: Extra kwargs passed to the partition function.
+
+        Returns:
+            Union[List[Element], None]: List of elements after parsing the file
+                if successful, otherwise `None`.
+
+        Notes:
+            Supported file types:
+                "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+                "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
+
+        References:
+            https://docs.unstructured.io/open-source/core-functionality/partitioning
+        """
+
+        from unstructured.partition.auto import partition
+
+        try:
+            # Use partition to process the bytes stream
+            elements = partition(file=file, **kwargs)
+            return elements
+        except Exception as e:
+            import warnings
+
+            warnings.warn(f"Failed to partition the file stream: {e}")
+            return None
 
     @staticmethod
     def clean_text_data(
