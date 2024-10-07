@@ -1,7 +1,7 @@
 name: Build and deploy camel documents
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
   workflow_dispatch:
 permissions:
     contents: write
