@@ -43,7 +43,7 @@ def main():
     ]
 
     model_platform = ModelPlatformType.OPENAI
-    model_type = PredefinedModelType.GPT_3_5_TURBO
+    model_type = PredefinedModelType.GPT_4O_MINI
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(
