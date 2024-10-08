@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -50,20 +51,32 @@ class OpenAICompatibleModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        api_key: str,
-        url: str,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._token_counter = token_counter
+        self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
+        self._api_key = api_key or os.environ.get(
+            "OPENAI_COMPATIBILIY_API_KEY"
+        )
+        if self._url is None:
+            raise ValueError(
+                "For OpenAI-compatible models, you must provide the `url`."
+            )
+        if self._api_key is None:
+            raise ValueError(
+                "For OpenAI-compatible models, you must provide the `api_key`."
+            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            api_key=api_key,
-            base_url=url,
+            base_url=self._url,
+            api_key=self._api_key,
         )
+        self._token_counter = token_counter
 
     def run(
         self,
