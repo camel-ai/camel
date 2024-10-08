@@ -14,7 +14,7 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from camel.configs import Gemini_API_PARAMS
+from camel.configs import Gemini_API_PARAMS, GeminiConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -38,8 +38,9 @@ class GeminiModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will be fed into
-            generate_content().
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`genai.GenerativeModel.generate_content()
+            `. (default: :obj:`GeminiConfig().as_dict()`)
         api_key (Optional[str], optional): The API key for authenticating with
             the gemini service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the gemini service.
@@ -56,13 +57,16 @@ class GeminiModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         import google.generativeai as genai
         from google.generativeai.types.generation_types import GenerationConfig
+
+        if not model_config_dict:
+            model_config_dict = GeminiConfig().as_dict()
 
         api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         super().__init__(

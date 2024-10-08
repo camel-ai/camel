@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OLLAMA_API_PARAMS
+from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -34,8 +34,9 @@ class OllamaModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            (default: :obj:`OllamaConfig().as_dict()`)
         url (Optional[str], optional): The url to the model service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
@@ -50,10 +51,12 @@ class OllamaModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        if not model_config_dict:
+            model_config_dict = OllamaConfig().as_dict()
         if not url and not os.environ.get("OLLAMA_BASE_URL"):
             self._start_server()
         url = (

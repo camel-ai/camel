@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import GROQ_API_PARAMS
+from camel.configs import GROQ_API_PARAMS, GroqConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -37,8 +37,9 @@ class GroqModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary of parameters for
-            the model configuration.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            (default: :obj:`GroqConfig().as_dict()`)
         api_key (Optional[str], optional): The API key for authenticating
             with the Groq service. (default: :obj:`None`).
         url (Optional[str], optional): The url to the Groq service.
@@ -52,11 +53,13 @@ class GroqModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        if not model_config_dict:
+            model_config_dict = GroqConfig().as_dict()
         url = url or os.environ.get("GROQ_API_BASE_URL")
         api_key = api_key or os.environ.get("GROQ_API_KEY")
         super().__init__(

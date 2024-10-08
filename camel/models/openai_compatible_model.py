@@ -35,8 +35,9 @@ class OpenAICompatibleModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            (default: :obj:`{}`)
         api_key (str): The API key for authenticating with the
             model service.
         url (str): The url to the model service.
@@ -49,9 +50,9 @@ class OpenAICompatibleModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
         api_key: str,
         url: str,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         super().__init__(

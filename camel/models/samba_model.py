@@ -23,6 +23,7 @@ from openai import OpenAI, Stream
 from camel.configs import (
     SAMBA_CLOUD_API_PARAMS,
     SAMBA_VERSE_API_PARAMS,
+    SambaCloudAPIConfig,
 )
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -49,15 +50,17 @@ class SambaModel(BaseModelBackend):
             sambanova.ai/t/supported-models/193`. Supported models via
             SambaVerse API is listed in `https://sambaverse.sambanova.ai/
             models`.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into API request.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            (default: :obj:`SambaCloudAPIConfig().as_dict()`)
         api_key (Optional[str], optional): The API key for authenticating
             with the SambaNova service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the SambaNova service.
             Current support SambaVerse API:
             :obj:`"https://sambaverse.sambanova.ai/api/predict"` and
             SambaNova Cloud:
-            :obj:`"https://api.sambanova.ai/v1"` (default: :obj:`None`)
+            :obj:`"https://api.sambanova.ai/v1"` (default: :obj:`https://api.
+            sambanova.ai/v1`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
@@ -66,11 +69,13 @@ class SambaModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        if not model_config_dict:
+            model_config_dict = SambaCloudAPIConfig().as_dict()
         api_key = api_key or os.environ.get("SAMBA_API_KEY")
         url = url or os.environ.get(
             "SAMBA_API_BASE_URL",

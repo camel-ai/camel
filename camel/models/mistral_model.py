@@ -22,7 +22,7 @@ if TYPE_CHECKING:
         Messages,
     )
 
-from camel.configs import MISTRAL_API_PARAMS
+from camel.configs import MISTRAL_API_PARAMS, MistralConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, PredefinedModelType
@@ -47,8 +47,9 @@ class MistralModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created, one of
             MISTRAL_* series.
-        model_config_dict (Dict[str, Any]): A dictionary that will be fed into
-            `MistralClient.chat`.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`Mistral.chat.complete()`.
+            (default: :obj:`MistralConfig().as_dict()`)
         api_key (Optional[str], optional): The API key for authenticating with
             the mistral service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the mistral service.
@@ -61,12 +62,15 @@ class MistralModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         from mistralai import Mistral
+
+        if not model_config_dict:
+            model_config_dict = MistralConfig().as_dict()
 
         api_key = api_key or os.environ.get("MISTRAL_API_KEY")
         url = url or os.environ.get("MISTRAL_SERVER_URL")

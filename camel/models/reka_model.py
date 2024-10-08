@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from camel.configs import REKA_API_PARAMS
+from camel.configs import REKA_API_PARAMS, RekaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, PredefinedModelType
@@ -44,8 +44,9 @@ class RekaModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created,
             one of REKA_* series.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into `Reka.chat.create`.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`Reka.chat.create()`.
+            (default: :obj:`RekaConfig().as_dict()`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Reka service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Reka service.
@@ -58,13 +59,15 @@ class RekaModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         from reka.client import Reka
 
+        if not model_config_dict:
+            model_config_dict = RekaConfig().as_dict()
         api_key = api_key or os.environ.get("REKA_API_KEY")
         url = url or os.environ.get("REKA_SERVER_URL")
         super().__init__(
