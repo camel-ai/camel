@@ -4,6 +4,7 @@ import inspect
 import pkgutil
 from typing import Callable, List, Optional
 
+from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
 
 
@@ -22,8 +23,12 @@ class ToolManager:
         Initializes the ToolManager and loads all available toolkits.
         """
         self.toolkits = {}
+
         self.toolkit_classes = {}
+        self.toolkit_class_methods = {}
+
         self._load_toolkits()
+        self._load_toolkit_class_and_methods()
 
     def _load_toolkits(self):
         r"""
@@ -53,18 +58,82 @@ class ToolManager:
                     ):
                         self.toolkits[name] = func
 
-    def _load_toolkit_class(self):
+    def _load_toolkit_class_and_methods(self):
         r"""
-        todo:Dynamically loads all toolkits class to self.toolkit_classes for
-        user to define their own toolkit by setting the keys or other conifgs.
-        """
-        pass
+        Dynamically loads all classes and their methods from the `camel.toolkits` package.
 
-    def add_toolkit(self, tookit: Callable):
-        r"""
-        todo: let user add toolkit to the toolkits list
+        It iterates through all modules in the package, checking for public classes.
+        For each class, it collects its public methods (those not starting with `_`).
         """
-        pass
+        package = importlib.import_module('camel.toolkits')
+
+        for _, module_name, _ in pkgutil.iter_modules(package.__path__):
+            module = importlib.import_module(f'camel.toolkits.{module_name}')
+
+            for name, cls in inspect.getmembers(module, inspect.isclass):
+                if cls.__module__ == module.__name__:
+                    self.toolkit_classes[name] = cls
+
+                    self.toolkit_class_methods[name] = {
+                        method_name: method
+                        for method_name, method in inspect.getmembers(
+                            cls, inspect.isfunction
+                        )
+                        if callable(method) and hasattr(method, '_is_exported')
+                    }
+
+    def add_toolkit_from_function(self, toolkit_func: Callable):
+        """
+        Adds a toolkit function to the toolkits list.
+
+        Parameters:
+            toolkit_func (Callable): The toolkit function to be added.
+
+        Returns:
+            Str: A message indicating whether the addition was successful or
+                if it  failed.
+        """
+        if not callable(toolkit_func):
+            return "Provided argument is not a callable function."
+
+        func_name = toolkit_func.__name__
+
+        if not func_name:
+            return "Function must have a valid name."
+
+        self.toolkits[func_name] = toolkit_func
+
+        return f"Toolkit '{func_name}' added successfully."
+
+    def add_toolkit_from_instance(self, **kwargs):
+        """
+        Add a toolkit class instance to the tool list.
+
+        Parameters:
+            kwargs: The toolkit class instance to be added. Keyword arguments
+                where each value is expected to be an instance of BaseToolkit.
+
+        Returns:
+            Str: A message indicating whether the addition was successful or
+                if it failed.
+        """
+        messages = []
+        for toolkit_instance_name, toolkit_instance in kwargs.items():
+            if isinstance(toolkit_instance, BaseToolkit):
+                for attr_name in dir(toolkit_instance):
+                    attr = getattr(toolkit_instance, attr_name)
+
+                    if callable(attr) and hasattr(attr, '_is_exported'):
+                        method_name = f"{toolkit_instance_name}_{attr_name}"
+
+                        self.toolkits[method_name] = attr
+                        messages.append(f"Successfully added {method_name}.")
+            else:
+                messages.append(
+                    f"Failed to add {toolkit_instance_name}: Not an instance of BaseToolkit."
+                )
+
+        return "\n".join(messages)
 
     def list_toolkits(self):
         r"""
@@ -74,6 +143,26 @@ class ToolManager:
             List[str]: A list of all toolkit function names available for use.
         """
         return list(self.toolkits.keys())
+
+    def list_toolkit_classes(self):
+        r"""
+        Lists the names of all available toolkit classes along with their
+        methods.
+
+        Returns:
+            List[str]: A list of strings in the format 'ClassName: method1,
+                method2, ...'.
+        """
+        result = []
+
+        for class_name, methods in self.toolkit_class_methods.items():
+            methods_str = ', '.join(methods)
+
+            formatted_string = f"{class_name}: {methods_str}"
+
+            result.append(formatted_string)
+
+        return result
 
     def get_toolkit(self, name: str) -> OpenAIFunction | str:
         r"""
@@ -110,16 +199,16 @@ class ToolManager:
         for name in names:
             current_toolkit = self.toolkits.get(name)
             if current_toolkit:
-                toolkits.append(OpenAIFunction(current_toolkit))
+                toolkits.append(current_toolkit)
         if len(toolkits) > 0:
             return toolkits
-        return f"Toolkit '{name}' not found."
+        return "Toolkits are not found."
 
     def _default_search_algorithm(
         self, keyword: str, description: str
     ) -> bool:
         r"""
-        Default search algorithm using fuzzy matching.
+        Default search algorithm.
 
         Args:
             keyword (str): The keyword to search for.
@@ -129,12 +218,7 @@ class ToolManager:
             bool: True if a match is found based on similarity, False
             otherwise.
         """
-        ratio = difflib.SequenceMatcher(
-            None, keyword.lower(), description.lower()
-        ).ratio()
-        return (
-            ratio > 0.6
-        )  # A threshold of 0.6 for fuzzy matching (adjustable)
+        return keyword.lower() in description.lower()
 
     def search_toolkits(
         self,
@@ -163,7 +247,7 @@ class ToolManager:
         for name, func in self.toolkits.items():
             openai_func = OpenAIFunction(func)
             description = openai_func.get_function_description()
-            if algorithm(keyword, description):
+            if algorithm(keyword, description) or algorithm(keyword, name):
                 matching_toolkits.append(name)
 
         return matching_toolkits

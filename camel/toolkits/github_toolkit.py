@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
 from camel.utils import dependencies_required
+from camel.utils.commons import export_to_toolkit
 
 
 def get_github_access_token() -> str:
@@ -163,6 +164,7 @@ class GithubToolkit(BaseToolkit):
             OpenAIFunction(self.retrieve_pull_requests),
         ]
 
+    @export_to_toolkit
     def retrieve_issue_list(self) -> List[GithubIssue]:
         r"""Retrieve a list of open issues from the repository.
 
@@ -185,6 +187,7 @@ class GithubToolkit(BaseToolkit):
             if not issue.pull_request
         ]
 
+    @export_to_toolkit
     def retrieve_issue(self, issue_number: int) -> Optional[str]:
         r"""Retrieves an issue from a GitHub repository. This function
         retrieves an issue from a specified repository using the issue number.
@@ -201,6 +204,7 @@ class GithubToolkit(BaseToolkit):
                 return str(issue)
         return None
 
+    @export_to_toolkit
     def retrieve_pull_requests(
         self, days: int, state: str, max_prs: int
     ) -> List[str]:
@@ -241,6 +245,7 @@ class GithubToolkit(BaseToolkit):
                 merged_prs.append(str(pr_details))
         return merged_prs
 
+    @export_to_toolkit
     def create_pull_request(
         self,
         file_path: str,
