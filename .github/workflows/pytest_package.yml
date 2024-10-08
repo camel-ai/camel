@@ -5,9 +5,9 @@ name: Pytest Camel package
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
 
 permissions:
   contents: read
