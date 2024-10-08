@@ -82,6 +82,7 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+    MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -186,6 +187,7 @@ class ModelType(Enum):
             ModelType.MISTRAL_MIXTRAL_8x7B,
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.MISTRAL_CODESTRAL_MAMBA,
+            ModelType.MISTRAL_PIXTRAL_12B,
         }
 
     @property
@@ -278,6 +280,7 @@ class ModelType(Enum):
             ModelType.O1_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
+            ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.QWEN_2,
         }:
             return 128_000
