@@ -33,43 +33,6 @@ toolkit_classes = manager.list_toolkit_classes()
 
 pretty_print_list("Function Toolkits", toolkits)
 pretty_print_list("Class Toolkits", toolkit_classes)
-
-matching_toolkits_test = manager.search_toolkits('weather')
-pretty_print_list("Matching Toolkit", matching_toolkits_test)
-
-
-def strict_search_algorithm(keyword: str, description: str) -> bool:
-    return keyword.lower() in description.lower()
-
-
-matching_toolkits_custom = manager.search_toolkits(
-    'weather', algorithm=strict_search_algorithm
-)
-pretty_print_list(
-    "Custom Algorithm Matching Toolkit", matching_toolkits_custom
-)
-
-tool = manager.get_toolkit('get_weather_data')
-if isinstance(tool, OpenAIFunction):
-    print("\nFunction Description:")
-    print('-' * 40)
-    print(tool.get_function_description())
-
-camel_github_toolkit = GithubToolkit(repo_name='camel-ai/camel')
-crab_github_toolkit = GithubToolkit(repo_name='ZackYule/crab')
-
-manager.add_toolkit_from_instance(
-    camel_github_toolkit=camel_github_toolkit,
-    crab_github_toolkit=crab_github_toolkit,
-)
-
-matching_tools_for_github = manager.search_toolkits('github')
-pretty_print_list("Matching Tools for GitHub", matching_tools_for_github)
-
-if isinstance(matching_tools_for_github, list):
-    tools_instances = manager.get_toolkits(names=matching_tools_for_github)
-    pretty_print_list("Tools Instances", tools_instances)
-
 """
 ===============================================================================
 ========================================
@@ -112,7 +75,25 @@ Class Toolkits:
   18. TwitterToolkit: 
   19. WeatherToolkit: 
 ========================================
+===============================================================================
+"""
 
+matching_toolkits_test = manager.search_toolkits('weather')
+pretty_print_list("Matching Toolkit", matching_toolkits_test)
+
+
+def strict_search_algorithm(keyword: str, description: str) -> bool:
+    return keyword.lower() in description.lower()
+
+
+matching_toolkits_custom = manager.search_toolkits(
+    'weather', algorithm=strict_search_algorithm
+)
+pretty_print_list(
+    "Custom Algorithm Matching Toolkit", matching_toolkits_custom
+)
+"""
+===============================================================================
 ========================================
 Matching Toolkit:
 ----------------------------------------
@@ -126,7 +107,16 @@ Custom Algorithm Matching Toolkit:
   1. get_openweathermap_api_key
   2. get_weather_data
 ========================================
+===============================================================================
+"""
 
+tool = manager.get_toolkit('get_weather_data')
+if isinstance(tool, OpenAIFunction):
+    print("\nFunction Description:")
+    print('-' * 40)
+    print(tool.get_function_description())
+"""
+===============================================================================
 Function Description:
 ----------------------------------------
 Fetch and return a comprehensive weather report for a given city
@@ -137,6 +127,21 @@ all formatted as a readable string.
 The function interacts with the OpenWeatherMap API to
 retrieve the data.
 
+===============================================================================
+"""
+
+camel_github_toolkit = GithubToolkit(repo_name='camel-ai/camel')
+crab_github_toolkit = GithubToolkit(repo_name='ZackYule/crab')
+
+manager.add_toolkit_from_instance(
+    camel_github_toolkit=camel_github_toolkit,
+    crab_github_toolkit=crab_github_toolkit,
+)
+
+matching_tools_for_github = manager.search_toolkits('github')
+pretty_print_list("Matching Tools for GitHub", matching_tools_for_github)
+"""
+===============================================================================
 ========================================
 Matching Tools for GitHub:
 ----------------------------------------
@@ -150,7 +155,15 @@ Matching Tools for GitHub:
   8. crab_github_toolkit_retrieve_issue_list
   9. crab_github_toolkit_retrieve_pull_requests
 ========================================
+===============================================================================
+"""
 
+if isinstance(matching_tools_for_github, list):
+    tools_instances = manager.get_toolkits(names=matching_tools_for_github)
+    pretty_print_list("Tools Instances", tools_instances)
+
+"""
+===============================================================================
 ========================================
 Tools Instances:
 ----------------------------------------
