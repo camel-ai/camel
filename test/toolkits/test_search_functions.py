@@ -150,7 +150,6 @@ def test_search_duckduckgo_images(mock_images):
     result = search_duckduckgo(
         query="test query", source="images", max_results=2
     )
-
     assert result == [
         {
             "result_id": 1,
@@ -167,7 +166,6 @@ def test_search_duckduckgo_images(mock_images):
             "source": "Example Source 2",
         },
     ]
-
     mock_images.assert_called_once_with(keywords="test query", max_results=2)
 
 
