@@ -91,6 +91,8 @@ botocore = { version = "^1.35.3", optional = true }
 nltk = { version = "3.8.1", optional = true }
 praw = { version = "^7.7.1", optional = true }
 textblob = { version = "^0.18.0.post0", optional = true }
+arxiv = { version = "^2.1.3", optional = true }
+arxiv2text = { version = "^0.1.14", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -172,6 +174,8 @@ tools = [
     "openapi-spec-validator",
     "unstructured",
     "firecrawl-py",
+    "arxiv",
+    "arxiv2text",
     "nltk",
     "imageio",
     "pillow",
@@ -241,6 +245,8 @@ all = [
     "unstructured",
     "nltk",
     "firecrawl-py",
+    "arxiv",
+    "arxiv2text",
     "imageio",
     "slack-sdk",
     "pydub",

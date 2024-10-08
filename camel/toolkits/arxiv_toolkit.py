@@ -80,9 +80,8 @@ class ArxivToolkit(BaseToolkit):
 
         Returns:
             List[Dict[str, str]]: A list of dictionaries, each containing
-                information about a paper,
-            including title, published date, authors, entry ID, summary, and
-                extracted text from the paper.
+                information about a paper, including title, published date,
+                authors, entry ID, summary, and extracted text from the paper.
         """
         from arxiv2text import arxiv_to_text
 
@@ -110,7 +109,7 @@ class ArxivToolkit(BaseToolkit):
         paper_ids: Optional[List[str]] = None,
         max_results: Optional[int] = 5,
         output_dir: Optional[str] = "./",
-    ) -> None:
+    ) -> str:
         r"""Downloads PDFs of academic papers from arXiv based on the provided
         query.
 
@@ -122,15 +121,22 @@ class ArxivToolkit(BaseToolkit):
                 to download. (default::obj: `5`)
             output_dir (str, optional): The directory to save the downloaded
                 PDFs. Defaults to the current directory.
-        """
-        search_results = self._get_search_results(
-            query, paper_ids, max_results
-        )
 
-        for paper in search_results:
-            paper.download_pdf(
-                dirpath=output_dir, filename=f"{paper.title}" + ".pdf"
+        Returns:
+            str: Status message indicating success or failure.
+        """
+        try:
+            search_results = self._get_search_results(
+                query, paper_ids, max_results
             )
+
+            for paper in search_results:
+                paper.download_pdf(
+                    dirpath=output_dir, filename=f"{paper.title}" + ".pdf"
+                )
+            return "papers downloaded successfully"
+        except Exception as e:
+            return f"An error occurred: {e}"
 
     def get_tools(self) -> List[OpenAIFunction]:
         return [
