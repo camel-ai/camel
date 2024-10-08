@@ -21,7 +21,7 @@ from camel.types import ModelPlatformType, ModelType
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling opertor', content='You are a helpful assistant'
+    role_name="Tools calling opertor", content="You are a helpful assistant"
 )
 
 # Set model config
@@ -48,8 +48,8 @@ camel_agent.reset()
 
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
-    role_name='CAMEL User',
-    content='get the detailed information of this author',
+    role_name="CAMEL User",
+    content="get the detailed information of this author",
 )
 
 # Get response information
@@ -89,12 +89,12 @@ DeepMind'}, {'container_type': 'Author', 'filled': [], 'scholar_id':
 
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
-    role_name='CAMEL User', content='get the publications of this author'
+    role_name="CAMEL User", content="get the publications of this author"
 )
 
 # Get response information
-# response = camel_agent.step(usr_msg)
-# print(str(response.info['tool_calls'])[:1000])
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
 [FunctionCallingRecord(func_name='get_author_publications', args={}, result=
@@ -117,8 +117,8 @@ detectors', 'Lec
 # ruff: noqa: E501
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
-    role_name='CAMEL User',
-    content='get the detailed information for publication with title: `Camel: Communicative agents for" mind" exploration of large language model society`',
+    role_name="CAMEL User",
+    content="""get the detailed information for publication with title: `Camel: Communicative agents for" mind" exploration of large language model society`""",
 )
 
 # Get response information
