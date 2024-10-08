@@ -41,13 +41,14 @@ class DataCommonsToolkit:
         r"""Query the Data Commons knowledge graph using SPARQL.
 
         Args:
-        query_string (str): A SPARQL query string.
-        select_function (callable, optional): A function to select rows to be
-        returned. It should take a dict as input and return a boolean.
+            query_string (str): A SPARQL query string.
+            select_function (callable, optional): A function to select
+            rows to be returned. It should take a dict as input and
+            return a boolean.
 
         Returns:
-        list: A list of dictionaries, each representing a node matching the
-        query conditions.
+            list: A list of dictionaries, each representing a node matching
+            the query conditions.
 
         Note:
         - Only supports a limited subset of SPARQL functionality (ORDER BY,
@@ -57,7 +58,7 @@ class DataCommonsToolkit:
           of the API.
 
         Reference:
-        https://docs.datacommons.org/api/python/query.html
+            https://docs.datacommons.org/api/python/query.html
         """
 
         try:
@@ -89,14 +90,14 @@ class DataCommonsToolkit:
         r"""Retrieve triples associated with nodes.
 
         Args:
-        dcids (Union[str, List[str]]): A single DCID or a list of DCIDs to
-                                       query.
-        limit (int, optional): The maximum number of triples per combination
-                               of property and type. Default is 500.
+            dcids (Union[str, List[str]]): A single DCID or a list of DCIDs
+                to query.
+            limit (int, optional): The maximum number of triples per
+                combination of property and type. Default is 500.
 
         Returns:
-        Dict[str, List[tuple]]: A dictionary where keys are DCIDs and values
-                                are lists of associated triples.
+            Dict[str, List[tuple]]: A dictionary where keys are DCIDs and
+            values are lists of associated triples.
 
         Note:
         - The function will raise a ValueError if any of the required
@@ -110,7 +111,7 @@ class DataCommonsToolkit:
         - The function will raise an Exception if an unexpected error occurs.
 
         Reference:
-        https://docs.datacommons.org/api/python/triple.html
+            https://docs.datacommons.org/api/python/triple.html
         """
         try:
             result = datacommons.get_triples(dcids, limit)
@@ -159,28 +160,29 @@ class DataCommonsToolkit:
         r"""Retrieve statistical time series for a place.
 
         Args:
-        place: The dcid of the Place to query for.
-        stat_var: The dcid of the StatisticalVariable.
-        In addition to these required properties, this endpoint also allows
-        for other, optional arguments.
-        measurement_method: The technique used for measuring a statistical
-                            variable.
-        observation_period: The time period over which an observation is made.
-        scaling_factor: Property of statistical variables indicating factor by
-                        which a measurement is multiplied to fit a certain
-                        format.
-        unit: The unit of measurement.
+            place (str): The dcid of the Place to query for.
+            stat_var (str): The dcid of the StatisticalVariable.
+            In addition to these required properties, this endpoint also
+            allows for other, optional arguments.
+            measurement_method (str, optional): The technique used for
+                measuring a statistical variable.
+            observation_period (str, optional): The time period over which an
+                observation is made.
+            scaling_factor (str, optional): Property of statistical variables
+                indicating factor by which a measurement is multiplied to fit
+                a certain format.
+            unit (str, optional): The unit of measurement.
 
         Returns:
-        Dict[str, Any]: A dictionary containing the statistical time series
-                        data.
+            Dict[str, Any]: A dictionary containing the statistical time
+            series data.
 
         Note:
         - The function will raise a ValueError if any of the required
           arguments are missing.
 
         Reference:
-        https://docs.datacommons.org/api/python/stat_series.html
+            https://docs.datacommons.org/api/python/stat_series.html
         """
         try:
             result = datacommons_pandas.get_stat_series(
@@ -210,14 +212,14 @@ class DataCommonsToolkit:
         r"""Retrieves and analyzes property labels for given DCIDs.
 
         Args:
-        dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
-        out (bool): Direction of properties to retrieve. Defaults to True.
+            dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
+            out (bool): Direction of properties to retrieve. Defaults to True.
 
         Returns:
-        dict: Analysis results for each DCID.
+            dict: Analysis results for each DCID.
 
         Reference:
-        https://docs.datacommons.org/api/python/property_label.html
+            https://docs.datacommons.org/api/python/property_label.html
         """
         try:
             result = datacommons.get_property_labels(dcids, out)
@@ -241,24 +243,25 @@ class DataCommonsToolkit:
         r"""Retrieves and analyzes property values for given DCIDs.
 
         Args:
-        dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
-        prop (str): The property to analyze.
+            dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
+            prop (str): The property to analyze.
 
         Optional arguments:
-        value_type: The type of the property value to filter by. Defaults to
-                    NONE. Only applicable if the value refers to a node.
-        out: The label's direction. Defaults to True (only returning response
-             nodes directed towards the requested node). If set to False,
-             will only return response nodes directed away from the request
-             node.
-        limit: (≤ 500) Maximum number of values returned per node. Defaults
-               to datacommons.utils._MAX_LIMIT.
+            value_type (str, optional): The type of the property value to
+                filter by. Defaults to NONE. Only applicable if the value
+                refers to a node.
+            out (bool, optional): The label's direction. Defaults to True
+                (only returning response nodes directed towards the requested
+                node). If set to False, will only return response nodes
+                directed away from the request node.
+            limit (int, optional): (≤ 500) Maximum number of values returned
+                per node. Defaults to datacommons.utils._MAX_LIMIT.
 
         Returns:
-        dict: Analysis results for each DCID.
+            dict: Analysis results for each DCID.
 
         Reference:
-        https://docs.datacommons.org/api/python/property_value.html
+            https://docs.datacommons.org/api/python/property_value.html
         """
         try:
             result = datacommons.get_property_values(
@@ -280,14 +283,14 @@ class DataCommonsToolkit:
         r"""Retrieves places within a given place type.
 
         Args:
-        dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
-        place_type (str): The type of the place to filter by.
+            dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
+            place_type (str): The type of the place to filter by.
 
         Returns:
-        dict: Analysis results for each DCID.
+            dict: Analysis results for each DCID.
 
         Reference:
-        https://docs.datacommons.org/api/python/place_in.html
+            https://docs.datacommons.org/api/python/place_in.html
         """
         try:
             result = datacommons.get_places_in(dcids, place_type)
@@ -320,25 +323,27 @@ class DataCommonsToolkit:
         and date.
 
         Args:
-        place: The DCID of the Place to query for.
-        stat_var: The DCID of the StatisticalVariable.
-        You can find a list of StatisticalVariables with human-readable names
-        here.
+            place (str): The DCID of the Place to query for.
+            stat_var (str): The DCID of the StatisticalVariable.
+            !!You can find a list of StatisticalVariables with human-readable
+            names here.!!
 
         Optional arguments:
-        date: The preferred date of observation in ISO 8601 format. If not
-              specified, returns the latest observation.
-        measurement_method: The DCID of the preferred measurementMethod value.
-        observation_period: The preferred observationPeriod value.
-        unit: The DCID of the preferred unit value.
-        scaling_factor: The preferred scalingFactor value.
+            date (str, optional): The preferred date of observation in ISO
+                8601 format. If not specified, returns the latest observation.
+            measurement_method (str, optional): The DCID of the preferred
+                measurementMethod value.
+            observation_period (str, optional): The preferred observationPeriod
+                value.
+            unit (str, optional): The DCID of the preferred unit value.
+            scaling_factor (str, optional): The preferred scalingFactor value.
 
         Returns:
-        float: The value of the statistical variable for the given place and
-               date.
+            float: The value of the statistical variable for the given place
+            and date.
 
         Reference:
-        https://docs.datacommons.org/api/python/stat_value.html
+            https://docs.datacommons.org/api/python/stat_value.html
         """
         try:
             result = datacommons.get_stat_value(
@@ -371,20 +376,20 @@ class DataCommonsToolkit:
         and date.
 
         Args:
-        places: The DCID IDs of the Place objects to query for. (Here DCID
-                stands for Data Commons ID, the unique identifier assigned to
-                all entities in Data Commons.)
-        stat_vars: The dcids of the StatisticalVariables at
-                   https://datacommons.org/browser/StatisticalVariable
+            places (list): The DCID IDs of the Place objects to query for.
+                (Here DCID stands for Data Commons ID, the unique identifier
+                assigned to all entities in Data Commons.)
+            stat_vars (list): The dcids of the StatisticalVariables at
+                https://datacommons.org/browser/StatisticalVariable
 
         Returns:
-        A dictionary with the DCID of the place as the key and a list of
-        tuples as the value. Each tuple contains the DCID of the statistical
-        variable, the date, the measurement method, the observation period,
-        the unit, and the scaling factor.
+            A dictionary with the DCID of the place as the key and a list of
+            tuples as the value. Each tuple contains the DCID of the
+            statistical variable, the date, the measurement method, the
+            observation period, the unit, and the scaling factor.
 
         Reference:
-        https://docs.datacommons.org/api/python/stat_all.html
+            https://docs.datacommons.org/api/python/stat_all.html
         """
         try:
             result = datacommons.get_stat_all(places, stat_vars)
