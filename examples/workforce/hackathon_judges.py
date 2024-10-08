@@ -14,7 +14,6 @@
 import textwrap
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks import Task
@@ -48,7 +47,6 @@ def make_judge(
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=PredefinedModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     agent = ChatAgent(
@@ -83,7 +81,6 @@ def main():
     researcher_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=PredefinedModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     researcher_agent = ChatAgent(

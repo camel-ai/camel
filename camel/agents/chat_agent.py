@@ -34,7 +34,6 @@ from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
-from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -164,7 +163,6 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=PredefinedModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().as_dict(),
             )
         )
         self.output_language: Optional[str] = output_language

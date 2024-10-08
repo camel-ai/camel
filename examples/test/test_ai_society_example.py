@@ -22,7 +22,6 @@ from camel.types import ModelPlatformType, PredefinedModelType
 test_model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=PredefinedModelType.STUB,
-    model_config_dict={},
 )
 
 

@@ -54,7 +54,6 @@ parametrize = pytest.mark.parametrize(
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=PredefinedModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -426,7 +425,6 @@ def test_function_enabled():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=PredefinedModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
@@ -450,7 +448,6 @@ def test_tool_calling_sync():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=PredefinedModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -495,7 +492,6 @@ async def test_tool_calling_math_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=PredefinedModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -550,7 +546,6 @@ async def test_tool_calling_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=PredefinedModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     agent = ChatAgent(

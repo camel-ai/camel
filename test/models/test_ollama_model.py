@@ -33,10 +33,9 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_ollama_model(model_type: ModelType):
-    model_config_dict = OllamaConfig().as_dict()
-    model = OllamaModel(model_type, model_config_dict)
+    model = OllamaModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == OllamaConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type, ModelType)
     assert isinstance(model.token_limit, int)
