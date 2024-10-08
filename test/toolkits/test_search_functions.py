@@ -93,7 +93,6 @@ def test_google_api():
 search_duckduckgo = SearchToolkit().search_duckduckgo
 
 
-@pytest.mark.skip(reason="Rate limit")
 def test_search_duckduckgo_text():
     # Mock the DDGS class and its text method
     with mock.patch("duckduckgo_search.DDGS") as MockDDGS:
@@ -138,7 +137,6 @@ def test_search_duckduckgo_text():
         )
 
 
-@pytest.mark.skip(reason="Rate limit")
 def test_search_duckduckgo_images():
     # Mock the DDGS class and its images method
     with mock.patch("duckduckgo_search.DDGS") as MockDDGS:
@@ -184,14 +182,6 @@ def test_search_duckduckgo_images():
         mock_ddgs_instance.images.assert_called_once_with(
             keywords="test query", max_results=2
         )
-
-
-def test_web_search(search_toolkit):
-    query = "What big things are happening in 2023?"
-    answer = search_toolkit.search_google(query)
-    assert answer is not None
-    answer = search_toolkit.search_duckduckgo(query)
-    assert answer is not None
 
 
 @patch('wolframalpha.Client')
