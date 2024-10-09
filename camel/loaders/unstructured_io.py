@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import uuid
 import warnings
+from io import IOBase
 from typing import (
-    IO,
     Any,
     Dict,
     List,
@@ -154,13 +154,11 @@ class UnstructuredIO:
                 return None
 
     @staticmethod
-    def parse_bytes(
-        file: IO[bytes], **kwargs: Any
-    ) -> Union[List[Element], None]:
+    def parse_bytes(file: IOBase, **kwargs: Any) -> Union[List[Element], None]:
         r"""Parses a bytes stream and converts its contents into elements.
 
         Args:
-            file (IO[bytes]): The file in bytes format to be parsed.
+            file (IOBase): The file in bytes format to be parsed.
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
