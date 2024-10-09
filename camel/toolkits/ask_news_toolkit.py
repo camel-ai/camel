@@ -30,7 +30,7 @@ class AskNewsToolkit(BaseToolkit):
         r"""Initialize the AskNewsToolkit with API clients.
 
         Args:
-            scopes (Optional[List[str]]): A list of API scopes to specify which
+            scopes (Optional[List[str]], optional): A list of API scopes to specify which
                 functionalities the client should access.
                 (default: :list:`["chat", "news", "stories"]`)
 
