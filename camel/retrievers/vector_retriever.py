@@ -13,7 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import warnings
-from typing import IO, Any, Dict, List, Optional, Union
+from io import IOBase
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -72,7 +73,7 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: Union[str, Element, IO[bytes]],
+        content: Union[str, Element, IOBase],
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
         embed_batch: int = 50,
@@ -85,7 +86,7 @@ class VectorRetriever(BaseRetriever):
         specified vector storage.
 
         Args:
-            content (Union[str, Element, IO[bytes]]): Local file path, remote
+            content (Union[str, Element, IOBase]): Local file path, remote
                 URL, string content, Element object, or a binary file object.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
@@ -98,7 +99,7 @@ class VectorRetriever(BaseRetriever):
         """
         if isinstance(content, Element):
             elements = [content]
-        elif isinstance(content, IO):
+        elif isinstance(content, IOBase):
             elements = self.uio.parse_bytes(file=content, **kwargs) or []
         else:
             # Check if the content is URL
@@ -138,6 +139,8 @@ class VectorRetriever(BaseRetriever):
             for vector, chunk in zip(batch_vectors, batch_chunks):
                 if isinstance(content, str):
                     content_path_info = {"content path": content}
+                elif isinstance(content, IOBase):
+                    content_path_info = {"content path": "From file bytes"}
                 elif isinstance(content, Element):
                     content_path_info = {
                         "content path": content.metadata.file_directory
