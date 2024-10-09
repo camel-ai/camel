@@ -35,12 +35,11 @@ class OpenAICompatibleModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`.
-            (default: :obj:`{}`)
-        api_key (str): The API key for authenticating with the
-            model service.
+        api_key (str): The API key for authenticating with the model service.
         url (str): The url to the model service.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`{}` will be used. (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.

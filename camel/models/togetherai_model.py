@@ -39,13 +39,14 @@ class TogetherAIModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created, supported
             model can be found here: https://docs.together.ai/docs/chat-models
-        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`.
-            (default: :obj:`TogetherAIConfig().as_dict()`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Together service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Together AI service.
             If not provided, "https://api.together.xyz/v1" will be used.
+            (default: :obj:`None`)
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`TogetherAIConfig().as_dict()` will be used.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -55,12 +56,12 @@ class TogetherAIModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        if not model_config_dict:
+        if model_config_dict is None:
             model_config_dict = TogetherAIConfig().as_dict()
         api_key = api_key or os.environ.get("TOGETHER_API_KEY")
         url = url or os.environ.get(

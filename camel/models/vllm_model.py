@@ -35,14 +35,15 @@ class VLLMModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`.
-            (default: :obj:`VLLMConfig().as_dict()`)
         url (Optional[str], optional): The url to the model service. If not
             provided, :obj:`"http://localhost:8000/v1"` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the model service. (default: :obj:`None`)
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`VLLMConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
@@ -55,12 +56,12 @@ class VLLMModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        if not model_config_dict:
+        if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
         if not url and not os.environ.get("VLLM_BASE_URL"):
             self._start_server()
