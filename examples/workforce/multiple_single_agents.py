@@ -19,8 +19,8 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import (
     WEATHER_FUNCS,
-    GoogleMapsToolkit,
     FunctionTool,
+    GoogleMapsToolkit,
     SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType

@@ -33,8 +33,8 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
-    MathToolkit,
     FunctionTool,
+    MathToolkit,
     SearchToolkit,
 )
 from camel.types import (
