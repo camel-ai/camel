@@ -69,7 +69,7 @@ class RekaModel(BaseModelBackend):
         if model_config_dict is None:
             model_config_dict = RekaConfig().as_dict()
         api_key = api_key or os.environ.get("REKA_API_KEY")
-        url = url or os.environ.get("REKA_SERVER_URL")
+        url = url or os.environ.get("REKA_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
