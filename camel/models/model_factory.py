@@ -82,7 +82,7 @@ class ModelFactory:
         if parsed_model_type.is_open_source:
             if model_platform.is_ollama:
                 return OllamaModel(
-                    parsed_model_type, url, model_config_dict, token_counter
+                    parsed_model_type, model_config_dict, url, token_counter
                 )
             elif model_platform.is_vllm:
                 model_class = VLLMModel

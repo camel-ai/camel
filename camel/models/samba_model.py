@@ -50,6 +50,10 @@ class SambaModel(BaseModelBackend):
             sambanova.ai/t/supported-models/193`. Supported models via
             SambaVerse API is listed in `https://sambaverse.sambanova.ai/
             models`.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`SambaCloudAPIConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating
             with the SambaNova service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the SambaNova service.
@@ -58,10 +62,6 @@ class SambaModel(BaseModelBackend):
             SambaNova Cloud:
             :obj:`"https://api.sambanova.ai/v1"` (default: :obj:`https://api.
             sambanova.ai/v1`)
-        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`. If
-            :obj:`None`, :obj:`SambaCloudAPIConfig().as_dict()` will be used.
-            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
@@ -70,9 +70,9 @@ class SambaModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        model_config_dict: Optional[Dict[str, Any]] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:

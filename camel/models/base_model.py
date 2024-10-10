@@ -50,14 +50,14 @@ class BaseModelBackend(ABC):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        self.model_type = model_type
         if not model_config_dict:
             model_config_dict = {}
-        self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._api_key = api_key
         self._url = url
-        self.check_model_config()
         self._token_counter = token_counter
+        self.check_model_config()
 
     @property
     @abstractmethod

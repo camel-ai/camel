@@ -34,14 +34,14 @@ class AnthropicModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created, one of
             CLAUDE_* series.
-        api_key (Optional[str], optional): The API key for authenticating with
-            the Anthropic service. (default: :obj:`None`)
-        url (Optional[str], optional): The url to the Anthropic service.
-            (default: :obj:`None`)
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into Anthropic.messages.create().  If
             :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
             (default::obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Anthropic service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Anthropic service.
+            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`AnthropicTokenCounter`
             will be used. (default: :obj:`None`)
@@ -50,19 +50,19 @@ class AnthropicModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        model_config_dict: Optional[Dict[str, Any]] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = AnthropicConfig().as_dict()
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
-        self.client = Anthropic(api_key=api_key, base_url=url)
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
+        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py

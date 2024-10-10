@@ -35,13 +35,13 @@ class OpenSourceModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        api_key (Optional[str], optional): The API key for authenticating with
-            the model service. (default: :obj:`None`)
-        url (Optional[str], optional): The url to the model service.
-            (default: :obj:`None`)
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenSourceTokenCounter`
@@ -51,9 +51,9 @@ class OpenSourceModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        model_config_dict: Optional[Dict[str, Any]] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:

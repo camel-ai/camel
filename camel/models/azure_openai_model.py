@@ -33,6 +33,10 @@ class AzureOpenAIModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created, one of
             GPT_* series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the OpenAI service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the OpenAI service.
@@ -41,10 +45,6 @@ class AzureOpenAIModel(BaseModelBackend):
             (default: :obj:`None`)
         azure_deployment_name (Optional[str], optional): The deployment name
             you chose when you deployed an azure model. (default: :obj:`None`)
-        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into:obj:`openai.ChatCompletion.create()`. If
-            :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
-            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter`
             will be used. (default: :obj:`None`)
@@ -56,17 +56,17 @@ class AzureOpenAIModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
         api_version: Optional[str] = None,
         azure_deployment_name: Optional[str] = None,
-        model_config_dict: Optional[Dict[str, Any]] = None,
-        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
-        url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
         api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -75,17 +75,6 @@ class AzureOpenAIModel(BaseModelBackend):
         self.azure_deployment_name = azure_deployment_name or os.environ.get(
             "AZURE_DEPLOYMENT_NAME"
         )
-
-        if self._url is None:
-            raise ValueError(
-                "Must provide either the `url` argument "
-                "or `AZURE_OPENAI_BASE_URL` environment variable."
-            )
-        if self._api_key is None:
-            raise ValueError(
-                "Must provide either the `api_key` argument "
-                "or `AZURE_OPENAI_API_KEY` environment variable."
-            )
         if self.api_version is None:
             raise ValueError(
                 "Must provide either the `api_version` argument "
