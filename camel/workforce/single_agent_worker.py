@@ -90,15 +90,14 @@ class SingleAgentWorker(Worker):
         result_dict = ast.literal_eval(response.msg.content)
         task_result = TaskResult(**result_dict)
 
+        color = Fore.RED if task_result.failed else Fore.GREEN
+        print_text_animated(
+            f"\n{color}{task_result.content}{Fore.RESET}\n======",
+            delay=0.005,
+        )
+
         if task_result.failed:
-            print(
-                f"{Fore.RED}{self} failed to process task {task.id}.\n======"
-            )
             return TaskState.FAILED
 
         task.result = task_result.content
-        print_text_animated(
-            f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======',
-            delay=0.005,
-        )
         return TaskState.DONE
