@@ -15,11 +15,11 @@ from .enums import (
     AudioModelType,
     EmbeddingModelType,
     ModelPlatformType,
-    ModelType,
     OpenAIBackendRole,
     OpenAIImageType,
     OpenAIVisionDetailType,
     OpenAPIName,
+    PredefinedModelType,
     RoleType,
     StorageType,
     TaskType,
@@ -27,6 +27,7 @@ from .enums import (
     VectorDistance,
     VoiceType,
 )
+from .model_type import ModelType
 from .openai_types import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
@@ -42,7 +43,7 @@ from .openai_types import (
 
 __all__ = [
     'RoleType',
-    'ModelType',
+    'PredefinedModelType',
     'TaskType',
     'TerminationMode',
     'OpenAIBackendRole',
@@ -59,11 +60,11 @@ __all__ = [
     'ChatCompletionAssistantMessageParam',
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
-    'OpenAIVideoType',
     'OpenAIImageType',
     'OpenAIVisionDetailType',
     'OpenAPIName',
     'ModelPlatformType',
     'AudioModelType',
     'VoiceType',
+    'ModelType',
 ]

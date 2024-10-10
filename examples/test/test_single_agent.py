@@ -19,15 +19,14 @@ import examples.evaluation.single_agent
 import examples.misalignment.single_agent
 import examples.single_agent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 
 parametrize = pytest.mark.parametrize(
     'model',
     [
         ModelFactory.create(
             ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-            model_config_dict={},
+            model_type=PredefinedModelType.STUB,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -44,8 +43,7 @@ def test_single_agent(model):
     [
         ModelFactory.create(
             ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-            model_config_dict={},
+            model_type=PredefinedModelType.STUB,
         )
     ],
 )
@@ -68,8 +66,7 @@ def test_code_generate_metadata(model):
     [
         ModelFactory.create(
             ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-            model_config_dict={},
+            model_type=PredefinedModelType.STUB,
         )
     ],
 )

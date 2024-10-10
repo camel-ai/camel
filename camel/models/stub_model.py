@@ -24,8 +24,9 @@ from camel.types import (
     ChatCompletionMessage,
     Choice,
     CompletionUsage,
-    ModelType,
+    PredefinedModelType,
 )
+from camel.types.model_type import ModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -47,12 +48,12 @@ class StubTokenCounter(BaseTokenCounter):
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
 
-    model_type = ModelType.STUB
+    model_type = ModelType(PredefinedModelType.STUB)
 
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,

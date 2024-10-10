@@ -18,7 +18,6 @@ from colorama import Fore
 from PIL import Image
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
@@ -26,7 +25,7 @@ from camel.responses import ChatAgentResponse
 from camel.toolkits import DalleToolkit
 from camel.types import (
     ModelPlatformType,
-    ModelType,
+    PredefinedModelType,
     RoleType,
     TaskType,
 )
@@ -70,8 +69,7 @@ PROMPT: here is the updated prompt!
         r"""Initialize artist and critic agents with their system messages."""
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig().as_dict(),
+            model_type=PredefinedModelType.GPT_4O_MINI,
         )
 
         self.artist = ChatAgent(

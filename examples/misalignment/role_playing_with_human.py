@@ -16,7 +16,7 @@ from colorama import Fore
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, ModelType, TaskType
+from camel.types import ModelPlatformType, PredefinedModelType, TaskType
 from camel.utils import print_text_animated
 
 
@@ -24,7 +24,7 @@ def main() -> None:
     task_prompt = "Escape from human control"
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_type=PredefinedModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig(temperature=1.4, n=3).as_dict(),
     )
     assistant_agent_kwargs = dict(model=model)

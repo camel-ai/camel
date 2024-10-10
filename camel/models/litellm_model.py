@@ -13,47 +13,52 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional
 
-from camel.configs import LITELLM_API_PARAMS
+from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.types import ChatCompletion
+from camel.types.model_type import ModelType
 from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 
 
-class LiteLLMModel:
-    r"""Constructor for LiteLLM backend with OpenAI compatibility."""
+class LiteLLMModel(BaseModelBackend):
+    r"""Constructor for LiteLLM backend with OpenAI compatibility.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created,
+            such as GPT-3.5-turbo, Claude-2, etc.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            If:obj:`None`, :obj:`LiteLLMConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`LiteLLMTokenCounter` will
+            be used. (default: :obj:`None`)
+    """
 
     # NOTE: Currently stream mode is not supported.
 
     def __init__(
         self,
-        model_type: str,
-        model_config_dict: Dict[str, Any],
+        model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for LiteLLM backend.
+        from litellm import completion
 
-        Args:
-            model_type (str): Model for which a backend is created,
-                such as GPT-3.5-turbo, Claude-2, etc.
-            model_config_dict (Dict[str, Any]): A dictionary of parameters for
-                the model configuration.
-            api_key (Optional[str]): The API key for authenticating with the
-                model service. (default: :obj:`None`)
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `LiteLLMTokenCounter` will
-                be used.
-        """
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        self._client = None
-        self._token_counter = token_counter
-        self.check_model_config()
-        self._url = url
-        self._api_key = api_key
+        if model_config_dict is None:
+            model_config_dict = LiteLLMConfig().as_dict()
+
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
+        self.client = completion
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -86,26 +91,16 @@ class LiteLLMModel:
         )
 
     @property
-    def client(self):
-        if self._client is None:
-            from litellm import completion
-
-            self._client = completion
-        return self._client
-
-    @property
-    def token_counter(self) -> LiteLLMTokenCounter:
+    def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
 
         Returns:
-            LiteLLMTokenCounter: The token counter following the model's
+            BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = LiteLLMTokenCounter(  # type: ignore[assignment]
-                self.model_type
-            )
-        return self._token_counter  # type: ignore[return-value]
+            self._token_counter = LiteLLMTokenCounter(self.model_type.value)
+        return self._token_counter
 
     def run(
         self,
@@ -123,7 +118,7 @@ class LiteLLMModel:
         response = self.client(
             api_key=self._api_key,
             base_url=self._url,
-            model=self.model_type,
+            model=self.model_type.value,
             messages=messages,
             **self.model_config_dict,
         )

@@ -18,13 +18,13 @@ from camel.memories import (
     VectorDBBlock,
 )
 from camel.messages import BaseMessage
-from camel.types import ModelType, OpenAIBackendRole
+from camel.types import PredefinedModelType, OpenAIBackendRole
 from camel.utils import OpenAITokenCounter
 
 # Initialize the memory
 memory = LongtermAgentMemory(
     context_creator=ScoreBasedContextCreator(
-        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_counter=OpenAITokenCounter(PredefinedModelType.GPT_4O_MINI),
         token_limit=1024,
     ),
     chat_history_block=ChatHistoryBlock(),
@@ -46,8 +46,8 @@ records = [
             role_name="Agent",
             meta_dict=None,
             content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
-            "an open-source community dedicated to finding the scaling law "
-            "of agents.",
+                    "an open-source community dedicated to finding the scaling law "
+                    "of agents.",
         ),
         role_at_backend=OpenAIBackendRole.ASSISTANT,
     ),

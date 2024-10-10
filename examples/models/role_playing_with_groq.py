@@ -13,10 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import GroqConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 
@@ -27,7 +26,6 @@ def main(model_type=None) -> None:
         role: ModelFactory.create(
             model_platform=ModelPlatformType.GROQ,
             model_type=model_type,
-            model_config_dict=GroqConfig().as_dict(),
         )
         for role in ["assistant", "user", "task-specify"]
     }
@@ -100,4 +98,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GROQ_LLAMA_3_1_70B)
+    main(model_type=PredefinedModelType.GROQ_LLAMA_3_1_70B)

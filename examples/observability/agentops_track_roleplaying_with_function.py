@@ -21,7 +21,7 @@ from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 # Initialize agentops
@@ -36,7 +36,7 @@ from camel.toolkits import (  # noqa: E402
 
 # Set up role playing session
 model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_4O_MINI
+model_type = PredefinedModelType.GPT_4O_MINI
 chat_turn_limit = 10
 task_prompt = (
     "Assume now is 2024 in the Gregorian calendar, "

@@ -14,10 +14,9 @@
 
 from colorama import Fore
 
-from camel.configs import GeminiConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 
@@ -27,7 +26,6 @@ def main(model_type=None) -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.GEMINI,
         model_type=model_type,
-        model_config_dict=GeminiConfig().as_dict(),
     )
 
     # Update agent_kwargs to use the created models
@@ -103,4 +101,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GEMINI_1_5_FLASH)
+    main(model_type=PredefinedModelType.GEMINI_1_5_FLASH)

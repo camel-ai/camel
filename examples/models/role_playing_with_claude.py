@@ -13,10 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import AnthropicConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 
@@ -26,7 +25,6 @@ def main(model_type=None) -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.ANTHROPIC,
         model_type=model_type,
-        model_config_dict=AnthropicConfig().as_dict(),
     )
 
     # Update agent_kwargs to use the created models
@@ -102,4 +100,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.CLAUDE_2_0)
+    main(model_type=PredefinedModelType.CLAUDE_2_0)

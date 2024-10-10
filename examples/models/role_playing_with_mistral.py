@@ -24,13 +24,13 @@ from camel.toolkits import (
     MathToolkit,
     SearchToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 
 def main(
     model_platform=ModelPlatformType.MISTRAL,
-    model_type=ModelType.MISTRAL_LARGE,
+    model_type=PredefinedModelType.MISTRAL_LARGE,
     chat_turn_limit=10,
 ) -> None:
     task_prompt = (

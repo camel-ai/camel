@@ -17,7 +17,8 @@ import pytest
 
 from camel.configs import GroqConfig, OpenSourceConfig
 from camel.models import GroqModel
-from camel.types import ModelType
+from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -25,8 +26,8 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GROQ_LLAMA_3_8B,
-        ModelType.GROQ_LLAMA_3_70B,
+        ModelType(PredefinedModelType.GROQ_LLAMA_3_8B),
+        ModelType(PredefinedModelType.GROQ_LLAMA_3_70B),
     ],
 )
 def test_groq_llama3_model(model_type):
@@ -43,7 +44,7 @@ def test_groq_llama3_model(model_type):
 
 @pytest.mark.model_backend
 def test_groq_llama3_model_unexpected_argument():
-    model_type = ModelType.GROQ_LLAMA_3_70B
+    model_type = ModelType(PredefinedModelType.GROQ_LLAMA_3_70B)
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

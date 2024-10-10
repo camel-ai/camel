@@ -17,45 +17,57 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OLLAMA_API_PARAMS
+from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.models import BaseModelBackend
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    PredefinedModelType,
+)
+from camel.types.model_type import ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
-class OllamaModel:
-    r"""Ollama service interface."""
+class OllamaModel(BaseModelBackend):
+    r"""Ollama service interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            PredefinedModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
+
+    References:
+        https://github.com/ollama/ollama/blob/main/docs/openai.md
+    """
 
     def __init__(
         self,
-        model_type: str,
-        model_config_dict: Dict[str, Any],
+        model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Ollama backend with OpenAI compatibility.
-
-        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
-
-        Args:
-            model_type (str): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`"http://localhost:11434/v1"`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        self._url = (
+        if model_config_dict is None:
+            model_config_dict = OllamaConfig().as_dict()
+        if not url and not os.environ.get("OLLAMA_BASE_URL"):
+            self._start_server()
+        url = (
             url
             or os.environ.get("OLLAMA_BASE_URL")
             or "http://localhost:11434/v1"
         )
-        if not url and not os.environ.get("OLLAMA_BASE_URL"):
-            self._start_server()
+        super().__init__(
+            model_type, model_config_dict, None, url, token_counter
+        )
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
             timeout=60,
@@ -63,8 +75,6 @@ class OllamaModel:
             base_url=self._url,
             api_key="ollama",  # required but ignored
         )
-        self._token_counter = token_counter
-        self.check_model_config()
 
     def _start_server(self) -> None:
         r"""Starts the Ollama server in a subprocess."""
@@ -90,7 +100,9 @@ class OllamaModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+            self._token_counter = OpenAITokenCounter(
+                PredefinedModelType.GPT_4O_MINI
+            )
         return self._token_counter
 
     def check_model_config(self):
@@ -126,7 +138,7 @@ class OllamaModel:
 
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
+            model=self.model_type.value,
             **self.model_config_dict,
         )
         return response

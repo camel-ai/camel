@@ -20,12 +20,13 @@ from camel.configs import (
     OpenSourceConfig,
 )
 from camel.models import OpenSourceModel
-from camel.types import ModelType
+from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenSourceTokenCounter, check_server_running
 
 MODEL_PATH_MAP = {
-    ModelType.VICUNA: "lmsys/vicuna-7b-v1.5",
-    ModelType.VICUNA_16K: "lmsys/vicuna-7b-v1.5-16k",
+    PredefinedModelType.VICUNA: "lmsys/vicuna-7b-v1.5",
+    PredefinedModelType.VICUNA_16K: "lmsys/vicuna-7b-v1.5-16k",
 }
 DEFAULT_SERVER_URL = "http://localhost:8000/v1"
 
@@ -34,12 +35,12 @@ DEFAULT_SERVER_URL = "http://localhost:8000/v1"
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.VICUNA,
-        ModelType.VICUNA_16K,
+        ModelType(PredefinedModelType.VICUNA),
+        ModelType(PredefinedModelType.VICUNA_16K),
     ],
 )
 def test_open_source_model(model_type):
-    model_path = MODEL_PATH_MAP[model_type]
+    model_path = MODEL_PATH_MAP[model_type.type]
     model_name = model_path.split('/')[-1]
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -59,7 +60,7 @@ def test_open_source_model(model_type):
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize("model_type", [ModelType.VICUNA])
+@pytest.mark.parametrize("model_type", [PredefinedModelType.VICUNA])
 @pytest.mark.skipif(
     not check_server_running(DEFAULT_SERVER_URL),
     reason="No server running LLM inference is provided.",
@@ -81,8 +82,8 @@ def test_open_source_model_run(model_type):
 
 @pytest.mark.model_backend
 def test_open_source_model_close_source_model_type():
-    model_type = ModelType.GPT_4O_MINI
-    model_path = MODEL_PATH_MAP[ModelType.VICUNA]
+    model_type = ModelType(PredefinedModelType.GPT_4O_MINI)
+    model_path = MODEL_PATH_MAP[PredefinedModelType.VICUNA]
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
@@ -92,10 +93,7 @@ def test_open_source_model_close_source_model_type():
     with pytest.raises(
         ValueError,
         match=re.escape(
-            (
-                "Model `ModelType.GPT_4O_MINI` is not a supported"
-                " open-source model."
-            )
+            ("Model `gpt-4o-mini` is not a supported" " open-source model.")
         ),
     ):
         _ = OpenSourceModel(model_type, model_config_dict)
@@ -103,7 +101,7 @@ def test_open_source_model_close_source_model_type():
 
 @pytest.mark.model_backend
 def test_open_source_model_mismatched_model_config():
-    model_type = ModelType.VICUNA
+    model_type = ModelType(PredefinedModelType.VICUNA)
     model_config = ChatGPTConfig()
     model_config_dict = model_config.as_dict()
 
@@ -121,8 +119,8 @@ def test_open_source_model_mismatched_model_config():
 
 @pytest.mark.model_backend
 def test_open_source_model_unexpected_argument():
-    model_type = ModelType.VICUNA
-    model_path = MODEL_PATH_MAP[ModelType.VICUNA]
+    model_type = PredefinedModelType.VICUNA
+    model_path = MODEL_PATH_MAP[PredefinedModelType.VICUNA]
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
@@ -143,7 +141,7 @@ def test_open_source_model_unexpected_argument():
 
 @pytest.mark.model_backend
 def test_open_source_model_invalid_model_path():
-    model_type = ModelType.VICUNA
+    model_type = ModelType(PredefinedModelType.VICUNA)
     model_path = "vicuna-7b-v1.5"
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -166,8 +164,8 @@ def test_open_source_model_invalid_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_unmatched_model_path():
-    model_type = ModelType.LLAMA_2
-    model_path = MODEL_PATH_MAP[ModelType.VICUNA]
+    model_type = ModelType(PredefinedModelType.LLAMA_2)
+    model_path = MODEL_PATH_MAP[PredefinedModelType.VICUNA]
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
@@ -186,7 +184,7 @@ def test_open_source_model_unmatched_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_missing_model_path():
-    model_type = ModelType.VICUNA
+    model_type = ModelType(PredefinedModelType.VICUNA)
     model_config = OpenSourceConfig(
         model_path="",
         server_url=DEFAULT_SERVER_URL,
@@ -201,8 +199,8 @@ def test_open_source_model_missing_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_missing_server_url():
-    model_type = ModelType.VICUNA
-    model_path = MODEL_PATH_MAP[ModelType.VICUNA]
+    model_type = ModelType(PredefinedModelType.VICUNA)
+    model_path = MODEL_PATH_MAP[PredefinedModelType.VICUNA]
     model_config = OpenSourceConfig(model_path=model_path, server_url="")
     model_config_dict = model_config.as_dict()
 

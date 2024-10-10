@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from camel.configs import REKA_API_PARAMS
+from camel.configs import REKA_API_PARAMS, RekaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ModelType
+from camel.types import ChatCompletion, PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -39,40 +39,41 @@ except (ImportError, AttributeError):
 
 
 class RekaModel(BaseModelBackend):
-    r"""Reka API in a unified BaseModelBackend interface."""
+    r"""Reka API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (ModelType): Model for which a backend is created,
+            one of REKA_* series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`Reka.chat.create()`. If :obj:`None`,
+            :obj:`RekaConfig().as_dict()` will be used. (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Reka service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Reka service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter` will
+            be used. (default: :obj:`None`)
+    """
 
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Reka backend.
+        from reka.client import Reka
 
-        Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of REKA_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into `Reka.chat.create`.
-            api_key (Optional[str]): The API key for authenticating with the
-                Reka service. (default: :obj:`None`)
-            url (Optional[str]): The url to the Reka service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will be
-                used.
-        """
+        if model_config_dict is None:
+            model_config_dict = RekaConfig().as_dict()
+        api_key = api_key or os.environ.get("REKA_API_KEY")
+        url = url or os.environ.get("REKA_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("REKA_API_KEY")
-        self._url = url or os.environ.get("REKA_SERVER_URL")
-
-        from reka.client import Reka
-
         self._client = Reka(api_key=self._api_key, base_url=self._url)
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'
@@ -162,7 +163,7 @@ class RekaModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(
-                model=ModelType.GPT_4O_MINI
+                model=PredefinedModelType.GPT_4O_MINI
             )
         return self._token_counter
 

@@ -24,13 +24,13 @@ from camel.toolkits import (
     MathToolkit,
     SearchToolkit,
 )
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, PredefinedModelType
 from camel.utils import print_text_animated
 
 
 def main(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_type=PredefinedModelType.GPT_4O_MINI,
     chat_turn_limit=10,
 ) -> None:
     task_prompt = (

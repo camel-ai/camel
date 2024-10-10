@@ -20,6 +20,7 @@ from camel.configs import (
     SambaFastAPIConfig,
 )
 from camel.models import SambaModel
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -27,20 +28,19 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        "llama3-70b",
+        ModelType("llama3-70b"),
     ],
 )
 def test_samba_model(model_type):
-    model_config_dict = SambaFastAPIConfig().as_dict()
-    model = SambaModel(model_type, model_config_dict)
+    model = SambaModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == SambaFastAPIConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
 
 
 @pytest.mark.model_backend
 def test_samba_model_unexpected_argument():
-    model_type = "llama3-70b"
+    model_type = ModelType("llama3-70b")
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

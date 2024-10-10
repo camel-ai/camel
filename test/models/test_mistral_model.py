@@ -17,7 +17,8 @@ import pytest
 
 from camel.configs import MistralConfig, OpenSourceConfig
 from camel.models import MistralModel
-from camel.types import ModelType
+from camel.types import PredefinedModelType
+from camel.types.model_type import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -25,13 +26,13 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.MISTRAL_LARGE,
-        ModelType.MISTRAL_NEMO,
-        ModelType.MISTRAL_7B,
-        ModelType.MISTRAL_MIXTRAL_8x7B,
-        ModelType.MISTRAL_MIXTRAL_8x22B,
-        ModelType.MISTRAL_CODESTRAL,
-        ModelType.MISTRAL_CODESTRAL_MAMBA,
+        ModelType(PredefinedModelType.MISTRAL_LARGE),
+        ModelType(PredefinedModelType.MISTRAL_NEMO),
+        ModelType(PredefinedModelType.MISTRAL_7B),
+        ModelType(PredefinedModelType.MISTRAL_MIXTRAL_8x7B),
+        ModelType(PredefinedModelType.MISTRAL_MIXTRAL_8x22B),
+        ModelType(PredefinedModelType.MISTRAL_CODESTRAL),
+        ModelType(PredefinedModelType.MISTRAL_CODESTRAL_MAMBA),
     ],
 )
 def test_mistral_model(model_type):
@@ -46,7 +47,7 @@ def test_mistral_model(model_type):
 
 @pytest.mark.model_backend
 def test_mistral_model_unexpected_argument():
-    model_type = ModelType.MISTRAL_LARGE
+    model_type = ModelType(PredefinedModelType.MISTRAL_LARGE)
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

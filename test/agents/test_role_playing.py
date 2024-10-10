@@ -14,18 +14,21 @@
 import pytest
 
 from camel.agents import ChatAgent, CriticAgent
-from camel.configs import ChatGPTConfig
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    PredefinedModelType,
+    RoleType,
+    TaskType,
+)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().as_dict(),
+    model_type=PredefinedModelType.GPT_4O,
 )
 
 
@@ -69,12 +72,22 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(user_agent, ChatAgent)
     if model is None:
         assert (
-            assistant_agent.model_backend.model_type == ModelType.GPT_4O_MINI
+            assistant_agent.model_backend.model_type.type
+            == PredefinedModelType.GPT_4O_MINI
         )
-        assert user_agent.model_backend.model_type == ModelType.GPT_4O_MINI
+        assert (
+            user_agent.model_backend.model_type.type
+            == PredefinedModelType.GPT_4O_MINI
+        )
     else:
-        assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
-        assert user_agent.model_backend.model_type == ModelType.GPT_4O
+        assert (
+            assistant_agent.model_backend.model_type.type
+            == PredefinedModelType.GPT_4O
+        )
+        assert (
+            user_agent.model_backend.model_type.type
+            == PredefinedModelType.GPT_4O
+        )
 
     if not with_critic_in_the_loop:
         assert critic is None
@@ -86,9 +99,15 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert critic.model_backend.model_type == ModelType.GPT_4O_MINI
+                assert (
+                    critic.model_backend.model_type.type
+                    == PredefinedModelType.GPT_4O_MINI
+                )
             else:
-                assert critic.model_backend.model_type == ModelType.GPT_4O
+                assert (
+                    critic.model_backend.model_type.type
+                    == PredefinedModelType.GPT_4O
+                )
 
 
 @pytest.mark.model_backend
@@ -140,8 +159,7 @@ def test_role_playing_with_function():
     tools = MathToolkit().get_tools()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
+        model_type=PredefinedModelType.GPT_4O_MINI,
     )
 
     role_playing = RolePlaying(

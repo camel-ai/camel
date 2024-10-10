@@ -16,13 +16,12 @@ import argparse
 from PIL import Image
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import (
     ModelPlatformType,
-    ModelType,
+    PredefinedModelType,
     RoleType,
     TaskType,
 )
@@ -53,8 +52,7 @@ def detect_image_obj(image_paths: str) -> None:
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
+        model_type=PredefinedModelType.GPT_4O_MINI,
     )
     agent = ChatAgent(
         assistant_sys_msg,
