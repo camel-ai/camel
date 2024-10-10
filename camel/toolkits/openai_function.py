@@ -387,3 +387,6 @@ class OpenAIFunction:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
+
+
+__all__: list[str] = []
