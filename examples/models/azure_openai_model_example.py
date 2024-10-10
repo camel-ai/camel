@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, PredefinedModelType
 
 """
 please set the below os environment:
-export AZURE_OPENAI_ENDPOINT=""
+export AZURE_OPENAI_BASE_URL=""
 export AZURE_API_VERSION=""
 export AZURE_OPENAI_API_KEY=""
 export AZURE_DEPLOYMENT_NAME=""

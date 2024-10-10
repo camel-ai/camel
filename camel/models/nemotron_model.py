@@ -34,7 +34,7 @@ class NemotronModel(BaseModelBackend):
         api_key (Optional[str], optional): The API key for authenticating with
             the Nvidia service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Nvidia service.
-            (default: :obj:`None`)
+            (default: :obj:`https://integrate.api.nvidia.com/v1`)
 
     Notes:
         Nemotron model doesn't support additional model config like OpenAI.
@@ -46,13 +46,11 @@ class NemotronModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        url = url or os.environ.get("NVIDIA_API_BASE_URL")
+        url = url or os.environ.get(
+            "NVIDIA_API_BASE_URL", "https://integrate.api.nvidia.com/v1"
+        )
         api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         super().__init__(model_type, {}, api_key, url)
-        if not self._url or not self._api_key:
-            raise ValueError(
-                "NVIDIA_API_BASE_URL and NVIDIA_API_KEY should be set."
-            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,

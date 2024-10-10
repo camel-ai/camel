@@ -42,7 +42,7 @@ class ZhipuAIModel(BaseModelBackend):
         api_key (Optional[str], optional): The API key for authenticating with
             the ZhipuAI service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the ZhipuAI service.
-            (default: :obj:`None`)
+            (default: :obj:`https://open.bigmodel.cn/api/paas/v4/`)
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`ZhipuAIConfig().as_dict()` will be used.
@@ -63,7 +63,9 @@ class ZhipuAIModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ZhipuAIConfig().as_dict()
-        url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
+        url = url or os.environ.get(
+            "ZHIPUAI_API_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/"
+        )
         api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter

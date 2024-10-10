@@ -65,7 +65,7 @@ class AzureOpenAIModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
-        url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
+        url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
         api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
@@ -79,7 +79,7 @@ class AzureOpenAIModel(BaseModelBackend):
         if self._url is None:
             raise ValueError(
                 "Must provide either the `url` argument "
-                "or `AZURE_OPENAI_ENDPOINT` environment variable."
+                "or `AZURE_OPENAI_BASE_URL` environment variable."
             )
         if self._api_key is None:
             raise ValueError(

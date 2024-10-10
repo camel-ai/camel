@@ -74,7 +74,7 @@ class MistralModel(BaseModelBackend):
             model_config_dict = MistralConfig().as_dict()
 
         api_key = api_key or os.environ.get("MISTRAL_API_KEY")
-        url = url or os.environ.get("MISTRAL_SERVER_URL")
+        url = url or os.environ.get("MISTRAL_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
