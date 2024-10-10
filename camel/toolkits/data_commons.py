@@ -48,7 +48,7 @@ class DataCommonsToolkit:
 
         Returns:
             list: A list of dictionaries, each representing a node matching
-            the query conditions.
+                the query conditions.
 
         Note:
         - Only supports a limited subset of SPARQL functionality (ORDER BY,
@@ -97,7 +97,7 @@ class DataCommonsToolkit:
 
         Returns:
             Dict[str, List[tuple]]: A dictionary where keys are DCIDs and
-            values are lists of associated triples.
+                values are lists of associated triples.
 
         Note:
         - The function will raise a ValueError if any of the required
@@ -162,8 +162,6 @@ class DataCommonsToolkit:
         Args:
             place (str): The dcid of the Place to query for.
             stat_var (str): The dcid of the StatisticalVariable.
-            In addition to these required properties, this endpoint also
-            allows for other, optional arguments.
             measurement_method (str, optional): The technique used for
                 measuring a statistical variable.
             observation_period (str, optional): The time period over which an
@@ -175,7 +173,7 @@ class DataCommonsToolkit:
 
         Returns:
             Dict[str, Any]: A dictionary containing the statistical time
-            series data.
+                series data.
 
         Note:
         - The function will raise a ValueError if any of the required
@@ -325,8 +323,6 @@ class DataCommonsToolkit:
         Args:
             place (str): The DCID of the Place to query for.
             stat_var (str): The DCID of the StatisticalVariable.
-            !!You can find a list of StatisticalVariables with human-readable
-            names here.!!
 
         Optional arguments:
             date (str, optional): The preferred date of observation in ISO
@@ -340,7 +336,7 @@ class DataCommonsToolkit:
 
         Returns:
             float: The value of the statistical variable for the given place
-            and date.
+                and date.
 
         Reference:
             https://docs.datacommons.org/api/python/stat_value.html
@@ -384,9 +380,9 @@ class DataCommonsToolkit:
 
         Returns:
             A dictionary with the DCID of the place as the key and a list of
-            tuples as the value. Each tuple contains the DCID of the
-            statistical variable, the date, the measurement method, the
-            observation period, the unit, and the scaling factor.
+                tuples as the value. Each tuple contains the DCID of the
+                statistical variable, the date, the measurement method, the
+                observation period, the unit, and the scaling factor.
 
         Reference:
             https://docs.datacommons.org/api/python/stat_all.html
