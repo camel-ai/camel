@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import warnings
 from inspect import Parameter, signature
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
@@ -142,7 +143,7 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     return openai_tool_schema
 
 
-class OpenAIFunction:
+class FunctionTool:
     r"""An abstraction of a function that OpenAI chat models can call. See
     https://platform.openai.com/docs/api-reference/chat/create.
 
@@ -387,3 +388,14 @@ class OpenAIFunction:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
+
+
+# Alias for backwards compatibility
+class OpenAIFunction(FunctionTool):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "OpenAIFunction is deprecated, please use FunctionTool instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

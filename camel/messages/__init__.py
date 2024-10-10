@@ -22,7 +22,7 @@ from camel.types import (
 OpenAISystemMessage = ChatCompletionSystemMessageParam
 OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
 OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
+FunctionToolMessage = ChatCompletionFunctionMessageParam
 OpenAIMessage = ChatCompletionMessageParam
 
 from .base import BaseMessage  # noqa: E402

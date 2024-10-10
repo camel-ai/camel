@@ -39,13 +39,13 @@ class BaseConfig(ABC, BaseModel):
     @classmethod
     def fields_type_checking(cls, tools):
         if tools is not None:
-            from camel.toolkits import OpenAIFunction
+            from camel.toolkits import FunctionTool
 
             for tool in tools:
-                if not isinstance(tool, OpenAIFunction):
+                if not isinstance(tool, FunctionTool):
                     raise ValueError(
                         f"The tool {tool} should "
-                        "be an instance of `OpenAIFunction`."
+                        "be an instance of `FunctionTool`."
                     )
         return tools
 
@@ -54,14 +54,14 @@ class BaseConfig(ABC, BaseModel):
 
         tools_schema = None
         if self.tools:
-            from camel.toolkits import OpenAIFunction
+            from camel.toolkits import FunctionTool
 
             tools_schema = []
             for tool in self.tools:
-                if not isinstance(tool, OpenAIFunction):
+                if not isinstance(tool, FunctionTool):
                     raise ValueError(
                         f"The tool {tool} should "
-                        "be an instance of `OpenAIFunction`."
+                        "be an instance of `FunctionTool`."
                     )
                 tools_schema.append(tool.get_openai_tool_schema())
         config_dict["tools"] = tools_schema

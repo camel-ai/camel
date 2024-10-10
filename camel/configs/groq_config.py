@@ -73,7 +73,7 @@ class GroqConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
-        tools (list[OpenAIFunction], optional): A list of tools the model may
+        tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.

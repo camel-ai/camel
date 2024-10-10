@@ -19,7 +19,7 @@ from typing import List
 import pytest
 from jsonschema.exceptions import SchemaError
 
-from camel.toolkits import OpenAIFunction, get_openai_tool_schema
+from camel.toolkits import FunctionTool, get_openai_tool_schema
 from camel.types import RoleType
 from camel.utils import get_pydantic_major_version
 
@@ -336,13 +336,13 @@ tool_schema = {
 
 
 def test_correct_function():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     add.set_function_name("add")
     assert add.get_openai_function_schema() == function_schema
 
 
 def test_function_without_doc():
-    add = OpenAIFunction(add_without_doc)
+    add = FunctionTool(add_without_doc)
     add.set_function_name("add")
     with pytest.raises(Exception, match="miss function description"):
         _ = add.get_openai_function_schema()
@@ -351,7 +351,7 @@ def test_function_without_doc():
 
 
 def test_function_with_wrong_doc():
-    add = OpenAIFunction(add_with_wrong_doc)
+    add = FunctionTool(add_with_wrong_doc)
     add.set_function_name("add")
     with pytest.raises(Exception, match="miss description of parameter \"b\""):
         _ = add.get_openai_function_schema()
@@ -360,11 +360,11 @@ def test_function_with_wrong_doc():
 
 
 def test_validate_openai_tool_schema_valid():
-    OpenAIFunction.validate_openai_tool_schema(tool_schema)
+    FunctionTool.validate_openai_tool_schema(tool_schema)
 
 
 def test_get_set_openai_tool_schema():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     assert add.get_openai_tool_schema() is not None
     new_schema = copy.deepcopy(tool_schema)
     new_schema["function"]["description"] = "New description"
@@ -373,20 +373,20 @@ def test_get_set_openai_tool_schema():
 
 
 def test_get_set_parameter_description():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     assert add.get_paramter_description("a") == "The first number to be added."
     add.set_paramter_description("a", "New description for a.")
     assert add.get_paramter_description("a") == "New description for a."
 
 
 def test_get_set_parameter_description_non_existing():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     with pytest.raises(KeyError):
         add.get_paramter_description("non_existing")
 
 
 def test_get_set_openai_function_schema():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_schema = add.get_openai_function_schema()
     assert initial_schema is not None
 
@@ -400,7 +400,7 @@ def test_get_set_openai_function_schema():
 
 
 def test_get_set_function_name():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     assert add.get_function_name() == "add_with_doc"
 
     add.set_function_name("new_add")
@@ -408,7 +408,7 @@ def test_get_set_function_name():
 
 
 def test_get_set_function_description():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_description = add.get_function_description()
     assert initial_description is not None
 
@@ -418,7 +418,7 @@ def test_get_set_function_description():
 
 
 def test_get_set_parameter():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_param_schema = add.get_parameter("a")
     assert initial_param_schema is not None
 
@@ -431,7 +431,7 @@ def test_get_set_parameter():
 
 
 def test_parameters_getter_setter():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_params = add.parameters
     assert initial_params is not None
 

@@ -14,7 +14,7 @@
 from typing import List, Optional, Union
 
 from camel.retrievers import AutoRetriever
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import StorageType
 from camel.utils import Constants
@@ -75,14 +75,14 @@ class RetrievalToolkit(BaseToolkit):
         )
         return str(retrieved_info)
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.information_retrieval),
+            FunctionTool(self.information_retrieval),
         ]

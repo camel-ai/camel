@@ -16,8 +16,8 @@ from typing import Any, Dict, Optional
 
 from camel.messages import (
     BaseMessage,
+    FunctionToolMessage,
     OpenAIAssistantMessage,
-    OpenAIFunctionMessage,
     OpenAIMessage,
 )
 from camel.types import OpenAIBackendRole
@@ -85,7 +85,7 @@ class FunctionCallingMessage(BaseMessage):
 
         return msg_dict
 
-    def to_openai_function_message(self) -> OpenAIFunctionMessage:
+    def to_openai_function_message(self) -> FunctionToolMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object
         with the role being "function".
 
@@ -100,7 +100,7 @@ class FunctionCallingMessage(BaseMessage):
             )
 
         result_content = {"result": {str(self.result)}}
-        msg_dict: OpenAIFunctionMessage = {
+        msg_dict: FunctionToolMessage = {
             "role": "function",
             "name": self.func_name,
             "content": f'{result_content}',

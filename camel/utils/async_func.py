@@ -14,20 +14,20 @@
 import asyncio
 from copy import deepcopy
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 
 
-def sync_funcs_to_async(funcs: list[OpenAIFunction]) -> list[OpenAIFunction]:
+def sync_funcs_to_async(funcs: list[FunctionTool]) -> list[FunctionTool]:
     r"""Convert a list of Python synchronous functions to Python
     asynchronous functions.
 
     Args:
-        funcs (list[OpenAIFunction]): List of Python synchronous
-            functions in the :obj:`OpenAIFunction` format.
+        funcs (list[FunctionTool]): List of Python synchronous
+            functions in the :obj:`FunctionTool` format.
 
     Returns:
-        list[OpenAIFunction]: List of Python asynchronous functions
-            in the :obj:`OpenAIFunction` format.
+        list[FunctionTool]: List of Python asynchronous functions
+            in the :obj:`FunctionTool` format.
     """
     async_funcs = []
     for func in funcs:
@@ -37,6 +37,6 @@ def sync_funcs_to_async(funcs: list[OpenAIFunction]) -> list[OpenAIFunction]:
             return asyncio.to_thread(sync_func, *args, **kwargs)  # noqa: B023
 
         async_funcs.append(
-            OpenAIFunction(async_callable, deepcopy(func.openai_tool_schema))
+            FunctionTool(async_callable, deepcopy(func.openai_tool_schema))
         )
     return async_funcs

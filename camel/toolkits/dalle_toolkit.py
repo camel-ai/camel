@@ -20,7 +20,7 @@ from typing import List, Optional
 from openai import OpenAI
 from PIL import Image
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
@@ -132,15 +132,15 @@ class DalleToolkit(BaseToolkit):
 
         return image_path
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [OpenAIFunction(self.get_dalle_img)]
+        return [FunctionTool(self.get_dalle_img)]
 
 
-DALLE_FUNCS: List[OpenAIFunction] = DalleToolkit().get_tools()
+DALLE_FUNCS: List[FunctionTool] = DalleToolkit().get_tools()

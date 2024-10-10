@@ -45,7 +45,7 @@ class ZhipuAIConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-        tools (list[OpenAIFunction], optional): A list of tools the model may
+        tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.

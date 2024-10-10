@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     from openai import Stream
 
     from camel.terminators import ResponseTerminator
-    from camel.toolkits import OpenAIFunction
+    from camel.toolkits import FunctionTool
 
 
 logger = logging.getLogger(__name__)
@@ -131,10 +131,10 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        tools (List[OpenAIFunction], optional): List of available
-            :obj:`OpenAIFunction`. (default: :obj:`None`)
-        external_tools (List[OpenAIFunction], optional): List of external tools
-            (:obj:`OpenAIFunction`) bind to one chat agent. When these tools
+        tools (List[FunctionTool], optional): List of available
+            :obj:`FunctionTool`. (default: :obj:`None`)
+        external_tools (List[FunctionTool], optional): List of external tools
+            (:obj:`FunctionTool`) bind to one chat agent. When these tools
             are called, the agent will directly return the request instead of
             processing it. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
@@ -150,8 +150,8 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
-        tools: Optional[List[OpenAIFunction]] = None,
-        external_tools: Optional[List[OpenAIFunction]] = None,
+        tools: Optional[List[FunctionTool]] = None,
+        external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
         self.orig_sys_message: BaseMessage = system_message
@@ -795,12 +795,12 @@ class ChatAgent(BaseAgent):
         r"""Internal function of structuring the output of the agent based on
         the given output schema.
         """
-        from camel.toolkits import OpenAIFunction
+        from camel.toolkits import FunctionTool
 
         schema_json = get_pydantic_object_schema(output_schema)
         func_str = json_to_function_code(schema_json)
         func_callable = func_string_to_callable(func_str)
-        func = OpenAIFunction(func_callable)
+        func = FunctionTool(func_callable)
 
         original_func_dict = self.func_dict
         original_model_dict = self.model_backend.model_config_dict
