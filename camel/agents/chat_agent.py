@@ -47,8 +47,8 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelPlatformType,
+    ModelType,
     OpenAIBackendRole,
-    PredefinedModelType,
     RoleType,
 )
 from camel.utils import (
@@ -162,7 +162,7 @@ class ChatAgent(BaseAgent):
             if model is not None
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=PredefinedModelType.GPT_4O_MINI,
+                model_type=ModelType.GPT_4O_MINI,
             )
         )
         self.output_language: Optional[str] = output_language

@@ -15,11 +15,11 @@ from camel.agents import ChatAgent
 from camel.configs import RekaConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.REKA,
-    model_type=PredefinedModelType.REKA_FLASH,
+    model_type=ModelType.REKA_FLASH,
     model_config_dict=RekaConfig(temperature=0.0).as_dict(),
 )
 

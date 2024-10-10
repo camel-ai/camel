@@ -22,7 +22,7 @@ from camel.tasks import (
 )
 from camel.types import (
     ModelPlatformType,
-    PredefinedModelType,
+    ModelType,
 )
 
 # set up LLM model
@@ -32,7 +32,7 @@ assistant_model_config = ChatGPTConfig(
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=PredefinedModelType.GPT_4O_MINI,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=assistant_model_config.as_dict(),
 )
 

@@ -17,8 +17,8 @@ import pytest
 
 from camel.configs import OllamaConfig
 from camel.models import OllamaModel
-from camel.types import PredefinedModelType
-from camel.types.model_type import ModelType
+from camel.types import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -26,24 +26,24 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType(PredefinedModelType.GPT_4),
-        ModelType(PredefinedModelType.GPT_4_TURBO),
-        ModelType(PredefinedModelType.GPT_4O),
-        ModelType(PredefinedModelType.GPT_4O_MINI),
+        AugmentedModelType(ModelType.GPT_4),
+        AugmentedModelType(ModelType.GPT_4_TURBO),
+        AugmentedModelType(ModelType.GPT_4O),
+        AugmentedModelType(ModelType.GPT_4O_MINI),
     ],
 )
-def test_ollama_model(model_type: ModelType):
+def test_ollama_model(model_type: AugmentedModelType):
     model = OllamaModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == OllamaConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type, ModelType)
+    assert isinstance(model.model_type, AugmentedModelType)
     assert isinstance(model.token_limit, int)
 
 
 @pytest.mark.model_backend
 def test_ollama_model_unexpected_argument():
-    model_type = ModelType(PredefinedModelType.GPT_4)
+    model_type = AugmentedModelType(ModelType.GPT_4)
     model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(

@@ -23,9 +23,9 @@ from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
+    ModelType,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -37,8 +37,8 @@ class ZhipuAIModel(BaseModelBackend):
     r"""ZhipuAI API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (ModelType): Model for which a backend is created, such as
-            GLM_* series.
+        model_type (AugmentedModelType): Model for which a backend is created,
+            one of GLM_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`ZhipuAIConfig().as_dict()` will be used.
@@ -55,7 +55,7 @@ class ZhipuAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -112,9 +112,7 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(
-                PredefinedModelType.GPT_4O_MINI
-            )
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):

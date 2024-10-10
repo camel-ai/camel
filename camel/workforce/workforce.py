@@ -27,7 +27,7 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task, TaskState
 from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.workforce.base import BaseNode
 from camel.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
@@ -365,7 +365,7 @@ class Workforce(BaseNode):
 
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=PredefinedModelType.GPT_4O,
+            model_type=ModelType.GPT_4O,
             model_config_dict=model_config_dict,
         )
 

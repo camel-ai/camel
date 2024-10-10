@@ -86,6 +86,6 @@ def main(model=None) -> None:
 
 
 if __name__ == "__main__":
-    from camel.types import PredefinedModelType
+    from camel.types import ModelType
 
-    main(PredefinedModelType.GPT_4)
+    main(ModelType.GPT_4)

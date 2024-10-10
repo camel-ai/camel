@@ -23,9 +23,9 @@ from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
+    ModelType,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
@@ -33,7 +33,7 @@ class OllamaModel(BaseModelBackend):
     r"""Ollama service interface.
 
     Args:
-        model_type (ModelType): Model for which a backend is created.
+        model_type (AugmentedModelType): Model for which a backend is created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
             If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
@@ -51,7 +51,7 @@ class OllamaModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
@@ -100,9 +100,7 @@ class OllamaModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(
-                PredefinedModelType.GPT_4O_MINI
-            )
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):

@@ -30,8 +30,8 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
-from camel.types import ModelPlatformType, PredefinedModelType
-from camel.types.model_type import ModelType
+from camel.types import ModelPlatformType, ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -45,7 +45,7 @@ class ModelFactory:
     @staticmethod
     def create(
         model_platform: ModelPlatformType,
-        model_type: Union[PredefinedModelType, str],
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
@@ -56,7 +56,7 @@ class ModelFactory:
         Args:
             model_platform (ModelPlatformType): Platform from which the model
                 originates.
-            model_type (Union[PredefinedModelType, str]): Model for which a
+            model_type (Union[ModelType, str]): Model for which a
                 backend is created. Can be a `str` for open source platforms.
             model_config_dict (Optional[Dict]): A dictionary that will be fed
                 into the backend constructor. (default: :obj:`None`)
@@ -77,7 +77,7 @@ class ModelFactory:
             ValueError: If there is no backend for the model.
         """
         model_class: Optional[Type[BaseModelBackend]] = None
-        parsed_model_type = ModelType(model_type)
+        parsed_model_type = AugmentedModelType(model_type)
 
         if parsed_model_type.is_open_source:
             if model_platform.is_ollama:
@@ -112,7 +112,7 @@ class ModelFactory:
             model_class = MistralModel
         elif model_platform.is_reka and parsed_model_type.is_reka:
             model_class = RekaModel
-        elif parsed_model_type.type == PredefinedModelType.STUB:
+        elif parsed_model_type.type == ModelType.STUB:
             model_class = StubModel
 
         if model_class is None:

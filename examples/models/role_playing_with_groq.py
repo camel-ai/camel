@@ -15,7 +15,7 @@ from colorama import Fore
 
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -98,4 +98,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=PredefinedModelType.GROQ_LLAMA_3_1_70B)
+    main(model_type=ModelType.GROQ_LLAMA_3_1_70B)

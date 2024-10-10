@@ -16,7 +16,7 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import OpenAPIToolkit
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
@@ -31,7 +31,7 @@ model_config_dict = ChatGPTConfig(
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=PredefinedModelType.GPT_4O,
+    model_type=ModelType.GPT_4O,
     model_config_dict=model_config_dict,
 )
 

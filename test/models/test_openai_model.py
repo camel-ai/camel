@@ -17,8 +17,8 @@ import pytest
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import OpenAIModel
-from camel.types import PredefinedModelType
-from camel.types.model_type import ModelType
+from camel.types import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -26,13 +26,13 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType(PredefinedModelType.GPT_3_5_TURBO),
-        ModelType(PredefinedModelType.GPT_4),
-        ModelType(PredefinedModelType.GPT_4_TURBO),
-        ModelType(PredefinedModelType.GPT_4O),
-        ModelType(PredefinedModelType.GPT_4O_MINI),
-        ModelType(PredefinedModelType.O1_PREVIEW),
-        ModelType(PredefinedModelType.O1_MINI),
+        AugmentedModelType(ModelType.GPT_3_5_TURBO),
+        AugmentedModelType(ModelType.GPT_4),
+        AugmentedModelType(ModelType.GPT_4_TURBO),
+        AugmentedModelType(ModelType.GPT_4O),
+        AugmentedModelType(ModelType.GPT_4O_MINI),
+        AugmentedModelType(ModelType.O1_PREVIEW),
+        AugmentedModelType(ModelType.O1_MINI),
     ],
 )
 def test_openai_model(model_type):
@@ -46,7 +46,7 @@ def test_openai_model(model_type):
 
 @pytest.mark.model_backend
 def test_openai_model_unexpected_argument():
-    model_type = ModelType(PredefinedModelType.GPT_4)
+    model_type = AugmentedModelType(ModelType.GPT_4)
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

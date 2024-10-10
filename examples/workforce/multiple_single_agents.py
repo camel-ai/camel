@@ -22,7 +22,7 @@ from camel.toolkits import (
     OpenAIFunction,
     SearchToolkit,
 )
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
 
 
@@ -36,7 +36,7 @@ def main():
     # Set up web searching agent
     search_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=PredefinedModelType.GPT_4O,
+        model_type=ModelType.GPT_4O,
     )
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -50,7 +50,7 @@ def main():
     # Set up tour guide agent
     tour_guide_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=PredefinedModelType.GPT_4O,
+        model_type=ModelType.GPT_4O,
     )
 
     tour_guide_agent = ChatAgent(
@@ -70,7 +70,7 @@ def main():
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=PredefinedModelType.GPT_4O,
+            model_type=ModelType.GPT_4O,
         ),
     )
 

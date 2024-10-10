@@ -21,7 +21,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import (
     ModelPlatformType,
-    PredefinedModelType,
+    ModelType,
     RoleType,
     TaskType,
 )
@@ -52,7 +52,7 @@ def detect_image_obj(image_paths: str) -> None:
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=PredefinedModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O_MINI,
     )
     agent = ChatAgent(
         assistant_sys_msg,

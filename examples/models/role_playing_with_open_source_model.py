@@ -16,7 +16,7 @@ from colorama import Fore
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -27,7 +27,7 @@ from camel.utils import print_text_animated
 def main(
     chat_turn_limit=50,
     model_platform=ModelPlatformType.OPEN_SOURCE,
-    model_type=PredefinedModelType.STUB,
+    model_type=ModelType.STUB,
     model_path="meta-llama/Llama-2-7b-chat-hf",
     server_url="http://localhost:8000/v1",
 ) -> None:

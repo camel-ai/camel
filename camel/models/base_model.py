@@ -21,7 +21,7 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -30,7 +30,7 @@ class BaseModelBackend(ABC):
     It may be OpenAI API, a local LLM, a stub for unit tests, etc.
 
     Args:
-        model_type (ModelType): Model for which a backend is created.
+        model_type (AugmentedModelType): Model for which a backend is created.
         model_config_dict (Optional[Dict[str, Any]], optional): A config
             dictionary. (default: :obj:`{}`)
         api_key (Optional[str], optional): The API key for authenticating
@@ -44,7 +44,7 @@ class BaseModelBackend(ABC):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,

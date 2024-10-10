@@ -17,7 +17,7 @@ from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit, SearchToolkit
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=PredefinedModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config_dict,
     )
 

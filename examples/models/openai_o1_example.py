@@ -16,11 +16,11 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 o1_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=PredefinedModelType.O1_PREVIEW,  # Or ModelType.O1_MINI
+    model_type=ModelType.O1_PREVIEW,  # Or ModelType.O1_MINI
     model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
 )
 

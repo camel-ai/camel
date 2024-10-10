@@ -22,9 +22,9 @@ from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
+    ModelType,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -35,7 +35,7 @@ class OpenAICompatibleModel(BaseModelBackend):
     r"""Constructor for model backend supporting OpenAI compatibility.
 
     Args:
-        model_type (ModelType): Model for which a backend is created.
+        model_type (AugmentedModelType): Model for which a backend is created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`{}` will be used. (default: :obj:`None`)
@@ -49,7 +49,7 @@ class OpenAICompatibleModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -99,9 +99,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(
-                PredefinedModelType.GPT_4O_MINI
-            )
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     @property

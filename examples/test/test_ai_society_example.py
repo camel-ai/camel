@@ -17,11 +17,11 @@ import examples.ai_society.role_playing
 import examples.function_call.role_playing_with_functions
 import examples.models.role_playing_with_open_source_model
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 test_model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
-    model_type=PredefinedModelType.STUB,
+    model_type=ModelType.STUB,
 )
 
 

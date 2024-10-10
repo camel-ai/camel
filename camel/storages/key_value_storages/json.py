@@ -19,8 +19,8 @@ from typing import Any, ClassVar, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import (
+    ModelType,
     OpenAIBackendRole,
-    PredefinedModelType,
     RoleType,
     TaskType,
 )
@@ -34,7 +34,7 @@ class _CamelJSONEncoder(json.JSONEncoder):
     CAMEL_ENUMS: ClassVar[Dict[str, EnumMeta]] = {
         "RoleType": RoleType,
         "TaskType": TaskType,
-        "ModelType": PredefinedModelType,
+        "ModelType": ModelType,
         "OpenAIBackendRole": OpenAIBackendRole,
     }
 

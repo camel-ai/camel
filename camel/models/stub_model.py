@@ -24,9 +24,9 @@ from camel.types import (
     ChatCompletionMessage,
     Choice,
     CompletionUsage,
-    PredefinedModelType,
+    ModelType,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -48,11 +48,11 @@ class StubTokenCounter(BaseTokenCounter):
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
 
-    model_type = ModelType(PredefinedModelType.STUB)
+    model_type = AugmentedModelType(ModelType.STUB)
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,

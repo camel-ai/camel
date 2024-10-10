@@ -15,7 +15,7 @@ from colorama import Fore
 
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -100,4 +100,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=PredefinedModelType.CLAUDE_2_0)
+    main(model_type=ModelType.CLAUDE_2_0)

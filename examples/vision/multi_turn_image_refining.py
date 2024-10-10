@@ -25,7 +25,7 @@ from camel.responses import ChatAgentResponse
 from camel.toolkits import DalleToolkit
 from camel.types import (
     ModelPlatformType,
-    PredefinedModelType,
+    ModelType,
     RoleType,
     TaskType,
 )
@@ -69,7 +69,7 @@ PROMPT: here is the updated prompt!
         r"""Initialize artist and critic agents with their system messages."""
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=PredefinedModelType.GPT_4O_MINI,
+            model_type=ModelType.GPT_4O_MINI,
         )
 
         self.artist = ChatAgent(

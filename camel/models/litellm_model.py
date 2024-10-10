@@ -17,7 +17,7 @@ from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 
 
@@ -25,7 +25,7 @@ class LiteLLMModel(BaseModelBackend):
     r"""Constructor for LiteLLM backend with OpenAI compatibility.
 
     Args:
-        model_type (ModelType): Model for which a backend is created,
+        model_type (AugmentedModelType): Model for which a backend is created,
             such as GPT-3.5-turbo, Claude-2, etc.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
@@ -44,7 +44,7 @@ class LiteLLMModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,

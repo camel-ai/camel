@@ -19,7 +19,7 @@ from camel.models import ModelFactory
 from camel.societies import BabyAGI
 from camel.types import (
     ModelPlatformType,
-    PredefinedModelType,
+    ModelType,
     RoleType,
     TaskType,
 )
@@ -29,7 +29,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=PredefinedModelType.STUB,
+            model_type=ModelType.STUB,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],

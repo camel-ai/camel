@@ -21,14 +21,14 @@ from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import (
     ModelPlatformType,
-    PredefinedModelType,
+    ModelType,
     RoleType,
     TaskType,
 )
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=PredefinedModelType.GPT_4O,
+    model_type=ModelType.GPT_4O,
 )
 
 
@@ -73,21 +73,16 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     if model is None:
         assert (
             assistant_agent.model_backend.model_type.type
-            == PredefinedModelType.GPT_4O_MINI
+            == ModelType.GPT_4O_MINI
         )
         assert (
-            user_agent.model_backend.model_type.type
-            == PredefinedModelType.GPT_4O_MINI
+            user_agent.model_backend.model_type.type == ModelType.GPT_4O_MINI
         )
     else:
         assert (
-            assistant_agent.model_backend.model_type.type
-            == PredefinedModelType.GPT_4O
+            assistant_agent.model_backend.model_type.type == ModelType.GPT_4O
         )
-        assert (
-            user_agent.model_backend.model_type.type
-            == PredefinedModelType.GPT_4O
-        )
+        assert user_agent.model_backend.model_type.type == ModelType.GPT_4O
 
     if not with_critic_in_the_loop:
         assert critic is None
@@ -101,13 +96,10 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             if model is None:
                 assert (
                     critic.model_backend.model_type.type
-                    == PredefinedModelType.GPT_4O_MINI
+                    == ModelType.GPT_4O_MINI
                 )
             else:
-                assert (
-                    critic.model_backend.model_type.type
-                    == PredefinedModelType.GPT_4O
-                )
+                assert critic.model_backend.model_type.type == ModelType.GPT_4O
 
 
 @pytest.mark.model_backend
@@ -159,7 +151,7 @@ def test_role_playing_with_function():
     tools = MathToolkit().get_tools()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=PredefinedModelType.GPT_4O_MINI,
+        model_type=ModelType.GPT_4O_MINI,
     )
 
     role_playing = RolePlaying(

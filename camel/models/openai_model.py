@@ -22,9 +22,9 @@ from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    PredefinedModelType,
+    ModelType,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -36,8 +36,8 @@ class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (ModelType): Model for which a backend is created, one of
-            GPT_* series.
+        model_type (AugmentedModelType): Model for which a backend is created,
+            one of GPT_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
@@ -53,7 +53,7 @@ class OpenAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -104,8 +104,8 @@ class OpenAIModel(BaseModelBackend):
         # o1-preview and o1-mini have Beta limitations
         # reference: https://platform.openai.com/docs/guides/reasoning
         if self.model_type in [
-            PredefinedModelType.O1_MINI,
-            PredefinedModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
+            ModelType.O1_PREVIEW,
         ]:
             # Remove system message that is not supported in o1 model.
             messages = [msg for msg in messages if msg.get("role") != "system"]

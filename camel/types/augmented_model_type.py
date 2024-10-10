@@ -15,21 +15,21 @@
 from threading import Lock
 from typing import ClassVar, Dict, Union
 
-from camel.types import PredefinedModelType
+from camel.types import ModelType
 
 
-class ModelType:
-    _cache: ClassVar[Dict[str, "ModelType"]] = {}
+class AugmentedModelType:
+    _cache: ClassVar[Dict[str, "AugmentedModelType"]] = {}
     _lock: ClassVar[Lock] = Lock()
 
-    def __new__(cls, *args) -> "ModelType":
+    def __new__(cls, *args) -> "AugmentedModelType":
         if not args:
             return super().__new__(cls)
 
         # If args are passed in, meaning that this instance is being created
         # by user with calling ModelType(...) directly
-        value: Union[PredefinedModelType, str] = args[0]
-        if isinstance(value, PredefinedModelType):
+        value: Union[ModelType, str] = args[0]
+        if isinstance(value, ModelType):
             value_str = value.value
         elif isinstance(value, str):
             value_str = value
@@ -43,19 +43,19 @@ class ModelType:
                 instance = cls._cache[value_str]
         return instance
 
-    def __init__(self, value: Union[str, PredefinedModelType]) -> None:
+    def __init__(self, value: Union[str, ModelType]) -> None:
         # If type attr is set, then the instance is from cache
         if hasattr(self, "type"):
             return
 
-        if isinstance(value, PredefinedModelType):
+        if isinstance(value, ModelType):
             self.type = value
             self.value = value.value
         elif isinstance(value, str):
             try:
-                self.type = PredefinedModelType(value)
+                self.type = ModelType(value)
             except ValueError:
-                self.type = PredefinedModelType.OPEN_SOURCE
+                self.type = ModelType.OPEN_SOURCE
             self.value = value
         else:
             raise ValueError(f"Invalid type for ModelType: {value}.")

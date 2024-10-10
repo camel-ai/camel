@@ -22,7 +22,7 @@ from camel.types import (
     ChatCompletionMessage,
     Choice,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
@@ -37,7 +37,7 @@ class GeminiModel(BaseModelBackend):
     r"""Gemini API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (ModelType): Model for which a backend is created.
+        model_type (AugmentedModelType): Model for which a backend is created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`genai.GenerativeModel.generate_content()
             `. If:obj:`None`, :obj:`GeminiConfig().as_dict()` will be used.
@@ -57,7 +57,7 @@ class GeminiModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,

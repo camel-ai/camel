@@ -16,7 +16,7 @@ from colorama import Fore
 
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -101,4 +101,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=PredefinedModelType.GEMINI_1_5_FLASH)
+    main(model_type=ModelType.GEMINI_1_5_FLASH)

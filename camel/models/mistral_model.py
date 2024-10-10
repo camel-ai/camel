@@ -14,7 +14,7 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 
 if TYPE_CHECKING:
     from mistralai.models import (
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 from camel.configs import MISTRAL_API_PARAMS, MistralConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, PredefinedModelType
+from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -45,8 +45,8 @@ class MistralModel(BaseModelBackend):
     r"""Mistral API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (ModelType): Model for which a backend is created, one of
-            MISTRAL_* series.
+        model_type (AugmentedModelType): Model for which a backend is created,
+            one of MISTRAL_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`Mistral.chat.complete()`.
             If:obj:`None`, :obj:`MistralConfig().as_dict()` will be used.
@@ -62,7 +62,7 @@ class MistralModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -196,7 +196,7 @@ class MistralModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(
-                model=PredefinedModelType.GPT_4O_MINI
+                model=ModelType.GPT_4O_MINI
             )
         return self._token_counter
 

@@ -31,9 +31,9 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     CompletionUsage,
-    PredefinedModelType,
+    ModelType,
 )
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -45,7 +45,7 @@ class SambaModel(BaseModelBackend):
     r"""SambaNova service interface.
 
     Args:
-        model_type (ModelType): Model for which a SambaNova backend is
+        model_type (AugmentedModelType): Model for which a SambaNova backend is
             created. Supported models via SambaNova Cloud: `https://community.
             sambanova.ai/t/supported-models/193`. Supported models via
             SambaVerse API is listed in `https://sambaverse.sambanova.ai/
@@ -69,7 +69,7 @@ class SambaModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: AugmentedModelType,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -103,9 +103,7 @@ class SambaModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(
-                PredefinedModelType.GPT_4O_MINI
-            )
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):

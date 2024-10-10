@@ -15,7 +15,7 @@ import pytest
 
 from camel.configs import TogetherAIConfig
 from camel.models import TogetherAIModel
-from camel.types.model_type import ModelType
+from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -23,10 +23,10 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType("meta-llama/Llama-3-8b-chat-hf"),
+        AugmentedModelType("meta-llama/Llama-3-8b-chat-hf"),
     ],
 )
-def test_litellm_model(model_type: ModelType):
+def test_litellm_model(model_type: AugmentedModelType):
     model = TogetherAIModel(model_type)
     assert model.model_config_dict == TogetherAIConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)

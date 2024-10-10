@@ -15,11 +15,11 @@ from camel.agents import ChatAgent
 from camel.configs import GeminiConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
-    model_type=PredefinedModelType.GEMINI_1_5_PRO,
+    model_type=ModelType.GEMINI_1_5_PRO,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
 

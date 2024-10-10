@@ -16,14 +16,14 @@ from mock import patch
 
 import examples.ai_society.babyagi_playing
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 parametrize = pytest.mark.parametrize(
     'model',
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=PredefinedModelType.STUB,
+            model_type=ModelType.STUB,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],

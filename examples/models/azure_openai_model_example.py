@@ -15,7 +15,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, PredefinedModelType
+from camel.types import ModelPlatformType, ModelType
 
 """
 please set the below os environment:
@@ -27,7 +27,7 @@ export AZURE_DEPLOYMENT_NAME=""
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AZURE,
-    model_type=PredefinedModelType.GPT_4O_MINI,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig(temperature=0.2).as_dict(),
 )
 

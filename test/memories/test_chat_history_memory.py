@@ -24,15 +24,15 @@ from camel.storages.key_value_storages import (
     InMemoryKeyValueStorage,
     JsonStorage,
 )
-from camel.types import OpenAIBackendRole, PredefinedModelType, RoleType
+from camel.types import ModelType, OpenAIBackendRole, RoleType
 from camel.utils.token_counting import OpenAITokenCounter
 
 
 @pytest.fixture
 def memory(request):
     context_creator = ScoreBasedContextCreator(
-        OpenAITokenCounter(PredefinedModelType.GPT_4),
-        PredefinedModelType.GPT_4.token_limit,
+        OpenAITokenCounter(ModelType.GPT_4),
+        ModelType.GPT_4.token_limit,
     )
     if request.param == "in-memory":
         yield ChatHistoryMemory(
