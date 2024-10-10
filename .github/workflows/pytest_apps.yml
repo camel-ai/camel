@@ -5,9 +5,9 @@ name: Pytest Gradio Apps and Examples
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -40,7 +40,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"

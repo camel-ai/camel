@@ -410,7 +410,7 @@ class TwitterToolkit(BaseToolkit):
         return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
 
     def _get_oauth_session(self) -> requests.Session:
-        r'''Initiates an OAuth1Session with Twitter's API and returns it.
+        r"""Initiates an OAuth1Session with Twitter's API and returns it.
 
         The function first fetches a request token, then prompts the user to
         authorize the application. After the user has authorized the
@@ -431,7 +431,7 @@ class TwitterToolkit(BaseToolkit):
             Manage-Tweets/create_tweet.py
             https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/
             User-Lookup/get_users_me_user_context.py
-        '''
+        """
         try:
             from requests_oauthlib import OAuth1Session
         except ImportError:
@@ -517,6 +517,3 @@ class TwitterToolkit(BaseToolkit):
             return "HTTP Exception"
         else:
             return "Unexpected Exception"
-
-
-TWITTER_FUNCS: List[FunctionTool] = TwitterToolkit().get_tools()

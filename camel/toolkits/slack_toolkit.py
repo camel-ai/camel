@@ -303,6 +303,3 @@ class SlackToolkit(BaseToolkit):
             FunctionTool(self.send_slack_message),
             FunctionTool(self.delete_slack_message),
         ]
-
-
-SLACK_FUNCS: List[FunctionTool] = SlackToolkit().get_tools()

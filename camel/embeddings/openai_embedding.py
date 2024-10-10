@@ -75,12 +75,19 @@ class OpenAIEmbedding(BaseEmbedding[str]):
                 as a list of floating-point numbers.
         """
         # TODO: count tokens
-        response = self.client.embeddings.create(
-            input=objs,
-            model=self.model_type.value,
-            dimensions=self.output_dim,
-            **kwargs,
-        )
+        if self.model_type == EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
+            response = self.client.embeddings.create(
+                input=objs,
+                model=self.model_type.value,
+                **kwargs,
+            )
+        else:
+            response = self.client.embeddings.create(
+                input=objs,
+                model=self.model_type.value,
+                dimensions=self.output_dim,
+                **kwargs,
+            )
         return [data.embedding for data in response.data]
 
     def get_output_dim(self) -> int:

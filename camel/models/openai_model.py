@@ -93,6 +93,22 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # o1-preview and o1-mini have Beta limitations
+        # reference: https://platform.openai.com/docs/guides/reasoning
+        if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
+            # Remove system message that is not supported in o1 model.
+            messages = [msg for msg in messages if msg.get("role") != "system"]
+
+            # Remove unsupported parameters and reset the fixed parameters
+            del self.model_config_dict["stream"]
+            del self.model_config_dict["tools"]
+            del self.model_config_dict["tool_choice"]
+            self.model_config_dict["temperature"] = 1.0
+            self.model_config_dict["top_p"] = 1.0
+            self.model_config_dict["n"] = 1.0
+            self.model_config_dict["presence_penalty"] = 0.0
+            self.model_config_dict["frequency_penalty"] = 0.0
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type.value,

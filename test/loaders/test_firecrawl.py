@@ -177,30 +177,30 @@ def test_structured_scrape_failure():
             assert 'Failed to perform structured scrape' in str(e)
 
 
-def test_tidy_scrape_success():
+def test_map_site_success():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        response = {'markdown': 'Tidy content'}
-        mock_app.scrape_url.return_value = response
+        map_result = ['https://example.com']
+        mock_app.map_url.return_value = map_result
 
-        result = firecrawl.tidy_scrape(url)
-        assert result == 'Tidy content'
+        result = firecrawl.map_site(url)
+        assert result == map_result
 
 
-def test_tidy_scrape_failure():
+def test_map_site_failure():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        mock_app.scrape_url.side_effect = Exception('Error')
+        mock_app.map_url.side_effect = Exception('Error')
 
         try:
-            firecrawl.tidy_scrape(url)
+            firecrawl.map_site(url)
         except RuntimeError as e:
-            assert 'Failed to perform tidy scrape' in str(e)
+            assert 'Failed to map the site' in str(e)

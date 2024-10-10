@@ -27,7 +27,7 @@ export AZURE_DEPLOYMENT_NAME=""
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AZURE,
-    model_type=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig(temperature=0.2).as_dict(),
 )
 

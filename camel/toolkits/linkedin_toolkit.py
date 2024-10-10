@@ -225,6 +225,3 @@ class LinkedInToolkit(BaseToolkit):
         if not token:
             return "Access token not found. Please set LINKEDIN_ACCESS_TOKEN."
         return token
-
-
-LINKEDIN_FUNCS: List[FunctionTool] = LinkedInToolkit().get_tools()

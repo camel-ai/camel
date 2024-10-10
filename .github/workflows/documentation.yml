@@ -1,7 +1,7 @@
 name: Build and deploy camel documents
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
   workflow_dispatch:
 permissions:
     contents: write
@@ -14,7 +14,9 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.9"
+        python-version: "3.10"
+    - name: Install Pandoc
+      run: sudo apt-get install -y pandoc
     - name: Sphinx build
       run: |
         cd docs

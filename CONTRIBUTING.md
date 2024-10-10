@@ -1,6 +1,6 @@
 🐫 **Welcome to CAMEL!** 🐫
 
-Thank you for your interest in contributing to the CAMEL project! 🎉 We're excited to have your support. As an open-source initiative in a rapidly evolving and open-ended field, we wholeheartedly welcome contributions of all kinds. Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate your enthusiasm and efforts. 🙌  You are welcome to join our [slack](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ) for more efficient communication. 💬
+Thank you for your interest in contributing to the CAMEL project! 🎉 We're excited to have your support. As an open-source initiative in a rapidly evolving and open-ended field, we wholeheartedly welcome contributions of all kinds. Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate your enthusiasm and efforts. 🙌  You are welcome to join our [discord](https://discord.gg/eNsRwtnT) for more efficient communication. 💬
 
 ## Join Our Community 🌍
 
@@ -9,13 +9,13 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 - Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
 
 ### Developer Meeting Time & Link 💻
-- English speakers: Mondays at 5 PM GMT+1. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/91735108083)
+- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/aWfgSTh5?event=1288737688794435634)
 - Chinese Speakers: Mondays at 9 PM UTC+8. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/94271505221)
 
 ### Our Communication Channels 💬
-- **Slack:** [Join here](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
 - **Discord:** [Join here](https://discord.gg/CNcNpquyDc)
 - **WeChat:** Scan the QR code [here](https://ghli.org/camel/wechat.png)
+- **Slack:** [Join here](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
 
 ## Guidelines 📝
 
@@ -42,13 +42,56 @@ Ensuring excellent documentation and thorough testing is absolutely crucial. Her
 - If you add a feature:
   - Include unit tests in the `test` directory. 
   - Add a demo script in the `examples` directory.
-
-- If you review the code:
-  - Ensure responsible code review principles and cautious code approval.
-  - Try to review not only the modified code snippets but also consider the overall impact and optimization of the PR from a global and system perspective.
-  - More information about code review in Github is [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews)
  
 We're a small team focused on building great things. If you have something in mind that you'd like to add or modify, opening a pull request is the ideal way to catch our attention. 🚀
+
+### Contributing to Code Reviews 🔍
+This part outlines the guidelines and best practices for conducting code reviews in CAMEL. The aim is to ensure that all contributions are of high quality, align with the project's goals, and are consistent with our coding standards.
+
+#### Purpose of Code Reviews
+- Maintain Code Quality: Ensure that the codebase remains clean, readable, and maintainable.
+- Knowledge Sharing: Facilitate knowledge sharing among contributors and help new contributors learn best practices.
+- Bug Prevention: Catch potential bugs and issues before they are merged into the main branch.
+- Consistency: Ensure consistency in style, design patterns, and architecture across the project.
+
+#### Review Process Overview
+- Reviewers should check the code for functionality, readability, consistency, and compliance with the project’s coding standards.
+- If changes are necessary, the reviewer should leave constructive feedback.
+- The contributor addresses feedback and updates the PR.
+- The reviewer re-reviews the updated code.
+- Once the code is approved by at least two reviewer, it can be merged into the main branch.
+- Merging should be done by a maintainer or an authorized contributor.
+
+#### Code Review Checklist
+- Functionality
+  - Correctness: Does the code perform the intended task? Are edge cases handled?
+  - Testing: Is there sufficient test coverage? Do all tests pass?
+  - Security: Are there any security vulnerabilities introduced by the change?
+  - Performance: Does the code introduce any performance regressions?
+
+- Code Quality
+  - Readability: Is the code easy to read and understand? Is it well-commented where necessary?
+  - Maintainability: Is the code structured in a way that makes future changes easy?
+  - Style: Does the code follow the project’s style guidelines?
+  Currently we use Ruff for format check and take [Google Python Style Guide]("https://google.github.io/styleguide/pyguide.html") as reference.
+  - Documentation: Are public methods, classes, and any complex logic well-documented?
+- Design
+  - Consistency: Does the code follow established design patterns and project architecture?
+  - Modularity: Are the changes modular and self-contained? Does the code avoid unnecessary duplication?
+  - Dependencies: Are dependencies minimized and used appropriately?
+
+#### Reviewer Responsibilities
+- Timely Reviews: Reviewers should strive to review PRs promptly to keep the project moving.
+- Constructive Feedback: Provide feedback that is clear, constructive, and aimed at helping the contributor improve.
+- Collaboration: Work with the contributor to address any issues and ensure the final code meets the project’s standards.
+- Approvals: Only approve code that you are confident meets all the necessary criteria.
+
+#### Common Pitfalls
+- Large PRs: Avoid submitting PRs that are too large. Break down your changes into smaller, manageable PRs if possible.
+- Ignoring Feedback: Address all feedback provided by reviewers, even if you don’t agree with it—discuss it instead of ignoring it.
+- Rushed Reviews: Avoid rushing through reviews. Taking the time to thoroughly review code is critical to maintaining quality.
+
+Code reviews are an essential part of maintaining the quality and integrity of our open source project. By following these guidelines, we can ensure that CAMEL remains robust, secure, and easy to maintain, while also fostering a collaborative and welcoming community.
 
 ### Board Item Create Workflow 🛠️
 At CAMEL, we manage our project through a structured workflow that ensures efficiency and clarity in our development process. Our workflow includes stages for issue creation and pull requests (PRs), sprint planning, and reviews.
@@ -118,10 +161,6 @@ cd camel
 poetry shell
 
 # Install camel from source
-# It takes about 75s to resolve dependencies and 10s to install them, depending on your hardware and network
-poetry install --with dev,docs
-
-# Or if you want to use all other extra packages
 poetry install --with dev,docs -E all  # (Suggested for developers, needed to pass all tests)
 
 # The following command installs a pre-commit hook into the local git repo,
@@ -141,6 +180,9 @@ exit
 These commands will install all the necessary dependencies for running the package, examples, linting, formatting, tests, and coverage.
 
 To verify that everything is set up correctly, run `pytest .` This will ensure that all tests pass successfully. ✅
+
+> [!TIP]
+> You need to config different API Keys as environment variables to pass all tests.
 
 ## Common Actions 🔄
 

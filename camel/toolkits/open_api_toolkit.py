@@ -542,6 +542,3 @@ class OpenAPIToolkit:
             FunctionTool(a_func, a_schema)
             for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
         ]
-
-
-OPENAPI_FUNCS: List[FunctionTool] = OpenAPIToolkit().get_tools()

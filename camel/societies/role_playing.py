@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -26,6 +27,9 @@ from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.types import RoleType, TaskType
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
 
 
 class RolePlaying:
@@ -97,6 +101,14 @@ class RolePlaying:
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
     ) -> None:
+        if model is not None:
+            logger.warning(
+                "The provided model will override the model settings in "
+                "all agents, including any configurations passed "
+                "through assistant_agent_kwargs, user_agent_kwargs, and "
+                "other agent-specific kwargs."
+            )
+
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
