@@ -78,8 +78,8 @@ class VLLMModel(BaseModelBackend):
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
+            api_key=self._api_key,
             base_url=self._url,
-            api_key=api_key,
         )
 
     def _start_server(self) -> None:

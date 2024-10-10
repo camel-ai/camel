@@ -60,8 +60,8 @@ class OpenAICompatibleModel(BaseModelBackend):
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            api_key=api_key,
-            base_url=url,
+            api_key=self._api_key,
+            base_url=self._url,
         )
 
     def run(

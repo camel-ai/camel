@@ -62,7 +62,9 @@ class GroqModel(BaseModelBackend):
         if model_config_dict is None:
             model_config_dict = GroqConfig().as_dict()
         api_key = api_key or os.environ.get("GROQ_API_KEY")
-        url = url or os.environ.get("GROQ_API_BASE_URL")
+        url = url or os.environ.get(
+            "GROQ_API_BASE_URL" or "https://api.groq.com/openai/v1"
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -70,7 +72,7 @@ class GroqModel(BaseModelBackend):
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url=self._url or "https://api.groq.com/openai/v1",
+            base_url=self._url,
         )
 
     @property
