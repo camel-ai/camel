@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import importlib
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -40,23 +41,24 @@ MODULE_NAMES = [
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
 @pytest.mark.parametrize("module_name", MODULE_NAMES)
 def test_toolkits(mock_get_repo, module_name):
-    toolkit_class = getattr(
-        importlib.import_module('camel.toolkits'), module_name
-    )
-
-    if module_name == 'GithubToolkit':
-        toolkit = toolkit_class('camel-ai/camel')
-    else:
-        toolkit = toolkit_class()
-
-    tool_names = toolkit.list_tools()
-
-    for tool_name in tool_names:
-        tool = toolkit.get_a_tool(tool_name)
-        assert (
-            tool
-        ), f"Tool {tool_name} could not be retrieved in {module_name}"
-        assert tool[0].func.__name__ == tool_name, (
-            f"Retrieved tool's function name {tool[0].func.__name__}"
-            f"does not match {tool_name}"
+    with patch.dict(os.environ, {"GITHUB_ACCESS_TOKEN": "fake_token"}):
+        toolkit_class = getattr(
+            importlib.import_module('camel.toolkits'), module_name
         )
+
+        if module_name == 'GithubToolkit':
+            toolkit = toolkit_class('camel-ai/camel')
+        else:
+            toolkit = toolkit_class()
+
+        tool_names = toolkit.list_tools()
+
+        for tool_name in tool_names:
+            tool = toolkit.get_a_tool(tool_name)
+            assert (
+                tool
+            ), f"Tool {tool_name} could not be retrieved in {module_name}"
+            assert tool[0].func.__name__ == tool_name, (
+                f"Retrieved tool's function name {tool[0].func.__name__}"
+                f"does not match {tool_name}"
+            )
