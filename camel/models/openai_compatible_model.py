@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -35,11 +36,11 @@ class OpenAICompatibleModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        api_key (str): The API key for authenticating with the model service.
-        url (str): The url to the model service.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`{}` will be used. (default: :obj:`None`)
+        api_key (str): The API key for authenticating with the model service.
+        url (str): The url to the model service.
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
@@ -49,11 +50,13 @@ class OpenAICompatibleModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        api_key: str,
-        url: str,
         model_config_dict: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        self.api_key = api_key or os.environ.get("OPENAI_COMPATIBILIY_API_KEY")
+        self.url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )

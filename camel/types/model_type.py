@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from threading import Lock
 from typing import ClassVar, Dict, Union
 
 from camel.types import PredefinedModelType
@@ -19,8 +20,9 @@ from camel.types import PredefinedModelType
 
 class ModelType:
     _cache: ClassVar[Dict[str, "ModelType"]] = {}
+    _lock: ClassVar[Lock] = Lock()
 
-    def __new__(cls, *args, **kwargs) -> "ModelType":
+    def __new__(cls, *args) -> "ModelType":
         if not args:
             return super().__new__(cls)
 
@@ -33,10 +35,12 @@ class ModelType:
             value_str = value
         else:
             raise ValueError(f"Invalid type for ModelType: {value}.")
-        if value_str in cls._cache:
-            return cls._cache[value_str]
-        instance = super().__new__(cls)
-        cls._cache[value_str] = instance
+        with cls._lock:
+            if value_str not in cls._cache:
+                instance = super().__new__(cls)
+                cls._cache[value_str] = instance
+            else:
+                instance = cls._cache[value_str]
         return instance
 
     def __init__(self, value: Union[str, PredefinedModelType]) -> None:
@@ -73,7 +77,7 @@ class ModelType:
         return self.type.is_open_source
 
     @property
-    def supports_tool_calling(self):
+    def supports_tool_calling(self) -> bool:
         r"""Returns whether this type of models supports tool calling."""
         return self.type.supports_tool_calling
 
