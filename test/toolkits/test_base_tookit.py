@@ -12,8 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import importlib
+from unittest.mock import MagicMock, patch
 
 import pytest
+from github import Auth, Github
 
 # Note: `OpenAPIToolkit` does not inherit from `BaseToolkit`, so it cannot
 # use the `list_tools` and `get_a_tool` functions.
@@ -33,8 +35,11 @@ MODULE_NAMES = [
 ]
 
 
+@patch.object(Github, '__init__', lambda self, *args, **kwargs: None)
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
 @pytest.mark.parametrize("module_name", MODULE_NAMES)
-def test_toolkits(module_name):
+def test_toolkits(mock_get_repo, module_name):
     toolkit_class = getattr(
         importlib.import_module('camel.toolkits'), module_name
     )
@@ -48,9 +53,9 @@ def test_toolkits(module_name):
 
     for tool_name in tool_names:
         tool = toolkit.get_a_tool(tool_name)
-        assert tool, (
-            f"Tool {tool_name} could not be retrieved in " f"{module_name}"
-        )
+        assert (
+            tool
+        ), f"Tool {tool_name} could not be retrieved in {module_name}"
         assert tool[0].func.__name__ == tool_name, (
             f"Retrieved tool's function name {tool[0].func.__name__}"
             f"does not match {tool_name}"
