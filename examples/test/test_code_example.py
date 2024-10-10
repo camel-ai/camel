@@ -24,7 +24,6 @@ def test_code_role_playing_example():
             ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=PredefinedModelType.STUB,
-                model_config_dict={},
             ),
             chat_turn_limit=2,
         )

@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts.prompt_templates import PromptTemplateGenerator
@@ -32,7 +31,6 @@ sys_msg = BaseMessage.make_assistant_message(
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=PredefinedModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 # Set agent

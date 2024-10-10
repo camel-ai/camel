@@ -46,7 +46,7 @@ class ModelFactory:
     def create(
         model_platform: ModelPlatformType,
         model_type: Union[PredefinedModelType, str],
-        model_config_dict: Dict,
+        model_config_dict: Optional[Dict] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -58,11 +58,11 @@ class ModelFactory:
                 originates.
             model_type (Union[PredefinedModelType, str]): Model for which a
                 backend is created. Can be a `str` for open source platforms.
-            model_config_dict (Dict): A dictionary that will be fed into
-                the backend constructor.
+            model_config_dict (Optional[Dict]): A dictionary that will be fed
+                into the backend constructor. (default: :obj:`None`)
             token_counter (Optional[BaseTokenCounter], optional): Token
                 counter to use for the model. If not provided,
-                :obj:`OpenAITokenCounter(PredefinedModelType.GPT_3_5_TURBO)`
+                :obj:`OpenAITokenCounter(PredefinedModelType.GPT_4O_MINI)`
                 will be used if the model platform didn't provide official
                 token counter. (default: :obj:`None`)
             api_key (Optional[str], optional): The API key for authenticating
@@ -70,11 +70,11 @@ class ModelFactory:
             url (Optional[str], optional): The url to the model service.
                 (default: :obj:`None`)
 
-        Raises:
-            ValueError: If there is no backend for the model.
-
         Returns:
             BaseModelBackend: The initialized backend.
+
+        Raises:
+            ValueError: If there is no backend for the model.
         """
         model_class: Optional[Type[BaseModelBackend]] = None
         parsed_model_type = ModelType(model_type)

@@ -36,10 +36,9 @@ from camel.utils import AnthropicTokenCounter
     ],
 )
 def test_anthropic_model(model_type: ModelType):
-    model_config_dict = AnthropicConfig().as_dict()
-    model = AnthropicModel(model_type, model_config_dict)
+    model = AnthropicModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == AnthropicConfig().as_dict()
     assert isinstance(model.token_counter, AnthropicTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)

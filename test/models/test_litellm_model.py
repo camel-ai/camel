@@ -33,10 +33,9 @@ from camel.utils import LiteLLMTokenCounter
     ],
 )
 def test_litellm_model(model_type: ModelType):
-    model_config_dict = LiteLLMConfig().as_dict()
-    model = LiteLLMModel(model_type, model_config_dict)
+    model = LiteLLMModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == LiteLLMConfig().as_dict()
     assert isinstance(model.token_counter, LiteLLMTokenCounter)
     assert isinstance(model_type.value_for_tiktoken, str)
     assert isinstance(model_type.token_limit, int)

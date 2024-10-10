@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import GROQ_API_PARAMS
+from camel.configs import GROQ_API_PARAMS, GroqConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -37,8 +37,10 @@ class GroqModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary of parameters for
-            the model configuration.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            If:obj:`None`, :obj:`GroqConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating
             with the Groq service. (default: :obj:`None`).
         url (Optional[str], optional): The url to the Groq service.
@@ -52,23 +54,26 @@ class GroqModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        if model_config_dict is None:
+            model_config_dict = GroqConfig().as_dict()
+        api_key = api_key or os.environ.get("GROQ_API_KEY")
+        url = url or os.environ.get(
+            "GROQ_API_BASE_URL" or "https://api.groq.com/openai/v1"
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or os.environ.get("GROQ_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("GROQ_API_KEY")
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url=self._url or "https://api.groq.com/openai/v1",
+            base_url=self._url,
         )
-        self._token_counter = token_counter
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -84,7 +89,7 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(
                 PredefinedModelType.GPT_4O_MINI
             )
-        return self._token_counter
+        return self.token_counter
 
     @api_keys_required("GROQ_API_KEY")
     def run(

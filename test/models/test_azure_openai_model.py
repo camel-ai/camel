@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 """
 please set the below os environment:
-export AZURE_OPENAI_ENDPOINT=""
+export AZURE_OPENAI_BASE_URL=""
 
 # if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api version
 export AZURE_API_VERSION=""

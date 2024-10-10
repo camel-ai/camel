@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OLLAMA_API_PARAMS
+from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -34,8 +34,10 @@ class OllamaModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
@@ -50,20 +52,22 @@ class OllamaModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        super().__init__(
-            model_type, model_config_dict, None, url, token_counter
-        )
-        self._url = (
+        if model_config_dict is None:
+            model_config_dict = OllamaConfig().as_dict()
+        if not url and not os.environ.get("OLLAMA_BASE_URL"):
+            self._start_server()
+        url = (
             url
             or os.environ.get("OLLAMA_BASE_URL")
             or "http://localhost:11434/v1"
         )
-        if not url and not os.environ.get("OLLAMA_BASE_URL"):
-            self._start_server()
+        super().__init__(
+            model_type, model_config_dict, None, url, token_counter
+        )
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
             timeout=60,
@@ -71,8 +75,6 @@ class OllamaModel(BaseModelBackend):
             base_url=self._url,
             api_key="ollama",  # required but ignored
         )
-        self._token_counter = token_counter
-        self.check_model_config()
 
     def _start_server(self) -> None:
         r"""Starts the Ollama server in a subprocess."""

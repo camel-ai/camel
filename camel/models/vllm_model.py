@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import VLLM_API_PARAMS
+from camel.configs import VLLM_API_PARAMS, VLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -35,13 +35,15 @@ class VLLMModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will be fed
-            into openai.ChatCompletion.create().
-        url (Optional[str], optional): The url to the model service. If not
-            provided, :obj:`"http://localhost:8000/v1"` will be used.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`VLLMConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the model service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service. If not
+            provided, :obj:`"http://localhost:8000/v1"` will be used.
+            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             PredefinedModelType.GPT_4O_MINI)` will be used.
@@ -54,30 +56,31 @@ class VLLMModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
-        url: Optional[str] = None,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
-        )
-        self._url = (
+        if model_config_dict is None:
+            model_config_dict = VLLMConfig().as_dict()
+        if not url and not os.environ.get("VLLM_BASE_URL"):
+            self._start_server()
+        url = (
             url
             or os.environ.get("VLLM_BASE_URL")
             or "http://localhost:8000/v1"
         )
-        if not url and not os.environ.get("VLLM_BASE_URL"):
-            self._start_server()
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
+
         # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
+            api_key=self._api_key,
             base_url=self._url,
-            api_key=api_key,
         )
-        self._token_counter = token_counter
-        self.check_model_config()
 
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""

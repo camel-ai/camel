@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from anthropic import NOT_GIVEN, Anthropic
 
-from camel.configs import ANTHROPIC_API_PARAMS
+from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion
@@ -34,8 +34,10 @@ class AnthropicModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created, one of
             CLAUDE_* series.
-        model_config_dict (Dict[str, Any]): A dictionary that will be fed into
-            Anthropic.messages.create().
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into Anthropic.messages.create().  If
+            :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
+            (default::obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Anthropic service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Anthropic service.
@@ -48,16 +50,18 @@ class AnthropicModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        if model_config_dict is None:
+            model_config_dict = AnthropicConfig().as_dict()
+        api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
         self.client = Anthropic(api_key=self._api_key, base_url=self._url)
 
     def _convert_response_from_anthropic_to_openai(self, response):

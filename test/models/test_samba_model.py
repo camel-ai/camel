@@ -32,10 +32,9 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_samba_model(model_type):
-    model_config_dict = SambaFastAPIConfig().as_dict()
-    model = SambaModel(model_type, model_config_dict)
+    model = SambaModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == SambaFastAPIConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
 
 

@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import TOGETHERAI_API_PARAMS
+from camel.configs import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -33,15 +33,16 @@ from camel.utils import (
 )
 
 
-# TODO: Add function calling support
 class TogetherAIModel(BaseModelBackend):
     r"""Constructor for Together AI backend with OpenAI compatibility.
 
     Args:
         model_type (ModelType): Model for which a backend is created, supported
             model can be found here: https://docs.together.ai/docs/chat-models
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`TogetherAIConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Together service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Together AI service.
@@ -55,23 +56,26 @@ class TogetherAIModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        if model_config_dict is None:
+            model_config_dict = TogetherAIConfig().as_dict()
+        api_key = api_key or os.environ.get("TOGETHER_API_KEY")
+        url = url or os.environ.get(
+            "TOGETHER_API_BASE_URL", "https://api.together.xyz/v1"
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._token_counter = token_counter
-        self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
-        self._url = url or os.environ.get("TOGETHER_API_BASE_URL")
 
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url=self._url or "https://api.together.xyz/v1",
+            base_url=self._url,
         )
 
     @api_keys_required("TOGETHER_API_KEY")

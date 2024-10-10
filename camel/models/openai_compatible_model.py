@@ -36,10 +36,10 @@ class OpenAICompatibleModel(BaseModelBackend):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A dictionary that will
-            be fed into openai.ChatCompletion.create().
-        api_key (str): The API key for authenticating with the
-            model service.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`{}` will be used. (default: :obj:`None`)
+        api_key (str): The API key for authenticating with the model service.
         url (str): The url to the model service.
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -50,33 +50,22 @@ class OpenAICompatibleModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        self.api_key = api_key or os.environ.get("OPENAI_COMPATIBILIY_API_KEY")
+        self.url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
-        self._api_key = api_key or os.environ.get(
-            "OPENAI_COMPATIBILIY_API_KEY"
-        )
-        if self._url is None:
-            raise ValueError(
-                "For OpenAI-compatible models, you must provide the `url`."
-            )
-        if self._api_key is None:
-            raise ValueError(
-                "For OpenAI-compatible models, you must provide the `api_key`."
-            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=self._url,
             api_key=self._api_key,
+            base_url=self._url,
         )
-        self._token_counter = token_counter
 
     def run(
         self,

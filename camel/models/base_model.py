@@ -31,7 +31,8 @@ class BaseModelBackend(ABC):
 
     Args:
         model_type (ModelType): Model for which a backend is created.
-        model_config_dict (Dict[str, Any]): A config dictionary.
+        model_config_dict (Optional[Dict[str, Any]], optional): A config
+            dictionary. (default: :obj:`{}`)
         api_key (Optional[str], optional): The API key for authenticating
             with the model service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
@@ -44,17 +45,19 @@ class BaseModelBackend(ABC):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         self.model_type = model_type
+        if not model_config_dict:
+            model_config_dict = {}
         self.model_config_dict = model_config_dict
         self._api_key = api_key
         self._url = url
-        self.check_model_config()
         self._token_counter = token_counter
+        self.check_model_config()
 
     @property
     @abstractmethod

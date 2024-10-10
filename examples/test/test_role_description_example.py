@@ -21,13 +21,11 @@ from camel.types import ModelPlatformType, PredefinedModelType
 model_gpt = ModelFactory.create(
     ModelPlatformType.OPENAI,
     model_type=PredefinedModelType.GPT_4O,
-    model_config_dict={},
 )
 
 model_stub = ModelFactory.create(
     ModelPlatformType.OPENAI,
     model_type=PredefinedModelType.STUB,
-    model_config_dict={},
 )
 
 

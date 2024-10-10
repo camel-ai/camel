@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional
 
-from camel.configs import LITELLM_API_PARAMS
+from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion
@@ -27,8 +27,10 @@ class LiteLLMModel(BaseModelBackend):
     Args:
         model_type (ModelType): Model for which a backend is created,
             such as GPT-3.5-turbo, Claude-2, etc.
-        model_config_dict (Dict[str, Any]): A dictionary of parameters for
-            the model configuration.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`.
+            If:obj:`None`, :obj:`LiteLLMConfig().as_dict()` will be used.
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the model service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
@@ -43,19 +45,20 @@ class LiteLLMModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
+        from litellm import completion
+
+        if model_config_dict is None:
+            model_config_dict = LiteLLMConfig().as_dict()
+
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._client = None
-        self._token_counter = token_counter
-        self.check_model_config()
-        self._url = url
-        self._api_key = api_key
+        self.client = completion
 
     def _convert_response_from_litellm_to_openai(
         self, response
@@ -86,14 +89,6 @@ class LiteLLMModel(BaseModelBackend):
             system_fingerprint=response.system_fingerprint,
             usage=response.usage,
         )
-
-    @property
-    def client(self):
-        if self._client is None:
-            from litellm import completion
-
-            self._client = completion
-        return self._client
 
     @property
     def token_counter(self) -> BaseTokenCounter:
