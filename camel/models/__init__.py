@@ -14,6 +14,7 @@
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
+from .cogvideo_model import CogVideoModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
@@ -53,4 +54,5 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'CogVideoModel',
 ]
