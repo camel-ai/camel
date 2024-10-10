@@ -33,6 +33,7 @@ from .reddit_toolkit import RedditToolkit
 
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
+from .google_scholar_toolkit import GoogleScholarToolkit
 
 __all__ = [
     'OpenAIFunction',
@@ -52,6 +53,7 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    'GoogleScholarToolkit',
     'MATH_FUNCS',
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',

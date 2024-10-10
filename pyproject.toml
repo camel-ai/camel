@@ -91,6 +91,7 @@ botocore = { version = "^1.35.3", optional = true }
 nltk = { version = "3.8.1", optional = true }
 praw = { version = "^7.7.1", optional = true }
 textblob = { version = "^0.18.0.post0", optional = true }
+scholarly = { extras = ["tor"], version = "1.7.11", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -185,6 +186,7 @@ tools = [
     "agentops",
     "praw",
     "textblob",
+    "scholarly",
 ]
 
 vector-databases = [
@@ -250,6 +252,7 @@ all = [
     "agentops",
     "praw",
     "textblob",
+    "scholarly",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -411,5 +414,6 @@ module = [
     "botocore.*",
     "praw",
     "textblob",
+    "scholarly",
 ]
 ignore_missing_imports = true
