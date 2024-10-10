@@ -22,3 +22,18 @@ from .openai_function import OpenAIFunction
 class BaseToolkit(metaclass=AgentOpsMeta):
     def get_tools(self) -> List[OpenAIFunction]:
         raise NotImplementedError("Subclasses must implement this method.")
+
+    def list_tools(self) -> List[str]:
+        tools = self.get_tools()
+        tool_names = [tool.func.__name__ for tool in tools]
+        return tool_names
+
+    def get_a_tool(self, func_name: str) -> List[OpenAIFunction]:
+        tools = self.get_tools()
+        for tool in tools:
+            if tool.func.__name__ == func_name:
+                return [tool]
+        raise AttributeError(
+            f"{func_name} is not a valid tool name or is not part of "
+            f"{self.__class__.__name__}'s module."
+        )
