@@ -17,6 +17,41 @@ from warnings import warn
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
+from camel.utils.commons import api_keys_required
+
+
+def _process_response(response, return_type: str):
+    r"""Process the response based on the specified return type.
+
+    This helper method processes the API response and returns the content
+    in the specified format, which could be a string, a dictionary, or
+    both.
+
+    Args:
+        response: The response object returned by the API call.
+        return_type (str): Specifies the format of the return value. It
+            can be "string" to return the response as a string, "dicts" to
+            return it as a dictionary, or "both" to return both formats as
+            a tuple.
+
+    Returns:
+        Union[str, dict, Tuple[str, dict]]: The processed response,
+            formatted according to the return_type argument. If "string",
+            returns the response as a string. If "dicts", returns the
+            response as a dictionary. If "both", returns a tuple
+            containing both formats.
+
+    Raises:
+        ValueError: If the return_type provided is invalid.
+    """
+    if return_type == "string":
+        return response.as_string
+    elif return_type == "dicts":
+        return response.as_dicts
+    elif return_type == "both":
+        return (response.as_string, response.as_dicts)
+    else:
+        raise ValueError(f"Invalid return_type: {return_type}")
 
 
 class AskNewsToolkit(BaseToolkit):
@@ -26,15 +61,15 @@ class AskNewsToolkit(BaseToolkit):
     based on user queries using the AskNews API.
     """
 
+    @api_keys_required("ASKNEWS_CLIENT_ID", "ASKNEWS_CLIENT_SECRET")
     def __init__(self, scopes: Optional[List[str]] = None):
-        r"""Initialize the AskNewsToolkit with API clients.
+        r"""Initialize the AskNewsToolkit with API clients.The API keys and
+        credentials are retrieved from environment variables.
 
         Args:
-            scopes (Optional[List[str]], optional): A list of API scopes to specify which
-                functionalities the client should access.
+            scopes (Optional[List[str]], optional): A list of API scopes to
+                specify which functionalities the client should access.
                 (default: :list:`["chat", "news", "stories"]`)
-
-        The API keys and credentials are retrieved from environment variables.
         """
         from asknews_sdk import AskNewsSDK  # type: ignore[import]
 
@@ -53,39 +88,6 @@ class AskNewsToolkit(BaseToolkit):
             client_secret,
             scopes=scopes,
         )
-
-    def _process_response(self, response, return_type: str):
-        r"""Process the response based on the specified return type.
-
-        This helper method processes the API response and returns the content
-        in the specified format, which could be a string, a dictionary, or
-        both.
-
-        Args:
-            response: The response object returned by the API call.
-            return_type (str): Specifies the format of the return value. It
-                can be "string" to return the response as a string, "dicts" to
-                return it as a dictionary, or "both" to return both formats as
-                a tuple.
-
-        Returns:
-            Union[str, dict, Tuple[str, dict]]: The processed response,
-                formatted according to the return_type argument. If "string",
-                returns the response as a string. If "dicts", returns the
-                response as a dictionary. If "both", returns a tuple
-                containing both formats.
-
-        Raises:
-            ValueError: If the return_type provided is invalid.
-        """
-        if return_type == "string":
-            return response.as_string
-        elif return_type == "dicts":
-            return response.as_dicts
-        elif return_type == "both":
-            return (response.as_string, response.as_dicts)
-        else:
-            raise ValueError(f"Invalid return_type: {return_type}")
 
     def get_news(
         self,
@@ -120,7 +122,7 @@ class AskNewsToolkit(BaseToolkit):
                 method=method,
             )
 
-            return self._process_response(response, return_type)
+            return _process_response(response, return_type)
 
         except Exception as e:
             raise Exception(
@@ -158,7 +160,7 @@ class AskNewsToolkit(BaseToolkit):
                 keywords=keywords, n_threads=n_threads, method=method
             )
 
-            return self._process_response(response, return_type)
+            return _process_response(response, return_type)
 
         except Exception as e:
             raise Exception(
@@ -391,6 +393,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
     content based on user queries using the AskNews API.
     """
 
+    @api_keys_required("ASKNEWS_CLIENT_ID", "ASKNEWS_CLIENT_SECRET")
     def __init__(self, scopes: Optional[List[str]] = None):
         r"""Initialize the AsyncAskNewsToolkit with API clients.The API keys
         and credentials are retrieved from environment variables.
@@ -417,39 +420,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
             client_secret,
             scopes=scopes,
         )
-
-    def _process_response(self, response, return_type: str):
-        r"""Process the response based on the specified return type.
-
-        This helper method processes the API response and returns the content
-        in the specified format, which could be a string, a dictionary, or
-        both.
-
-        Args:
-            response: The response object returned by the API call.
-            return_type (str): Specifies the format of the return value. It
-                can be "string" to return the response as a string, "dicts" to
-                return it as a dictionary, or "both" to return both formats as
-                a tuple.
-
-        Returns:
-            Union[str, dict, Tuple[str, dict]]: The processed response,
-                formatted according to the return_type argument. If "string",
-                returns the response as a string. If "dicts", returns the
-                response as a dictionary. If "both", returns a tuple
-                containing both formats.
-
-        Raises:
-            ValueError: If the return_type provided is invalid.
-        """
-        if return_type == "string":
-            return response.as_string
-        elif return_type == "dicts":
-            return response.as_dicts
-        elif return_type == "both":
-            return (response.as_string, response.as_dicts)
-        else:
-            raise ValueError(f"Invalid return_type: {return_type}")
 
     async def get_news(
         self,
@@ -484,7 +454,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 method=method,
             )
 
-            return self._process_response(response, return_type)
+            return _process_response(response, return_type)
 
         except Exception as e:
             raise Exception(
@@ -522,7 +492,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 keywords=keywords, n_threads=n_threads, method=method
             )
 
-            return self._process_response(response, return_type)
+            return _process_response(response, return_type)
 
         except Exception as e:
             raise Exception(

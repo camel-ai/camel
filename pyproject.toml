@@ -235,6 +235,7 @@ all = [
     "agentops",
     "praw",
     "textblob",
+    "asknews",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -257,7 +258,6 @@ all = [
     # object-storages
     "azure-storage-blob",
     "google-cloud-storage",
-    "asknews",
     "botocore",
 ]
 
