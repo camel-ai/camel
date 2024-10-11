@@ -390,6 +390,9 @@ class FunctionTool:
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
 
 
+warnings.simplefilter('always', DeprecationWarning)
+
+
 # Alias for backwards compatibility
 class OpenAIFunction(FunctionTool):
     def __init__(self, *args, **kwargs):
