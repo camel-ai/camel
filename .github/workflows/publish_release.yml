@@ -28,7 +28,7 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     permissions:
-        contents: write
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,7 +47,6 @@ jobs:
           prerelease: false
           files: |
             dist/${{ env.name }}
-            
 
   build-and-publish-image:
     runs-on: ubuntu-latest
