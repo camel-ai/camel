@@ -156,7 +156,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
         self.orig_sys_message: Optional[BaseMessage] = system_message
-        self.system_message: Optional[BaseMessage] = system_message
+        self._system_message: Optional[BaseMessage] = system_message
         self.role_name: str = (
             system_message.role_name if system_message else "assistant"
         )
@@ -320,7 +320,9 @@ class ChatAgent(BaseAgent):
             MemoryRecord(message=message, role_at_backend=role)
         )
 
-    def set_output_language(self, output_language: str) -> BaseMessage:
+    def set_output_language(
+        self, output_language: str
+    ) -> Optional[BaseMessage]:
         r"""Sets the output language for the system message. This method
         updates the output language for the system message. The output
         language determines the language in which the output text should be
@@ -330,15 +332,20 @@ class ChatAgent(BaseAgent):
             output_language (str): The desired output language.
 
         Returns:
-            BaseMessage: The updated system message object.
+            Optional[BaseMessage]: The updated system message object.
         """
         self.output_language = output_language
-        content = self.orig_sys_message.content + (
-            "\nRegardless of the input language, "
-            f"you must output text in {output_language}."
-        )
-        self.system_message = self.system_message.create_new_instance(content)
-        return self.system_message
+        if self.orig_sys_message is not None:
+            content = self.orig_sys_message.content + (
+                "\nRegardless of the input language, "
+                f"you must output text in {output_language}."
+            )
+            self._system_message = self.orig_sys_message.create_new_instance(
+                content
+            )
+            return self._system_message
+        else:
+            return None
 
     def get_info(
         self,
@@ -383,12 +390,15 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        system_record = MemoryRecord(
-            message=self.system_message,
-            role_at_backend=OpenAIBackendRole.SYSTEM,
-        )
-        self.memory.clear()
-        self.memory.write_record(system_record)
+        if self.orig_sys_message is not None:
+            system_record = MemoryRecord(
+                message=self.orig_sys_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+            )
+            self.memory.clear()
+            self.memory.write_record(system_record)
+        else:
+            self.memory.clear()
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
