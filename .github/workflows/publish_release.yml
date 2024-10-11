@@ -21,6 +21,7 @@ jobs:
       - name: Build and publish to PyPI
         uses: JRubics/poetry-publish@v2.0
         with:
+          python_version: '3.10'
           pypi_token: ${{ secrets.PYPI_API_KEY }}
 
   create-release:
