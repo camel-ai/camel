@@ -89,6 +89,12 @@ class ModelType(Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # Cohere models
+    COHERE_COMMAND_R = "command-r"
+    COHERE_COMMAND_LIGHT = "command-light"
+    COHERE_COMMAND = "command"
+    COHERE_COMMAND_NIGHTLY = "command-nightly"
+
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
@@ -224,6 +230,20 @@ class ModelType(Enum):
         }
 
     @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this type of models is a Cohere model.
+
+        Returns:
+            bool: Whether this type of models is Cohere.
+        """
+        return self in {
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -304,6 +324,13 @@ class ModelType(Enum):
             return 256_000
         elif self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}:
             return 1_048_576
+        elif self in {
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }:
+            return 4_096
         else:
             raise ValueError("Unknown model type")
 
@@ -485,6 +512,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
     SAMBA = "samba-nova"
+    COHERE = "cohere"
 
     @property
     def is_openai(self) -> bool:
@@ -561,6 +589,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this platform is Cohere."""
+        return self is ModelPlatformType.COHERE
 
 
 class AudioModelType(Enum):
