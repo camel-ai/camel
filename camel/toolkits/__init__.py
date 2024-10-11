@@ -14,6 +14,7 @@
 # ruff: noqa: I001
 from .openai_function import (
     FunctionTool,
+    OpenAIFunction,
     get_openai_function_schema,
     get_openai_tool_schema,
 )
@@ -36,6 +37,7 @@ from .github_toolkit import GithubToolkit
 
 __all__ = [
     'FunctionTool',
+    'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     'openapi_security_config',
