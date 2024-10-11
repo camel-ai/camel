@@ -23,7 +23,7 @@ from camel.toolkits.base import BaseToolkit
 
 
 class WhatsAppToolkit(BaseToolkit):
-    """A class representing a toolkit for WhatsApp operations.
+    r"""A class representing a toolkit for WhatsApp operations.
 
     This toolkit provides methods to interact with the WhatsApp Business API,
     allowing users to send messages, retrieve message templates, and get
