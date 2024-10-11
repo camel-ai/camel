@@ -396,9 +396,15 @@ warnings.simplefilter('always', DeprecationWarning)
 # Alias for backwards compatibility
 class OpenAIFunction(FunctionTool):
     def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "OpenAIFunction is deprecated, please use FunctionTool instead.",
-            DeprecationWarning,
-            stacklevel=2,
+        PURPLE = '\033[95m'
+        RESET = '\033[0m'
+
+        def purple_warning(msg):
+            warnings.warn(
+                PURPLE + msg + RESET, DeprecationWarning, stacklevel=2
+            )
+
+        purple_warning(
+            "OpenAIFunction is deprecated, please use FunctionTool instead."
         )
         super().__init__(*args, **kwargs)
