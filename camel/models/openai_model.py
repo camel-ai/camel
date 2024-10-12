@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -96,13 +97,23 @@ class OpenAIModel(BaseModelBackend):
         # o1-preview and o1-mini have Beta limitations
         # reference: https://platform.openai.com/docs/guides/reasoning
         if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
+            warnings.warn(
+                "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
+                "which has certain limitations, reference: "
+                "`https://platform.openai.com/docs/guides/reasoning`",
+                UserWarning,
+            )
+
             # Remove system message that is not supported in o1 model.
             messages = [msg for msg in messages if msg.get("role") != "system"]
 
-            # Remove unsupported parameters and reset the fixed parameters
-            del self.model_config_dict["stream"]
-            del self.model_config_dict["tools"]
-            del self.model_config_dict["tool_choice"]
+            # Check and remove unsupported parameters and reset the fixed
+            # parameters
+            unsupported_keys = ["stream", "tools", "tool_choice"]
+            for key in unsupported_keys:
+                if key in self.model_config_dict:
+                    del self.model_config_dict[key]
+
             self.model_config_dict["temperature"] = 1.0
             self.model_config_dict["top_p"] = 1.0
             self.model_config_dict["n"] = 1.0
