@@ -30,26 +30,34 @@ class ToolManager:
     OpenAIFunction objects.
     """
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(ToolManager, cls).__new__(
+                cls, *args, **kwargs
+            )
+        return cls._instance
+
     def __init__(self):
         r"""
         Initializes the ToolManager and loads all available toolkits.
         """
-        self.toolkits = {}
-
-        self.toolkit_classes = {}
-        self.toolkit_class_methods = {}
-
-        self._load_toolkits()
-        self._load_toolkit_class_and_methods()
+        if not hasattr(self, '_initialized'):
+            self._initialized = True
+            self.toolkits = {}
+            self.toolkit_classes = {}
+            self.toolkit_class_methods = {}
+            self._load_toolkits()
+            self._load_toolkit_class_and_methods()
 
     def _load_toolkits(self):
         r"""
-        Dynamically loads all toolkits from the `camel.toolkits` package.
+        Dynamically loads all toolkit functions from the `camel.toolkits`
+        package.
 
-        It iterates through all modules in the package, checking for the
-        presence of an `__all__` attribute to explicitly control what
-        functions to export.
-        If `__all__` is not present, it ignores any function starting with `_`.
+        For each module in the package, it checks for functions decorated with
+        `@export_to_toolkit`, which adds the `_is_exported` attribute.
         """
         package = importlib.import_module('camel.toolkits')
         for _, module_name, _ in pkgutil.iter_modules(package.__path__):
@@ -64,13 +72,12 @@ class ToolManager:
 
     def _load_toolkit_class_and_methods(self):
         r"""
-        Dynamically loads all classes and their methods from the `camel.
-        toolkits` package.
+        Dynamically loads all classes and their exported methods from the
+        `camel.toolkits` package.
 
-        It iterates through all modules in the package, checking for public
-        classes.
-        For each class, it collects its public methods (those not starting
-        with `_`).
+        For each module in the package, it identifies public classes. For each
+        class, it collects only those methods that are decorated with
+        `@export_to_toolkit`, which adds the `_is_exported` attribute.
         """
         package = importlib.import_module('camel.toolkits')
 
@@ -89,8 +96,25 @@ class ToolManager:
                         if callable(method) and hasattr(method, '_is_exported')
                     }
 
-    def add_toolkit_from_function(self, toolkit_func: Callable):
+    def register_tool(self, toolkit_func: Callable):
+        r"""
+        Registers a toolkit function and adds it to the toolkits list.
+
+        Parameters:
+            toolkit_func (Callable): The toolkit function to be registered.
+
+        Returns:
+            Union[OpenAIFunction, str]: Returns an OpenAIFunction instance if
+                the registration is successful. Otherwise, returns a message
+                indicating the failure reason.
         """
+        add_info = self.add_toolkit_from_function(toolkit_func)
+        if "successfully" in add_info:
+            return OpenAIFunction(toolkit_func)
+        return add_info
+
+    def add_toolkit_from_function(self, toolkit_func: Callable):
+        r"""
         Adds a toolkit function to the toolkits list.
 
         Parameters:
@@ -113,7 +137,7 @@ class ToolManager:
         return f"Toolkit '{func_name}' added successfully."
 
     def add_toolkit_from_instance(self, **kwargs):
-        """
+        r"""
         Add a toolkit class instance to the tool list.
 
         Parameters:
