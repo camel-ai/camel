@@ -151,7 +151,10 @@ def div(a: int, b: int) -> float:
 
 camel_github_toolkit = GithubToolkit(repo_name='camel-ai/camel')
 
-added_tools = manager.register_tool([div, camel_github_toolkit])
+added_tools = manager.register_tool(
+    [div, camel_github_toolkit]
+)  # manager.register_tool(div) is also supported.
+
 pretty_print_list("Added Tools", added_tools)
 pretty_print_list("Available Toolkits for now", manager.list_toolkits())
 """
