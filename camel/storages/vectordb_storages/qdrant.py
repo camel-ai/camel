@@ -403,35 +403,94 @@ class QdrantStorage(BaseVectorStorage):
                 f"{op_info}."
             )
 
-    def delete(
-            self,
-            ids: List[str],
-            **kwargs: Any,
-    ) -> None:
-        r"""Deletes a list of vectors identified by their IDs from the storage.
+    def update_payload(self, ids: List[str], payload: Dict[str, Any], **kwargs: Any) -> None:
+        r"""Updates the payload of the vectors identified by their IDs.
 
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
-                deleted.
+                updated.
+            payload (Dict[str, Any]): List of payloads to be updated.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
-            RuntimeError: If there is an error during the deletion process.
+            RuntimeError: If there is an error during the update process.
         """
         from qdrant_client.http.models import PointIdsList, UpdateStatus
 
         points = cast(List[Union[str, int]], ids)
-        op_info = self._manager.client.delete(
+
+        op_info = self._manager.client.set_payload(
             collection_name=self.collection_name,
-            points_selector=PointIdsList(points=points),
-            wait=True,
+            payload=payload,
+            points=PointIdsList(points=points),
             **kwargs,
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to delete vectors in Qdrant, operation info: "
+                "Failed to update payload in Qdrant, operation info: "
                 f"{op_info}"
             )
+
+    def delete(
+            self,
+            ids: Optional[List[int]] = None,
+            payload_filter: Optional[Dict[str, Any]] = None,
+            **kwargs: Any,
+    ) -> None:
+        r"""Deletes points from the collection based on either IDs or payload filters.
+
+        Args:
+            ids (List[str]): List of unique identifiers for the vectors to be
+                deleted.
+            payload_filter (Optional[Dict[str, Any]], optional): A filter for the payload to
+                delete points matching specific conditions. If `ids` is provided, `payload_filter`
+                will be ignored unless both are combined explicitly.
+            **kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            ValueError: If neither `ids` nor `payload_filter` is provided.
+            RuntimeError: If there is an error during the deletion process.
+
+        Notes:
+            - If `ids` is provided, the points with these IDs will be deleted directly,
+                and the `payload_filter` will be ignored.
+            - If `ids` is not provided but `payload_filter` is, then points matching the
+                `payload_filter` will be deleted.
+        """
+        from qdrant_client.http.models import PointIdsList, UpdateStatus, Filter, FieldCondition, MatchValue
+
+        if not ids and not payload_filter:
+            raise ValueError("You must provide either `ids` or `payload_filter` to delete points.")
+
+        if ids:
+            op_info = self._manager.client.delete(
+                collection_name=self.collection_name,
+                points_selector=PointIdsList(points=ids),
+                **kwargs
+            )
+            if op_info.status != UpdateStatus.COMPLETED:
+                raise RuntimeError(
+                    "Failed to delete vectors in Qdrant, operation info: "
+                    f"{op_info}"
+                )
+            return
+
+        if payload_filter:
+            filter_conditions = []
+            for key, value in payload_filter.items():
+                filter_conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+
+            op_info = self._manager.client.delete(
+                collection_name=self.collection_name,
+                points_selector={"filter": Filter(must=filter_conditions)},
+                **kwargs
+            )
+
+            if op_info.status != UpdateStatus.COMPLETED:
+                raise RuntimeError(
+                    "Failed to delete vectors in Qdrant, operation info: "
+                    f"{op_info}"
+                )
 
     def status(self) -> VectorDBStatus:
         r"""
