@@ -16,6 +16,7 @@ from typing import List, Literal
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
+from camel.utils.commons import export_to_toolkit
 
 
 def get_openweathermap_api_key() -> str:
@@ -39,6 +40,7 @@ def get_openweathermap_api_key() -> str:
     return api_key
 
 
+@export_to_toolkit
 def get_weather_data(
     city: str,
     temp_units: Literal['kelvin', 'celsius', 'fahrenheit'] = 'kelvin',

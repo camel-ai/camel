@@ -39,40 +39,41 @@ pretty_print_list("Class Toolkits", toolkit_classes)
 Function Toolkits:
 ----------------------------------------
   1. get_dalle_img
-  2. get_github_access_token
-  3. add
-  4. mul
-  5. sub
-  6. query_wolfram_alpha
-  7. search_duckduckgo
-  8. search_google
-  9. search_wiki
-  10. get_openweathermap_api_key
-  11. get_weather_data
+  2. add
+  3. mul
+  4. sub
+  5. query_wolfram_alpha
+  6. search_duckduckgo
+  7. search_google
+  8. search_wiki
+  9. get_weather_data
 ========================================
 
 ========================================
 Class Toolkits:
 ----------------------------------------
   1. BaseToolkit: 
-  2. CodeExecutionToolkit: 
+  2. CodeExecutionToolkit: execute_code
   3. DalleToolkit: 
   4. GithubIssue: 
   5. GithubPullRequest: 
   6. GithubPullRequestDiff: 
   7. GithubToolkit: create_pull_request, retrieve_issue, retrieve_issue_list, 
   retrieve_pull_requests
-  8. GoogleMapsToolkit: 
-  9. LinkedInToolkit: 
+  8. GoogleMapsToolkit: get_address_description, get_elevation, get_timezone
+  9. LinkedInToolkit: create_post, delete_post, get_profile
   10. MathToolkit: 
   11. OpenAPIToolkit: 
   12. OpenAIFunction: 
-  13. RedditToolkit: 
-  14. RetrievalToolkit: 
+  13. RedditToolkit: collect_top_posts, perform_sentiment_analysis, 
+  track_keyword_discussions
+  14. RetrievalToolkit: information_retrieval
   15. SearchToolkit: 
-  16. SlackToolkit: 
+  16. SlackToolkit: create_slack_channel, delete_slack_message, 
+  get_slack_channel_information, get_slack_channel_message, 
+  join_slack_channel, leave_slack_channel, send_slack_message
   17. ToolManager: 
-  18. TwitterToolkit: 
+  18. TwitterToolkit: create_tweet, delete_tweet, get_my_user_profile
   19. WeatherToolkit: 
 ========================================
 ===============================================================================

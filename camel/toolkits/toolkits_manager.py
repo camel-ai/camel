@@ -55,20 +55,12 @@ class ToolManager:
         for _, module_name, _ in pkgutil.iter_modules(package.__path__):
             module = importlib.import_module(f'camel.toolkits.{module_name}')
 
-            if hasattr(module, '__all__'):
-                for name in module.__all__:
-                    func = getattr(module, name, None)
-                    if callable(func) and func.__module__ == module.__name__:
-                        self.toolkits[name] = func
-            else:
-                for name, func in inspect.getmembers(
-                    module, inspect.isfunction
+            for name, func in inspect.getmembers(module, inspect.isfunction):
+                if (
+                    hasattr(func, '_is_exported')
+                    and func.__module__ == module.__name__
                 ):
-                    if (
-                        not name.startswith('_')
-                        and func.__module__ == module.__name__
-                    ):
-                        self.toolkits[name] = func
+                    self.toolkits[name] = func
 
     def _load_toolkit_class_and_methods(self):
         r"""

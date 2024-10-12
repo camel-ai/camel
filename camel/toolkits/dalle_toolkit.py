@@ -22,6 +22,7 @@ from PIL import Image
 
 from camel.toolkits import OpenAIFunction
 from camel.toolkits.base import BaseToolkit
+from camel.utils.commons import export_to_toolkit
 
 
 def _base64_to_image(base64_string: str) -> Optional[Image.Image]:
@@ -90,6 +91,7 @@ def _image_to_base64(image: Image.Image) -> str:
         return ""
 
 
+@export_to_toolkit
 def get_dalle_img(prompt: str, image_dir: str = "img") -> str:
     r"""Generate an image using OpenAI's DALL-E model. The generated image
     is saved to the specified directory.

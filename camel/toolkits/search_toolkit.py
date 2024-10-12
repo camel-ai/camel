@@ -16,8 +16,10 @@ from typing import Any, Dict, List
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
+from camel.utils.commons import export_to_toolkit
 
 
+@export_to_toolkit
 def search_wiki(entity: str) -> str:
     r"""Search the entity in WikiPedia and return the summary of the
         required page, containing factual information about
@@ -58,6 +60,7 @@ def search_wiki(entity: str) -> str:
     return result
 
 
+@export_to_toolkit
 def search_duckduckgo(
     query: str, source: str = "text", max_results: int = 5
 ) -> List[Dict[str, Any]]:
@@ -146,6 +149,7 @@ def search_duckduckgo(
     return responses
 
 
+@export_to_toolkit
 def search_google(
     query: str, num_result_pages: int = 5
 ) -> List[Dict[str, Any]]:
@@ -244,6 +248,7 @@ def search_google(
     return responses
 
 
+@export_to_toolkit
 def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
     r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
     answer engine developed by Wolfram Research. It is offered as an online

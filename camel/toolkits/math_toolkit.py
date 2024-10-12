@@ -16,8 +16,10 @@ from typing import List
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
+from camel.utils.commons import export_to_toolkit
 
 
+@export_to_toolkit
 def add(a: int, b: int) -> int:
     r"""Adds two numbers.
 
@@ -31,6 +33,7 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
+@export_to_toolkit
 def sub(a: int, b: int) -> int:
     r"""Do subtraction between two numbers.
 
@@ -44,6 +47,7 @@ def sub(a: int, b: int) -> int:
     return a - b
 
 
+@export_to_toolkit
 def mul(a: int, b: int) -> int:
     r"""Multiplies two integers.
 
