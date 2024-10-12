@@ -135,7 +135,7 @@ class ToolManager:
     def _register_single_tool(
         self, toolkit_obj: Union[Callable, object]
     ) -> tuple[List[OpenAIFunction], str]:
-        """
+        r"""
         Helper function to register a single toolkit function or instance.
 
         Parameters:

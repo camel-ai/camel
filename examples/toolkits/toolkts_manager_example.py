@@ -188,6 +188,7 @@ Available Toolkits for now:
 
 crab_github_toolkit = GithubToolkit(repo_name='ZackYule/crab')
 
+# Custom instance names are supported here.
 manager.add_toolkit_from_instance(
     crab_github_toolkit=crab_github_toolkit,
 )
