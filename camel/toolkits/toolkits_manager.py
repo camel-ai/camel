@@ -156,7 +156,7 @@ class ToolManager:
             res = self.add_toolkit_from_instance(
                 **{toolkit_obj.__class__.__name__: toolkit_obj}
             )
-            if "Successfully" in res:
+            if "Successfully" in res and hasattr(toolkit_obj, 'get_tools'):
                 res_openai_functions.extend(toolkit_obj.get_tools())
             res_info += res
         return res_openai_functions, res_info
