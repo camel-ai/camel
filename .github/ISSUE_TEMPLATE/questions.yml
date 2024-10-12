@@ -2,7 +2,6 @@ name: 🤔 Questions / Help / Support
 description: Do you need support?
 title: "[Question] "
 labels: [question]
-assignees: [lightaime]
 body:
   - type: checkboxes
     id: steps
