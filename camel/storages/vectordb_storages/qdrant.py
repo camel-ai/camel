@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, TYPE_CHECKING
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -24,7 +24,154 @@ from camel.storages.vectordb_storages import (
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
+
 _qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
+
+
+class QdrantManager:
+    r"""
+    Manages interaction with Qdrant, handling collection creation, deletion,
+    and client management.
+
+    Args:
+        url_and_api_key (Optional[Tuple[str, str]], optional): Tuple containing
+            the URL and API key for connecting to a remote Qdrant instance.
+            If provided, it will attempt to connect to the remote Qdrant
+            instance using the provided URL and API key.
+        path (Optional[str], optional): Path to a local Qdrant instance. If
+            provided, the client will be initialized for local use. If neither
+            `url_and_api_key` nor `path` is provided, the client will default
+            to an in-memory storage mode.
+        **kwargs (Any): Additional keyword arguments for initializing the
+            Qdrant client.
+
+    Attributes:
+        _client (QdrantClient): The Qdrant client instance used to interact with
+            Qdrant's vector search engine.
+
+    Notes:
+        - If `url_and_api_key` is provided, it takes priority and the client
+          will attempt to connect to the remote Qdrant instance using the URL
+          endpoint.
+        - If `url_and_api_key` is not provided and `path` is given, the client
+          will use the local path to initialize Qdrant.
+        - If neither `url_and_api_key` nor `path` is provided, the client will
+          be initialized with an in-memory storage (`":memory:"`).
+    """
+
+    def __init__(
+            self,
+            url_and_api_key: Optional[Tuple[str, str]] = None,
+            path: Optional[str] = None,
+            **kwargs: Any,
+    ):
+        from qdrant_client import QdrantClient
+
+        if url_and_api_key is not None:
+            self._client = QdrantClient(
+                url=url_and_api_key[0],
+                api_key=url_and_api_key[1],
+                **kwargs,
+            )
+        elif path is not None:
+            self._client = QdrantClient(path=path, **kwargs)
+        else:
+            self._client = QdrantClient(":memory:", **kwargs)
+
+    @property
+    def client(self) -> QdrantClient:
+        r"""Provides access to the underlying Qdrant client."""
+        return self._client
+
+    def close_client(self, **kwargs):
+        r"""Closes the client connection to the Qdrant storage."""
+        self._client.close(**kwargs)
+
+    def create_collection(
+            self,
+            collection_name: str,
+            size: int,
+            distance: VectorDistance = VectorDistance.COSINE,
+            **kwargs: Any,
+    ) -> None:
+        r"""Creates a new collection in the database.
+
+        Args:
+            collection_name (str): Name of the collection to be created.
+            size (int): Dimensionality of vectors to be stored in this
+                collection.
+            distance (VectorDistance, optional): The distance metric to be used
+                for vector similarity. (default: :obj:`VectorDistance.COSINE`)
+            **kwargs (Any): Additional keyword arguments.
+        """
+        from qdrant_client.http.models import Distance, VectorParams
+
+        distance_map = {
+            VectorDistance.DOT: Distance.DOT,
+            VectorDistance.COSINE: Distance.COSINE,
+            VectorDistance.EUCLIDEAN: Distance.EUCLID,
+        }
+        # Since `recreate_collection` method will be removed in the future
+        # by Qdrant, `create_collection` is recommended instead.
+        self._client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(
+                size=size,
+                distance=distance_map[distance],
+            ),
+            **kwargs,
+        )
+
+    def delete_collection(
+            self,
+            collection_name: str,
+            **kwargs: Any,
+    ) -> None:
+        r"""Deletes an existing collection from the database.
+
+        Args:
+            collection_name (str): Name of the collection to be deleted.
+            **kwargs (Any): Additional keyword arguments.
+        """
+        self._client.delete_collection(
+            collection_name=collection_name, **kwargs
+        )
+
+    def collection_exists(self, collection_name: str) -> bool:
+        r"""Returns whether the collection exists in the database"""
+        for c in self._client.get_collections().collections:
+            if collection_name == c.name:
+                return True
+        return False
+
+    def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
+        r"""Retrieves details of an existing collection.
+
+        Args:
+            collection_name (str): Name of the collection to be checked.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing details about the
+                collection.
+        """
+        from qdrant_client.http.models import VectorParams
+
+        # TODO: check more information
+        collection_info = self._client.get_collection(
+            collection_name=collection_name
+        )
+        vector_config = collection_info.config.params.vectors
+        return {
+            "vector_dim": vector_config.size
+            if isinstance(vector_config, VectorParams)
+            else None,
+            "vector_count": collection_info.points_count,
+            "status": collection_info.status,
+            "vectors_count": collection_info.vectors_count,
+            "config": collection_info.config,
+        }
 
 
 class QdrantStorage(BaseVectorStorage):
@@ -64,25 +211,23 @@ class QdrantStorage(BaseVectorStorage):
 
     @dependencies_required('qdrant_client')
     def __init__(
-        self,
-        vector_dim: int,
-        collection_name: Optional[str] = None,
-        url_and_api_key: Optional[Tuple[str, str]] = None,
-        path: Optional[str] = None,
-        distance: VectorDistance = VectorDistance.COSINE,
-        delete_collection_on_del: bool = False,
-        **kwargs: Any,
+            self,
+            vector_dim: int,
+            collection_name: Optional[str] = None,
+            url_and_api_key: Optional[Tuple[str, str]] = None,
+            path: Optional[str] = None,
+            distance: VectorDistance = VectorDistance.COSINE,
+            delete_collection_on_del: bool = False,
+            **kwargs: Any,
     ) -> None:
-        from qdrant_client import QdrantClient
+        self._manager: QdrantManager = QdrantManager(url_and_api_key, path, **kwargs)
 
-        self._client: QdrantClient
         self._local_path: Optional[str] = None
-        self._create_client(url_and_api_key, path, **kwargs)
 
         self.vector_dim = vector_dim
         self.distance = distance
         self.collection_name = (
-            collection_name or self._generate_collection_name()
+                collection_name or self._generate_collection_name()
         )
 
         self._check_and_create_collection()
@@ -104,42 +249,42 @@ class QdrantStorage(BaseVectorStorage):
                 )
 
         if (
-            hasattr(self, "delete_collection_on_del")
-            and self.delete_collection_on_del
+                hasattr(self, "delete_collection_on_del")
+                and self.delete_collection_on_del
         ):
-            self._delete_collection(self.collection_name)
+            self._manager.delete_collection(self.collection_name)
 
     def _create_client(
-        self,
-        url_and_api_key: Optional[Tuple[str, str]],
-        path: Optional[str],
-        **kwargs: Any,
+            self,
+            url_and_api_key: Optional[Tuple[str, str]],
+            path: Optional[str],
+            **kwargs: Any,
     ) -> None:
-        from qdrant_client import QdrantClient
+        r"""Creates a new Qdrant client.
 
-        if url_and_api_key is not None:
-            self._client = QdrantClient(
-                url=url_and_api_key[0],
-                api_key=url_and_api_key[1],
-                **kwargs,
-            )
-        elif path is not None:
-            # Avoid creating a local client multiple times,
-            # which is prohibited by Qdrant
-            self._local_path = path
-            if path in _qdrant_local_client_map:
-                # Store client instance in the map and maintain counts
-                self._client, count = _qdrant_local_client_map[path]
-                _qdrant_local_client_map[path] = (self._client, count + 1)
-            else:
-                self._client = QdrantClient(path=path, **kwargs)
-                _qdrant_local_client_map[path] = (self._client, 1)
-        else:
-            self._client = QdrantClient(":memory:", **kwargs)
+        Args:
+            url_and_api_key (Optional[Tuple[str, str]], optional): Tuple
+                containing the URL and API key for connecting to a remote Qdrant
+                instance. (default: :obj:`None`)
+            path (Optional[str], optional): Path to a directory for initializing
+                a local Qdrant client. (default: :obj:`None`)
+            **kwargs (Any): Additional keyword arguments for initializing
+            `QdrantClient`.
+
+        @deprecated: This method is deprecated and will be removed in a future version.
+        Use `QdrantManager` instead.
+        """
+        pass
+
+    def close_client(self, **kwargs):
+        r"""Closes the client connection to the Qdrant storage."""
+        self._manager.close_client(**kwargs)
 
     def _check_and_create_collection(self) -> None:
-        if self._collection_exists(self.collection_name):
-            in_dim = self._get_collection_info(self.collection_name)[
+        r"""Checks if the collection exists and creates a new collection if it
+        does not exist."""
+        if self._manager.collection_exists(self.collection_name):
+            in_dim = self._manager.get_collection_info(self.collection_name)[
                 "vector_dim"
             ]
             if in_dim != self.vector_dim:
@@ -150,7 +295,7 @@ class QdrantStorage(BaseVectorStorage):
                     f"the given embedding dim ({self.vector_dim})."
                 )
         else:
-            self._create_collection(
+            self._manager.create_collection(
                 collection_name=self.collection_name,
                 size=self.vector_dim,
                 distance=self.distance,
@@ -172,23 +317,12 @@ class QdrantStorage(BaseVectorStorage):
             distance (VectorDistance, optional): The distance metric to be used
                 for vector similarity. (default: :obj:`VectorDistance.COSINE`)
             **kwargs (Any): Additional keyword arguments.
-        """
-        from qdrant_client.http.models import Distance, VectorParams
 
-        distance_map = {
-            VectorDistance.DOT: Distance.DOT,
-            VectorDistance.COSINE: Distance.COSINE,
-            VectorDistance.EUCLIDEAN: Distance.EUCLID,
-        }
-        # Since `recreate_collection` method will be removed in the future
-        # by Qdrant, `create_collection` is recommended instead.
-        self._client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=size,
-                distance=distance_map[distance],
-            ),
-            **kwargs,
+        @deprecated: This method is deprecated and will be removed in a future version.
+        Use `QdrantManager.create_collection` instead.
+        """
+        self._manager.create_collection(
+            collection_name, size, distance, **kwargs
         )
 
     def _delete_collection(
@@ -199,19 +333,27 @@ class QdrantStorage(BaseVectorStorage):
         r"""Deletes an existing collection from the database.
 
         Args:
-            collection (str): Name of the collection to be deleted.
+            collection_name (str): Name of the collection to be deleted.
             **kwargs (Any): Additional keyword arguments.
+
+        @deprecated: This method is deprecated and will be removed in a future version.
+        Use `QdrantManager.delete_collection` instead.
         """
-        self._client.delete_collection(
+        self._manager.delete_collection(
             collection_name=collection_name, **kwargs
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
-        for c in self._client.get_collections().collections:
-            if collection_name == c.name:
-                return True
-        return False
+        r"""Returns whether the collection exists in the database.
+
+        Args:
+            collection_name (str): Name of the collection to be checked.
+            **kwargs (Any): Additional keyword arguments.
+
+        @deprecated: This method is deprecated and will be removed in a future version.
+        Use `QdrantManager.collection_exists` instead.
+        """
+        return self._manager.collection_exists(collection_name)
 
     def _generate_collection_name(self) -> str:
         r"""Generates a collection name if user doesn't provide"""
@@ -226,33 +368,21 @@ class QdrantStorage(BaseVectorStorage):
         Returns:
             Dict[str, Any]: A dictionary containing details about the
                 collection.
-        """
-        from qdrant_client.http.models import VectorParams
 
-        # TODO: check more information
-        collection_info = self._client.get_collection(
-            collection_name=collection_name
-        )
-        vector_config = collection_info.config.params.vectors
-        return {
-            "vector_dim": vector_config.size
-            if isinstance(vector_config, VectorParams)
-            else None,
-            "vector_count": collection_info.points_count,
-            "status": collection_info.status,
-            "vectors_count": collection_info.vectors_count,
-            "config": collection_info.config,
-        }
+        @deprecated: This method is deprecated and will be removed in a future version.
+        Use `QdrantManager.get_collection_info` instead.
+        """
+        return self._manager.get_collection_info(collection_name)
 
     def add(
-        self,
-        records: List[VectorRecord],
-        **kwargs,
+            self,
+            records: List[VectorRecord],
+            **kwargs,
     ) -> None:
         r"""Adds a list of vectors to the specified collection.
 
         Args:
-            vectors (List[VectorRecord]): List of vectors to be added.
+            records (List[VectorRecord]): List of vectors to be added.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
@@ -261,7 +391,7 @@ class QdrantStorage(BaseVectorStorage):
         from qdrant_client.http.models import PointStruct, UpdateStatus
 
         qdrant_points = [PointStruct(**p.model_dump()) for p in records]
-        op_info = self._client.upsert(
+        op_info = self._manager.client.upsert(
             collection_name=self.collection_name,
             points=qdrant_points,
             wait=True,
@@ -274,9 +404,9 @@ class QdrantStorage(BaseVectorStorage):
             )
 
     def delete(
-        self,
-        ids: List[str],
-        **kwargs: Any,
+            self,
+            ids: List[str],
+            **kwargs: Any,
     ) -> None:
         r"""Deletes a list of vectors identified by their IDs from the storage.
 
@@ -291,7 +421,7 @@ class QdrantStorage(BaseVectorStorage):
         from qdrant_client.http.models import PointIdsList, UpdateStatus
 
         points = cast(List[Union[str, int]], ids)
-        op_info = self._client.delete(
+        op_info = self._manager.client.delete(
             collection_name=self.collection_name,
             points_selector=PointIdsList(points=points),
             wait=True,
@@ -304,16 +434,24 @@ class QdrantStorage(BaseVectorStorage):
             )
 
     def status(self) -> VectorDBStatus:
-        status = self._get_collection_info(self.collection_name)
+        r"""
+        Returns the status of the collection.
+
+        Returns:
+            VectorDBStatus: A dataclass object containing the status of the
+                collection.
+        """
+
+        status = self._manager.get_collection_info(self.collection_name)
         return VectorDBStatus(
             vector_dim=status["vector_dim"],
             vector_count=status["vector_count"],
         )
 
     def query(
-        self,
-        query: VectorDBQuery,
-        **kwargs: Any,
+            self,
+            query: VectorDBQuery,
+            **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided
         query.
@@ -328,7 +466,7 @@ class QdrantStorage(BaseVectorStorage):
                 storage based on similarity to the query vector.
         """
         # TODO: filter
-        search_result = self._client.search(
+        search_result = self._manager.client.search(
             collection_name=self.collection_name,
             query_vector=query.query_vector,
             with_payload=True,
@@ -351,11 +489,9 @@ class QdrantStorage(BaseVectorStorage):
 
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
-        self._delete_collection(self.collection_name)
-        self._create_collection(
+        self._manager.client.delete(
             collection_name=self.collection_name,
-            size=self.vector_dim,
-            distance=self.distance,
+            points_selector={"all": True}
         )
 
     def load(self) -> None:
@@ -363,6 +499,6 @@ class QdrantStorage(BaseVectorStorage):
         pass
 
     @property
-    def client(self) -> Any:
+    def client(self) -> QdrantClient:
         r"""Provides access to the underlying vector database client."""
-        return self._client
+        return self._manager.client
