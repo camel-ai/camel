@@ -237,11 +237,12 @@ class ToolManager:
         result = []
 
         for class_name, methods in self.toolkit_class_methods.items():
-            methods_str = ', '.join(methods)
+            if methods:
+                methods_str = ', '.join(methods)
 
-            formatted_string = f"{class_name}: {methods_str}"
+                formatted_string = f"{class_name}: {methods_str}"
 
-            result.append(formatted_string)
+                result.append(formatted_string)
 
         return result
 
