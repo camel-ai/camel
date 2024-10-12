@@ -98,15 +98,13 @@ pretty_print_list(
 ========================================
 Matching Toolkit:
 ----------------------------------------
-  1. get_openweathermap_api_key
-  2. get_weather_data
+  1. get_weather_data
 ========================================
 
 ========================================
 Custom Algorithm Matching Toolkit:
 ----------------------------------------
-  1. get_openweathermap_api_key
-  2. get_weather_data
+  1. get_weather_data
 ========================================
 ===============================================================================
 """
@@ -146,15 +144,14 @@ pretty_print_list("Matching Tools for GitHub", matching_tools_for_github)
 ========================================
 Matching Tools for GitHub:
 ----------------------------------------
-  1. get_github_access_token
-  2. camel_github_toolkit_create_pull_request
-  3. camel_github_toolkit_retrieve_issue
-  4. camel_github_toolkit_retrieve_issue_list
-  5. camel_github_toolkit_retrieve_pull_requests
-  6. crab_github_toolkit_create_pull_request
-  7. crab_github_toolkit_retrieve_issue
-  8. crab_github_toolkit_retrieve_issue_list
-  9. crab_github_toolkit_retrieve_pull_requests
+  1. camel_github_toolkit_create_pull_request
+  2. camel_github_toolkit_retrieve_issue
+  3. camel_github_toolkit_retrieve_issue_list
+  4. camel_github_toolkit_retrieve_pull_requests
+  5. crab_github_toolkit_create_pull_request
+  6. crab_github_toolkit_retrieve_issue
+  7. crab_github_toolkit_retrieve_issue_list
+  8. crab_github_toolkit_retrieve_pull_requests
 ========================================
 ===============================================================================
 """
@@ -168,23 +165,22 @@ if isinstance(matching_tools_for_github, list):
 ========================================
 Tools Instances:
 ----------------------------------------
-  1. <function get_github_access_token at 0x1070d04c0>
-  2. <bound method GithubToolkit.create_pull_request of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x1070ed150>>
-  3. <bound method GithubToolkit.retrieve_issue of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x1070ed150>>
-  4. <bound method GithubToolkit.retrieve_issue_list of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x1070ed150>>
-  5. <bound method GithubToolkit.retrieve_pull_requests of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x1070ed150>>
-  6. <bound method GithubToolkit.create_pull_request of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x11759b0a0>>
-  7. <bound method GithubToolkit.retrieve_issue of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x11759b0a0>>
-  8. <bound method GithubToolkit.retrieve_issue_list of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x11759b0a0>>
-  9. <bound method GithubToolkit.retrieve_pull_requests of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x11759b0a0>>
+  1. <bound method GithubToolkit.create_pull_request of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x104e06aa0>>
+  2. <bound method GithubToolkit.retrieve_issue of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x104e06aa0>>
+  3. <bound method GithubToolkit.retrieve_issue_list of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x104e06aa0>>
+  4. <bound method GithubToolkit.retrieve_pull_requests of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x104e06aa0>>
+  5. <bound method GithubToolkit.create_pull_request of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x105286560>>
+  6. <bound method GithubToolkit.retrieve_issue of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x105286560>>
+  7. <bound method GithubToolkit.retrieve_issue_list of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x105286560>>
+  8. <bound method GithubToolkit.retrieve_pull_requests of <camel.toolkits.
+  github_toolkit.GithubToolkit object at 0x105286560>>
 ========================================
 ===============================================================================
 """
