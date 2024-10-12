@@ -333,11 +333,12 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
+        language_prompt = (
+            "\nRegardless of the input language, "
+            f"you must output text in {output_language}."
+        )
         if self.orig_sys_message is not None:
-            content = self.orig_sys_message.content + (
-                "\nRegardless of the input language, "
-                f"you must output text in {output_language}."
-            )
+            content = self.orig_sys_message.content + language_prompt
             self._system_message = self.orig_sys_message.create_new_instance(
                 content
             )
@@ -345,7 +346,7 @@ class ChatAgent(BaseAgent):
         else:
             self._system_message = BaseMessage.make_assistant_message(
                 role_name="Assistant",
-                content=(f"you must output text in {output_language}."),
+                content=language_prompt,
             )
             return self._system_message
 
