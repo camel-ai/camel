@@ -14,7 +14,7 @@
 import importlib
 import inspect
 import pkgutil
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
@@ -96,22 +96,70 @@ class ToolManager:
                         if callable(method) and hasattr(method, '_is_exported')
                     }
 
-    def register_tool(self, toolkit_func: Callable):
+    def register_tool(
+        self,
+        toolkit_obj: Union[Callable, object, List[Union[Callable, object]]],
+    ) -> List[OpenAIFunction] | str:
         r"""
-        Registers a toolkit function and adds it to the toolkits list.
+        Registers a toolkit function or instance and adds it to the toolkits
+        list. If the input is a list, it processes each element in the list.
 
         Parameters:
-            toolkit_func (Callable): The toolkit function to be registered.
+            toolkit_obj (Union[Callable, object, List[Union[Callable,
+                object]]]): The toolkit function(s) or instance(s) to be
+                registered.
 
         Returns:
-            Union[OpenAIFunction, str]: Returns an OpenAIFunction instance if
-                the registration is successful. Otherwise, returns a message
-                indicating the failure reason.
+            Union[List[OpenAIFunction], str]: Returns a list of OpenAIFunction
+                instances if the registration is successful. Otherwise,
+                returns a message indicating the failure reason.
         """
-        add_info = self.add_toolkit_from_function(toolkit_func)
-        if "successfully" in add_info:
-            return OpenAIFunction(toolkit_func)
-        return add_info
+        res_openai_functions = []
+        res_info = ""
+
+        # If the input is a list, process each element
+        if isinstance(toolkit_obj, list):
+            for obj in toolkit_obj:
+                res_openai_functions_part, res_info_part = (
+                    self._register_single_tool(obj)
+                )
+                res_openai_functions.extend(res_openai_functions_part)
+                res_info += res_info_part
+        else:
+            res_openai_functions, res_info = self._register_single_tool(
+                toolkit_obj
+            )
+
+        return res_openai_functions if res_openai_functions else res_info
+
+    def _register_single_tool(
+        self, toolkit_obj: Union[Callable, object]
+    ) -> tuple[List[OpenAIFunction], str]:
+        """
+        Helper function to register a single toolkit function or instance.
+
+        Parameters:
+            toolkit_obj (Union[Callable, object]): The toolkit function or
+                instance to be processed.
+
+        Returns:
+            Tuple: A list of OpenAIFunction instances and a result message.
+        """
+        res_openai_functions = []
+        res_info = ""
+        if callable(toolkit_obj):
+            res = self.add_toolkit_from_function(toolkit_obj)
+            if "successfully" in res:
+                res_openai_functions.append(OpenAIFunction(toolkit_obj))
+            res_info += res
+        else:
+            res = self.add_toolkit_from_instance(
+                **{toolkit_obj.__class__.__name__: toolkit_obj}
+            )
+            if "Successfully" in res:
+                res_openai_functions.extend(toolkit_obj.get_tools())
+            res_info += res
+        return res_openai_functions, res_info
 
     def add_toolkit_from_function(self, toolkit_func: Callable):
         r"""
@@ -139,6 +187,7 @@ class ToolManager:
     def add_toolkit_from_instance(self, **kwargs):
         r"""
         Add a toolkit class instance to the tool list.
+        Custom instance names are supported here.
 
         Parameters:
             kwargs: The toolkit class instance to be added. Keyword arguments

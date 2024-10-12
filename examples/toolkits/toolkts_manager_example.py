@@ -129,11 +129,66 @@ retrieve the data.
 ===============================================================================
 """
 
+
+def div(a: int, b: int) -> float:
+    r"""Divides two numbers.
+
+    Args:
+        a (int): The dividend in the division.
+        b (int): The divisor in the division.
+
+    Returns:
+        float: The quotient of the division.
+
+    Raises:
+        ValueError: If the divisor is zero.
+    """
+    if b == 0:
+        raise ValueError("Division by zero is not allowed.")
+
+    return a / b
+
+
 camel_github_toolkit = GithubToolkit(repo_name='camel-ai/camel')
+
+added_tools = manager.register_tool([div, camel_github_toolkit])
+pretty_print_list("Added Tools", added_tools)
+pretty_print_list("Available Toolkits for now", manager.list_toolkits())
+"""
+===============================================================================
+========================================
+Added Tools:
+----------------------------------------
+  1. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b5390>
+  2. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b55a0>
+  3. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b5c30>
+  4. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b6590>
+  5. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b63e0>
+========================================
+========================================
+Available Toolkits for now:
+----------------------------------------
+  1. get_dalle_img
+  2. add
+  3. mul
+  4. sub
+  5. query_wolfram_alpha
+  6. search_duckduckgo
+  7. search_google
+  8. search_wiki
+  9. get_weather_data
+  10. div
+  11. GithubToolkit_create_pull_request
+  12. GithubToolkit_retrieve_issue
+  13. GithubToolkit_retrieve_issue_list
+  14. GithubToolkit_retrieve_pull_requests
+========================================
+===============================================================================
+"""
+
 crab_github_toolkit = GithubToolkit(repo_name='ZackYule/crab')
 
 manager.add_toolkit_from_instance(
-    camel_github_toolkit=camel_github_toolkit,
     crab_github_toolkit=crab_github_toolkit,
 )
 
@@ -144,10 +199,10 @@ pretty_print_list("Matching Tools for GitHub", matching_tools_for_github)
 ========================================
 Matching Tools for GitHub:
 ----------------------------------------
-  1. camel_github_toolkit_create_pull_request
-  2. camel_github_toolkit_retrieve_issue
-  3. camel_github_toolkit_retrieve_issue_list
-  4. camel_github_toolkit_retrieve_pull_requests
+  1. GithubToolkit_create_pull_request
+  2. GithubToolkit_retrieve_issue
+  3. GithubToolkit_retrieve_issue_list
+  4. GithubToolkit_retrieve_pull_requests
   5. crab_github_toolkit_create_pull_request
   6. crab_github_toolkit_retrieve_issue
   7. crab_github_toolkit_retrieve_issue_list
