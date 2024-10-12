@@ -320,9 +320,7 @@ class ChatAgent(BaseAgent):
             MemoryRecord(message=message, role_at_backend=role)
         )
 
-    def set_output_language(
-        self, output_language: str
-    ) -> Optional[BaseMessage]:
+    def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
         updates the output language for the system message. The output
         language determines the language in which the output text should be
@@ -332,7 +330,7 @@ class ChatAgent(BaseAgent):
             output_language (str): The desired output language.
 
         Returns:
-            Optional[BaseMessage]: The updated system message object.
+            BaseMessage: The updated system message object.
         """
         self.output_language = output_language
         if self.orig_sys_message is not None:
@@ -345,7 +343,11 @@ class ChatAgent(BaseAgent):
             )
             return self.system_message
         else:
-            return None
+            self.system_message = BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content=(f"you must output text in {output_language}."),
+            )
+            return self.system_message
 
     def get_info(
         self,
