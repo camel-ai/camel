@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.1a"
+version = "0.2.3a1"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -50,7 +50,7 @@ pillow = "^10.2.0"
 litellm = { version = "^1.38.1", optional = true }
 google-generativeai = { version = "^0.6.0", optional = true }
 mistralai = { version = "^1.0.0", optional = true }
-reka-api = { version = "^3.0.8", optional = true } 
+reka-api = { version = "^3.0.8", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -317,11 +317,11 @@ quote-style = "preserve"
 
 [tool.ruff.lint]
 extend-select = [
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "PGH",  # pygrep-hooks
-    "RUF",  # ruff
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "PGH", # pygrep-hooks
+    "RUF", # ruff
     "E",
 ]
 
