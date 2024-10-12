@@ -156,7 +156,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
         self.orig_sys_message: Optional[BaseMessage] = system_message
-        self.system_message: Optional[BaseMessage] = system_message
+        self._system_message: Optional[BaseMessage] = system_message
         self.role_name: str = (
             getattr(system_message, 'role_name', None) or "assistant"
         )
@@ -284,7 +284,7 @@ class ChatAgent(BaseAgent):
             Optional[BaseMessage]: The system message of this agent if set,
                 else :obj:`None`.
         """
-        return self.system_message
+        return self._system_message
 
     @system_message.setter
     def system_message(self, message: BaseMessage):
@@ -294,7 +294,7 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): The message to be set as the
                 new system message of this agent.
         """
-        self.system_message = message
+        self._system_message = message
 
     def is_tools_added(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent.
@@ -338,16 +338,16 @@ class ChatAgent(BaseAgent):
                 "\nRegardless of the input language, "
                 f"you must output text in {output_language}."
             )
-            self.system_message = self.orig_sys_message.create_new_instance(
+            self._system_message = self.orig_sys_message.create_new_instance(
                 content
             )
-            return self.system_message
+            return self._system_message
         else:
-            self.system_message = BaseMessage.make_assistant_message(
+            self._system_message = BaseMessage.make_assistant_message(
                 role_name="Assistant",
                 content=(f"you must output text in {output_language}."),
             )
-            return self.system_message
+            return self._system_message
 
     def get_info(
         self,
