@@ -93,10 +93,10 @@ class FunctionCallingMessage(BaseMessage):
             OpenAIMessage: The converted :obj:`OpenAIMessage` object
                 with its role being "function".
         """
-        if (not self.func_name) or (not self.result):
+        if not self.func_name:
             raise ValueError(
                 "Invalid request for converting into function message"
-                " due to missing function name or results."
+                " due to missing function name."
             )
 
         result_content = {"result": {str(self.result)}}
