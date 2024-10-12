@@ -45,8 +45,12 @@ class VectorDBQuery(BaseModel):
             vector.
         top_k (int, optional): The number of top similar vectors to retrieve
             from the database. (default: :obj:`1`)
+        filter (Optional[Dict[str, Any]], optional): A filter for narrowing down
+            the search based on specific conditions. (default: :obj:`None`)
     """
 
+    filter: Optional[Dict[str, Any]] = None
+    """A filter for narrowing down the search based on specific conditions."""
     query_vector: List[float]
     """The numerical representation of the query vector."""
     top_k: int = 1
@@ -61,6 +65,9 @@ class VectorDBQuery(BaseModel):
                 query vector.
             top_k (int, optional): The number of top similar vectors to
                 retrieve from the database. (default: :obj:`1`)
+            filter (Optional[Dict[str, Any]], optional): A filter for narrowing
+                down the search based on specific conditions. (default:
+                :obj:`None`)
         """
         super().__init__(query_vector=query_vector, top_k=top_k, **kwargs)
 

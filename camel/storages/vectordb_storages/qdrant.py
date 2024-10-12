@@ -457,7 +457,7 @@ class QdrantStorage(BaseVectorStorage):
             - If `ids` is not provided but `payload_filter` is, then points matching the
                 `payload_filter` will be deleted.
         """
-        from qdrant_client.http.models import PointIdsList, UpdateStatus, Filter, FieldCondition, MatchValue
+        from qdrant_client.http.models import PointIdsList, UpdateStatus, Filter
 
         if not ids and not payload_filter:
             raise ValueError("You must provide either `ids` or `payload_filter` to delete points.")
@@ -476,13 +476,11 @@ class QdrantStorage(BaseVectorStorage):
             return
 
         if payload_filter:
-            filter_conditions = []
-            for key, value in payload_filter.items():
-                filter_conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+            query_filter = Filter(**payload_filter)
 
             op_info = self._manager.client.delete(
                 collection_name=self.collection_name,
-                points_selector={"filter": Filter(must=filter_conditions)},
+                points_selector={"filter": query_filter},
                 **kwargs
             )
 
@@ -524,10 +522,15 @@ class QdrantStorage(BaseVectorStorage):
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector.
         """
-        # TODO: filter
+        # only support rest Filter for now
+        from qdrant_client.http.models import Filter
+
+        query_filter = Filter(**query.filter) if query.filter else None
+
         search_result = self._manager.client.search(
             collection_name=self.collection_name,
             query_vector=query.query_vector,
+            query_filter=query_filter,
             with_payload=True,
             with_vectors=True,
             limit=query.top_k,
