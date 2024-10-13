@@ -115,7 +115,8 @@ class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
     Args:
-        system_message (BaseMessage): The system message for the chat agent.
+        system_message (BaseMessage, optional): The system message for the
+            chat agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
@@ -144,7 +145,7 @@ class ChatAgent(BaseAgent):
 
     def __init__(
         self,
-        system_message: BaseMessage,
+        system_message: Optional[BaseMessage] = None,
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -154,10 +155,14 @@ class ChatAgent(BaseAgent):
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
-        self.orig_sys_message: BaseMessage = system_message
-        self.system_message = system_message
-        self.role_name: str = system_message.role_name
-        self.role_type: RoleType = system_message.role_type
+        self.orig_sys_message: Optional[BaseMessage] = system_message
+        self._system_message: Optional[BaseMessage] = system_message
+        self.role_name: str = (
+            getattr(system_message, 'role_name', None) or "assistant"
+        )
+        self.role_type: RoleType = (
+            getattr(system_message, 'role_type', None) or RoleType.ASSISTANT
+        )
         self.model_backend: BaseModelBackend = (
             model
             if model is not None
@@ -272,11 +277,12 @@ class ChatAgent(BaseAgent):
             terminator.reset()
 
     @property
-    def system_message(self) -> BaseMessage:
+    def system_message(self) -> Optional[BaseMessage]:
         r"""The getter method for the property :obj:`system_message`.
 
         Returns:
-            BaseMessage: The system message of this agent.
+            Optional[BaseMessage]: The system message of this agent if set,
+                else :obj:`None`.
         """
         return self._system_message
 
@@ -327,12 +333,22 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = self.orig_sys_message.content + (
+        language_prompt = (
             "\nRegardless of the input language, "
             f"you must output text in {output_language}."
         )
-        self.system_message = self.system_message.create_new_instance(content)
-        return self.system_message
+        if self.orig_sys_message is not None:
+            content = self.orig_sys_message.content + language_prompt
+            self._system_message = self.orig_sys_message.create_new_instance(
+                content
+            )
+            return self._system_message
+        else:
+            self._system_message = BaseMessage.make_assistant_message(
+                role_name="Assistant",
+                content=language_prompt,
+            )
+            return self._system_message
 
     def get_info(
         self,
@@ -377,12 +393,15 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        system_record = MemoryRecord(
-            message=self.system_message,
-            role_at_backend=OpenAIBackendRole.SYSTEM,
-        )
-        self.memory.clear()
-        self.memory.write_record(system_record)
+        if self.orig_sys_message is not None:
+            system_record = MemoryRecord(
+                message=self.orig_sys_message,
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+            )
+            self.memory.clear()
+            self.memory.write_record(system_record)
+        else:
+            self.memory.clear()
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
