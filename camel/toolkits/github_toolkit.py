@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from camel.utils import dependencies_required
 
 from .base import BaseToolkit
-from .openai_function import OpenAIFunction
+from .function_tool import FunctionTool
 
 
 class GithubIssue(BaseModel):
@@ -131,19 +131,19 @@ class GithubToolkit(BaseToolkit):
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.retrieve_issue_list),
-            OpenAIFunction(self.retrieve_issue),
-            OpenAIFunction(self.create_pull_request),
-            OpenAIFunction(self.retrieve_pull_requests),
+            FunctionTool(self.retrieve_issue_list),
+            FunctionTool(self.retrieve_issue),
+            FunctionTool(self.create_pull_request),
+            FunctionTool(self.retrieve_pull_requests),
         ]
 
     def get_github_access_token(self) -> str:

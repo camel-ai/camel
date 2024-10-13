@@ -33,8 +33,8 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
+    FunctionTool,
     MathToolkit,
-    OpenAIFunction,
     SearchToolkit,
 )
 from camel.types import (
@@ -606,7 +606,7 @@ async def test_tool_calling_async():
     agent = ChatAgent(
         system_message=system_message,
         model=model,
-        tools=[OpenAIFunction(async_sleep)],
+        tools=[FunctionTool(async_sleep)],
     )
 
     assert len(agent.func_dict) == 1
