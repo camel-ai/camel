@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
     from slack_sdk import WebClient
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 
 logger = logging.getLogger(__name__)
 
@@ -294,20 +294,20 @@ class SlackToolkit(BaseToolkit):
         except SlackApiError as e:
             return f"Error creating conversation: {e.response['error']}"
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.create_slack_channel),
-            OpenAIFunction(self.join_slack_channel),
-            OpenAIFunction(self.leave_slack_channel),
-            OpenAIFunction(self.get_slack_channel_information),
-            OpenAIFunction(self.get_slack_channel_message),
-            OpenAIFunction(self.send_slack_message),
-            OpenAIFunction(self.delete_slack_message),
+            FunctionTool(self.create_slack_channel),
+            FunctionTool(self.join_slack_channel),
+            FunctionTool(self.leave_slack_channel),
+            FunctionTool(self.get_slack_channel_information),
+            FunctionTool(self.get_slack_channel_message),
+            FunctionTool(self.send_slack_message),
+            FunctionTool(self.delete_slack_message),
         ]

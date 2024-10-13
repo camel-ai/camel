@@ -15,7 +15,7 @@ import os
 from typing import Any, Dict, List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import export_to_toolkit
 
 
@@ -305,10 +305,10 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
 
 
 SEARCH_FUNCS = [
-    OpenAIFunction(search_wiki),
-    OpenAIFunction(search_duckduckgo),
-    OpenAIFunction(search_google),
-    OpenAIFunction(query_wolfram_alpha),
+    FunctionTool(search_wiki),
+    FunctionTool(search_duckduckgo),
+    FunctionTool(search_google),
+    FunctionTool(query_wolfram_alpha),
 ]
 
 
@@ -319,12 +319,12 @@ class SearchToolkit(BaseToolkit):
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha.
     """
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return SEARCH_FUNCS

@@ -19,7 +19,7 @@ from typing import List
 
 import requests
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import handle_http_error
 from camel.utils.commons import export_to_toolkit
@@ -198,18 +198,18 @@ class LinkedInToolkit(BaseToolkit):
 
         return profile_report
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.create_post),
-            OpenAIFunction(self.delete_post),
-            OpenAIFunction(self.get_profile),
+            FunctionTool(self.create_post),
+            FunctionTool(self.delete_post),
+            FunctionTool(self.get_profile),
         ]
 
     def _get_access_token(self) -> str:

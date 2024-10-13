@@ -15,7 +15,7 @@
 from typing import List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 from camel.utils.commons import export_to_toolkit
 
 
@@ -62,9 +62,9 @@ def mul(a: int, b: int) -> int:
 
 
 MATH_FUNCS = [
-    OpenAIFunction(add),
-    OpenAIFunction(sub),
-    OpenAIFunction(mul),
+    FunctionTool(add),
+    FunctionTool(sub),
+    FunctionTool(mul),
 ]
 
 
@@ -74,12 +74,12 @@ class MathToolkit(BaseToolkit):
     subtraction, and multiplication.
     """
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return MATH_FUNCS

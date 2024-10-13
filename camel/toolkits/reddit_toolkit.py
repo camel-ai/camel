@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Union
 
 from requests.exceptions import RequestException
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils.commons import export_to_toolkit
 
@@ -223,16 +223,16 @@ class RedditToolkit(BaseToolkit):
             data = self.perform_sentiment_analysis(data)
         return data
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects for the
+            List[FunctionTool]: A list of FunctionTool objects for the
                 toolkit methods.
         """
         return [
-            OpenAIFunction(self.collect_top_posts),
-            OpenAIFunction(self.perform_sentiment_analysis),
-            OpenAIFunction(self.track_keyword_discussions),
+            FunctionTool(self.collect_top_posts),
+            FunctionTool(self.perform_sentiment_analysis),
+            FunctionTool(self.track_keyword_discussions),
         ]

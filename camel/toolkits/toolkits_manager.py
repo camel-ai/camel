@@ -17,7 +17,7 @@ import pkgutil
 from typing import Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 
 
 class ToolManager:
@@ -27,7 +27,7 @@ class ToolManager:
 
     The ToolManager loads all callable toolkits from the `camel.toolkits`
     package and provides methods to list, retrieve, and search them as
-    OpenAIFunction objects.
+    FunctionTool objects.
     """
 
     _instance = None
@@ -99,7 +99,7 @@ class ToolManager:
     def register_tool(
         self,
         toolkit_obj: Union[Callable, object, List[Union[Callable, object]]],
-    ) -> List[OpenAIFunction] | str:
+    ) -> List[FunctionTool] | str:
         r"""
         Registers a toolkit function or instance and adds it to the toolkits
         list. If the input is a list, it processes each element in the list.
@@ -110,7 +110,7 @@ class ToolManager:
                 registered.
 
         Returns:
-            Union[List[OpenAIFunction], str]: Returns a list of OpenAIFunction
+            Union[List[FunctionTool], str]: Returns a list of FunctionTool
                 instances if the registration is successful. Otherwise,
                 returns a message indicating the failure reason.
         """
@@ -134,7 +134,7 @@ class ToolManager:
 
     def _register_single_tool(
         self, toolkit_obj: Union[Callable, object]
-    ) -> tuple[List[OpenAIFunction], str]:
+    ) -> tuple[List[FunctionTool], str]:
         r"""
         Helper function to register a single toolkit function or instance.
 
@@ -143,14 +143,14 @@ class ToolManager:
                 instance to be processed.
 
         Returns:
-            Tuple: A list of OpenAIFunction instances and a result message.
+            Tuple: A list of FunctionTool instances and a result message.
         """
         res_openai_functions = []
         res_info = ""
         if callable(toolkit_obj):
             res = self.add_toolkit_from_function(toolkit_obj)
             if "successfully" in res:
-                res_openai_functions.append(OpenAIFunction(toolkit_obj))
+                res_openai_functions.append(FunctionTool(toolkit_obj))
             res_info += res
         else:
             res = self.add_toolkit_from_instance(
@@ -246,38 +246,38 @@ class ToolManager:
 
         return result
 
-    def get_toolkit(self, name: str) -> OpenAIFunction | str:
+    def get_toolkit(self, name: str) -> FunctionTool | str:
         r"""
-        Retrieves the specified toolkit as an OpenAIFunction object.
+        Retrieves the specified toolkit as an FunctionTool object.
 
         Args:
             name (str): The name of the toolkit function to retrieve.
 
         Returns:
-            OpenAIFunction: The toolkit wrapped as an OpenAIFunction.
+            FunctionTool: The toolkit wrapped as an FunctionTool.
 
         Raises:
             ValueError: If the specified toolkit is not found.
         """
         toolkit = self.toolkits.get(name)
         if toolkit:
-            return OpenAIFunction(toolkit)
+            return FunctionTool(toolkit)
         return f"Toolkit '{name}' not found."
 
-    def get_toolkits(self, names: list[str]) -> list[OpenAIFunction] | str:
+    def get_toolkits(self, names: list[str]) -> list[FunctionTool] | str:
         r"""
-        Retrieves the specified toolkit as an OpenAIFunction object.
+        Retrieves the specified toolkit as an FunctionTool object.
 
         Args:
             name (str): The name of the toolkit function to retrieve.
 
         Returns:
-            OpenAIFunctions (list): The toolkits wrapped as an OpenAIFunction.
+            FunctionTools (list): The toolkits wrapped as an FunctionTool.
 
         Raises:
             ValueError: If the specified toolkit is not found.
         """
-        toolkits: list[OpenAIFunction] = []
+        toolkits: list[FunctionTool] = []
         for name in names:
             current_toolkit = self.toolkits.get(name)
             if current_toolkit:
@@ -327,7 +327,7 @@ class ToolManager:
 
         matching_toolkits = []
         for name, func in self.toolkits.items():
-            openai_func = OpenAIFunction(func)
+            openai_func = FunctionTool(func)
             description = openai_func.get_function_description()
             if algorithm(keyword, description) or algorithm(keyword, name):
                 matching_toolkits.append(name)

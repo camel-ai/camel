@@ -90,7 +90,7 @@ def test_google_api():
             assert result.status_code == 200
 
 
-search_duckduckgo = SearchToolkit().search_duckduckgo
+search_duckduckgo = SearchToolkit().get_tools()[1]
 
 
 def test_search_duckduckgo_text():
