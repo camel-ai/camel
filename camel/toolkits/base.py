@@ -16,9 +16,9 @@ from typing import List
 
 from camel.utils import AgentOpsMeta
 
-from .openai_function import OpenAIFunction
+from .function_tool import FunctionTool
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
-    def get_tools(self) -> List[OpenAIFunction]:
+    def get_tools(self) -> List[FunctionTool]:
         raise NotImplementedError("Subclasses must implement this method.")
