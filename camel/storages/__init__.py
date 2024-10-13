@@ -26,7 +26,7 @@ from .vectordb_storages.base import (
     VectorRecord,
 )
 from .vectordb_storages.milvus import MilvusStorage
-from .vectordb_storages.qdrant import QdrantStorage
+from .vectordb_storages.qdrant import QdrantManager, QdrantStorage
 
 __all__ = [
     'BaseKeyValueStorage',
@@ -37,6 +37,7 @@ __all__ = [
     'BaseVectorStorage',
     'VectorDBQuery',
     'VectorDBQueryResult',
+    'QdrantManager',
     'QdrantStorage',
     'MilvusStorage',
     'BaseGraphStorage',

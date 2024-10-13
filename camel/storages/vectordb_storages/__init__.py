@@ -20,12 +20,13 @@ from .base import (
     VectorRecord,
 )
 from .milvus import MilvusStorage
-from .qdrant import QdrantStorage
+from .qdrant import QdrantManager, QdrantStorage
 
 __all__ = [
     'BaseVectorStorage',
     'VectorDBQuery',
     'VectorDBQueryResult',
+    'QdrantManager',
     'QdrantStorage',
     'MilvusStorage',
     'VectorRecord',
