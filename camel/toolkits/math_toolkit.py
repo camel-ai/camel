@@ -15,7 +15,7 @@
 from typing import List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import FunctionTool
+from camel.toolkits.function_tool import FunctionTool
 
 
 class MathToolkit(BaseToolkit):

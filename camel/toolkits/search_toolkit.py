@@ -15,7 +15,7 @@ import os
 from typing import Any, Dict, List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import FunctionTool
+from camel.toolkits.function_tool import FunctionTool
 
 
 class SearchToolkit(BaseToolkit):

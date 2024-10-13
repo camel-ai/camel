@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from camel.utils import dependencies_required
 
 from .base import BaseToolkit
-from .openai_function import FunctionTool
+from .function_tool import FunctionTool
 
 
 class GithubIssue(BaseModel):

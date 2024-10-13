@@ -16,7 +16,7 @@ from typing import List
 
 from camel.utils import AgentOpsMeta
 
-from .openai_function import FunctionTool
+from .function_tool import FunctionTool
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
