@@ -15,7 +15,7 @@ import os
 from typing import Any, Dict, List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 
 
 class SearchToolkit(BaseToolkit):
@@ -307,20 +307,20 @@ class SearchToolkit(BaseToolkit):
 
         return result.rstrip()  # Remove trailing whitespace
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.search_wiki),
-            OpenAIFunction(self.search_google),
-            OpenAIFunction(self.search_duckduckgo),
-            OpenAIFunction(self.query_wolfram_alpha),
+            FunctionTool(self.search_wiki),
+            FunctionTool(self.search_google),
+            FunctionTool(self.search_duckduckgo),
+            FunctionTool(self.query_wolfram_alpha),
         ]
 
 
-SEARCH_FUNCS: List[OpenAIFunction] = SearchToolkit().get_tools()
+SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()
