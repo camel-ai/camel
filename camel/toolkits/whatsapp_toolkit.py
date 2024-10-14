@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
@@ -170,7 +170,7 @@ class WhatsAppToolkit(BaseToolkit):
         except Exception as e:
             return f"Failed to retrieve business profile: {e!s}"
 
-    def get_tools(self) -> List[OpenAIFunction]:
+    def get_tools(self) -> List[FunctionTool]:
         """Returns a list of OpenAIFunction objects representing the
         functions in the toolkit.
 
@@ -179,7 +179,7 @@ class WhatsAppToolkit(BaseToolkit):
                 toolkit methods.
         """
         return [
-            OpenAIFunction(self.send_message),
-            OpenAIFunction(self.get_message_templates),
-            OpenAIFunction(self.get_business_profile),
+            FunctionTool(self.send_message),
+            FunctionTool(self.get_message_templates),
+            FunctionTool(self.get_business_profile),
         ]
