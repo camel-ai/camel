@@ -19,7 +19,7 @@ from typing import List, Optional, Tuple, Union
 
 import requests
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 TWEET_TEXT_LIMIT = 280
@@ -365,18 +365,18 @@ class TwitterToolkit(BaseToolkit):
 
         return user_report
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.create_tweet),
-            OpenAIFunction(self.delete_tweet),
-            OpenAIFunction(self.get_my_user_profile),
+            FunctionTool(self.create_tweet),
+            FunctionTool(self.delete_tweet),
+            FunctionTool(self.get_my_user_profile),
         ]
 
     def _get_twitter_api_key(self) -> Tuple[str, str]:
