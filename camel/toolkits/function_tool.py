@@ -162,11 +162,13 @@ class FunctionTool:
         self,
         func: Callable,
         openai_tool_schema: Optional[Dict[str, Any]] = None,
+        alias_name: Optional[str] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
+        self.alias_name = alias_name
 
     @staticmethod
     def validate_openai_tool_schema(
@@ -388,6 +390,12 @@ class FunctionTool:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
+
+    def __str__(self) -> str:
+        return self.alias_name if self.alias_name else self.func.__name__
+
+    def __repr__(self) -> str:
+        return self.alias_name if self.alias_name else self.func.__name__
 
 
 warnings.simplefilter('always', DeprecationWarning)

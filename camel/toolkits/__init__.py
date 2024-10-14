@@ -34,7 +34,7 @@ from .reddit_toolkit import RedditToolkit
 
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
-from .toolkits_manager import ToolManager
+from .toolkits_manager import ToolkitManager
 
 __all__ = [
     'FunctionTool',
@@ -59,5 +59,5 @@ __all__ = [
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',
     'DALLE_FUNCS',
-    'ToolManager',
+    'ToolkitManager',
 ]

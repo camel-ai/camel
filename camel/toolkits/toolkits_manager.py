@@ -20,12 +20,12 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 
 
-class ToolManager:
+class ToolkitManager:
     r"""
     A class representing a manager for dynamically loading and accessing
     toolkits.
 
-    The ToolManager loads all callable toolkits from the `camel.toolkits`
+    The ToolkitManager loads all callable toolkits from the `camel.toolkits`
     package and provides methods to list, retrieve, and search them as
     FunctionTool objects.
     """
@@ -34,14 +34,14 @@ class ToolManager:
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = super(ToolManager, cls).__new__(
+            cls._instance = super(ToolkitManager, cls).__new__(
                 cls, *args, **kwargs
             )
         return cls._instance
 
     def __init__(self):
         r"""
-        Initializes the ToolManager and loads all available toolkits.
+        Initializes the ToolkitManager and loads all available toolkits.
         """
         if not hasattr(self, '_initialized'):
             self._initialized = True
@@ -261,7 +261,7 @@ class ToolManager:
         """
         toolkit = self.toolkits.get(name)
         if toolkit:
-            return FunctionTool(toolkit)
+            return FunctionTool(func=toolkit, alias_name=name)
         return f"Toolkit '{name}' not found."
 
     def get_toolkits(self, names: list[str]) -> list[FunctionTool] | str:
@@ -273,15 +273,14 @@ class ToolManager:
 
         Returns:
             FunctionTools (list): The toolkits wrapped as an FunctionTool.
-
-        Raises:
-            ValueError: If the specified toolkit is not found.
         """
         toolkits: list[FunctionTool] = []
         for name in names:
             current_toolkit = self.toolkits.get(name)
             if current_toolkit:
-                toolkits.append(current_toolkit)
+                toolkits.append(
+                    FunctionTool(func=current_toolkit, alias_name=name)
+                )
         if len(toolkits) > 0:
             return toolkits
         return "Toolkits are not found."
@@ -298,7 +297,7 @@ class ToolManager:
 
         Returns:
             bool: True if a match is found based on similarity, False
-            otherwise.
+                otherwise.
         """
         return keyword.lower() in description.lower()
 
@@ -306,30 +305,29 @@ class ToolManager:
         self,
         keyword: str,
         algorithm: Optional[Callable[[str, str], bool]] = None,
-    ) -> List[str]:
+    ) -> List[FunctionTool] | str:
         r"""
         Searches for toolkits based on a keyword in their descriptions using
         the provided search algorithm.
 
         Args:
             keyword (str): The keyword to search for in toolkit descriptions.
-            algorithm (Callable[[str, str], bool], optional): A custom search
-            algorithm function
-                that accepts the keyword and description and returns a boolean.
-                Defaults to fuzzy matching.
+                algorithm (Callable[[str, str], bool], optional): A custom
+                search algorithm function that accepts the keyword and
+                description and returns a boolean. Defaults to fuzzy matching.
 
         Returns:
-            List[str]: A list of toolkit names whose descriptions match the
-            keyword.
+            List[FunctionTool] | str: A list of toolkit names whose
+                descriptions match the keyword.
         """
         if algorithm is None:
             algorithm = self._default_search_algorithm
 
-        matching_toolkits = []
+        matching_toolkits_names = []
         for name, func in self.toolkits.items():
             openai_func = FunctionTool(func)
             description = openai_func.get_function_description()
             if algorithm(keyword, description) or algorithm(keyword, name):
-                matching_toolkits.append(name)
+                matching_toolkits_names.append(name)
 
-        return matching_toolkits
+        return self.get_toolkits(matching_toolkits_names)

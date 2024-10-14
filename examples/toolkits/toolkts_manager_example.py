@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.toolkits import ToolManager
+from camel.toolkits import ToolkitManager
+from camel.toolkits.function_tool import FunctionTool
 from camel.toolkits.github_toolkit import GithubToolkit
-from camel.toolkits.openai_function import OpenAIFunction
 
 
 def pretty_print_list(title, items):
@@ -26,7 +26,7 @@ def pretty_print_list(title, items):
     print('=' * 40)
 
 
-manager = ToolManager()
+manager = ToolkitManager()
 
 toolkits = manager.list_toolkits()
 toolkit_classes = manager.list_toolkit_classes()
@@ -99,7 +99,7 @@ Custom Algorithm Matching Toolkit:
 """
 
 tool = manager.get_toolkit('get_weather_data')
-if isinstance(tool, OpenAIFunction):
+if isinstance(tool, FunctionTool):
     print("\nFunction Description:")
     print('-' * 40)
     print(tool.get_function_description())
@@ -151,11 +151,11 @@ pretty_print_list("Available Toolkits for now", manager.list_toolkits())
 ========================================
 Added Tools:
 ----------------------------------------
-  1. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b5390>
-  2. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b55a0>
-  3. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b5c30>
-  4. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b6590>
-  5. <camel.toolkits.openai_function.OpenAIFunction object at 0x1077b63e0>
+  1. <camel.toolkits.openai_function.FunctionTool object at 0x1077b5390>
+  2. <camel.toolkits.openai_function.FunctionTool object at 0x1077b55a0>
+  3. <camel.toolkits.openai_function.FunctionTool object at 0x1077b5c30>
+  4. <camel.toolkits.openai_function.FunctionTool object at 0x1077b6590>
+  5. <camel.toolkits.openai_function.FunctionTool object at 0x1077b63e0>
 ========================================
 ========================================
 Available Toolkits for now:
@@ -192,43 +192,14 @@ pretty_print_list("Matching Tools for GitHub", matching_tools_for_github)
 ========================================
 Matching Tools for GitHub:
 ----------------------------------------
-  1. GithubToolkit_create_pull_request
-  2. GithubToolkit_retrieve_issue
-  3. GithubToolkit_retrieve_issue_list
-  4. GithubToolkit_retrieve_pull_requests
-  5. crab_github_toolkit_create_pull_request
-  6. crab_github_toolkit_retrieve_issue
-  7. crab_github_toolkit_retrieve_issue_list
-  8. crab_github_toolkit_retrieve_pull_requests
-========================================
-===============================================================================
-"""
-
-if isinstance(matching_tools_for_github, list):
-    tools_instances = manager.get_toolkits(names=matching_tools_for_github)
-    pretty_print_list("Tools Instances", tools_instances)
-
-"""
-===============================================================================
-========================================
-Tools Instances:
-----------------------------------------
-  1. <bound method GithubToolkit.create_pull_request of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x104e06aa0>>
-  2. <bound method GithubToolkit.retrieve_issue of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x104e06aa0>>
-  3. <bound method GithubToolkit.retrieve_issue_list of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x104e06aa0>>
-  4. <bound method GithubToolkit.retrieve_pull_requests of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x104e06aa0>>
-  5. <bound method GithubToolkit.create_pull_request of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x105286560>>
-  6. <bound method GithubToolkit.retrieve_issue of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x105286560>>
-  7. <bound method GithubToolkit.retrieve_issue_list of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x105286560>>
-  8. <bound method GithubToolkit.retrieve_pull_requests of <camel.toolkits.
-  github_toolkit.GithubToolkit object at 0x105286560>>
+  1. create_pull_request
+  2. retrieve_issue
+  3. retrieve_issue_list
+  4. retrieve_pull_requests
+  5. create_pull_request
+  6. retrieve_issue
+  7. retrieve_issue_list
+  8. retrieve_pull_requests
 ========================================
 ===============================================================================
 """
