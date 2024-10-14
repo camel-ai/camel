@@ -20,6 +20,7 @@ from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .nemotron_model import NemotronModel
+from .nexa_model import NexaModel
 from .ollama_model import OllamaModel
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
@@ -53,4 +54,5 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'NexaModel',
 ]

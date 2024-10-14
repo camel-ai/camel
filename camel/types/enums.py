@@ -482,6 +482,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
     SAMBA = "samba-nova"
+    NEXA = "nexa"
 
     @property
     def is_openai(self) -> bool:
@@ -558,6 +559,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_nexa(self) -> bool:
+        """Returns whether this platform is Nexa."""
+        return self is ModelPlatformType.NEXA
 
 
 class AudioModelType(Enum):

@@ -20,6 +20,7 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.nexa_model import NexaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_compatibility_model import OpenAICompatibilityModel
@@ -98,6 +99,11 @@ class ModelFactory:
                 model_class = RekaModel
             elif model_type == ModelType.STUB:
                 model_class = StubModel
+            elif model_platform.is_nexa:
+                model_class = NexaModel
+                return model_class(
+                    model_type, model_config_dict, url, api_key, token_counter
+                )
             else:
                 raise ValueError(
                     f"Unknown pair of model platform `{model_platform}` "
