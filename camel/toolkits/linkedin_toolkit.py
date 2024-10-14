@@ -15,11 +15,9 @@
 import json
 import os
 from http import HTTPStatus
-from typing import List
 
 import requests
 
-from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import handle_http_error
 from camel.utils.commons import export_to_toolkit

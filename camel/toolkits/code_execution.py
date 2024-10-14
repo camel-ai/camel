@@ -11,10 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Literal
+from typing import Literal
 
 from camel.interpreters import InternalPythonInterpreter
-from camel.toolkits import FunctionTool
 from camel.utils.commons import export_to_toolkit
 
 from .base import BaseToolkit

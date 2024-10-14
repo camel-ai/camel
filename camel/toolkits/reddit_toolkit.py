@@ -18,7 +18,6 @@ from typing import Any, Dict, List, Union
 
 from requests.exceptions import RequestException
 
-from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils.commons import export_to_toolkit
 

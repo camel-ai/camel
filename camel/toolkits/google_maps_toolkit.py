@@ -16,7 +16,6 @@ from functools import wraps
 from typing import Any, Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
 from camel.utils.commons import export_to_toolkit
 

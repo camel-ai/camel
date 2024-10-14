@@ -19,7 +19,6 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
 from camel.utils.commons import export_to_toolkit
 

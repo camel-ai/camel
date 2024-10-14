@@ -14,7 +14,6 @@
 from typing import List, Optional, Union
 
 from camel.retrievers import AutoRetriever
-from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.types import StorageType
 from camel.utils import Constants

@@ -19,7 +19,6 @@ from typing import List, Optional, Tuple, Union
 
 import requests
 
-from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils.commons import export_to_toolkit
 
