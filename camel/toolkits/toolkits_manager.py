@@ -63,12 +63,20 @@ class ToolkitManager:
         for _, module_name, _ in pkgutil.iter_modules(package.__path__):
             module = importlib.import_module(f'camel.toolkits.{module_name}')
 
+            base_toolkit_class_name = None
+            for _, cls in inspect.getmembers(module, inspect.isclass):
+                if issubclass(cls, BaseToolkit) and cls is not BaseToolkit:
+                    base_toolkit_class_name = cls.__name__
+                    break
+
+            prefix = base_toolkit_class_name if base_toolkit_class_name else ''
+
             for name, func in inspect.getmembers(module, inspect.isfunction):
                 if (
                     hasattr(func, '_is_exported')
                     and func.__module__ == module.__name__
                 ):
-                    self.toolkits[name] = func
+                    self.toolkits[f"{prefix}.{name}"] = func
 
     def _load_toolkit_class_and_methods(self):
         r"""

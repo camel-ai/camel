@@ -153,9 +153,6 @@ def get_weather_data(
         return error_message
 
 
-WEATHER_FUNCS = [FunctionTool(get_weather_data)]
-
-
 class WeatherToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with weather data.
 
@@ -172,3 +169,8 @@ class WeatherToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return WEATHER_FUNCS
+
+
+WEATHER_FUNCS = [
+    FunctionTool(func=get_weather_data, name_prefix=WeatherToolkit.__name__)
+]

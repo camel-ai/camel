@@ -304,14 +304,6 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
     return result.rstrip()  # Remove trailing whitespace
 
 
-SEARCH_FUNCS = [
-    FunctionTool(search_wiki),
-    FunctionTool(search_duckduckgo),
-    FunctionTool(search_google),
-    FunctionTool(query_wolfram_alpha),
-]
-
-
 class SearchToolkit(BaseToolkit):
     r"""A class representing a toolkit for web search.
 
@@ -328,3 +320,14 @@ class SearchToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return SEARCH_FUNCS
+
+
+SEARCH_FUNCS = [
+    FunctionTool(func=func, name_prefix=SearchToolkit.__name__)
+    for func in (
+        search_wiki,
+        search_duckduckgo,
+        search_google,
+        query_wolfram_alpha,
+    )
+]

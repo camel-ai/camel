@@ -61,13 +61,6 @@ def mul(a: int, b: int) -> int:
     return a * b
 
 
-MATH_FUNCS = [
-    FunctionTool(add),
-    FunctionTool(sub),
-    FunctionTool(mul),
-]
-
-
 class MathToolkit(BaseToolkit):
     r"""A class representing a toolkit for mathematical operations. This
     class provides methods for basic mathematical operations such as addition,
@@ -83,3 +76,9 @@ class MathToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return MATH_FUNCS
+
+
+MATH_FUNCS = [
+    FunctionTool(func=math_func, name_prefix=MathToolkit.__name__)
+    for math_func in (add, sub, mul)
+]

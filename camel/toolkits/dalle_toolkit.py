@@ -128,9 +128,6 @@ def get_dalle_img(prompt: str, image_dir: str = "img") -> str:
     return image_path
 
 
-DALLE_FUNCS = [FunctionTool(get_dalle_img)]
-
-
 class DalleToolkit(BaseToolkit):
     r"""A class representing a toolkit for image generation using OpenAI's.
     This class provides methods handle image generation using OpenAI's DALL-E.
@@ -145,3 +142,8 @@ class DalleToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return DALLE_FUNCS
+
+
+DALLE_FUNCS = [
+    FunctionTool(func=get_dalle_img, name_prefix=DalleToolkit.__name__)
+]

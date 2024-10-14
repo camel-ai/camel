@@ -38,15 +38,15 @@ pretty_print_list("Class Toolkits", toolkit_classes)
 ========================================
 Function Toolkits:
 ----------------------------------------
-  1. get_dalle_img
-  2. add
-  3. mul
-  4. sub
-  5. query_wolfram_alpha
-  6. search_duckduckgo
-  7. search_google
-  8. search_wiki
-  9. get_weather_data
+  1. DalleToolkit.get_dalle_img
+  2. MathToolkit.add
+  3. MathToolkit.mul
+  4. MathToolkit.sub
+  5. SearchToolkit.query_wolfram_alpha
+  6. SearchToolkit.search_duckduckgo
+  7. SearchToolkit.search_google
+  8. SearchToolkit.search_wiki
+  9. WeatherToolkit.get_weather_data
 ========================================
 
 ========================================
@@ -87,18 +87,18 @@ pretty_print_list(
 ========================================
 Matching Toolkit:
 ----------------------------------------
-  1. get_weather_data
+  1. WeatherToolkit.get_weather_data
 ========================================
 
 ========================================
 Custom Algorithm Matching Toolkit:
 ----------------------------------------
-  1. get_weather_data
+  1. WeatherToolkit.get_weather_data
 ========================================
 ===============================================================================
 """
 
-tool = manager.get_toolkit('get_weather_data')
+tool = manager.get_toolkit('WeatherToolkit.get_weather_data')
 if isinstance(tool, FunctionTool):
     print("\nFunction Description:")
     print('-' * 40)
@@ -160,15 +160,15 @@ Added Tools:
 ========================================
 Available Toolkits for now:
 ----------------------------------------
-  1. get_dalle_img
-  2. add
-  3. mul
-  4. sub
-  5. query_wolfram_alpha
-  6. search_duckduckgo
-  7. search_google
-  8. search_wiki
-  9. get_weather_data
+  1. DalleToolkit.get_dalle_img
+  2. MathToolkit.add
+  3. MathToolkit.mul
+  4. MathToolkit.sub
+  5. SearchToolkit.query_wolfram_alpha
+  6. SearchToolkit.search_duckduckgo
+  7. SearchToolkit.search_google
+  8. SearchToolkit.search_wiki
+  9. WeatherToolkit.get_weather_data
   10. div
   11. GithubToolkit.create_pull_request
   12. GithubToolkit.retrieve_issue
