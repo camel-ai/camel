@@ -76,15 +76,3 @@ class RetrievalToolkit(BaseToolkit):
             similarity_threshold=similarity_threshold,
         )
         return str(retrieved_info)
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.information_retrieval),
-        ]

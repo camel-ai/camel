@@ -290,20 +290,3 @@ class GoogleMapsToolkit(BaseToolkit):
         )
 
         return description
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.get_address_description),
-            FunctionTool(self.get_elevation),
-            FunctionTool(self.get_timezone),
-        ]
-
-
-__all__: list[str] = []

@@ -59,13 +59,3 @@ class CodeExecutionToolkit(BaseToolkit):
         if self.verbose:
             print(content)
         return content
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [FunctionTool(self.execute_code)]

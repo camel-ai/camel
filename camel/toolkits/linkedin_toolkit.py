@@ -198,20 +198,6 @@ class LinkedInToolkit(BaseToolkit):
 
         return profile_report
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.create_post),
-            FunctionTool(self.delete_post),
-            FunctionTool(self.get_profile),
-        ]
-
     def _get_access_token(self) -> str:
         r"""Fetches the access token required for making LinkedIn API requests.
 

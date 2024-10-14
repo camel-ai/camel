@@ -293,21 +293,3 @@ class SlackToolkit(BaseToolkit):
             return str(response)
         except SlackApiError as e:
             return f"Error creating conversation: {e.response['error']}"
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.create_slack_channel),
-            FunctionTool(self.join_slack_channel),
-            FunctionTool(self.leave_slack_channel),
-            FunctionTool(self.get_slack_channel_information),
-            FunctionTool(self.get_slack_channel_message),
-            FunctionTool(self.send_slack_message),
-            FunctionTool(self.delete_slack_message),
-        ]

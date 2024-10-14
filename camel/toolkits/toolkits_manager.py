@@ -204,7 +204,7 @@ class ToolkitManager:
                     attr = getattr(toolkit_instance, attr_name)
 
                     if callable(attr) and hasattr(attr, '_is_exported'):
-                        method_name = f"{toolkit_instance_name}_{attr_name}"
+                        method_name = f"{toolkit_instance_name}.{attr_name}"
 
                         self.toolkits[method_name] = attr
                         messages.append(f"Successfully added {method_name}.")
@@ -261,7 +261,7 @@ class ToolkitManager:
         """
         toolkit = self.toolkits.get(name)
         if toolkit:
-            return FunctionTool(func=toolkit, alias_name=name)
+            return FunctionTool(func=toolkit, name_prefix=name.split('.')[0])
         return f"Toolkit '{name}' not found."
 
     def get_toolkits(self, names: list[str]) -> list[FunctionTool] | str:
@@ -279,7 +279,9 @@ class ToolkitManager:
             current_toolkit = self.toolkits.get(name)
             if current_toolkit:
                 toolkits.append(
-                    FunctionTool(func=current_toolkit, alias_name=name)
+                    FunctionTool(
+                        func=current_toolkit, name_prefix=name.split('.')[0]
+                    )
                 )
         if len(toolkits) > 0:
             return toolkits

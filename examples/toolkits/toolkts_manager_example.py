@@ -151,11 +151,11 @@ pretty_print_list("Available Toolkits for now", manager.list_toolkits())
 ========================================
 Added Tools:
 ----------------------------------------
-  1. <camel.toolkits.openai_function.FunctionTool object at 0x1077b5390>
-  2. <camel.toolkits.openai_function.FunctionTool object at 0x1077b55a0>
-  3. <camel.toolkits.openai_function.FunctionTool object at 0x1077b5c30>
-  4. <camel.toolkits.openai_function.FunctionTool object at 0x1077b6590>
-  5. <camel.toolkits.openai_function.FunctionTool object at 0x1077b63e0>
+  1. div
+  2. GithubToolkit.retrieve_issue_list
+  3. GithubToolkit.retrieve_issue
+  4. GithubToolkit.create_pull_request
+  5. GithubToolkit.retrieve_pull_requests
 ========================================
 ========================================
 Available Toolkits for now:
@@ -170,10 +170,10 @@ Available Toolkits for now:
   8. search_wiki
   9. get_weather_data
   10. div
-  11. GithubToolkit_create_pull_request
-  12. GithubToolkit_retrieve_issue
-  13. GithubToolkit_retrieve_issue_list
-  14. GithubToolkit_retrieve_pull_requests
+  11. GithubToolkit.create_pull_request
+  12. GithubToolkit.retrieve_issue
+  13. GithubToolkit.retrieve_issue_list
+  14. GithubToolkit.retrieve_pull_requests
 ========================================
 ===============================================================================
 """
@@ -192,14 +192,14 @@ pretty_print_list("Matching Tools for GitHub", matching_tools_for_github)
 ========================================
 Matching Tools for GitHub:
 ----------------------------------------
-  1. create_pull_request
-  2. retrieve_issue
-  3. retrieve_issue_list
-  4. retrieve_pull_requests
-  5. create_pull_request
-  6. retrieve_issue
-  7. retrieve_issue_list
-  8. retrieve_pull_requests
+  1. GithubToolkit.create_pull_request
+  2. GithubToolkit.retrieve_issue
+  3. GithubToolkit.retrieve_issue_list
+  4. GithubToolkit.retrieve_pull_requests
+  5. crab_github_toolkit.create_pull_request
+  6. crab_github_toolkit.retrieve_issue
+  7. crab_github_toolkit.retrieve_issue_list
+  8. crab_github_toolkit.retrieve_pull_requests
 ========================================
 ===============================================================================
 """

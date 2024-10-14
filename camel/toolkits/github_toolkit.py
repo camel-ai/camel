@@ -149,21 +149,6 @@ class GithubToolkit(BaseToolkit):
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.retrieve_issue_list),
-            FunctionTool(self.retrieve_issue),
-            FunctionTool(self.create_pull_request),
-            FunctionTool(self.retrieve_pull_requests),
-        ]
-
     @export_to_toolkit
     def retrieve_issue_list(self) -> List[GithubIssue]:
         r"""Retrieve a list of open issues from the repository.

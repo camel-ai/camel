@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import inspect
 from typing import List
 
 from camel.utils import AgentOpsMeta
@@ -21,4 +22,23 @@ from .function_tool import FunctionTool
 
 class BaseToolkit(metaclass=AgentOpsMeta):
     def get_tools(self) -> List[FunctionTool]:
-        raise NotImplementedError("Subclasses must implement this method.")
+        """Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
+        tools = []
+        for _, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if getattr(method, '_is_exported', False):
+                tools.append(
+                    FunctionTool(
+                        func=method, name_prefix=self.__class__.__name__
+                    )
+                )
+
+        if not tools:
+            raise NotImplementedError("Subclasses must implement the methods")
+
+        return tools

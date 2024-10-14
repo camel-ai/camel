@@ -369,20 +369,6 @@ class TwitterToolkit(BaseToolkit):
 
         return user_report
 
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.create_tweet),
-            FunctionTool(self.delete_tweet),
-            FunctionTool(self.get_my_user_profile),
-        ]
-
     def _get_twitter_api_key(self) -> Tuple[str, str]:
         r"""Retrieve the Twitter API key and secret from environment variables.
 

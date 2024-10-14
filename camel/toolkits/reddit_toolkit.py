@@ -222,17 +222,3 @@ class RedditToolkit(BaseToolkit):
         if sentiment_analysis:
             data = self.perform_sentiment_analysis(data)
         return data
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects for the
-                toolkit methods.
-        """
-        return [
-            FunctionTool(self.collect_top_posts),
-            FunctionTool(self.perform_sentiment_analysis),
-            FunctionTool(self.track_keyword_discussions),
-        ]
