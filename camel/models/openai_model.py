@@ -100,7 +100,7 @@ class OpenAIModel(BaseModelBackend):
             warnings.warn(
                 "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
                 "which has certain limitations, reference: "
-                "`https://platform.openai.com/docs/guides/reasoning`",
+                "`https://platform.openai.com/docs/guides/reasoning`.",
                 UserWarning,
             )
 
