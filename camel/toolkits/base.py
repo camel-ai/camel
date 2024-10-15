@@ -38,7 +38,4 @@ class BaseToolkit(metaclass=AgentOpsMeta):
                     )
                 )
 
-        if not tools:
-            raise NotImplementedError("Subclasses must implement the methods")
-
         return tools
