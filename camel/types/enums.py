@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
 from enum import Enum, EnumMeta
 from typing import cast
 
@@ -36,7 +35,6 @@ class ModelType(InnerModelType, Enum):
     O1_MINI = "o1-mini"
 
     GLM_4 = "glm-4"
-    GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
@@ -50,13 +48,6 @@ class ModelType(InnerModelType, Enum):
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     STUB = "stub"
-
-    LLAMA_2 = "llama-2"
-    LLAMA_3 = "llama-3"
-    VICUNA = "vicuna"
-    VICUNA_16K = "vicuna-16k"
-
-    QWEN_2 = "qwen-2"
 
     # Legacy anthropic models
     # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
@@ -91,8 +82,6 @@ class ModelType(InnerModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
-    OPEN_SOURCE = "open-source"
-
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", InnerModelType.__new__(cls, value))
 
@@ -103,7 +92,7 @@ class ModelType(InnerModelType, Enum):
         return "gpt-4o-mini"
 
     @property
-    def supports_tool_calling(self) -> bool:
+    def supports_native_tool_calling(self) -> bool:
         return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
@@ -138,19 +127,6 @@ class ModelType(InnerModelType, Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.GLM_4V,
-        }
-
-    @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source."""
-        return self in {
-            ModelType.LLAMA_2,
-            ModelType.LLAMA_3,
-            ModelType.QWEN_2,
-            ModelType.GLM_4_OPEN_SOURCE,
-            ModelType.VICUNA,
-            ModelType.VICUNA_16K,
-            ModelType.OPEN_SOURCE,
         }
 
     @property
@@ -242,11 +218,7 @@ class ModelType(InnerModelType, Enum):
         """
         if self is ModelType.GLM_4V:
             return 1024
-        elif self is ModelType.VICUNA:
-            # reference: https://lmsys.org/blog/2023-03-30-vicuna/
-            return 2048
         elif self in {
-            ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
             ModelType.REKA_CORE,
@@ -260,15 +232,12 @@ class ModelType(InnerModelType, Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
-            ModelType.LLAMA_3,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
-            ModelType.GLM_4_OPEN_SOURCE,
         }:
             return 8_192
         elif self in {
             ModelType.GPT_3_5_TURBO,
-            ModelType.VICUNA_16K,
         }:
             return 16_384
         elif self in {
@@ -293,7 +262,6 @@ class ModelType(InnerModelType, Enum):
             ModelType.O1_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
-            ModelType.QWEN_2,
         }:
             return 128_000
         elif self in {
@@ -321,43 +289,6 @@ class ModelType(InnerModelType, Enum):
             return 1_048_576
         else:
             raise ValueError("Unknown model type")
-
-    def validate_model_name(self, model_name: str) -> bool:
-        r"""Checks whether the model type and the model name matches.
-
-        Args:
-            model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
-
-        Returns:
-            bool: Whether the model type matches the model name.
-        """
-        if self is ModelType.VICUNA:
-            pattern = r'^vicuna-\d+b-v\d+\.\d+$'
-            return bool(re.match(pattern, model_name))
-        elif self is ModelType.VICUNA_16K:
-            pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
-            return bool(re.match(pattern, model_name))
-        elif self is ModelType.LLAMA_2:
-            return (
-                self.value in model_name.lower()
-                or "llama2" in model_name.lower()
-            )
-        elif self is ModelType.LLAMA_3:
-            return (
-                self.value in model_name.lower()
-                or "llama3" in model_name.lower()
-            )
-        elif self is ModelType.QWEN_2:
-            return (
-                self.value in model_name.lower()
-                or "qwen2" in model_name.lower()
-            )
-        elif self is ModelType.GLM_4_OPEN_SOURCE:
-            return (
-                'glm-4' in model_name.lower() or "glm4" in model_name.lower()
-            )
-        else:
-            return self.value in model_name.lower()
 
 
 class EmbeddingModelType(Enum):
@@ -488,7 +419,6 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
-    OPEN_SOURCE = "open-source"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -550,11 +480,6 @@ class ModelPlatformType(Enum):
     def is_mistral(self) -> bool:
         r"""Returns whether this platform is mistral."""
         return self is ModelPlatformType.MISTRAL
-
-    @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this platform is opensource."""
-        return self is ModelPlatformType.OPEN_SOURCE
 
     @property
     def is_openai_compatible_model(self) -> bool:

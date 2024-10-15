@@ -85,14 +85,6 @@ camel.models.ollama\_model module
    :show-inheritance:
 
 camel.models.open\_source\_model module
----------------------------------------
-
-.. automodule:: camel.models.open_source_model
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.models.openai\_audio\_models module
 -----------------------------------------
 
 .. automodule:: camel.models.openai_audio_models

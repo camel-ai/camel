@@ -590,7 +590,7 @@ class ChatAgent(BaseAgent):
 
             if (
                 output_schema is not None
-                and self.model_type.supports_tool_calling
+                and self.model_type.supports_native_tool_calling
             ):
                 (
                     output_messages,
@@ -698,7 +698,10 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None and self.model_type.supports_tool_calling:
+        if (
+            output_schema is not None
+            and self.model_type.supports_native_tool_calling
+        ):
             (
                 output_messages,
                 finish_reasons,

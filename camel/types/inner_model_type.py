@@ -45,11 +45,6 @@ class InnerModelType(str):
         return True
 
     @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether the model is an open-source model."""
-        return True
-
-    @property
     def is_anthropic(self) -> bool:
         r"""Returns whether the model is an Anthropic model."""
         return True
@@ -80,17 +75,6 @@ class InnerModelType(str):
         return True
 
     @property
-    def supports_tool_calling(self) -> bool:
-        r"""Returns whether the model supports streaming."""
+    def supports_native_tool_calling(self) -> bool:
+        r"""Returns whether the model supports native tool calling."""
         return False
-
-    def validate_model_name(self, model_name: str) -> bool:
-        r"""Checks whether the model type and the model name matches.
-
-        Args:
-            model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
-
-        Returns:
-            bool: Whether the model type matches the model name.
-        """
-        return True

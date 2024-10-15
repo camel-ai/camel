@@ -47,7 +47,7 @@ class GroqModel(BaseModelBackend):
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
-            PredefinedModelType.GPT_4O_MINI)` will be used.
+            ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
     """
 

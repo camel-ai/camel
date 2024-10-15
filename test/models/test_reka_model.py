@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import OpenSourceConfig, RekaConfig
+from camel.configs import RekaConfig
 from camel.models import RekaModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -42,11 +42,7 @@ def test_reka_model(model_type: ModelType):
 @pytest.mark.model_backend
 def test_reka_model_unexpected_argument():
     model_type = ModelType.REKA_CORE
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

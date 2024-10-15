@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import OpenSourceConfig, ZhipuAIConfig
+from camel.configs import ZhipuAIConfig
 from camel.models import ZhipuAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -42,11 +42,7 @@ def test_zhipuai_model(model_type: ModelType):
 @pytest.mark.model_backend
 def test_zhipuai_model_unexpected_argument():
     model_type = ModelType.GLM_4V
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

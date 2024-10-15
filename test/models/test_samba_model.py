@@ -16,7 +16,6 @@ import re
 import pytest
 
 from camel.configs import (
-    OpenSourceConfig,
     SambaCloudAPIConfig,
 )
 from camel.models import SambaModel
@@ -41,11 +40,7 @@ def test_samba_model(model_type: ModelType):
 @pytest.mark.model_backend
 def test_samba_model_unexpected_argument():
     model_type = "llama3-70b"
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import AnthropicConfig, OpenSourceConfig
+from camel.configs import AnthropicConfig
 from camel.models import AnthropicModel
 from camel.types import ModelType
 from camel.utils import AnthropicTokenCounter
@@ -46,11 +46,7 @@ def test_anthropic_model(model_type: ModelType):
 @pytest.mark.model_backend
 def test_anthropic_model_unexpected_argument():
     model_type = ModelType.CLAUDE_2_0
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

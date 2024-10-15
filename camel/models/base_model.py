@@ -20,9 +20,9 @@ from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    InnerModelType,
     ModelType,
 )
-from camel.types.inner_model_type import InnerModelType
 from camel.utils import BaseTokenCounter
 
 

@@ -39,13 +39,13 @@ from camel.toolkits import (
 )
 from camel.types import (
     ChatCompletion,
+    InnerModelType,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
     TaskType,
 )
-from camel.types.inner_model_type import InnerModelType
 from camel.utils.async_func import sync_funcs_to_async
 
 parametrize = pytest.mark.parametrize(

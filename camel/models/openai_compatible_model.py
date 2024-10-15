@@ -43,7 +43,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         url (str): The url to the model service.
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
-            PredefinedModelType.GPT_4O_MINI)` will be used.
+            ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
     """
 
@@ -99,7 +99,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     @property

@@ -17,8 +17,7 @@ import pytest
 
 from camel.configs import OllamaConfig
 from camel.models import OllamaModel
-from camel.types import ModelType
-from camel.types.inner_model_type import InnerModelType
+from camel.types import InnerModelType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
