@@ -151,8 +151,7 @@ class ToolkitManager:
         # If the input is a list, process each element
         if isinstance(toolkit_obj, list):
             for obj in toolkit_obj:
-                res_openai_functions = self._register_single_tool(obj)
-                res_openai_functions.extend(res_openai_functions)
+                res_openai_functions.extend(self._register_single_tool(obj))
         else:
             res_openai_functions = self._register_single_tool(toolkit_obj)
 
