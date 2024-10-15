@@ -38,6 +38,9 @@ class OllamaModel(BaseModelBackend):
             that will be fed into:obj:`openai.ChatCompletion.create()`.
             If:obj:`None`, :obj:`OllamaConfig().as_dict()` will be used.
             (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the model service.  Ollama doesn't need API key, it would be
+            ignored if set. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
@@ -53,27 +56,24 @@ class OllamaModel(BaseModelBackend):
         self,
         model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:
             model_config_dict = OllamaConfig().as_dict()
-        if not url and not os.environ.get("OLLAMA_BASE_URL"):
-            self._start_server()
-        url = (
-            url
-            or os.environ.get("OLLAMA_BASE_URL")
-            or "http://localhost:11434/v1"
-        )
+        url = url or os.environ.get("OLLAMA_BASE_URL")
         super().__init__(
-            model_type, model_config_dict, None, url, token_counter
+            model_type, model_config_dict, api_key, url, token_counter
         )
+        if not self._url:
+            self._start_server()
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
+            api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
-            api_key="ollama",  # required but ignored
         )
 
     def _start_server(self) -> None:
@@ -84,8 +84,9 @@ class OllamaModel(BaseModelBackend):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
+            self._url = "http://localhost:11434/v1"
             print(
-                f"Ollama server started on http://localhost:11434/v1 "
+                f"Ollama server started on {self._url} "
                 f"for {self.model_type} model."
             )
         except Exception as e:

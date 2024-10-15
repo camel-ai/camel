@@ -78,7 +78,7 @@ class ModelFactory:
         model = InnerModelType(model_type)
 
         if model_platform.is_ollama:
-            return OllamaModel(model, model_config_dict, url, token_counter)
+            model_class = OllamaModel
         elif model_platform.is_vllm:
             model_class = VLLMModel
         elif model_platform.is_openai_compatible_model:

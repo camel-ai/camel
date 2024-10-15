@@ -86,7 +86,7 @@ class GroqModel(BaseModelBackend):
         # Make sure you have the access to these open-source model in
         # HuggingFace
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     @api_keys_required("GROQ_API_KEY")

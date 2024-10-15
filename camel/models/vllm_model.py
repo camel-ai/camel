@@ -40,7 +40,8 @@ class VLLMModel(BaseModelBackend):
             :obj:`None`, :obj:`VLLMConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the model service. (default: :obj:`None`)
+            the model service. vLLM doesn't need API key, it would be ignored
+            if set. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service. If not
             provided, :obj:`"http://localhost:8000/v1"` will be used.
             (default: :obj:`None`)
@@ -63,22 +64,17 @@ class VLLMModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = VLLMConfig().as_dict()
-        if not url and not os.environ.get("VLLM_BASE_URL"):
-            self._start_server()
-        url = (
-            url
-            or os.environ.get("VLLM_BASE_URL")
-            or "http://localhost:8000/v1"
-        )
+        url = url or os.environ.get("VLLM_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-
+        if not self._url:
+            self._start_server()
         # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            api_key=self._api_key,
+            api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
 
@@ -90,8 +86,9 @@ class VLLMModel(BaseModelBackend):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
+            self._url = "http://localhost:8000/v1"
             print(
-                f"vllm server started on http://localhost:8000/v1 "
+                f"vllm server started on {self._url} "
                 f"for {self.model_type} model."
             )
         except Exception as e:
