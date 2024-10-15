@@ -313,6 +313,22 @@ class ToolkitManager:
             return toolkits
         return "Toolkits are not found."
 
+    def get_toolkit_class(self, class_name: str) -> type[BaseToolkit] | str:
+        r"""
+        Retrieves the specified toolkit class.
+
+        Args:
+            class_name (str): The name of the toolkit class to retrieve.
+
+        Returns:
+            BaseToolkit | str: The toolkit class object if found, otherwise an
+                error message.
+        """
+        toolkit_class = self.toolkit_classes.get(class_name)
+        if toolkit_class:
+            return toolkit_class
+        return f"Toolkit class '{class_name}' not found."
+
     def _default_search_algorithm(
         self, keyword: str, description: str
     ) -> bool:

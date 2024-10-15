@@ -208,3 +208,21 @@ Matching Tools for GitHub:
 ========================================
 ===============================================================================
 """
+toolkit_class = manager.get_toolkit_class('GithubToolkit')
+if isinstance(toolkit_class, type):
+    instance = toolkit_class(repo_name='ZackYule/crab')
+    pretty_print_list(
+        "Tools in the crab GitHub Toolkit instance", instance.get_tools()
+    )
+"""
+===============================================================================
+========================================
+Tools in the crab GitHub Toolkit instance:
+----------------------------------------
+  1. GithubToolkit.create_pull_request
+  2. GithubToolkit.retrieve_issue
+  3. GithubToolkit.retrieve_issue_list
+  4. GithubToolkit.retrieve_pull_requests
+========================================
+===============================================================================
+"""
