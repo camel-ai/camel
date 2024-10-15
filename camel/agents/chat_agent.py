@@ -590,7 +590,7 @@ class ChatAgent(BaseAgent):
 
             if (
                 output_schema is not None
-                and self.model_type.supports_native_tool_calling
+                and self.model_type.support_native_tool_calling
             ):
                 (
                     output_messages,
