@@ -92,7 +92,7 @@ class ModelType(InnerModelType, Enum):
         return "gpt-4o-mini"
 
     @property
-    def supports_native_tool_calling(self) -> bool:
+    def support_native_tool_calling(self) -> bool:
         return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
