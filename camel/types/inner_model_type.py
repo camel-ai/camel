@@ -55,6 +55,11 @@ class InnerModelType(str):
         return True
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether the model is an Groq served model."""
+        return True
+
+    @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether the model is a Zhipuai model."""
         return True
