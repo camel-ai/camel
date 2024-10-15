@@ -26,7 +26,6 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -48,11 +47,11 @@ class StubTokenCounter(BaseTokenCounter):
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
 
-    model_type = AugmentedModelType(ModelType.STUB)
+    model_type = ModelType.STUB
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,

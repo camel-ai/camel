@@ -18,7 +18,7 @@ import pytest
 from camel.configs import VLLMConfig
 from camel.models import VLLMModel
 from camel.types import ModelType
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types.inner_model_type import InnerModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -26,18 +26,18 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        AugmentedModelType(ModelType.GPT_4),
-        AugmentedModelType(ModelType.GPT_4_TURBO),
-        AugmentedModelType(ModelType.GPT_4O),
-        AugmentedModelType(ModelType.GPT_4O_MINI),
+        ModelType.GPT_4,
+        ModelType.GPT_4_TURBO,
+        ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
-def test_vllm_model(model_type: AugmentedModelType):
+def test_vllm_model(model_type: ModelType):
     model = VLLMModel(model_type, api_key="vllm")
     assert model.model_type == model_type
     assert model.model_config_dict == VLLMConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type, AugmentedModelType)
+    assert isinstance(model.model_type, InnerModelType)
     assert isinstance(model.token_limit, int)
 
 

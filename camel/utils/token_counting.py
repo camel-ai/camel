@@ -24,6 +24,7 @@ from anthropic import Anthropic
 from PIL import Image
 
 from camel.types import (
+    InnerModelType,
     ModelType,
     OpenAIImageType,
     OpenAIVisionDetailType,
@@ -44,14 +45,16 @@ SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
 
 
-def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
+def messages_to_prompt(
+    messages: List[OpenAIMessage], model: InnerModelType
+) -> str:
     r"""Parse the message list into a single prompt following model-specific
     formats.
 
     Args:
         messages (List[OpenAIMessage]): Message list with the chat history
             in OpenAI API format.
-        model (ModelType): Model type for which messages will be parsed.
+        model (InnerModelType): Model type for which messages will be parsed.
 
     Returns:
         str: A single prompt summarizing all the messages.
@@ -229,11 +232,11 @@ class BaseTokenCounter(ABC):
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType, model_path: str):
+    def __init__(self, model_type: InnerModelType, model_path: str):
         r"""Constructor for the token counter for open-source models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
+            model_type (InnerModelType): Model type for which tokens will be
                 counted.
             model_path (str): The path to the model files, where the tokenizer
                 model should be located.
@@ -281,14 +284,14 @@ class OpenSourceTokenCounter(BaseTokenCounter):
 
 
 class OpenAITokenCounter(BaseTokenCounter):
-    def __init__(self, model: ModelType):
+    def __init__(self, model: InnerModelType):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model (ModelType): Model type for which tokens will be counted.
+            model (InnerModelType): Model type for which tokens will be
+                counted.
         """
         self.model: str = model.value_for_tiktoken
-        self.model_type = model
 
         self.tokens_per_message: int
         self.tokens_per_name: int
@@ -411,15 +414,9 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Anthropic models.
+    def __init__(self):
+        r"""Constructor for the token counter for Anthropic models."""
 
-        Args:
-            model_type (ModelType): Model type for which tokens will
-                be counted.
-        """
-
-        self.model_type = model_type
         self.client = Anthropic()
         self.tokenizer = self.client.get_tokenizer()
 
@@ -442,12 +439,16 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Gemini models."""
+    def __init__(self, model_type: InnerModelType):
+        r"""Constructor for the token counter for Gemini models.
+
+        Args:
+            model_type (InnerModelType): Model type for which tokens will be
+                counted.
+        """
         import google.generativeai as genai
 
-        self.model_type = model_type
-        self._client = genai.GenerativeModel(self.model_type.value)
+        self._client = genai.GenerativeModel(model_type)
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -476,11 +477,12 @@ class GeminiTokenCounter(BaseTokenCounter):
 
 
 class LiteLLMTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: str):
+    def __init__(self, model_type: InnerModelType):
         r"""Constructor for the token counter for LiteLLM models.
 
         Args:
-            model_type (str): Model type for which tokens will be counted.
+            model_type (InnerModelType): Model type for which tokens will be
+                counted.
         """
         self.model_type = model_type
         self._token_counter = None

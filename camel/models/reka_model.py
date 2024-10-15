@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from camel.configs import REKA_API_PARAMS, RekaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -42,8 +41,8 @@ class RekaModel(BaseModelBackend):
     r"""Reka API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created,
-            one of REKA_* series.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of REKA_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`Reka.chat.create()`. If :obj:`None`,
             :obj:`RekaConfig().as_dict()` will be used. (default: :obj:`None`)
@@ -58,7 +57,7 @@ class RekaModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -185,7 +184,7 @@ class RekaModel(BaseModelBackend):
 
         response = self._client.chat.create(
             messages=reka_messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
 
@@ -201,7 +200,7 @@ class RekaModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.input_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.output_tokens,  # type: ignore[union-attr]
-                model=self.model_type.value,
+                model=self.model_type,
             )
             record(llm_event)
 

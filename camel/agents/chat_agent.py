@@ -418,7 +418,7 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        if "lama" in self.model_type.value:
+        if "llama" in self.model_type.lower():
             if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 

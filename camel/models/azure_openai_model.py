@@ -22,8 +22,8 @@ from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    ModelType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 
@@ -31,8 +31,8 @@ class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created,
-            one of GPT_* series.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of GPT_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
@@ -55,7 +55,7 @@ class AzureOpenAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -104,7 +104,7 @@ class AzureOpenAIModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type.type)
+            self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
     @api_keys_required("AZURE_OPENAI_API_KEY", "AZURE_API_VERSION")

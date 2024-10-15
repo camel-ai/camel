@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from camel.configs import Gemini_API_PARAMS, GeminiConfig
 from camel.messages import OpenAIMessage
@@ -21,8 +21,8 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionMessage,
     Choice,
+    ModelType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
@@ -37,7 +37,8 @@ class GeminiModel(BaseModelBackend):
     r"""Gemini API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`genai.GenerativeModel.generate_content()
             `. If:obj:`None`, :obj:`GeminiConfig().as_dict()` will be used.
@@ -57,7 +58,7 @@ class GeminiModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -74,7 +75,7 @@ class GeminiModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         genai.configure(api_key=self._api_key)
-        self._client = genai.GenerativeModel(self.model_type.value)
+        self._client = genai.GenerativeModel(self.model_type)
 
         keys = list(self.model_config_dict.keys())
         generation_config_dict = {
@@ -96,7 +97,7 @@ class GeminiModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = GeminiTokenCounter(self.model_type.type)
+            self._token_counter = GeminiTokenCounter(self.model_type)
         return self._token_counter
 
     @api_keys_required("GOOGLE_API_KEY")
@@ -194,7 +195,7 @@ class GeminiModel(BaseModelBackend):
             id=f"chatcmpl-{uuid.uuid4().hex!s}",
             object="chat.completion",
             created=int(time.time()),
-            model=self.model_type.value,
+            model=self.model_type,
             choices=[],
         )
         for i, candidate in enumerate(response.candidates):

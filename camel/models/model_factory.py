@@ -31,7 +31,7 @@ from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types.inner_model_type import InnerModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -77,17 +77,15 @@ class ModelFactory:
             ValueError: If there is no backend for the model.
         """
         model_class: Optional[Type[BaseModelBackend]] = None
-        parsed_model_type = AugmentedModelType(model_type)
+        model = InnerModelType(model_type)
 
-        if parsed_model_type.is_open_source:
+        if model.is_open_source:
             if model_platform.is_ollama:
                 return OllamaModel(
-                    parsed_model_type, model_config_dict, url, token_counter
+                    model, model_config_dict, url, token_counter
                 )
             elif model_platform.is_vllm:
                 model_class = VLLMModel
-            elif model_platform.is_litellm:
-                model_class = LiteLLMModel
             elif model_platform.is_openai_compatible_model:
                 model_class = OpenAICompatibleModel
             elif model_platform.is_samba:
@@ -96,31 +94,33 @@ class ModelFactory:
                 model_class = TogetherAIModel
             elif model_platform.is_open_source:
                 model_class = OpenSourceModel
-        elif model_platform.is_openai and parsed_model_type.is_openai:
+        elif model_platform.is_litellm:
+            model_class = LiteLLMModel
+        elif model_platform.is_openai and model.is_openai:
             model_class = OpenAIModel
-        elif model_platform.is_azure and parsed_model_type.is_azure_openai:
+        elif model_platform.is_azure and model.is_azure_openai:
             model_class = AzureOpenAIModel
-        elif model_platform.is_anthropic and parsed_model_type.is_anthropic:
+        elif model_platform.is_anthropic and model.is_anthropic:
             model_class = AnthropicModel
-        elif parsed_model_type.is_groq:
+        elif model_platform.is_groq:
             model_class = GroqModel
-        elif model_platform.is_zhipuai and parsed_model_type.is_zhipuai:
+        elif model_platform.is_zhipuai and model.is_zhipuai:
             model_class = ZhipuAIModel
-        elif model_platform.is_gemini and parsed_model_type.is_gemini:
+        elif model_platform.is_gemini and model.is_gemini:
             model_class = GeminiModel
-        elif model_platform.is_mistral and parsed_model_type.is_mistral:
+        elif model_platform.is_mistral and model.is_mistral:
             model_class = MistralModel
-        elif model_platform.is_reka and parsed_model_type.is_reka:
+        elif model_platform.is_reka and model.is_reka:
             model_class = RekaModel
-        elif parsed_model_type.type == ModelType.STUB:
+        elif model == ModelType.STUB:
             model_class = StubModel
 
         if model_class is None:
             raise ValueError(
                 f"Unknown pair of model platform `{model_platform}` "
-                f"and model type `{parsed_model_type.value}`."
+                f"and model type `{model}`."
             )
 
         return model_class(
-            parsed_model_type, model_config_dict, api_key, url, token_counter
+            model, model_config_dict, api_key, url, token_counter
         )

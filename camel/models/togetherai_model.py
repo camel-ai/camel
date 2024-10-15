@@ -25,7 +25,6 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -37,8 +36,8 @@ class TogetherAIModel(BaseModelBackend):
     r"""Constructor for Together AI backend with OpenAI compatibility.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created,
-            supported model can be found here:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, supported model can be found here:
             https://docs.together.ai/docs/chat-models
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
@@ -56,7 +55,7 @@ class TogetherAIModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -99,7 +98,7 @@ class TogetherAIModel(BaseModelBackend):
         # Reference: https://docs.together.ai/docs/openai-api-compatibility
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
         return response

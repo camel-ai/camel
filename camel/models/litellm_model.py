@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types import ChatCompletion, ModelType
 from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 
 
@@ -25,8 +24,8 @@ class LiteLLMModel(BaseModelBackend):
     r"""Constructor for LiteLLM backend with OpenAI compatibility.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created,
-            such as GPT-3.5-turbo, Claude-2, etc.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, such as GPT-3.5-turbo, Claude-2, etc.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`.
             If:obj:`None`, :obj:`LiteLLMConfig().as_dict()` will be used.
@@ -44,7 +43,7 @@ class LiteLLMModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -99,7 +98,7 @@ class LiteLLMModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = LiteLLMTokenCounter(self.model_type.value)
+            self._token_counter = LiteLLMTokenCounter(self.model_type)
         return self._token_counter
 
     def run(
@@ -118,7 +117,7 @@ class LiteLLMModel(BaseModelBackend):
         response = self.client(
             api_key=self._api_key,
             base_url=self._url,
-            model=self.model_type.value,
+            model=self.model_type,
             messages=messages,
             **self.model_config_dict,
         )

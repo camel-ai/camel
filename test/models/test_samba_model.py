@@ -17,10 +17,10 @@ import pytest
 
 from camel.configs import (
     OpenSourceConfig,
-    SambaFastAPIConfig,
+    SambaCloudAPIConfig,
 )
 from camel.models import SambaModel
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -28,19 +28,19 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        AugmentedModelType("llama3-70b"),
+        "llama3-70b",
     ],
 )
-def test_samba_model(model_type):
+def test_samba_model(model_type: ModelType):
     model = SambaModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == SambaFastAPIConfig().as_dict()
+    assert model.model_config_dict == SambaCloudAPIConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
 
 
 @pytest.mark.model_backend
 def test_samba_model_unexpected_argument():
-    model_type = AugmentedModelType("llama3-70b")
+    model_type = "llama3-70b"
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
@@ -52,7 +52,7 @@ def test_samba_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into SambaNova Fast API."
+                "input into SambaCloud API."
             )
         ),
     ):

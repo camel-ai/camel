@@ -33,7 +33,6 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -45,11 +44,11 @@ class SambaModel(BaseModelBackend):
     r"""SambaNova service interface.
 
     Args:
-        model_type (AugmentedModelType): Model for which a SambaNova backend is
-            created. Supported models via SambaNova Cloud: `https://community.
-            sambanova.ai/t/supported-models/193`. Supported models via
-            SambaVerse API is listed in `https://sambaverse.sambanova.ai/
-            models`.
+        model_type (Union[ModelType, str]): Model for which a SambaNova backend
+            is created. Supported models via SambaNova Cloud:
+            `https://community.sambanova.ai/t/supported-models/193`.
+            Supported models via SambaVerse API is listed in
+            `https://sambaverse.sambanova.ai/models`.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
             :obj:`None`, :obj:`SambaCloudAPIConfig().as_dict()` will be used.
@@ -69,7 +68,7 @@ class SambaModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -179,7 +178,7 @@ class SambaModel(BaseModelBackend):
         if self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
-                model=self.model_type.value,
+                model=self.model_type,
                 **self.model_config_dict,
             )
             return response
@@ -213,7 +212,7 @@ class SambaModel(BaseModelBackend):
         if self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
-                model=self.model_type.value,
+                model=self.model_type,
                 **self.model_config_dict,
             )
             return response
@@ -223,7 +222,7 @@ class SambaModel(BaseModelBackend):
             headers = {
                 "Content-Type": "application/json",
                 "key": str(self._api_key),
-                "modelName": self.model_type.value,
+                "modelName": self.model_type,
             }
 
             data = {
@@ -252,7 +251,7 @@ class SambaModel(BaseModelBackend):
                     },
                     "select_expert": {
                         "type": "str",
-                        "value": self.model_type.value.split('/')[1],
+                        "value": self.model_type.split('/')[1],
                     },
                     "stop_sequences": {
                         "type": "str",
@@ -331,7 +330,7 @@ class SambaModel(BaseModelBackend):
             id=None,
             choices=choices,
             created=int(time.time()),
-            model=self.model_type.value,
+            model=self.model_type,
             object="chat.completion",
             # SambaVerse API only provide `total_tokens`
             usage=CompletionUsage(

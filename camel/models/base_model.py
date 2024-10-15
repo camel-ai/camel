@@ -20,8 +20,9 @@ from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    ModelType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types.inner_model_type import InnerModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -30,7 +31,8 @@ class BaseModelBackend(ABC):
     It may be OpenAI API, a local LLM, a stub for unit tests, etc.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
         model_config_dict (Optional[Dict[str, Any]], optional): A config
             dictionary. (default: :obj:`{}`)
         api_key (Optional[str], optional): The API key for authenticating
@@ -44,14 +46,14 @@ class BaseModelBackend(ABC):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type = model_type
-        if not model_config_dict:
+        self.model_type: InnerModelType = InnerModelType(model_type)
+        if model_config_dict is None:
             model_config_dict = {}
         self.model_config_dict = model_config_dict
         self._api_key = api_key

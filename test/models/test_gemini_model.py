@@ -18,7 +18,6 @@ import pytest
 from camel.configs import GeminiConfig, OpenSourceConfig
 from camel.models import GeminiModel
 from camel.types import ModelType
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import GeminiTokenCounter
 
 
@@ -26,11 +25,11 @@ from camel.utils import GeminiTokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        AugmentedModelType(ModelType.GEMINI_1_5_FLASH),
-        AugmentedModelType(ModelType.GEMINI_1_5_PRO),
+        ModelType.GEMINI_1_5_FLASH,
+        ModelType.GEMINI_1_5_PRO,
     ],
 )
-def test_gemini_model(model_type):
+def test_gemini_model(model_type: ModelType):
     model_config_dict = GeminiConfig().as_dict()
     model = GeminiModel(model_type, model_config_dict)
     assert model.model_type == model_type
@@ -42,7 +41,7 @@ def test_gemini_model(model_type):
 
 @pytest.mark.model_backend
 def test_gemini_model_unexpected_argument():
-    model_type = AugmentedModelType(ModelType.GEMINI_1_5_FLASH)
+    model_type = ModelType.GEMINI_1_5_FLASH
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

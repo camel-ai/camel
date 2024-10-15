@@ -18,7 +18,6 @@ import pytest
 from camel.configs import OpenSourceConfig, RekaConfig
 from camel.models import RekaModel
 from camel.types import ModelType
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -26,12 +25,12 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        AugmentedModelType(ModelType.REKA_CORE),
-        AugmentedModelType(ModelType.REKA_EDGE),
-        AugmentedModelType(ModelType.REKA_FLASH),
+        ModelType.REKA_CORE,
+        ModelType.REKA_EDGE,
+        ModelType.REKA_FLASH,
     ],
 )
-def test_reka_model(model_type):
+def test_reka_model(model_type: ModelType):
     model = RekaModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == RekaConfig().as_dict()
@@ -42,7 +41,7 @@ def test_reka_model(model_type):
 
 @pytest.mark.model_backend
 def test_reka_model_unexpected_argument():
-    model_type = AugmentedModelType(ModelType.REKA_CORE)
+    model_type = ModelType.REKA_CORE
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

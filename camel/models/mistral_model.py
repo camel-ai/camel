@@ -12,9 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from camel.types.augmented_model_type import AugmentedModelType
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from mistralai.models import (
@@ -45,8 +43,8 @@ class MistralModel(BaseModelBackend):
     r"""Mistral API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created,
-            one of MISTRAL_* series.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of MISTRAL_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`Mistral.chat.complete()`.
             If:obj:`None`, :obj:`MistralConfig().as_dict()` will be used.
@@ -62,7 +60,7 @@ class MistralModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
@@ -218,7 +216,7 @@ class MistralModel(BaseModelBackend):
 
         response = self._client.chat.complete(
             messages=mistral_messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
 
@@ -234,7 +232,7 @@ class MistralModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
-                model=self.model_type.value,
+                model=self.model_type,
             )
             record(llm_event)
 

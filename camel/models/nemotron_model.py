@@ -12,14 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from openai import OpenAI
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
@@ -30,7 +29,8 @@ class NemotronModel(BaseModelBackend):
     r"""Nemotron model API backend with OpenAI compatibility.
 
     Args:
-        model_type (AugmentedModelType): Model for which a backend is created.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
         api_key (Optional[str], optional): The API key for authenticating with
             the Nvidia service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Nvidia service.
@@ -42,7 +42,7 @@ class NemotronModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: AugmentedModelType,
+        model_type: Union[ModelType, str],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
@@ -73,7 +73,7 @@ class NemotronModel(BaseModelBackend):
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model_type,
         )
         return response
 

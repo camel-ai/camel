@@ -18,7 +18,6 @@ import pytest
 from camel.configs import LiteLLMConfig, OpenSourceConfig
 from camel.models import LiteLLMModel
 from camel.types import ModelType
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import LiteLLMTokenCounter
 
 
@@ -26,13 +25,13 @@ from camel.utils import LiteLLMTokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        AugmentedModelType(ModelType.GPT_4),
-        AugmentedModelType(ModelType.GPT_4_TURBO),
-        AugmentedModelType(ModelType.GPT_4O),
-        AugmentedModelType(ModelType.GPT_4O_MINI),
+        ModelType.GPT_4,
+        ModelType.GPT_4_TURBO,
+        ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
-def test_litellm_model(model_type: AugmentedModelType):
+def test_litellm_model(model_type: ModelType):
     model = LiteLLMModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == LiteLLMConfig().as_dict()
@@ -43,7 +42,7 @@ def test_litellm_model(model_type: AugmentedModelType):
 
 @pytest.mark.model_backend
 def test_litellm_model_unexpected_argument():
-    model_type = AugmentedModelType(ModelType.GPT_4.value)
+    model_type = ModelType.GPT_4.value
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

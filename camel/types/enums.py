@@ -13,6 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
 from enum import Enum, EnumMeta
+from typing import cast
+
+from camel.types.inner_model_type import InnerModelType
 
 
 class RoleType(Enum):
@@ -23,7 +26,7 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
-class ModelType(Enum):
+class ModelType(InnerModelType, Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo"
@@ -89,6 +92,9 @@ class ModelType(Enum):
     REKA_EDGE = "reka-edge"
 
     OPEN_SOURCE = "open-source"
+
+    def __new__(cls, value) -> "ModelType":
+        return cast("ModelType", InnerModelType.__new__(cls, value))
 
     @property
     def value_for_tiktoken(self) -> str:

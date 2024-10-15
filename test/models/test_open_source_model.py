@@ -21,7 +21,6 @@ from camel.configs import (
 )
 from camel.models import OpenSourceModel
 from camel.types import ModelType
-from camel.types.augmented_model_type import AugmentedModelType
 from camel.utils import OpenSourceTokenCounter, check_server_running
 
 MODEL_PATH_MAP = {
@@ -35,12 +34,12 @@ DEFAULT_SERVER_URL = "http://localhost:8000/v1"
 @pytest.mark.parametrize(
     "model_type",
     [
-        AugmentedModelType(ModelType.VICUNA),
-        AugmentedModelType(ModelType.VICUNA_16K),
+        ModelType.VICUNA,
+        ModelType.VICUNA_16K,
     ],
 )
-def test_open_source_model(model_type):
-    model_path = MODEL_PATH_MAP[model_type.type]
+def test_open_source_model(model_type: ModelType):
+    model_path = MODEL_PATH_MAP[model_type]
     model_name = model_path.split('/')[-1]
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -82,7 +81,7 @@ def test_open_source_model_run(model_type):
 
 @pytest.mark.model_backend
 def test_open_source_model_close_source_model_type():
-    model_type = AugmentedModelType(ModelType.GPT_4O_MINI)
+    model_type = ModelType.GPT_4O_MINI
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -93,7 +92,7 @@ def test_open_source_model_close_source_model_type():
     with pytest.raises(
         ValueError,
         match=re.escape(
-            ("Model `gpt-4o-mini` is not a supported" " open-source model.")
+            "Model `gpt-4o-mini` is not a supported" " open-source model."
         ),
     ):
         _ = OpenSourceModel(model_type, model_config_dict)
@@ -101,7 +100,7 @@ def test_open_source_model_close_source_model_type():
 
 @pytest.mark.model_backend
 def test_open_source_model_mismatched_model_config():
-    model_type = AugmentedModelType(ModelType.VICUNA)
+    model_type = ModelType.VICUNA
     model_config = ChatGPTConfig()
     model_config_dict = model_config.as_dict()
 
@@ -141,7 +140,7 @@ def test_open_source_model_unexpected_argument():
 
 @pytest.mark.model_backend
 def test_open_source_model_invalid_model_path():
-    model_type = AugmentedModelType(ModelType.VICUNA)
+    model_type = ModelType.VICUNA
     model_path = "vicuna-7b-v1.5"
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -164,7 +163,7 @@ def test_open_source_model_invalid_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_unmatched_model_path():
-    model_type = AugmentedModelType(ModelType.LLAMA_2)
+    model_type = ModelType.LLAMA_2
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
     model_config = OpenSourceConfig(
         model_path=model_path,
@@ -184,7 +183,7 @@ def test_open_source_model_unmatched_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_missing_model_path():
-    model_type = AugmentedModelType(ModelType.VICUNA)
+    model_type = ModelType.VICUNA
     model_config = OpenSourceConfig(
         model_path="",
         server_url=DEFAULT_SERVER_URL,
@@ -199,7 +198,7 @@ def test_open_source_model_missing_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_missing_server_url():
-    model_type = AugmentedModelType(ModelType.VICUNA)
+    model_type = ModelType.VICUNA
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
     model_config = OpenSourceConfig(model_path=model_path, server_url="")
     model_config_dict = model_config.as_dict()

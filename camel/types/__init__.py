@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .augmented_model_type import AugmentedModelType
 from .enums import (
     AudioModelType,
     EmbeddingModelType,
@@ -28,6 +27,7 @@ from .enums import (
     VectorDistance,
     VoiceType,
 )
+from .inner_model_type import InnerModelType
 from .openai_types import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
@@ -66,5 +66,5 @@ __all__ = [
     'ModelPlatformType',
     'AudioModelType',
     'VoiceType',
-    'AugmentedModelType',
+    'InnerModelType',
 ]

@@ -45,7 +45,7 @@ from camel.types import (
     RoleType,
     TaskType,
 )
-from camel.types.augmented_model_type import AugmentedModelType
+from camel.types.inner_model_type import InnerModelType
 from camel.utils.async_func import sync_funcs_to_async
 
 parametrize = pytest.mark.parametrize(
@@ -73,7 +73,7 @@ def test_chat_agent(model):
 
     assert str(assistant) == (
         "ChatAgent(doctor, "
-        f"RoleType.ASSISTANT, {AugmentedModelType(ModelType.GPT_4O_MINI)})"
+        f"RoleType.ASSISTANT, {InnerModelType(ModelType.GPT_4O_MINI)})"
     )
 
     assistant.reset()
