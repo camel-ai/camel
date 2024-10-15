@@ -23,6 +23,7 @@ from camel.messages import BaseMessage
 
 
 class GAIABenchmark:
+    current_task = None
     r"""
     Please using huggingface-cli login to get authorization
     From Hugging Face download GAIA dataset
@@ -102,18 +103,17 @@ class GAIABenchmark:
         Returns:
             float: The evaluation score of the agent.
         """
-        from camel.retrievers import AutoRetriever
 
-        if vector_storage_api_key:
-            self.auto_retriever = AutoRetriever(
-                url_and_api_key=vector_storage_api_key
-            )
-        else:
-            vector_storage_local_path = os.path.join(self.data_dir, "storage")
-            os.makedirs(vector_storage_local_path, exist_ok=True)
-            self.auto_retriever = AutoRetriever(
-                vector_storage_local_path=vector_storage_api_key
-            )
+        # if vector_storage_api_key:
+        #     self.auto_retriever = AutoRetriever(
+        #         url_and_api_key=vector_storage_api_key
+        #     )
+        # else:
+        #     vector_storage_local_path = os.path.join(self.data_dir, "storage")
+        #     os.makedirs(vector_storage_local_path, exist_ok=True)
+        #     self.auto_retriever = AutoRetriever(
+        #         vector_storage_local_path=vector_storage_api_key
+        #     )
         results = []
         scores = []
 
@@ -134,14 +134,41 @@ class GAIABenchmark:
             for task in tasks[level]:
                 final_answer = task['Final answer']
                 if task['file_name'] != '':
-                    user_msg = self.get_rag_msg(task)
+                    # user_msg = self.get_rag_msg(task)
+                    print("Skipping RAG for now")
+                    continue
                 else:
                     user_msg = BaseMessage.make_user_message(
                         role_name="User",
                         content=task['Question'],
                     )
-                response = agent.step(user_msg)
+                try:
+                    response = agent.step(user_msg)
+                except Exception as e:
+                    print(f"Error in task {task['task_id']}: {e}")
+                    results.append(
+                        {
+                            "task_id": task['task_id'],
+                            "model_answer": "Error",
+                        }
+                    )
+                    print(
+                        f"Task {task['task_id']} response: Error. Expected: {final_answer}"
+                    )
+                    scores.append(False)
+                    continue
+                    # raise e
+                print(
+                    f"Task {task['task_id']} response: {response.msgs[0].content}"
+                )
                 model_answer = self.get_final_answer(response.msgs[0].content)
+                print(f"Task {task['task_id']} model answer: {model_answer}")
+                # Find tool usage
+                tool_calls = response.info.get('tool_calls', [])
+                if tool_calls:
+                    print(f"Task {task['task_id']} used tools: {tool_calls}")
+                    print(f"Tool results: {response.msgs[0].content}")
+
                 results.append(
                     {
                         "task_id": task['task_id'],
@@ -149,11 +176,21 @@ class GAIABenchmark:
                     }
                 )
                 score = self.question_scorer(model_answer, final_answer)
+                if score:
+                    print(f"Correct!: {task['task_id']}")
+                else:
+                    print(
+                        f"Wrong!: {task['task_id']}. Expected: {final_answer}, Got: {model_answer}"
+                    )
                 scores.append(score)
         self.save_results(results)
         true_count = scores.count(True)
         total_count = len(scores)
         eval_score = (true_count / total_count) * 100 if total_count > 0 else 0
+        print("Here is a breakdown of the evaluation:")
+        print(f"Total questions: {total_count}")
+        print(f"Correct answers: {true_count}")
+        print(f"Accuracy: {eval_score:.2f}%")
         return eval_score
 
     def save_results(
@@ -164,6 +201,8 @@ class GAIABenchmark:
 
         Args:
             results (List): A list of results to be saved.
+        Returns:
+            None
         """
         results_file = os.path.join(self.script_dir, "results.jsonl")
         with open(results_file, 'w') as f:
@@ -221,6 +260,9 @@ class GAIABenchmark:
             format='%(asctime)s - %(levelname)s - %(message)s',
         )
         try:
+            print(f"Retrieving content for task: {task['task_id']}")
+            print(f"Question: {task['Question']}")
+            print(f"File path: {task['file_path']}")
             retrieved_msg = self.auto_retriever.run_vector_retriever(
                 query=task['Question'],
                 content_input_paths=task['file_path'],
