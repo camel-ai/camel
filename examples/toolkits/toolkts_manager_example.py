@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Type, cast
+
 from camel.toolkits import ToolkitManager
-from camel.toolkits.function_tool import FunctionTool
 from camel.toolkits.github_toolkit import GithubToolkit
 
 
@@ -104,7 +105,7 @@ Custom Algorithm Matching Toolkit:
 """
 
 tool = manager.get_toolkit('WeatherToolkit.get_weather_data')
-if isinstance(tool, FunctionTool):
+if tool:
     print("\nFunction Description:")
     print('-' * 40)
     print(tool.get_function_description())
@@ -208,8 +209,11 @@ Matching Tools for GitHub:
 ========================================
 ===============================================================================
 """
+
 toolkit_class = manager.get_toolkit_class('GithubToolkit')
-if isinstance(toolkit_class, type):
+
+if toolkit_class:
+    toolkit_class = cast(Type[GithubToolkit], toolkit_class)
     instance = toolkit_class(repo_name='ZackYule/crab')
     pretty_print_list(
         "Tools in the crab GitHub Toolkit instance", instance.get_tools()

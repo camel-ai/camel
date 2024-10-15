@@ -15,6 +15,7 @@ import importlib
 import inspect
 import pkgutil
 from typing import Callable, List, Optional, Union
+from warnings import warn
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -90,6 +91,12 @@ class ToolkitManager:
         For each module in the package, it identifies public classes. For each
         class, it collects only those methods that are decorated with
         `@export_to_toolkit`, which adds the `_is_exported` attribute.
+
+        In addition to class methods, it also collects standalone functions
+        from the target module that are decorated with `@export_to_toolkit`
+        and adds them to the corresponding toolkit class. This allows
+        including both class methods and standalone functions under the
+        same toolkit class.
         """
         package = importlib.import_module('camel.toolkits')
 
@@ -125,7 +132,7 @@ class ToolkitManager:
     def register_tool(
         self,
         toolkit_obj: Union[Callable, object, List[Union[Callable, object]]],
-    ) -> List[FunctionTool] | str:
+    ) -> List[FunctionTool]:
         r"""
         Registers a toolkit function or instance and adds it to the toolkits
         list. If the input is a list, it processes each element in the list.
@@ -136,31 +143,24 @@ class ToolkitManager:
                 registered.
 
         Returns:
-            Union[List[FunctionTool], str]: Returns a list of FunctionTool
-                instances if the registration is successful. Otherwise,
-                returns a message indicating the failure reason.
+            FunctionTools (List[FunctionTool]): A list of FunctionTool
+                instances.
         """
         res_openai_functions = []
-        res_info = ""
 
         # If the input is a list, process each element
         if isinstance(toolkit_obj, list):
             for obj in toolkit_obj:
-                res_openai_functions_part, res_info_part = (
-                    self._register_single_tool(obj)
-                )
-                res_openai_functions.extend(res_openai_functions_part)
-                res_info += res_info_part
+                res_openai_functions = self._register_single_tool(obj)
+                res_openai_functions.extend(res_openai_functions)
         else:
-            res_openai_functions, res_info = self._register_single_tool(
-                toolkit_obj
-            )
+            res_openai_functions = self._register_single_tool(toolkit_obj)
 
-        return res_openai_functions if res_openai_functions else res_info
+        return res_openai_functions
 
     def _register_single_tool(
         self, toolkit_obj: Union[Callable, object]
-    ) -> tuple[List[FunctionTool], str]:
+    ) -> List[FunctionTool]:
         r"""
         Helper function to register a single toolkit function or instance.
 
@@ -169,25 +169,21 @@ class ToolkitManager:
                 instance to be processed.
 
         Returns:
-            Tuple: A list of FunctionTool instances and a result message.
+            FunctionTools (tuple[List[FunctionTool]): A list of FunctionTool
+                instances.
         """
         res_openai_functions = []
-        res_info = ""
         if callable(toolkit_obj):
-            res = self.add_toolkit_from_function(toolkit_obj)
-            if "successfully" in res:
+            if self.add_toolkit_from_function(toolkit_obj):
                 res_openai_functions.append(FunctionTool(toolkit_obj))
-            res_info += res
         else:
-            res = self.add_toolkit_from_instance(
+            if self.add_toolkit_from_instance(
                 **{toolkit_obj.__class__.__name__: toolkit_obj}
-            )
-            if "Successfully" in res and hasattr(toolkit_obj, 'get_tools'):
+            ) and hasattr(toolkit_obj, 'get_tools'):
                 res_openai_functions.extend(toolkit_obj.get_tools())
-            res_info += res
-        return res_openai_functions, res_info
+        return res_openai_functions
 
-    def add_toolkit_from_function(self, toolkit_func: Callable):
+    def add_toolkit_from_function(self, toolkit_func: Callable) -> bool:
         r"""
         Adds a toolkit function to the toolkits list.
 
@@ -195,22 +191,21 @@ class ToolkitManager:
             toolkit_func (Callable): The toolkit function to be added.
 
         Returns:
-            Str: A message indicating whether the addition was successful or
-                if it  failed.
+            Bool: True if the addition was successful, False otherwise.
         """
         if not callable(toolkit_func):
-            return "Provided argument is not a callable function."
+            warn("Provided argument is not a callable function.")
 
         func_name = toolkit_func.__name__
 
         if not func_name:
-            return "Function must have a valid name."
+            warn("Function must have a valid name.")
 
         self.toolkits[func_name] = toolkit_func
 
-        return f"Toolkit '{func_name}' added successfully."
+        return True
 
-    def add_toolkit_from_instance(self, **kwargs):
+    def add_toolkit_from_instance(self, **kwargs) -> bool:
         r"""
         Add a toolkit class instance to the tool list.
         Custom instance names are supported here.
@@ -220,10 +215,10 @@ class ToolkitManager:
                 where each value is expected to be an instance of BaseToolkit.
 
         Returns:
-            Str: A message indicating whether the addition was successful or
-                if it failed.
+            Bool: True if the addition was successful, False otherwise.
         """
-        messages = []
+        is_method_added = False
+
         for toolkit_instance_name, toolkit_instance in kwargs.items():
             if isinstance(toolkit_instance, BaseToolkit):
                 for attr_name in dir(toolkit_instance):
@@ -231,18 +226,18 @@ class ToolkitManager:
 
                     if callable(attr) and hasattr(attr, '_is_exported'):
                         method_name = f"{toolkit_instance_name}.{attr_name}"
-
                         self.toolkits[method_name] = attr
-                        messages.append(f"Successfully added {method_name}.")
+                        is_method_added = True
+
             else:
-                messages.append(
+                warn(
                     f"Failed to add {toolkit_instance_name}: "
                     + "Not an instance of BaseToolkit."
                 )
 
-        return "\n".join(messages)
+        return is_method_added
 
-    def list_toolkits(self):
+    def list_toolkits(self) -> List[str]:
         r"""
         Lists the names of all available toolkits.
 
@@ -251,7 +246,7 @@ class ToolkitManager:
         """
         return list(self.toolkits.keys())
 
-    def list_toolkit_classes(self):
+    def list_toolkit_classes(self) -> List[str]:
         r"""
         Lists the names of all available toolkit classes along with their
         methods.
@@ -272,7 +267,7 @@ class ToolkitManager:
 
         return result
 
-    def get_toolkit(self, name: str) -> FunctionTool | str:
+    def get_toolkit(self, name: str) -> Optional[FunctionTool]:
         r"""
         Retrieves the specified toolkit as an FunctionTool object.
 
@@ -280,17 +275,14 @@ class ToolkitManager:
             name (str): The name of the toolkit function to retrieve.
 
         Returns:
-            FunctionTool: The toolkit wrapped as an FunctionTool.
-
-        Raises:
-            ValueError: If the specified toolkit is not found.
+            FunctionTool (optional): The toolkit wrapped as an FunctionTool.
         """
         toolkit = self.toolkits.get(name)
         if toolkit:
             return FunctionTool(func=toolkit, name_prefix=name.split('.')[0])
-        return f"Toolkit '{name}' not found."
+        return None
 
-    def get_toolkits(self, names: list[str]) -> list[FunctionTool] | str:
+    def get_toolkits(self, names: list[str]) -> list[FunctionTool]:
         r"""
         Retrieves the specified toolkit as an FunctionTool object.
 
@@ -298,7 +290,7 @@ class ToolkitManager:
             name (str): The name of the toolkit function to retrieve.
 
         Returns:
-            FunctionTools (list): The toolkits wrapped as an FunctionTool.
+            FunctionTools (list): The toolkits wrapped as FunctionTools.
         """
         toolkits: list[FunctionTool] = []
         for name in names:
@@ -309,11 +301,11 @@ class ToolkitManager:
                         func=current_toolkit, name_prefix=name.split('.')[0]
                     )
                 )
-        if len(toolkits) > 0:
-            return toolkits
-        return "Toolkits are not found."
+        return toolkits
 
-    def get_toolkit_class(self, class_name: str) -> type[BaseToolkit] | str:
+    def get_toolkit_class(
+        self, class_name: str
+    ) -> Optional[type[BaseToolkit]]:
         r"""
         Retrieves the specified toolkit class.
 
@@ -321,13 +313,12 @@ class ToolkitManager:
             class_name (str): The name of the toolkit class to retrieve.
 
         Returns:
-            BaseToolkit | str: The toolkit class object if found, otherwise an
-                error message.
+            BaseToolkit(optional): The toolkit class object if found.
         """
         toolkit_class = self.toolkit_classes.get(class_name)
         if toolkit_class:
             return toolkit_class
-        return f"Toolkit class '{class_name}' not found."
+        return None
 
     def _default_search_algorithm(
         self, keyword: str, description: str
@@ -349,20 +340,20 @@ class ToolkitManager:
         self,
         keyword: str,
         algorithm: Optional[Callable[[str, str], bool]] = None,
-    ) -> List[FunctionTool] | str:
+    ) -> Optional[List[FunctionTool]]:
         r"""
         Searches for toolkits based on a keyword in their descriptions using
         the provided search algorithm.
 
         Args:
             keyword (str): The keyword to search for in toolkit descriptions.
-                algorithm (Callable[[str, str], bool], optional): A custom
+            algorithm (Callable[[str, str], bool], optional): A custom
                 search algorithm function that accepts the keyword and
                 description and returns a boolean. Defaults to fuzzy matching.
 
         Returns:
-            List[FunctionTool] | str: A list of toolkit names whose
-                descriptions match the keyword.
+            FunctionTools (list): A list of toolkit names whose descriptions
+                match the keyword, otherwise an error message.
         """
         if algorithm is None:
             algorithm = self._default_search_algorithm
