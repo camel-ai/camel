@@ -69,14 +69,18 @@ class ToolkitManager:
                     base_toolkit_class_name = cls.__name__
                     break
 
-            prefix = base_toolkit_class_name if base_toolkit_class_name else ''
+            prefix = (
+                base_toolkit_class_name + '.'
+                if base_toolkit_class_name
+                else ''
+            )
 
             for name, func in inspect.getmembers(module, inspect.isfunction):
                 if (
                     hasattr(func, '_is_exported')
                     and func.__module__ == module.__name__
                 ):
-                    self.toolkits[f"{prefix}.{name}"] = func
+                    self.toolkits[f"{prefix}{name}"] = func
 
     def _load_toolkit_class_and_methods(self):
         r"""
@@ -91,9 +95,11 @@ class ToolkitManager:
 
         for _, module_name, _ in pkgutil.iter_modules(package.__path__):
             module = importlib.import_module(f'camel.toolkits.{module_name}')
-
+            toolkit_class_name = None
             for name, cls in inspect.getmembers(module, inspect.isclass):
-                if cls.__module__ == module.__name__:
+                if cls.__module__ == module.__name__ and issubclass(
+                    cls, BaseToolkit
+                ):
                     self.toolkit_classes[name] = cls
 
                     self.toolkit_class_methods[name] = {
@@ -103,6 +109,18 @@ class ToolkitManager:
                         )
                         if callable(method) and hasattr(method, '_is_exported')
                     }
+                    toolkit_class_name = name
+            if toolkit_class_name:
+                for name, func in inspect.getmembers(
+                    module, inspect.isfunction
+                ):
+                    if (
+                        hasattr(func, '_is_exported')
+                        and func.__module__ == module.__name__
+                    ):
+                        self.toolkit_class_methods[toolkit_class_name][
+                            name
+                        ] = func
 
     def register_tool(
         self,

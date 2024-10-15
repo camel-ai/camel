@@ -53,17 +53,22 @@ Function Toolkits:
 Class Toolkits:
 ----------------------------------------
   1. CodeExecutionToolkit: execute_code
-  2. GithubToolkit: create_pull_request, retrieve_issue, retrieve_issue_list, 
+  2. DalleToolkit: get_dalle_img
+  3. GithubToolkit: create_pull_request, retrieve_issue, retrieve_issue_list, 
   retrieve_pull_requests
-  3. GoogleMapsToolkit: get_address_description, get_elevation, get_timezone
-  4. LinkedInToolkit: create_post, delete_post, get_profile
-  5. RedditToolkit: collect_top_posts, perform_sentiment_analysis, 
+  4. GoogleMapsToolkit: get_address_description, get_elevation, get_timezone
+  5. LinkedInToolkit: create_post, delete_post, get_profile
+  6. MathToolkit: add, mul, sub
+  7. RedditToolkit: collect_top_posts, perform_sentiment_analysis, 
   track_keyword_discussions
-  6. RetrievalToolkit: information_retrieval
-  7. SlackToolkit: create_slack_channel, delete_slack_message, 
+  8. RetrievalToolkit: information_retrieval
+  9. SearchToolkit: query_wolfram_alpha, search_duckduckgo, search_google, 
+  search_wiki
+  10. SlackToolkit: create_slack_channel, delete_slack_message, 
   get_slack_channel_information, get_slack_channel_message, 
   join_slack_channel, leave_slack_channel, send_slack_message
-  8. TwitterToolkit: create_tweet, delete_tweet, get_my_user_profile
+  11. TwitterToolkit: create_tweet, delete_tweet, get_my_user_profile
+  12. WeatherToolkit: get_weather_data
 ========================================
 ===============================================================================
 """
