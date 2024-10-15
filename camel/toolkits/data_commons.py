@@ -17,7 +17,7 @@ import datacommons
 import datacommons_pandas
 
 
-class DataCommonsToolkit:
+class DataCommonsToolkit(BaseToolkit):
     r"""A class representing a toolkit for Data Commons.
 
     This class provides methods for querying and retrieving data from the
