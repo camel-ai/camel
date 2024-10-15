@@ -42,6 +42,7 @@ Main Documentation
    key_modules/tasks.md
    key_modules/loaders.md
    key_modules/storages.md
+   key_modules/society.md
    key_modules/embeddings.md
    key_modules/retrievers.md
    key_modules/workforce.md
