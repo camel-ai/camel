@@ -19,8 +19,7 @@ from typing import TYPE_CHECKING, Optional
 from slack_sdk.oauth.installation_store.async_installation_store import (
     AsyncInstallationStore,
 )
-from starlette.requests import Request
-from starlette.responses import Response
+from starlette import requests, responses
 
 from camel.bots.slack.models import (
     SlackEventBody,
@@ -108,21 +107,27 @@ class SlackApp:
                 "`https://api.slack.com/apps`."
             )
 
-        # Initialize Slack Bolt AsyncApp with settings
-        self._app = AsyncApp(
-            logger=logger,
-            signing_secret=self.signing_secret,
-            installation_store=installation_store,
-            token=self.token,
-        )
-
         # Setup OAuth settings if client ID and secret are provided
         if client_id and client_secret:
-            self._app.oauth_settings = AsyncOAuthSettings(
-                client_id=self.client_id,
-                client_secret=self.client_secret,
-                scopes=self.scopes,
-                redirect_uri_path=redirect_uri_path,
+            self._app = AsyncApp(
+                oauth_settings=AsyncOAuthSettings(
+                    client_id=self.client_id,
+                    client_secret=self.client_secret,
+                    scopes=self.scopes,
+                    redirect_uri_path=redirect_uri_path,
+                ),
+                logger=logger,
+                signing_secret=self.signing_secret,
+                installation_store=installation_store,
+                token=self.token,
+            )
+        else:
+            # Initialize Slack Bolt AsyncApp with settings
+            self._app = AsyncApp(
+                logger=logger,
+                signing_secret=self.signing_secret,
+                installation_store=installation_store,
+                token=self.token,
             )
 
         self._handler = AsyncSlackRequestHandler(self._app)
@@ -175,10 +180,12 @@ class SlackApp:
             host (Optional[str]): The hostname to bind the server (default is
                 None).
         """
-        thread = threading.Thread(target=self.run,  args=(port, path, host))
+        thread = threading.Thread(target=self.run, args=(port, path, host))
         thread.start()
 
-    async def handle_request(self, request: Request) -> Response:
+    async def handle_request(
+        self, request: requests.Request
+    ) -> responses.Response:
         """Handles incoming requests from Slack through the request handler.
 
         Args:
@@ -251,9 +258,7 @@ class SlackApp:
         await say("Hello, world!")
 
     def mention_me(
-            self,
-            context: "AsyncBoltContext",
-            body: SlackEventBody
+        self, context: "AsyncBoltContext", body: SlackEventBody
     ) -> bool:
         """Check if the bot is mentioned in the message.
 
@@ -268,4 +273,3 @@ class SlackApp:
         bot_user_id = context.bot_user_id
         mention = f"<@{bot_user_id}>"
         return mention in message
-

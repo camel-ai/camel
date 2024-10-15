@@ -37,6 +37,7 @@ class SlackAuthProfile(BaseModel):
     - https://api.slack.com/apis/events-api#authorizations
     - https://api.slack.com/changelog/2020-09-15-events-api-truncate-authed-users#no_context
     """
+
     enterprise_id: Optional[str] = None
     """The ID of the enterprise associated with the authorization."""
 
@@ -88,7 +89,7 @@ class SlackEventProfile(BaseModel):
     event_ts: str
     """The event-specific timestamp when it occurred."""
 
-    channel_type: str
+    channel_type: Optional[str]
     """The type of Slack channel (e.g., 'channel', 'im')."""
 
 
@@ -103,7 +104,7 @@ class SlackEventBody(BaseModel):
     team_id: str
     """The ID of the team where the event is happening."""
 
-    context_team_id: str
+    context_team_id: Optional[str]
     """The team ID for the shared channel context, if applicable."""
 
     context_enterprise_id: Optional[str] = None

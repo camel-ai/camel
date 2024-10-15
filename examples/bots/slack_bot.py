@@ -19,8 +19,7 @@ from slack_bolt.context.async_context import AsyncBoltContext
 from slack_bolt.context.say.async_say import AsyncSay
 from slack_sdk.web.async_client import AsyncWebClient
 
-from camel.bots.slack.models import SlackEventBody
-from camel.bots.slack.slack_app import SlackApp
+from camel.bots import SlackApp, SlackEventBody
 from examples.bots.agent import Agent
 
 
@@ -41,6 +40,7 @@ class SlackBot(SlackApp):
         client_id (Optional[str]): Slack app client ID.
         client_secret (Optional[str]): Slack app client secret.
     """
+
     def __init__(
         self,
         msg_queue: queue.Queue,
@@ -50,8 +50,8 @@ class SlackBot(SlackApp):
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
     ):
-        """Initializes the SlackBot instance with a message queue and the required
-        Slack authentication details.
+        """Initializes the SlackBot instance with a message queue and the
+        required Slack authentication details.
 
         Args:
             msg_queue (queue.Queue): A thread-safe queue to communicate between
