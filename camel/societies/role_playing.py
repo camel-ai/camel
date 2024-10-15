@@ -149,8 +149,8 @@ class RolePlaying:
 
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
-        self.assistant_sys_msg: BaseMessage
-        self.user_sys_msg: BaseMessage
+        self.assistant_sys_msg: Optional[BaseMessage]
+        self.user_sys_msg: Optional[BaseMessage]
         self._init_agents(
             init_assistant_sys_msg,
             init_user_sys_msg,
@@ -454,9 +454,11 @@ class RolePlaying:
         )
         if init_msg_content is None:
             init_msg_content = default_init_msg_content
+
         # Initialize a message sent by the assistant
         init_msg = BaseMessage.make_assistant_message(
-            role_name=self.assistant_sys_msg.role_name,
+            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
+            or "assistant",
             content=init_msg_content,
         )
 
