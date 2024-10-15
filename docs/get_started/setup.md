@@ -22,14 +22,14 @@ If you are using Command Prompt:
 ```bash
 set OPENAI_API_KEY="your_api_key"
 
-# If you are using other proxy services like Azure [TODO]
+# If you are using other proxy services
 # set OPENAI_API_BASE_URL="your_base_url" # (Optional)
 ```
 Or if you are using PowerShell:
 ```powershell
 $env:OPENAI_API_KEY="your_api_key"
 
-# If you are using other proxy services like Azure
+# If you are using other proxy services
 $env:OPENAI_API_BASE_URL="your_base_url" # (Optional)
 ```
 These commands on Windows will set the environment variable for the duration of that particular Command Prompt or PowerShell session only. You may use `setx` or change the system properties dialog for the change to take place in all the new sessions.
