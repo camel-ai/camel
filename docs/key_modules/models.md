@@ -21,7 +21,9 @@ The following table lists currently supported model platforms by CAMEL.
 | Azure OpenAI | gpt-4-turbo | Y |
 | Azure OpenAI | gpt-4 | Y |
 | Azure OpenAI | gpt-3.5-turbo | Y |
+| OpenAI Compatible | Depends on the provider | ----- |
 | Mistral AI | mistral-large-2 | N |
+| Mistral AI | pixtral-12b-2409 | Y |
 | Mistral AI | open-mistral-nemo | N |
 | Mistral AI | codestral | N |
 | Mistral AI | open-mistral-7b | N |
@@ -49,9 +51,9 @@ The following table lists currently supported model platforms by CAMEL.
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
 
-## 3. Model calling template
+## 3. Using Models by API calling
 
-Here is the example code to use a chosen model. To utilize a different model, you can simply change three parameters the define your model to be used: `model_platform`, `model_type`, `model_config_dict` .
+Here is an example code to use a specific model (gpt-4o-mini). If you want to use another model, you can simply change these three parameters: `model_platform`, `model_type`, `model_config_dict` .
 
 ```python
 from camel.models import ModelFactory
@@ -69,18 +71,29 @@ model = ModelFactory.create(
 
 # Define an assitant message
 system_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
+    role_name="Assistant",
+    content="You are a helpful assistant.",
 )
 
 # Initialize the agent
 ChatAgent(system_msg, model=model)
 ```
 
-## 4. Open Source LLMs
-In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
+And if you want to use an OpenAI-compatible API, you can replace the `model` with the following code:
 
-While proprietary models like gpt-4o-mini and gpt-4o have set high standards for content generation, open-source alternatives offer viable solutions for experimentation and practical use. These models, supported by active communities and continuous improvements, provide flexibility and cost-effectiveness for developers and researchers.
+```python
+from camel.models.openai_compatibility_model import OpenAICompatibilityModel
+
+model = OpenAICompatibilityModel(
+    model_type="a-string-representing-the-model-type",
+    model_config_dict={"max_tokens": 4096},  # and other parameters you want
+    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
+)
+```
+
+## 4. Using On-Device Open Source Models
+In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
 
 ### 4.1 Using Ollama to Set Llama 3 Locally
 

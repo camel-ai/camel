@@ -16,6 +16,7 @@ Main Documentation
    :caption: Get Started
    :name: getting_started
 
+   get_started/installation.md
    get_started/setup.md
 
 .. toctree::
@@ -23,10 +24,10 @@ Main Documentation
    :caption: Agents
    :name: agents
 
-   agents/single_agent.md
-   agents/role_playing.md
-   agents/embodied_agents.md
-   agents/critic_agents_and_tree_search.md
+   cookbooks/create_your_first_agent.ipynb
+   cookbooks/create_your_first_agents_society.ipynb
+   cookbooks/embodied_agents.ipynb
+   cookbooks/critic_agents_and_tree_search.ipynb
 
 .. toctree::
    :maxdepth: 1
@@ -41,6 +42,7 @@ Main Documentation
    key_modules/tasks.md
    key_modules/loaders.md
    key_modules/storages.md
+   key_modules/society.md
    key_modules/embeddings.md
    key_modules/retrievers.md
    key_modules/workforce.md

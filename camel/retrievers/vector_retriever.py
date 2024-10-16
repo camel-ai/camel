@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import warnings
+from io import IOBase
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
@@ -72,26 +73,34 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: Union[str, Element],
+        content: Union[str, Element, IOBase],
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
+        embed_batch: int = 50,
+        should_chunk: bool = True,
         **kwargs: Any,
     ) -> None:
-        r"""Processes content from a file or URL, divides it into chunks by
-        using `Unstructured IO`, and stores their embeddings in the specified
-        vector storage.
+        r"""Processes content from local file path, remote URL, string
+        content, Element object, or a binary file object, divides it into
+        chunks by using `Unstructured IO`, and stores their embeddings in the
+        specified vector storage.
 
         Args:
-            content (Union[str, Element]): Local file path, remote URL,
-                string content or Element object.
+            content (Union[str, Element, IOBase]): Local file path, remote
+                URL, string content, Element object, or a binary file object.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
             max_characters (int): Max number of characters in each chunk.
                 Defaults to `500`.
+            embed_batch (int): Size of batch for embeddings. Defaults to `50`.
+            should_chunk (bool): If True, divide the content into chunks,
+                otherwise skip chunking. Defaults to True.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         if isinstance(content, Element):
             elements = [content]
+        elif isinstance(content, IOBase):
+            elements = self.uio.parse_bytes(file=content, **kwargs) or []
         else:
             # Check if the content is URL
             parsed_url = urlparse(content)
@@ -100,20 +109,26 @@ class VectorRetriever(BaseRetriever):
                 elements = self.uio.parse_file_or_url(content, **kwargs) or []
             else:
                 elements = [self.uio.create_element_from_text(text=content)]
-        if elements:
-            chunks = self.uio.chunk_elements(
-                chunk_type=chunk_type,
-                elements=elements,
-                max_characters=max_characters,
-            )
         if not elements:
             warnings.warn(
                 f"No elements were extracted from the content: {content}"
             )
             return
-        # Iterate to process and store embeddings, set batch of 50
-        for i in range(0, len(chunks), 50):
-            batch_chunks = chunks[i : i + 50]
+
+        # Chunk the content if required
+        chunks = (
+            self.uio.chunk_elements(
+                chunk_type=chunk_type,
+                elements=elements,
+                max_characters=max_characters,
+            )
+            if should_chunk
+            else elements
+        )
+
+        # Process chunks in batches and store embeddings
+        for i in range(0, len(chunks), embed_batch):
+            batch_chunks = chunks[i : i + embed_batch]
             batch_vectors = self.embedding_model.embed_list(
                 objs=[str(chunk) for chunk in batch_chunks]
             )
@@ -124,6 +139,8 @@ class VectorRetriever(BaseRetriever):
             for vector, chunk in zip(batch_vectors, batch_chunks):
                 if isinstance(content, str):
                     content_path_info = {"content path": content}
+                elif isinstance(content, IOBase):
+                    content_path_info = {"content path": "From file bytes"}
                 elif isinstance(content, Element):
                     content_path_info = {
                         "content path": content.metadata.file_directory

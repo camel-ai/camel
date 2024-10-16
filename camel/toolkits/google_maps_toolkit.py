@@ -16,7 +16,7 @@ from functools import wraps
 from typing import Any, Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
 
 
@@ -287,16 +287,16 @@ class GoogleMapsToolkit(BaseToolkit):
 
         return description
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.get_address_description),
-            OpenAIFunction(self.get_elevation),
-            OpenAIFunction(self.get_timezone),
+            FunctionTool(self.get_address_description),
+            FunctionTool(self.get_elevation),
+            FunctionTool(self.get_timezone),
         ]
