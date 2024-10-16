@@ -15,8 +15,8 @@ import os
 from typing import List, Literal, Optional, Tuple, Union
 from warnings import warn
 
-from camel.toolkits.base import BaseToolkit
 from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
 from camel.utils.commons import api_keys_required
 
 
