@@ -12,11 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .discord_app import DiscordApp
-from .discord_bot import DiscordBot
 from .telegram_bot import TelegramBot
 
 __all__ = [
     'DiscordApp',
-    'DiscordBot',
     'TelegramBot',
 ]
