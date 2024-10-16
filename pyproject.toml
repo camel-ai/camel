@@ -420,7 +420,6 @@ module = [
     "mistralai",
     "reka-api",
     "agentops",
-    "boto3",
     "botocore.*",
     "asknews",
     "arxiv",

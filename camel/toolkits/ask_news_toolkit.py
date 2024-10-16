@@ -16,7 +16,7 @@ from typing import List, Literal, Optional, Tuple, Union
 from warnings import warn
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.utils.commons import api_keys_required
 
 
@@ -367,21 +367,21 @@ class AskNewsToolkit(BaseToolkit):
                 + f"'{queries}': {e!s}."
             )
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the functions
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
           in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects representing
+            List[FunctionTool]: A list of FunctionTool objects representing
                 the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.get_news),
-            OpenAIFunction(self.search_reddit),
-            OpenAIFunction(self.get_stories),
-            OpenAIFunction(self.finance_query),
-            OpenAIFunction(self.chat_query),
-            OpenAIFunction(self.get_web_search),
+            FunctionTool(self.get_news),
+            FunctionTool(self.search_reddit),
+            FunctionTool(self.get_stories),
+            FunctionTool(self.finance_query),
+            FunctionTool(self.chat_query),
+            FunctionTool(self.get_web_search),
         ]
 
 
@@ -695,23 +695,23 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 + f"'{queries}': {e!s}."
             )
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the functions
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
           in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects representing
+            List[FunctionTool]: A list of FunctionTool objects representing
                 the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.get_news),
-            OpenAIFunction(self.search_reddit),
-            OpenAIFunction(self.get_stories),
-            OpenAIFunction(self.finance_query),
-            OpenAIFunction(self.chat_query),
-            OpenAIFunction(self.get_web_search),
+            FunctionTool(self.get_news),
+            FunctionTool(self.search_reddit),
+            FunctionTool(self.get_stories),
+            FunctionTool(self.finance_query),
+            FunctionTool(self.chat_query),
+            FunctionTool(self.get_web_search),
         ]
 
 
-ASKNEWS_FUNCS: List[OpenAIFunction] = AskNewsToolkit().get_tools()
-ASYNC_ASKNEWS_FUNCS: List[OpenAIFunction] = AsyncAskNewsToolkit().get_tools()
+ASKNEWS_FUNCS: List[FunctionTool] = AskNewsToolkit().get_tools()
+ASYNC_ASKNEWS_FUNCS: List[FunctionTool] = AsyncAskNewsToolkit().get_tools()
