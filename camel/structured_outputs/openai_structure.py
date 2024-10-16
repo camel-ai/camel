@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -65,15 +65,15 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
         if target is not None:
             self.model_config_dict["response_format"] = target
 
-        self._client.chat.completions.create = (
-            self._client.beta.chat.completions.parse
+        self._client.chat.completions.create = (  # type: ignore[method-assign]
+            self._client.beta.chat.completions.parse  # type: ignore[assignment]
         )
 
     @api_keys_required("OPENAI_API_KEY")
     def structure(
         self,
         content: str,
-    ) -> Union[BaseModel, str]:
+    ) -> Optional[BaseModel]:
         """
         Formats the input content into the expected BaseModel
 
@@ -81,7 +81,7 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
             content (str): The content to be formatted.
 
         Returns:
-            Union[BaseModel, str]: The formatted response.
+            Optional[BaseModel]: The formatted response.
         """
         completion = self.run(
             messages=[
@@ -89,8 +89,7 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
                 {'role': 'user', 'content': content},
             ]
         )
-        message = completion.choices[0].message
-        if message.parsed:
-            return message.parsed
-        else:
-            return message.refusal
+        message = completion.choices[0].message  # type: ignore[union-attr]
+        if message.parsed:  # type: ignore[union-attr]
+            return message.parsed  # type: ignore[union-attr]
+        return None

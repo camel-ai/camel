@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC, abstractclassmethod
-from typing import Optional, Union
+from abc import ABC, abstractmethod
+from typing import Callable, Optional, Union
 
 from pydantic import BaseModel
 
@@ -44,13 +44,13 @@ class BaseStructedModel(ABC):
 
     @staticmethod
     def get_format(
-        input_data: Optional[Union[str, type, callable]] = None,
+        input_data: Optional[Union[str, type, Callable]] = None,
     ) -> BaseModel:
         """
         Formats the input data into the expected response format.
 
         Args:
-            input_data (Optional[Union[str, type, callable]]):
+            input_data (Optional[Union[str, type, Callable]]):
                 The input data to be formatted. Defaults to None.
 
         Returns:
@@ -58,8 +58,8 @@ class BaseStructedModel(ABC):
         """
         return get_format(input_data)
 
-    @abstractclassmethod
-    def structure(self, text: str) -> BaseModel:
+    @abstractmethod
+    def structure(self, text: str) -> Optional[BaseModel]:
         """
         Structures the input text into the expected response format.
 
@@ -67,6 +67,6 @@ class BaseStructedModel(ABC):
             text (str): The input text to be structured.
 
         Returns:
-            BaseModel: The structured response.
+            Optional[BaseModel]: The structured response.
         """
         pass
