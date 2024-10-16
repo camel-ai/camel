@@ -39,6 +39,7 @@ from .openai_types import (
     Choice,
     CompletionUsage,
 )
+from .unified_model_type import UnifiedModelType
 
 __all__ = [
     'RoleType',
@@ -59,11 +60,11 @@ __all__ = [
     'ChatCompletionAssistantMessageParam',
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
-    'OpenAIVideoType',
     'OpenAIImageType',
     'OpenAIVisionDetailType',
     'OpenAPIName',
     'ModelPlatformType',
     'AudioModelType',
     'VoiceType',
+    'UnifiedModelType',
 ]

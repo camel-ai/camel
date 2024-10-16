@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
@@ -43,14 +42,13 @@ def main():
     ]
 
     model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_3_5_TURBO
+    model_type = ModelType.GPT_4O_MINI
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
         tools=function_list,
     )
@@ -58,7 +56,6 @@ def main():
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
     )
 

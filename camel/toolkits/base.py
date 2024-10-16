@@ -14,9 +14,8 @@
 
 from typing import List
 
+from camel.toolkits import FunctionTool
 from camel.utils import AgentOpsMeta
-
-from .function_tool import FunctionTool
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):

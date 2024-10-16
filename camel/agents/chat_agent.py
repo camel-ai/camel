@@ -34,7 +34,6 @@ from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
-from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -169,14 +168,13 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().as_dict(),
             )
         )
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: ModelType = self.model_backend.model_type
+        self.model_type = self.model_backend.model_type
 
         # tool registration
         external_tools = external_tools or []
@@ -439,12 +437,7 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        if (
-            isinstance(self.model_type, ModelType)
-            and "lama" in self.model_type.value
-            or isinstance(self.model_type, str)
-            and "lama" in self.model_type
-        ):
+        if "llama" in self.model_type.lower():
             if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
@@ -525,10 +518,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
-            ):
+            if output_schema is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -619,7 +609,7 @@ class ChatAgent(BaseAgent):
 
             if (
                 output_schema is not None
-                and self.model_type.supports_tool_calling
+                and self.model_type.support_native_tool_calling
             ):
                 (
                     output_messages,
@@ -727,7 +717,10 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None and self.model_type.supports_tool_calling:
+        if (
+            output_schema is not None
+            and self.model_type.support_native_tool_calling
+        ):
             (
                 output_messages,
                 finish_reasons,
@@ -1193,10 +1186,7 @@ class ChatAgent(BaseAgent):
         Returns:
             dict: Usage dictionary.
         """
-        if isinstance(self.model_type, ModelType):
-            encoding = get_model_encoding(self.model_type.value_for_tiktoken)
-        else:
-            encoding = get_model_encoding("gpt-4o-mini")
+        encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))

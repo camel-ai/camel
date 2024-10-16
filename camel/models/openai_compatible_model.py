@@ -18,59 +18,54 @@ from typing import Any, Dict, List, Optional, Union
 from openai import OpenAI, Stream
 
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.models import BaseModelBackend
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
 )
 
 
-class OpenAICompatibilityModel:
-    r"""LLM API served by OpenAI-compatible providers."""
+class OpenAICompatibleModel(BaseModelBackend):
+    r"""Constructor for model backend supporting OpenAI compatibility.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`{}` will be used. (default: :obj:`None`)
+        api_key (str): The API key for authenticating with the model service.
+        url (str): The url to the model service.
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
+    """
 
     def __init__(
         self,
-        model_type: str,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for model backend.
-
-        Args:
-            model_type (str): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (str): The API key for authenticating with the
-                model service. (default: :obj:`None`)
-            url (str): The url to the model service. (default:
-                :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
-        self._api_key = api_key or os.environ.get(
-            "OPENAI_COMPATIBILIY_API_KEY"
+        self.api_key = api_key or os.environ.get("OPENAI_COMPATIBILIY_API_KEY")
+        self.url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
         )
-        if self._url is None:
-            raise ValueError(
-                "For OpenAI-compatible models, you must provide the `url`."
-            )
-        if self._api_key is None:
-            raise ValueError(
-                "For OpenAI-compatible models, you must provide the `api_key`."
-            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=self._url,
             api_key=self._api_key,
+            base_url=self._url,
         )
-        self._token_counter = token_counter
 
     def run(
         self,
@@ -132,3 +127,6 @@ class OpenAICompatibilityModel:
             " setting up the model. Using 4096 as default value."
         )
         return 4096
+
+    def check_model_config(self):
+        pass
