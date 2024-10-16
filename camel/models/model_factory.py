@@ -78,7 +78,10 @@ class ModelFactory:
             if model_platform.is_open_source and model_type.is_open_source:
                 model_class = OpenSourceModel
                 return model_class(
-                    model_type, model_config_dict, url, token_counter
+                    model_type=model_type,
+                    model_config_dict=model_config_dict,
+                    url=url,
+                    token_counter=token_counter
                 )
             if model_platform.is_openai and model_type.is_openai:
                 model_class = OpenAIModel
@@ -107,7 +110,10 @@ class ModelFactory:
             if model_platform.is_ollama:
                 model_class = OllamaModel
                 return model_class(
-                    model_type, model_config_dict, url, token_counter
+                    model_type=model_type,
+                    model_config_dict=model_config_dict,
+                    url=url,
+                    token_counter=token_counter
                 )
             elif model_platform.is_vllm:
                 model_class = VLLMModel
@@ -120,7 +126,10 @@ class ModelFactory:
             elif model_platform.is_together:
                 model_class = TogetherAIModel
                 return model_class(
-                    model_type, model_config_dict, api_key, token_counter
+                    model_type=model_type,
+                    model_config_dict=model_config_dict,
+                    api_key=api_key,
+                    token_counter=token_counter
                 )
             else:
                 raise ValueError(
@@ -130,5 +139,9 @@ class ModelFactory:
         else:
             raise ValueError(f"Invalid model type `{model_type}` provided.")
         return model_class(
-            model_type, model_config_dict, api_key, url, token_counter
+            model_type=model_type,
+            model_config_dict=model_config_dict,
+            url=url,
+            api_key=api_key,
+            token_counter=token_counter
         )
