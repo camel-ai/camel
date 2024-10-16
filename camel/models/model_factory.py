@@ -18,6 +18,7 @@ from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
+from camel.models.huggingface_model import HuggingFaceModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
 from camel.models.ollama_model import OllamaModel
@@ -113,6 +114,9 @@ class ModelFactory:
                 model_class = VLLMModel
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
+            elif model_platform.is_internlm:
+                model_class = HuggingFaceModel
+                return model_class(model_type, model_config_dict)
             elif model_platform.is_openai_compatibility_model:
                 model_class = OpenAICompatibilityModel
             elif model_platform.is_samba:
