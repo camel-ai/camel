@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.configs import ChatGPTConfig
 from camel.models import OpenAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -34,11 +34,10 @@ from camel.utils import OpenAITokenCounter
         ModelType.O1_MINI,
     ],
 )
-def test_openai_model(model_type):
-    model_config_dict = ChatGPTConfig().as_dict()
-    model = OpenAIModel(model_type, model_config_dict)
+def test_openai_model(model_type: ModelType):
+    model = OpenAIModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == ChatGPTConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
@@ -47,11 +46,7 @@ def test_openai_model(model_type):
 @pytest.mark.model_backend
 def test_openai_model_unexpected_argument():
     model_type = ModelType.GPT_4
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

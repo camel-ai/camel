@@ -17,41 +17,49 @@ from typing import Any, Dict, List, Optional, Union
 from openai import Stream
 
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+    UnifiedModelType,
+)
 from camel.utils import BaseTokenCounter
 
 
 class BaseModelBackend(ABC):
     r"""Base class for different model backends.
-    May be OpenAI API, a local LLM, a stub for unit tests, etc.
+    It may be OpenAI API, a local LLM, a stub for unit tests, etc.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
+        model_config_dict (Optional[Dict[str, Any]], optional): A config
+            dictionary. (default: :obj:`{}`)
+        api_key (Optional[str], optional): The API key for authenticating
+            with the model service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the model service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token
+            counter to use for the model. If not provided,
+            :obj:`OpenAITokenCounter` will be used. (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for the model backend.
-
-        Args:
-            model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A config dictionary.
-            api_key (Optional[str]): The API key for authenticating with the
-                model service.
-            url (Optional[str]): The url to the model service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will
-                be used.
-        """
-        self.model_type = model_type
+        self.model_type: UnifiedModelType = UnifiedModelType(model_type)
+        if model_config_dict is None:
+            model_config_dict = {}
         self.model_config_dict = model_config_dict
         self._api_key = api_key
         self._url = url
-        self.check_model_config()
         self._token_counter = token_counter
+        self.check_model_config()
 
     @property
     @abstractmethod

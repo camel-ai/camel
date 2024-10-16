@@ -11,28 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
-from mock import patch
-
-import examples.ai_society.babyagi_playing
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-
-parametrize = pytest.mark.parametrize(
-    'model',
-    [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-        ),
-        pytest.param(None, marks=pytest.mark.model_backend),
-    ],
-)
+from camel.types import ModelType, UnifiedModelType
 
 
-@parametrize
-def test_ai_society_babyagi_playing_example(model):
-    with patch('time.sleep', return_value=None):
-        examples.ai_society.babyagi_playing.main(
-            model=model, chat_turn_limit=2
-        )
+def test_predefined_model():
+    model_type = UnifiedModelType("gpt-4o-mini")
+    assert model_type == ModelType.GPT_4O_MINI
+
+
+def test_duplicated_model_types():
+    model_type_1 = UnifiedModelType("random-open-source")
+    model_type_2 = UnifiedModelType("random-open-source")
+    assert id(model_type_1) == id(model_type_2)
+
+    model_type_3 = UnifiedModelType(ModelType.GPT_4O_MINI)
+    model_type_4 = UnifiedModelType("gpt-4o-mini")
+    assert id(model_type_3) == id(model_type_4)

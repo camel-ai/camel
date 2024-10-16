@@ -12,11 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from openai import OpenAI
 
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -24,40 +25,38 @@ from camel.utils import (
 )
 
 
-class NemotronModel:
-    r"""Nemotron model API backend with OpenAI compatibility."""
+class NemotronModel(BaseModelBackend):
+    r"""Nemotron model API backend with OpenAI compatibility.
 
-    # NOTE: Nemotron model doesn't support additional model config like OpenAI.
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the Nvidia service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the Nvidia service.
+            (default: :obj:`https://integrate.api.nvidia.com/v1`)
+
+    Notes:
+        Nemotron model doesn't support additional model config like OpenAI.
+    """
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: Union[ModelType, str],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        r"""Constructor for Nvidia backend.
-
-        Args:
-            model_type (ModelType): Model for which a backend is created.
-            api_key (Optional[str]): The API key for authenticating with the
-                Nvidia service. (default: :obj:`None`)
-            url (Optional[str]): The url to the Nvidia service. (default:
-                :obj:`None`)
-        """
-        self.model_type = model_type
-        self._url = url or os.environ.get("NVIDIA_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
-        if not self._url or not self._api_key:
-            raise ValueError(
-                "NVIDIA_API_BASE_URL and NVIDIA_API_KEY should be set."
-            )
+        url = url or os.environ.get(
+            "NVIDIA_API_BASE_URL", "https://integrate.api.nvidia.com/v1"
+        )
+        api_key = api_key or os.environ.get("NVIDIA_API_KEY")
+        super().__init__(model_type, {}, api_key, url)
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     @api_keys_required("NVIDIA_API_KEY")
     def run(
@@ -74,6 +73,17 @@ class NemotronModel:
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model_type,
         )
         return response
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        raise NotImplementedError(
+            "Nemotron model doesn't support token counter."
+        )
+
+    def check_model_config(self):
+        raise NotImplementedError(
+            "Nemotron model doesn't support model config."
+        )

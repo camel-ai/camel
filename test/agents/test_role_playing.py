@@ -14,18 +14,21 @@
 import pytest
 
 from camel.agents import ChatAgent, CriticAgent
-from camel.configs import ChatGPTConfig
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 
@@ -141,7 +144,6 @@ def test_role_playing_with_function():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     role_playing = RolePlaying(

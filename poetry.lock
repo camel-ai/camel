@@ -402,12 +402,12 @@ tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
 name = "asknews"
-version = "0.7.47"
+version = "0.7.48"
 description = "Python SDK for AskNews"
 optional = true
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "asknews-0.7.47-py3-none-any.whl", hash = "sha256:f11569bd7f488a9097e20996d5bb4f7f240a684fd928d59db4fe4459903b5bbb"},
+    {file = "asknews-0.7.48-py3-none-any.whl", hash = "sha256:ef53cd21f93e086a31938bf4e50b7d6c117ca64fc5fc0829b6c713a72a7991c4"},
 ]
 
 [package.dependencies]
@@ -1521,13 +1521,13 @@ files = [
 
 [[package]]
 name = "duckduckgo-search"
-version = "6.3.1"
+version = "6.3.2"
 description = "Search for words, documents, images, news, maps and text translation using the DuckDuckGo.com search engine."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "duckduckgo_search-6.3.1-py3-none-any.whl", hash = "sha256:408fbfe07ae084eca5d0b5ebd0234187362d9e507ca1549f264104ce13006b58"},
-    {file = "duckduckgo_search-6.3.1.tar.gz", hash = "sha256:f43c7fa61518537bb5327aa9411520b04baa7c32b199d816b97d38f451f71824"},
+    {file = "duckduckgo_search-6.3.2-py3-none-any.whl", hash = "sha256:cd631275292460d590d1d496995d002bf2fe6db9752713fab17b9e95924ced98"},
+    {file = "duckduckgo_search-6.3.2.tar.gz", hash = "sha256:53dbf45f8749bfc67483eb9f281f2e722a5fe644d61c54ed9e551d26cb6bcbf2"},
 ]
 
 [package.dependencies]
