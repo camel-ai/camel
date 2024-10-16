@@ -16,8 +16,8 @@ from camel.toolkits import AskNewsToolkit
 
 ask_news = AskNewsToolkit()
 
-# news_output = ask_news.get_news(query="camel-ai")
-# print(news_output[:1000])
+news_output = ask_news.get_news(query="camel-ai")
+print(news_output[:1000])
 
 """
 ===============================================================================
