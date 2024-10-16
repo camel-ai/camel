@@ -54,7 +54,7 @@ class TestAskNewsToolkit(unittest.TestCase):
         # Test handling of an exception in get_news
         self.mock_sdk.news.search_news.side_effect = Exception("API Error")
         result = self.toolkit.get_news(query="test query")
-        self.assertIsNone(result)
+        self.assertEqual(result, "Got error: API Error")
 
     def test_search_reddit_success(self):
         # Mock the API response for search_reddit
@@ -83,7 +83,7 @@ class TestAskNewsToolkit(unittest.TestCase):
         self.mock_sdk.stories.search_stories.return_value = mock_response
 
         result = self.toolkit.get_stories(
-            categories=["sports"], continent="NA"
+            query="test query", categories=["Sports"]
         )
 
         expected_result = {
@@ -105,14 +105,23 @@ class TestAskNewsToolkit(unittest.TestCase):
         }
         self.assertEqual(result, expected_result)
         self.mock_sdk.stories.search_stories.assert_called_once_with(
-            categories=["sports"],
-            continent="NA",
-            sort_by="coverage",
+            query="test query",
+            categories=["Sports"],
             reddit=3,
             expand_updates=True,
             max_updates=2,
             max_articles=10,
         )
+
+    def test_get_stories_failure(self):
+        # Test handling of an exception in get_stories
+        self.mock_sdk.stories.search_stories.side_effect = Exception(
+            "API Error"
+        )
+        result = self.toolkit.get_stories(
+            query="test query", categories=["Sports"]
+        )
+        self.assertEqual(result, "Got error: API Error")
 
     def test_process_response(self):
         # Test _process_response utility function
