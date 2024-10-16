@@ -54,7 +54,7 @@ usr_msg = BaseMessage.make_user_message(
 
 # Get response information
 response = camel_agent.step(usr_msg)
-print(str(response.info['tool_calls'])[:2000])
+print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
 [FunctionCallingRecord(func_name='get_author_detailed_info', args={}, result=
@@ -161,5 +161,34 @@ paper_files/paper/2023/hash/
 a3621ee907def47c1b952ade25c67698-Abstract-Conference.html', 
 'url_related_articles': '/scholar?oi=bibs&hl=en&q=related:9TMbme6CLjcJ:scholar.
 google.com/', 'cites_per_year': {2023: 95, 2024: 269}})]
+===============================================================================
+"""
+
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="""get the full information for paper from link: `https://hal.science/hal-04206682/document`""",
+)
+
+# Get response information
+response = camel_agent.step(usr_msg)
+print((response.info['tool_calls'])[:1000])
+"""
+===============================================================================
+[FunctionCallingRecord(func_name='get_full_paper_content_by_link', args=
+{'pdf_url': 'https://hal.science/hal-04206682/document'}, result='Deep 
+learning\nYann Lecun, Yoshua Bengio, Geoffrey Hinton\n\nTo cite this 
+version:\n\nYann Lecun, Yoshua Bengio, Geoffrey Hinton. Deep learning. Nature, 
+2015, 521 (7553), pp.436-444.\n\uffff10.1038/nature14539\uffff. 
+\uffffhal-04206682\uffff\n\nHAL Id: hal-04206682\n\nhttps://hal.science/
+hal-04206682v1\n\nSubmitted on 14 Sep 2023\n\nHAL is a multi-disciplinary open 
+access\narchive for the deposit and dissemination of sci-\nentific research 
+documents, whether they are pub-\nlished or not. The documents may come 
+from\nteaching and research institutions in France or\nabroad, or from public 
+or private research centers.\n\nL'archive ouverte pluridisciplinaire HAL, 
+est\ndestinée au dépôt et à la diffusion de documents\nscientifiques de niveau 
+recherche, publiés ou non,\némanant des établissements d'enseignement et 
+de\nrecherche français ou étrangers, des laboratoires\npublics ou privés.
+\n\n\x0cDeep learning\n\nYann LeCun1,2, Yoshua Bengio3 & Geoffrey Hinton4,
+5\n\n1Facebook AI Research, 770 Broadway, New York, New York 10003 USA\n\n2N..
 ===============================================================================
 """

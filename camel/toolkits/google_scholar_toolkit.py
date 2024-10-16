@@ -14,7 +14,7 @@
 import re
 from typing import List, Optional
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
@@ -94,7 +94,8 @@ class GoogleScholarToolkit(BaseToolkit):
         self, publication_title: str
     ) -> Optional[dict]:
         r"""Retrieves detailed information about a specific publication by its
-        title.
+        title. Note that this method cannot retrieve the full content of the
+        paper.
 
         Args:
             publication_title (str): The title of the publication to search
@@ -111,16 +112,35 @@ class GoogleScholarToolkit(BaseToolkit):
                 return self.scholarly.fill(publication)
         return None  # Return None if not found
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_full_paper_content_by_link(self, pdf_url: str) -> Optional[str]:
+        r"""Retrieves the full paper content from a given PDF URL using the
+        arxiv2text tool.
+
+        Args:
+            pdf_url (str): The URL of the PDF file.
+
+        Returns:
+            Optional[str]: The full text extracted from the PDF, or `None` if
+                an error occurs.
+        """
+        from arxiv2text import arxiv_to_text
+
+        try:
+            return arxiv_to_text(pdf_url)
+        except Exception:
+            return None  # Return None in case of any error
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.get_author_detailed_info),
-            OpenAIFunction(self.get_author_publications),
-            OpenAIFunction(self.get_publication_by_title),
+            FunctionTool(self.get_author_detailed_info),
+            FunctionTool(self.get_author_publications),
+            FunctionTool(self.get_publication_by_title),
+            FunctionTool(self.get_full_paper_content_by_link),
         ]
