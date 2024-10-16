@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import patch
 
-from camel.toolkits import GoogleScholarToolkit, OpenAIFunction
+from camel.toolkits import FunctionTool, GoogleScholarToolkit
 
 
 def test_get_author_detailed_info_by_name():
@@ -90,5 +90,5 @@ def test_get_publication_by_title_not_found():
 def test_get_tools():
     toolkit = GoogleScholarToolkit('Author Name')
     tools = toolkit.get_tools()
-    assert len(tools) == 3
-    assert all(isinstance(tool, OpenAIFunction) for tool in tools)
+    assert len(tools) == 4
+    assert all(isinstance(tool, FunctionTool) for tool in tools)
