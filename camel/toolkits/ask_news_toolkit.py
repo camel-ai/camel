@@ -17,7 +17,6 @@ from typing import List, Literal, Optional, Tuple, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils.commons import api_keys_required
 
 
 def _process_response(
@@ -63,7 +62,6 @@ class AskNewsToolkit(BaseToolkit):
     based on user queries using the AskNews API.
     """
 
-    @api_keys_required("ASKNEWS_CLIENT_ID", "ASKNEWS_CLIENT_SECRET")
     def __init__(self):
         r"""Initialize the AskNewsToolkit with API clients.The API keys and
         credentials are retrieved from environment variables.
@@ -72,7 +70,11 @@ class AskNewsToolkit(BaseToolkit):
 
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
-        self.asknews_client = AskNewsSDK(client_id, client_secret)
+
+        if client_id and client_secret:
+            self.asknews_client = AskNewsSDK(client_id, client_secret)
+        else:
+            self.asknews_client = None
 
     def get_news(
         self,
@@ -357,7 +359,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
     content based on user queries using the AskNews API.
     """
 
-    @api_keys_required("ASKNEWS_CLIENT_ID", "ASKNEWS_CLIENT_SECRET")
     def __init__(self):
         r"""Initialize the AsyncAskNewsToolkit with API clients.The API keys
         and credentials are retrieved from environment variables.
@@ -366,10 +367,11 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
-        self.asknews_client = AsyncAskNewsSDK(
-            client_id,
-            client_secret,
-        )
+
+        if client_id and client_secret:
+            self.asknews_client = AsyncAskNewsSDK(client_id, client_secret)
+        else:
+            self.asknews_client = None
 
     async def get_news(
         self,
