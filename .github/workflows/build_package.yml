@@ -66,6 +66,8 @@ jobs:
           NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
           NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
           FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+          ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+          ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test

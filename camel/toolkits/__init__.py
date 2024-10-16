@@ -25,15 +25,16 @@ from .math_toolkit import MathToolkit, MATH_FUNCS
 from .search_toolkit import SearchToolkit, SEARCH_FUNCS
 from .weather_toolkit import WeatherToolkit, WEATHER_FUNCS
 from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
+from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 
+from .linkedin_toolkit import LinkedInToolkit
+from .reddit_toolkit import RedditToolkit
 from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 from .google_scholar_toolkit import GoogleScholarToolkit
 from .arxiv_toolkit import ArxivToolkit
-from .linkedin_toolkit import LinkedInToolkit
-from .reddit_toolkit import RedditToolkit
 from .slack_toolkit import SlackToolkit
 from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
@@ -59,6 +60,8 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    'AskNewsToolkit',
+    'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
     'ArxivToolkit',
     'MATH_FUNCS',
