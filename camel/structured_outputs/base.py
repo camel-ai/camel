@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC
+from abc import ABC, abstractclassmethod
 from typing import Optional, Union
 
 from pydantic import BaseModel
@@ -23,7 +23,8 @@ from .prompts import DEFAULT_STRUCTURED_PROMPTS
 
 class BaseStructedModel(ABC):
     """
-    A base class for structured models that includes functionality for managing the response format.
+    A base class for structured models that includes functionality
+    for managing the response format.
     """
 
     def __init__(
@@ -33,8 +34,10 @@ class BaseStructedModel(ABC):
         Initializes the BaseStructedModel with an optional response format.
 
         Args:
-            target (Optional[BaseModel]): The expected format of the response. Defaults to None.
-            prompt (Optional[str]): The prompt to be used for the model. Defaults to None.
+            target (Optional[BaseModel]): The expected format of the response.
+                Defaults to None.
+            prompt (Optional[str]): The prompt to be used for the model.
+                Defaults to None.
         """
         self.target = target
         self.prompt = prompt or DEFAULT_STRUCTURED_PROMPTS
@@ -47,9 +50,23 @@ class BaseStructedModel(ABC):
         Formats the input data into the expected response format.
 
         Args:
-            input_data (Optional[Union[str, type, callable]]): The input data to be formatted. Defaults to None.
+            input_data (Optional[Union[str, type, callable]]):
+                The input data to be formatted. Defaults to None.
 
         Returns:
             BaseModel: The formatted response.
         """
         return get_format(input_data)
+
+    @abstractclassmethod
+    def structure(self, text: str) -> BaseModel:
+        """
+        Structures the input text into the expected response format.
+
+        Args:
+            text (str): The input text to be structured.
+
+        Returns:
+            BaseModel: The structured response.
+        """
+        pass

@@ -22,7 +22,6 @@ from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
-from camel.utils.token_counting import BaseTokenCounter
 
 from .base import BaseStructedModel
 
@@ -39,16 +38,24 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
         prompt: Optional[str] = None,
     ):
         """
-        Initializes the StructuredOpenAIModel class with the specified parameters.
+        Initializes the StructuredOpenAIModel class
+            with the specified parameters.
 
         Args:
-            model_type (ModelType): Type of the model to be used.
-            model_config_dict (Dict[str, Any]): Dictionary containing model configuration parameters.
-            api_key (Optional[str]): API key for authenticating the requests. Defaults to None.
-            url (Optional[str]): URL endpoint for the model API. Defaults to None.
-            token_counter (Optional[BaseTokenCounter]): Counter for tracking token usage. Defaults to None.
-            target (Optional[BaseModel]): Expected format of the response. Defaults to None.
-            prompt (Optional[str]): Prompt to be used for the model. Defaults to None.
+            model_type (ModelType):
+                Type of the model to be used.
+            model_config_dict (Dict[str, Any]):
+                Dictionary containing model configuration parameters.
+            api_key (Optional[str]):
+                API key for authenticating the requests. Defaults to None.
+            url (Optional[str]):
+                URL endpoint for the model API. Defaults to None.
+            token_counter (Optional[BaseTokenCounter]):
+                Counter for tracking token usage. Defaults to None.
+            target (Optional[BaseModel]):
+                Expected format of the response. Defaults to None.
+            prompt (Optional[str]):
+                Prompt to be used for the model. Defaults to None.
         """
         OpenAIModel.__init__(
             self, model_type, model_config_dict, api_key, url, token_counter

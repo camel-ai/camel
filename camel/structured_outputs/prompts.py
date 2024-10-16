@@ -13,7 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 DEFAULT_STRUCTURED_PROMPTS = """
-    You are an advanced language model tasked with extracting key entities and attributes from unstructured text and converting them into a structured JSON format. 
-    Your goal is to analyze the provided text, identify relevant entities, and organize them with corresponding attributes in a clear structure.
-    Please ensure the output is formatted as follows: { 'entity_name': '...', 'attributes': { 'attribute1': '...', 'attribute2': '...' }, 'additional_information': '...' }.
+    You are an advanced language model tasked with extracting key entities 
+    and attributes from unstructured text and 
+    converting them into a structured JSON format. 
+    Your goal is to analyze the provided text, identify relevant entities, 
+    and organize them with corresponding attributes in a clear structure.
+    Please ensure the output is formatted as follows: 
+    { 
+        'entity_name': '...', 'attributes': 
+        { 'attribute1': '...', 'attribute2': '...' }, 
+        'additional_information': '...' 
+    }.
 """

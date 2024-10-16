@@ -24,16 +24,20 @@ from pydantic.dataclasses import dataclass
 
 def get_format(input_data: Optional[Union[str, type, callable]] = None):
     """
-    A multi-purpose function that can be used as a normal function, a class decorator, or a function decorator.
+    A multi-purpose function that can be used as a normal function,
+        a class decorator, or a function decorator.
 
     Parameters:
     input_data (Optional[Union[str, type, callable]]):
-        - If a string is provided, it should be a JSON-encoded string that will be converted into a BaseModel.
-        - If a function is provided, it will be decorated such that its arguments are converted into a BaseModel.
+        - If a string is provided, it should be a JSON-encoded string
+            that will be converted into a BaseModel.
+        - If a function is provided, it will be decorated such that
+            its arguments are converted into a BaseModel.
 
     Returns:
     - A BaseModel instance if used as a normal function with a JSON string.
-    - A decorated function if used as a function decorator, returning a BaseModel instance of the function's arguments.
+    - A decorated function if used as a function decorator,
+        returning a BaseModel instance of the function's arguments.
     """
     if isinstance(input_data, str):
         data_dict = json.loads(input_data)
