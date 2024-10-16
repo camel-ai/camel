@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 import os
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from slack_sdk.oauth.installation_store.async_installation_store import (
     AsyncInstallationStore,
@@ -21,6 +21,8 @@ from slack_sdk.oauth.installation_store.async_installation_store import (
 from starlette import requests, responses
 
 from camel.bots.slack.models import (
+    SlackAppMentionEventBody,
+    SlackAppMentionEventProfile,
     SlackEventBody,
     SlackEventProfile,
 )
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
     from slack_bolt.context.say.async_say import AsyncSay
     from slack_sdk.web.async_client import AsyncWebClient
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -179,8 +181,8 @@ class SlackApp:
         self,
         context: "AsyncBoltContext",
         client: "AsyncWebClient",
-        event: Dict[str],
-        body: Dict[str],
+        event: Dict[str, Any],
+        body: Dict[str, Any],
         say: "AsyncSay",
     ) -> None:
         r"""Event handler for `app_mention` events.
@@ -190,26 +192,25 @@ class SlackApp:
         Args:
             context (AsyncBoltContext): The Slack Bolt context for the event.
             client (AsyncWebClient): The Slack Web API client.
-            event (dict): The event data for the app mention.
-            body (dict): The full request body from Slack.
+            event (Dict[str, Any]): The event data for the app mention.
+            body (Dict[str, Any]): The full request body from Slack.
             say (AsyncSay): A function to send a response back to the channel.
         """
-        await context.ack()
-        event_profile = SlackEventProfile(**event)
-        event_body = SlackEventBody(**body)
+        event_profile = SlackAppMentionEventProfile(**event)
+        event_body = SlackAppMentionEventBody(**body)
 
-        logger.info(f"on_message, context: {format(context)}")
-        logger.info(f"on_message, client: {format(client)}")
-        logger.info(f"on_message, event_profile: {format(event_profile)}")
-        logger.info(f"on_message, event_body: {format(event_body)}")
-        logger.info(f"on_message, say: {format(say)}")
+        logger.info(f"app_mention, context: {context}")
+        logger.info(f"app_mention, client: {client}")
+        logger.info(f"app_mention, event_profile: {event_profile}")
+        logger.info(f"app_mention, event_body: {event_body}")
+        logger.info(f"app_mention, say: {say}")
 
     async def on_message(
         self,
         context: "AsyncBoltContext",
         client: "AsyncWebClient",
-        event: dict,
-        body: dict,
+        event: Dict[str, Any],
+        body: Dict[str, Any],
         say: "AsyncSay",
     ) -> None:
         r"""Event handler for `message` events.
@@ -219,8 +220,8 @@ class SlackApp:
         Args:
             context (AsyncBoltContext): The Slack Bolt context for the event.
             client (AsyncWebClient): The Slack Web API client.
-            event (dict): The event data for the message.
-            body (dict): The full request body from Slack.
+            event (Dict[str, Any]): The event data for the message.
+            body (Dict[str, Any]): The full request body from Slack.
             say (AsyncSay): A function to send a response back to the channel.
         """
         await context.ack()
@@ -228,11 +229,11 @@ class SlackApp:
         event_profile = SlackEventProfile(**event)
         event_body = SlackEventBody(**body)
 
-        logger.info("on_message, context: {}".format(context))
-        logger.info("on_message, client: {}".format(client))
-        logger.info("on_message, event_profile: {}".format(event_profile))
-        logger.info("on_message, event_body: {}".format(event_body))
-        logger.info("on_message, say: {}".format(say))
+        logger.info(f"on_message, context: {context}")
+        logger.info(f"on_message, client: {client}")
+        logger.info(f"on_message, event_profile: {event_profile}")
+        logger.info(f"on_message, event_body: {event_body}")
+        logger.info(f"on_message, say: {say}")
 
         logger.info(f"Received message: {event_profile.text}")
 

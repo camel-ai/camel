@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 from typing import List, Optional, Union
 
 from camel.agents import ChatAgent
@@ -21,6 +22,9 @@ try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class Agent:
@@ -94,7 +98,7 @@ class Agent:
 
     async def process(self, message: str) -> str:
         user_raw_msg = message
-        print("User message:", user_raw_msg)
+        logger.info(f"User message: {user_raw_msg}")
         if self._auto_retriever:
             retrieved_content = self._auto_retriever.run_vector_retriever(
                 query=user_raw_msg,

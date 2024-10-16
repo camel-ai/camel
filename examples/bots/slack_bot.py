@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
+import logging
 import queue
 import threading
 from typing import Optional
@@ -22,6 +23,9 @@ from slack_sdk.web.async_client import AsyncWebClient
 
 from camel.bots import SlackApp, SlackEventBody
 from examples.bots.agent import Agent
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class SlackBot(SlackApp):
@@ -119,7 +123,7 @@ async def process_message(agent: Agent, msg_queue: queue.Queue):
     while True:
         event_body, say = msg_queue.get()
 
-        print(f"Received message: {event_body.event.text}")
+        logger.info(f"Received message: {event_body.event.text}")
         user_raw_msg = event_body.event.text
 
         # Process the message using the agent and send response back to Slack.
@@ -161,9 +165,9 @@ if __name__ == "__main__":
 
     agent = Agent()
 
-    thread = threading.Thread(target=start_async_queue_processor, args=(
-        agent, msg_queue
-    ))
+    thread = threading.Thread(
+        target=start_async_queue_processor, args=(agent, msg_queue)
+    )
     thread.start()
 
     # Initialize the SlackBot with the message queue.
