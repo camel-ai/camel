@@ -36,6 +36,7 @@ from .commons import (
     track_agent,
 )
 from .constants import Constants
+from .response_format import get_format
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -46,7 +47,6 @@ from .token_counting import (
     OpenSourceTokenCounter,
     get_model_encoding,
 )
-from .response_format import get_format
 
 __all__ = [
     "print_text_animated",

@@ -14,12 +14,13 @@
 
 from __future__ import annotations
 
-from pydantic import create_model, BaseModel
-from pydantic.dataclasses import dataclass
-from functools import wraps
 import inspect
 import json
 from typing import Optional, Union
+
+from pydantic import create_model
+from pydantic.dataclasses import dataclass
+
 
 def get_format(input_data: Optional[Union[str, type, callable]] = None):
     """
@@ -47,12 +48,15 @@ def get_format(input_data: Optional[Union[str, type, callable]] = None):
             f"{input_data.__name__.capitalize()}Model",
             **{
                 name: (param.annotation, ...)
-                for name, param in inspect.signature(input_data).parameters.items()
+                for name, param in inspect.signature(
+                    input_data
+                ).parameters.items()
             },
         )
         return WrapperClass
 
     else:
+
         def decorator(target):
             if inspect.isclass(target):
                 return dataclass(target)

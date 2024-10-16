@@ -13,16 +13,18 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from typing import Any, Dict, Optional, Union
+
+from pydantic import BaseModel
+
+from camel.models import OpenAIModel
 from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
 )
-
-from pydantic import BaseModel
 from camel.utils.token_counting import BaseTokenCounter
+
 from .base import BaseStructedModel
-from camel.models import OpenAIModel
 
 
 class OpenAIStructure(OpenAIModel, BaseStructedModel):
@@ -56,7 +58,9 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
         if target is not None:
             self.model_config_dict["response_format"] = target
 
-        self._client.chat.completions.create = self._client.beta.chat.completions.parse
+        self._client.chat.completions.create = (
+            self._client.beta.chat.completions.parse
+        )
 
     @api_keys_required("OPENAI_API_KEY")
     def structure(
@@ -75,7 +79,7 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
         completion = self.run(
             messages=[
                 {'role': 'system', 'content': self.prompt},
-                {'role': 'user', 'content': content}
+                {'role': 'user', 'content': content},
             ]
         )
         message = completion.choices[0].message

@@ -12,9 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC
-from typing import Union, Optional
+from typing import Optional, Union
+
 from pydantic import BaseModel
+
 from camel.utils import get_format
+
 from .prompts import DEFAULT_STRUCTURED_PROMPTS
 
 
@@ -38,7 +41,7 @@ class BaseStructedModel(ABC):
 
     @staticmethod
     def get_format(
-        input_data: Optional[Union[str, type, callable]] = None
+        input_data: Optional[Union[str, type, callable]] = None,
     ) -> BaseModel:
         """
         Formats the input data into the expected response format.
