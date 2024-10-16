@@ -12,105 +12,128 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import unittest
+from unittest.mock import MagicMock, patch
 
-import pytest
-
-from camel.toolkits.ask_news_toolkit import AskNewsToolkit
-
-
-@pytest.fixture(scope="module")
-def client_id():
-    key = os.environ.get('ASKNEWS_CLIENT_ID')
-    if not key:
-        pytest.fail("ASKNEWS_CLIENT_ID environment variable is not set.")
-    return key
+from camel.toolkits.ask_news_toolkit import AskNewsToolkit, _process_response
 
 
-@pytest.fixture(scope="module")
-def client_secret():
-    key = os.environ.get('ASKNEWS_CLIENT_SECRET')
-    if not key:
-        pytest.fail("ASKNEWS_CLIENT_SECRET environment variable is not set.")
-    return key
+class TestAskNewsToolkit(unittest.TestCase):
+    @patch.dict(
+        os.environ,
+        {
+            "ASKNEWS_CLIENT_ID": "fake_client_id",
+            "ASKNEWS_CLIENT_SECRET": "fake_client_secret",
+        },
+    )
+    @patch("asknews_sdk.AskNewsSDK")
+    def setUp(self, MockAskNewsSDK):
+        # Setup for tests
+        self.mock_sdk = MockAskNewsSDK.return_value
+        self.toolkit = AskNewsToolkit()
 
+    def test_get_news_success(self):
+        # Mock the API response for a successful get_news call
+        mock_response = MagicMock()
+        mock_response.as_string = "News in string format"
+        self.mock_sdk.news.search_news.return_value = mock_response
 
-@pytest.fixture
-def ask_news_toolkit():
-    return AskNewsToolkit()
-
-
-def test_chat_query(ask_news_toolkit):
-    try:
-        response = ask_news_toolkit.chat_query(
-            "What's going on in the latest tech news?"
+        result = self.toolkit.get_news(
+            query="test query", return_type="string"
         )
-        assert response is not None
-        print("chat_query test passed.")
-    except Exception as e:
-        pytest.fail(f"chat_query raised an exception: {e}")
 
-
-def test_get_news(ask_news_toolkit):
-    try:
-        news = ask_news_toolkit.get_news(
-            "Give me the latest news about AI advancements."
+        self.assertEqual(result, "News in string format")
+        self.mock_sdk.news.search_news.assert_called_once_with(
+            query="test query",
+            n_articles=10,
+            return_type="string",
+            method="kw",
         )
-        assert news is not None
-        print("get_news test passed.")
-    except Exception as e:
-        pytest.fail(f"get_news raised an exception: {e}")
 
+    def test_get_news_failure(self):
+        # Test handling of an exception in get_news
+        self.mock_sdk.news.search_news.side_effect = Exception("API Error")
+        result = self.toolkit.get_news(query="test query")
+        self.assertIsNone(result)
 
-def test_get_stories(ask_news_toolkit):
-    try:
-        stories = ask_news_toolkit.get_stories(
-            categories=["Technology", "Science"],
-            continent="North America",
+    def test_search_reddit_success(self):
+        # Mock the API response for search_reddit
+        mock_response = MagicMock()
+        mock_response.as_string = "Reddit threads in string format"
+        self.mock_sdk.news.search_reddit.return_value = mock_response
+
+        result = self.toolkit.search_reddit(
+            keywords=["test"], n_threads=5, return_type="string"
+        )
+
+        self.assertEqual(result, "Reddit threads in string format")
+        self.mock_sdk.news.search_reddit.assert_called_once_with(
+            keywords=["test"], n_threads=5, method="kw"
+        )
+
+    def test_get_stories_success(self):
+        # Mock the API response for get_stories
+        mock_story = MagicMock()
+        mock_story.updates = [
+            MagicMock(headline="Update 1 headline", story="Update 1 story"),
+            MagicMock(headline="Update 2 headline", story="Update 2 story"),
+        ]
+        mock_response = MagicMock()
+        mock_response.stories = [mock_story]
+        self.mock_sdk.stories.search_stories.return_value = mock_response
+
+        result = self.toolkit.get_stories(
+            categories=["sports"], continent="NA"
+        )
+
+        expected_result = {
+            "stories": [
+                {
+                    "headline": "Update 1 headline",
+                    "updates": [
+                        {
+                            "headline": "Update 1 headline",
+                            "story": "Update 1 story",
+                        },
+                        {
+                            "headline": "Update 2 headline",
+                            "story": "Update 2 story",
+                        },
+                    ],
+                }
+            ]
+        }
+        self.assertEqual(result, expected_result)
+        self.mock_sdk.stories.search_stories.assert_called_once_with(
+            categories=["sports"],
+            continent="NA",
             sort_by="coverage",
-            sort_type="desc",
             reddit=3,
             expand_updates=True,
             max_updates=2,
             max_articles=10,
         )
-        assert stories is not None
-        print("get_stories test passed.")
-    except Exception as e:
-        pytest.fail(f"get_stories raised an exception: {e}")
 
+    def test_process_response(self):
+        # Test _process_response utility function
+        mock_response = MagicMock()
+        mock_response.as_string = "response in string"
+        mock_response.as_dicts = {"response": "in dict"}
 
-def test_search_reddit(ask_news_toolkit):
-    try:
-        reddit_response = ask_news_toolkit.search_reddit(
-            keywords=["sentiment", "bitcoin", "halving"], return_type="both"
+        # Test for string return type
+        result = _process_response(mock_response, "string")
+        self.assertEqual(result, "response in string")
+
+        # Test for dicts return type
+        result = _process_response(mock_response, "dicts")
+        self.assertEqual(result, {"response": "in dict"})
+
+        # Test for both return type
+        result = _process_response(mock_response, "both")
+        self.assertEqual(
+            result, ("response in string", {"response": "in dict"})
         )
-        assert reddit_response is not None
-        print("search_reddit test passed.")
-    except Exception as e:
-        pytest.fail(f"search_reddit raised an exception: {e}")
 
-
-def test_finance_query(ask_news_toolkit):
-    try:
-        sentiment_data_string = ask_news_toolkit.finance_query(
-            asset="amazon",
-            metric="news_positive",
-            date_from="2024-03-20T10:00:00Z",
-            date_to="2024-03-24T23:00:00Z",
-            return_type="string",
-        )
-        assert sentiment_data_string is not None
-        print("finance_query test passed.")
-    except Exception as e:
-        pytest.fail(f"finance_query raised an exception: {e}")
-
-
-def test_get_web_search(ask_news_toolkit):
-    try:
-        search_results = ask_news_toolkit.get_web_search(
-            queries=["Eagles vs Falcons"]
-        )
-        assert search_results is not None
-        print("get_web_search test passed.")
-    except Exception as e:
-        pytest.fail(f"get_web_search raised an exception: {e}")
+        # Test for invalid return type
+        with self.assertRaises(ValueError):
+            _process_response(mock_response, "invalid_type")

@@ -13,14 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 from typing import List, Literal, Optional, Tuple, Union
-from warnings import warn
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils.commons import api_keys_required
 
 
-def _process_response(response, return_type: str):
+def _process_response(
+    response, return_type: str
+) -> Union[str, dict, Tuple[str, dict]]:
     r"""Process the response based on the specified return type.
 
     This helper method processes the API response and returns the content
@@ -75,14 +76,9 @@ class AskNewsToolkit(BaseToolkit):
 
         if scopes is None:
             scopes = ["chat", "news", "stories", "analytics"]
+
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
-        if not client_id or not client_secret:
-            warn(
-                "`client_id` or `client_secret` not found in environment "
-                "variables. Get `client_id & client_secret` here: "
-                "`https://docs.asknews.app/`."
-            )
         self.asknews_client = AskNewsSDK(
             client_id,
             client_secret,
@@ -95,7 +91,7 @@ class AskNewsToolkit(BaseToolkit):
         n_articles: int = 10,
         return_type: Literal["string", "dicts", "both"] = "string",
         method: Literal["nl", "kw"] = "kw",
-    ) -> Union[str, dict, Tuple[str, dict]]:
+    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
         r"""Fetch news or stories based on a user query.
 
         Args:
@@ -110,9 +106,9 @@ class AskNewsToolkit(BaseToolkit):
                 :obj:`"kw"`)
 
         Returns:
-            Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-                containing the news or story content, or an error message if
-                the process fails.
+            Option[Union[str, dict, Tuple[str, dict]]]: A string, dictionary,
+                or both containing the news or story content, or :obj: `None`
+                if the process fails.
         """
         try:
             response = self.asknews_client.news.search_news(
@@ -124,10 +120,8 @@ class AskNewsToolkit(BaseToolkit):
 
             return _process_response(response, return_type)
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching news for '{query}': {e!s}."
-            )
+        except Exception:
+            return None
 
     def search_reddit(
         self,
@@ -135,7 +129,7 @@ class AskNewsToolkit(BaseToolkit):
         n_threads: int = 5,
         return_type: Literal["string", "dicts", "both"] = "string",
         method: Literal["nl", "kw"] = "kw",
-    ) -> Union[str, dict, Tuple[str, dict]]:
+    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
         r"""Search Reddit based on the provided keywords.
 
         Args:
@@ -149,11 +143,9 @@ class AskNewsToolkit(BaseToolkit):
                 (default::obj:`"kw"`)
 
         Returns:
-            Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
-                string, dictionary, or both.
-
-        Raises:
-            Exception: If there is an error while searching Reddit.
+            Opetional[Union[str, dict, Tuple[str, dict]]]: The Reddit search
+                results as a string, dictionary, or both, or :obj:`None` if the
+                process fails.
         """
         try:
             response = self.asknews_client.news.search_reddit(
@@ -162,10 +154,8 @@ class AskNewsToolkit(BaseToolkit):
 
             return _process_response(response, return_type)
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while searching Reddit: {e!s}."
-            )
+        except Exception:
+            return None
 
     def get_stories(
         self,
@@ -176,7 +166,7 @@ class AskNewsToolkit(BaseToolkit):
         expand_updates: bool = True,
         max_updates: int = 2,
         max_articles: int = 10,
-    ) -> dict:
+    ) -> Optional[dict]:
         r"""Fetch stories based on the provided parameters.
 
         Args:
@@ -194,11 +184,8 @@ class AskNewsToolkit(BaseToolkit):
                 each update. (default: :obj:`10`)
 
         Returns:
-            dict: A dictionary containing the stories and their associated
-                data.
-
-        Raises:
-            Exception: If there is an error while fetching the stories.
+            Optional[dict]: A dictionary containing the stories and their
+                associated data, or :obj:`None` if the process fails.
         """
         try:
             response = self.asknews_client.stories.search_stories(
@@ -230,10 +217,8 @@ class AskNewsToolkit(BaseToolkit):
 
             return stories_data
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching stories: {e!s}."
-            )
+        except Exception:
+            return None
 
     def finance_query(
         self,
@@ -242,7 +227,7 @@ class AskNewsToolkit(BaseToolkit):
         date_from: str,
         date_to: str,
         return_type: Literal["list", "string"] = "string",
-    ) -> Union[list, str]:
+    ) -> Optional[Union[list, str]]:
         r"""Fetch asset sentiment data for a given asset, metric, and date
         range.
 
@@ -260,10 +245,7 @@ class AskNewsToolkit(BaseToolkit):
             Union[list, str]: A list of dictionaries containing the datetime
                 and value or a string describing all datetime and value pairs
                 for providing quantified time-series data for news sentiment
-                on topics of interest.
-
-        Raises:
-            Exception: If there is an error while fetching the sentiment data.
+                on topics of interest, or :obj:`None` if the process fails.
         """
         try:
             response = self.asknews_client.analytics.get_asset_sentiment(
@@ -293,15 +275,12 @@ class AskNewsToolkit(BaseToolkit):
                 )
                 return header + descriptive_text
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching asset sentiment "
-                f"data: {e!s}."
-            )
+        except Exception:
+            return None
 
     def chat_query(
         self, query: str, model: str = "meta-llama/Meta-Llama-3-70B-Instruct"
-    ) -> str:
+    ) -> Optional[str]:
         r"""Send a chat query to the API and retrieve the response.
 
         Args:
@@ -310,10 +289,8 @@ class AskNewsToolkit(BaseToolkit):
                 (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
 
         Returns:
-            str: The content of the response message.
-
-        Raises:
-            Exception: If there is an error while processing the chat query.
+            Optional[str]: The content of the response message, or :obj:`None`
+                if the process fails.
         """
         try:
             response = self.asknews_client.chat.get_chat_completions(
@@ -325,16 +302,14 @@ class AskNewsToolkit(BaseToolkit):
             # Return the content of the first choice's message
             return response.choices[0].message.content
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while processing the chat query: {e!s}."
-            )
+        except Exception:
+            return None
 
     def get_web_search(
         self,
         queries: List[str],
         return_type: Literal["string", "dicts", "both"] = "string",
-    ) -> Union[str, dict, Tuple[str, dict]]:
+    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
         r"""Perform a live web search based on the given queries.
 
         Args:
@@ -343,29 +318,19 @@ class AskNewsToolkit(BaseToolkit):
                 return value. (default: :obj:`"string"`)
 
         Returns:
-            Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-                containing the search results, or an error message if the
-                process fails.
+            Optional[Union[str, dict, Tuple[str, dict]]]: A string,
+                dictionary, or both containing the search results, or
+                :obj:`None` if the process fails.
         """
         try:
             response = self.asknews_client.chat.live_web_search(
                 queries=queries
             )
 
-            if return_type == "string":
-                search_content = response.as_string
-            elif return_type == "dicts":
-                search_content = response.as_dicts
-            elif return_type == "both":
-                search_content = (response.as_string, response.as_dicts)
+            return _process_response(response, return_type)
 
-            return search_content
-
-        except Exception as e:
-            raise Exception(
-                "An error occurred while performing the web search for "
-                + f"'{queries}': {e!s}."
-            )
+        except Exception:
+            return None
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
@@ -409,12 +374,6 @@ class AsyncAskNewsToolkit(BaseToolkit):
             scopes = ["chat", "news", "stories", "analytics"]
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
-        if not client_id or not client_secret:
-            warn(
-                "`client_id` or `client_secret` not found in environment "
-                + "variables. Get `client_id & client_secret` here: "
-                + "`https://docs.asknews.app/`."
-            )
         self.asknews_client = AsyncAskNewsSDK(
             client_id,
             client_secret,
@@ -427,7 +386,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         n_articles: int = 10,
         return_type: Literal["string", "dicts", "both"] = "string",
         method: Literal["nl", "kw"] = "kw",
-    ) -> Union[str, dict, Tuple[str, dict]]:
+    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
         r"""Fetch news or stories based on a user query.
 
         Args:
@@ -442,9 +401,9 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 :obj:`"kw"`)
 
         Returns:
-            Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-                containing the news or story content, or an error message if
-                process fails.
+            Optional[Union[str, dict, Tuple[str, dict]]]: A string,
+                dictionary, or both containing the news or story content, or
+                :obj:`None` if the process fails.
         """
         try:
             response = await self.asknews_client.news.search_news(
@@ -456,10 +415,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
             return _process_response(response, return_type)
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching news for '{query}': {e!s}."
-            )
+        except Exception:
+            return None
 
     async def search_reddit(
         self,
@@ -467,7 +424,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         n_threads: int = 5,
         return_type: Literal["string", "dicts", "both"] = "string",
         method: Literal["nl", "kw"] = "kw",
-    ) -> Union[str, dict, Tuple[str, dict]]:
+    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
         r"""Search Reddit based on the provided keywords.
 
         Args:
@@ -481,8 +438,9 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 (default::obj:`"kw"`)
 
         Returns:
-            Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
-                string, dictionary, or both.
+            Optional[Union[str, dict, Tuple[str, dict]]]: The Reddit search
+                results as a string, dictionary, or both, or :obj:`None` if
+                the process fails.
 
         Raises:
             Exception: If there is an error while searching Reddit.
@@ -494,10 +452,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
             return _process_response(response, return_type)
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while searching Reddit: {e!s}."
-            )
+        except Exception:
+            return None
 
     async def get_stories(
         self,
@@ -507,7 +463,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         expand_updates: bool = True,
         max_updates: int = 2,
         max_articles: int = 10,
-    ) -> dict:
+    ) -> Optional[dict]:
         r"""Fetch stories based on the provided parameters.
 
         Args:
@@ -523,11 +479,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 each update. (default: :obj:`10`)
 
         Returns:
-            dict: A dictionary containing the stories and their associated
-                data.
-
-        Raises:
-            Exception: If there is an error while fetching the stories.
+            Optional[dict]: A dictionary containing the stories and their
+                associated data, or :obj:`None` if the process fails.
         """
         try:
             response = await self.asknews_client.stories.search_stories(
@@ -558,10 +511,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
             return stories_data
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching stories: {e!s}."
-            )
+        except Exception:
+            return None
 
     async def finance_query(
         self,
@@ -570,7 +521,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         date_from: str,
         date_to: str,
         return_type: Literal["list", "string"] = "string",
-    ) -> Union[list, str]:
+    ) -> Optional[Union[list, str]]:
         r"""Fetch asset sentiment data for a given asset, metric, and date
         range.
 
@@ -585,13 +536,11 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 value. (default: :obj:`"string"`)
 
         Returns:
-            Union[list, str]: A list of dictionaries containing the datetime
-                and value or a string describing all datetime and value pairs
-                for providing quantified time-series data for news sentiment
-                on topics of interest.
-
-        Raises:
-            Exception: If there is an error while fetching the sentiment data.
+            Optional[Union[list, str]]: A list of dictionaries containing the
+                datetime and value or a string describing all datetime and
+                value pairs for providing quantified time-series data for news
+                sentiment on topics of interest, or :obj:`None` if the process
+                fails.
         """
         try:
             response = await self.asknews_client.analytics.get_asset_sentiment(
@@ -621,15 +570,12 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 )
                 return header + descriptive_text
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while fetching asset sentiment "
-                f"data: {e!s}."
-            )
+        except Exception:
+            return None
 
     async def chat_query(
         self, query: str, model: str = "meta-llama/Meta-Llama-3-70B-Instruct"
-    ) -> str:
+    ) -> Optional[str]:
         r"""Send a chat query to the API and retrieve the response.
 
         Args:
@@ -638,10 +584,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
 
         Returns:
-            str: The content of the response message.
-
-        Raises:
-            Exception: If there is an error while processing the chat query.
+            Optional[str]: The content of the response message, or :obj:`None`
+                if the process fails.
         """
         try:
             response = await self.asknews_client.chat.get_chat_completions(
@@ -653,16 +597,14 @@ class AsyncAskNewsToolkit(BaseToolkit):
             # Return the content of the first choice's message
             return response.choices[0].message.content
 
-        except Exception as e:
-            raise Exception(
-                f"An error occurred while processing the chat query: {e!s}."
-            )
+        except Exception:
+            return None
 
     async def get_web_search(
         self,
         queries: List[str],
         return_type: Literal["string", "dicts", "both"] = "string",
-    ) -> Union[str, dict, Tuple[str, dict]]:
+    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
         r"""Perform a live web search based on the given queries.
 
         Args:
@@ -671,29 +613,19 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 return value. (default: :obj:`"string"`)
 
         Returns:
-            Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
-                containing the search results, or an error message if the
-                process fails.
+            Optional[Union[str, dict, Tuple[str, dict]]]: A string,
+                dictionary, or both containing the search results, or
+                :obj:`None` if the process fails.
         """
         try:
             response = await self.asknews_client.chat.live_web_search(
                 queries=queries
             )
 
-            if return_type == "string":
-                search_content = response.as_string
-            elif return_type == "dicts":
-                search_content = response.as_dicts
-            elif return_type == "both":
-                search_content = (response.as_string, response.as_dicts)
+            return _process_response(response, return_type)
 
-            return search_content
-
-        except Exception as e:
-            raise Exception(
-                "An error occurred while performing the web search for "
-                + f"'{queries}': {e!s}."
-            )
+        except Exception:
+            return None
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
