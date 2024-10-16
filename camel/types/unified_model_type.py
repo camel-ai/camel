@@ -16,15 +16,15 @@ from threading import Lock
 from typing import ClassVar, Dict, cast
 
 
-class InnerModelType(str):
-    _cache: ClassVar[Dict[str, "InnerModelType"]] = {}
+class UnifiedModelType(str):
+    _cache: ClassVar[Dict[str, "UnifiedModelType"]] = {}
     _lock: ClassVar[Lock] = Lock()
 
-    def __new__(cls, value: str) -> "InnerModelType":
+    def __new__(cls, value: str) -> "UnifiedModelType":
         with cls._lock:
             if value not in cls._cache:
                 instance = super().__new__(cls, value)
-                cls._cache[value] = cast(InnerModelType, instance)
+                cls._cache[value] = cast(UnifiedModelType, instance)
             else:
                 instance = cls._cache[value]
         return instance

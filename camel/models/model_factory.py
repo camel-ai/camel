@@ -29,7 +29,7 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
-from camel.types import InnerModelType, ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, ModelType, UnifiedModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -75,7 +75,7 @@ class ModelFactory:
             ValueError: If there is no backend for the model.
         """
         model_class: Optional[Type[BaseModelBackend]] = None
-        model = InnerModelType(model_type)
+        model = UnifiedModelType(model_type)
 
         if model_platform.is_ollama:
             model_class = OllamaModel
@@ -116,5 +116,9 @@ class ModelFactory:
             )
 
         return model_class(
-            model, model_config_dict, api_key, url, token_counter
+            model_type=model,
+            model_config_dict=model_config_dict,
+            api_key=api_key,
+            url=url,
+            token_counter=token_counter,
         )

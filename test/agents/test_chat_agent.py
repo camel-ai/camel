@@ -39,12 +39,12 @@ from camel.toolkits import (
 )
 from camel.types import (
     ChatCompletion,
-    InnerModelType,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
     TaskType,
+    UnifiedModelType,
 )
 from camel.utils.async_func import sync_funcs_to_async
 
@@ -73,7 +73,7 @@ def test_chat_agent(model):
 
     assert str(assistant) == (
         "ChatAgent(doctor, "
-        f"RoleType.ASSISTANT, {InnerModelType(ModelType.GPT_4O_MINI)})"
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4O_MINI)})"
     )
 
     assistant.reset()

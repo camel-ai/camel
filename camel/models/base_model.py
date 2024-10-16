@@ -20,8 +20,8 @@ from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    InnerModelType,
     ModelType,
+    UnifiedModelType,
 )
 from camel.utils import BaseTokenCounter
 
@@ -52,7 +52,7 @@ class BaseModelBackend(ABC):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        self.model_type: InnerModelType = InnerModelType(model_type)
+        self.model_type: UnifiedModelType = UnifiedModelType(model_type)
         if model_config_dict is None:
             model_config_dict = {}
         self.model_config_dict = model_config_dict

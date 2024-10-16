@@ -24,10 +24,10 @@ from anthropic import Anthropic
 from PIL import Image
 
 from camel.types import (
-    InnerModelType,
     ModelType,
     OpenAIImageType,
     OpenAIVisionDetailType,
+    UnifiedModelType,
 )
 
 if TYPE_CHECKING:
@@ -88,11 +88,11 @@ class BaseTokenCounter(ABC):
 
 
 class OpenAITokenCounter(BaseTokenCounter):
-    def __init__(self, model: InnerModelType):
+    def __init__(self, model: UnifiedModelType):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model (InnerModelType): Model type for which tokens will be
+            model (UnifiedModelType): Model type for which tokens will be
                 counted.
         """
         self.model: str = model.value_for_tiktoken
@@ -243,11 +243,11 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: InnerModelType):
+    def __init__(self, model_type: UnifiedModelType):
         r"""Constructor for the token counter for Gemini models.
 
         Args:
-            model_type (InnerModelType): Model type for which tokens will be
+            model_type (UnifiedModelType): Model type for which tokens will be
                 counted.
         """
         import google.generativeai as genai
@@ -281,11 +281,11 @@ class GeminiTokenCounter(BaseTokenCounter):
 
 
 class LiteLLMTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: InnerModelType):
+    def __init__(self, model_type: UnifiedModelType):
         r"""Constructor for the token counter for LiteLLM models.
 
         Args:
-            model_type (InnerModelType): Model type for which tokens will be
+            model_type (UnifiedModelType): Model type for which tokens will be
                 counted.
         """
         self.model_type = model_type

@@ -14,7 +14,7 @@
 from enum import Enum, EnumMeta
 from typing import cast
 
-from camel.types.inner_model_type import InnerModelType
+from camel.types.unified_model_type import UnifiedModelType
 
 
 class RoleType(Enum):
@@ -25,7 +25,7 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
-class ModelType(InnerModelType, Enum):
+class ModelType(UnifiedModelType, Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo"
@@ -83,7 +83,7 @@ class ModelType(InnerModelType, Enum):
     REKA_EDGE = "reka-edge"
 
     def __new__(cls, value) -> "ModelType":
-        return cast("ModelType", InnerModelType.__new__(cls, value))
+        return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @property
     def value_for_tiktoken(self) -> str:

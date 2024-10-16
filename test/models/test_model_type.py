@@ -11,19 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.types import InnerModelType, ModelType
+from camel.types import ModelType, UnifiedModelType
 
 
 def test_predefined_model():
-    model_type = InnerModelType("gpt-4o-mini")
+    model_type = UnifiedModelType("gpt-4o-mini")
     assert model_type == ModelType.GPT_4O_MINI
 
 
 def test_duplicated_model_types():
-    model_type_1 = InnerModelType("random-open-source")
-    model_type_2 = InnerModelType("random-open-source")
+    model_type_1 = UnifiedModelType("random-open-source")
+    model_type_2 = UnifiedModelType("random-open-source")
     assert id(model_type_1) == id(model_type_2)
 
-    model_type_3 = InnerModelType(ModelType.GPT_4O_MINI)
-    model_type_4 = InnerModelType("gpt-4o-mini")
+    model_type_3 = UnifiedModelType(ModelType.GPT_4O_MINI)
+    model_type_4 = UnifiedModelType("gpt-4o-mini")
     assert id(model_type_3) == id(model_type_4)
