@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class DiscordBot(DiscordApp):
-    """A Discord bot that listens for messages, adds them to a queue,
+    r"""A Discord bot that listens for messages, adds them to a queue,
     and processes them asynchronously.
 
     This class extends the functionality of `DiscordApp` and adds message
@@ -47,7 +47,7 @@ class DiscordBot(DiscordApp):
         self._queue: asyncio.Queue = msg_queue
 
     async def on_message(self, message: 'Message') -> None:
-        """Event handler for received messages. This method processes incoming
+        r"""Event handler for received messages. This method processes incoming
         messages, checks whether the message is from the bot itself, and
         determines whether the bot should respond based on channel ID and
         mentions.
@@ -75,7 +75,7 @@ class DiscordBot(DiscordApp):
 
 
 async def process_message(agent: Agent, msg_queue: asyncio.Queue):
-    """Continuously processes messages from the queue and sends responses.
+    r"""Continuously processes messages from the queue and sends responses.
 
     This function waits for new messages in the queue, processes each message
     using the `Agent` instance, and sends the response back to Discord.
@@ -98,7 +98,7 @@ async def process_message(agent: Agent, msg_queue: asyncio.Queue):
 
 
 async def main():
-    """Main function to initialize and run the Discord bot and message
+    r"""Main function to initialize and run the Discord bot and message
     processor.
 
     This function initializes the message queue, creates an `Agent` instance

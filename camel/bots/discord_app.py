@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 import os
 from typing import TYPE_CHECKING, List, Optional
 
@@ -19,10 +20,13 @@ from camel.utils import dependencies_required
 if TYPE_CHECKING:
     from discord import Message
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class DiscordApp:
-    """A class representing a Discord bot that uses the `discord.py` library to
-    interact with Discord servers.
+    r"""A class representing a Discord app that uses the `discord.py` library
+    to interact with Discord servers.
 
     This bot can respond to messages in specific channels and only reacts to
     messages that mention the bot.
@@ -39,7 +43,7 @@ class DiscordApp:
         channel_ids: Optional[List[int]] = None,
         token: Optional[str] = None,
     ) -> None:
-        """Initialize the DiscordApp instance by setting up the Discord client
+        r"""Initialize the DiscordApp instance by setting up the Discord client
         and event handlers.
 
         Args:
@@ -74,7 +78,7 @@ class DiscordApp:
         self._client.event(self.on_message)
 
     async def start(self):
-        """Asynchronously start the Discord bot using its token.
+        r"""Asynchronously start the Discord bot using its token.
 
         This method starts the bot and logs into Discord asynchronously using
         the provided token. It should be awaited when used in an async
@@ -83,7 +87,7 @@ class DiscordApp:
         await self._client.start(self.token)
 
     def run(self) -> None:
-        """Start the Discord bot using its token.
+        r"""Start the Discord bot using its token.
 
         This method starts the bot and logs into Discord synchronously using
         the provided token. It blocks execution and keeps the bot running.
@@ -91,16 +95,16 @@ class DiscordApp:
         self._client.run(self.token)  # type: ignore[arg-type]
 
     async def on_ready(self) -> None:
-        """Event handler that is called when the bot has successfully connected
-        to the Discord server.
+        r"""Event handler that is called when the bot has successfully
+        connected to the Discord server.
 
         When the bot is ready and logged into Discord, it prints a message
         displaying the bot's username.
         """
-        print(f'We have logged in as {self._client.user}')
+        logger.info(f'We have logged in as {self._client.user}')
 
     async def on_message(self, message: 'Message') -> None:
-        """Event handler for processing incoming messages.
+        r"""Event handler for processing incoming messages.
 
         This method is called whenever a new message is received by the bot. It
         will ignore messages sent by the bot itself, only respond to messages
@@ -127,7 +131,8 @@ class DiscordApp:
         ):
             return
 
-        # reply to the message
-        # await message.reply('Hello, world!')
-        # send a message to the channel
-        await message.channel.send('Hello, world!')
+        logger.info(f"Received message: {message.content}")
+
+    @property
+    def client(self):
+        return self._client
