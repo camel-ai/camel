@@ -24,7 +24,7 @@ from examples.bots.agent import Agent
 
 
 class SlackBot(SlackApp):
-    """SlackBot class that extends the SlackApp class to handle Slack events
+    r"""SlackBot class that extends the SlackApp class to handle Slack events
     and integrate with a message queue for asynchronous processing.
 
     This class initializes the Slack app and adds a message handler to process
@@ -50,7 +50,7 @@ class SlackBot(SlackApp):
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
     ):
-        """Initializes the SlackBot instance with a message queue and the
+        r"""Initializes the SlackBot instance with a message queue and the
         required Slack authentication details.
 
         Args:
@@ -80,7 +80,7 @@ class SlackBot(SlackApp):
         body: dict,
         say: "AsyncSay",
     ):
-        """Event handler for processing incoming Slack messages.
+        r"""Event handler for processing incoming Slack messages.
 
         This method is called when a message event is received from Slack.
         It acknowledges the message and adds the event body and say function to
@@ -103,7 +103,7 @@ class SlackBot(SlackApp):
 
 
 async def process_message(agent: Agent, msg_queue: queue.Queue):
-    """Function that runs in a separate thread to process messages from the
+    r"""Function that runs in a separate thread to process messages from the
     message queue.
 
     This function continuously fetches messages from the queue, processes them
@@ -126,7 +126,7 @@ async def process_message(agent: Agent, msg_queue: queue.Queue):
 
 
 async def main():
-    """Main function that initializes the Slack bot and starts the message
+    r"""Main function that initializes the Slack bot and starts the message
     processing.
 
     This function creates a thread-safe message queue, initializes the Agent

@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 
 class SlackAuthProfile(BaseModel):
-    """Represents the authorization profile within a Slack event.
+    r"""Represents the authorization profile within a Slack event.
 
     Events will contain a single, compact authorizations field that shows one
     installation of your app that the event is visible to.
@@ -55,7 +55,7 @@ class SlackAuthProfile(BaseModel):
 
 
 class SlackEventProfile(BaseModel):
-    """Represents the detailed profile of a Slack event, including user,
+    r"""Represents the detailed profile of a Slack event, including user,
     message, and context data.
     """
 
@@ -94,7 +94,7 @@ class SlackEventProfile(BaseModel):
 
 
 class SlackEventBody(BaseModel):
-    """Represents the entire body of a Slack event, including the event
+    r"""Represents the entire body of a Slack event, including the event
     profile, authorization, and context.
     """
 
@@ -138,7 +138,7 @@ class SlackEventBody(BaseModel):
 
 
 class SlackAppMentionEventProfile(SlackEventProfile):
-    """Represents the detailed profile of a Slack event where the app was
+    r"""Represents the detailed profile of a Slack event where the app was
     mentioned in a message.
     """
 
@@ -147,7 +147,7 @@ class SlackAppMentionEventProfile(SlackEventProfile):
 
 
 class SlackAppMentionEventBody(SlackEventBody):
-    """Represents the entire body of a Slack event where the app was mentioned
+    r"""Represents the entire body of a Slack event where the app was mentioned
     in a message.
     """
 

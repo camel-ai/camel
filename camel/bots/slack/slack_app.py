@@ -67,7 +67,7 @@ class SlackApp:
         redirect_uri_path: str = "/slack/oauth_redirect",
         installation_store: Optional[AsyncInstallationStore] = None,
     ) -> None:
-        """Initializes the SlackApp instance by setting up the Slack Bolt app
+        r"""Initializes the SlackApp instance by setting up the Slack Bolt app
         and configuring event handlers and OAuth settings.
 
         Args:
@@ -149,7 +149,7 @@ class SlackApp:
         path: str = "/slack/events",
         host: Optional[str] = None,
     ) -> None:
-        """Start the Slack Bolt app server to listen for incoming Slack events.
+        r"""Start the Slack Bolt app server to listen for incoming Slack events.
 
         Args:
             port (int): The port on which the server should run (default is
@@ -167,7 +167,7 @@ class SlackApp:
         path: str = "/slack/events",
         host: Optional[str] = None,
     ) -> None:
-        """Start the Slack Bolt app server in a separate thread.
+        r"""Start the Slack Bolt app server in a separate thread.
 
         This is useful when you want to run the server alongside other tasks
         in the main thread.
@@ -186,7 +186,7 @@ class SlackApp:
     async def handle_request(
         self, request: requests.Request
     ) -> responses.Response:
-        """Handles incoming requests from Slack through the request handler.
+        r"""Handles incoming requests from Slack through the request handler.
 
         Args:
             request (Request): A Starlette request object representing the
@@ -205,7 +205,7 @@ class SlackApp:
         body: dict,
         say: "AsyncSay",
     ) -> None:
-        """Event handler for `app_mention` events.
+        r"""Event handler for `app_mention` events.
 
         This method is triggered when someone mentions the app in Slack.
 
@@ -233,7 +233,7 @@ class SlackApp:
         body: dict,
         say: "AsyncSay",
     ) -> None:
-        """Event handler for `message` events.
+        r"""Event handler for `message` events.
 
         This method is triggered when the app receives a message in Slack.
 
@@ -260,7 +260,7 @@ class SlackApp:
     def mention_me(
         self, context: "AsyncBoltContext", body: SlackEventBody
     ) -> bool:
-        """Check if the bot is mentioned in the message.
+        r"""Check if the bot is mentioned in the message.
 
         Args:
             context (AsyncBoltContext): The Slack Bolt context for the event.
