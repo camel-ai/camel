@@ -12,20 +12,25 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from pydantic import BaseModel
+
 from camel.structured_outputs import OpenAIStructure
 from camel.types.enums import ModelType
-from pydantic import BaseModel
 
 
 def get_temperature(location: str, date: str, temperature: float):
     print(f"Temperature in {location} on {date} is {temperature} degrees.")
+
 
 class Temperature(BaseModel):
     location: str
     date: str
     temperature: float
 
-temperature_template = '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
+
+temperature_template = (
+    '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
+)
 
 
 target_format_from_str = OpenAIStructure.get_format(temperature_template)
@@ -34,7 +39,13 @@ target_format_from_model = Temperature
 
 
 model = OpenAIStructure(
-    model_type=ModelType.GPT_4O, model_config_dict={}, target=target_format_from_str
+    model_type=ModelType.GPT_4O,
+    model_config_dict={},
+    target=target_format_from_str,
 )
 
-print(model.structure("Today is 2023-09-01, the temperature in Beijing is 30 degrees."))
+print(
+    model.structure(
+        "Today is 2023-09-01, the temperature in Beijing is 30 degrees."
+    )
+)
