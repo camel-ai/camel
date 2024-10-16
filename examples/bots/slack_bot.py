@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 import queue
+import threading
 from typing import Optional
 
 from slack_bolt.context.async_context import AsyncBoltContext
@@ -103,20 +104,22 @@ class SlackBot(SlackApp):
 
 
 async def process_message(agent: Agent, msg_queue: queue.Queue):
-    r"""Function that runs in a separate thread to process messages from the
-    message queue.
+    r"""Process messages from the queue asynchronously.
 
-    This function continuously fetches messages from the queue, processes them
-    using the Agent's `process` method, and sends the response back to Slack.
+    This function continuously retrieves messages from the message queue,
+    processes them using the `Agent` instance, and sends the response back
+    to Slack using the `say` function.
 
     Args:
-        agent (Agent): An instance of an Agent that handles processing of the
-            message.
-        msg_queue (queue.Queue): A thread-safe queue for receiving Slack events
-            and responses.
+        agent (Agent): An instance of the `Agent` class that handles the
+            processing of the incoming message.
+        msg_queue (queue.Queue): A thread-safe queue that stores Slack event
+            messages and the corresponding `say` functions for response.
     """
     while True:
         event_body, say = msg_queue.get()
+
+        print(f"Received message: {event_body.event.text}")
         user_raw_msg = event_body.event.text
 
         # Process the message using the agent and send response back to Slack.
@@ -125,29 +128,46 @@ async def process_message(agent: Agent, msg_queue: queue.Queue):
         msg_queue.task_done()
 
 
-async def main():
-    r"""Main function that initializes the Slack bot and starts the message
-    processing.
+def start_async_queue_processor(agent: Agent, msg_queue: queue.Queue):
+    r"""Start an asynchronous queue processor in a new event loop.
 
-    This function creates a thread-safe message queue, initializes the Agent
-    and SlackBot, and runs the message processing in a separate thread.
+    This function creates a new asyncio event loop in a separate thread to
+    asynchronously process messages from the queue. It will run until all
+    the messages in the queue have been processed.
+
+    Args:
+        agent (Agent): The agent responsible for processing the messages.
+        msg_queue (queue.Queue): The message queue that contains Slack events
+            and responses.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    # Schedule the asynchronous message processing task in this event loop
+    loop.run_until_complete(process_message(agent, msg_queue))
+
+
+if __name__ == "__main__":
+    r"""Main entry point for running the Slack bot application.
+
+    This section initializes the required components including the message 
+    queue, agent, and the SlackBot instance. It also starts a separate thread 
+    for asynchronous message processing to avoid blocking the Slack bot's main 
+    event loop. The `slack_bot.run()` function will handle incoming Slack 
+    events on the main thread, while the separate thread will handle processing
+    the messages from the queue.
     """
     msg_queue = queue.Queue()
 
     agent = Agent()
 
+    thread = threading.Thread(target=start_async_queue_processor, args=(
+        agent, msg_queue
+    ))
+    thread.start()
+
     # Initialize the SlackBot with the message queue.
     slack_bot = SlackBot(msg_queue=msg_queue)
-    # Run the slack bot in a separate thread.
-    # This is necessary because slack_bot.run() is a blocking operation.
-    # By running it in a separate thread, it prevents the main thread from
-    # being blocked, allowing other async functions to execute, such as
-    # processing the message queue.
-    slack_bot.run_in_thread(3000)
+    slack_bot.run(3000)
 
-    # Start a separate thread for processing messages from the queue.
-    await process_message(agent, msg_queue)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    thread.join()

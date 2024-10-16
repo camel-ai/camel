@@ -13,8 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 import os
-import threading
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from slack_sdk.oauth.installation_store.async_installation_store import (
     AsyncInstallationStore,
@@ -108,7 +107,7 @@ class SlackApp:
             )
 
         # Setup OAuth settings if client ID and secret are provided
-        if client_id and client_secret:
+        if self.client_id and self.client_secret:
             self._app = AsyncApp(
                 oauth_settings=AsyncOAuthSettings(
                     client_id=self.client_id,
@@ -149,7 +148,8 @@ class SlackApp:
         path: str = "/slack/events",
         host: Optional[str] = None,
     ) -> None:
-        r"""Start the Slack Bolt app server to listen for incoming Slack events.
+        r"""Starts the Slack Bolt app server to listen for incoming Slack
+        events.
 
         Args:
             port (int): The port on which the server should run (default is
@@ -160,28 +160,6 @@ class SlackApp:
                 None).
         """
         self._app.start(port=port, path=path, host=host)
-
-    def run_in_thread(
-        self,
-        port: int = 3000,
-        path: str = "/slack/events",
-        host: Optional[str] = None,
-    ) -> None:
-        r"""Start the Slack Bolt app server in a separate thread.
-
-        This is useful when you want to run the server alongside other tasks
-        in the main thread.
-
-        Args:
-            port (int): The port on which the server should run (default is
-                3000).
-            path (str): The endpoint path for receiving Slack events (default
-                is "/slack/events").
-            host (Optional[str]): The hostname to bind the server (default is
-                None).
-        """
-        thread = threading.Thread(target=self.run, args=(port, path, host))
-        thread.start()
 
     async def handle_request(
         self, request: requests.Request
@@ -201,8 +179,8 @@ class SlackApp:
         self,
         context: "AsyncBoltContext",
         client: "AsyncWebClient",
-        event: dict,
-        body: dict,
+        event: Dict[str],
+        body: Dict[str],
         say: "AsyncSay",
     ) -> None:
         r"""Event handler for `app_mention` events.
@@ -216,14 +194,15 @@ class SlackApp:
             body (dict): The full request body from Slack.
             say (AsyncSay): A function to send a response back to the channel.
         """
+        await context.ack()
         event_profile = SlackEventProfile(**event)
         event_body = SlackEventBody(**body)
 
-        logger.info("on_message, context: {}".format(context))
-        logger.info("on_message, client: {}".format(client))
-        logger.info("on_message, event_profile: {}".format(event_profile))
-        logger.info("on_message, event_body: {}".format(event_body))
-        logger.info("on_message, say: {}".format(say))
+        logger.info(f"on_message, context: {format(context)}")
+        logger.info(f"on_message, client: {format(client)}")
+        logger.info(f"on_message, event_profile: {format(event_profile)}")
+        logger.info(f"on_message, event_body: {format(event_body)}")
+        logger.info(f"on_message, say: {format(say)}")
 
     async def on_message(
         self,
@@ -255,7 +234,7 @@ class SlackApp:
         logger.info("on_message, event_body: {}".format(event_body))
         logger.info("on_message, say: {}".format(say))
 
-        await say("Hello, world!")
+        logger.info(f"Received message: {event_profile.text}")
 
     def mention_me(
         self, context: "AsyncBoltContext", body: SlackEventBody
