@@ -67,11 +67,6 @@ class AskNewsToolkit(BaseToolkit):
     def __init__(self):
         r"""Initialize the AskNewsToolkit with API clients.The API keys and
         credentials are retrieved from environment variables.
-
-        Args:
-            scopes (Optional[List[str]], optional): A list of API scopes to
-                specify which functionalities the client should access.
-                (default: :list:`["chat", "news", "stories"]`)
         """
         from asknews_sdk import AskNewsSDK  # type: ignore[import]
 
@@ -204,7 +199,7 @@ class AskNewsToolkit(BaseToolkit):
                 return value. (default: :obj:`"string"`)
 
         Returns:
-            Optional[Union[str, dict, Tuple[str, dict]]]: A string,
+            Union[str, dict, Tuple[str, dict]]: A string,
                 dictionary, or both containing the search results, or
                 error message if the process fails.
         """
@@ -252,7 +247,7 @@ class AskNewsToolkit(BaseToolkit):
         except Exception as e:
             return f"Got error: {e}"
 
-    def finance_query(
+    def query_finance(
         self,
         asset: Literal[
             'bitcoin',
@@ -292,12 +287,12 @@ class AskNewsToolkit(BaseToolkit):
         Args:
             asset (Literal): The asset for which to fetch sentiment data.
             metric (Literal): The sentiment metric to analyze.
+            return_type (Literal["list", "string"]): The format of the return
+                value. (default: :obj:`"string"`)
             date_from (datetime, optional): The start date and time for the
                 data in ISO 8601 format.
             date_to (datetime, optional): The end date and time for the data
                 in ISO 8601 format.
-            return_type (Literal["list", "string"]): The format of the return
-                value. (default: :obj:`"string"`)
 
         Returns:
             Union[list, str]: A list of dictionaries containing the datetime
@@ -347,10 +342,10 @@ class AskNewsToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.get_news),
-            FunctionTool(self.search_reddit),
             FunctionTool(self.get_stories),
-            FunctionTool(self.finance_query),
             FunctionTool(self.get_web_search),
+            FunctionTool(self.search_reddit),
+            FunctionTool(self.query_finance),
         ]
 
 
@@ -363,25 +358,17 @@ class AsyncAskNewsToolkit(BaseToolkit):
     """
 
     @api_keys_required("ASKNEWS_CLIENT_ID", "ASKNEWS_CLIENT_SECRET")
-    def __init__(self, scopes: Optional[List[str]] = None):
+    def __init__(self):
         r"""Initialize the AsyncAskNewsToolkit with API clients.The API keys
         and credentials are retrieved from environment variables.
-
-        Args:
-            scopes (Optional[List[str]]): A list of API scopes to specify which
-                functionalities the client should access.
-                (default: :list:`["chat", "news", "stories"]`)
         """
         from asknews_sdk import AsyncAskNewsSDK  # type: ignore[import]
 
-        if scopes is None:
-            scopes = ["chat", "news", "stories", "analytics"]
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
         self.asknews_client = AsyncAskNewsSDK(
             client_id,
             client_secret,
-            scopes=scopes,
         )
 
     async def get_news(
@@ -390,24 +377,24 @@ class AsyncAskNewsToolkit(BaseToolkit):
         n_articles: int = 10,
         return_type: Literal["string", "dicts", "both"] = "string",
         method: Literal["nl", "kw"] = "kw",
-    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
+    ) -> Union[str, dict, Tuple[str, dict]]:
         r"""Fetch news or stories based on a user query.
 
         Args:
             query (str): The search query for fetching relevant news or
                 stories.
             n_articles (int): Number of articles to include in the response.
-                (default: :obj:`10`)
+                (default: :obj:10)
             return_type (Literal["string", "dicts", "both"]): The format of the
-                return value. (default: :obj:`"string"`)
+                return value. (default: :obj:"string")
             method (Literal["nl", "kw"]): The search method, either "nl" for
                 natural language or "kw" for keyword search. (default:
-                :obj:`"kw"`)
+                :obj:"kw")
 
         Returns:
-            Optional[Union[str, dict, Tuple[str, dict]]]: A string,
+            Union[str, dict, Tuple[str, dict]]: A string,
                 dictionary, or both containing the news or story content, or
-                :obj:`None` if the process fails.
+                error message if the process fails.
         """
         try:
             response = await self.asknews_client.news.search_news(
@@ -419,60 +406,39 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
             return _process_response(response, return_type)
 
-        except Exception:
-            return None
-
-    async def search_reddit(
-        self,
-        keywords: list,
-        n_threads: int = 5,
-        return_type: Literal["string", "dicts", "both"] = "string",
-        method: Literal["nl", "kw"] = "kw",
-    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
-        r"""Search Reddit based on the provided keywords.
-
-        Args:
-            keywords (list): The keywords to search for on Reddit.
-            n_threads (int): Number of Reddit threads to summarize and return.
-                (default: :obj:`5`)
-            return_type (Literal["string", "dicts", "both"]): The format of the
-                return value. (default: :obj:`"string"`)
-            method (Literal["nl", "kw"]): The search method, either "nl" for
-                natural language or "kw" for keyword search.
-                (default::obj:`"kw"`)
-
-        Returns:
-            Optional[Union[str, dict, Tuple[str, dict]]]: The Reddit search
-                results as a string, dictionary, or both, or :obj:`None` if
-                the process fails.
-
-        Raises:
-            Exception: If there is an error while searching Reddit.
-        """
-        try:
-            response = await self.asknews_client.news.search_reddit(
-                keywords=keywords, n_threads=n_threads, method=method
-            )
-
-            return _process_response(response, return_type)
-
-        except Exception:
-            return None
+        except Exception as e:
+            return f"Got error: {e}"
 
     async def get_stories(
         self,
-        categories: list,
-        continent: str,
+        query: str,
+        categories: List[
+            Literal[
+                'Politics',
+                'Economy',
+                'Finance',
+                'Science',
+                'Technology',
+                'Sports',
+                'Climate',
+                'Environment',
+                'Culture',
+                'Entertainment',
+                'Business',
+                'Health',
+                'International',
+            ]
+        ],
         reddit: int = 3,
         expand_updates: bool = True,
         max_updates: int = 2,
         max_articles: int = 10,
-    ) -> Optional[dict]:
+    ) -> Union[dict, str]:
         r"""Fetch stories based on the provided parameters.
 
         Args:
+            query (str): The search query for fetching relevant stories.
             categories (list): The categories to filter stories by.
-            continent (str): The continent to filter stories by.
             reddit (int): Number of Reddit threads to include.
                 (default: :obj:`3`)
             expand_updates (bool): Whether to include detailed updates.
@@ -483,13 +449,13 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 each update. (default: :obj:`10`)
 
         Returns:
-            Optional[dict]: A dictionary containing the stories and their
-                associated data, or :obj:`None` if the process fails.
+            Unio[dict, str]: A dictionary containing the stories and their
+                associated data, or error message if the process fails.
         """
         try:
             response = await self.asknews_client.stories.search_stories(
+                query=query,
                 categories=categories,
-                continent=continent,
                 reddit=reddit,
                 expand_updates=expand_updates,
                 max_updates=max_updates,
@@ -515,35 +481,122 @@ class AsyncAskNewsToolkit(BaseToolkit):
 
             return stories_data
 
-        except Exception:
-            return None
+        except Exception as e:
+            return f"Got error: {e}"
 
-    async def finance_query(
+    async def get_web_search(
         self,
-        asset: str,
-        metric: str,
-        date_from: str,
-        date_to: str,
+        queries: List[str],
+        return_type: Literal["string", "dicts", "both"] = "string",
+    ) -> Union[str, dict, Tuple[str, dict]]:
+        r"""Perform a live web search based on the given queries.
+
+        Args:
+            queries (List[str]): A list of search queries.
+            return_type (Literal["string", "dicts", "both"]): The format of the
+                return value. (default: :obj:`"string"`)
+
+        Returns:
+            Union[str, dict, Tuple[str, dict]]: A string,
+                dictionary, or both containing the search results, or
+                error message if the process fails.
+        """
+        try:
+            response = await self.asknews_client.chat.live_web_search(
+                queries=queries
+            )
+
+            return _process_response(response, return_type)
+
+        except Exception as e:
+            return f"Got error: {e}"
+
+    async def search_reddit(
+        self,
+        keywords: List[str],
+        n_threads: int = 5,
+        return_type: Literal["string", "dicts", "both"] = "string",
+        method: Literal["nl", "kw"] = "kw",
+    ) -> Union[str, dict, Tuple[str, dict]]:
+        r"""Search Reddit based on the provided keywords.
+
+        Args:
+            keywords (list): The keywords to search for on Reddit.
+            n_threads (int): Number of Reddit threads to summarize and return.
+                (default: :obj:5)
+            return_type (Literal["string", "dicts", "both"]): The format of the
+                return value. (default: :obj:"string")
+            method (Literal["nl", "kw"]): The search method, either "nl" for
+                natural language or "kw" for keyword search.
+                (default::obj:"kw")
+
+        Returns:
+            Union[str, dict, Tuple[str, dict]]: The Reddit search
+                results as a string, dictionary, or both, or error message if
+                the process fails.
+        """
+        try:
+            response = await self.asknews_client.news.search_reddit(
+                keywords=keywords, n_threads=n_threads, method=method
+            )
+
+            return _process_response(response, return_type)
+
+        except Exception as e:
+            return f"Got error: {e}"
+
+    async def query_finance(
+        self,
+        asset: Literal[
+            'bitcoin',
+            'ethereum',
+            'cardano',
+            'uniswap',
+            'ripple',
+            'solana',
+            'polkadot',
+            'polygon',
+            'chainlink',
+            'tether',
+            'dogecoin',
+            'monero',
+            'tron',
+            'binance',
+            'aave',
+            'tesla',
+            'microsoft',
+            'amazon',
+        ],
+        metric: Literal[
+            'news_positive',
+            'news_negative',
+            'news_total',
+            'news_positive_weighted',
+            'news_negative_weighted',
+            'news_total_weighted',
+        ] = "news_positive",
         return_type: Literal["list", "string"] = "string",
-    ) -> Optional[Union[list, str]]:
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+    ) -> Union[list, str]:
         r"""Fetch asset sentiment data for a given asset, metric, and date
         range.
 
         Args:
-            asset (str): The asset for which to fetch sentiment data.
-            metric (str): The sentiment metric to analyze.
-            date_from (str): The start date and time for the data in ISO 8601
-                format.
-            date_to (str): The end date and time for the data in ISO 8601
-                format.
+            asset (Literal): The asset for which to fetch sentiment data.
+            metric (Literal): The sentiment metric to analyze.
             return_type (Literal["list", "string"]): The format of the return
                 value. (default: :obj:`"string"`)
+            date_from (datetime, optional): The start date and time for the
+                data in ISO 8601 format.
+            date_to (datetime, optional): The end date and time for the data
+                in ISO 8601 format.
 
         Returns:
-            Optional[Union[list, str]]: A list of dictionaries containing the
-                datetime and value or a string describing all datetime and
-                value pairs for providing quantified time-series data for news
-                sentiment on topics of interest, or :obj:`None` if the process
+            Union[list, str]: A list of dictionaries containing the datetime
+                and value or a string describing all datetime and value pairs
+                for providing quantified time-series data for news sentiment
+                on topics of interest, or an error message if the process
                 fails.
         """
         try:
@@ -574,62 +627,8 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 )
                 return header + descriptive_text
 
-        except Exception:
-            return None
-
-    async def chat_query(
-        self, query: str, model: str = "meta-llama/Meta-Llama-3-70B-Instruct"
-    ) -> Optional[str]:
-        r"""Send a chat query to the API and retrieve the response.
-
-        Args:
-            query (str): The content of the user's message.
-            model (str): The model to use for generating the chat response.
-                (default: :obj:`"meta-llama/Meta-Llama-3-70B-Instruct"`)
-
-        Returns:
-            Optional[str]: The content of the response message, or :obj:`None`
-                if the process fails.
-        """
-        try:
-            response = await self.asknews_client.chat.get_chat_completions(
-                model=model,
-                messages=[{"role": "user", "content": query}],
-                stream=False,
-            )
-
-            # Return the content of the first choice's message
-            return response.choices[0].message.content
-
-        except Exception:
-            return None
-
-    async def get_web_search(
-        self,
-        queries: List[str],
-        return_type: Literal["string", "dicts", "both"] = "string",
-    ) -> Optional[Union[str, dict, Tuple[str, dict]]]:
-        r"""Perform a live web search based on the given queries.
-
-        Args:
-            queries (List[str]): A list of search queries.
-            return_type (Literal["string", "dicts", "both"]): The format of the
-                return value. (default: :obj:`"string"`)
-
-        Returns:
-            Optional[Union[str, dict, Tuple[str, dict]]]: A string,
-                dictionary, or both containing the search results, or
-                :obj:`None` if the process fails.
-        """
-        try:
-            response = await self.asknews_client.chat.live_web_search(
-                queries=queries
-            )
-
-            return _process_response(response, return_type)
-
-        except Exception:
-            return None
+        except Exception as e:
+            return f"Got error: {e}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
@@ -641,11 +640,10 @@ class AsyncAskNewsToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.get_news),
-            FunctionTool(self.search_reddit),
             FunctionTool(self.get_stories),
-            FunctionTool(self.finance_query),
-            FunctionTool(self.chat_query),
             FunctionTool(self.get_web_search),
+            FunctionTool(self.search_reddit),
+            FunctionTool(self.query_finance),
         ]
 
 

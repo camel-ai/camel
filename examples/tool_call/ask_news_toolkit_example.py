@@ -24,18 +24,31 @@ ask_news = AskNewsToolkit()
 <doc>
 [1]:
 Title: Robot Creates Painting of Alan Turing for $130,000 to $195,000 Auction
-Summary: A robot named 'Ai-Da' created a painting of Alan Turing, a British mathematician and father of modern computer science, using artificial intelligence technology. The painting is part of an online auction that will take place from October 31 to November 7, and is estimated to be worth between $130,000 and $195,000. Ai-Da is a highly advanced robot that has arms and a face that resembles a human, complete with brown hair. The robot was created in 2019 by a team led by Aidan Meller, an art dealer and founder of Ai-Da Robot Studio, in collaboration with experts in artificial intelligence from the universities of Oxford and Birmingham. Ai-Da uses AI to create paintings or sculptures, and has cameras in its eyes and electronic arms. According to Ai-Da, 'Through my works on Alan Turing, I celebrate his achievements and contributions to the development of computing and artificial intelligence.' T
+Summary: A robot named 'Ai-Da' created a painting of Alan Turing, a British 
+mathematician and father of modern computer science, using artificial 
+intelligence technology. The painting is part of an online auction that will 
+take place from October 31 to November 7, and is estimated to be worth between 
+$130,000 and $195,000. Ai-Da is a highly advanced robot that has arms and a 
+face that resembles a human, complete with brown hair. The robot was created 
+in 2019 by a team led by Aidan Meller, an art dealer and founder of Ai-Da 
+Robot Studio, in collaboration with experts in artificial intelligence from 
+the universities of Oxford and Birmingham. Ai-Da uses AI to create paintings 
+or sculptures, and has cameras in its eyes and electronic arms. According to 
+Ai-Da, 'Through my works on Alan Turing, I celebrate his achievements and 
+contributions to the development of computing and artificial intelligence.' T
 ===============================================================================
 """
 
-# story_output = ask_news.get_stories(query="camel-ai", categories=["Technology"])
-# print(story_output)
+story_output = ask_news.get_stories(
+    query="camel-ai", categories=["Technology"]
+)
+print(story_output)
 
-# web_search_output = ask_news.get_web_search(queries=["camel-ai"])
-# print(web_search_output)
+web_search_output = ask_news.get_web_search(queries=["camel-ai"])
+print(web_search_output)
 
-# reddit_output = ask_news.search_reddit(keywords=["camel-ai", "multi-agent"])
-# print(reddit_output)
+reddit_output = ask_news.search_reddit(keywords=["camel-ai", "multi-agent"])
+print(reddit_output)
 
 finance_output = ask_news.finance_query(asset="bitcoin")
 print(finance_output)
