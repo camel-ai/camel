@@ -16,19 +16,19 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 from pydantic import create_model
 from pydantic.dataclasses import dataclass
 
 
-def get_format(input_data: Optional[Union[str, type, callable]] = None):
+def get_format(input_data: Optional[Union[str, type, Callable]] = None):
     """
     A multi-purpose function that can be used as a normal function,
         a class decorator, or a function decorator.
 
     Parameters:
-    input_data (Optional[Union[str, type, callable]]):
+    input_data (Optional[Union[str, type, Callable]]):
         - If a string is provided, it should be a JSON-encoded string
             that will be converted into a BaseModel.
         - If a function is provided, it will be decorated such that
@@ -41,14 +41,14 @@ def get_format(input_data: Optional[Union[str, type, callable]] = None):
     """
     if isinstance(input_data, str):
         data_dict = json.loads(input_data)
-        TemporaryModel = create_model(
+        TemporaryModel = create_model(  # type: ignore[call-overload]
             "TemporaryModel",
             **{key: (type(value), None) for key, value in data_dict.items()},
         )
         return TemporaryModel(**data_dict).__class__
 
     elif callable(input_data):
-        WrapperClass = create_model(
+        WrapperClass = create_model(  # type: ignore[call-overload]
             f"{input_data.__name__.capitalize()}Model",
             **{
                 name: (param.annotation, ...)
