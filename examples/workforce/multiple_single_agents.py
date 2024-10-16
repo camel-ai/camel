@@ -18,8 +18,8 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import (
     WEATHER_FUNCS,
+    FunctionTool,
     GoogleMapsToolkit,
-    OpenAIFunction,
     SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
@@ -29,8 +29,8 @@ from camel.workforce import Workforce
 def main():
     search_toolkit = SearchToolkit()
     search_tools = [
-        OpenAIFunction(search_toolkit.search_google),
-        OpenAIFunction(search_toolkit.search_duckduckgo),
+        FunctionTool(search_toolkit.search_google),
+        FunctionTool(search_toolkit.search_duckduckgo),
     ]
 
     # Set up web searching agent

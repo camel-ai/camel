@@ -1,5 +1,7 @@
 # Tools
 
+For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/agents_with_tools.ipynb)
+
 ## 1. Concept
 Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
 
@@ -14,7 +16,7 @@ To enhance your agents' capabilities with CAMEL tools, start by installing our a
 pip install 'camel-ai[tools]'
 ```
 
-In CAMEL, a tool is an `OpenAIFunction` that LLMs can call.
+In CAMEL, a tool is an `FunctionTool` that LLMs can call.
 
 
 ### 2.1 How to Define Your Own Tool?
@@ -22,7 +24,7 @@ In CAMEL, a tool is an `OpenAIFunction` that LLMs can call.
 Developers can create custom tools tailored to their agent’s specific needs:
 
 ```python
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 
 def add(a: int, b: int) -> int:
     r"""Adds two numbers.
@@ -36,7 +38,7 @@ def add(a: int, b: int) -> int:
     """
     return a + b
     
-add_tool = OpenAIFunction(add)
+add_tool = FunctionTool(add)
 ```
 
 ```python
@@ -105,8 +107,8 @@ To utilize specific tools from the toolkits, you can implement code like the fol
 ```python
 from camel.toolkits import SearchToolkit
 
-google_tool = OpenAIFunction(SearchToolkit().search_google)
-wiki_tool = OpenAIFunction(SearchToolkit().search_wiki)
+google_tool = FunctionTool(SearchToolkit().search_google)
+wiki_tool = FunctionTool(SearchToolkit().search_wiki)
 ```
 
 Here is a list of the available CAMEL tools and their descriptions:

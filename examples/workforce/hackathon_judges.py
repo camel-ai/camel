@@ -17,7 +17,7 @@ from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks import Task
-from camel.toolkits import OpenAIFunction, SearchToolkit
+from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
 
@@ -74,8 +74,8 @@ def main():
 
     search_toolkit = SearchToolkit()
     search_tools = [
-        OpenAIFunction(search_toolkit.search_google),
-        OpenAIFunction(search_toolkit.search_duckduckgo),
+        FunctionTool(search_toolkit.search_google),
+        FunctionTool(search_toolkit.search_duckduckgo),
     ]
 
     researcher_model = ModelFactory.create(
