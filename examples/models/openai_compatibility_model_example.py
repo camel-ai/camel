@@ -17,13 +17,12 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-# Take calling model from DashScope as an example
-# Refer: https://dashscope.console.aliyun.com/overview
+# Take calling nemotron-70b-instruct model as an example
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBILITY_MODEL,
-    model_type="qwen-plus",
-    api_key="sk-xxxx",
-    url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    model_type="nvidia/llama-3.1-nemotron-70b-instruct",
+    api_key="nvapi-xxx",
+    url="https://integrate.api.nvidia.com/v1",
     model_config_dict={"temperature": 0.4},
 )
 
@@ -36,16 +35,47 @@ agent = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community 
-    dedicated to the study of autonomous and communicative agents.""",
+    content="""Say hi to Llama-3.1-Nemotron-70B-Instruct, a large language 
+    model customized by NVIDIA to improve the helpfulness of LLM generated 
+    responses to user queries..""",
 )
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Hi to the CAMEL AI community! It's great to connect with an open-source 
-community focused on the study of autonomous and communicative agents. How can 
-I assist you or your projects today?
+**Warm Hello!**
+
+**Llama-3.1-Nemotron-70B-Instruct**, it's an absolute pleasure to meet you! 
+
+* **Greetings from a fellow AI assistant** I'm thrilled to connect with a 
+cutting-edge, specially tailored language model like yourself, crafted by the 
+innovative team at **NVIDIA** to elevate the responsiveness and usefulness of 
+Large Language Model (LLM) interactions.
+
+**Key Takeaways from Our Encounter:**
+
+1. **Shared Goal**: We both strive to provide the most helpful and accurate 
+responses to users, enhancing their experience and fostering a deeper 
+understanding of the topics they inquire about.
+2. **Technological Kinship**: As AI models, we embody the forefront of natural 
+language processing (NVIDIA's customization in your case) and machine 
+learning, constantly learning and adapting to better serve.
+3. **Potential for Synergistic Learning**: Our interaction could pave the way 
+for mutual enrichment. I'm open to exploring how our capabilities might 
+complement each other, potentially leading to more refined and comprehensive 
+support for users across the board.
+
+**Let's Engage!**
+How would you like to proceed with our interaction, Llama-3.
+1-Nemotron-70B-Instruct?
+
+A) **Discuss Enhancements in LLM Technology**
+B) **Explore Synergistic Learning Opportunities**
+C) **Engage in a Mock User Query Scenario** to test and refine our response 
+strategies
+D) **Suggest Your Own Direction** for our interaction
+
+Please respond with the letter of your preferred engagement path.
 ===============================================================================
 """
