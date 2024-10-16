@@ -15,8 +15,7 @@ from typing import List, Literal
 
 from camel.interpreters import InternalPythonInterpreter
 from camel.toolkits import FunctionTool
-
-from .base import BaseToolkit
+from camel.toolkits.base import BaseToolkit
 
 
 class CodeExecutionToolkit(BaseToolkit):
