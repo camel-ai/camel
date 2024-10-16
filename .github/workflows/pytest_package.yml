@@ -45,6 +45,8 @@ jobs:
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+        ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+        ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -79,6 +81,8 @@ jobs:
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+        ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+        ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -113,4 +117,6 @@ jobs:
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+        ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+        ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
       run: poetry run pytest --very-slow-test-only test/
