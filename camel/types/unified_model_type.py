@@ -13,14 +13,25 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from threading import Lock
-from typing import ClassVar, Dict, cast
+from typing import TYPE_CHECKING, ClassVar, Dict, Union, cast
+
+if TYPE_CHECKING:
+    from camel.types import ModelType
 
 
 class UnifiedModelType(str):
+    r"""Class used for support both :obj:`ModelType` and :obj:`str` to be used
+    to represent a model type in a unified way. This class is a subclass of
+    :obj:`str` so that it can be used as string seamlessly.
+
+    Args:
+        value (Union[ModelType, str]): The value of the model type.
+    """
+
     _cache: ClassVar[Dict[str, "UnifiedModelType"]] = {}
     _lock: ClassVar[Lock] = Lock()
 
-    def __new__(cls, value: str) -> "UnifiedModelType":
+    def __new__(cls, value: Union["ModelType", str]) -> "UnifiedModelType":
         with cls._lock:
             if value not in cls._cache:
                 instance = super().__new__(cls, value)
@@ -28,6 +39,9 @@ class UnifiedModelType(str):
             else:
                 instance = cls._cache[value]
         return instance
+
+    def __init__(self, value: Union["ModelType", str]) -> None:
+        pass
 
     @property
     def value_for_tiktoken(self) -> str:
