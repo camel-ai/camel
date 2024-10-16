@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 # ruff: noqa: I001
-from .openai_function import (
+from .function_tool import (
+    FunctionTool,
     OpenAIFunction,
     get_openai_function_schema,
     get_openai_tool_schema,
@@ -39,6 +40,7 @@ from .retrieval_toolkit import RetrievalToolkit
 
 __all__ = [
     'BaseToolkit',
+    'FunctionTool',
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',

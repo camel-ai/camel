@@ -120,8 +120,8 @@ def test_track_keyword_discussions(reddit_toolkit):
 
 
 def test_get_tools(reddit_toolkit):
-    from camel.toolkits import OpenAIFunction
+    from camel.toolkits import FunctionTool
 
     tools = reddit_toolkit.get_tools()
     assert len(tools) == 3
-    assert all(isinstance(tool, OpenAIFunction) for tool in tools)
+    assert all(isinstance(tool, FunctionTool) for tool in tools)

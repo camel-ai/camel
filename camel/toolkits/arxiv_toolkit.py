@@ -14,7 +14,8 @@
 
 from typing import Dict, Generator, List, Optional
 
-from camel.toolkits import BaseToolkit, OpenAIFunction
+from camel.toolkits.base import BaseToolkit
+from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
 
 
@@ -97,6 +98,8 @@ class ArxivToolkit(BaseToolkit):
                 "authors": [author.name for author in paper.authors],
                 "entry_id": paper.entry_id,
                 "summary": paper.summary,
+                # TODO: Use chunkr instead of atxiv_to_text for better
+                # performance
                 "paper_text": arxiv_to_text(paper.pdf_url),
             }
             papers_data.append(paper_info)
@@ -138,8 +141,8 @@ class ArxivToolkit(BaseToolkit):
         except Exception as e:
             return f"An error occurred: {e}"
 
-    def get_tools(self) -> List[OpenAIFunction]:
+    def get_tools(self) -> List[FunctionTool]:
         return [
-            OpenAIFunction(self.search_papers),
-            OpenAIFunction(self.download_papers),
+            FunctionTool(self.search_papers),
+            FunctionTool(self.download_papers),
         ]
