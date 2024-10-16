@@ -151,7 +151,7 @@ class OpenAIModel(BaseModelBackend):
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial 
+        r"""Returns whether the model is in stream mode, which sends partial
         results each time.
 
         Returns:

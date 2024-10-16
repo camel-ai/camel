@@ -76,7 +76,8 @@ def test_chat_agent(model):
         "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
     )
     assert str(assistant_without_sys_msg) == (
-        "ChatAgent(assistant, " f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4O_MINI)})"
+        "ChatAgent(assistant, "
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4O_MINI)})"
     )
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
