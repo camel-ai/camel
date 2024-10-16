@@ -30,6 +30,7 @@ from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
+from .google_scholar_toolkit import GoogleScholarToolkit
 from .arxiv_toolkit import ArxivToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
@@ -58,6 +59,7 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
+    'GoogleScholarToolkit',
     'ArxivToolkit',
     'MATH_FUNCS',
     'SEARCH_FUNCS',

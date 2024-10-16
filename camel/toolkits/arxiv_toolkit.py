@@ -142,6 +142,13 @@ class ArxivToolkit(BaseToolkit):
             return f"An error occurred: {e}"
 
     def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
         return [
             FunctionTool(self.search_papers),
             FunctionTool(self.download_papers),

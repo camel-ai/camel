@@ -333,6 +333,25 @@ files = [
 ]
 
 [[package]]
+name = "arrow"
+version = "1.3.0"
+description = "Better dates & times for Python"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "arrow-1.3.0-py3-none-any.whl", hash = "sha256:c728b120ebc00eb84e01882a6f5e7927a53960aa990ce7dd2b10f39005a67f80"},
+    {file = "arrow-1.3.0.tar.gz", hash = "sha256:d4540617648cb5f895730f1ad8c82a65f2dad0166f57b75f3ca54759c4d67a85"},
+]
+
+[package.dependencies]
+python-dateutil = ">=2.7.0"
+types-python-dateutil = ">=2.8.10"
+
+[package.extras]
+doc = ["doc8", "sphinx (>=7.0.0)", "sphinx-autobuild", "sphinx-autodoc-typehints", "sphinx_rtd_theme (>=1.3.0)"]
+test = ["dateparser (==1.*)", "pre-commit", "pytest", "pytest-cov", "pytest-mock", "pytz (==2021.1)", "simplejson (==3.*)"]
+
+[[package]]
 name = "arxiv"
 version = "2.1.3"
 description = "Python wrapper for the arXiv API: https://arxiv.org/help/api/"
@@ -563,6 +582,19 @@ chardet = ["chardet"]
 charset-normalizer = ["charset-normalizer"]
 html5lib = ["html5lib"]
 lxml = ["lxml"]
+
+[[package]]
+name = "bibtexparser"
+version = "1.4.2"
+description = "Bibtex parser for python 3"
+optional = true
+python-versions = "*"
+files = [
+    {file = "bibtexparser-1.4.2.tar.gz", hash = "sha256:dd5d54a1ec6d27b6485ce2f6b9aa514b183fb2b8d4bf5f19333a906eedaf8eaa"},
+]
+
+[package.dependencies]
+pyparsing = ">=2.0.3"
 
 [[package]]
 name = "bleach"
@@ -1574,6 +1606,17 @@ files = [
 tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipython", "littleutils", "pytest", "rich"]
 
 [[package]]
+name = "fake-useragent"
+version = "1.5.1"
+description = "Up-to-date simple useragent faker with real world database"
+optional = true
+python-versions = "*"
+files = [
+    {file = "fake-useragent-1.5.1.tar.gz", hash = "sha256:6387269f5a2196b5ba7ed8935852f75486845a1c95c50e72460e6a8e762f5c49"},
+    {file = "fake_useragent-1.5.1-py3-none-any.whl", hash = "sha256:57415096557c8a4e23b62a375c21c55af5fd4ba30549227f562d2c4f5b60e3b3"},
+]
+
+[[package]]
 name = "fastapi"
 version = "0.115.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -1818,6 +1861,20 @@ type1 = ["xattr"]
 ufo = ["fs (>=2.2.0,<3)"]
 unicode = ["unicodedata2 (>=15.1.0)"]
 woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
+
+[[package]]
+name = "free-proxy"
+version = "1.1.2"
+description = "Proxy scraper for further use"
+optional = true
+python-versions = ">=3.6"
+files = [
+    {file = "free_proxy-1.1.2.tar.gz", hash = "sha256:f7c361d3b6c82918ab845163c46ea574e6bd4ce54b1342e89804aaf07e53b848"},
+]
+
+[package.dependencies]
+lxml = "*"
+requests = "*"
 
 [[package]]
 name = "frozenlist"
@@ -3343,13 +3400,13 @@ files = [
 
 [[package]]
 name = "litellm"
-version = "1.49.4"
+version = "1.49.5"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.49.4-py3-none-any.whl", hash = "sha256:3094a9f74979da993f4b3298372ec4416f7a3f82d11a0831c9c616098b3fb50a"},
-    {file = "litellm-1.49.4.tar.gz", hash = "sha256:5f16d40bfa7747fcc21f45f340454c57cbc705178244fe7326abac7c0759e05e"},
+    {file = "litellm-1.49.5-py3-none-any.whl", hash = "sha256:9cd246221c1d922edb7614f29b5b5618b9da588f0ac04612965dbd8afeaa130f"},
+    {file = "litellm-1.49.5.tar.gz", hash = "sha256:f45667d723d77d235dc3cc3b056338012eb2ffbfd46d7beb7abea927f49358e0"},
 ]
 
 [package.dependencies]
@@ -4811,6 +4868,20 @@ files = [
     {file = "orjson-3.10.7-cp39-none-win_amd64.whl", hash = "sha256:974683d4618c0c7dbf4f69c95a979734bf183d0658611760017f6e70a145af58"},
     {file = "orjson-3.10.7.tar.gz", hash = "sha256:75ef0640403f945f3a1f9f6400686560dbfb0fb5b16589ad62cd477043c4eee3"},
 ]
+
+[[package]]
+name = "outcome"
+version = "1.3.0.post0"
+description = "Capture the outcome of Python function calls."
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "outcome-1.3.0.post0-py2.py3-none-any.whl", hash = "sha256:e771c5ce06d1415e356078d3bdd68523f284b4ce5419828922b6871e65eda82b"},
+    {file = "outcome-1.3.0.post0.tar.gz", hash = "sha256:9dcf02e65f2971b80047b377468e72a268e15c0af3cf1238e6ff14f7f91143b8"},
+]
+
+[package.dependencies]
+attrs = ">=19.2.0"
 
 [[package]]
 name = "packaging"
@@ -7186,6 +7257,35 @@ testing = ["h5py (>=3.7.0)", "huggingface-hub (>=0.12.1)", "hypothesis (>=6.70.2
 torch = ["safetensors[numpy]", "torch (>=1.10)"]
 
 [[package]]
+name = "scholarly"
+version = "1.7.11"
+description = "Simple access to Google Scholar authors and citations"
+optional = true
+python-versions = "*"
+files = [
+    {file = "scholarly-1.7.11-py3-none-any.whl", hash = "sha256:be404853e0d020254de32d2050c54dc201f1f36efa4a9d3f8e740d3be4361b20"},
+    {file = "scholarly-1.7.11.tar.gz", hash = "sha256:2c983dd44d9d9398a6f2605102ae6e5586023b41ebbaec1461917ee48eb153f0"},
+]
+
+[package.dependencies]
+arrow = "*"
+beautifulsoup4 = "*"
+bibtexparser = "*"
+deprecated = "*"
+fake-useragent = "*"
+free-proxy = "*"
+httpx = "*"
+python-dotenv = "*"
+requests = {version = "*", extras = ["socks"]}
+selenium = "*"
+sphinx-rtd-theme = "*"
+stem = {version = "*", optional = true, markers = "extra == \"tor\""}
+typing-extensions = "*"
+
+[package.extras]
+tor = ["stem"]
+
+[[package]]
 name = "scikit-learn"
 version = "1.5.2"
 description = "A set of python modules for machine learning and data mining"
@@ -7279,6 +7379,25 @@ numpy = ">=1.23.5,<2.3"
 dev = ["cython-lint (>=0.12.2)", "doit (>=0.36.0)", "mypy (==1.10.0)", "pycodestyle", "pydevtool", "rich-click", "ruff (>=0.0.292)", "types-psutil", "typing_extensions"]
 doc = ["jupyterlite-pyodide-kernel", "jupyterlite-sphinx (>=0.13.1)", "jupytext", "matplotlib (>=3.5)", "myst-nb", "numpydoc", "pooch", "pydata-sphinx-theme (>=0.15.2)", "sphinx (>=5.0.0,<=7.3.7)", "sphinx-design (>=0.4.0)"]
 test = ["Cython", "array-api-strict (>=2.0)", "asv", "gmpy2", "hypothesis (>=6.30)", "meson", "mpmath", "ninja", "pooch", "pytest", "pytest-cov", "pytest-timeout", "pytest-xdist", "scikit-umfpack", "threadpoolctl"]
+
+[[package]]
+name = "selenium"
+version = "4.25.0"
+description = "Official Python bindings for Selenium WebDriver"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "selenium-4.25.0-py3-none-any.whl", hash = "sha256:3798d2d12b4a570bc5790163ba57fef10b2afee958bf1d80f2a3cf07c4141f33"},
+    {file = "selenium-4.25.0.tar.gz", hash = "sha256:95d08d3b82fb353f3c474895154516604c7f0e6a9a565ae6498ef36c9bac6921"},
+]
+
+[package.dependencies]
+certifi = ">=2021.10.8"
+trio = ">=0.17,<1.0"
+trio-websocket = ">=0.9,<1.0"
+typing_extensions = ">=4.9,<5.0"
+urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
+websocket-client = ">=1.8,<2.0"
 
 [[package]]
 name = "semantic-version"
@@ -7462,6 +7581,17 @@ files = [
 ]
 
 [[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+description = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
+optional = true
+python-versions = "*"
+files = [
+    {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
+    {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
+]
+
+[[package]]
 name = "soundfile"
 version = "0.12.1"
 description = "An audio library based on libsndfile, CFFI and NumPy"
@@ -7551,6 +7681,25 @@ doc = ["ablog", "folium", "ipywidgets", "matplotlib", "myst-nb", "nbclient", "nu
 test = ["beautifulsoup4", "coverage", "defusedxml", "myst-nb", "pytest", "pytest-cov", "pytest-regressions", "sphinx_thebe"]
 
 [[package]]
+name = "sphinx-rtd-theme"
+version = "3.0.1"
+description = "Read the Docs theme for Sphinx"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "sphinx_rtd_theme-3.0.1-py2.py3-none-any.whl", hash = "sha256:921c0ece75e90633ee876bd7b148cfaad136b481907ad154ac3669b6fc957916"},
+    {file = "sphinx_rtd_theme-3.0.1.tar.gz", hash = "sha256:a4c5745d1b06dfcb80b7704fe532eb765b44065a8fad9851e4258c8804140703"},
+]
+
+[package.dependencies]
+docutils = ">0.18,<0.22"
+sphinx = ">=6,<9"
+sphinxcontrib-jquery = ">=4,<5"
+
+[package.extras]
+dev = ["bump2version", "transifex-client", "twine", "wheel"]
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "2.0.0"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -7597,6 +7746,20 @@ files = [
 lint = ["mypy", "ruff (==0.5.5)", "types-docutils"]
 standalone = ["Sphinx (>=5)"]
 test = ["html5lib", "pytest"]
+
+[[package]]
+name = "sphinxcontrib-jquery"
+version = "4.1"
+description = "Extension to include jQuery on newer Sphinx releases"
+optional = true
+python-versions = ">=2.7"
+files = [
+    {file = "sphinxcontrib-jquery-4.1.tar.gz", hash = "sha256:1620739f04e36a2c779f1a131a2dfd49b2fd07351bf1968ced074365933abc7a"},
+    {file = "sphinxcontrib_jquery-4.1-py2.py3-none-any.whl", hash = "sha256:f936030d7d0147dd026a4f2b5a57343d233f1fc7b363f68b3d4f1cb0993878ae"},
+]
+
+[package.dependencies]
+Sphinx = ">=1.8"
 
 [[package]]
 name = "sphinxcontrib-jsmath"
@@ -7679,6 +7842,16 @@ anyio = ">=3.4.0,<5"
 
 [package.extras]
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7)", "pyyaml"]
+
+[[package]]
+name = "stem"
+version = "1.8.2"
+description = "Stem is a Python controller library that allows applications to interact with Tor (https://www.torproject.org/)."
+optional = true
+python-versions = "*"
+files = [
+    {file = "stem-1.8.2.tar.gz", hash = "sha256:83fb19ffd4c9f82207c006051480389f80af221a7e4783000aedec4e384eb582"},
+]
 
 [[package]]
 name = "sympy"
@@ -8230,6 +8403,42 @@ video = ["av (==9.2.0)", "decord (==0.6.0)"]
 vision = ["Pillow (>=10.0.1,<=15.0)"]
 
 [[package]]
+name = "trio"
+version = "0.26.2"
+description = "A friendly Python library for async concurrency and I/O"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "trio-0.26.2-py3-none-any.whl", hash = "sha256:c5237e8133eb0a1d72f09a971a55c28ebe69e351c783fc64bc37db8db8bbe1d0"},
+    {file = "trio-0.26.2.tar.gz", hash = "sha256:0346c3852c15e5c7d40ea15972c4805689ef2cb8b5206f794c9c19450119f3a4"},
+]
+
+[package.dependencies]
+attrs = ">=23.2.0"
+cffi = {version = ">=1.14", markers = "os_name == \"nt\" and implementation_name != \"pypy\""}
+exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
+idna = "*"
+outcome = "*"
+sniffio = ">=1.3.0"
+sortedcontainers = "*"
+
+[[package]]
+name = "trio-websocket"
+version = "0.11.1"
+description = "WebSocket library for Trio"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "trio-websocket-0.11.1.tar.gz", hash = "sha256:18c11793647703c158b1f6e62de638acada927344d534e3c7628eedcb746839f"},
+    {file = "trio_websocket-0.11.1-py3-none-any.whl", hash = "sha256:520d046b0d030cf970b8b2b2e00c4c2245b3807853ecd44214acd33d74581638"},
+]
+
+[package.dependencies]
+exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
+trio = ">=0.11"
+wsproto = ">=0.14"
+
+[[package]]
 name = "triton"
 version = "3.0.0"
 description = "A language and compiler for custom Deep Learning operations"
@@ -8314,6 +8523,17 @@ files = [
 [package.dependencies]
 types-docutils = "*"
 types-setuptools = "*"
+
+[[package]]
+name = "types-python-dateutil"
+version = "2.9.0.20241003"
+description = "Typing stubs for python-dateutil"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "types-python-dateutil-2.9.0.20241003.tar.gz", hash = "sha256:58cb85449b2a56d6684e41aeefb4c4280631246a0da1a719bdbe6f3fb0317446"},
+    {file = "types_python_dateutil-2.9.0.20241003-py3-none-any.whl", hash = "sha256:250e1d8e80e7bbc3a6c99b907762711d1a1cdd00e978ad39cb5940f6f0a87f3d"},
+]
 
 [[package]]
 name = "types-regex"
@@ -8668,6 +8888,9 @@ files = [
     {file = "urllib3-2.2.3.tar.gz", hash = "sha256:e7d814a81dad81e6caf2ec9fdedb284ecc9c73076b62654547cc64ccdcae26e9"},
 ]
 
+[package.dependencies]
+pysocks = {version = ">=1.5.6,<1.5.7 || >1.5.7,<2.0", optional = true, markers = "extra == \"socks\""}
+
 [package.extras]
 brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
 h2 = ["h2 (>=4,<5)"]
@@ -8961,6 +9184,20 @@ files = [
 ]
 
 [[package]]
+name = "wsproto"
+version = "1.2.0"
+description = "WebSockets state-machine based protocol implementation"
+optional = true
+python-versions = ">=3.7.0"
+files = [
+    {file = "wsproto-1.2.0-py3-none-any.whl", hash = "sha256:b9acddd652b585d75b20477888c56642fdade28bdfd3579aa24a4d2c037dd736"},
+    {file = "wsproto-1.2.0.tar.gz", hash = "sha256:ad565f26ecb92588a3e43bc3d96164de84cd9902482b130d0ddbaa9664a85065"},
+]
+
+[package.dependencies]
+h11 = ">=0.9.0,<1"
+
+[[package]]
 name = "xlrd"
 version = "2.0.1"
 description = "Library for developers to extract data from Microsoft Excel (tm) .xls spreadsheet files"
@@ -9246,7 +9483,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "agentops", "arxiv", "arxiv2text", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "firecrawl-py", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "jupyter_client", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "nltk", "openapi-spec-validator", "opencv-python", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "sentence-transformers", "sentencepiece", "slack-sdk", "soundfile", "textblob", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
+all = ["PyMuPDF", "accelerate", "agentops", "arxiv", "arxiv2text", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "firecrawl-py", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "jupyter_client", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "nltk", "openapi-spec-validator", "opencv-python", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "scholarly", "sentence-transformers", "sentencepiece", "slack-sdk", "soundfile", "textblob", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
 encoders = ["sentence-transformers"]
 graph-storages = ["nebula3-python", "neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
@@ -9257,10 +9494,10 @@ rag = ["cohere", "nebula3-python", "neo4j", "pymilvus", "qdrant-client", "rank-b
 retrievers = ["cohere", "rank-bm25"]
 search-tools = ["duckduckgo-search", "wikipedia", "wolframalpha"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "agentops", "arxiv", "arxiv2text", "beautifulsoup4", "discord.py", "docker", "docx2txt", "duckduckgo-search", "firecrawl-py", "googlemaps", "imageio", "jupyter_client", "newspaper3k", "nltk", "openapi-spec-validator", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "requests_oauthlib", "slack-sdk", "textblob", "unstructured", "wikipedia", "wolframalpha"]
+tools = ["PyMuPDF", "agentops", "arxiv", "arxiv2text", "beautifulsoup4", "discord.py", "docker", "docx2txt", "duckduckgo-search", "firecrawl-py", "googlemaps", "imageio", "jupyter_client", "newspaper3k", "nltk", "openapi-spec-validator", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "requests_oauthlib", "scholarly", "slack-sdk", "textblob", "unstructured", "wikipedia", "wolframalpha"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0,<=3.13"
-content-hash = "262190989db7ae1e524b1f3442412c285cff302aa9d2b9a1b45b18478679115b"
+content-hash = "dd92185c6f132df5561577938bce32b57b798166241971f02b5a6aa418459efe"
