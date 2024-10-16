@@ -84,6 +84,11 @@ class ModelType(Enum):
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
 
+    # CogVideo Model
+    COGVIDEO = "cogvideo"
+    COGVIDEOX_2B = "cogvideox-2b"
+    COGVIDEOX_5B = "cogvideox-5b"
+
     # Reka models
     REKA_CORE = "reka-core"
     REKA_FLASH = "reka-flash"
@@ -211,6 +216,17 @@ class ModelType(Enum):
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
 
     @property
+    def is_cogvideo(self) -> bool:
+        r"""Returns whether this type of models is CogVideo-released model.
+
+        Returns:
+            bool: Whether this type of models is CogVideo.
+        """
+        return self in {
+            ModelType.COGVIDEO,
+            ModelType.COGVIDEOX_2B,
+            ModelType.COGVIDEOX_5B,
+
     def is_reka(self) -> bool:
         r"""Returns whether this type of models is Reka model.
 
@@ -398,6 +414,7 @@ class TaskType(Enum):
     MULTI_CONDITION_IMAGE_CRAFT = "multi_condition_image_craft"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"
+    VIDEO_GENERATION = "video_generation"
 
 
 class VectorDistance(Enum):
@@ -484,6 +501,8 @@ class ModelPlatformType(Enum):
     REKA = "reka"
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    INTERNLM = "internlm"
+    COGVIDEO = "cogvideo"
     SAMBA = "samba-nova"
 
     @property
@@ -561,6 +580,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_cogvideo(self) -> bool:
+        r"""Returns whether this platform is CogVideo"""
+        return self in [ModelPlatformType.COGVIDEO]
 
 
 class AudioModelType(Enum):
