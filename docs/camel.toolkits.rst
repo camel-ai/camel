@@ -71,7 +71,7 @@ camel.toolkits.open\_api\_toolkit module
 camel.toolkits.openai\_function module
 --------------------------------------
 
-.. automodule:: camel.toolkits.openai_function
+.. automodule:: camel.toolkits.function_tool
    :members:
    :undoc-members:
    :show-inheritance:
