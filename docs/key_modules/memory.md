@@ -48,8 +48,8 @@ records = [
             role_name="Agent",
             meta_dict=None,
             content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
-            "an open-source community dedicated to finding the scaling law "
-            "of agents.",
+                    "an open-source community dedicated to finding the scaling law "
+                    "of agents.",
         ),
         role_at_backend=OpenAIBackendRole.ASSISTANT,
     ),

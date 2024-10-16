@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from mistralai.models import (
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
         Messages,
     )
 
-from camel.configs import MISTRAL_API_PARAMS
+from camel.configs import MISTRAL_API_PARAMS, MistralConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -31,8 +31,6 @@ from camel.utils import (
 )
 
 try:
-    import os
-
     if os.getenv("AGENTOPS_API_KEY") is not None:
         from agentops import LLMEvent, record
     else:
@@ -42,40 +40,43 @@ except (ImportError, AttributeError):
 
 
 class MistralModel(BaseModelBackend):
-    r"""Mistral API in a unified BaseModelBackend interface."""
+    r"""Mistral API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of MISTRAL_* series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`Mistral.chat.complete()`.
+            If:obj:`None`, :obj:`MistralConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the mistral service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the mistral service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter` will
+            be used. (default: :obj:`None`)
+    """
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Mistral backend.
+        from mistralai import Mistral
 
-        Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of MISTRAL_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into `MistralClient.chat`.
-            api_key (Optional[str]): The API key for authenticating with the
-                mistral service. (default: :obj:`None`)
-            url (Optional[str]): The url to the mistral service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will be
-                used.
-        """
+        if model_config_dict is None:
+            model_config_dict = MistralConfig().as_dict()
+
+        api_key = api_key or os.environ.get("MISTRAL_API_KEY")
+        url = url or os.environ.get("MISTRAL_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("MISTRAL_API_KEY")
-        self._url = url or os.environ.get("MISTRAL_SERVER_URL")
-
-        from mistralai import Mistral
-
         self._client = Mistral(api_key=self._api_key, server_url=self._url)
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     def _to_openai_response(
         self, response: 'ChatCompletionResponse'
@@ -215,7 +216,7 @@ class MistralModel(BaseModelBackend):
 
         response = self._client.chat.complete(
             messages=mistral_messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
 
@@ -231,7 +232,7 @@ class MistralModel(BaseModelBackend):
                 prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
                 completion=openai_response.choices[0].message.content,
                 completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
-                model=self.model_type.value,
+                model=self.model_type,
             )
             record(llm_event)
 
