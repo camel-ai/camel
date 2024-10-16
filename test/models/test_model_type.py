@@ -11,8 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.types import ModelType
-from camel.types.inner_model_type import InnerModelType
+from camel.types import InnerModelType, ModelType
 
 
 def test_predefined_model():

@@ -112,24 +112,3 @@ class ChatGPTConfig(BaseConfig):
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}
-
-
-class OpenSourceConfig(BaseConfig):
-    r"""Defines parameters for setting up open-source models and includes
-    parameters to be passed to chat completion function of OpenAI API.
-
-    Args:
-        model_path (str): The path to a local folder containing the model
-            files or the model card in HuggingFace hub.
-        server_url (str): The URL to the server running the model inference
-            which will be used as the API base of OpenAI API.
-        api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
-            contain the arguments to be passed to OpenAI API.
-    """
-
-    # Maybe the param needs to be renamed.
-    # Warning: Field "model_path" has conflict with protected namespace
-    # "model_".
-    model_path: str
-    server_url: str
-    api_params: ChatGPTConfig = Field(default_factory=ChatGPTConfig)
