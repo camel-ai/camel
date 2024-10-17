@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -23,7 +36,7 @@ class TestSlackApp(unittest.TestCase):
         del os.environ["SLACK_CLIENT_SECRET"]
 
     @patch('slack_bolt.app.async_app.AsyncApp')
-    def test_init_without_token_raises_error(self, mock_async_app):
+    async def test_init_without_token_raises_error(self, mock_async_app):
         # Temporarily clear SLACK_TOKEN to test the ValueError
         del os.environ["SLACK_TOKEN"]
 
@@ -31,7 +44,7 @@ class TestSlackApp(unittest.TestCase):
             SlackApp()
 
     @patch('slack_bolt.app.async_app.AsyncApp')
-    def test_init_with_token(self, mock_async_app):
+    async def test_init_with_token(self, mock_async_app):
         app = SlackApp(
             token="fake_token1",
             scopes="channels:read,chat:write,commands",
@@ -47,7 +60,7 @@ class TestSlackApp(unittest.TestCase):
         self.assertEqual(app.client_secret, "fake_client_secret1")
 
     @patch('slack_bolt.app.async_app.AsyncApp')
-    def test_setup_handlers(self, mock_async_app):
+    async def test_setup_handlers(self, mock_async_app):
         mock_app = mock_async_app.return_value
         app = SlackApp()
         app.setup_handlers()
