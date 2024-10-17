@@ -135,7 +135,7 @@ class SlackApp:
         self.setup_handlers()
 
     def setup_handlers(self) -> None:
-        """Sets up the event handlers for Slack events, such as `app_mention`
+        r"""Sets up the event handlers for Slack events, such as `app_mention`
         and `message`.
 
         This method registers the `app_mention` and `on_message` event handlers
