@@ -13,9 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 import os
+from asyncio import Queue
 from typing import TYPE_CHECKING, List, Optional
 
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 if TYPE_CHECKING:
     from discord import Message
@@ -28,20 +29,21 @@ class DiscordApp:
     r"""A class representing a Discord app that uses the `discord.py` library
     to interact with Discord servers.
 
-    This bot can respond to messages in specific channels and only reacts to
-    messages that mention the bot.
-
     Attributes:
         channel_ids (Optional[List[int]]): A list of allowed channel IDs. If
             provided, the bot will only respond to messages in these channels.
         token (Optional[str]): The Discord bot token used for authentication.
+        msg_queue (Optional[Queue]): A queue used to store incoming messages
+            for processing.
     """
 
+    @api_keys_required("DISCORD_TOKEN")
     @dependencies_required('discord')
     def __init__(
         self,
         channel_ids: Optional[List[int]] = None,
         token: Optional[str] = None,
+        msg_queue: Optional[Queue] = None,
     ) -> None:
         r"""Initialize the DiscordApp instance by setting up the Discord client
         and event handlers.
@@ -49,25 +51,22 @@ class DiscordApp:
         Args:
             channel_ids (Optional[List[int]]): A list of allowed channel IDs.
                 The bot will only respond to messages in these channels if
-                provided.
+                provided. (default: :obj:`None`)
             token (Optional[str]): The Discord bot token for authentication.
                 If not provided, the token will be retrieved from the
-                environment variable `DISCORD_TOKEN`.
+                environment variable `DISCORD_TOKEN`. (default: :obj:`None`)
+            msg_queue (Optional[Queue]): A queue used to store incoming
+                messages for processing. (default: :obj:`None`)
 
         Raises:
             ValueError: If the `DISCORD_TOKEN` is not found in environment
                 variables.
         """
+        import discord
+
         self.token = token or os.getenv('DISCORD_TOKEN')
         self.channel_ids = channel_ids
-
-        if not self.token:
-            raise ValueError(
-                "`DISCORD_TOKEN` not found in environment variables. Get it"
-                " here: `https://discord.com/developers/applications`."
-            )
-
-        import discord
+        self._queue: Optional[Queue] = msg_queue
 
         intents = discord.Intents.default()
         intents.message_content = True
@@ -132,6 +131,8 @@ class DiscordApp:
             return
 
         logger.info(f"Received message: {message.content}")
+        if self._queue:
+            await self._queue.put(message)
 
     @property
     def client(self):

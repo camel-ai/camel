@@ -11,10 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .bot_agent import BotAgent
 from .discord_app import DiscordApp
 from .telegram_bot import TelegramBot
 
 __all__ = [
     'DiscordApp',
     'TelegramBot',
+    'BotAgent',
 ]
