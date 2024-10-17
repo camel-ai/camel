@@ -20,7 +20,6 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from anthropic import Anthropic
 from PIL import Image
 
 from camel.types import (
@@ -220,6 +219,7 @@ class OpenAITokenCounter(BaseTokenCounter):
 class AnthropicTokenCounter(BaseTokenCounter):
     def __init__(self):
         r"""Constructor for the token counter for Anthropic models."""
+        from anthropic import Anthropic
 
         self.client = Anthropic()
         self.tokenizer = self.client.get_tokenizer()
