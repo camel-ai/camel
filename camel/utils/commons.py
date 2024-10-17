@@ -582,12 +582,12 @@ def handle_http_error(response: requests.Response) -> str:
 def retry_request(
     func: Callable, retries: int = 3, delay: int = 1, *args: Any, **kwargs: Any
 ) -> Any:
-    """Retries a function in case of any errors.
+    r"""Retries a function in case of any errors.
 
     Args:
-        func (callable): The function to be retried.
-        retries (int): Number of retry attempts. Defaults to 3.
-        delay (int): Delay between retries in seconds. Defaults to 1.
+        func (Callable): The function to be retried.
+        retries (int): Number of retry attempts. (default: :obj:`3`)
+        delay (int): Delay between retries in seconds. (default: :obj:`1`)
         *args: Arguments to pass to the function.
         **kwargs: Keyword arguments to pass to the function.
 

@@ -37,14 +37,14 @@ class WhatsAppToolkit(BaseToolkit):
     """
 
     def __init__(self, retries: int = 3, delay: int = 1):
-        """Initializes the WhatsAppToolkit with the specified number of retries
-        and delay.
+        r"""Initializes the WhatsAppToolkit with the specified number of
+        retries and delay.
 
         Args:
             retries (int): Number of times to retry the request in case of
-                failure. Defaults to 3.
+                failure. (default: :obj:`3`)
             delay (int): Time in seconds to wait between retries.
-            Defaults to 1.
+                (default: :obj:`1`)
         """
         self.retries = retries
         self.delay = delay
@@ -64,7 +64,7 @@ class WhatsAppToolkit(BaseToolkit):
     def send_message(
         self, to: str, message: str
     ) -> Union[Dict[str, Any], str]:
-        """Sends a text message to a specified WhatsApp number.
+        r"""Sends a text message to a specified WhatsApp number.
 
         Args:
             to (str): The recipient's WhatsApp number in international format.
@@ -72,8 +72,8 @@ class WhatsAppToolkit(BaseToolkit):
 
         Returns:
             Union[Dict[str, Any], str]: A dictionary containing
-            the API response if successful,
-            or an error message string if failed.
+                the API response if successful, or an error message string if
+                failed.
         """
         url = f"{self.base_url}/{self.version}/{self.phone_number_id}/messages"
         headers = {
@@ -102,7 +102,7 @@ class WhatsAppToolkit(BaseToolkit):
             return f"Failed to send message: {e!s}"
 
     def get_message_templates(self) -> Union[List[Dict[str, Any]], str]:
-        """Retrieves all message templates for the WhatsApp Business account.
+        r"""Retrieves all message templates for the WhatsApp Business account.
 
         Returns:
             Union[List[Dict[str, Any]], str]: A list of dictionaries containing
@@ -129,7 +129,7 @@ class WhatsAppToolkit(BaseToolkit):
             return f"Failed to retrieve message templates: {e!s}"
 
     def get_business_profile(self) -> Union[Dict[str, Any], str]:
-        """Retrieves the WhatsApp Business profile information.
+        r"""Retrieves the WhatsApp Business profile information.
 
         Returns:
             Union[Dict[str, Any], str]: A dictionary containing the business
@@ -163,7 +163,7 @@ class WhatsAppToolkit(BaseToolkit):
             return f"Failed to retrieve business profile: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
-        """Returns a list of OpenAIFunction objects representing the
+        r"""Returns a list of OpenAIFunction objects representing the
         functions in the toolkit.
 
         Returns:
