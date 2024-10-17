@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
@@ -118,13 +119,26 @@ class BaseModelBackend(ABC):
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
+        This method retrieves the maximum token limit either from the
+        `model_config_dict` or from the model's default token limit. If
+        neither is specified or valid, it defaults to 4096.
+
         Returns:
             int: The maximum token limit for the given model.
         """
-        return (
+        max_tokens = (
             self.model_config_dict.get("max_tokens")
             or self.model_type.token_limit
         )
+
+        if max_tokens > 0:
+            return max_tokens
+
+        logging.warning(
+            "Invalid or missing `max_tokens` in `model_config_dict`. "
+            "Defaulting to 4096 tokens."
+        )
+        return 4096
 
     @property
     def stream(self) -> bool:

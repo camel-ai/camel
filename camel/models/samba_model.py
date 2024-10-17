@@ -347,16 +347,6 @@ class SambaModel(BaseModelBackend):
         return obj
 
     @property
-    def token_limit(self) -> int:
-        r"""Returns the maximum token limit for the given model.
-
-        Returns:
-            int: The maximum token limit for the given model.
-        """
-        max_tokens = self.model_config_dict["max_tokens"]
-        return max_tokens
-
-    @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial
         results each time.
