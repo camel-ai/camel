@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import warnings
-from inspect import Parameter, signature
+from inspect import Parameter, signature, getsource
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
 from docstring_parser import parse
@@ -22,6 +22,12 @@ from pydantic import create_model
 from pydantic.fields import FieldInfo
 
 from camel.utils import get_pydantic_object_schema, to_pascal
+from camel.models.base_model import BaseModelBackend
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
+from camel.agents import ChatAgent
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -142,6 +148,68 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     }
     return openai_tool_schema
 
+def docstring_generation(
+    code: str, 
+    model: BaseModelBackend,
+) -> str:
+    """Generates a docstring for a given function code using the provided model.
+
+    Args:
+        code (str): The source code of the function.
+        model (BaseModelBackend): The model used for generating the docstring.
+
+    Returns:
+        str: The generated docstring.
+    """
+    # Create the docstring prompt
+    docstring_prompt = '''
+    **Role**: Generate professional Python docstrings conforming to PEP 8/PEP 257.
+
+    **Requirements**:
+    - Use appropriate format: reST, Google, or NumPy, as needed.
+    - Include parameters, return values, and exceptions.
+    - Reference any existing docstring in the function and retain useful information.
+
+    **Input**: Python function.
+
+    **Output**: Docstring content (plain text, no code markers).
+
+    **Example:**
+
+    Input:
+    ```python
+    def add(a: int, b: int) -> int:
+        return a + b
+    ```
+
+    Output:
+    Adds two numbers.
+    Args:
+        a (int): The first number.
+        b (int): The second number.
+
+    Returns:
+        int: The sum of the two numbers.
+
+    **Task**: Generate a docstring for the function below.
+
+    '''
+    # Initialize assistant with system message and model
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful assistant.",
+    )
+    docstring_assistant = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
+
+    # Create user message to prompt the assistant
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=docstring_prompt + code,
+    )
+    
+    # Get the response containing the generated docstring
+    response = docstring_assistant.step(user_msg)
+    return response.msg.content
 
 class FunctionTool:
     r"""An abstraction of a function that OpenAI chat models can call. See
@@ -162,11 +230,23 @@ class FunctionTool:
         self,
         func: Callable,
         openai_tool_schema: Optional[Dict[str, Any]] = None,
+        schema_assistant: Optional[BaseModelBackend] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
+        try:
+            self.validate_openai_tool_schema(self.openai_tool_schema)
+        except Exception as e:
+            print(
+                f"Warning: No model provided. Use GPT_4O_MINI to generate the schema \
+                    for {self.func.__name__}. Attempting to generate one using LLM."
+            )
+            schema = self.generate_openai_tool_schema(schema_assistant)
+            if schema:
+                self.openai_tool_schema = schema
+
 
     @staticmethod
     def validate_openai_tool_schema(
@@ -361,6 +441,80 @@ class FunctionTool:
         self.openai_tool_schema["function"]["parameters"]["properties"][
             param_name
         ] = value
+    
+    def generate_openai_tool_schema(
+        self,
+        schema_assistant: Optional[BaseModelBackend]=None,
+    ) -> Dict[str, Any]:
+        r"""Generates an OpenAI tool schema for the specified function.
+
+        This method generates the OpenAI tool schema using the provided 
+        LLM assistant. If no assistant is provided, it defaults 
+        to creating a GPT_4O_MINI model. The function's source code is used
+        to generate a docstring and schema, which are validated before 
+        returning the final schema. If schema generation or validation fails, 
+        the process retries up to two times.
+
+        Args:
+            schema_assistant (Optional[BaseModelBackend]): An optional 
+            assistant model to use for schema generation. If not provided, a 
+            GPT_4O_MINI model will be created.
+
+        Returns:
+            Dict[str, Any]: The generated OpenAI tool schema for the function.
+
+        Raises:
+            ValueError: If schema generation or validation fails after the 
+            maximum number of retries, a ValueError is raised, prompting manual 
+            schema setting.
+        """
+        if not schema_assistant:
+            print(f"Warning: No model provided. Use GPT_4O_MINI to generate the schema.")
+            try:
+                schema_assistant = ModelFactory.create(
+                    model_platform=ModelPlatformType.OPENAI,
+                    model_type=ModelType.GPT_4O_MINI,
+                    model_config_dict=ChatGPTConfig(temperature=1.0).as_dict(),
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to generate the OpenAI tool schema for function "
+                    f"{self.func.__name__}. Please set the OpenAI tool schema manually."
+                ) from e
+
+        function_string = getsource(self.func)
+        
+        max_retries = 2
+        retries = 0
+
+        # Retry loop to handle schema generation and validation
+        while retries < max_retries:
+            try:
+                # Generate the docstring and the schema
+                docstring = docstring_generation(function_string, schema_assistant)
+                self.func.__doc__ = docstring
+                schema = get_openai_tool_schema(self.func)
+
+                # Validate the schema
+                self.validate_openai_tool_schema(schema)
+
+                print(
+                    f"Successfully generated the OpenAI tool schema for the function "
+                    f"{self.func.__name__}."
+                )
+                return schema
+
+            except Exception as e:
+                # If maximum retries reached, raise a ValueError
+                if retries == max_retries:
+                    raise ValueError(
+                        f"Failed to generate the OpenAI tool Schema. Please set "
+                        f"the OpenAI tool schema for function {self.func.__name__} "
+                        f"manually."
+                    ) from e
+
+                print(f"Schema validation failed. Retrying...")
+                retries += 1
 
     @property
     def parameters(self) -> Dict[str, Any]:
