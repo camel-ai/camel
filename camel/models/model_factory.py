@@ -75,7 +75,7 @@ class ModelFactory:
             ValueError: If there is no backend for the model.
         """
         model_class: Optional[Type[BaseModelBackend]] = None
-        model = UnifiedModelType(model_type)
+        model_type = UnifiedModelType(model_type)
 
         if model_platform.is_ollama:
             model_class = OllamaModel
@@ -90,33 +90,33 @@ class ModelFactory:
         elif model_platform.is_litellm:
             model_class = LiteLLMModel
 
-        elif model_platform.is_openai and model.is_openai:
+        elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
-        elif model_platform.is_azure and model.is_azure_openai:
+        elif model_platform.is_azure and model_type.is_azure_openai:
             model_class = AzureOpenAIModel
-        elif model_platform.is_anthropic and model.is_anthropic:
+        elif model_platform.is_anthropic and model_type.is_anthropic:
             model_class = AnthropicModel
-        elif model_platform.is_groq and model.is_groq:
+        elif model_platform.is_groq and model_type.is_groq:
             model_class = GroqModel
-        elif model_platform.is_zhipuai and model.is_zhipuai:
+        elif model_platform.is_zhipuai and model_type.is_zhipuai:
             model_class = ZhipuAIModel
-        elif model_platform.is_gemini and model.is_gemini:
+        elif model_platform.is_gemini and model_type.is_gemini:
             model_class = GeminiModel
-        elif model_platform.is_mistral and model.is_mistral:
+        elif model_platform.is_mistral and model_type.is_mistral:
             model_class = MistralModel
-        elif model_platform.is_reka and model.is_reka:
+        elif model_platform.is_reka and model_type.is_reka:
             model_class = RekaModel
-        elif model == ModelType.STUB:
+        elif model_type == ModelType.STUB:
             model_class = StubModel
 
         if model_class is None:
             raise ValueError(
                 f"Unknown pair of model platform `{model_platform}` "
-                f"and model type `{model}`."
+                f"and model type `{model_type}`."
             )
 
         return model_class(
-            model_type=model,
+            model_type=model_type,
             model_config_dict=model_config_dict,
             api_key=api_key,
             url=url,
