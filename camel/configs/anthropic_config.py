@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import List, Union
 
-from anthropic import NOT_GIVEN, NotGiven
+from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
 
