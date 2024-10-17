@@ -148,7 +148,7 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     }
     return openai_tool_schema
 
-def docstring_generation(
+def generate_docstring(
     code: str, 
     model: BaseModelBackend,
 ) -> str:
@@ -240,8 +240,8 @@ class FunctionTool:
             self.validate_openai_tool_schema(self.openai_tool_schema)
         except Exception as e:
             print(
-                f"Warning: No model provided. Use GPT_4O_MINI to generate the schema \
-                    for {self.func.__name__}. Attempting to generate one using LLM."
+                f"Warning: No model provided. Use GPT_4O_MINI to generate the schema "
+                f"for {self.func.__name__}. Attempting to generate one using LLM."
             )
             schema = self.generate_openai_tool_schema(schema_assistant)
             if schema:
@@ -491,7 +491,7 @@ class FunctionTool:
         while retries < max_retries:
             try:
                 # Generate the docstring and the schema
-                docstring = docstring_generation(function_string, schema_assistant)
+                docstring = generate_docstring(function_string, schema_assistant)
                 self.func.__doc__ = docstring
                 schema = get_openai_tool_schema(self.func)
 
@@ -505,16 +505,15 @@ class FunctionTool:
                 return schema
 
             except Exception as e:
-                # If maximum retries reached, raise a ValueError
+                retries += 1
                 if retries == max_retries:
                     raise ValueError(
                         f"Failed to generate the OpenAI tool Schema. Please set "
                         f"the OpenAI tool schema for function {self.func.__name__} "
                         f"manually."
                     ) from e
-
                 print(f"Schema validation failed. Retrying...")
-                retries += 1
+
 
     @property
     def parameters(self) -> Dict[str, Any]:
