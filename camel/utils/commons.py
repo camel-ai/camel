@@ -577,3 +577,32 @@ def handle_http_error(response: requests.Response) -> str:
         return "Too Many Requests. You have hit the rate limit."
     else:
         return "HTTP Error"
+
+
+def retry_request(
+    func: Callable, retries: int = 3, delay: int = 1, *args: Any, **kwargs: Any
+) -> Any:
+    """Retries a function in case of any errors.
+
+    Args:
+        func (callable): The function to be retried.
+        retries (int): Number of retry attempts. Defaults to 3.
+        delay (int): Delay between retries in seconds. Defaults to 1.
+        *args: Arguments to pass to the function.
+        **kwargs: Keyword arguments to pass to the function.
+
+    Returns:
+        Any: The result of the function call if successful.
+
+    Raises:
+        Exception: If all retry attempts fail.
+    """
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise

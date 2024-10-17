@@ -13,13 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-import time
 from typing import Any, Dict, List, Union
 
 import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils.commons import retry_request
 
 
 class WhatsAppToolkit(BaseToolkit):
@@ -61,30 +61,6 @@ class WhatsAppToolkit(BaseToolkit):
                 "WHATSAPP_PHONE_NUMBER_ID environment variables."
             )
 
-    def _retry_request(self, func, *args, **kwargs):
-        """Retries a function in case of any errors.
-
-        Args:
-            func (callable): The function to be retried.
-            *args: Arguments to pass to the function.
-            **kwargs: Keyword arguments to pass to the function.
-
-        Returns:
-            Any: The result of the function call if successful.
-
-        Raises:
-            Exception: If all retry attempts fail.
-        """
-        for attempt in range(self.retries):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                print(f"Attempt {attempt + 1}/{self.retries} failed: {e}")
-                if attempt < self.retries - 1:
-                    time.sleep(self.delay)
-                else:
-                    raise
-
     def send_message(
         self, to: str, message: str
     ) -> Union[Dict[str, Any], str]:
@@ -112,8 +88,13 @@ class WhatsAppToolkit(BaseToolkit):
         }
 
         try:
-            response = self._retry_request(
-                requests.post, url, headers=headers, json=data
+            response = retry_request(
+                requests.post,
+                retries=self.retries,
+                delay=self.delay,
+                url=url,
+                headers=headers,
+                json=data,
             )
             response.raise_for_status()
             return response.json()
@@ -135,7 +116,13 @@ class WhatsAppToolkit(BaseToolkit):
         headers = {"Authorization": f"Bearer {self.access_token}"}
 
         try:
-            response = self._retry_request(requests.get, url, headers=headers)
+            response = retry_request(
+                requests.get,
+                retries=self.retries,
+                delay=self.delay,
+                url=url,
+                headers=headers,
+            )
             response.raise_for_status()
             return response.json().get("data", [])
         except Exception as e:
@@ -162,8 +149,13 @@ class WhatsAppToolkit(BaseToolkit):
         }
 
         try:
-            response = self._retry_request(
-                requests.get, url, headers=headers, params=params
+            response = retry_request(
+                requests.get,
+                retries=self.retries,
+                delay=self.delay,
+                url=url,
+                headers=headers,
+                params=params,
             )
             response.raise_for_status()
             return response.json()
