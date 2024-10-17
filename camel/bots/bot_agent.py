@@ -11,31 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import logging
 from typing import List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
+from camel.types import StorageType
 
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-
-class Agent:
+class BotAgent:
     def __init__(
         self,
         contents: Union[str, List[str], Element, List[Element]] = None,
         auto_retriever: Optional[AutoRetriever] = None,
-        vector_storage_local_path: Union[str, List[str]] = "local_data/",
+        similarity_threshold: float = 0.5,
+        vector_storage_local_path: str = "local_data/",
         top_k: int = 1,
         return_detailed_info: bool = True,
     ):
+        r"""Initialize the BotAgent instance.
+
+        Args:
+            contents (Union[str, List[str], Element, List[Element]], optional)
+                : The content to be retrieved.
+            auto_retriever (Optional[AutoRetriever], optional): An instance of 
+                AutoRetriever for vector search.
+            similarity_threshold (float): Threshold for vector similarity when 
+                retrieving content.
+            vector_storage_local_path (str): Path to local vector storage for 
+                the retriever.
+            top_k (int): Number of top results to retrieve.
+            return_detailed_info (bool): Whether to return detailed 
+                information from the retriever.
+        """
         assistant_sys_msg: BaseMessage = BaseMessage.make_assistant_message(
             role_name="Assistant",
             content='''
@@ -87,23 +100,32 @@ class Agent:
         self._auto_retriever = None
         self._contents = contents
         self._top_k = top_k
+        self._similarity_threshold = similarity_threshold
         self._return_detailed_info = return_detailed_info
 
-        # Uncommented the following code and offer storage information
-        # for RAG functionality
-        # self._auto_retriever = auto_retriever or AutoRetriever(
-        #     vector_storage_local_path=vector_storage_local_path,
-        #     storage_type=StorageType.QDRANT,
-        # )
+        self._auto_retriever = auto_retriever or AutoRetriever(
+            vector_storage_local_path=vector_storage_local_path,
+            storage_type=StorageType.QDRANT,
+        )
 
     async def process(self, message: str) -> str:
+        r"""Process the user message, retrieve relevant content, and generate 
+        a response.
+
+        Args:
+            message (str): The user's query message.
+
+        Returns:
+            str: The assistant's response message.
+        """
         user_raw_msg = message
-        logger.info(f"User message: {user_raw_msg}")
+        print("User message:", user_raw_msg)
         if self._auto_retriever:
             retrieved_content = self._auto_retriever.run_vector_retriever(
                 query=user_raw_msg,
                 contents=self._contents,
                 top_k=self._top_k,
+                similarity_threshold=self._similarity_threshold,
                 return_detailed_info=self._return_detailed_info,
             )
             user_raw_msg = (

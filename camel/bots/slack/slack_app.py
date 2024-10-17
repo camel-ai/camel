@@ -13,12 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 import os
+from queue import Queue
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from slack_sdk.oauth.installation_store.async_installation_store import (
     AsyncInstallationStore,
 )
-from starlette import requests, responses
+from starlette.requests import Request
+from starlette.responses import Response
 
 from camel.bots.slack.models import (
     SlackAppMentionEventBody,
@@ -55,6 +57,8 @@ class SlackApp:
             "/slack/oauth_redirect".
         installation_store (Optional[AsyncInstallationStore]): The installation
             store for handling OAuth installations.
+        msg_queue (Optional[Queue]): A thread-safe queue to communicate between
+            threads.
     """
 
     @dependencies_required('slack_bolt')
@@ -67,27 +71,36 @@ class SlackApp:
         client_secret: Optional[str] = None,
         redirect_uri_path: str = "/slack/oauth_redirect",
         installation_store: Optional[AsyncInstallationStore] = None,
+        msg_queue: Optional[Queue] = None,
     ) -> None:
         r"""Initializes the SlackApp instance by setting up the Slack Bolt app
         and configuring event handlers and OAuth settings.
 
         Args:
-            token (Optional[str]): The Slack API token.
+            token (Optional[str]): The Slack API token. (default: :obj:`None`)
             scopes (Optional[str]): The scopes for Slack app permissions.
+                (default: :obj:`None`)
             signing_secret (Optional[str]): The signing secret for verifying
-                requests.
-            client_id (Optional[str]): The Slack app client ID.
+                requests. (default: :obj:`None`)
+            client_id (Optional[str]): The Slack app client ID. (default:
+                :obj:`None`)
             client_secret (Optional[str]): The Slack app client secret.
+                (default: :obj:`None`)
             redirect_uri_path (str): The URI path for handling OAuth redirects
-                (default is "/slack/oauth_redirect").
+                (default: "/slack/oauth_redirect").
             installation_store (Optional[AsyncInstallationStore]): An optional
-                installation store for OAuth installations.
+                installation store for OAuth installations. (default:
+                :obj:`None`)
+            msg_queue (Queue): A thread-safe queue to communicate between
+                threads. (default: :obj:`None`)
         """
         from slack_bolt.adapter.starlette.async_handler import (
             AsyncSlackRequestHandler,
         )
         from slack_bolt.app.async_app import AsyncApp
         from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
+
+        self._queue: Optional[Queue] = msg_queue
 
         self.token: Optional[str] = token or os.getenv("SLACK_TOKEN")
         self.scopes: Optional[str] = scopes or os.getenv("SLACK_SCOPES")
@@ -163,9 +176,7 @@ class SlackApp:
         """
         self._app.start(port=port, path=path, host=host)
 
-    async def handle_request(
-        self, request: requests.Request
-    ) -> responses.Response:
+    async def handle_request(self, request: Request) -> Response:
         r"""Handles incoming requests from Slack through the request handler.
 
         Args:
@@ -228,6 +239,8 @@ class SlackApp:
 
         event_profile = SlackEventProfile(**event)
         event_body = SlackEventBody(**body)
+        if self._queue:
+            self._queue.put((event_body, say))
 
         logger.info(f"on_message, context: {context}")
         logger.info(f"on_message, client: {client}")
@@ -247,7 +260,8 @@ class SlackApp:
             body (SlackEventBody): The body of the Slack event.
 
         Returns:
-            bool: True if the bot is mentioned in the message, False otherwise.
+            bool: :obj:`True` if the bot is mentioned in the message,
+                :obj:`False` otherwise.
         """
         message = body.event.text
         bot_user_id = context.bot_user_id
