@@ -12,69 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
-from typing import TYPE_CHECKING, Optional
 
-from camel.bots import DiscordApp
-from examples.bots.agent import Agent
+from discord import Message
 
-if TYPE_CHECKING:
-    from discord import Message
+from camel.bots import BotAgent, DiscordApp
 
 
-class DiscordBot(DiscordApp):
-    r"""A Discord bot that listens for messages, adds them to a queue,
-    and processes them asynchronously.
-
-    This class extends the functionality of `DiscordApp` and adds message
-    handling by pushing messages into a queue for further processing.
-
-    Args:
-        msg_queue (asyncio.Queue): A queue used to store incoming messages for
-            processing.
-        token (Optional[str]): The token used to authenticate the bot with
-            Discord.
-        channel_ids (Optional[list[int]]): A list of Discord channel IDs where
-            the bot is allowed to interact.
-    """
-
-    def __init__(
-        self,
-        msg_queue: asyncio.Queue,
-        token: Optional[str] = None,
-        channel_ids: Optional[list[int]] = None,
-    ):
-        super().__init__(token=token, channel_ids=channel_ids)
-        self._queue: asyncio.Queue = msg_queue
-
-    async def on_message(self, message: 'Message') -> None:
-        r"""Event handler for received messages. This method processes incoming
-        messages, checks whether the message is from the bot itself, and
-        determines whether the bot should respond based on channel ID and
-        mentions.
-
-        Args:
-            message (discord.Message): The received message object.
-        """
-        # If the message author is the bot itself,
-        # do not respond to this message
-        if message.author == self._client.user:
-            return
-
-        # If allowed channel IDs are provided,
-        # only respond to messages in those channels
-        if self.channel_ids and message.channel.id not in self.channel_ids:
-            return
-
-        # Only respond to messages that mention the bot
-        if not self._client.user or not self._client.user.mentioned_in(
-            message
-        ):
-            return
-
-        await self._queue.put(message)
-
-
-async def process_message(agent: Agent, msg_queue: asyncio.Queue):
+async def process_message(agent: BotAgent, msg_queue: asyncio.Queue):
     r"""Continuously processes messages from the queue and sends responses.
 
     This function waits for new messages in the queue, processes each message
@@ -107,10 +51,10 @@ async def main():
     """
     msg_queue = asyncio.Queue()
 
-    agent = Agent()
+    agent = BotAgent()
 
     # Initialize the DiscordBot with the message queue
-    discord_bot = DiscordBot(msg_queue=msg_queue)
+    discord_bot = DiscordApp(msg_queue=msg_queue)
     await asyncio.gather(
         discord_bot.start(), process_message(agent, msg_queue)
     )
