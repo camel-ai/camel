@@ -68,7 +68,7 @@ user_msg = BaseMessage.make_user_message(
 )
 
 # Get response information
-response = camel_agent.step(user_msg, output_schema=Schema)
+response = camel_agent.step(user_msg, response_format=Schema)
 print(response.msgs[0].content)
 """
 {'current_age': '928', 'calculated_age': '938'}

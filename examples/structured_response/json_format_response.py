@@ -46,7 +46,7 @@ user_msg = BaseMessage.make_user_message(
 )
 
 # Get response information
-response = camel_agent.step(user_msg, output_schema=JokeResponse)
+response = camel_agent.step(user_msg, response_format=JokeResponse)
 print(response.msgs[0].content)
 """
 {'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"

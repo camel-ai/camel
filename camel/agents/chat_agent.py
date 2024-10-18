@@ -415,7 +415,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[Type[BaseModel]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
@@ -426,7 +426,7 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[Type[BaseModel]], optional): A pydantic
+            response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
@@ -518,7 +518,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if output_schema is not None:
+            if response_format is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -526,7 +526,7 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_call,
                     num_tokens,
-                ) = self._structure_output_with_function(output_schema)
+                ) = self._structure_output_with_function(response_format)
                 tool_call_records.append(tool_call)
 
             info = self._step_get_info(
@@ -608,7 +608,7 @@ class ChatAgent(BaseAgent):
                 )
 
             if (
-                output_schema is not None
+                response_format is not None
                 and self.model_type.support_native_tool_calling
             ):
                 (
@@ -618,7 +618,7 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_call,
                     num_tokens,
-                ) = self._structure_output_with_function(output_schema)
+                ) = self._structure_output_with_function(response_format)
                 tool_call_records.append(tool_call)
 
             info = self._step_get_info(
@@ -647,7 +647,7 @@ class ChatAgent(BaseAgent):
     async def step_async(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[Type[BaseModel]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -658,7 +658,7 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[Type[BaseModel]], optional): A pydantic
+            response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
@@ -718,7 +718,7 @@ class ChatAgent(BaseAgent):
             )
 
         if (
-            output_schema is not None
+            response_format is not None
             and self.model_type.support_native_tool_calling
         ):
             (
@@ -728,7 +728,7 @@ class ChatAgent(BaseAgent):
                 response_id,
                 tool_call_record,
                 num_tokens,
-            ) = self._structure_output_with_function(output_schema)
+            ) = self._structure_output_with_function(response_format)
             tool_call_records.append(tool_call_record)
 
         info = self._step_get_info(
@@ -795,7 +795,7 @@ class ChatAgent(BaseAgent):
         return func_record
 
     def _structure_output_with_function(
-        self, output_schema: Type[BaseModel]
+        self, response_format: Type[BaseModel]
     ) -> Tuple[
         List[BaseMessage],
         List[str],
@@ -809,7 +809,7 @@ class ChatAgent(BaseAgent):
         """
         from camel.toolkits import FunctionTool
 
-        schema_json = get_pydantic_object_schema(output_schema)
+        schema_json = get_pydantic_object_schema(response_format)
         func_str = json_to_function_code(schema_json)
         func_callable = func_string_to_callable(func_str)
         func = FunctionTool(func_callable)
