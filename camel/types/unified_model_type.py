@@ -51,12 +51,12 @@ class UnifiedModelType(str):
     @property
     def token_limit(self) -> int:
         r"""Returns the token limit for the model. Here we set the default
-        value as `4096` if it's not provided from `model_config_dict`"""
+        value as `999_999_999` if it's not provided from `model_config_dict`"""
         logging.warning(
             "Invalid or missing `max_tokens` in `model_config_dict`. "
-            "Defaulting to 4096 tokens."
+            "Defaulting to 999_999_999 tokens."
         )
-        return 4096
+        return 999_999_999
 
     @property
     def is_openai(self) -> bool:
