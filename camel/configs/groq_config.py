@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from typing import Optional, Sequence, Union
 
-from openai._types import NOT_GIVEN, NotGiven
-
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class GroqConfig(BaseConfig):

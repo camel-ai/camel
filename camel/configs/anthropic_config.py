@@ -13,17 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Union
-
-if TYPE_CHECKING:
-    from anthropic import NotGiven
-
-try:
-    from anthropic import NOT_GIVEN
-except ImportError:
-    NOT_GIVEN = None  # type:ignore [assignment]
+from typing import List, Union
 
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class AnthropicConfig(BaseConfig):
