@@ -329,9 +329,54 @@ function_schema = {
     },
 }
 
+function_schema_without_docs = {
+    "description": '',
+    "name": "add",
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+            },
+            'b': {
+                'type': 'integer',
+            },
+        },
+        'required': ['a', 'b'],
+    },
+}
+
+function_schema_with_wrong_docs = {
+    "name": "add",
+    "description": "Adds two numbers.",
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+                'description': 'The first number to be added.',
+            },
+            'b': {
+                'type': 'integer',
+            },
+        },
+        'required': ['a', 'b'],
+    },
+}
+
 tool_schema = {
     "type": "function",
     "function": function_schema,
+}
+
+tool_schema_without_docs = {
+    "type": "function",
+    "function": function_schema_without_docs,
+}
+
+tool_schema_with_wrong_docs = {
+    "type": "function",
+    "function": function_schema_with_wrong_docs,
 }
 
 
@@ -344,19 +389,13 @@ def test_correct_function():
 def test_function_without_doc():
     add = FunctionTool(add_without_doc)
     add.set_function_name("add")
-    with pytest.raises(Exception, match="miss function description"):
-        _ = add.get_openai_function_schema()
-    add.set_openai_function_schema(function_schema)
-    assert add.get_openai_function_schema() == function_schema
+    assert add.get_openai_tool_schema() == tool_schema_without_docs
 
 
 def test_function_with_wrong_doc():
     add = FunctionTool(add_with_wrong_doc)
     add.set_function_name("add")
-    with pytest.raises(Exception, match="miss description of parameter \"b\""):
-        _ = add.get_openai_function_schema()
-    add.set_parameter("b", function_schema["parameters"]["properties"]["b"])
-    assert add.get_openai_function_schema() == function_schema
+    assert add.get_openai_tool_schema() == tool_schema_with_wrong_docs
 
 
 def test_validate_openai_tool_schema_valid():
