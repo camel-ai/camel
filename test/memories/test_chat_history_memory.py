@@ -31,7 +31,8 @@ from camel.utils.token_counting import OpenAITokenCounter
 @pytest.fixture
 def memory(request):
     context_creator = ScoreBasedContextCreator(
-        OpenAITokenCounter(ModelType.GPT_4), ModelType.GPT_4.token_limit
+        OpenAITokenCounter(ModelType.GPT_4),
+        ModelType.GPT_4.token_limit,
     )
     if request.param == "in-memory":
         yield ChatHistoryMemory(

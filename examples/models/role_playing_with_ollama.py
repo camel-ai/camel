@@ -11,53 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
+from typing import List
+
 from colorama import Fore
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.agents.chat_agent import FunctionCallingRecord
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType
 from camel.utils import print_text_animated
 
 
-# Here :obj:`model_type` can be any of the supported open-source
-# model types and :obj:`model_path` should be set corresponding to
-# model type. For example, to use Vicuna, we can set:
-# model_path = "lmsys/vicuna-7b-v1.5"
 def main(
-    chat_turn_limit=50,
-    model_platform=ModelPlatformType.OPEN_SOURCE,
-    model_type=ModelType.STUB,
-    model_path="meta-llama/Llama-2-7b-chat-hf",
-    server_url="http://localhost:8000/v1",
+    model_platform=ModelPlatformType.OLLAMA,
+    model_type="llama3.2",
+    chat_turn_limit=10,
 ) -> None:
-    task_prompt = "Develop a trading bot for the stock market"
-
-    model = ModelFactory.create(
-        model_platform=model_platform,
-        model_type=model_type,
-        model_config_dict=OpenSourceConfig(
-            model_path=model_path,
-            server_url=server_url,
-            api_params=ChatGPTConfig(temperature=0),
-        ).as_dict(),
-    )
-
-    # Update agent_kwargs to use the created models
-    agent_kwargs = {
-        "assistant": {"model": model},
-        "user": {"model": model},
-        "task-specify": {"model": model},
-    }
+    task_prompt = "Develop a trading bot for the stock market."
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=agent_kwargs["assistant"],
         user_role_name="Stock Trader",
-        user_agent_kwargs=agent_kwargs["user"],
+        assistant_agent_kwargs=dict(
+            model=ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+                model_config_dict={"temperature": 0.4, "max_tokens": 4096},
+            ),
+        ),
+        user_agent_kwargs=dict(
+            model=ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+                model_config_dict={"temperature": 0.4, "max_tokens": 4096},
+            ),
+        ),
         task_prompt=task_prompt,
-        with_task_specify=True,
-        task_specify_agent_kwargs=agent_kwargs["task-specify"],
+        with_task_specify=False,
     )
 
     print(
@@ -101,13 +92,21 @@ def main(
             )
             break
 
+        # Print output from the user
         print_text_animated(
             Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
         )
-        print_text_animated(
-            Fore.GREEN + "AI Assistant:\n\n"
-            f"{assistant_response.msg.content}\n"
-        )
+
+        # Print output from the assistant, including any function
+        # execution information
+        print_text_animated(Fore.GREEN + "AI Assistant:")
+        tool_calls: List[FunctionCallingRecord] = [
+            FunctionCallingRecord(**call.as_dict())
+            for call in assistant_response.info['tool_calls']
+        ]
+        for func_record in tool_calls:
+            print_text_animated(f"{func_record}")
+        print_text_animated(f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break

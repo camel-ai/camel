@@ -22,10 +22,11 @@ from openai import OpenAI, Stream
 
 from camel.configs import (
     SAMBA_CLOUD_API_PARAMS,
-    SAMBA_FAST_API_PARAMS,
     SAMBA_VERSE_API_PARAMS,
+    SambaCloudAPIConfig,
 )
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -39,47 +40,50 @@ from camel.utils import (
 )
 
 
-class SambaModel:
-    r"""SambaNova service interface."""
+class SambaModel(BaseModelBackend):
+    r"""SambaNova service interface.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a SambaNova backend
+            is created. Supported models via SambaNova Cloud:
+            `https://community.sambanova.ai/t/supported-models/193`.
+            Supported models via SambaVerse API is listed in
+            `https://sambaverse.sambanova.ai/models`.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`SambaCloudAPIConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating
+            with the SambaNova service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the SambaNova service.
+            Current support SambaVerse API:
+            :obj:`"https://sambaverse.sambanova.ai/api/predict"` and
+            SambaNova Cloud:
+            :obj:`"https://api.sambanova.ai/v1"` (default: :obj:`https://api.
+            sambanova.ai/v1`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
+    """
 
     def __init__(
         self,
-        model_type: str,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for SambaNova backend.
-
-        Args:
-            model_type (str): Model for which a SambaNova backend is
-                created. Supported models via Fast API: `https://sambanova.ai/
-                fast-api?api_ref=128521`. Supported models via SambaVerse API
-                is listed in `https://sambaverse.sambanova.ai/models`.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into API request.
-            api_key (Optional[str]): The API key for authenticating with the
-                SambaNova service. (default: :obj:`None`)
-            url (Optional[str]): The url to the SambaNova service. Current
-                support SambaNova Fast API: :obj:`"https://fast-api.snova.ai/
-                v1/chat/ completions"`, SambaVerse API: :obj:`"https://
-                sambaverse.sambanova.ai/api/predict"` and SambaNova Cloud:
-                :obj:`"https://api.sambanova.ai/v1"`
-                (default::obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
-        """
-        self.model_type = model_type
-        self._api_key = api_key or os.environ.get("SAMBA_API_KEY")
-        self._url = url or os.environ.get(
+        if model_config_dict is None:
+            model_config_dict = SambaCloudAPIConfig().as_dict()
+        api_key = api_key or os.environ.get("SAMBA_API_KEY")
+        url = url or os.environ.get(
             "SAMBA_API_BASE_URL",
-            "https://fast-api.snova.ai/v1/chat/completions",
+            "https://api.sambanova.ai/v1",
         )
-        self._token_counter = token_counter
-        self.model_config_dict = model_config_dict
-        self.check_model_config()
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
 
         if self._url == "https://api.sambanova.ai/v1":
             self._client = OpenAI(
@@ -109,14 +113,7 @@ class SambaModel:
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments to SambaNova API.
         """
-        if self._url == "https://fast-api.snova.ai/v1/chat/completions":
-            for param in self.model_config_dict:
-                if param not in SAMBA_FAST_API_PARAMS:
-                    raise ValueError(
-                        f"Unexpected argument `{param}` is "
-                        "input into SambaNova Fast API."
-                    )
-        elif self._url == "https://sambaverse.sambanova.ai/api/predict":
+        if self._url == "https://sambaverse.sambanova.ai/api/predict":
             for param in self.model_config_dict:
                 if param not in SAMBA_VERSE_API_PARAMS:
                     raise ValueError(
@@ -159,7 +156,7 @@ class SambaModel:
         else:
             return self._run_non_streaming(messages)
 
-    def _run_streaming(  # type: ignore[misc]
+    def _run_streaming(
         self, messages: List[OpenAIMessage]
     ) -> Stream[ChatCompletionChunk]:
         r"""Handles streaming inference with SambaNova's API.
@@ -175,43 +172,10 @@ class SambaModel:
 
         Raises:
             RuntimeError: If the HTTP request fails.
+            ValueError: If the API doesn't support stream mode.
         """
-
-        # Handle SambaNova's Fast API
-        if self._url == "https://fast-api.snova.ai/v1/chat/completions":
-            headers = {
-                "Authorization": f"Basic {self._api_key}",
-                "Content-Type": "application/json",
-            }
-
-            data = {
-                "messages": messages,
-                "max_tokens": self.token_limit,
-                "stop": self.model_config_dict.get("stop"),
-                "model": self.model_type,
-                "stream": True,
-                "stream_options": self.model_config_dict.get("stream_options"),
-            }
-
-            try:
-                with httpx.stream(
-                    "POST",
-                    self._url,
-                    headers=headers,
-                    json=data,
-                ) as api_response:
-                    stream = Stream[ChatCompletionChunk](
-                        cast_to=ChatCompletionChunk,
-                        response=api_response,
-                        client=OpenAI(api_key="required_but_not_used"),
-                    )
-                    for chunk in stream:
-                        yield chunk
-            except httpx.HTTPError as e:
-                raise RuntimeError(f"HTTP request failed: {e!s}")
-
         # Handle SambaNova's Cloud API
-        elif self._url == "https://api.sambanova.ai/v1":
+        if self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
                 model=self.model_type,
@@ -224,6 +188,7 @@ class SambaModel:
                 "https://sambaverse.sambanova.ai/api/predict doesn't support"
                 " stream mode"
             )
+        raise RuntimeError(f"Unknown URL: {self._url}")
 
     def _run_non_streaming(
         self, messages: List[OpenAIMessage]
@@ -243,46 +208,8 @@ class SambaModel:
             ValueError: If the JSON response cannot be decoded or is missing
                 expected data.
         """
-
-        # Handle SambaNova's Fast API
-        if self._url == "https://fast-api.snova.ai/v1/chat/completions":
-            headers = {
-                "Authorization": f"Basic {self._api_key}",
-                "Content-Type": "application/json",
-            }
-
-            data = {
-                "messages": messages,
-                "max_tokens": self.token_limit,
-                "stop": self.model_config_dict.get("stop"),
-                "model": self.model_type,
-                "stream": True,
-                "stream_options": self.model_config_dict.get("stream_options"),
-            }
-
-            try:
-                with httpx.stream(
-                    "POST",
-                    self._url,
-                    headers=headers,
-                    json=data,
-                ) as api_response:
-                    samba_response = []
-                    for chunk in api_response.iter_text():
-                        if chunk.startswith('data: '):
-                            chunk = chunk[6:]
-                        if '[DONE]' in chunk:
-                            break
-                        json_data = json.loads(chunk)
-                        samba_response.append(json_data)
-                    return self._fastapi_to_openai_response(samba_response)
-            except httpx.HTTPError as e:
-                raise RuntimeError(f"HTTP request failed: {e!s}")
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Failed to decode JSON response: {e!s}")
-
         # Handle SambaNova's Cloud API
-        elif self._url == "https://api.sambanova.ai/v1":
+        if self._url == "https://api.sambanova.ai/v1":
             response = self._client.chat.completions.create(
                 messages=messages,
                 model=self.model_type,
@@ -370,56 +297,6 @@ class SambaModel:
             except httpx.HTTPStatusError:
                 raise RuntimeError(f"HTTP request failed: {raw_text}")
 
-    def _fastapi_to_openai_response(
-        self, samba_response: List[Dict[str, Any]]
-    ) -> ChatCompletion:
-        r"""Converts SambaNova Fast API response chunks into an
-            OpenAI-compatible response.
-
-        Args:
-            samba_response (List[Dict[str, Any]]): A list of dictionaries
-                representing partial responses from the SambaNova Fast API.
-
-        Returns:
-            ChatCompletion: A `ChatCompletion` object constructed from the
-                aggregated response data.
-        """
-
-        # Step 1: Combine the content from each chunk
-        full_content = ""
-        for chunk in samba_response:
-            if chunk['choices']:
-                for choice in chunk['choices']:
-                    delta_content = choice['delta'].get('content', '')
-                    full_content += delta_content
-
-        # Step 2: Create the ChatCompletion object
-        # Extract relevant information from the first chunk
-        first_chunk = samba_response[0]
-
-        choices = [
-            dict(
-                index=0,  # type: ignore[index]
-                message={
-                    "role": 'assistant',
-                    "content": full_content.strip(),
-                },
-                finish_reason=samba_response[-1]['choices'][0]['finish_reason']
-                or None,
-            )
-        ]
-
-        obj = ChatCompletion.construct(
-            id=first_chunk['id'],
-            choices=choices,
-            created=first_chunk['created'],
-            model=first_chunk['model'],
-            object="chat.completion",
-            usage=None,
-        )
-
-        return obj
-
     def _sambaverse_to_openai_response(
         self, samba_response: Dict[str, Any]
     ) -> ChatCompletion:
@@ -468,16 +345,6 @@ class SambaModel:
         )
 
         return obj
-
-    @property
-    def token_limit(self) -> int:
-        r"""Returns the maximum token limit for the given model.
-
-        Returns:
-            int: The maximum token limit for the given model.
-        """
-        max_tokens = self.model_config_dict["max_tokens"]
-        return max_tokens
 
     @property
     def stream(self) -> bool:

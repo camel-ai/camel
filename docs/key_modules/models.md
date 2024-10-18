@@ -23,6 +23,9 @@ The following table lists currently supported model platforms by CAMEL.
 | Azure OpenAI | gpt-3.5-turbo | Y |
 | OpenAI Compatible | Depends on the provider | ----- |
 | Mistral AI | mistral-large-2 | N |
+| Mistral AI | pixtral-12b-2409 | Y |
+| Mistral AI | ministral-8b-latest | N |
+| Mistral AI | ministral-3b-latest | N |
 | Mistral AI | open-mistral-nemo | N |
 | Mistral AI | codestral | N |
 | Mistral AI | open-mistral-7b | N |
@@ -81,20 +84,17 @@ ChatAgent(system_msg, model=model)
 And if you want to use an OpenAI-compatible API, you can replace the `model` with the following code:
 
 ```python
-from camel.models.openai_compatibility_model import OpenAICompatibilityModel
-
-model = OpenAICompatibilityModel(
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="a-string-representing-the-model-type",
-    model_config_dict={"max_tokens": 4096},  # and other parameters you want
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
     api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    model_config_dict={"temperature": 0.4, "max_tokens": 4096},
 )
 ```
 
 ## 4. Using On-Device Open Source Models
 In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
-
-While proprietary models like gpt-4o-mini and gpt-4o have set high standards for content generation, open-source alternatives offer viable solutions for experimentation and practical use. These models, supported by active communities and continuous improvements, provide flexibility and cost-effectiveness for developers and researchers.
 
 ### 4.1 Using Ollama to Set Llama 3 Locally
 

@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import OpenSourceConfig, ZhipuAIConfig
+from camel.configs import ZhipuAIConfig
 from camel.models import ZhipuAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -30,11 +30,10 @@ from camel.utils import OpenAITokenCounter
         ModelType.GLM_4V,
     ],
 )
-def test_zhipuai_model(model_type):
-    model_config_dict = ZhipuAIConfig().as_dict()
-    model = ZhipuAIModel(model_type, model_config_dict)
+def test_zhipuai_model(model_type: ModelType):
+    model = ZhipuAIModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_config_dict == ZhipuAIConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
@@ -43,11 +42,7 @@ def test_zhipuai_model(model_type):
 @pytest.mark.model_backend
 def test_zhipuai_model_unexpected_argument():
     model_type = ModelType.GLM_4V
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

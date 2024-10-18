@@ -14,11 +14,10 @@
 import textwrap
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks import Task
-from camel.toolkits import OpenAIFunction, SearchToolkit
+from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
 
@@ -48,7 +47,6 @@ def make_judge(
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     agent = ChatAgent(
@@ -76,14 +74,13 @@ def main():
 
     search_toolkit = SearchToolkit()
     search_tools = [
-        OpenAIFunction(search_toolkit.search_google),
-        OpenAIFunction(search_toolkit.search_duckduckgo),
+        FunctionTool(search_toolkit.search_google),
+        FunctionTool(search_toolkit.search_duckduckgo),
     ]
 
     researcher_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     researcher_agent = ChatAgent(

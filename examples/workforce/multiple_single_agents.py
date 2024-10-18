@@ -13,14 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import (
     WEATHER_FUNCS,
+    FunctionTool,
     GoogleMapsToolkit,
-    OpenAIFunction,
     SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
@@ -30,15 +29,14 @@ from camel.workforce import Workforce
 def main():
     search_toolkit = SearchToolkit()
     search_tools = [
-        OpenAIFunction(search_toolkit.search_google),
-        OpenAIFunction(search_toolkit.search_duckduckgo),
+        FunctionTool(search_toolkit.search_google),
+        FunctionTool(search_toolkit.search_duckduckgo),
     ]
 
     # Set up web searching agent
     search_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -53,7 +51,6 @@ def main():
     tour_guide_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     tour_guide_agent = ChatAgent(
@@ -74,7 +71,6 @@ def main():
         model=ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
     )
 

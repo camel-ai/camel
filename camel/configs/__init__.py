@@ -19,7 +19,7 @@ from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .nexa_config import NEXA_API_PARAMS, NexaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
-from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig, OpenSourceConfig
+from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
     SAMBA_CLOUD_API_PARAMS,
@@ -41,7 +41,6 @@ __all__ = [
     'ANTHROPIC_API_PARAMS',
     'GROQ_API_PARAMS',
     'GroqConfig',
-    'OpenSourceConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
     'OllamaConfig',

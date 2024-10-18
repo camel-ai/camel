@@ -12,14 +12,19 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -28,36 +33,39 @@ from camel.utils import (
 
 
 class OpenAIModel(BaseModelBackend):
-    r"""OpenAI API in a unified BaseModelBackend interface."""
+    r"""OpenAI API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of GPT_* series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating
+            with the OpenAI service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the OpenAI service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter` will
+            be used. (default: :obj:`None`)
+    """
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for OpenAI backend.
-
-        Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of GPT_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                OpenAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the OpenAI service. (default:
-                :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will
-                be used.
-        """
+        if model_config_dict is None:
+            model_config_dict = ChatGPTConfig().as_dict()
+        api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        url = url or os.environ.get("OPENAI_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
@@ -96,13 +104,23 @@ class OpenAIModel(BaseModelBackend):
         # o1-preview and o1-mini have Beta limitations
         # reference: https://platform.openai.com/docs/guides/reasoning
         if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
+            warnings.warn(
+                "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
+                "which has certain limitations, reference: "
+                "`https://platform.openai.com/docs/guides/reasoning`.",
+                UserWarning,
+            )
+
             # Remove system message that is not supported in o1 model.
             messages = [msg for msg in messages if msg.get("role") != "system"]
 
-            # Remove unsupported parameters and reset the fixed parameters
-            del self.model_config_dict["stream"]
-            del self.model_config_dict["tools"]
-            del self.model_config_dict["tool_choice"]
+            # Check and remove unsupported parameters and reset the fixed
+            # parameters
+            unsupported_keys = ["stream", "tools", "tool_choice"]
+            for key in unsupported_keys:
+                if key in self.model_config_dict:
+                    del self.model_config_dict[key]
+
             self.model_config_dict["temperature"] = 1.0
             self.model_config_dict["top_p"] = 1.0
             self.model_config_dict["n"] = 1.0
@@ -111,7 +129,7 @@ class OpenAIModel(BaseModelBackend):
 
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
         return response
@@ -133,8 +151,9 @@ class OpenAIModel(BaseModelBackend):
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode,
-            which sends partial results each time.
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """

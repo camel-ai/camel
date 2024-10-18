@@ -77,7 +77,7 @@ class SingleAgentWorker(Worker):
             content=prompt,
         )
         try:
-            response = self.worker.step(req, output_schema=TaskResult)
+            response = self.worker.step(req, response_format=TaskResult)
         except Exception as e:
             print(
                 f"{Fore.RED}Error occurred while processing task {task.id}:"
@@ -90,15 +90,14 @@ class SingleAgentWorker(Worker):
         result_dict = ast.literal_eval(response.msg.content)
         task_result = TaskResult(**result_dict)
 
+        color = Fore.RED if task_result.failed else Fore.GREEN
+        print_text_animated(
+            f"\n{color}{task_result.content}{Fore.RESET}\n======",
+            delay=0.005,
+        )
+
         if task_result.failed:
-            print(
-                f"{Fore.RED}{self} failed to process task {task.id}.\n======"
-            )
             return TaskState.FAILED
 
         task.result = task_result.content
-        print_text_animated(
-            f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======',
-            delay=0.005,
-        )
         return TaskState.DONE

@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
 from enum import Enum, EnumMeta
+from typing import cast
+
+from camel.types.unified_model_type import UnifiedModelType
 
 
 class RoleType(Enum):
@@ -23,7 +25,7 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
-class ModelType(Enum):
+class ModelType(UnifiedModelType, Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo"
@@ -33,7 +35,6 @@ class ModelType(Enum):
     O1_MINI = "o1-mini"
 
     GLM_4 = "glm-4"
-    GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
@@ -47,13 +48,6 @@ class ModelType(Enum):
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     STUB = "stub"
-
-    LLAMA_2 = "llama-2"
-    LLAMA_3 = "llama-3"
-    VICUNA = "vicuna"
-    VICUNA_16K = "vicuna-16k"
-
-    QWEN_2 = "qwen-2"
 
     # Legacy anthropic models
     # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
@@ -75,18 +69,24 @@ class ModelType(Enum):
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     # Mistral AI models
-    MISTRAL_LARGE = "mistral-large-latest"
-    MISTRAL_NEMO = "open-mistral-nemo"
-    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_3B = "ministral-3b-latest"
     MISTRAL_7B = "open-mistral-7b"
+    MISTRAL_8B = "ministral-8b-latest"
+    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+    MISTRAL_LARGE = "mistral-large-latest"
     MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
-    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+    MISTRAL_NEMO = "open-mistral-nemo"
+    MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
 
     # Reka models
     REKA_CORE = "reka-core"
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
+
+    def __new__(cls, value) -> "ModelType":
+        return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -95,7 +95,7 @@ class ModelType(Enum):
         return "gpt-4o-mini"
 
     @property
-    def supports_tool_calling(self) -> bool:
+    def support_native_tool_calling(self) -> bool:
         return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
@@ -130,18 +130,6 @@ class ModelType(Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.GLM_4V,
-        }
-
-    @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source."""
-        return self in {
-            ModelType.LLAMA_2,
-            ModelType.LLAMA_3,
-            ModelType.QWEN_2,
-            ModelType.GLM_4_OPEN_SOURCE,
-            ModelType.VICUNA,
-            ModelType.VICUNA_16K,
         }
 
     @property
@@ -186,6 +174,9 @@ class ModelType(Enum):
             ModelType.MISTRAL_MIXTRAL_8x7B,
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.MISTRAL_CODESTRAL_MAMBA,
+            ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
         }
 
     @property
@@ -206,7 +197,10 @@ class ModelType(Enum):
         Returns:
             bool: Whether this type of models is gemini.
         """
-        return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+        return self in {
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
+        }
 
     @property
     def is_reka(self) -> bool:
@@ -230,11 +224,7 @@ class ModelType(Enum):
         """
         if self is ModelType.GLM_4V:
             return 1024
-        elif self is ModelType.VICUNA:
-            # reference: https://lmsys.org/blog/2023-03-30-vicuna/
-            return 2048
         elif self in {
-            ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
             ModelType.REKA_CORE,
@@ -248,15 +238,12 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
-            ModelType.LLAMA_3,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
-            ModelType.GLM_4_OPEN_SOURCE,
         }:
             return 8_192
         elif self in {
             ModelType.GPT_3_5_TURBO,
-            ModelType.VICUNA_16K,
         }:
             return 16_384
         elif self in {
@@ -268,7 +255,10 @@ class ModelType(Enum):
             return 32_768
         elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
             return 64_000
-        elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+        elif self in {
+            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_INSTANT_1_2,
+        }:
             return 100_000
         elif self in {
             ModelType.GPT_4O,
@@ -278,7 +268,9 @@ class ModelType(Enum):
             ModelType.O1_MINI,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
-            ModelType.QWEN_2,
+            ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
         }:
             return 128_000
         elif self in {
@@ -299,47 +291,13 @@ class ModelType(Enum):
             ModelType.MISTRAL_CODESTRAL_MAMBA,
         }:
             return 256_000
-        elif self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}:
+        elif self in {
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
+        }:
             return 1_048_576
         else:
             raise ValueError("Unknown model type")
-
-    def validate_model_name(self, model_name: str) -> bool:
-        r"""Checks whether the model type and the model name matches.
-
-        Args:
-            model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
-
-        Returns:
-            bool: Whether the model type matches the model name.
-        """
-        if self is ModelType.VICUNA:
-            pattern = r'^vicuna-\d+b-v\d+\.\d+$'
-            return bool(re.match(pattern, model_name))
-        elif self is ModelType.VICUNA_16K:
-            pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
-            return bool(re.match(pattern, model_name))
-        elif self is ModelType.LLAMA_2:
-            return (
-                self.value in model_name.lower()
-                or "llama2" in model_name.lower()
-            )
-        elif self is ModelType.LLAMA_3:
-            return (
-                self.value in model_name.lower()
-                or "llama3" in model_name.lower()
-            )
-        elif self is ModelType.QWEN_2:
-            return (
-                self.value in model_name.lower()
-                or "qwen2" in model_name.lower()
-            )
-        elif self is ModelType.GLM_4_OPEN_SOURCE:
-            return (
-                'glm-4' in model_name.lower() or "glm4" in model_name.lower()
-            )
-        else:
-            return self.value in model_name.lower()
 
 
 class EmbeddingModelType(Enum):
@@ -470,7 +428,6 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
-    OPEN_SOURCE = "open-source"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -480,7 +437,7 @@ class ModelPlatformType(Enum):
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
-    OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
     NEXA = "nexa"
 
@@ -535,15 +492,10 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.MISTRAL
 
     @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this platform is opensource."""
-        return self is ModelPlatformType.OPEN_SOURCE
-
-    @property
-    def is_openai_compatibility_model(self) -> bool:
+    def is_openai_compatible_model(self) -> bool:
         r"""Returns whether this is a platform supporting openai
         compatibility"""
-        return self is ModelPlatformType.OPENAI_COMPATIBILITY_MODEL
+        return self is ModelPlatformType.OPENAI_COMPATIBLE_MODEL
 
     @property
     def is_gemini(self) -> bool:

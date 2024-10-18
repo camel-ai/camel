@@ -16,10 +16,10 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from openai import NOT_GIVEN, NotGiven, OpenAI
+from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
-from camel.types import EmbeddingModelType
+from camel.types import NOT_GIVEN, EmbeddingModelType, NotGiven
 from camel.utils import api_keys_required
 
 
