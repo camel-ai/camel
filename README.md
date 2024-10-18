@@ -332,8 +332,8 @@ We appreciate your interest in contributing to our open-source initiative. We pr
 ## Contact
 For more information please contact camel.ai.team@gmail.com.
 
-[python-image]: https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg
-[python-url]: https://docs.python.org/3.10/
+[python-image]: https://img.shields.io/badge/Python-3.10%2C%203.11%2C%203.12-brightgreen.svg
+[python-url]: https://www.python.org/
 [pytest-image]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml/badge.svg
 [pytest-url]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml
 [docs-image]: https://img.shields.io/badge/Documentation-grey.svg?logo=github
