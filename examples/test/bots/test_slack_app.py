@@ -15,17 +15,28 @@ class TestSlackApp(unittest.TestCase):
         os.environ["SLACK_CLIENT_SECRET"] = "fake_client_secret"
 
     def tearDown(self):
-        # Clean up environment variables after the tests
-        del os.environ["SLACK_TOKEN"]
-        del os.environ["SLACK_SCOPES"]
-        del os.environ["SLACK_SIGNING_SECRET"]
-        del os.environ["SLACK_CLIENT_ID"]
-        del os.environ["SLACK_CLIENT_SECRET"]
+        # Clean up environment variables after the tests, if they exist
+        for var in [
+            "SLACK_TOKEN",
+            "SLACK_SCOPES",
+            "SLACK_SIGNING_SECRET",
+            "SLACK_CLIENT_ID",
+            "SLACK_CLIENT_SECRET"
+        ]:
+            if var in os.environ:
+                del os.environ[var]
 
     @patch('slack_bolt.app.async_app.AsyncApp')
     def test_init_without_token_raises_error(self, mock_async_app):
-        # Temporarily clear SLACK_TOKEN to test the ValueError
-        del os.environ["SLACK_TOKEN"]
+        # Temporarily clear SLACK_TOKEN, SLACK_SCOPES and SLACK_SIGNING_SECRET
+        # to test the ValueError
+        for var in [
+            "SLACK_TOKEN",
+            "SLACK_SCOPES",
+            "SLACK_SIGNING_SECRET",
+        ]:
+            if var in os.environ:
+                del os.environ[var]
 
         with self.assertRaises(ValueError):
             SlackApp()
