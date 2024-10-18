@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -61,7 +74,7 @@ class TestDiscordApp(unittest.TestCase):
 
     @patch('discord.Client')
     async def test_on_message_respond_in_allowed_channel(
-            self, mock_discord_client
+        self, mock_discord_client
     ):
         # Test that on_message responds in allowed channels
         app = DiscordApp(channel_ids=[123])
@@ -78,7 +91,7 @@ class TestDiscordApp(unittest.TestCase):
 
     @patch('discord.Client')
     async def test_on_message_ignore_non_mentioned_message(
-            self, mock_discord_client
+        self, mock_discord_client
     ):
         # Test that on_message ignores messages that don't mention the bot
         app = DiscordApp(channel_ids=[123])
@@ -92,7 +105,7 @@ class TestDiscordApp(unittest.TestCase):
 
     @patch('discord.Client')
     async def test_on_message_ignore_outside_channel(
-            self, mock_discord_client
+        self, mock_discord_client
     ):
         # Test that on_message ignores messages outside the allowed channels
         app = DiscordApp(channel_ids=[123])
