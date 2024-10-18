@@ -27,6 +27,7 @@ from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
     api_keys_required,
+    dependencies_required,
 )
 
 if TYPE_CHECKING:
@@ -56,6 +57,7 @@ class GeminiModel(BaseModelBackend):
         limitation of the current camel design.
     """
 
+    @dependencies_required('google')
     def __init__(
         self,
         model_type: Union[ModelType, str],

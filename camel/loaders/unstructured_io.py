@@ -15,6 +15,7 @@ import uuid
 import warnings
 from io import IOBase
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -24,7 +25,8 @@ from typing import (
     Union,
 )
 
-from unstructured.documents.elements import Element
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
 
 class UnstructuredIO:
@@ -47,7 +49,7 @@ class UnstructuredIO:
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
         parent_id: Optional[Union[str, uuid.UUID]] = None,
-    ) -> Element:
+    ) -> "Element":
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
@@ -93,7 +95,7 @@ class UnstructuredIO:
     def parse_file_or_url(
         input_path: str,
         **kwargs: Any,
-    ) -> Union[List[Element], None]:
+    ) -> Union[List["Element"], None]:
         r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
@@ -154,7 +156,9 @@ class UnstructuredIO:
                 return None
 
     @staticmethod
-    def parse_bytes(file: IOBase, **kwargs: Any) -> Union[List[Element], None]:
+    def parse_bytes(
+        file: IOBase, **kwargs: Any
+    ) -> Union[List["Element"], None]:
         r"""Parses a bytes stream and converts its contents into elements.
 
         Args:
@@ -441,7 +445,7 @@ class UnstructuredIO:
     @staticmethod
     def chunk_elements(
         elements: List[Any], chunk_type: str, **kwargs
-    ) -> List[Element]:
+    ) -> List["Element"]:
         r"""Chunks elements by titles.
 
         Args:

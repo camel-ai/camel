@@ -287,7 +287,7 @@ class Workforce(BaseNode):
         )
 
         response = self.coordinator_agent.step(
-            req, output_schema=TaskAssignResult
+            req, response_format=TaskAssignResult
         )
         result_dict = ast.literal_eval(response.msg.content)
         task_assign_result = TaskAssignResult(**result_dict)
@@ -319,7 +319,7 @@ class Workforce(BaseNode):
             role_name="User",
             content=prompt,
         )
-        response = self.coordinator_agent.step(req, output_schema=WorkerConf)
+        response = self.coordinator_agent.step(req, response_format=WorkerConf)
         result_dict = ast.literal_eval(response.msg.content)
         new_node_conf = WorkerConf(**result_dict)
 
