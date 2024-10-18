@@ -195,6 +195,17 @@ class VectorRetriever(BaseRetriever):
         db_query = VectorDBQuery(query_vector=query_vector, top_k=top_k)
         query_results = self.storage.query(query=db_query)
 
+        # If no results found, return a message
+        if not query_results:
+            return [
+                {
+                    'text': (
+                        "No suitable information retrieved "
+                        "Please check if the storage is empty"
+                    )
+                }
+            ]
+
         if query_results[0].record.payload is None:
             raise ValueError(
                 "Payload of vector storage is None, please check the "
