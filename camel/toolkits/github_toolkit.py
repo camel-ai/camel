@@ -18,10 +18,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
 from camel.utils import dependencies_required
-
-from .base import BaseToolkit
-from .function_tool import FunctionTool
 
 
 class GithubIssue(BaseModel):

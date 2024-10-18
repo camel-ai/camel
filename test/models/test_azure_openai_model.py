@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 """
 please set the below os environment:
-export AZURE_OPENAI_ENDPOINT=""
+export AZURE_OPENAI_BASE_URL=""
 
 # if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api version
 export AZURE_API_VERSION=""
@@ -25,7 +25,7 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.configs import ChatGPTConfig
 from camel.models import AzureOpenAIModel, ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
@@ -61,7 +61,7 @@ def test_openai_model(model_type):
         ModelType.GPT_4O,
     ],
 )
-def test_openai_model_create(model_type):
+def test_openai_model_create(model_type: ModelType):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.AZURE,
         model_type=model_type,
@@ -73,11 +73,7 @@ def test_openai_model_create(model_type):
 @pytest.mark.model_backend
 def test_openai_model_unexpected_argument():
     model_type = ModelType.GPT_4
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,
