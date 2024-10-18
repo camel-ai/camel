@@ -250,7 +250,7 @@ class FunctionTool:
         self.func = func
         self.openai_tool_schema = openai_tool_schema
 
-        if not self.openai_tool_schema:
+        if self.openai_tool_schema is not None:
             self.openai_tool_schema = get_openai_tool_schema(func)
 
             if use_schema_assistant:
