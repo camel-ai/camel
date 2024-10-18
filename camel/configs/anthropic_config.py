@@ -13,9 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 
-from openai._types import NOT_GIVEN, NotGiven
+if TYPE_CHECKING:
+    from anthropic import NotGiven
 
 from camel.configs.base_config import BaseConfig
 
@@ -59,6 +60,8 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`False`)
 
     """
+
+    from anthropic import NOT_GIVEN
 
     max_tokens: int = 256
     stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
