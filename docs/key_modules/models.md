@@ -24,7 +24,7 @@ The following table lists currently supported model platforms by CAMEL.
 | OpenAI Compatible | Depends on the provider | ----- |
 | Mistral AI | mistral-large-2 | N |
 | Mistral AI | pixtral-12b-2409 | Y |
-| Mistral AI | ministral-8b-latest	 | N |
+| Mistral AI | ministral-8b-latest | N |
 | Mistral AI | ministral-3b-latest | N |
 | Mistral AI | open-mistral-nemo | N |
 | Mistral AI | codestral | N |
