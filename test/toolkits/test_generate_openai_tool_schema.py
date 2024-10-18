@@ -8,7 +8,8 @@ from camel.toolkits import FunctionTool, generate_docstring
 
 def sample_function(a: int, b: str = "default") -> bool:
     """
-    This function checks if the integer is positive and if the string is non-empty.
+    This function checks if the integer is positive and 
+    if the string is non-empty.
 
     Args:
         a (int): The integer value to check.
@@ -30,9 +31,13 @@ def test_generate_openai_tool_schema(mock_create_model, mock_chat_agent_step):
     # Mock ChatAgent's step method return value
     mock_message = MagicMock()
     mock_message.content = (
-        "This function checks if the integer is positive and if the string is non-empty.\n"
-        "Args:\n    a (int): The integer value to check.\n    b (str): The string to verify. Default is 'default'.\n"
-        "Returns:\n    bool: True if both conditions are met, otherwise False."
+        "This function checks if the integer is positive and if the string "
+        "is non-empty.\n"
+        "Args:\n"
+        "    a (int): The integer value to check.\n"
+        "    b (str): The string to verify. Default is 'default'.\n"
+        "Returns:\n"
+        "    bool: True if both conditions are met, otherwise False."
     )
     mock_response = MagicMock()
     mock_response.msgs = [mock_message]
@@ -45,19 +50,26 @@ def test_generate_openai_tool_schema(mock_create_model, mock_chat_agent_step):
 
     # Generate schema
     try:
-        schema = function_tool.generate_openai_tool_schema(schema_assistant=mock_model_instance)
+        schema = function_tool.generate_openai_tool_schema(
+            schema_assistant=mock_model_instance
+        )
     except Exception as e:
-        pytest.fail(f"generate_openai_tool_schema() raised an exception unexpectedly: {e}")
+        pytest.fail(f"generate_openai_tool_schema() raised an exception: {e}")
 
     if schema is None:
-        pytest.fail("generate_openai_tool_schema() returned None unexpectedly.")
+        pytest.fail(
+            "generate_openai_tool_schema() returned None unexpectedly."
+        )
 
     # Adjusted expected schema with 'default' key in 'b' parameter
     expected_schema = {
         'type': 'function',
         'function': {
             'name': 'sample_function',
-            'description': 'This function checks if the integer is positive and if the string is non-empty.',
+            'description': (
+                'This function checks if the integer is positive '
+                'and if the string is non-empty.'
+            ),
             'parameters': {
                 'type': 'object',
                 'properties': {
@@ -67,8 +79,11 @@ def test_generate_openai_tool_schema(mock_create_model, mock_chat_agent_step):
                     },
                     'b': {
                         'type': 'string',
-                        'description': "The string to verify. Default is 'default'.",
-                        'default': 'default'  # Include this line
+                        'description': (
+                            "The string to verify. "
+                            "Default is 'default'."
+                        ),
+                        'default': 'default'
                     }
                 },
                 'required': ['a']
@@ -105,9 +120,12 @@ def test_generate_docstring(mock_chat_agent_step, mock_model):
     # Mock ChatAgent's step method return value
     mock_message = MagicMock()
     mock_message.content = (
-        "This function checks if the integer is positive and if the string is non-empty.\n"
-        "Args:\n    a (int): The integer value to check.\n    b (str): The string to verify. Default is 'default'.\n"
-        "Returns:\n    bool: True if both conditions are met, otherwise False."
+        f"This function checks if the integer is positive and "
+        f"if the string is non-empty.\n"
+        f"Args:\n    a (int): The integer value to check.\n "
+        f"   b (str): The string to verify. Default is 'default'.\n"
+        f"Returns:\n    bool: True if both conditions are met, "
+        f"otherwise False."
     )
     mock_response = MagicMock()
     mock_response.msgs = [mock_message]
@@ -119,14 +137,21 @@ def test_generate_docstring(mock_chat_agent_step, mock_model):
     try:
         docstring = generate_docstring(code, mock_model)
     except AttributeError as e:
-        pytest.fail(f"generate_docstring() raised AttributeError unexpectedly: {e}")
+        pytest.fail(
+            f"generate_docstring() raised AttributeError unexpectedly: {e}"
+        )
     except RuntimeError as e:
-        pytest.fail(f"generate_docstring() raised RuntimeError unexpectedly: {e}")
+        pytest.fail(
+            f"generate_docstring() raised RuntimeError unexpectedly: {e}"
+        )
 
     expected_docstring = (
-        "This function checks if the integer is positive and if the string is non-empty.\n"
-        "Args:\n    a (int): The integer value to check.\n    b (str): The string to verify. Default is 'default'.\n"
-        "Returns:\n    bool: True if both conditions are met, otherwise False."
+        f"This function checks if the integer is positive and "
+        f"if the string is non-empty.\n"
+        f"Args:\n    a (int): The integer value to check.\n "
+        f"   b (str): The string to verify. Default is 'default'.\n"
+        f"Returns:\n    bool: True if both conditions are met, "
+        f"otherwise False."
     )
 
     assert docstring == expected_docstring

@@ -152,7 +152,7 @@ def generate_docstring(
     code: str, 
     model: BaseModelBackend,
 ) -> str:
-    """Generates a docstring for a given function code using the provided model.
+    """Generates a docstring for a given function code using LLM.
 
     Args:
         code (str): The source code of the function.
@@ -163,12 +163,14 @@ def generate_docstring(
     """
     # Create the docstring prompt
     docstring_prompt = '''
-    **Role**: Generate professional Python docstrings conforming to PEP 8/PEP 257.
+    **Role**: Generate professional Python docstrings conforming to 
+    PEP 8/PEP 257.
 
     **Requirements**:
     - Use appropriate format: reST, Google, or NumPy, as needed.
     - Include parameters, return values, and exceptions.
-    - Reference any existing docstring in the function and retain useful information.
+    - Reference any existing docstring in the function and 
+      retain useful information.
 
     **Input**: Python function.
 
@@ -199,7 +201,11 @@ def generate_docstring(
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    docstring_assistant = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
+    docstring_assistant = ChatAgent(
+        assistant_sys_msg, 
+        model=model, 
+        token_limit=4096
+    )
 
     # Create user message to prompt the assistant
     user_msg = BaseMessage.make_user_message(
@@ -224,6 +230,14 @@ class FunctionTool:
         openai_tool_schema (Optional[Dict[str, Any]], optional): A user-defined
             openai tool schema to override the default result.
             (default: :obj:`None`)
+        schema_assistant (Optional[BaseModelBackend], optional): An assistant 
+            (e.g., an LLM model) used to generate the schema if no valid 
+            schema is provided and use_schema_assistant is enabled.
+            (default: :obj:`None`)
+        use_schema_assistant (bool, optional): Whether to enable the use of 
+            the schema_assistant to automatically generate the schema if 
+            validation fails or no valid schema is provided.
+            (default: :obj:`False`)
     """
 
     def __init__(
@@ -231,21 +245,33 @@ class FunctionTool:
         func: Callable,
         openai_tool_schema: Optional[Dict[str, Any]] = None,
         schema_assistant: Optional[BaseModelBackend] = None,
+        use_schema_assistant: bool = False,
     ) -> None:
         self.func = func
-        self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
-            func
-        )
-        try:
-            self.validate_openai_tool_schema(self.openai_tool_schema)
-        except Exception as e:
-            print(
-                f"Warning: No model provided. Use GPT_4O_MINI to generate the schema "
-                f"for {self.func.__name__}. Attempting to generate one using LLM."
-            )
-            schema = self.generate_openai_tool_schema(schema_assistant)
-            if schema:
-                self.openai_tool_schema = schema
+        self.openai_tool_schema = openai_tool_schema
+
+        if not self.openai_tool_schema:
+            self.openai_tool_schema = get_openai_tool_schema(func)
+
+            if use_schema_assistant:
+                try:
+                    self.validate_openai_tool_schema(self.openai_tool_schema)
+                except Exception as e:
+                    print(
+                        f"Warning: No valid schema found "
+                        f"for {self.func.__name__}. "
+                        f"Attempting to generate one using LLM."
+                    )
+                    schema = self.generate_openai_tool_schema(
+                        schema_assistant
+                    )
+                    if schema:
+                        self.openai_tool_schema = schema
+                    else:
+                        raise ValueError(
+                            f"Failed to generate valid schema for "
+                            f"{self.func.__name__}"
+                        )
 
 
     @staticmethod
@@ -465,21 +491,25 @@ class FunctionTool:
 
         Raises:
             ValueError: If schema generation or validation fails after the 
-            maximum number of retries, a ValueError is raised, prompting manual 
-            schema setting.
+            maximum number of retries, a ValueError is raised, 
+            prompting manual schema setting.
         """
         if not schema_assistant:
-            print(f"Warning: No model provided. Use GPT_4O_MINI to generate the schema.")
+            print(
+                f"Warning: No model provided. "
+                f"Use GPT_4O_MINI to generate the schema."
+            )
             try:
                 schema_assistant = ModelFactory.create(
                     model_platform=ModelPlatformType.OPENAI,
                     model_type=ModelType.GPT_4O_MINI,
-                    model_config_dict=ChatGPTConfig(temperature=1.0).as_dict(),
+                    model_config_dict=ChatGPTConfig(temperature=1.0).as_dict()
                 )
             except Exception as e:
                 raise ValueError(
-                    f"Failed to generate the OpenAI tool schema for function "
-                    f"{self.func.__name__}. Please set the OpenAI tool schema manually."
+                    f"Failed to generate the OpenAI tool schema for "
+                    f"the function {self.func.__name__}. "
+                    f"Please set the OpenAI tool schema manually."
                 ) from e
 
         function_string = getsource(self.func)
@@ -491,7 +521,10 @@ class FunctionTool:
         while retries < max_retries:
             try:
                 # Generate the docstring and the schema
-                docstring = generate_docstring(function_string, schema_assistant)
+                docstring = generate_docstring(
+                    function_string, 
+                    schema_assistant
+                )
                 self.func.__doc__ = docstring
                 schema = get_openai_tool_schema(self.func)
 
@@ -499,8 +532,8 @@ class FunctionTool:
                 self.validate_openai_tool_schema(schema)
 
                 print(
-                    f"Successfully generated the OpenAI tool schema for the function "
-                    f"{self.func.__name__}."
+                    f"Successfully generated the OpenAI tool schema for "
+                    f"the function {self.func.__name__}."
                 )
                 return schema
 
@@ -508,9 +541,9 @@ class FunctionTool:
                 retries += 1
                 if retries == max_retries:
                     raise ValueError(
-                        f"Failed to generate the OpenAI tool Schema. Please set "
-                        f"the OpenAI tool schema for function {self.func.__name__} "
-                        f"manually."
+                        f"Failed to generate the OpenAI tool Schema. "
+                        f"Please set the OpenAI tool schema for "
+                        f"function {self.func.__name__} manually."
                     ) from e
                 print(f"Schema validation failed. Retrying...")
 

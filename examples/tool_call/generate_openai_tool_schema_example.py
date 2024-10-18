@@ -38,7 +38,11 @@ agent_model = ModelFactory.create(
 )
 
 # Create a FunctionTool with the function
-function_tool = FunctionTool(get_perfect_square, schema_assistant=agent_model)
+function_tool = FunctionTool(
+    get_perfect_square, 
+    schema_assistant=agent_model,
+    use_schema_assistant=True
+)
 print("\nGenerated OpenAI Tool Schema:")
 print(function_tool.get_openai_tool_schema())
 
@@ -70,11 +74,17 @@ print(response.msg.content)
 
 print("""
 ===============================================================================
-Warning: No model provided. Use GPT_4O_MINI to generate the schema for get_perfect_square. Attempting to generate one using LLM.
-Successfully generated the OpenAI tool schema for the function get_perfect_square.
+Warning: No model provided. Use GPT_4O_MINI to generate the schema for 
+the function get_perfect_square. Attempting to generate one using LLM.
+Successfully generated the OpenAI tool schema for 
+the function get_perfect_square.
 
 Generated OpenAI Tool Schema:
-{'type': 'function', 'function': {'name': 'get_perfect_square', 'description': 'Calculates the perfect square of a given integer.', 'parameters': {'properties': {'n': {'type': 'integer', 'description': 'The integer to be squared.'}}, 'required': ['n'], 'type': 'object'}}}
+{'type': 'function', 'function': {'name': 'get_perfect_square', 
+'description': 'Calculates the perfect square of a given integer.', 
+'parameters': {'properties': {'n': {'type': 'integer', 
+'description': 'The integer to be squared.'}}, 'required': ['n'], 
+'type': 'object'}}}
       
 [FunctionCallingRecord(func_name='get_perfect_square', args={'n': 2024}, 
 result={'result': 4096576})]
