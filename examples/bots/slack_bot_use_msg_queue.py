@@ -11,7 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import asyncio
 import logging
+import queue
+import threading
 from typing import List, Optional, Union
 
 from slack_bolt.context.async_context import AsyncBoltContext
@@ -118,8 +121,17 @@ class BotAgent:
         )
 
     async def process(self, message: str) -> str:
+        r"""Process the user message, retrieve relevant content, and generate
+        a response.
+
+        Args:
+            message (str): The user's query message.
+
+        Returns:
+            str: The assistant's response message.
+        """
         user_raw_msg = message
-        logger.info("User message:", user_raw_msg)
+        print("User message:", user_raw_msg)
         if self._auto_retriever:
             retrieved_content = self._auto_retriever.run_vector_retriever(
                 query=user_raw_msg,
@@ -142,21 +154,38 @@ class BotAgent:
 
 
 class SlackBot(SlackApp):
+    r"""SlackBot class that extends the SlackApp class to handle Slack events
+    and integrate with a message queue for asynchronous processing.
+
+    This class initializes the Slack app and adds a message handler to process
+    Slack events, specifically for incoming messages.
+
+    Args:
+        msg_queue (queue.Queue): A thread-safe queue to communicate between
+            threads.
+        token (Optional[str]): Slack API token for authentication.
+        scopes (Optional[str]): Slack app scopes for permissions.
+        signing_secret (Optional[str]): Signing secret for verifying Slack
+            requests.
+        client_id (Optional[str]): Slack app client ID.
+        client_secret (Optional[str]): Slack app client secret.
+    """
+
     def __init__(
         self,
-        agent: BotAgent,
+        msg_queue: queue.Queue,
         token: Optional[str] = None,
         scopes: Optional[str] = None,
         signing_secret: Optional[str] = None,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
     ):
-        """Initializes the SlackBot instance to handle Slack messages and
-        communicate with BotAgent.
+        r"""Initializes the SlackBot instance with a message queue and the
+        required Slack authentication details.
 
         Args:
-            agent (BotAgent): The BotAgent responsible for processing messages
-                and generating responses.
+            msg_queue (queue.Queue): A thread-safe queue to communicate between
+                threads.
             token (Optional[str]): Slack API token for authentication.
             scopes (Optional[str]): Slack app scopes for permissions.
             signing_secret (Optional[str]): Signing secret for verifying Slack
@@ -171,7 +200,7 @@ class SlackBot(SlackApp):
             client_id=client_id,
             client_secret=client_secret,
         )
-        self.agent: BotAgent = agent
+        self._queue: queue.Queue = msg_queue
 
     async def on_message(
         self,
@@ -181,8 +210,11 @@ class SlackBot(SlackApp):
         body: dict,
         say: "AsyncSay",
     ):
-        """Handles incoming Slack messages, processes them with BotAgent, and
-        responds.
+        r"""Event handler for processing incoming Slack messages.
+
+        This method is called when a message event is received from Slack.
+        It acknowledges the message and adds the event body and say function to
+        the queue for further processing.
 
         Args:
             context (AsyncBoltContext): Context object that contains
@@ -197,13 +229,74 @@ class SlackBot(SlackApp):
         """
         await context.ack()
         event_body = SlackEventBody(**body)
+        self._queue.put((event_body, say))
+
+
+async def process_message(agent: BotAgent, msg_queue: queue.Queue):
+    r"""Process messages from the queue asynchronously.
+
+    This function continuously retrieves messages from the message queue,
+    processes them using the `BotAgent` instance, and sends the response back
+    to Slack using the `say` function.
+
+    Args:
+        agent (BotAgent): An instance of the `BotAgent` class that handles the
+            processing of the incoming message.
+        msg_queue (queue.Queue): A thread-safe queue that stores Slack event
+            messages and the corresponding `say` functions for response.
+    """
+    while True:
+        event_body, say = msg_queue.get()
+
+        logger.info(f"Received message: {event_body.event.text}")
         user_raw_msg = event_body.event.text
+
+        # Process the message using the agent and send response back to Slack.
         response = await agent.process(user_raw_msg)
         await say(response)
+        msg_queue.task_done()
+
+
+def start_async_queue_processor(agent: BotAgent, msg_queue: queue.Queue):
+    r"""Start an asynchronous queue processor in a new event loop.
+
+    This function creates a new asyncio event loop in a separate thread to
+    asynchronously process messages from the queue. It will run until all
+    the messages in the queue have been processed.
+
+    Args:
+        agent (BotAgent): The agent responsible for processing the messages.
+        msg_queue (queue.Queue): The message queue that contains Slack events
+            and responses.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    # Schedule the asynchronous message processing task in this event loop
+    loop.run_until_complete(process_message(agent, msg_queue))
 
 
 if __name__ == "__main__":
+    r"""Main entry point for running the Slack bot application.
+
+    This section initializes the required components including the message 
+    queue, agent, and the SlackBot instance. It also starts a separate thread 
+    for asynchronous message processing to avoid blocking the Slack bot's main 
+    event loop. The `slack_bot.run()` function will handle incoming Slack 
+    events on the main thread, while the separate thread will handle processing
+    the messages from the queue.
+    """
+    msg_queue = queue.Queue()
+
     agent = BotAgent()
 
-    slack_bot = SlackBot(agent=agent)
+    thread = threading.Thread(
+        target=start_async_queue_processor, args=(agent, msg_queue)
+    )
+    thread.start()
+
+    # Initialize the SlackBot with the message queue.
+    slack_bot = SlackBot(msg_queue=msg_queue)
     slack_bot.run(3000)
+
+    thread.join()

@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -21,7 +34,7 @@ class TestSlackApp(unittest.TestCase):
             "SLACK_SCOPES",
             "SLACK_SIGNING_SECRET",
             "SLACK_CLIENT_ID",
-            "SLACK_CLIENT_SECRET"
+            "SLACK_CLIENT_SECRET",
         ]:
             if var in os.environ:
                 del os.environ[var]
@@ -48,7 +61,7 @@ class TestSlackApp(unittest.TestCase):
             scopes="channels:read,chat:write,commands",
             signing_secret="fake_signing_secret1",
             client_id="fake_client_id1",
-            client_secret="fake_client_secret1"
+            client_secret="fake_client_secret1",
         )
         # Assert correct initialization of SlackApp attributes
         self.assertEqual(app.token, "fake_token1")
