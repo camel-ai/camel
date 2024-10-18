@@ -47,6 +47,7 @@ __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    "generate_docstring",
     'openapi_security_config',
     'GithubToolkit',
     'MathToolkit',
