@@ -24,7 +24,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MISTRAL,
-    model_type=ModelType.MISTRAL_8B,
+    model_type=ModelType.MISTRAL_MINISTRAL_8B,
     model_config_dict=MistralConfig(temperature=0.0).as_dict(),
 )
 

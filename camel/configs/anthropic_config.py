@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 try:
     from anthropic import NOT_GIVEN
-except:
-    NOT_GIVEN = None
+except ImportError:
+    NOT_GIVEN = None  # type:ignore [assignment]
 
 from camel.configs.base_config import BaseConfig
 
@@ -60,9 +60,10 @@ class AnthropicConfig(BaseConfig):
             responses.
             (default: :obj:`5`)
         metadata: An object describing metadata about the request.
-        stream (bool, optional): Whether to incrementally stream the response 
+        stream (bool, optional): Whether to incrementally stream the response
             using server-sent events. (default: :obj:`False`)
     """
+
     max_tokens: int = 256
     stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1
