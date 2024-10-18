@@ -197,7 +197,10 @@ class VectorRetriever(BaseRetriever):
 
         # If no results found, raise an error
         if not query_results:
-            raise ValueError("Please check if the vector storage is empty.")
+            raise ValueError(
+                "Query result is empty, please check if "
+                "the vector storage is empty."
+            )
 
         if query_results[0].record.payload is None:
             raise ValueError(

@@ -109,7 +109,9 @@ def test_query_no_results(vector_retriever):
     vector_retriever.storage.query.return_value = []
 
     with pytest.raises(
-        ValueError, match="Please check if the vector storage is empty."
+        ValueError,
+        match="Query result is empty, please check if the "
+        "vector storage is empty.",
     ):
         vector_retriever.query(query, top_k=top_k)
 
