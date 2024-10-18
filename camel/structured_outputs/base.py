@@ -28,18 +28,21 @@ class BaseStructedModel(ABC):
     """
 
     def __init__(
-        self, target: Optional[BaseModel] = None, prompt: Optional[str] = None
+        self,
+        output_format: Optional[BaseModel] = None,
+        prompt: Optional[str] = None,
     ):
         """
         Initializes the BaseStructedModel with an optional response format.
 
         Args:
-            target (Optional[BaseModel]): The expected format of the response.
+            output_format (Optional[BaseModel]):
+                The expected format of the response.
                 Defaults to None.
             prompt (Optional[str]): The prompt to be used for the model.
                 Defaults to None.
         """
-        self.target = target
+        self.output_format = output_format
         self.prompt = prompt or DEFAULT_STRUCTURED_PROMPTS
 
     @staticmethod

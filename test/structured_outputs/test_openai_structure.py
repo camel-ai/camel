@@ -37,7 +37,7 @@ def test_openaistructure_with_str_template():
     model = OpenAIStructure(
         model_type=ModelType.GPT_4O,
         model_config_dict={},
-        target=target_format_from_str,
+        output_format=target_format_from_str,
     )
 
     structured_output = model.structure(
@@ -57,7 +57,7 @@ def test_openaistructure_with_function():
     model = OpenAIStructure(
         model_type=ModelType.GPT_4O,
         model_config_dict={},
-        target=target_format_from_function,
+        output_format=target_format_from_function,
     )
 
     structured_output = model.structure(
@@ -77,7 +77,7 @@ def test_openaistructure_with_model():
     model = OpenAIStructure(
         model_type=ModelType.GPT_4O,
         model_config_dict={},
-        target=target_format_from_model,
+        output_format=target_format_from_model,
     )
 
     structured_output = model.structure(

@@ -34,7 +34,7 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        target: Optional[BaseModel] = None,
+        output_format: Optional[BaseModel] = None,
         prompt: Optional[str] = None,
     ):
         """
@@ -52,7 +52,7 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
                 URL endpoint for the model API. Defaults to None.
             token_counter (Optional[BaseTokenCounter]):
                 Counter for tracking token usage. Defaults to None.
-            target (Optional[BaseModel]):
+            output_format (Optional[BaseModel]):
                 Expected format of the response. Defaults to None.
             prompt (Optional[str]):
                 Prompt to be used for the model. Defaults to None.
@@ -60,10 +60,10 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
         OpenAIModel.__init__(
             self, model_type, model_config_dict, api_key, url, token_counter
         )
-        BaseStructedModel.__init__(self, target, prompt)
+        BaseStructedModel.__init__(self, output_format, prompt)
 
-        if target is not None:
-            self.model_config_dict["response_format"] = target
+        if output_format is not None:
+            self.model_config_dict["response_format"] = output_format
 
         self._client.chat.completions.create = (  # type: ignore[method-assign]
             self._client.beta.chat.completions.parse  # type: ignore[assignment]
@@ -71,18 +71,22 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
 
     @api_keys_required("OPENAI_API_KEY")
     def structure(
-        self,
-        content: str,
-    ) -> Optional[BaseModel]:
+        self, content: str, output_format: Optional[BaseModel] = None
+    ) -> BaseModel:
         """
         Formats the input content into the expected BaseModel
 
         Args:
             content (str): The content to be formatted.
+            output_format (Optional[BaseModel]):
+                The expected format of the response.
 
         Returns:
             Optional[BaseModel]: The formatted response.
         """
+        if output_format is not None:
+            self.model_config_dict["response_format"] = output_format
+
         completion = self.run(
             messages=[
                 {'role': 'system', 'content': self.prompt},
@@ -90,6 +94,4 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
             ]
         )
         message = completion.choices[0].message  # type: ignore[union-attr]
-        if message.parsed:  # type: ignore[union-attr]
-            return message.parsed  # type: ignore[union-attr]
-        return None
+        return message.parsed  # type: ignore[union-attr]
