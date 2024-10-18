@@ -17,7 +17,11 @@ from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
-from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    LiteLLMTokenCounter,
+    dependencies_required,
+)
 
 
 class LiteLLMModel(BaseModelBackend):
@@ -41,6 +45,7 @@ class LiteLLMModel(BaseModelBackend):
 
     # NOTE: Currently stream mode is not supported.
 
+    @dependencies_required('litellm')
     def __init__(
         self,
         model_type: Union[ModelType, str],
