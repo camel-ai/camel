@@ -254,7 +254,6 @@ class FunctionTool:
 
         if use_schema_assistant:
             try:
-                # 验证 schema
                 self.validate_openai_tool_schema(self.openai_tool_schema)
             except Exception as e:
                 print(
@@ -544,6 +543,8 @@ class FunctionTool:
                         f"function {self.func.__name__} manually."
                     ) from e
                 print(f"Schema validation failed. Retrying...")
+                
+        return {}
 
 
     @property
