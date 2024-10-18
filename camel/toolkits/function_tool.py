@@ -248,30 +248,28 @@ class FunctionTool:
         use_schema_assistant: bool = False,
     ) -> None:
         self.func = func
-        self.openai_tool_schema = openai_tool_schema
+        self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
+            func
+        )
 
-        if self.openai_tool_schema is None:
-            self.openai_tool_schema = get_openai_tool_schema(func)
-
-            if use_schema_assistant:
-                try:
-                    self.validate_openai_tool_schema(self.openai_tool_schema)
-                except Exception as e:
-                    print(
-                        f"Warning: No valid schema found "
-                        f"for {self.func.__name__}. "
-                        f"Attempting to generate one using LLM."
+        if use_schema_assistant:
+            try:
+                # 验证 schema
+                self.validate_openai_tool_schema(self.openai_tool_schema)
+            except Exception as e:
+                print(
+                    f"Warning: No valid schema found for "
+                    f"{self.func.__name__}. "
+                    f"Attempting to generate one using LLM."
+                )
+                schema = self.generate_openai_tool_schema(schema_assistant)
+                if schema:
+                    self.openai_tool_schema = schema
+                else:
+                    raise ValueError(
+                        f"Failed to generate valid schema for "
+                        f"{self.func.__name__}"
                     )
-                    schema = self.generate_openai_tool_schema(
-                        schema_assistant
-                    )
-                    if schema:
-                        self.openai_tool_schema = schema
-                    else:
-                        raise ValueError(
-                            f"Failed to generate valid schema for "
-                            f"{self.func.__name__}"
-                        )
 
 
     @staticmethod
