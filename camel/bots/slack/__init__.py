@@ -11,24 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .discord_app import DiscordApp
-from .slack.models import (
+from .models import (
     SlackAppMentionEventBody,
     SlackAppMentionEventProfile,
     SlackAuthProfile,
     SlackEventBody,
     SlackEventProfile,
 )
-from .slack.slack_app import SlackApp
-from .telegram_bot import TelegramBot
+from .slack_app import SlackApp
 
 __all__ = [
-    'DiscordApp',
     'SlackApp',
     'SlackAppMentionEventBody',
     'SlackAppMentionEventProfile',
     'SlackAuthProfile',
     'SlackEventBody',
     'SlackEventProfile',
-    'TelegramBot',
 ]

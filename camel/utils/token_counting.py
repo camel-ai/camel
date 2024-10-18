@@ -20,7 +20,6 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from anthropic import Anthropic
 from PIL import Image
 
 from camel.types import (
@@ -29,6 +28,7 @@ from camel.types import (
     OpenAIVisionDetailType,
     UnifiedModelType,
 )
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
@@ -218,8 +218,10 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
+    @dependencies_required('anthropic')
     def __init__(self):
         r"""Constructor for the token counter for Anthropic models."""
+        from anthropic import Anthropic
 
         self.client = Anthropic()
         self.tokenizer = self.client.get_tokenizer()

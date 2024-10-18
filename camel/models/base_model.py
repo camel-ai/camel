@@ -118,6 +118,9 @@ class BaseModelBackend(ABC):
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
+        This method retrieves the maximum token limit either from the
+        `model_config_dict` or from the model's default token limit.
+
         Returns:
             int: The maximum token limit for the given model.
         """
@@ -128,8 +131,8 @@ class BaseModelBackend(ABC):
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode,
-            which sends partial results each time.
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
 
         Returns:
             bool: Whether the model is in stream mode.
