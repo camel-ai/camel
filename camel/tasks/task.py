@@ -130,6 +130,11 @@ class Task(BaseModel):
         self.set_state(TaskState.DONE)
 
     def set_id(self, id: str):
+        r"""Set the id of the task.
+
+        Args:
+            id (str): The id of the task.
+        """
         self.id = id
 
     def set_state(self, state: TaskState):
@@ -147,10 +152,20 @@ class Task(BaseModel):
             self.parent.set_state(state)
 
     def add_subtask(self, task: "Task"):
+        r"""Add a subtask to the current task.
+
+        Args:
+            task (Task): The subtask to be added.
+        """
         task.parent = self
         self.subtasks.append(task)
 
     def remove_subtask(self, id: str):
+        r"""Remove a subtask from the current task.
+
+        Args:
+            id (str): The id of the subtask to be removed.
+        """
         self.subtasks = [task for task in self.subtasks if task.id != id]
 
     def get_running_task(self) -> Optional["Task"]:
