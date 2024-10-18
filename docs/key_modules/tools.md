@@ -1,5 +1,7 @@
 # Tools
 
+For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/agents_with_tools.ipynb)
+
 ## 1. Concept
 Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
 
