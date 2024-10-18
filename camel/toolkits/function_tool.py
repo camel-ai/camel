@@ -192,10 +192,7 @@ class FunctionTool:
         """
         # Check the type
         if not openai_tool_schema["type"]:
-            raise ValueError("miss type")
-        # Check the function description
-        if not openai_tool_schema["function"]["description"]:
-            raise ValueError("miss function description")
+            raise ValueError("miss `type` in tool schema.")
 
         # Validate whether parameters
         # meet the JSON Schema reference specifications.
@@ -208,14 +205,6 @@ class FunctionTool:
             JSONValidator.check_schema(parameters)
         except SchemaError as e:
             raise e
-        # Check the parameter description
-        properties: Dict[str, Any] = parameters["properties"]
-        for param_name in properties.keys():
-            param_dict = properties[param_name]
-            if "description" not in param_dict:
-                raise ValueError(
-                    f'miss description of parameter "{param_name}"'
-                )
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.
