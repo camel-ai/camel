@@ -18,6 +18,11 @@ from typing import TYPE_CHECKING, List, Union
 if TYPE_CHECKING:
     from anthropic import NotGiven
 
+try:
+    from anthropic import NOT_GIVEN
+except:
+    NOT_GIVEN = None
+
 from camel.configs.base_config import BaseConfig
 
 
@@ -55,14 +60,9 @@ class AnthropicConfig(BaseConfig):
             responses.
             (default: :obj:`5`)
         metadata: An object describing metadata about the request.
-        stream (bool, optional): Whether to incrementally stream the response
-          using server-sent events.
-            (default: :obj:`False`)
-
+        stream (bool, optional): Whether to incrementally stream the response 
+            using server-sent events. (default: :obj:`False`)
     """
-
-    from anthropic import NOT_GIVEN
-
     max_tokens: int = 256
     stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1

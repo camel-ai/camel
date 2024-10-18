@@ -77,6 +77,8 @@ class ModelType(UnifiedModelType, Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
+    MISTRAL_8B = "ministral-8b-latest"
+    MISTRAL_3B = "ministral-3b-latest"
 
     # Reka models
     REKA_CORE = "reka-core"
@@ -173,6 +175,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
         }
 
     @property
@@ -265,6 +269,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
         }:
             return 128_000
         elif self in {
