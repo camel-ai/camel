@@ -11,8 +11,9 @@ class TestDiscordApp(unittest.TestCase):
         os.environ['DISCORD_TOKEN'] = 'fake_token'
 
     def tearDown(self):
-        # Clear the environment variables
-        del os.environ['DISCORD_TOKEN']
+        # Clear the environment variable after the test
+        if 'DISCORD_TOKEN' in os.environ:
+            del os.environ['DISCORD_TOKEN']
 
     @patch('discord.Client')
     def test_init_with_token_from_env(self, mock_discord_client):
