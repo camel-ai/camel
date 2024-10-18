@@ -164,7 +164,7 @@ def test_chat_agent_step_with_structure_response():
         content="Tell a jokes.",
     )
 
-    response = assistant.step(user_msg, output_schema=JokeResponse)
+    response = assistant.step(user_msg, response_format=JokeResponse)
     response_content_json = ast.literal_eval(response.msgs[0].content)
     joke_response_keys = set(
         JokeResponse.model_json_schema()["properties"].keys()

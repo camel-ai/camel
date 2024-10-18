@@ -24,6 +24,8 @@ The following table lists currently supported model platforms by CAMEL.
 | OpenAI Compatible | Depends on the provider | ----- |
 | Mistral AI | mistral-large-2 | N |
 | Mistral AI | pixtral-12b-2409 | Y |
+| Mistral AI | ministral-8b-latest | N |
+| Mistral AI | ministral-3b-latest | N |
 | Mistral AI | open-mistral-nemo | N |
 | Mistral AI | codestral | N |
 | Mistral AI | open-mistral-7b | N |
@@ -82,13 +84,12 @@ ChatAgent(system_msg, model=model)
 And if you want to use an OpenAI-compatible API, you can replace the `model` with the following code:
 
 ```python
-from camel.models.openai_compatibility_model import OpenAICompatibilityModel
-
-model = OpenAICompatibilityModel(
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="a-string-representing-the-model-type",
-    model_config_dict={"max_tokens": 4096},  # and other parameters you want
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
     api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    model_config_dict={"temperature": 0.4, "max_tokens": 4096},
 )
 ```
 

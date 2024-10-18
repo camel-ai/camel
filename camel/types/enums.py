@@ -69,13 +69,15 @@ class ModelType(UnifiedModelType, Enum):
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     # Mistral AI models
-    MISTRAL_LARGE = "mistral-large-latest"
-    MISTRAL_NEMO = "open-mistral-nemo"
-    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_3B = "ministral-3b-latest"
     MISTRAL_7B = "open-mistral-7b"
+    MISTRAL_8B = "ministral-8b-latest"
+    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+    MISTRAL_LARGE = "mistral-large-latest"
     MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
-    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+    MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
 
     # Reka models
@@ -173,6 +175,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.MISTRAL_CODESTRAL_MAMBA,
             ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
         }
 
     @property
@@ -265,6 +269,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
         }:
             return 128_000
         elif self in {
