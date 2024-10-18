@@ -172,7 +172,7 @@ class RolePlayingWorker(Worker):
             role_name="User",
             content=prompt,
         )
-        response = self.summarize_agent.step(req, output_schema=TaskResult)
+        response = self.summarize_agent.step(req, response_format=TaskResult)
         result_dict = ast.literal_eval(response.msg.content)
         task_result = TaskResult(**result_dict)
         task.result = task_result.content

@@ -28,6 +28,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    dependencies_required,
 )
 
 try:
@@ -58,6 +59,7 @@ class MistralModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @dependencies_required('mistralai')
     def __init__(
         self,
         model_type: Union[ModelType, str],

@@ -77,7 +77,7 @@ class SingleAgentWorker(Worker):
             content=prompt,
         )
         try:
-            response = self.worker.step(req, output_schema=TaskResult)
+            response = self.worker.step(req, response_format=TaskResult)
         except Exception as e:
             print(
                 f"{Fore.RED}Error occurred while processing task {task.id}:"

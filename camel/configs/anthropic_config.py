@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from typing import List, Union
 
-from openai._types import NOT_GIVEN, NotGiven
-
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class AnthropicConfig(BaseConfig):
@@ -55,9 +54,7 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`5`)
         metadata: An object describing metadata about the request.
         stream (bool, optional): Whether to incrementally stream the response
-          using server-sent events.
-            (default: :obj:`False`)
-
+            using server-sent events. (default: :obj:`False`)
     """
 
     max_tokens: int = 256

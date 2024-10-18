@@ -68,7 +68,7 @@ class TopArticlesSchema(BaseModel):
 
 
 response = firecrawl.structured_scrape(
-    url='https://news.ycombinator.com', output_schema=TopArticlesSchema
+    url='https://news.ycombinator.com', response_format=TopArticlesSchema
 )
 
 print(response)

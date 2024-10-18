@@ -168,11 +168,11 @@ def test_structured_scrape_failure():
             api_key='test_api_key', api_url='https://api.test.com'
         )
         url = 'https://example.com'
-        output_schema = TopArticlesSchema
+        response_format = TopArticlesSchema
         mock_app.scrape_url.side_effect = Exception('Error')
 
         try:
-            firecrawl.structured_scrape(url, output_schema)
+            firecrawl.structured_scrape(url, response_format)
         except RuntimeError as e:
             assert 'Failed to perform structured scrape' in str(e)
 

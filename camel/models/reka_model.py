@@ -21,6 +21,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    dependencies_required,
 )
 
 if TYPE_CHECKING:
@@ -55,6 +56,7 @@ class RekaModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @dependencies_required('reka')
     def __init__(
         self,
         model_type: Union[ModelType, str],

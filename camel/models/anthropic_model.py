@@ -14,8 +14,6 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from openai import NOT_GIVEN
-
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
@@ -24,6 +22,7 @@ from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
     api_keys_required,
+    dependencies_required,
 )
 
 
@@ -46,6 +45,7 @@ class AnthropicModel(BaseModelBackend):
             will be used. (default: :obj:`None`)
     """
 
+    @dependencies_required('anthropic')
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -122,6 +122,7 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             ChatCompletion: Response in the OpenAI API format.
         """
+        from anthropic import NOT_GIVEN
 
         if messages[0]["role"] == "system":
             sys_msg = str(messages.pop(0)["content"])
