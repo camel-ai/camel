@@ -147,31 +147,35 @@ class BotAgent:
 
 
 class DiscordBot(DiscordApp):
+    r"""A Discord bot that listens for messages, adds them to a queue,
+    and processes them asynchronously.
+
+    This class extends the functionality of `DiscordApp` and adds message
+    handling by pushing messages into a queue for further processing.
+
+    Args:
+        msg_queue (asyncio.Queue): A queue used to store incoming messages for
+            processing.
+        token (Optional[str]): The token used to authenticate the bot with
+            Discord.
+        channel_ids (Optional[list[int]]): A list of Discord channel IDs where
+            the bot is allowed to interact.
+    """
+
     def __init__(
         self,
-        agent: BotAgent,
+        msg_queue: asyncio.Queue,
         token: Optional[str] = None,
         channel_ids: Optional[list[int]] = None,
     ):
-        r"""Initializes the DiscordBot instance to handle Discord messages and
-        communicate with BotAgent.
-
-        Args:
-            agent (BotAgent): The BotAgent responsible for processing messages
-                and generating responses.
-            token (Optional[str]): The token used to authenticate the bot with
-                Discord.
-            channel_ids (Optional[list[int]]): A list of Discord channel IDs
-                where the bot is allowed to interact.
-        """
         super().__init__(token=token, channel_ids=channel_ids)
-        self.agent: BotAgent = agent
+        self._queue: asyncio.Queue = msg_queue
 
     async def on_message(self, message: 'Message') -> None:
         r"""Event handler for received messages. This method processes incoming
         messages, checks whether the message is from the bot itself, and
         determines whether the bot should respond based on channel ID and
-        mentions. Then processes the message using the BotAgent, and responds.
+        mentions.
 
         Args:
             message (discord.Message): The received message object.
@@ -192,9 +196,7 @@ class DiscordBot(DiscordApp):
         ):
             return
 
-        user_raw_msg = message.content
-        response = await self.agent.process(user_raw_msg)
-        await message.channel.send(response)
+        await self._queue.put(message)
 
 
 async def process_message(agent: BotAgent, msg_queue: asyncio.Queue):
@@ -221,12 +223,22 @@ async def process_message(agent: BotAgent, msg_queue: asyncio.Queue):
 
 
 async def main():
+    r"""Main function to initialize and run the Discord bot and message
+    processor.
+
+    This function initializes the message queue, creates an `BotAgent` instance
+    for processing messages, and starts both the Discord bot and the
+    message-processing loop asynchronously.
+    """
+    msg_queue = asyncio.Queue()
+
     agent = BotAgent()
 
     # Initialize the DiscordBot with the message queue
-    discord_bot = DiscordBot(agent=agent)
-
-    await discord_bot.start()
+    discord_bot = DiscordBot(msg_queue=msg_queue)
+    await asyncio.gather(
+        discord_bot.start(), process_message(agent, msg_queue)
+    )
 
 
 if __name__ == "__main__":
