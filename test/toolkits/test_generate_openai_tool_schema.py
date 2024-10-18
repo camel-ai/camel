@@ -1,14 +1,28 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import MagicMock, patch
+
 import pytest
-from camel.models.base_model import BaseModelBackend
-from camel.messages import BaseMessage
+
 from camel.agents import ChatAgent
+from camel.models.base_model import BaseModelBackend
 from camel.toolkits import FunctionTool, generate_docstring
 
 
 def sample_function(a: int, b: str = "default") -> bool:
     """
-    This function checks if the integer is positive and 
+    This function checks if the integer is positive and
     if the string is non-empty.
 
     Args:
@@ -19,6 +33,7 @@ def sample_function(a: int, b: str = "default") -> bool:
         bool: True if both conditions are met, otherwise False.
     """
     return a > 0 and len(b) > 0
+
 
 @patch.object(ChatAgent, 'step')
 @patch('camel.models.ModelFactory.create')
@@ -75,20 +90,19 @@ def test_generate_openai_tool_schema(mock_create_model, mock_chat_agent_step):
                 'properties': {
                     'a': {
                         'type': 'integer',
-                        'description': 'The integer value to check.'
+                        'description': 'The integer value to check.',
                     },
                     'b': {
                         'type': 'string',
                         'description': (
-                            "The string to verify. "
-                            "Default is 'default'."
+                            "The string to verify. " "Default is 'default'."
                         ),
-                        'default': 'default'
-                    }
+                        'default': 'default',
+                    },
                 },
-                'required': ['a']
-            }
-        }
+                'required': ['a'],
+            },
+        },
     }
 
     assert schema == expected_schema
@@ -103,6 +117,7 @@ def mock_model():
     mock_model.model_config_dict = {}
     mock_model.value_for_tiktoken = MagicMock(return_value=1000)
     return mock_model
+
 
 @patch.object(ChatAgent, 'step')
 def test_generate_docstring(mock_chat_agent_step, mock_model):
@@ -120,12 +135,12 @@ def test_generate_docstring(mock_chat_agent_step, mock_model):
     # Mock ChatAgent's step method return value
     mock_message = MagicMock()
     mock_message.content = (
-        f"This function checks if the integer is positive and "
-        f"if the string is non-empty.\n"
-        f"Args:\n    a (int): The integer value to check.\n "
-        f"   b (str): The string to verify. Default is 'default'.\n"
-        f"Returns:\n    bool: True if both conditions are met, "
-        f"otherwise False."
+        "This function checks if the integer is positive and "
+        "if the string is non-empty.\n"
+        "Args:\n    a (int): The integer value to check.\n "
+        "   b (str): The string to verify. Default is 'default'.\n"
+        "Returns:\n    bool: True if both conditions are met, "
+        "otherwise False."
     )
     mock_response = MagicMock()
     mock_response.msgs = [mock_message]
@@ -146,12 +161,12 @@ def test_generate_docstring(mock_chat_agent_step, mock_model):
         )
 
     expected_docstring = (
-        f"This function checks if the integer is positive and "
-        f"if the string is non-empty.\n"
-        f"Args:\n    a (int): The integer value to check.\n "
-        f"   b (str): The string to verify. Default is 'default'.\n"
-        f"Returns:\n    bool: True if both conditions are met, "
-        f"otherwise False."
+        "This function checks if the integer is positive and "
+        "if the string is non-empty.\n"
+        "Args:\n    a (int): The integer value to check.\n "
+        "   b (str): The string to verify. Default is 'default'.\n"
+        "Returns:\n    bool: True if both conditions are met, "
+        "otherwise False."
     )
 
     assert docstring == expected_docstring

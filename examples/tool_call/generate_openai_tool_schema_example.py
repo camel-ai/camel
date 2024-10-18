@@ -12,22 +12,25 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import os
+
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
-import os
 
 # Set OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("API key not found in environment variables.")
 
+
 # Define a function which does't have a docstring
 def get_perfect_square(n: int) -> int:
-    return n ** 2
+    return n**2
+
 
 # Create a model instance
 model_config_dict = ChatGPTConfig(temperature=1.0).as_dict()
@@ -39,33 +42,25 @@ agent_model = ModelFactory.create(
 
 # Create a FunctionTool with the function
 function_tool = FunctionTool(
-    get_perfect_square, 
-    schema_assistant=agent_model,
-    use_schema_assistant=True
+    get_perfect_square, schema_assistant=agent_model, use_schema_assistant=True
 )
 print("\nGenerated OpenAI Tool Schema:")
 print(function_tool.get_openai_tool_schema())
 
 # Set system message for the assistant
 assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant."
+    role_name="Assistant", content="You are a helpful assistant."
 )
 
 # Create a ChatAgent with the tool
 camel_agent = ChatAgent(
-    system_message=assistant_sys_msg,
-    model=agent_model,
-    tools=[function_tool]
+    system_message=assistant_sys_msg, model=agent_model, tools=[function_tool]
 )
 camel_agent.reset()
 
 # Define a user message
 user_prompt = "What is the perfect square of 2024?"
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content=user_prompt
-)
+user_msg = BaseMessage.make_user_message(role_name="User", content=user_prompt)
 
 # Get response from the assistant
 response = camel_agent.step(user_msg)
