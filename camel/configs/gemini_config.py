@@ -87,6 +87,12 @@ class GeminiConfig(BaseConfig):
     @model_validator(mode="before")
     @classmethod
     def model_type_checking(cls, data: Any):
+        r"""Validate the type of tools in the configuration.
+
+        This method ensures that the tools provided in the configuration are
+        instances of `FunctionTool`. If any tool is not an instance of
+        `FunctionTool`, it raises a ValueError.
+        """
         if isinstance(data, dict):
             response_schema = data.get("response_schema")
             safety_settings = data.get("safety_settings")
