@@ -18,7 +18,6 @@ from camel.types import ModelPlatformType, ModelType, TaskType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().as_dict(),
 )
 task_specify_agent = TaskSpecifyAgent(
     model=model, task_type=TaskType.AI_SOCIETY
@@ -54,7 +53,6 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 my_prompt_template = TextPrompt(

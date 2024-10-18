@@ -34,7 +34,6 @@ from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
-from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -169,14 +168,13 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().as_dict(),
             )
         )
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: ModelType = self.model_backend.model_type
+        self.model_type = self.model_backend.model_type
 
         # tool registration
         external_tools = external_tools or []
@@ -417,7 +415,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[Type[BaseModel]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
@@ -428,7 +426,7 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[Type[BaseModel]], optional): A pydantic
+            response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
@@ -439,12 +437,7 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        if (
-            isinstance(self.model_type, ModelType)
-            and "lama" in self.model_type.value
-            or isinstance(self.model_type, str)
-            and "lama" in self.model_type
-        ):
+        if "llama" in self.model_type.lower():
             if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
@@ -525,10 +518,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
-            ):
+            if response_format is not None:
                 (
                     output_messages,
                     finish_reasons,
@@ -536,7 +526,7 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_call,
                     num_tokens,
-                ) = self._structure_output_with_function(output_schema)
+                ) = self._structure_output_with_function(response_format)
                 tool_call_records.append(tool_call)
 
             info = self._step_get_info(
@@ -618,8 +608,8 @@ class ChatAgent(BaseAgent):
                 )
 
             if (
-                output_schema is not None
-                and self.model_type.supports_tool_calling
+                response_format is not None
+                and self.model_type.support_native_tool_calling
             ):
                 (
                     output_messages,
@@ -628,7 +618,7 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_call,
                     num_tokens,
-                ) = self._structure_output_with_function(output_schema)
+                ) = self._structure_output_with_function(response_format)
                 tool_call_records.append(tool_call)
 
             info = self._step_get_info(
@@ -657,7 +647,7 @@ class ChatAgent(BaseAgent):
     async def step_async(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[Type[BaseModel]] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -668,7 +658,7 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[Type[BaseModel]], optional): A pydantic
+            response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
@@ -727,7 +717,10 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None and self.model_type.supports_tool_calling:
+        if (
+            response_format is not None
+            and self.model_type.support_native_tool_calling
+        ):
             (
                 output_messages,
                 finish_reasons,
@@ -735,7 +728,7 @@ class ChatAgent(BaseAgent):
                 response_id,
                 tool_call_record,
                 num_tokens,
-            ) = self._structure_output_with_function(output_schema)
+            ) = self._structure_output_with_function(response_format)
             tool_call_records.append(tool_call_record)
 
         info = self._step_get_info(
@@ -802,7 +795,7 @@ class ChatAgent(BaseAgent):
         return func_record
 
     def _structure_output_with_function(
-        self, output_schema: Type[BaseModel]
+        self, response_format: Type[BaseModel]
     ) -> Tuple[
         List[BaseMessage],
         List[str],
@@ -816,7 +809,7 @@ class ChatAgent(BaseAgent):
         """
         from camel.toolkits import FunctionTool
 
-        schema_json = get_pydantic_object_schema(output_schema)
+        schema_json = get_pydantic_object_schema(response_format)
         func_str = json_to_function_code(schema_json)
         func_callable = func_string_to_callable(func_str)
         func = FunctionTool(func_callable)
@@ -1193,10 +1186,7 @@ class ChatAgent(BaseAgent):
         Returns:
             dict: Usage dictionary.
         """
-        if isinstance(self.model_type, ModelType):
-            encoding = get_model_encoding(self.model_type.value_for_tiktoken)
-        else:
-            encoding = get_model_encoding("gpt-4o-mini")
+        encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))

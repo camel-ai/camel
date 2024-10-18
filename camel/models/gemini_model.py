@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import os
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from camel.configs import Gemini_API_PARAMS
+from camel.configs import Gemini_API_PARAMS, GeminiConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -26,6 +27,7 @@ from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
     api_keys_required,
+    dependencies_required,
 )
 
 if TYPE_CHECKING:
@@ -33,43 +35,49 @@ if TYPE_CHECKING:
 
 
 class GeminiModel(BaseModelBackend):
-    r"""Gemini API in a unified BaseModelBackend interface."""
+    r"""Gemini API in a unified BaseModelBackend interface.
 
-    # NOTE: Currently "stream": True is not supported with Gemini due to the
-    # limitation of the current camel design.
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`genai.GenerativeModel.generate_content()
+            `. If:obj:`None`, :obj:`GeminiConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the gemini service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the gemini service.
+            (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`GeminiTokenCounter` will
+            be used. (default: :obj:`None`)
 
+    Notes:
+        Currently :obj:`"stream": True` is not supported with Gemini due to the
+        limitation of the current camel design.
+    """
+
+    @dependencies_required('google')
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for Gemini backend.
-
-        Args:
-            model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into generate_content().
-            api_key (Optional[str]): The API key for authenticating with the
-                gemini service. (default: :obj:`None`)
-            url (Optional[str]): The url to the gemini service.
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `GeminiTokenCounter` will be
-                used.
-        """
-        import os
-
         import google.generativeai as genai
         from google.generativeai.types.generation_types import GenerationConfig
 
+        if model_config_dict is None:
+            model_config_dict = GeminiConfig().as_dict()
+
+        api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
-        self._client = genai.GenerativeModel(self.model_type.value)
+        self._client = genai.GenerativeModel(self.model_type)
 
         keys = list(self.model_config_dict.keys())
         generation_config_dict = {
@@ -143,8 +151,8 @@ class GeminiModel(BaseModelBackend):
         return self.model_config_dict.get('stream', False)
 
     def to_gemini_req(self, messages: List[OpenAIMessage]) -> 'ContentsType':
-        r"""Converts the request from the OpenAI API format to
-            the Gemini API request format.
+        r"""Converts the request from the OpenAI API format to the Gemini API
+        request format.
 
         Args:
             messages: The request object from the OpenAI API.
@@ -189,7 +197,7 @@ class GeminiModel(BaseModelBackend):
             id=f"chatcmpl-{uuid.uuid4().hex!s}",
             object="chat.completion",
             created=int(time.time()),
-            model=self.model_type.value,
+            model=self.model_type,
             choices=[],
         )
         for i, candidate in enumerate(response.candidates):

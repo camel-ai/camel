@@ -20,7 +20,12 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 QUERY_TYPE_LIST = ["extremely long-tail", "long-tail", "common"]
 QUERY_LENGTH_LIST = ["less than 5 words", "5 to 15 words", "at least 10 words"]

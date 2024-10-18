@@ -15,10 +15,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Sequence, Union
 
-from openai._types import NOT_GIVEN, NotGiven
 from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class SambaFastAPIConfig(BaseConfig):

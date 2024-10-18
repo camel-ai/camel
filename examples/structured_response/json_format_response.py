@@ -15,7 +15,6 @@
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
@@ -29,7 +28,6 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 # Set agent
@@ -48,7 +46,7 @@ user_msg = BaseMessage.make_user_message(
 )
 
 # Get response information
-response = camel_agent.step(user_msg, output_schema=JokeResponse)
+response = camel_agent.step(user_msg, response_format=JokeResponse)
 print(response.msgs[0].content)
 """
 {'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"

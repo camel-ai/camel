@@ -28,6 +28,7 @@ from .enums import (
     VoiceType,
 )
 from .openai_types import (
+    NOT_GIVEN,
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
@@ -38,7 +39,9 @@ from .openai_types import (
     ChatCompletionUserMessageParam,
     Choice,
     CompletionUsage,
+    NotGiven,
 )
+from .unified_model_type import UnifiedModelType
 
 __all__ = [
     'RoleType',
@@ -59,11 +62,13 @@ __all__ = [
     'ChatCompletionAssistantMessageParam',
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
-    'OpenAIVideoType',
     'OpenAIImageType',
     'OpenAIVisionDetailType',
     'OpenAPIName',
     'ModelPlatformType',
     'AudioModelType',
     'VoiceType',
+    'UnifiedModelType',
+    'NOT_GIVEN',
+    'NotGiven',
 ]

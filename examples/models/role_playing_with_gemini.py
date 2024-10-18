@@ -14,7 +14,6 @@
 
 from colorama import Fore
 
-from camel.configs import GeminiConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType
@@ -27,7 +26,6 @@ def main(model_type=None) -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.GEMINI,
         model_type=model_type,
-        model_config_dict=GeminiConfig().as_dict(),
     )
 
     # Update agent_kwargs to use the created models

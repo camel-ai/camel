@@ -27,7 +27,6 @@ parametrize = pytest.mark.parametrize(
         ModelFactory.create(
             ModelPlatformType.OPENAI,
             model_type=ModelType.STUB,
-            model_config_dict={},
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -45,7 +44,6 @@ def test_single_agent(model):
         ModelFactory.create(
             ModelPlatformType.OPENAI,
             model_type=ModelType.STUB,
-            model_config_dict={},
         )
     ],
 )
@@ -69,7 +67,6 @@ def test_code_generate_metadata(model):
         ModelFactory.create(
             ModelPlatformType.OPENAI,
             model_type=ModelType.STUB,
-            model_config_dict={},
         )
     ],
 )

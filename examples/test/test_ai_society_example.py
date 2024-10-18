@@ -14,15 +14,13 @@
 from mock import patch
 
 import examples.ai_society.role_playing
-import examples.function_call.role_playing_with_functions
-import examples.models.role_playing_with_open_source_model
+import examples.tool_call.role_playing_with_functions
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 test_model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.STUB,
-    model_config_dict={},
 )
 
 
@@ -35,13 +33,4 @@ def test_ai_society_role_playing_example():
 
 def test_role_playing_with_function_example():
     with patch('time.sleep', return_value=None):
-        examples.function_call.role_playing_with_functions.main(
-            chat_turn_limit=2
-        )
-
-
-def test_role_playing_with_open_source_model():
-    with patch('time.sleep', return_value=None):
-        examples.models.role_playing_with_open_source_model.main(
-            chat_turn_limit=2
-        )
+        examples.tool_call.role_playing_with_functions.main(chat_turn_limit=2)
