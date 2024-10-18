@@ -98,3 +98,39 @@ def test_query(vector_retriever):
     results = vector_retriever.query(query, top_k=top_k)
     assert len(results) == 1
     assert results[0]['similarity score'] == '0.8'
+
+
+# Test query with no results found
+def test_query_no_results(vector_retriever):
+    query = "test query"
+    top_k = 1
+    # Setup mock behavior for vector storage query
+    vector_retriever.storage.load = Mock()
+    vector_retriever.storage.query.return_value = []
+
+    with pytest.raises(
+        ValueError,
+        match="Query result is empty, please check if the "
+        "vector storage is empty.",
+    ):
+        vector_retriever.query(query, top_k=top_k)
+
+
+# Test query with payload None
+def test_query_payload_none(vector_retriever):
+    query = "test query"
+    top_k = 1
+    # Setup mock behavior for vector storage query
+    vector_retriever.storage.load = Mock()
+    vector_retriever.storage.query.return_value = [
+        Mock(similarity=0.8, record=Mock(payload=None))
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Payload of vector storage is None, "
+            "please check the collection."
+        ),
+    ):
+        vector_retriever.query(query, top_k=top_k)
