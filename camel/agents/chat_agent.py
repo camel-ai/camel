@@ -106,6 +106,11 @@ class FunctionCallingRecord(BaseModel):
         )
 
     def as_dict(self) -> dict[str, Any]:
+        r"""Returns the function calling record as a dictionary.
+
+        Returns:
+            dict[str, Any]: The function calling record as a dictionary.
+        """
         return self.model_dump()
 
 
@@ -221,6 +226,15 @@ class ChatAgent(BaseAgent):
 
     # ruff: noqa: E501
     def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
+        r"""Generates a tool prompt based on the provided tool schema list.
+
+        Args:
+            tool_schema_list (List[Dict]): A list of dictionaries, each containing
+                a tool schema.
+
+        Returns:
+            str: A string representing the tool prompt.
+        """
         tool_prompts = []
 
         for tool in tool_schema_list:
@@ -256,6 +270,14 @@ class ChatAgent(BaseAgent):
         return final_prompt
 
     def _parse_tool_response(self, response: str):
+        r"""Parses the tool response to extract the function name and arguments.
+
+        Args:
+            response (str): The response from the model containing the function call.
+
+        Returns:
+            Optional[Dict[str, Any]]: The parsed function name and arguments if found, otherwise None.
+        """
         function_regex = r"<function=(\w+)>(.*?)</function>"
         match = re.search(function_regex, response)
 
@@ -272,9 +294,6 @@ class ChatAgent(BaseAgent):
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
         stored messages.
-
-        Returns:
-            List[BaseMessage]: The stored messages.
         """
         self.terminated = False
         self.init_messages()
@@ -292,7 +311,7 @@ class ChatAgent(BaseAgent):
         return self._system_message
 
     @system_message.setter
-    def system_message(self, message: BaseMessage):
+    def system_message(self, message: BaseMessage) -> None:
         r"""The setter method for the property :obj:`system_message`.
 
         Args:
@@ -827,6 +846,14 @@ class ChatAgent(BaseAgent):
     ]:
         r"""Internal function of structuring the output of the agent based on
         the given output schema.
+
+        Args:
+            output_schema (Type[BaseModel]): The output schema to use for structuring the output.
+
+        Returns:
+            Tuple[List[BaseMessage], List[str], Dict[str, int], str, FunctionCallingRecord, int]:
+                A tuple containing the output messages, finish reasons, usage dictionary,
+                response ID, function calling record, and number of tokens.
         """
         from camel.toolkits import FunctionTool
 
@@ -919,9 +946,31 @@ class ChatAgent(BaseAgent):
         num_tokens: int,
         external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
-        # Loop over responses terminators, get list of termination
-        # tuples with whether the terminator terminates the agent
-        # and termination reason
+        """
+        Process the output of a chat step and gather information about the step.
+
+        This method checks for termination conditions, updates the agent's state,
+        and collects information about the chat step, including tool calls and
+        termination reasons.
+
+        Args:
+            output_messages (List[BaseMessage]): The messages generated in this step.
+            finish_reasons (List[str]): The reasons for finishing the generation for each message.
+            usage_dict (Dict[str, int]): Dictionary containing token usage information.
+            response_id (str): The ID of the response from the model.
+            tool_calls (List[FunctionCallingRecord]): Records of function calls made during this step.
+            num_tokens (int): The number of tokens used in this step.
+            external_tool_request (Optional[ChatCompletionMessageToolCall]): Any external tool request made during this step.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing information about the chat step,
+            including termination status, reasons, and tool call information.
+
+        Note:
+            This method iterates over all response terminators and checks if any of them
+            signal termination. If a terminator signals termination, the agent's state
+            is updated accordingly, and the termination reason is recorded.
+        """
         termination = [
             terminator.is_terminated(output_messages)
             for terminator in self.response_terminators
@@ -953,6 +1002,7 @@ class ChatAgent(BaseAgent):
         self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
+        Process a batch response from the model and extract the necessary information.
 
         Args:
             response (dict): Model response.
@@ -986,6 +1036,17 @@ class ChatAgent(BaseAgent):
         )
 
     def _safe_model_dump(self, obj):
+        r"""Safely dump a Pydantic model to a dictionary.
+
+        This method attempts to use the `model_dump` method if available,
+        otherwise it falls back to the `dict` method.
+
+        Args:
+            obj: The Pydantic model instance to be dumped.
+
+        Returns:
+            dict: A dictionary representation of the Pydantic model.
+        """
         # Check if the `model_dump` method exists (Pydantic v2)
         if hasattr(obj, 'model_dump'):
             return obj.model_dump()
@@ -1000,7 +1061,7 @@ class ChatAgent(BaseAgent):
         response: Stream[ChatCompletionChunk],
         prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
-        r"""
+        r"""Process a stream response from the model and extract the necessary information.
 
         Args:
             response (dict): Model response.
