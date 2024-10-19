@@ -272,7 +272,6 @@ class FunctionTool:
 
         if use_schema_assistant:
             try:
-                print(self.openai_tool_schema)
                 self.validate_openai_tool_schema(self.openai_tool_schema)
             except Exception:
                 print(
