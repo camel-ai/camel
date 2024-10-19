@@ -35,9 +35,14 @@ def test_query_data_commons():
 
     with patch('datacommons.query') as mock_query:
         mock_query.return_value = expected_result
-        result = dc_toolkit.query_data_commons(query)
-        assert result == expected_result
-    print("test_query_data_commons passed successfully")
+        try:
+            result = dc_toolkit.query_data_commons(query)
+            assert result == expected_result
+            print("test_query_data_commons passed successfully")
+        except Exception as e:
+            print(f"An error occurred: {e!s}")
+            print(f"Result: {result}")
+            raise
 
 
 def test_get_triples():
@@ -71,19 +76,28 @@ def test_get_triples():
 
 def test_get_property_labels():
     dc_toolkit = DataCommonsToolkit()
-    dcids = ['dc/c3j78rpyssdmf', 'dc/7hfhd2ek8ppd2']
+    dcids = ['geoId/5508']
     expected_result = {
-        'dc/c3j78rpyssdmf': ['biosampleOntology'],
-        'dc/7hfhd2ek8ppd2': ['biosampleOntology'],
+        'geoId/5508': [
+            'containedInPlace',
+            'geoId',
+            'geoJsonCoordinates',
+            'geoOverlaps',
+            'kmlCoordinates',
+            'landArea',
+            'latitude',
+            'longitude',
+            'name',
+            'provenance',
+            'typeOf',
+            'usCensusGeoId',
+            'waterArea',
+        ]
     }
 
-    with patch(
-        'datacommons_pandas.get_property_labels'
-    ) as mock_get_property_labels:
+    with patch('datacommons.get_property_labels') as mock_get_property_labels:
         mock_get_property_labels.return_value = expected_result
         result = dc_toolkit.get_property_labels(dcids, out=True)
-        print("Expected result:", expected_result)
-        print("Actual result:", result)
         assert result == expected_result
         mock_get_property_labels.assert_called_once_with(dcids, out=True)
     print("test_get_property_labels passed successfully")
@@ -91,18 +105,46 @@ def test_get_property_labels():
 
 def test_get_property_values():
     dc_toolkit = DataCommonsToolkit()
-    dcids = ["nces/360007702877", "nces/062961004587"]
-    prop = 'address'
+    dcids = ["country/MDG"]
+    prop, out, value_type = 'affectedPlace', False, 'EarthquakeEvent'
     expected_result = {
-        'nces/360007702877': ['345 Chambers St, New York, New York'],
-        'nces/062961004587': ['780 Arastradero Rd., Palo Alto, California'],
+        'country/MDG': [
+            'earthquake/us10007snb',
+            'earthquake/us200040me',
+            'earthquake/us60003r15',
+            'earthquake/us70009fim',
+            'earthquake/us7000h164',
+            'earthquake/usc000evr6',
+            'earthquake/usp00005zf',
+            'earthquake/usp00006yt',
+            'earthquake/usp0000afz',
+            'earthquake/usp0001fcd',
+            'earthquake/usp0001ss5',
+            'earthquake/usp00020ud',
+            'earthquake/usp0002kfd',
+            'earthquake/usp0004qn4',
+            'earthquake/usp0005gu9',
+            'earthquake/usp0007k9j',
+            'earthquake/usp0008vc6',
+            'earthquake/usp00091ab',
+            'earthquake/usp000dckw',
+            'earthquake/usp000fu24',
+            'earthquake/usp000gd93',
+            'earthquake/usp000gmuf',
+            'earthquake/usp000h6zw',
+            'earthquake/usp000jgbb',
+        ]
     }
 
     with patch('datacommons.get_property_values') as mock_get_property_values:
         mock_get_property_values.return_value = expected_result
-        result = dc_toolkit.get_property_values(dcids, prop)
+        result = dc_toolkit.get_property_values(
+            dcids, prop, out, value_type, 10
+        )
         assert result == expected_result
-        mock_get_property_values.assert_called_once_with(dcids, prop)
+        mock_get_property_values.assert_called_once_with(
+            dcids, prop, out, value_type, 10
+        )
     print("test_get_property_values passed successfully")
 
 
@@ -134,7 +176,9 @@ def test_get_stat_value():
         mock_get_stat_value.return_value = expected_result
         result = dc_toolkit.get_stat_value(place, stat_var, unit=unit)
         assert result == expected_result
-        mock_get_stat_value.assert_called_once_with(place, stat_var, unit=unit)
+        mock_get_stat_value.assert_called_once_with(
+            place, stat_var, None, None, None, unit, None
+        )
     print("test_get_stat_value passed successfully")
 
 
@@ -201,6 +245,6 @@ if __name__ == '__main__':
     test_get_property_labels()
     test_get_property_values()
     test_get_places_in()
-    test_get_stat_value()
     test_get_stat_all()
+    test_get_stat_value()
     print("All tests completed successfully!")

@@ -11,13 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import datacommons
 import datacommons_pandas
 
+from camel.toolkits.base import BaseToolkit
 
-class DataCommonsToolkit:
+
+class DataCommonsToolkit(BaseToolkit):
     r"""A class representing a toolkit for Data Commons.
 
     This class provides methods for querying and retrieving data from the
@@ -36,15 +38,11 @@ class DataCommonsToolkit:
     @staticmethod
     def query_data_commons(
         query_string: str,
-        select_function: Optional[Callable[[Dict[str, Any]], bool]] = None,
     ) -> List[Dict[str, Any]]:
         r"""Query the Data Commons knowledge graph using SPARQL.
 
         Args:
             query_string (str): A SPARQL query string.
-            select_function (callable, optional): A function to select
-            rows to be returned. It should take a dict as input and
-            return a boolean.
 
         Returns:
             list: A list of dictionaries, each representing a node matching
@@ -71,11 +69,6 @@ class DataCommonsToolkit:
             processed_results = [
                 {key: value for key, value in row.items()} for row in results
             ]
-
-            if select_function:
-                processed_results = [
-                    row for row in processed_results if select_function(row)
-                ]
 
             return processed_results
 
@@ -149,7 +142,7 @@ class DataCommonsToolkit:
             return {}
 
     @staticmethod
-    def get_stat_series(
+    def get_stat_time_series(
         place: str,
         stat_var: str,
         measurement_method: Optional[str] = None,
@@ -174,10 +167,6 @@ class DataCommonsToolkit:
         Returns:
             Dict[str, Any]: A dictionary containing the statistical time
                 series data.
-
-        Note:
-        - The function will raise a ValueError if any of the required
-          arguments are missing.
 
         Reference:
             https://docs.datacommons.org/api/python/stat_series.html
@@ -220,7 +209,7 @@ class DataCommonsToolkit:
             https://docs.datacommons.org/api/python/property_label.html
         """
         try:
-            result = datacommons.get_property_labels(dcids, out)
+            result = datacommons.get_property_labels(dcids, out=out)
             if len(result) == 0:
                 print(f"No data found for dcids '{dcids}'.")
                 return {}
@@ -232,12 +221,12 @@ class DataCommonsToolkit:
 
     @staticmethod
     def get_property_values(
-        dcids,
-        prop,
-        out=True,
-        value_type=None,
-        limit=datacommons.utils._MAX_LIMIT,
-    ):
+        dcids: Union[str, List[str]],
+        prop: str,
+        out: bool = True,
+        value_type: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
         r"""Retrieves and analyzes property values for given DCIDs.
 
         Args:
@@ -309,14 +298,14 @@ class DataCommonsToolkit:
 
     @staticmethod
     def get_stat_value(
-        place,
-        stat_var,
-        date=None,
-        measurement_method=None,
-        observation_period=None,
-        unit=None,
-        scaling_factor=None,
-    ):
+        place: str,
+        stat_var: str,
+        date: Optional[str] = None,
+        measurement_method: Optional[str] = None,
+        observation_period: Optional[str] = None,
+        unit: Optional[str] = None,
+        scaling_factor: Optional[str] = None,
+    ) -> Optional[float]:
         r"""Retrieves the value of a statistical variable for a given place
         and date.
 
