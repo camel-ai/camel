@@ -24,8 +24,7 @@ from pydantic.fields import FieldInfo
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
-from camel.models.base_model import BaseModelBackend
+from camel.models import ModelFactory, BaseModelBackend
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
 
@@ -203,7 +202,7 @@ def generate_docstring(
         content="You are a helpful assistant.",
     )
     docstring_assistant = ChatAgent(
-        assistant_sys_msg, model=model, token_limit=4096
+        assistant_sys_msg, model=model
     )
 
     # Create user message to prompt the assistant
@@ -230,12 +229,12 @@ class FunctionTool:
         openai_tool_schema (Optional[Dict[str, Any]], optional): A user-defined
             openai tool schema to override the default result.
             (default: :obj:`None`)
-        schema_assistant (Optional[BaseModelBackend], optional): An assistant
+        schema_assistant_model (Optional[BaseModelBackend], optional): An assistant
             (e.g., an LLM model) used to generate the schema if no valid
             schema is provided and use_schema_assistant is enabled.
             (default: :obj:`None`)
         use_schema_assistant (bool, optional): Whether to enable the use of
-            the schema_assistant to automatically generate the schema if
+            the `schema_assistant` to automatically generate the schema if
             validation fails or no valid schema is provided.
             (default: :obj:`False`)
     """
@@ -508,7 +507,7 @@ class FunctionTool:
                     f"Please set the OpenAI tool schema manually."
                 ) from e
 
-        function_string = getsource(self.func)
+        code = getsource(self.func)
 
         max_retries = 2
         retries = 0
@@ -526,17 +525,13 @@ class FunctionTool:
                 # Validate the schema
                 self.validate_openai_tool_schema(schema)
 
-                print(
-                    f"Successfully generated the OpenAI tool schema for "
-                    f"the function {self.func.__name__}."
-                )
                 return schema
 
             except Exception as e:
                 retries += 1
                 if retries == max_retries:
                     raise ValueError(
-                        f"Failed to generate the OpenAI tool Schema. "
+                        f"Failed to generate the OpenAI tool Schema after {max_retries} retries. "
                         f"Please set the OpenAI tool schema for "
                         f"function {self.func.__name__} manually."
                     ) from e

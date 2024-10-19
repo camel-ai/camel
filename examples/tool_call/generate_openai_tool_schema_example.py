@@ -15,7 +15,7 @@
 import os
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
+from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import FunctionTool
