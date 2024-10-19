@@ -42,7 +42,9 @@ agent_model = ModelFactory.create(
 
 # Create a FunctionTool with the function
 function_tool = FunctionTool(
-    get_perfect_square, schema_assistant=agent_model, use_schema_assistant=True
+    get_perfect_square,
+    schema_assistant_model=agent_model,
+    use_schema_assistant=True,
 )
 print("\nGenerated OpenAI Tool Schema:")
 print(function_tool.get_openai_tool_schema())
