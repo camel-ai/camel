@@ -24,7 +24,7 @@ from camel.toolkits.twitter_toolkit import (
 )
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(autouse=True)
 def set_env_vars(monkeypatch):
     monkeypatch.setenv("TWITTER_CONSUMER_KEY", "12345")
     monkeypatch.setenv("TWITTER_CONSUMER_SECRET", "12345")
