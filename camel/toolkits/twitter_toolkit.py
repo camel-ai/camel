@@ -72,8 +72,8 @@ def create_tweet(
         https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/post-tweets
     """
     auth = OAuth1(
-        os.getenv("TWITTER_API_KEY"),
-        os.getenv("TWITTER_API_KEY_SECRET"),
+        os.getenv("TWITTER_CONSUMER_KEY"),
+        os.getenv("TWITTER_CONSUMER_SECRET"),
         os.getenv("TWITTER_ACCESS_TOKEN"),
         os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
     )
@@ -223,6 +223,9 @@ def get_user_by_username(username: str) -> str:
     This function sends a GET request to the Twitter API to retrieve the
     user's profile information, including their pinned tweet.
     It then formats this information into a readable report.
+
+    Args:
+        username (str): The username (handle) of the user to retrieve.
 
     Returns:
         str: A formatted report of the user's Twitter profile information.
