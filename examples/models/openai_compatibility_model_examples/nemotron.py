@@ -19,9 +19,9 @@ from camel.types import ModelPlatformType
 
 # Take calling nemotron-70b-instruct model as an example
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI_COMPATIBILITY_MODEL,
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="nvidia/llama-3.1-nemotron-70b-instruct",
-    api_key="nvapi-xxx",
+    api_key="nvapi-xx",
     url="https://integrate.api.nvidia.com/v1",
     model_config_dict={"temperature": 0.4},
 )
@@ -31,7 +31,7 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
     content="You are a helpful assistant.",
 )
 
-agent = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
+agent = ChatAgent(assistant_sys_msg, model=model)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",

@@ -145,22 +145,6 @@ class VLLMModel(BaseModelBackend):
         return response
 
     @property
-    def token_limit(self) -> int:
-        r"""Returns the maximum token limit for the given model.
-
-        Returns:
-            int: The maximum token limit for the given model.
-        """
-        max_tokens = self.model_config_dict.get("max_tokens")
-        if isinstance(max_tokens, int):
-            return max_tokens
-        print(
-            "Must set `max_tokens` as an integer in `model_config_dict` when"
-            " setting up the model. Using 4096 as default value."
-        )
-        return 4096
-
-    @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial
         results each time.
