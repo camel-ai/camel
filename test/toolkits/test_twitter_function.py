@@ -14,12 +14,22 @@
 import textwrap
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from camel.toolkits.twitter_toolkit import (
     create_tweet,
     delete_tweet,
     get_my_user_profile,
     get_user_by_username,
 )
+
+
+@pytest.fixture(scope="module", autouse=True)
+def set_env_vars(monkeypatch):
+    monkeypatch.setenv("TWITTER_CONSUMER_KEY", "12345")
+    monkeypatch.setenv("TWITTER_CONSUMER_SECRET", "12345")
+    monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "12345")
+    monkeypatch.setenv("TWITTER_ACCESS_TOKEN_SECRET", "12345")
 
 
 def test_create_tweet(monkeypatch):
