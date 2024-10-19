@@ -312,8 +312,6 @@ class SearchToolkit(BaseToolkit):
     ) -> List[Dict[str, Any]]:
         r"""Use Tavily Search API to search information for the given query.
 
-        !! A formal test is not done yet !!
-
         Args:
             query (str): The query to be searched.
             num_results (int): The number of search results to retrieve
@@ -329,7 +327,7 @@ class SearchToolkit(BaseToolkit):
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries representing search
-            results. Each dictionary contains:
+                results. Each dictionary contains:
                 - 'result_id' (int): The result's index.
                 - 'title' (str): The title of the result.
                 - 'description' (str): A brief description of the result.
@@ -341,7 +339,7 @@ class SearchToolkit(BaseToolkit):
                 - 'published_date' (str): Publication date for news topics
                   (if available).
 
-        Example:
+        Returns:
             {
                 'result_id': 1,
                 'title': 'OpenAI',
@@ -353,12 +351,7 @@ class SearchToolkit(BaseToolkit):
                 'published_date': '2024-09-15'
             }
         """
-        from tavily import (
-            InvalidAPIKeyError,
-            MissingAPIKeyError,
-            TavilyClient,
-            UsageLimitExceededError,
-        )
+        from tavily import TavilyClient
 
         Tavily_API_KEY = os.getenv("TAVILY_API_KEY")
         if not Tavily_API_KEY:
@@ -372,17 +365,6 @@ class SearchToolkit(BaseToolkit):
         try:
             results = client.search(query, max_results=num_results, **kwargs)
             return results
-        except MissingAPIKeyError:
-            return [{"error": "Missing API key."}]
-        except InvalidAPIKeyError:
-            return [{"error": "Invalid API key."}]
-        except UsageLimitExceededError:
-            return [
-                {
-                    "error": "Usage limit exceeded. Check your plan's "
-                    "usage limits."
-                }
-            ]
         except Exception as e:
             return [{"error": f"An unexpected error occurred: {e!s}"}]
 
