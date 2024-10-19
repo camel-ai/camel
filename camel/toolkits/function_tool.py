@@ -251,10 +251,10 @@ class FunctionTool:
             if `use_schema_assistant` is enabled and no valid schema is
             provided.
             (default: :obj:`None`)
-        schema_generation_max_retries (Optional[int], optional): The maximum
+        schema_generation_max_retries (int, optional): The maximum
             number of attempts to retry schema generation using the schema
             assistant model if the previous attempts fail.
-            (default: :obj:`2`)
+            (default: 2)
     """
 
     def __init__(
@@ -263,7 +263,7 @@ class FunctionTool:
         openai_tool_schema: Optional[Dict[str, Any]] = None,
         use_schema_assistant: Optional[bool] = False,
         schema_assistant_model: Optional[BaseModelBackend] = None,
-        schema_generation_max_retries: Optional[int] = 2,
+        schema_generation_max_retries: int = 2,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
