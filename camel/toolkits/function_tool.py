@@ -185,14 +185,18 @@ class FunctionTool:
         Raises:
             ValidationError: If the schema does not comply with the
                 specifications.
-            ValueError: If the function description or parameter descriptions
-                are missing in the schema.
             SchemaError: If the parameters do not meet JSON Schema reference
                 specifications.
         """
         # Check the type
         if not openai_tool_schema["type"]:
             raise ValueError("miss `type` in tool schema.")
+
+        # Check the function description, if no description then raise warming
+        if not openai_tool_schema["function"].get("description"):
+            warnings.warn(f"""Function description is missing for 
+                          {openai_tool_schema['function']['name']}. This may 
+                          affect the quality of tool calling.""")
 
         # Validate whether parameters
         # meet the JSON Schema reference specifications.
@@ -205,6 +209,15 @@ class FunctionTool:
             JSONValidator.check_schema(parameters)
         except SchemaError as e:
             raise e
+
+        # Check the parameter description, if no description then raise warming
+        properties: Dict[str, Any] = parameters["properties"]
+        for param_name in properties.keys():
+            param_dict = properties[param_name]
+            if "description" not in param_dict:
+                warnings.warn(f"""Parameter description is missing for 
+                            {param_dict}. This may affect the quality of tool 
+                            calling.""")
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.

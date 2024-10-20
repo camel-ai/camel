@@ -389,6 +389,10 @@ def test_correct_function():
 def test_function_without_doc():
     add = FunctionTool(add_without_doc)
     add.set_function_name("add")
+    with pytest.warns(UserWarning, match="Function description is missing"):
+        _ = FunctionTool(add_without_doc).get_openai_function_schema()
+    with pytest.warns(UserWarning, match="Parameter description is missing"):
+        _ = FunctionTool(add_without_doc).get_openai_function_schema()
     assert add.get_openai_tool_schema() == tool_schema_without_docs
 
 
