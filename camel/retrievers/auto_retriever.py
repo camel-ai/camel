@@ -222,6 +222,8 @@ class AutoRetriever:
                 `contents` is empty.
             RuntimeError: If any errors occur during the retrieve process.
         """
+        from unstructured.documents.elements import Element
+
         if not contents:
             raise ValueError("content cannot be empty.")
 
