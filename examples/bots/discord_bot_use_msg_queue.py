@@ -20,19 +20,15 @@ from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
-try:
-    from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
-
 if TYPE_CHECKING:
     from discord import Message
+    from unstructured.documents.elements import Element
 
 
 class BotAgent:
     def __init__(
         self,
-        contents: Union[str, List[str], Element, List[Element]] = None,
+        contents: Union[str, List[str], "Element", List["Element"]] = None,
         auto_retriever: Optional[AutoRetriever] = None,
         similarity_threshold: float = 0.5,
         vector_storage_local_path: str = "local_data/",

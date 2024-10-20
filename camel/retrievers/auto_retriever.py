@@ -14,7 +14,16 @@
 import datetime
 import os
 import re
-from typing import Collection, List, Optional, Sequence, Tuple, Union
+import uuid
+from typing import (
+    TYPE_CHECKING,
+    Collection,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -27,10 +36,8 @@ from camel.storages import (
 from camel.types import StorageType
 from camel.utils import Constants
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 
 class AutoRetriever:
@@ -98,7 +105,9 @@ class AutoRetriever:
             f"Unsupported vector storage type: {self.storage_type}"
         )
 
-    def _collection_name_generator(self, content: Union[str, Element]) -> str:
+    def _collection_name_generator(
+        self, content: Union[str, "Element"]
+    ) -> str:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
@@ -108,9 +117,10 @@ class AutoRetriever:
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+        from unstructured.documents.elements import Element
 
         if isinstance(content, Element):
-            content = content.metadata.file_directory
+            content = content.metadata.file_directory or str(uuid.uuid4())
 
         collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
 
@@ -175,7 +185,7 @@ class AutoRetriever:
     def run_vector_retriever(
         self,
         query: str,
-        contents: Union[str, List[str], Element, List[Element]],
+        contents: Union[str, List[str], "Element", List["Element"]],
         top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
@@ -212,12 +222,20 @@ class AutoRetriever:
                 `contents` is empty.
             RuntimeError: If any errors occur during the retrieve process.
         """
+        from unstructured.documents.elements import Element
+
         if not contents:
             raise ValueError("content cannot be empty.")
 
-        contents = (
-            [contents] if isinstance(contents, (str, Element)) else contents
-        )
+        # Normalize contents to a list
+        if isinstance(contents, str):
+            contents = [contents]
+        elif isinstance(contents, Element):
+            contents = [contents]
+        elif not isinstance(contents, list):
+            raise ValueError(
+                "contents must be a string, Element, or a list of them."
+            )
 
         all_retrieved_info = []
         for content in contents:

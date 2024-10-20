@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import uuid
 import warnings
-from io import IOBase
 from typing import (
+    IO,
     TYPE_CHECKING,
     Any,
     Dict,
@@ -42,32 +42,32 @@ class UnstructuredIO:
     @staticmethod
     def create_element_from_text(
         text: str,
-        element_id: Optional[Union[str, uuid.UUID]] = None,
+        element_id: Optional[str] = None,
         embeddings: Optional[List[float]] = None,
         filename: Optional[str] = None,
         file_directory: Optional[str] = None,
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
-        parent_id: Optional[Union[str, uuid.UUID]] = None,
+        parent_id: Optional[str] = None,
     ) -> "Element":
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
         Args:
             text (str): The text content for the element.
-            element_id (Optional[Union[str, uuid.UUID]], optional): Unique
-                identifier for the element. Defaults to `None`.
-            embeddings (Optional[List[float]], optional): A list of float
+            element_id (str, optional): Unique identifier for the element.
+                Defaults to `None`.
+            embeddings (List[float], optional): A list of float
                 numbers representing the text embeddings. Defaults to `None`.
-            filename (Optional[str], optional): The name of the file the
+            filename (str, optional): The name of the file the
                 element is associated with. Defaults to `None`.
-            file_directory (Optional[str], optional): The directory path where
+            file_directory (str, optional): The directory path where
                 the file is located. Defaults to `None`.
-            last_modified (Optional[str], optional): The last modified date of
+            last_modified (str, optional): The last modified date of
                 the file. Defaults to `None`.
-            filetype (Optional[str], optional): The type of the file. Defaults
+            filetype (str, optional): The type of the file. Defaults
                 to `None`.
-            parent_id (Optional[Union[str, uuid.UUID]], optional): The
+            parent_id (str, optional): The
                 identifier of the parent element. Defaults to `None`.
 
         Returns:
@@ -86,7 +86,7 @@ class UnstructuredIO:
 
         return Text(
             text=text,
-            element_id=element_id or uuid.uuid4(),
+            element_id=element_id or str(uuid.uuid4()),
             metadata=metadata,
             embeddings=embeddings,
         )
@@ -121,25 +121,23 @@ class UnstructuredIO:
         import os
         from urllib.parse import urlparse
 
+        from unstructured.partition.auto import partition
+
         # Check if the input is a URL
         parsed_url = urlparse(input_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
 
+        # Handling URL
         if is_url:
-            # Handling URL
-            from unstructured.partition.html import partition_html
-
             try:
-                elements = partition_html(url=input_path, **kwargs)
+                elements = partition(url=input_path, **kwargs)
                 return elements
             except Exception:
                 warnings.warn(f"Failed to parse the URL: {input_path}")
                 return None
 
+        # Handling file
         else:
-            # Handling file
-            from unstructured.partition.auto import partition
-
             # Check if the file exists
             if not os.path.exists(input_path):
                 raise FileNotFoundError(
@@ -157,12 +155,12 @@ class UnstructuredIO:
 
     @staticmethod
     def parse_bytes(
-        file: IOBase, **kwargs: Any
+        file: IO[bytes], **kwargs: Any
     ) -> Union[List["Element"], None]:
         r"""Parses a bytes stream and converts its contents into elements.
 
         Args:
-            file (IOBase): The file in bytes format to be parsed.
+            file (IO[bytes]): The file in bytes format to be parsed.
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
@@ -185,8 +183,6 @@ class UnstructuredIO:
             elements = partition(file=file, **kwargs)
             return elements
         except Exception as e:
-            import warnings
-
             warnings.warn(f"Failed to partition the file stream: {e}")
             return None
 
@@ -287,7 +283,8 @@ class UnstructuredIO:
                 )
             else:
                 raise ValueError(
-                    f"'{func_name}' is not a valid function in `unstructured`."
+                    f"'{func_name}' is not a valid function in "
+                    "`Unstructured IO`."
                 )
 
         return cleaned_text
@@ -444,7 +441,7 @@ class UnstructuredIO:
 
     @staticmethod
     def chunk_elements(
-        elements: List[Any], chunk_type: str, **kwargs
+        elements: List["Element"], chunk_type: str, **kwargs
     ) -> List["Element"]:
         r"""Chunks elements by titles.
 

@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 class BotAgent:
     def __init__(
         self,
-        contents: Union[str, List[str], Element, List[Element]] = None,
+        contents: Union[str, List[str], "Element", List["Element"]] = None,
         auto_retriever: Optional[AutoRetriever] = None,
         similarity_threshold: float = 0.5,
         vector_storage_local_path: str = "local_data/",
