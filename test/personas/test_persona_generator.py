@@ -156,9 +156,23 @@ def test_deduplicate(persona_generator: PersonaHub):
 
     persona_generator.deduplicate()
 
-    # As the current implementation always returns False for similarity, both
-    # personas should remain
-    assert len(persona_generator.personas) == 2
+    assert (
+        len(persona_generator.personas) == 1
+    )  # Only one persona left as the persona descriptions are very similar
+
+
+def test_is_similar(persona_generator: PersonaHub):
+    persona1 = Persona(
+        name="Test Persona 1",
+        description="Test Description 1",
+    )
+    persona2 = Persona(
+        name="Test Persona 2",
+        description="Test Description 2",
+    )
+    assert persona_generator.is_similar(
+        persona1=persona1, persona2=persona2, threshold=0.9
+    )
 
 
 def test_len(persona_generator: PersonaHub):

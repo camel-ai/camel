@@ -15,6 +15,7 @@ import uuid
 from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
+from camel.embeddings import SentenceTransformerEncoder
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.personas import Persona
@@ -215,10 +216,29 @@ persona_description: <BLANK>
         self, persona1: Persona, persona2: Persona, threshold: float
     ) -> bool:
         r"""Check if two personas are similar."""
-        # This is a placeholder. You should implement a proper similarity
-        # check, possibly using embedding-based methods as suggested in the
-        # paper.
-        return False  # Placeholder return
+        sentence_encoder = SentenceTransformerEncoder(
+            model_name='all-mpnet-base-v2'
+        )  # Using all-mpnet-base-v2, may switch to other models
+
+        # Ensure persona descriptions are not None
+        persona1_description = persona1.description or ""
+        persona2_description = persona2.description or ""
+
+        persona1_embeddings = sentence_encoder.embed(persona1_description)
+        persona2_embeddings = sentence_encoder.embed(persona2_description)
+
+        import numpy as np
+
+        def cosine_similarity(vec1, vec2):
+            return np.dot(vec1, vec2) / (
+                np.linalg.norm(vec1) * np.linalg.norm(vec2)
+            )
+
+        similarity = cosine_similarity(
+            np.array(persona1_embeddings), np.array(persona2_embeddings)
+        )
+
+        return similarity >= threshold
 
     def __len__(self):
         return len(self.personas)
