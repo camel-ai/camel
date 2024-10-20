@@ -405,3 +405,39 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         return mistral_request
+
+
+# The API does not provide official token counting for Yi models, using the default "cl100k_base" encoding.
+class YiTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: UnifiedModelType):
+        r"""Constructor for the token counter for Yi models.
+
+        Args:
+            model_type (UnifiedModelType): Model type for which tokens will be
+                counted.
+        """
+        self.model_type = model_type
+        self.encoding = "cl100k_base"
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        the tokenizer specific to this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        num_tokens = 0
+        for message in messages:
+            num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            for key, value in message.items():
+                num_tokens += len(self.encoding.encode(str(value)))
+                if key == "name":  # if there's a name, the role is omitted
+                    num_tokens -= (
+                        1  # role is always required and always 1 token
+                    )
+        num_tokens += 2  # every reply is primed with <im_start>assistant
+        return num_tokens

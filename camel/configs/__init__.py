@@ -28,6 +28,7 @@ from .samba_config import (
 )
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
+from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
 __all__ = [
@@ -58,4 +59,6 @@ __all__ = [
     'SAMBA_CLOUD_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
+    'YiConfig',
+    'YI_API_PARAMS',
 ]
