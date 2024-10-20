@@ -73,7 +73,7 @@ Some features require extra dependencies:
 Install `CAMEL` from source with poetry (Recommended):
 ```sh
 # Make sure your python version is later than 3.10
-# You can use pyenv to manage multiple python verisons in your sytstem
+# You can use pyenv to manage multiple python versions in your system
 
 # Clone github repo
 git clone https://github.com/camel-ai/camel.git
@@ -81,7 +81,7 @@ git clone https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
-# If you didn't install peotry before
+# If you didn't install poetry before
 pip install poetry  # (Optional)
 
 # We suggest using python 3.10
@@ -315,7 +315,7 @@ We implemented amazing research ideas from other works for you to build, compare
   year={2023}
 }
 ```
-## Acknowledgement
+## Acknowledgment
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
 We would also like to thank Haya Hammoud for designing the initial logo of our project.
