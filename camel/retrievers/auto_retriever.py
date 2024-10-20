@@ -14,6 +14,7 @@
 import datetime
 import os
 import re
+import uuid
 from typing import (
     TYPE_CHECKING,
     Collection,
@@ -118,7 +119,7 @@ class AutoRetriever:
         """
 
         if isinstance(content, Element):
-            content = content.metadata.file_directory
+            content = content.metadata.file_directory or str(uuid.uuid4())
 
         collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
 
@@ -223,9 +224,15 @@ class AutoRetriever:
         if not contents:
             raise ValueError("content cannot be empty.")
 
-        contents = (
-            [contents] if isinstance(contents, (str, Element)) else contents
-        )
+        # Normalize contents to a list
+        if isinstance(contents, str):
+            contents = [contents]
+        elif isinstance(contents, Element):
+            contents = [contents]
+        elif not isinstance(contents, list):
+            raise ValueError(
+                "contents must be a string, Element, or a list of them."
+            )
 
         all_retrieved_info = []
         for content in contents:

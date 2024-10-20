@@ -142,13 +142,13 @@ class KnowledgeGraphAgent(ChatAgent):
 
     def run(
         self,
-        element: Union[str, "Element"],
+        element: "Element",
         parse_graph_elements: bool = False,
     ) -> Union[str, GraphElement]:
         r"""Run the agent to extract node and relationship information.
 
         Args:
-            element (Union[str, Element]): The input element or string.
+            element (Element): The input element.
             parse_graph_elements (bool, optional): Whether to parse into
                 `GraphElement`. Defaults to `False`.
 
