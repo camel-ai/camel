@@ -58,15 +58,15 @@ def create_tweet(
         quote_tweet_id (Optional[Union[int, str]]): Link to the tweet being
             quoted.
 
-    Note:
-        You can only provide either the `quote_tweet_id` parameter or
-        the pair of `poll_duration_minutes` and `poll_options` parameters,
-        not both.
-
     Returns:
         str: A message indicating the success of the tweet creation,
             including the tweet ID and text. If the request to the
             Twitter API is not successful, the return is an error message.
+
+    Note:
+        You can only provide either the `quote_tweet_id` parameter or
+        the pair of `poll_duration_minutes` and `poll_options` parameters,
+        not both.
 
     Reference:
         https://developer.x.com/en/docs/x-api/tweets/manage-tweets/api-reference/post-tweets
@@ -202,8 +202,7 @@ def get_my_user_profile() -> str:
             description, location, most recent tweet ID, profile image URL,
             account creation date, protection status, verification type,
             public metrics, and pinned tweet information. If the request to
-            the Twitter API is not successful,
-            the return is an error message.
+            the Twitter API is not successful, the return is an error message.
 
     Reference:
         https://developer.x.com/en/docs/x-api/users/lookup/api-reference/get-users-me
