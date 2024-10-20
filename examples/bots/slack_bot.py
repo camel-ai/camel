@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from slack_bolt.context.async_context import AsyncBoltContext
 from slack_bolt.context.say.async_say import AsyncSay
@@ -24,10 +24,8 @@ from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,7 +34,7 @@ logger = logging.getLogger(__name__)
 class BotAgent:
     def __init__(
         self,
-        contents: Union[str, List[str], Element, List[Element]] = None,
+        contents: Union[str, List[str], "Element", List["Element"]] = None,
         auto_retriever: Optional[AutoRetriever] = None,
         similarity_threshold: float = 0.5,
         vector_storage_local_path: str = "local_data/",

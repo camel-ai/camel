@@ -14,7 +14,15 @@
 import datetime
 import os
 import re
-from typing import Collection, List, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Collection,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -27,10 +35,8 @@ from camel.storages import (
 from camel.types import StorageType
 from camel.utils import Constants
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 
 class AutoRetriever:
@@ -98,7 +104,9 @@ class AutoRetriever:
             f"Unsupported vector storage type: {self.storage_type}"
         )
 
-    def _collection_name_generator(self, content: Union[str, Element]) -> str:
+    def _collection_name_generator(
+        self, content: Union[str, "Element"]
+    ) -> str:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
@@ -175,7 +183,7 @@ class AutoRetriever:
     def run_vector_retriever(
         self,
         query: str,
-        contents: Union[str, List[str], Element, List[Element]],
+        contents: Union[str, List[str], "Element", List["Element"]],
         top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,

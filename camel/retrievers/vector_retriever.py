@@ -14,7 +14,7 @@
 import os
 import warnings
 from io import IOBase
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -28,10 +28,8 @@ from camel.storages import (
 )
 from camel.utils import Constants
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 
 class VectorRetriever(BaseRetriever):
@@ -73,7 +71,7 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: Union[str, Element, IOBase],
+        content: Union[str, "Element", IOBase],
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
         embed_batch: int = 50,

@@ -49,7 +49,7 @@ class UnstructuredIO:
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
         parent_id: Optional[str] = None,
-    ) -> Element:
+    ) -> "Element":
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 

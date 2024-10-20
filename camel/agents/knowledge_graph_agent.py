@@ -11,12 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
@@ -144,7 +142,7 @@ class KnowledgeGraphAgent(ChatAgent):
 
     def run(
         self,
-        element: Union[str, Element],
+        element: Union[str, "Element"],
         parse_graph_elements: bool = False,
     ) -> Union[str, GraphElement]:
         r"""Run the agent to extract node and relationship information.
