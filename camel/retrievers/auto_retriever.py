@@ -117,6 +117,7 @@ class AutoRetriever:
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+        from unstructured.documents.elements import Element
 
         if isinstance(content, Element):
             content = content.metadata.file_directory or str(uuid.uuid4())

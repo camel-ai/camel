@@ -95,6 +95,8 @@ class VectorRetriever(BaseRetriever):
                 otherwise skip chunking. Defaults to True.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
+        from unstructured.documents.elements import Element
+
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IOBase):
