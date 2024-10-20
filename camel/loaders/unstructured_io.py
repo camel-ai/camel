@@ -441,7 +441,7 @@ class UnstructuredIO:
 
     @staticmethod
     def chunk_elements(
-        elements: List[Element], chunk_type: str, **kwargs
+        elements: List["Element"], chunk_type: str, **kwargs
     ) -> List["Element"]:
         r"""Chunks elements by titles.
 
