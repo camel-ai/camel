@@ -15,7 +15,7 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 ### Our Communication Channels 💬
 - **Discord:** [Join here](https://discord.camel-ai.org/)
 - **WeChat:** Scan the QR code [here](https://ghli.org/camel/wechat.png)
-- **Slack:** [Join here](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
+- **Slack:** [Join here](https://slack.camel-ai.org/)
 
 ## Guidelines 📝
 

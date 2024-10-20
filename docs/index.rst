@@ -93,4 +93,4 @@ We are always happy to work with friends to continuously move forward with our o
 
 **For Coding Enthusiasts**:  Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate each and every commit. Get started by checking out the `Contributing Guidelines <https://github.com/camel-ai/camel/wiki/Contributing-Guidlines>`_ on GitHub.
 
-**For Interested Humans**: Connect with us on `Discord <https://discord.camel-ai.org>`_, `WeChat <https://ghli.org/camel/wechat.png>`_, or `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_.
+**For Interested Humans**: Connect with us on `Discord <https://discord.camel-ai.org>`_, `WeChat <https://ghli.org/camel/wechat.png>`_, or `Slack <https://slack.camel-ai.org/>`_.
