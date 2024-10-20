@@ -229,8 +229,8 @@ class ChatAgent(BaseAgent):
         r"""Generates a tool prompt based on the provided tool schema list.
 
         Args:
-            tool_schema_list (List[Dict]): A list of dictionaries, each containing
-                a tool schema.
+            tool_schema_list (List[Dict]): A list of dictionaries, each
+                containing a tool schema.
 
         Returns:
             str: A string representing the tool prompt.
@@ -243,7 +243,10 @@ class ChatAgent(BaseAgent):
             tool_description = tool_info['description']
             tool_json = json.dumps(tool_info, indent=4)
 
-            prompt = f"Use the function '{tool_name}' to '{tool_description}':\n{tool_json}\n"
+            prompt = (
+                f"Use the function '{tool_name}' to '{tool_description}':\n"
+                f"{tool_json}\n"
+            )
             tool_prompts.append(prompt)
 
         tool_prompt_str = "\n".join(tool_prompts)
@@ -255,28 +258,35 @@ class ChatAgent(BaseAgent):
 
     {tool_prompt_str}
 
-    If you choose to call a function ONLY reply in the following format with no prefix or suffix:
+    If you choose to call a function ONLY reply in the following format with no
+    prefix or suffix:
 
-    <function=example_function_name>{{"example_name": "example_value"}}</function>
+    <function=example_function_name>{{"example_name": "example_value"}}
+    </function>
 
     Reminder:
-    - Function calls MUST follow the specified format, start with <function= and end with </function>
+    - Function calls MUST follow the specified format, start with <function=
+      and end with </function>
     - Required parameters MUST be specified
     - Only call one function at a time
     - Put the entire function call reply on one line
-    - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
+    - If there is no function call available, answer the question like normal 
+      with your current knowledge and do not tell the user about function calls
     """
     '''
         return final_prompt
 
     def _parse_tool_response(self, response: str):
-        r"""Parses the tool response to extract the function name and arguments.
+        r"""Parses the tool response to extract the function name and
+        arguments.
 
         Args:
-            response (str): The response from the model containing the function call.
+            response (str): The response from the model containing the
+                function call.
 
         Returns:
-            Optional[Dict[str, Any]]: The parsed function name and arguments if found, otherwise None.
+            Optional[Dict[str, Any]]: The parsed function name and arguments
+                if found, otherwise :obj:`None`.
         """
         function_regex = r"<function=(\w+)>(.*?)</function>"
         match = re.search(function_regex, response)
@@ -848,12 +858,15 @@ class ChatAgent(BaseAgent):
         the given output schema.
 
         Args:
-            output_schema (Type[BaseModel]): The output schema to use for structuring the output.
+            response_format (Type[BaseModel]): The output schema to use for
+                structuring the output.
 
         Returns:
-            Tuple[List[BaseMessage], List[str], Dict[str, int], str, FunctionCallingRecord, int]:
-                A tuple containing the output messages, finish reasons, usage dictionary,
-                response ID, function calling record, and number of tokens.
+            Tuple[List[BaseMessage], List[str], Dict[str, int], str,
+                FunctionCallingRecord, int]:
+                A tuple containing the output messages, finish reasons, usage
+                dictionary, response ID, function calling record, and number of
+                tokens.
         """
         from camel.toolkits import FunctionTool
 
@@ -946,30 +959,37 @@ class ChatAgent(BaseAgent):
         num_tokens: int,
         external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
-        """
-        Process the output of a chat step and gather information about the step.
+        r"""Process the output of a chat step and gather information about the
+        step.
 
-        This method checks for termination conditions, updates the agent's state,
-        and collects information about the chat step, including tool calls and
-        termination reasons.
+        This method checks for termination conditions, updates the agent's
+        state, and collects information about the chat step, including tool
+        calls and termination reasons.
 
         Args:
-            output_messages (List[BaseMessage]): The messages generated in this step.
-            finish_reasons (List[str]): The reasons for finishing the generation for each message.
-            usage_dict (Dict[str, int]): Dictionary containing token usage information.
+            output_messages (List[BaseMessage]): The messages generated in
+                this step.
+            finish_reasons (List[str]): The reasons for finishing the
+                generation for each message.
+            usage_dict (Dict[str, int]): Dictionary containing token usage
+                information.
             response_id (str): The ID of the response from the model.
-            tool_calls (List[FunctionCallingRecord]): Records of function calls made during this step.
+            tool_calls (List[FunctionCallingRecord]): Records of function calls
+                made during this step.
             num_tokens (int): The number of tokens used in this step.
-            external_tool_request (Optional[ChatCompletionMessageToolCall]): Any external tool request made during this step.
+            external_tool_request (Optional[ChatCompletionMessageToolCall]):
+                Any external tool request made during this step.
 
         Returns:
-            Dict[str, Any]: A dictionary containing information about the chat step,
-            including termination status, reasons, and tool call information.
+            Dict[str, Any]: A dictionary containing information about the chat
+                step, including termination status, reasons, and tool call
+                information.
 
         Note:
-            This method iterates over all response terminators and checks if any of them
-            signal termination. If a terminator signals termination, the agent's state
-            is updated accordingly, and the termination reason is recorded.
+            This method iterates over all response terminators and checks if
+            any of them signal termination. If a terminator signals
+            termination, the agent's state is updated accordingly, and the
+            termination reason is recorded.
         """
         termination = [
             terminator.is_terminated(output_messages)
@@ -1001,8 +1021,8 @@ class ChatAgent(BaseAgent):
     def handle_batch_response(
         self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
-        r"""
-        Process a batch response from the model and extract the necessary information.
+        r"""Process a batch response from the model and extract the necessary
+        information.
 
         Args:
             response (dict): Model response.
@@ -1061,7 +1081,8 @@ class ChatAgent(BaseAgent):
         response: Stream[ChatCompletionChunk],
         prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
-        r"""Process a stream response from the model and extract the necessary information.
+        r"""Process a stream response from the model and extract the necessary
+        information.
 
         Args:
             response (dict): Model response.
