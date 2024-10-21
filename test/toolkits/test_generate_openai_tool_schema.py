@@ -40,8 +40,8 @@ def sample_function(a: int, b: str = "default") -> bool:
 def test_generate_openai_tool_schema(
     mock_generate_schema, mock_validate_schema
 ):
-    # Mock the validate_openai_tool_schema to raise an exception
-    mock_validate_schema.side_effect = Exception("Invalid schema")
+    # Mock the validate_openai_tool_schema return None
+    mock_validate_schema.return_value = None
 
     # Mock the generate_openai_tool_schema to return a specific schema
     mock_schema = {
@@ -162,6 +162,10 @@ def test_function_tool_generate_schema_with_retries(
 ):
     # Mock the model factory to return a mock model
     mock_model = MagicMock(spec=BaseModelBackend)
+    mock_model.model_type = MagicMock()
+    mock_model.model_type.value_for_tiktoken = "mock_value_for_tiktoken"
+    mock_model.model_config_dict = {}
+    mock_model.value_for_tiktoken = MagicMock(return_value=1000)
     mock_model_factory.return_value = mock_model
 
     # Mock ChatAgent's step method to simulate retries

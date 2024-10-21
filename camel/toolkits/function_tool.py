@@ -271,24 +271,17 @@ class FunctionTool:
         )
 
         if use_schema_assistant:
-            try:
-                self.validate_openai_tool_schema(self.openai_tool_schema)
-            except Exception:
-                print(
-                    f"Warning: No valid schema found for "
-                    f"{self.func.__name__}. "
-                    f"Attempting to generate one using LLM."
+            self.validate_openai_tool_schema(self.openai_tool_schema)
+            schema = self.generate_openai_tool_schema(
+                schema_generation_max_retries, schema_assistant_model
+            )
+            if schema:
+                self.openai_tool_schema = schema
+            else:
+                raise ValueError(
+                    f"Failed to generate valid schema for "
+                    f"{self.func.__name__}."
                 )
-                schema = self.generate_openai_tool_schema(
-                    schema_generation_max_retries, schema_assistant_model
-                )
-                if schema:
-                    self.openai_tool_schema = schema
-                else:
-                    raise ValueError(
-                        f"Failed to generate valid schema for "
-                        f"{self.func.__name__}"
-                    )
 
     @staticmethod
     def validate_openai_tool_schema(
