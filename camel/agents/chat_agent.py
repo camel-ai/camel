@@ -414,18 +414,18 @@ class ChatAgent(BaseAgent):
 
     def step(
         self,
-        input_message: BaseMessage,
+        input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
         Args:
-            input_message (BaseMessage): The input message to the agent.
-                Its `role` field that specifies the role at backend may be
-                either `user` or `assistant` but it will be set to `user`
-                anyway since for the self agent any incoming message is
-                external.
+            input_message (Union[BaseMessage, str]): The input message to the
+                agent. For BaseMessage input, its `role` field that specifies
+                the role at backend may be either `user` or `assistant` but it
+                will be set to `user` anyway since for the self agent any
+                incoming message is external. For str input, the `role_name` would be `User`.
             response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
@@ -437,6 +437,11 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name='User', content=input_message
+            )
+
         if "llama" in self.model_type.lower():
             if self.model_backend.model_config_dict.get("tools", None):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
@@ -646,18 +651,18 @@ class ChatAgent(BaseAgent):
 
     async def step_async(
         self,
-        input_message: BaseMessage,
+        input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
 
         Args:
-            input_message (BaseMessage): The input message to the agent.
-                Its `role` field that specifies the role at backend may be
-                either `user` or `assistant` but it will be set to `user`
-                anyway since for the self agent any incoming message is
-                external.
+            input_message (Union[BaseMessage, str]): The input message to the
+                agent. For BaseMessage input, its `role` field that specifies
+                the role at backend may be either `user` or `assistant` but it
+                will be set to `user` anyway since for the self agent any
+                incoming message is external. For str input, the `role_name` would be `User`.
             response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
@@ -669,6 +674,11 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name='User', content=input_message
+            )
+
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[FunctionCallingRecord] = []
