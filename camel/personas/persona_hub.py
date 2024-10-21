@@ -195,21 +195,30 @@ persona_description: <BLANK>
 
         return personas
 
-    def deduplicate(self, similarity_threshold: float = 0.85):
+    def deduplicate(
+        self,
+        similarity_threshold: float = 0.85,
+        embedding_model: str = "text-embedding-3-small",
+    ):
         r"""Remove similar personas from the group.
 
         Args:
             similarity_threshold (float): The similarity threshold for
             deduplication (default is 0.85).
+            embedding_model: The embedding model for similarity compairsion
+            (default is text-embedding-3-small).
         """
         # Changed to default similarity threshold to 0.85 as the default
         # text-embedding-3-small model may give lower similarities than others
+
         # This is a simplified version. Need to implement a more
         # sophisticated deduplication algorithm as described in the paper.
         unique_personas: Dict[uuid.UUID, Persona] = {}
         for persona_id, persona in self.personas.items():
             if not any(
-                self.is_similar(persona, up, similarity_threshold)
+                self.is_similar(
+                    persona, up, similarity_threshold, embedding_model
+                )
                 for up in unique_personas.values()
             ):
                 unique_personas[persona_id] = persona
@@ -220,7 +229,7 @@ persona_description: <BLANK>
         persona1: Persona,
         persona2: Persona,
         threshold: float,
-        embedding_model: str = "text-embedding-3-small",
+        embedding_model: str,
     ) -> bool:
         r"""Check if two personas are similar."""
 

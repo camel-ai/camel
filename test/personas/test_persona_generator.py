@@ -169,7 +169,10 @@ def test_is_similar(persona_generator: PersonaHub):
         description="Test Description 2",
     )
     assert persona_generator.is_similar(
-        persona1=persona1, persona2=persona2, threshold=0.85
+        persona1=persona1,
+        persona2=persona2,
+        threshold=0.85,
+        embedding_model="text-embedding-3-small",
     )
 
 
