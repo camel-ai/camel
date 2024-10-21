@@ -114,8 +114,8 @@ class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
     Args:
-        system_message (BaseMessage, optional): The system message for the
-            chat agent.
+        system_message (Union[BaseMessage, str], optional): The system message
+            for the chat agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
@@ -144,7 +144,7 @@ class ChatAgent(BaseAgent):
 
     def __init__(
         self,
-        system_message: Optional[BaseMessage] = None,
+        system_message: Optional[Union[BaseMessage, str]] = None,
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -154,6 +154,11 @@ class ChatAgent(BaseAgent):
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
+        if isinstance(system_message, str):
+            system_message = BaseMessage.make_assistant_message(
+                role_name='Assistant', content=system_message
+            )
+
         self.orig_sys_message: Optional[BaseMessage] = system_message
         self._system_message: Optional[BaseMessage] = system_message
         self.role_name: str = (
