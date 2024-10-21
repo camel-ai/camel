@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .openai_structure import OpenAIStructure
+from .openai_converter import OpenAISchemaConverter
 from .prompts import DEFAULT_STRUCTURED_PROMPTS
 
-__all__ = ["OpenAIStructure", "DEFAULT_STRUCTURED_PROMPTS"]
+__all__ = ["OpenAISchemaConverter", "DEFAULT_STRUCTURED_PROMPTS"]

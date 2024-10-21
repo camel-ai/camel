@@ -14,7 +14,7 @@
 
 from pydantic import BaseModel
 
-from camel.structured_outputs import OpenAIStructure
+from camel.schemas import OpenAISchemaConverter
 
 
 class Temperature(BaseModel):
@@ -31,9 +31,11 @@ def test_openaistructure_with_str_template():
     temperature_template = (
         '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
     )
-    target_format_from_str = OpenAIStructure.get_format(temperature_template)
+    target_format_from_str = OpenAISchemaConverter.get_format(
+        temperature_template
+    )
 
-    model = OpenAIStructure(
+    model = OpenAISchemaConverter(
         target=target_format_from_str,
     )
 
@@ -49,9 +51,11 @@ def test_openaistructure_with_str_template():
 
 
 def test_openaistructure_with_function():
-    target_format_from_function = OpenAIStructure.get_format(get_temperature)
+    target_format_from_function = OpenAISchemaConverter.get_format(
+        get_temperature
+    )
 
-    model = OpenAIStructure(
+    model = OpenAISchemaConverter(
         target=target_format_from_function,
     )
 
@@ -69,7 +73,7 @@ def test_openaistructure_with_function():
 def test_openaistructure_with_model():
     target_format_from_model = Temperature
 
-    model = OpenAIStructure(
+    model = OpenAISchemaConverter(
         target=target_format_from_model,
     )
 

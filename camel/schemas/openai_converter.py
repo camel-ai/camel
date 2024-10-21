@@ -22,10 +22,10 @@ from camel.utils import (
     api_keys_required,
 )
 
-from .base import BaseStructedModel
+from .base import BaseConverter
 
 
-class OpenAIStructure(BaseStructedModel):
+class OpenAISchemaConverter(BaseConverter):
     def __init__(
         self,
         model_type: ModelType = ModelType.GPT_4O_MINI,
@@ -35,7 +35,7 @@ class OpenAIStructure(BaseStructedModel):
         prompt: Optional[str] = None,
     ):
         """
-        Initializes the StructuredOpenAIModel class
+        Initializes the OpenAISchemaConverter class
             with the specified parameters.
 
         Args:
@@ -49,7 +49,7 @@ class OpenAIStructure(BaseStructedModel):
         if model_config_dict is None:
             model_config_dict = {}
         self.model = OpenAIModel(model_type, model_config_dict, api_key)
-        BaseStructedModel.__init__(self, target, prompt)
+        BaseConverter.__init__(self, target, prompt)
 
         if target is not None:
             self.model.model_config_dict["response_format"] = target

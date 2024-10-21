@@ -21,9 +21,9 @@ from camel.utils import get_format
 from .prompts import DEFAULT_STRUCTURED_PROMPTS
 
 
-class BaseStructedModel(ABC):
+class BaseConverter(ABC):
     """
-    A base class for structured models that includes functionality
+    A base class for schema outputs that includes functionality
     for managing the response format.
     """
 
@@ -33,7 +33,7 @@ class BaseStructedModel(ABC):
         prompt: Optional[str] = None,
     ):
         """
-        Initializes the BaseStructedModel with an optional response format.
+        Initializes the BaseConverter with an optional response format.
 
         Args:
             output_format (Optional[BaseModel]):
