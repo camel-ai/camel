@@ -19,22 +19,19 @@ from pydantic import BaseModel
 from camel.models import OpenAIModel
 from camel.types import ModelType
 from camel.utils import (
-    BaseTokenCounter,
     api_keys_required,
 )
 
 from .base import BaseStructedModel
 
 
-class OpenAIStructure(OpenAIModel, BaseStructedModel):
+class OpenAIStructure(BaseStructedModel):
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: ModelType = ModelType.GPT_4O_MINI,
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        url: Optional[str] = None,
-        token_counter: Optional[BaseTokenCounter] = None,
-        output_format: Optional[BaseModel] = None,
+        target: Optional[BaseModel] = None,
         prompt: Optional[str] = None,
     ):
         """
@@ -42,52 +39,44 @@ class OpenAIStructure(OpenAIModel, BaseStructedModel):
             with the specified parameters.
 
         Args:
-            model_type (ModelType):
-                Type of the model to be used.
-            model_config_dict (Dict[str, Any]):
-                Dictionary containing model configuration parameters.
-            api_key (Optional[str]):
-                API key for authenticating the requests. Defaults to None.
-            url (Optional[str]):
-                URL endpoint for the model API. Defaults to None.
-            token_counter (Optional[BaseTokenCounter]):
-                Counter for tracking token usage. Defaults to None.
-            output_format (Optional[BaseModel]):
-                Expected format of the response. Defaults to None.
-            prompt (Optional[str]):
-                Prompt to be used for the model. Defaults to None.
+            model_type (ModelType): The model type to use.
+            model_config_dict (Optional[Dict[str, Any]]):
+                The model config dict.
+            api_key (Optional[str]): The API key to use.
+            target (Optional[BaseModel]): The target format.
+            prompt (Optional[str]): The prompt to use.
         """
-        OpenAIModel.__init__(
-            self, model_type, model_config_dict, api_key, url, token_counter
-        )
-        BaseStructedModel.__init__(self, output_format, prompt)
+        if model_config_dict is None:
+            model_config_dict = {}
+        self.model = OpenAIModel(model_type, model_config_dict, api_key)
+        BaseStructedModel.__init__(self, target, prompt)
 
-        if output_format is not None:
-            self.model_config_dict["response_format"] = output_format
+        if target is not None:
+            self.model.model_config_dict["response_format"] = target
 
-        self._client.chat.completions.create = (  # type: ignore[method-assign]
-            self._client.beta.chat.completions.parse  # type: ignore[assignment]
+        self.model._client.chat.completions.create = (  # type: ignore[method-assign]
+            self.model._client.beta.chat.completions.parse  # type: ignore[assignment]
         )
 
     @api_keys_required("OPENAI_API_KEY")
     def structure(
-        self, content: str, output_format: Optional[BaseModel] = None
+        self, content: str, target: Optional[BaseModel] = None
     ) -> BaseModel:
         """
         Formats the input content into the expected BaseModel
 
         Args:
             content (str): The content to be formatted.
-            output_format (Optional[BaseModel]):
+            target (Optional[BaseModel]):
                 The expected format of the response.
 
         Returns:
             Optional[BaseModel]: The formatted response.
         """
-        if output_format is not None:
-            self.model_config_dict["response_format"] = output_format
+        if target is not None:
+            self.model.model_config_dict["response_format"] = target
 
-        completion = self.run(
+        completion = self.model.run(
             messages=[
                 {'role': 'system', 'content': self.prompt},
                 {'role': 'user', 'content': content},

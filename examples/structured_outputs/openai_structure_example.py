@@ -15,7 +15,6 @@
 from pydantic import BaseModel
 
 from camel.structured_outputs import OpenAIStructure
-from camel.types.enums import ModelType
 
 
 def get_temperature(location: str, date: str, temperature: float):
@@ -39,13 +38,22 @@ target_format_from_model = Temperature
 
 
 model = OpenAIStructure(
-    model_type=ModelType.GPT_4O,
-    model_config_dict={},
     target=target_format_from_str,
 )
 
 print(
     model.structure(
         "Today is 2023-09-01, the temperature in Beijing is 30 degrees."
+    )
+)
+
+# OR
+
+model = OpenAIStructure()
+
+print(
+    model.structure(
+        "Today is 2023-09-01, the temperature in Beijing is 30 degrees.",
+        target=target_format_from_function,
     )
 )

@@ -15,7 +15,6 @@
 from pydantic import BaseModel
 
 from camel.structured_outputs import OpenAIStructure
-from camel.types.enums import ModelType
 
 
 class Temperature(BaseModel):
@@ -35,9 +34,7 @@ def test_openaistructure_with_str_template():
     target_format_from_str = OpenAIStructure.get_format(temperature_template)
 
     model = OpenAIStructure(
-        model_type=ModelType.GPT_4O,
-        model_config_dict={},
-        output_format=target_format_from_str,
+        target=target_format_from_str,
     )
 
     structured_output = model.structure(
@@ -55,9 +52,7 @@ def test_openaistructure_with_function():
     target_format_from_function = OpenAIStructure.get_format(get_temperature)
 
     model = OpenAIStructure(
-        model_type=ModelType.GPT_4O,
-        model_config_dict={},
-        output_format=target_format_from_function,
+        target=target_format_from_function,
     )
 
     structured_output = model.structure(
@@ -75,9 +70,7 @@ def test_openaistructure_with_model():
     target_format_from_model = Temperature
 
     model = OpenAIStructure(
-        model_type=ModelType.GPT_4O,
-        model_config_dict={},
-        output_format=target_format_from_model,
+        target=target_format_from_model,
     )
 
     structured_output = model.structure(
