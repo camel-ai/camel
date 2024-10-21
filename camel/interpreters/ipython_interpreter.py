@@ -105,7 +105,8 @@ class JupyterKernelInterpreter(BaseInterpreter):
                     outputs.append(msg_content["data"]["text/plain"])
                     if "image/png" in msg_content["data"]:
                         outputs.append(
-                            f"\n![image](data:image/png;base64,{msg_content['data']['image/png']})\n"
+                            f"\n![image](data:image/png;base64,"
+                            f"{msg_content['data']['image/png']})\n"
                         )
             except queue.Empty:
                 outputs.append("Time out")

@@ -18,6 +18,8 @@ from camel.messages import BaseMessage
 
 
 class BaseTerminator(ABC):
+    r"""Base class for terminators."""
+
     def __init__(self, *args, **kwargs) -> None:
         self._terminated: bool = False
         self._termination_reason: Optional[str] = None
@@ -32,6 +34,8 @@ class BaseTerminator(ABC):
 
 
 class ResponseTerminator(BaseTerminator):
+    r"""A terminator that terminates the conversation based on the response."""
+
     @abstractmethod
     def is_terminated(
         self, messages: List[BaseMessage]

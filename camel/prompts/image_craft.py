@@ -18,6 +18,14 @@ from camel.types import RoleType
 
 
 class ImageCraftPromptTemplateDict(TextPromptDict):
+    r"""A dictionary containing :obj:`TextPrompt` used in the `ImageCraft`
+    task.
+
+    Attributes:
+        ASSISTANT_PROMPT (TextPrompt): A prompt for the AI assistant to create
+            an original image based on the provided descriptive captions.
+    """
+
     ASSISTANT_PROMPT = TextPrompt(
         """You are tasked with creating an original image based on
         the provided descriptive captions. Use your imagination

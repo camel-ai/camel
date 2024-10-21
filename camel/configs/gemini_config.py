@@ -87,6 +87,12 @@ class GeminiConfig(BaseConfig):
     @model_validator(mode="before")
     @classmethod
     def model_type_checking(cls, data: Any):
+        r"""Validate the type of tools in the configuration.
+
+        This method ensures that the tools provided in the configuration are
+        instances of `FunctionTool`. If any tool is not an instance of
+        `FunctionTool`, it raises a ValueError.
+        """
         if isinstance(data, dict):
             response_schema = data.get("response_schema")
             safety_settings = data.get("safety_settings")
@@ -111,16 +117,17 @@ class GeminiConfig(BaseConfig):
 
         if response_schema and not isinstance(response_schema, Schema):
             raise ValueError(
-                "The response_schema should be "
-                "an instance of `google.generativeai.protos.Schema`."
+                "The response_schema should be an instance of "
+                "google.generativeai.protos.Schema."
             )
 
         if safety_settings and not isinstance(
             safety_settings, SafetySettingOptions
         ):
             raise ValueError(
-                "The response_schema should be an instance of "
-                "`google.generativeai.types.safety_types.SafetySettingOptions`."
+                "The safety_settings should be an instance of "
+                "google.generativeai.types.safety_types."
+                "SafetySettingOptions."
             )
 
         if tools is not None:
@@ -128,19 +135,20 @@ class GeminiConfig(BaseConfig):
                 if not isinstance(tool, FunctionLibraryType):
                     raise ValueError(
                         "The tool should be an instance of "
-                        "`google.generativeai.types.content_types.FunctionLibraryType`."
+                        "google.generativeai.types.content_types."
+                        "FunctionLibraryType."
                     )
         if tool_config and not isinstance(tool_config, ToolConfigType):
             raise ValueError(
-                "The response_schema should be an instance of "
-                "`google.generativeai.types.content_types.ToolConfigType`."
+                "The tool_config should be an instance of "
+                "google.generativeai.types.content_types.ToolConfigType."
             )
         if request_options and not isinstance(
             request_options, RequestOptionsType
         ):
             raise ValueError(
-                "The response_schema should be an instance of "
-                "`google.generativeai.types.helper_types.RequestOptionsType`."
+                "The request_options should be an instance of "
+                "google.generativeai.types.helper_types.RequestOptionsType."
             )
         return data
 
