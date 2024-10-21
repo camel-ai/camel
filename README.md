@@ -4,6 +4,7 @@
 [![Discord][discord-image]][discord-url]
 [![Wechat][wechat-image]][wechat-url]
 [![Twitter][twitter-image]][twitter-url]
+[![](https://img.shields.io/badge/Gurubase-Ask%20CAMEL%20Guru-006BFF)](https://gurubase.io/g/camel)
 
 ______________________________________________________________________
 
