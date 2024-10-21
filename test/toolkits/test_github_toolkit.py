@@ -248,3 +248,106 @@ def test_github_issue():
     assert (
         summary == expected_summary
     ), f"Expected {expected_summary}, but got {summary}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_get_all_issues(monkeypatch):
+    github_toolkit = GithubToolkit("repo_name", "token")
+    mock_issue = MagicMock()
+    mock_issue.number = 1
+    mock_issue.title = "Test Issue"
+    github_toolkit.repo.get_issues.return_value = [mock_issue]
+
+    issues = github_toolkit.get_all_issues()
+
+    expected_issues = [{"number": 1, "title": "Test Issue"}]
+    assert (
+        issues == expected_issues
+    ), f"Expected {expected_issues}, but got {issues}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_get_issue_content(monkeypatch):
+    github_toolkit = GithubToolkit("repo_name", "token")
+    mock_issue = MagicMock()
+    mock_issue.body = "Issue content"
+    github_toolkit.repo.get_issue.return_value = mock_issue
+
+    content = github_toolkit.get_issue_content(1)
+    expected_content = "Issue content"
+
+    assert (
+        content == expected_content
+    ), f"Expected {expected_content}, but got {content}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_get_all_pull_requests(self, mock_get_repo):
+    github_toolkit = GithubToolkit("repo_name", "token")
+    mock_pr = MagicMock()
+    mock_pr.number = 1
+    mock_pr.title = "Test PR"
+    github_toolkit.repo.get_pulls.return_value = [mock_pr]
+
+    prs = github_toolkit.get_all_pull_requests()
+    expected_prs = [{"number": 1, "title": "Test PR"}]
+
+    assert prs == expected_prs, f"Expected {expected_prs}, but got {prs}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_get_pull_request_code(self, mock_get_repo):
+    github_toolkit = GithubToolkit("repo_name", "token")
+    mock_file = MagicMock()
+    mock_file.filename = "file1.py"
+    mock_file.patch = "code changes"
+    github_toolkit.repo.get_pull.return_value.get_files.return_value = [
+        mock_file
+    ]
+
+    files_changed = github_toolkit.get_pull_request_code(1)
+    expected_files = [{"filename": "file1.py", "patch": "code changes"}]
+
+    assert (
+        files_changed == expected_files
+    ), f"Expected {expected_files}, but got {files_changed}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_get_pull_request_comments(self, mock_get_repo):
+    github_toolkit = GithubToolkit("repo_name", "token")
+    mock_comment = MagicMock()
+    mock_comment.user.login = "user1"
+    mock_comment.body = "Test comment"
+    github_toolkit.repo.get_pull.return_value.get_comments.return_value = [
+        mock_comment
+    ]
+
+    comments = github_toolkit.get_pull_request_comments(1)
+    expected_comments = [{"user": "user1", "body": "Test comment"}]
+
+    assert (
+        comments == expected_comments
+    ), f"Expected {expected_comments}, but got {comments}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_get_all_file_paths(self, mock_get_repo):
+    github_toolkit = GithubToolkit("repo_name", "token")
+    mock_content = MagicMock()
+    mock_content.type = "file"
+    mock_content.path = "path/to/file.py"
+    github_toolkit.repo.get_contents.return_value = [mock_content]
+
+    files = github_toolkit.get_all_file_paths()
+    expected_files = ["path/to/file.py"]
+
+    assert (
+        files == expected_files
+    ), f"Expected {expected_files}, but got {files}"
