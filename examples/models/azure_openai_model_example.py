@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 """
 please set the below os environment:
-export AZURE_OPENAI_ENDPOINT=""
+export AZURE_OPENAI_BASE_URL=""
 export AZURE_API_VERSION=""
 export AZURE_OPENAI_API_KEY=""
 export AZURE_DEPLOYMENT_NAME=""
@@ -27,7 +27,7 @@ export AZURE_DEPLOYMENT_NAME=""
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AZURE,
-    model_type=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=ChatGPTConfig(temperature=0.2).as_dict(),
 )
 

@@ -17,6 +17,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from camel.utils import api_keys_required
+
 
 class Firecrawl:
     r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
@@ -30,6 +32,7 @@ class Firecrawl:
         https://docs.firecrawl.dev/introduction
     """
 
+    @api_keys_required("FIRECRAWL_API_KEY")
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -46,7 +49,6 @@ class Firecrawl:
         self,
         url: str,
         params: Optional[Dict[str, Any]] = None,
-        wait_until_done: bool = True,
         **kwargs: Any,
     ) -> Any:
         r"""Crawl a URL and all accessible subpages. Customize the crawl by
@@ -57,14 +59,12 @@ class Firecrawl:
             url (str): The URL to crawl.
             params (Optional[Dict[str, Any]]): Additional parameters for the
                 crawl request. Defaults to `None`.
-            wait_until_done (bool): Whether to wait until the crawl job is
-                completed. Defaults to `True`.
             **kwargs (Any): Additional keyword arguments, such as
-                `poll_interval`, `idempotency_key`, etc.
+                `poll_interval`, `idempotency_key`.
 
         Returns:
-            Any: The list content of the URL if `wait_until_done` is True;
-                otherwise, a string job ID.
+            Any: The crawl job ID or the crawl results if waiting until
+                completion.
 
         Raises:
             RuntimeError: If the crawling process fails.
@@ -75,13 +75,8 @@ class Firecrawl:
                 url=url,
                 params=params,
                 **kwargs,
-                wait_until_done=wait_until_done,
             )
-            return (
-                crawl_response
-                if wait_until_done
-                else crawl_response.get("jobId")
-            )
+            return crawl_response
         except Exception as e:
             raise RuntimeError(f"Failed to crawl the URL: {e}")
 
@@ -100,7 +95,10 @@ class Firecrawl:
         """
 
         try:
-            crawl_result = self.app.crawl_url(url=url)
+            crawl_result = self.app.crawl_url(
+                url,
+                {'formats': ['markdown']},
+            )
             if not isinstance(crawl_result, list):
                 raise ValueError("Unexpected response format")
             markdown_contents = [
@@ -157,12 +155,12 @@ class Firecrawl:
         except Exception as e:
             raise RuntimeError(f"Failed to scrape the URL: {e}")
 
-    def structured_scrape(self, url: str, output_schema: BaseModel) -> Dict:
+    def structured_scrape(self, url: str, response_format: BaseModel) -> Dict:
         r"""Use LLM to extract structured data from given URL.
 
         Args:
             url (str): The URL to read.
-            output_schema (BaseModel): A pydantic model
+            response_format (BaseModel): A pydantic model
                 that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
@@ -177,37 +175,31 @@ class Firecrawl:
             data = self.app.scrape_url(
                 url,
                 {
-                    'extractorOptions': {
-                        "mode": "llm-extraction",
-                        "extractionPrompt": "Based on the information on "
-                        "the page, extract the information from the schema.",
-                        'extractionSchema': output_schema.model_json_schema(),
-                    },
-                    'pageOptions': {'onlyMainContent': True},
+                    'formats': ['extract'],
+                    'extract': {'schema': response_format.model_json_schema()},
                 },
             )
-            return data.get("llm_extraction", {})
+            return data.get("extract", {})
         except Exception as e:
             raise RuntimeError(f"Failed to perform structured scrape: {e}")
 
-    def tidy_scrape(self, url: str) -> str:
-        r"""Only return the main content of the page, excluding headers,
-        navigation bars, footers, etc. in Markdown format.
+    def map_site(
+        self, url: str, params: Optional[Dict[str, Any]] = None
+    ) -> list:
+        r"""Map a website to retrieve all accessible URLs.
 
         Args:
-            url (str): The URL to read.
+            url (str): The URL of the site to map.
+            params (Optional[Dict[str, Any]]): Additional parameters for the
+                map request. Defaults to `None`.
 
         Returns:
-            str: The markdown content of the URL.
+            list: A list containing the URLs found on the site.
 
         Raises:
-            RuntimeError: If the scrape process fails.
+            RuntimeError: If the mapping process fails.
         """
-
         try:
-            scrape_result = self.app.scrape_url(
-                url, {'pageOptions': {'onlyMainContent': True}}
-            )
-            return scrape_result.get("markdown", "")
+            return self.app.map_url(url=url, params=params)
         except Exception as e:
-            raise RuntimeError(f"Failed to perform tidy scrape: {e}")
+            raise RuntimeError(f"Failed to map the site: {e}")

@@ -24,7 +24,12 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 warnings.filterwarnings("ignore")
 
@@ -120,7 +125,7 @@ def translate_content(
 
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.GPT_4O_MINI,
             model_config=model_config,
         )
 

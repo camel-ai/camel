@@ -27,6 +27,7 @@ from .commons import (
     get_pydantic_object_schema,
     get_system_information,
     get_task_list,
+    handle_http_error,
     is_docker_running,
     json_to_function_code,
     print_text_animated,
@@ -42,7 +43,6 @@ from .token_counting import (
     LiteLLMTokenCounter,
     MistralTokenCounter,
     OpenAITokenCounter,
-    OpenSourceTokenCounter,
     get_model_encoding,
 )
 
@@ -59,7 +59,6 @@ __all__ = [
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
-    'OpenSourceTokenCounter',
     'LiteLLMTokenCounter',
     'Constants',
     'text_extract_from_web',
@@ -76,4 +75,5 @@ __all__ = [
     'agentops_decorator',
     'AgentOpsMeta',
     'track_agent',
+    'handle_http_error',
 ]

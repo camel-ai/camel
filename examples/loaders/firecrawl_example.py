@@ -20,19 +20,7 @@ from camel.loaders import Firecrawl
 
 firecrawl = Firecrawl()
 
-job_id = firecrawl.crawl(
-    url="https://www.camel-ai.org/about", wait_until_done=False
-)
-
-print(job_id)
-
-'''
-===============================================================================
-d2123e54-63c9-4feb-98f9-03b7ddeb0f1f
-===============================================================================
-'''
-
-response = firecrawl.check_crawl_job("d2123e54-63c9-4feb-98f9-03b7ddeb0f1f")
+response = firecrawl.crawl(url="https://www.camel-ai.org/about")
 
 print(response["status"])
 '''
@@ -80,7 +68,7 @@ class TopArticlesSchema(BaseModel):
 
 
 response = firecrawl.structured_scrape(
-    url='https://news.ycombinator.com', output_schema=TopArticlesSchema
+    url='https://news.ycombinator.com', response_format=TopArticlesSchema
 )
 
 print(response)
@@ -97,3 +85,19 @@ Interpreters with Rust: On Garbage Collection', 'points': 148, 'by':
 'amalinovic', 'commentsURL': 'item?id=41108662'}]}
 ===============================================================================
 '''
+
+map_result = firecrawl.map_site(url="https://www.camel-ai.org")
+
+print(map_result)
+"""
+===============================================================================
+['https://www.camel-ai.org', 'https://www.camel-ai.org/blog', 'https://www.
+camel-ai.org/checkout', 'https://www.camel-ai.org/contact', 'https://www.camel-
+ai.org/features', 'https://www.camel-ai.org/order-confirmation', 'https://www.
+camel-ai.org/paypal-checkout', 'https://www.camel-ai.org/about', 'https://www.
+camel-ai.org/integration', 'https://www.camel-ai.org/search', 'https://www.
+camel-ai.org/post/crab', 'https://www.camel-ai.org/post/tool-usage', 'https://
+www.camel-ai.org/post/releasenotes-sprint4', 'https://www.camel-ai.org/post/
+releasenotes-sprint56']
+===============================================================================
+"""

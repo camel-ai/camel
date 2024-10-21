@@ -1,4 +1,7 @@
 # Retrievers
+
+For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/agents_with_rag.ipynb)
+
 ## 1. Concept
 The Retrievers module is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
 

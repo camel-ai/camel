@@ -7,14 +7,13 @@
 
 ______________________________________________________________________
 
-# CAMEL: Communicative Agents for “Mind” Exploration of Large Language Model Society
+# CAMEL: Finding the Scaling Laws of Agents
 
 [![Python Version][python-image]][python-url]
 [![PyTest Status][pytest-image]][pytest-url]
 [![Documentation][docs-image]][docs-url]
 [![Star][star-image]][star-url]
 [![Package License][package-license-image]][package-license-url]
-[![Data License][data-license-image]][data-license-url]
 
 <p align="center">
   <a href="https://github.com/camel-ai/camel#community">Community</a> |
@@ -31,13 +30,11 @@ ______________________________________________________________________
   <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png' width=800>
 </p>
 
-## Overview
-The rapid advancement of conversational and chat-based language models has led to remarkable progress in complex task-solving. However, their success heavily relies on human input to guide the conversation, which can be challenging and time-consuming. This paper explores the potential of building scalable techniques to facilitate autonomous cooperation among communicative agents and provide insight into their "cognitive" processes. To address the challenges of achieving autonomous cooperation, we propose a novel communicative agent framework named *role-playing*. Our approach involves using *inception prompting* to guide chat agents toward task completion while maintaining consistency with human intentions. We showcase how role-playing can be used to generate conversational data for studying the behaviors and capabilities of chat agents, providing a valuable resource for investigating conversational language models. Our contributions include introducing a novel communicative agent framework, offering a scalable approach for studying the cooperative behaviors and capabilities of multi-agent systems, and open-sourcing our library to support research on communicative agents and beyond. The GitHub repository of this project is made publicly available on: [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel).
 
 ## Community
-🐫 CAMEL is an open-source library designed for the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
+🐫 CAMEL is an open-source community dedicated to finding the scaling laws of agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
-Join us ([*Slack*](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ), [*Discord*](https://discord.gg/CNcNpquyDc) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of building AI Society.
+Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org/camel/wechat.png) or [*Slack*](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)) in pushing the boundaries of finding the scaling laws of agents.
 
 ## Try it yourself
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
@@ -72,8 +69,8 @@ Some features require extra dependencies:
 
 Install `CAMEL` from source with poetry (Recommended):
 ```sh
-# Make sure your python version is later than 3.9
-# You can use pyenv to manage multiple python verisons in your sytstem
+# Make sure your python version is later than 3.10
+# You can use pyenv to manage multiple python versions in your system
 
 # Clone github repo
 git clone https://github.com/camel-ai/camel.git
@@ -81,7 +78,7 @@ git clone https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
-# If you didn't install peotry before
+# If you didn't install poetry before
 pip install poetry  # (Optional)
 
 # We suggest using python 3.10
@@ -95,22 +92,31 @@ poetry shell
 poetry install
 
 # Install CAMEL with all dependencies
-poetry install -E all  # (Optional)
+poetry install -E all # (Optional)
 
 # Exit the virtual environment
 exit
 ```
 
+> [!TIP]
+> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You can try running:
+> ```sh
+> poetry install --no-cache
+> ```
+
+
+
+
 Install `CAMEL` from source with conda and pip:
 ```sh
 # Create a conda virtual environment
-conda create --name camel python=3.9
+conda create --name camel python=3.10
 
 # Activate CAMEL conda environment
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.6.6 https://github.com/camel-ai/camel.git
+git clone -b v0.2.2 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -306,7 +312,7 @@ We implemented amazing research ideas from other works for you to build, compare
   year={2023}
 }
 ```
-## Acknowledgement
+## Acknowledgment
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
 We would also like to thank Haya Hammoud for designing the initial logo of our project.
@@ -315,16 +321,14 @@ We would also like to thank Haya Hammoud for designing the initial logo of our p
 
 The source code is licensed under Apache 2.0.
 
-The datasets are licensed under CC BY NC 4.0, which permits only non-commercial usage. It is advised that any models trained using the dataset should not be utilized for anything other than research purposes.
-
 ## Contributing to CAMEL 🐫
 We appreciate your interest in contributing to our open-source initiative. We provide a document of [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) which outlines the steps for contributing to CAMEL. Please refer to this guide to ensure smooth collaboration and successful contributions. 🤝🚀
 
 ## Contact
 For more information please contact camel.ai.team@gmail.com.
 
-[python-image]: https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg
-[python-url]: https://docs.python.org/3.9/
+[python-image]: https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg
+[python-url]: https://docs.python.org/3.10/
 [pytest-image]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml/badge.svg
 [pytest-url]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml
 [docs-image]: https://img.shields.io/badge/Documentation-grey.svg?logo=github
@@ -333,8 +337,6 @@ For more information please contact camel.ai.team@gmail.com.
 [star-url]: https://github.com/camel-ai/camel/stargazers
 [package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 [package-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/LICENSE
-[data-license-image]: https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg
-[data-license-url]: https://github.com/camel-ai/camel/blob/master/licenses/DATA_LICENSE
 
 [colab-url]: https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing
 [colab-image]: https://colab.research.google.com/assets/colab-badge.svg
@@ -342,7 +344,7 @@ For more information please contact camel.ai.team@gmail.com.
 [huggingface-image]: https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-CAMEL--AI-ffc107?color=ffc107&logoColor=white
 [slack-url]: https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ
 [slack-image]: https://img.shields.io/badge/Slack-CAMEL--AI-blueviolet?logo=slack
-[discord-url]: https://discord.gg/CNcNpquyDc
+[discord-url]: https://discord.camel-ai.org/
 [discord-image]: https://img.shields.io/badge/Discord-CAMEL--AI-7289da?logo=discord&logoColor=white&color=7289da
 [wechat-url]: https://ghli.org/camel/wechat.png
 [wechat-image]: https://img.shields.io/badge/WeChat-CamelAIOrg-brightgreen?logo=wechat&logoColor=white

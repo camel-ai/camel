@@ -16,10 +16,10 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from openai import NOT_GIVEN, NotGiven, OpenAI
+from openai import OpenAI
 
 from camel.embeddings.base import BaseEmbedding
-from camel.types import EmbeddingModelType
+from camel.types import NOT_GIVEN, EmbeddingModelType, NotGiven
 from camel.utils import api_keys_required
 
 
@@ -75,12 +75,19 @@ class OpenAIEmbedding(BaseEmbedding[str]):
                 as a list of floating-point numbers.
         """
         # TODO: count tokens
-        response = self.client.embeddings.create(
-            input=objs,
-            model=self.model_type.value,
-            dimensions=self.output_dim,
-            **kwargs,
-        )
+        if self.model_type == EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
+            response = self.client.embeddings.create(
+                input=objs,
+                model=self.model_type.value,
+                **kwargs,
+            )
+        else:
+            response = self.client.embeddings.create(
+                input=objs,
+                model=self.model_type.value,
+                dimensions=self.output_dim,
+                **kwargs,
+            )
         return [data.embedding for data in response.data]
 
     def get_output_dim(self) -> int:

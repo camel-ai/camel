@@ -106,7 +106,7 @@ class BabyAGI:
         )
 
         self.assistant_agent: ChatAgent
-        self.assistant_sys_msg: BaseMessage
+        self.assistant_sys_msg: Optional[BaseMessage]
         self.task_creation_agent: TaskCreationAgent
         self.task_prioritization_agent: TaskPrioritizationAgent
         self.init_agents(
@@ -202,7 +202,8 @@ class BabyAGI:
 
         self.task_creation_agent = TaskCreationAgent(
             objective=self.specified_task_prompt,
-            role_name=self.assistant_sys_msg.role_name,
+            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
+            or "assistant",
             output_language=output_language,
             message_window_size=message_window_size,
             **(task_creation_agent_kwargs or {}),
@@ -238,14 +239,13 @@ class BabyAGI:
 
         task_name = self.subtasks.popleft()
         assistant_msg_msg = BaseMessage.make_user_message(
-            role_name=self.assistant_sys_msg.role_name, content=f"{task_name}"
+            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
+            or "assistant",
+            content=f"{task_name}",
         )
 
         assistant_response = self.assistant_agent.step(assistant_msg_msg)
         assistant_msg = assistant_response.msgs[0]
-        self.assistant_agent.record_message(assistant_msg)
-        self.task_creation_agent.record_message(assistant_msg)
-        self.task_prioritization_agent.record_message(assistant_msg)
 
         self.solved_subtasks.append(task_name)
         past_tasks = self.solved_subtasks + list(self.subtasks)

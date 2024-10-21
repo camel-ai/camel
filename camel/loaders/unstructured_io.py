@@ -13,7 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import uuid
 import warnings
+from io import IOBase
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -23,7 +25,8 @@ from typing import (
     Union,
 )
 
-from unstructured.documents.elements import Element
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
 
 class UnstructuredIO:
@@ -46,7 +49,7 @@ class UnstructuredIO:
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
         parent_id: Optional[Union[str, uuid.UUID]] = None,
-    ) -> Element:
+    ) -> "Element":
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
@@ -92,7 +95,7 @@ class UnstructuredIO:
     def parse_file_or_url(
         input_path: str,
         **kwargs: Any,
-    ) -> Union[List[Element], None]:
+    ) -> Union[List["Element"], None]:
         r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
@@ -108,7 +111,7 @@ class UnstructuredIO:
                 specified.
 
         Notes:
-            Available document types:
+            Supported file types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
 
@@ -151,6 +154,41 @@ class UnstructuredIO:
             except Exception:
                 warnings.warn(f"Failed to partition the file: {input_path}")
                 return None
+
+    @staticmethod
+    def parse_bytes(
+        file: IOBase, **kwargs: Any
+    ) -> Union[List["Element"], None]:
+        r"""Parses a bytes stream and converts its contents into elements.
+
+        Args:
+            file (IOBase): The file in bytes format to be parsed.
+            **kwargs: Extra kwargs passed to the partition function.
+
+        Returns:
+            Union[List[Element], None]: List of elements after parsing the file
+                if successful, otherwise `None`.
+
+        Notes:
+            Supported file types:
+                "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+                "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
+
+        References:
+            https://docs.unstructured.io/open-source/core-functionality/partitioning
+        """
+
+        from unstructured.partition.auto import partition
+
+        try:
+            # Use partition to process the bytes stream
+            elements = partition(file=file, **kwargs)
+            return elements
+        except Exception as e:
+            import warnings
+
+            warnings.warn(f"Failed to partition the file stream: {e}")
+            return None
 
     @staticmethod
     def clean_text_data(
@@ -407,7 +445,7 @@ class UnstructuredIO:
     @staticmethod
     def chunk_elements(
         elements: List[Any], chunk_type: str, **kwargs
-    ) -> List[Element]:
+    ) -> List["Element"]:
         r"""Chunks elements by titles.
 
         Args:
