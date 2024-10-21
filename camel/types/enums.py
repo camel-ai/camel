@@ -85,6 +85,12 @@ class ModelType(UnifiedModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # Yi models (01-ai)
+    YI_LIGHTNING = "yi-lightning"
+    YI_LARGE = "yi-large"
+    YI_MEDIUM = "yi-medium"
+    YI_LARGE_TURBO = "yi-large-turbo"
+
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
@@ -216,6 +222,20 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_yi(self) -> bool:
+        r"""Returns whether this type of models is Yi model.
+
+        Returns:
+            bool: Whether this type of models is Yi.
+        """
+        return self in {
+            ModelType.YI_LIGHTNING,
+            ModelType.YI_LARGE,
+            ModelType.YI_MEDIUM,
+            ModelType.YI_LARGE_TURBO,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -244,6 +264,9 @@ class ModelType(UnifiedModelType, Enum):
             return 8_192
         elif self in {
             ModelType.GPT_3_5_TURBO,
+            ModelType.YI_LIGHTNING,
+            ModelType.YI_MEDIUM,
+            ModelType.YI_LARGE_TURBO,
         }:
             return 16_384
         elif self in {
@@ -251,6 +274,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
             ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.YI_LARGE,
         }:
             return 32_768
         elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
@@ -439,6 +463,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
+    YI = "lingyiwanwu"
 
     @property
     def is_openai(self) -> bool:
@@ -510,6 +535,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_yi(self) -> bool:
+        r"""Returns whether this platform is Yi."""
+        return self is ModelPlatformType.YI
 
 
 class AudioModelType(Enum):
