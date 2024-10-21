@@ -15,11 +15,12 @@ import uuid
 from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
-from camel.embeddings import SentenceTransformerEncoder
+from camel.embeddings import OpenAIEmbedding, SentenceTransformerEncoder
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.personas import Persona
 from camel.prompts import TextPrompt
+from camel.types import EmbeddingModelType
 
 
 class PersonaHub:
@@ -116,7 +117,7 @@ class PersonaHub:
 
         response = t2p_agent.step(
             t2p_prompt_instruction_msg,
-            output_schema=PersonaResponse,  # type: ignore[arg-type]
+            response_format=PersonaResponse,  # type: ignore[arg-type]
         )
 
         if response.terminated:
@@ -194,13 +195,15 @@ persona_description: <BLANK>
 
         return personas
 
-    def deduplicate(self, similarity_threshold: float = 0.9):
+    def deduplicate(self, similarity_threshold: float = 0.85):
         r"""Remove similar personas from the group.
 
         Args:
             similarity_threshold (float): The similarity threshold for
-            deduplication (default is 0.9).
+            deduplication (default is 0.85).
         """
+        # Changed to default similarity threshold to 0.85 as the default
+        # text-embedding-3-small model may give lower similarities than others
         # This is a simplified version. Need to implement a more
         # sophisticated deduplication algorithm as described in the paper.
         unique_personas: Dict[uuid.UUID, Persona] = {}
@@ -213,19 +216,28 @@ persona_description: <BLANK>
         self.personas = unique_personas
 
     def is_similar(
-        self, persona1: Persona, persona2: Persona, threshold: float
+        self,
+        persona1: Persona,
+        persona2: Persona,
+        threshold: float,
+        embedding_model: str = "text-embedding-3-small",
     ) -> bool:
         r"""Check if two personas are similar."""
-        sentence_encoder = SentenceTransformerEncoder(
-            model_name='all-mpnet-base-v2'
-        )  # Using all-mpnet-base-v2, may switch to other models
+
+        # Set up persona encoder
+        encoder: Union[SentenceTransformerEncoder, OpenAIEmbedding]
+        try:
+            model_type = EmbeddingModelType(embedding_model)
+            encoder = OpenAIEmbedding(model_type=model_type)
+        except ValueError:
+            encoder = SentenceTransformerEncoder(model_name=embedding_model)
 
         # Ensure persona descriptions are not None
         persona1_description = persona1.description or ""
         persona2_description = persona2.description or ""
 
-        persona1_embeddings = sentence_encoder.embed(persona1_description)
-        persona2_embeddings = sentence_encoder.embed(persona2_description)
+        persona1_embeddings = encoder.embed(persona1_description)
+        persona2_embeddings = encoder.embed(persona2_description)
 
         import numpy as np
 

@@ -141,8 +141,6 @@ def test_persona_to_persona(persona_generator: PersonaHub):
 
 
 def test_deduplicate(persona_generator: PersonaHub):
-    # This test is a placeholder and should be expanded when the actual
-    # deduplication logic is implemented
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
@@ -171,7 +169,7 @@ def test_is_similar(persona_generator: PersonaHub):
         description="Test Description 2",
     )
     assert persona_generator.is_similar(
-        persona1=persona1, persona2=persona2, threshold=0.9
+        persona1=persona1, persona2=persona2, threshold=0.85
     )
 
 
