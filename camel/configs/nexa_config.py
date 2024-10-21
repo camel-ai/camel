@@ -37,24 +37,19 @@ class NexaConfig(BaseConfig):
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`1.0`)
-        top_k (int, optional): The number of highest probability vocabulary
-            tokens to keep for top-k-filtering. (default: :obj:`50`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`False`)
         stop (str or list, optional): List of stop words for early stopping
             generating further tokens. (default: :obj:`None`)
-        nctx (int, optional): Length of context window. (default: :obj:`2048`)
 
     """
 
     temperature: float = 0.7
     max_tokens: int = 1024
     top_p: float = 1.0
-    top_k: int = 50
     stream: bool = False
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    nctx: int = 2048
 
 
 NEXA_API_PARAMS = {param for param in NexaConfig.model_fields.keys()}

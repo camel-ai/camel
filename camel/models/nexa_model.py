@@ -18,53 +18,52 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import NEXA_API_PARAMS
+from camel.configs import NEXA_API_PARAMS, NexaConfig
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import OpenAITokenCounter
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
-class NexaModel:
+class NexaModel(BaseModelBackend):
     """Nexa service interface."""
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
-        url: Optional[str] = None,
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        token_counter: Optional[OpenAITokenCounter] = None,
+        url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         """Constructor for Nexa backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into the API call.
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`None`)
-            api_key (Optional[str]): The API key for the model service.
-                (default: :obj:`None`)
-            token_counter (Optional[OpenAITokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_4O_MINI)` will be used.
+            model_type (Union[ModelType, str]): Model for which a backend is
+                created.
+            model_config_dict (Optional[Dict[str, Any]], optional): A
+            dictionary that will be fed into the API call. If None, default
+                configuration will be used. (default: None)
+            api_key (Optional[str], optional): The API key for the model
+                service. (default: None)
+            url (Optional[str], optional): The url to the model service. If not
+                provided, environment variable or default URL will be used.
+                (default: None)
+            token_counter (Optional[BaseTokenCounter], optional): Token counter
+                to use for the model. If not provided,
+                OpenAITokenCounter(ModelType.GPT_4O_MINI) will be used.
+                (default: None)
         """
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        # TODO: Cannot start server now
-        # Should be started by user, and url should be provided
-        if not url and not os.environ.get("NEXA_BASE_URL"):
-            self._start_server()
-        self._url = (
-            url
-            or os.environ.get("NEXA_BASE_URL")
-            or "http://localhost:8000/v1"
+        if model_config_dict is None:
+            model_config_dict = NexaConfig().as_dict()
+        url = url or os.environ.get("NEXA_BASE_URL")
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
         )
-        if not self._url.endswith("/v1"):
-            self._url += "/v1"
-        self._api_key = api_key or "DO-NOT-USE-API-KEY"
-        self._token_counter = token_counter
-        self.check_model_config()
+
+        if not self._url:
+            self._start_server()
+
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
@@ -79,10 +78,10 @@ class NexaModel:
                 [
                     "nexa",
                     "server",
-                    "llama3.2",
+                    self.model_type,
                     "--port",
                     "8000",
-                ],  # TODO: model type
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -92,6 +91,18 @@ class NexaModel:
             )
         except Exception as e:
             print(f"Failed to start Nexa server: {e}.")
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        """Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        if not self._token_counter:
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+        return self._token_counter
 
     def check_model_config(self):
         """Check whether the model configuration contains any
@@ -126,25 +137,12 @@ class NexaModel:
         try:
             response = self._client.chat.completions.create(
                 messages=messages,
-                # model=self.model_type,
-                model="model-type",
+                model=self.model_type,
                 **self.model_config_dict,
             )
             return response
         except Exception as e:
             raise Exception(f"Error calling Nexa API: {e!s}")
-
-    @property
-    def token_counter(self) -> OpenAITokenCounter:
-        """Initialize the token counter for the model backend.
-
-        Returns:
-            OpenAITokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
-        return self._token_counter
 
     @property
     def token_limit(self) -> int:
