@@ -166,8 +166,8 @@ class ChatAgent(BaseAgent):
             model
             if model is not None
             else ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
             )
         )
         self.output_language: Optional[str] = output_language

@@ -26,6 +26,8 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
+    DEFAULT = "gpt-4o-mini"
+
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo"
@@ -109,6 +111,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4O_MINI,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
+            ModelType.DEFAULT,
         }
 
     @property
@@ -271,6 +274,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.DEFAULT,
         }:
             return 128_000
         elif self in {
@@ -424,6 +428,8 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
+    DEFAULT = "default"
+
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
@@ -431,7 +437,6 @@ class ModelPlatformType(Enum):
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
-    DEFAULT = "default"
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
@@ -443,7 +448,10 @@ class ModelPlatformType(Enum):
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
-        return self is ModelPlatformType.OPENAI
+        return (
+            self is ModelPlatformType.OPENAI
+            or self is ModelPlatformType.DEFAULT
+        )
 
     @property
     def is_azure(self) -> bool:

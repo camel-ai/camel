@@ -32,8 +32,8 @@ def main():
     ).as_dict()
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
         model_config_dict=model_config_dict,
     )
 
