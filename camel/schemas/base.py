@@ -12,38 +12,24 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Type, Union
 
 from pydantic import BaseModel
 
 from camel.utils import get_format
 
-from .prompts import DEFAULT_STRUCTURED_PROMPTS
-
 
 class BaseConverter(ABC):
-    """
-    A base class for schema outputs that includes functionality
+    r"""A base class for schema outputs that includes functionality
     for managing the response format.
+
+    Args:
+        output_schema (Optional[Type[BaseModel]], optional): The expected
+            format of the response. (default: :obj:`None`)
     """
 
-    def __init__(
-        self,
-        output_format: Optional[BaseModel] = None,
-        prompt: Optional[str] = None,
-    ):
-        """
-        Initializes the BaseConverter with an optional response format.
-
-        Args:
-            output_format (Optional[BaseModel]):
-                The expected format of the response.
-                Defaults to None.
-            prompt (Optional[str]): The prompt to be used for the model.
-                Defaults to None.
-        """
-        self.output_format = output_format
-        self.prompt = prompt or DEFAULT_STRUCTURED_PROMPTS
+    def __init__(self, output_schema: Optional[Type[BaseModel]] = None):
+        self.output_schema = output_schema
 
     @staticmethod
     def get_format(
@@ -62,12 +48,16 @@ class BaseConverter(ABC):
         return get_format(input_data)
 
     @abstractmethod
-    def structure(self, text: str) -> Optional[BaseModel]:
+    def convert(
+        self, text: str, output_schema: Optional[Type[BaseModel]] = None
+    ) -> BaseModel:
         """
         Structures the input text into the expected response format.
 
         Args:
             text (str): The input text to be structured.
+            output_schema (Optional[Type[BaseModel]], optional):
+                The expected format of the response. Defaults to None.
 
         Returns:
             Optional[BaseModel]: The structured response.

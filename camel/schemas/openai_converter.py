@@ -12,75 +12,88 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, Optional
+import os
+from typing import Any, Dict, Optional, Type
 
+from openai import OpenAI
 from pydantic import BaseModel
 
-from camel.models import OpenAIModel
 from camel.types import ModelType
 from camel.utils import (
     api_keys_required,
 )
 
 from .base import BaseConverter
+from .prompts import DEFAULT_CONVERTER_PROMPTS
 
 
 class OpenAISchemaConverter(BaseConverter):
+    r"""OpenAISchemaConverter is a class that
+    converts a string or a function into a BaseModel schema.
+
+    Args:
+        model_type (ModelType, optional): The model type to be used.
+            (default: ModelType.GPT_4O_MINI)
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating
+            with the OpenAI service. (default: :obj:`None`)
+        output_schema (Optional[Type[BaseModel]], optional): The expected
+            format of the response. (default: :obj:`None`)
+        prompt (Optional[str], optional): The prompt to be used.
+            (default: :obj:`None`)
+
+    """
+
     def __init__(
         self,
         model_type: ModelType = ModelType.GPT_4O_MINI,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        target: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
         prompt: Optional[str] = None,
     ):
-        """
-        Initializes the OpenAISchemaConverter class
-            with the specified parameters.
-
-        Args:
-            model_type (ModelType): The model type to use.
-            model_config_dict (Optional[Dict[str, Any]]):
-                The model config dict.
-            api_key (Optional[str]): The API key to use.
-            target (Optional[BaseModel]): The target format.
-            prompt (Optional[str]): The prompt to use.
-        """
-        if model_config_dict is None:
-            model_config_dict = {}
-        self.model = OpenAIModel(model_type, model_config_dict, api_key)
-        BaseConverter.__init__(self, target, prompt)
-
-        if target is not None:
-            self.model.model_config_dict["response_format"] = target
-
-        self.model._client.chat.completions.create = (  # type: ignore[method-assign]
-            self.model._client.beta.chat.completions.parse  # type: ignore[assignment]
+        self.model_type = model_type
+        self.prompt = prompt or DEFAULT_CONVERTER_PROMPTS
+        self.model_config_dict = model_config_dict or {}
+        api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self._client = OpenAI(
+            timeout=60,
+            max_retries=3,
+            api_key=api_key,
         )
+        BaseConverter.__init__(self, output_schema)
+        if output_schema is not None:
+            self.model_config_dict["response_format"] = output_schema
 
     @api_keys_required("OPENAI_API_KEY")
-    def structure(
-        self, content: str, target: Optional[BaseModel] = None
+    def convert(
+        self, content: str, output_schema: Optional[Type[BaseModel]] = None
     ) -> BaseModel:
         """
         Formats the input content into the expected BaseModel
 
         Args:
             content (str): The content to be formatted.
-            target (Optional[BaseModel]):
-                The expected format of the response.
+            output_schema (Optional[Type[BaseModel]], optional):
+                The expected format of the response. Defaults to None.
 
         Returns:
             Optional[BaseModel]: The formatted response.
         """
-        if target is not None:
-            self.model.model_config_dict["response_format"] = target
+        if output_schema is not None:
+            self.model_config_dict["response_format"] = output_schema
 
-        completion = self.model.run(
+        response = self._client.beta.chat.completions.parse(
             messages=[
                 {'role': 'system', 'content': self.prompt},
                 {'role': 'user', 'content': content},
-            ]
+            ],
+            model=self.model_type,
+            **self.model_config_dict,
         )
-        message = completion.choices[0].message  # type: ignore[union-attr]
-        return message.parsed  # type: ignore[union-attr]
+
+        message = response.choices[0].message  # type: ignore[union-attr]
+        return message.parsed  # type: ignore[return-value]

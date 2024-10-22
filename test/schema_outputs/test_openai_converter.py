@@ -36,10 +36,10 @@ def test_openaistructure_with_str_template():
     )
 
     model = OpenAISchemaConverter(
-        target=target_format_from_str,
+        output_schema=target_format_from_str,
     )
 
-    structured_output = model.structure(
+    structured_output = model.convert(
         "Today is 2023-09-01, the temperature in Beijing is 30 degrees."
     )
 
@@ -56,10 +56,10 @@ def test_openaistructure_with_function():
     )
 
     model = OpenAISchemaConverter(
-        target=target_format_from_function,
+        output_schema=target_format_from_function,
     )
 
-    structured_output = model.structure(
+    structured_output = model.convert(
         "Today is 2023-09-01, the temperature in Beijing is 30 degrees."
     )
 
@@ -74,10 +74,10 @@ def test_openaistructure_with_model():
     target_format_from_model = Temperature
 
     model = OpenAISchemaConverter(
-        target=target_format_from_model,
+        output_schema=target_format_from_model,
     )
 
-    structured_output = model.structure(
+    structured_output = model.convert(
         "Today is 2023-09-01, the temperature in Beijing is 30 degrees."
     )
 

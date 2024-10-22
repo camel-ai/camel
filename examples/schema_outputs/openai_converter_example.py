@@ -38,11 +38,11 @@ target_format_from_model = Temperature
 
 
 model = OpenAISchemaConverter(
-    target=target_format_from_str,
+    output_schema=target_format_from_str,
 )
 
 print(
-    model.structure(
+    model.convert(
         "Today is 2023-09-01, the temperature in Beijing is 30 degrees."
     )
 )
@@ -52,8 +52,8 @@ print(
 model = OpenAISchemaConverter()
 
 print(
-    model.structure(
+    model.convert(
         "Today is 2023-09-01, the temperature in Beijing is 30 degrees.",
-        target=target_format_from_function,
+        output_schema=target_format_from_function,
     )
 )

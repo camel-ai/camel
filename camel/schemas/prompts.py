@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-DEFAULT_STRUCTURED_PROMPTS = """
+DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the provided text,
         and convert them into a structured JSON format.
 """
