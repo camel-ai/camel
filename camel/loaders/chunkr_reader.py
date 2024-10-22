@@ -115,8 +115,10 @@ class ChunkrReader:
             task_id (str): The task ID to check the status for.
             max_retries (int, optional): Maximum number of retry attempts.
                 (default: :obj:`5`)
+
         Returns:
             str: The formatted task result in JSON format.
+
         Raises:
             ValueError: If the task status cannot be retrieved.
             RuntimeError: If the maximum number of retries is reached without
