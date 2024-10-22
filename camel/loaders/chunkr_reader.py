@@ -28,6 +28,7 @@ logging.basicConfig(level=logging.INFO)
 class ChunkrReader:
     r"""Chunkr Reader for processing documents and returning content
     in various formats.
+
     Args:
         api_key (Optional[str], optional): The API key for Chunkr API. If not
             provided, it will be retrieved from the environment variable
