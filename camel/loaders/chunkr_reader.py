@@ -64,6 +64,7 @@ class ChunkrReader:
         target_chunk_length: str = "512",
     ) -> str:
         r"""Submits a file to the Chunkr API and returns the task ID.
+
         Args:
             file_path (str): The path to the file to be uploaded.
             model (str, optional): The model to be used for the task.
