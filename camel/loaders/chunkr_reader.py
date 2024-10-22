@@ -157,6 +157,7 @@ class ChunkrReader:
         r"""Pretty prints the JSON response.
         Args:
             response_json (dict): The response JSON to pretty print.
+
         Returns:
             str: Formatted JSON as a string.
         """
