@@ -47,6 +47,7 @@ jobs:
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
         ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
         ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
+        CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -83,6 +84,7 @@ jobs:
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
         ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
         ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
+        CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -119,4 +121,5 @@ jobs:
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
         ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
         ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
+        CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/
