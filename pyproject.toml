@@ -99,6 +99,7 @@ arxiv2text = { version = "^0.1.14", optional = true }
 jupyter_client = { version = "^8.6.2", optional = true }
 ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
+apify_client = { version = "^1.8.1", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -201,6 +202,7 @@ tools = [
     "textblob",
     "scholarly",
     "pdfplumber",
+    "apify_client",
 ]
 
 vector-databases = [
@@ -297,6 +299,7 @@ all = [
     "azure-storage-blob",
     "google-cloud-storage",
     "botocore",
+    "apify_client",
 ]
 
 [tool.poetry.group.dev]

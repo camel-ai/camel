@@ -16,10 +16,12 @@ from .base_io import File
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .unstructured_io import UnstructuredIO
+from.apify_reader import Apify
 
 __all__ = [
     'File',
     'UnstructuredIO',
     'JinaURLReader',
     'Firecrawl',
+    'Apify',
 ]
