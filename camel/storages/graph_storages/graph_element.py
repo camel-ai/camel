@@ -13,14 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 
 class Node(BaseModel):
@@ -73,6 +71,6 @@ class GraphElement(BaseModel):
     source: Element
 
     def __post_init__(self):
-        if Element is None:
+        if "Element" not in globals():
             raise ImportError("""The 'unstructured' package is required to use
                               the 'source' attribute.""")

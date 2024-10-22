@@ -27,7 +27,7 @@ ______________________________________________________________________
 </p>
 
 <p align="center">
-  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png' width=800>
+  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png' width=800>
 </p>
 
 
@@ -116,7 +116,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.2 https://github.com/camel-ai/camel.git
+git clone -b v0.2.3 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -298,8 +298,8 @@ We appreciate your interest in contributing to our open-source initiative. We pr
 ## Contact
 For more information please contact camel.ai.team@gmail.com.
 
-[python-image]: https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg
-[python-url]: https://docs.python.org/3.10/
+[python-image]: https://img.shields.io/badge/Python-3.10%2C%203.11%2C%203.12-brightgreen.svg
+[python-url]: https://www.python.org/
 [pytest-image]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml/badge.svg
 [pytest-url]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml
 [docs-image]: https://img.shields.io/badge/Documentation-grey.svg?logo=github
