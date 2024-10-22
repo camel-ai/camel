@@ -285,7 +285,7 @@ def test_get_issue_content(monkeypatch):
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_all_pull_requests(self, mock_get_repo):
+def test_get_all_pull_requests(monkeypatch):
     github_toolkit = GithubToolkit("repo_name", "token")
     mock_pr = MagicMock()
     mock_pr.number = 1
@@ -300,7 +300,7 @@ def test_get_all_pull_requests(self, mock_get_repo):
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_pull_request_code(self, mock_get_repo):
+def test_get_pull_request_code(monkeypatch):
     github_toolkit = GithubToolkit("repo_name", "token")
     mock_file = MagicMock()
     mock_file.filename = "file1.py"
@@ -319,7 +319,7 @@ def test_get_pull_request_code(self, mock_get_repo):
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_pull_request_comments(self, mock_get_repo):
+def test_get_pull_request_comments(monkeypatch):
     github_toolkit = GithubToolkit("repo_name", "token")
     mock_comment = MagicMock()
     mock_comment.user.login = "user1"
@@ -338,7 +338,7 @@ def test_get_pull_request_comments(self, mock_get_repo):
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_get_all_file_paths(self, mock_get_repo):
+def test_get_all_file_paths(monkeypatch):
     github_toolkit = GithubToolkit("repo_name", "token")
     mock_content = MagicMock()
     mock_content.type = "file"
