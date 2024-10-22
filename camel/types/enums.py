@@ -85,6 +85,9 @@ class ModelType(UnifiedModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    def __str__(self):
+        return self.value
+
     def __new__(cls, value) -> "ModelType":
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 

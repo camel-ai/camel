@@ -17,6 +17,7 @@ from camel.types import ModelType, UnifiedModelType
 def test_predefined_model():
     model_type = UnifiedModelType("gpt-4o-mini")
     assert model_type == ModelType.GPT_4O_MINI
+    assert f"test_prefix/{model_type}" == "test_prefix/gpt-4o-mini"
 
 
 def test_duplicated_model_types():
