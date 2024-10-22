@@ -55,20 +55,21 @@ class UnstructuredIO:
 
         Args:
             text (str): The text content for the element.
-            element_id (str, optional): Unique identifier for the element.
-                Defaults to `None`.
+            element_id (Optional[str], optional): Unique identifier for the
+                element. (default: :obj:`None`)
             embeddings (List[float], optional): A list of float
-                numbers representing the text embeddings. Defaults to `None`.
-            filename (str, optional): The name of the file the
-                element is associated with. Defaults to `None`.
-            file_directory (str, optional): The directory path where
-                the file is located. Defaults to `None`.
-            last_modified (str, optional): The last modified date of
-                the file. Defaults to `None`.
-            filetype (str, optional): The type of the file. Defaults
-                to `None`.
-            parent_id (str, optional): The
-                identifier of the parent element. Defaults to `None`.
+                numbers representing the text embeddings.
+                (default: :obj:`None`)
+            filename (Optional[str], optional): The name of the file the
+                element is associated with. (default: :obj:`None`)
+            file_directory (Optional[str], optional): The directory path where
+                the file is located. (default: :obj:`None`)
+            last_modified (Optional[str], optional): The last modified date of
+                the file. (default: :obj:`None`)
+            filetype (Optional[str], optional): The type of the file.
+                (default: :obj:`None`)
+            parent_id (Optional[str], optional): The identifier of the parent
+                element. (default: :obj:`None`)
 
         Returns:
             Element: An instance of Text with the provided content and
@@ -196,7 +197,7 @@ class UnstructuredIO:
 
         This function applies multiple text cleaning utilities by calling the
         `unstructured` library's cleaning bricks for operations like
-        replacing unicode quotes, removing extra whitespace, dashes, non-ascii
+        replacing Unicode quotes, removing extra whitespace, dashes, non-ascii
         characters, and more.
 
         If no cleaning options are provided, a default set of cleaning
