@@ -155,6 +155,7 @@ class ChunkrReader:
 
     def _pretty_print_response(self, response_json: dict) -> str:
         r"""Pretty prints the JSON response.
+
         Args:
             response_json (dict): The response JSON to pretty print.
 
