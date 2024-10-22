@@ -72,6 +72,7 @@ class ChunkrReader:
             ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
             target_chunk_length (str, optional): The target chunk length.
                 (default: :obj:`512`)
+
         Returns:
             str: The task ID.
         """
