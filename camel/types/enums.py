@@ -111,7 +111,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4O_MINI,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
-            ModelType.DEFAULT,
         }
 
     @property
@@ -274,7 +273,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
-            ModelType.DEFAULT,
         }:
             return 128_000
         elif self in {
@@ -428,7 +426,7 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
-    DEFAULT = "default"
+    DEFAULT = "openai"
 
     OPENAI = "openai"
     AZURE = "azure"
@@ -448,10 +446,7 @@ class ModelPlatformType(Enum):
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this platform is openai."""
-        return (
-            self is ModelPlatformType.OPENAI
-            or self is ModelPlatformType.DEFAULT
-        )
+        return self is ModelPlatformType.OPENAI
 
     @property
     def is_azure(self) -> bool:
