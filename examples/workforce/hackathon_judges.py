@@ -13,13 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import textwrap
 
+import agentops
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks import Task
-from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
+
+agentops.init(tags=["Hackathon Judges"])
+from camel.toolkits import FunctionTool, SearchToolkit  # noqa: E402
 
 
 def make_judge(
@@ -254,6 +258,8 @@ def main():
 
     task = workforce.process_task(task)
     print(task.result)
+
+    agentops.end_session("Success")
 
 
 if __name__ == "__main__":
