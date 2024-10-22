@@ -22,7 +22,7 @@ import requests
 
 from camel.utils import api_keys_required
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class ChunkrReader:
@@ -99,12 +99,10 @@ class ChunkrReader:
                 task_id = response.json().get('task_id')
                 if not task_id:
                     raise ValueError("Task ID not returned in the response.")
-                logging.info(
-                    f"Task submitted successfully. Task ID: {task_id}"
-                )
+                logger.info(f"Task submitted successfully. Task ID: {task_id}")
                 return task_id
             except Exception as e:
-                logging.error(f"Failed to submit task: {e}")
+                logger.error(f"Failed to submit task: {e}")
                 raise ValueError(f"Failed to submit task: {e}") from e
 
     def get_task_output(self, task_id: str, max_retries: int = 5) -> str:
@@ -136,21 +134,21 @@ class ChunkrReader:
                 task_status = response.json().get('status')
 
                 if task_status == "Succeeded":
-                    logging.info(f"Task {task_id} completed successfully.")
+                    logger.info(f"Task {task_id} completed successfully.")
                     return self._pretty_print_response(response.json())
                 else:
-                    logging.info(
+                    logger.info(
                         f"Task {task_id} is still {task_status}. Retrying "
                         "in 5 seconds..."
                     )
             except Exception as e:
-                logging.error(f"Failed to retrieve task status: {e}")
+                logger.error(f"Failed to retrieve task status: {e}")
                 raise ValueError(f"Failed to retrieve task status: {e}") from e
 
             attempts += 1
             time.sleep(5)
 
-        logging.error(f"Max retries reached for task {task_id}.")
+        logger.error(f"Max retries reached for task {task_id}.")
         raise RuntimeError(f"Max retries reached for task {task_id}.")
 
     def _pretty_print_response(self, response_json: dict) -> str:
