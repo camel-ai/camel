@@ -87,7 +87,7 @@ class ChunkrReader:
             }
             try:
                 response = requests.post(
-                    self._url, # type: ignore[arg-type]
+                    self._url,  # type: ignore[arg-type]
                     headers=self._headers,
                     files=files,
                     timeout=self.timeout,
@@ -109,7 +109,7 @@ class ChunkrReader:
         result.
         Args:
             task_id (str): The task ID to check the status for.
-            max_retries (int, optional): Maximum number of retry attempts. 
+            max_retries (int, optional): Maximum number of retry attempts.
                 (default: :obj:`5`)
         Returns:
             str: The formatted task result in JSON format.
