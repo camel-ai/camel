@@ -14,6 +14,7 @@
 
 from typing import List
 
+import agentops
 from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
@@ -33,20 +34,23 @@ def main(
     model_type="Meta-Llama-3.1-70B-Instruct",
     chat_turn_limit=10,
 ) -> None:
+    # Initialize agentops
+    agentops.init(default_tags=["SambaNova_with_Agentops"])
+
     task_prompt = (
         "Assume now is 2024 in the Gregorian calendar, "
         "estimate the current age of University of Oxford "
         "and then add 10 more years to this age."
     )
 
-    user_model_config = SambaCloudAPIConfig(temperature=0.2, max_tokens=1800)
+    user_model_config = SambaCloudAPIConfig(temperature=0.0, max_tokens=1800)
 
     tools_list = [
         *MathToolkit().get_tools(),
         *SearchToolkit().get_tools(),
     ]
     assistant_model_config = SambaCloudAPIConfig(
-        temperature=0.2, max_tokens=2200
+        temperature=0.0, max_tokens=2200
     )
 
     role_play_session = RolePlaying(
@@ -60,7 +64,7 @@ def main(
                 model_config_dict=assistant_model_config.as_dict(),
             ),
             tools=tools_list,
-            message_window_size=5,
+            message_window_size=2,
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(
@@ -136,6 +140,9 @@ def main(
             break
 
         input_msg = assistant_response.msg
+
+    # End agentops session
+    agentops.end_session("Success")
 
 
 if __name__ == "__main__":
