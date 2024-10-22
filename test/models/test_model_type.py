@@ -17,12 +17,14 @@ from camel.types import ModelType, UnifiedModelType
 def test_predefined_model():
     model_type = UnifiedModelType("gpt-4o-mini")
     assert model_type == ModelType.GPT_4O_MINI
+    assert f"test_prefix/{model_type}" == "test_prefix/gpt-4o-mini"
 
 
 def test_duplicated_model_types():
     model_type_1 = UnifiedModelType("random-open-source")
     model_type_2 = UnifiedModelType("random-open-source")
     assert id(model_type_1) == id(model_type_2)
+    assert f"test_prefix/{model_type_1}" == "test_prefix/random-open-source"
 
     model_type_3 = UnifiedModelType(ModelType.GPT_4O_MINI)
     model_type_4 = UnifiedModelType("gpt-4o-mini")
