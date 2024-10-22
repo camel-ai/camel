@@ -14,18 +14,22 @@
 
 from typing import List
 
+import agentops
 from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import SambaCloudAPIConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.toolkits import (
+from camel.types import ModelPlatformType
+from camel.utils import print_text_animated
+
+# Initialize agentops
+agentops.init(default_tags=["SambaNova_with_Agentops"])
+from camel.toolkits import (  # noqa: E402
     MathToolkit,
     SearchToolkit,
 )
-from camel.types import ModelPlatformType
-from camel.utils import print_text_animated
 
 
 def main(
@@ -39,14 +43,14 @@ def main(
         "and then add 10 more years to this age."
     )
 
-    user_model_config = SambaCloudAPIConfig(temperature=0.2, max_tokens=1800)
+    user_model_config = SambaCloudAPIConfig(temperature=0.0, max_tokens=1800)
 
     tools_list = [
         *MathToolkit().get_tools(),
         *SearchToolkit().get_tools(),
     ]
     assistant_model_config = SambaCloudAPIConfig(
-        temperature=0.2, max_tokens=2200
+        temperature=0.0, max_tokens=2200
     )
 
     role_play_session = RolePlaying(
@@ -60,7 +64,7 @@ def main(
                 model_config_dict=assistant_model_config.as_dict(),
             ),
             tools=tools_list,
-            message_window_size=5,
+            message_window_size=2,
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(
@@ -136,6 +140,9 @@ def main(
             break
 
         input_msg = assistant_response.msg
+
+    # End agentops session
+    agentops.end_session("Success")
 
 
 if __name__ == "__main__":
