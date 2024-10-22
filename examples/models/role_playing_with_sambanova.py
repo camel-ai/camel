@@ -21,12 +21,15 @@ from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import SambaCloudAPIConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.toolkits import (
+from camel.types import ModelPlatformType
+from camel.utils import print_text_animated
+
+# Initialize agentops
+agentops.init(default_tags=["SambaNova_with_Agentops"])
+from camel.toolkits import (  # noqa: E402
     MathToolkit,
     SearchToolkit,
 )
-from camel.types import ModelPlatformType
-from camel.utils import print_text_animated
 
 
 def main(
@@ -34,9 +37,6 @@ def main(
     model_type="Meta-Llama-3.1-70B-Instruct",
     chat_turn_limit=10,
 ) -> None:
-    # Initialize agentops
-    agentops.init(default_tags=["SambaNova_with_Agentops"])
-
     task_prompt = (
         "Assume now is 2024 in the Gregorian calendar, "
         "estimate the current age of University of Oxford "
