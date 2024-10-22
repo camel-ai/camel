@@ -26,6 +26,8 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
+    DEFAULT = "gpt-4o-mini"
+
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo"
@@ -427,6 +429,8 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
+    DEFAULT = "openai"
+
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
@@ -434,7 +438,6 @@ class ModelPlatformType(Enum):
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
-    DEFAULT = "default"
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
