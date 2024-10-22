@@ -110,6 +110,7 @@ class ChunkrReader:
     def get_task_output(self, task_id: str, max_retries: int = 5) -> str:
         r"""Polls the Chunkr API to check the task status and returns the task
         result.
+
         Args:
             task_id (str): The task ID to check the status for.
             max_retries (int, optional): Maximum number of retry attempts.
