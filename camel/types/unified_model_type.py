@@ -75,7 +75,7 @@ class UnifiedModelType(str):
 
     @property
     def is_groq(self) -> bool:
-        r"""Returns whether the model is an Groq served model."""
+        r"""Returns whether the model is a Groq served model."""
         return True
 
     @property
