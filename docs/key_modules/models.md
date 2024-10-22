@@ -204,7 +204,18 @@ assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
 
-## 5. Conclusion
+## 5. About Model Speed
+Model speed is a crucial factor in AI application performance. It affects both user experience and system efficiency, especially in real-time or interactive tasks. In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
+
+Key Insights:
+Smaller models like SambaNova’s Llama 8B and OpenAI's GPT-4O Mini typically offer faster responses.
+Larger models like SambaNova’s Llama 405B, while more powerful, tend to generate output more slowly due to their complexity.
+OpenAI models demonstrate relatively consistent performance, while SambaNova's Llama 8B significantly outperforms others in speed.
+The chart below illustrates the tokens per second achieved by each model during our tests:
+
+![Model Speed Comparison](https://i.postimg.cc/4xByytyZ/model-speed.png)
+
+## 6. Conclusion
 In conclusion, CAMEL empowers developers to explore and integrate these diverse models, unlocking new possibilities for innovative AI applications. The world of large language models offers a rich tapestry of options beyond just the well-known proprietary solutions. By guiding users through model selection, environment setup, and integration, CAMEL bridges the gap between cutting-edge AI research and practical implementation. Its hybrid approach, combining in-house implementations with third-party integrations, offers unparalleled flexibility and comprehensive support for LLM-based development. Don't just watch this transformation that is happening from the sidelines.
 
 Dive into the CAMEL documentation, experiment with different models, and be part of shaping the future of AI. The era of truly flexible and powerful AI is here - are you ready to make your mark?
