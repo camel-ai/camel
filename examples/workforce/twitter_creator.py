@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import textwrap
+import urllib.parse
 
 import agentops
 
@@ -31,13 +32,45 @@ from camel.toolkits import (  # noqa: E402
 )
 
 
-def main():
-    # firecrawl = Firecrawl()
-    #
-    # response = firecrawl.crawl(url="https://github.com/camel-ai/camel/pull/877")
-    #
-    # pr_content = (response["data"][0]["markdown"])
+def write_tweet(
+    workforce: Workforce, pr_content: str, direct_post: bool
+) -> None:
+    if direct_post:
+        human_task = Task(
+            content=(
+                "Get the infomation on the PR and do reseach on what tool was "
+                "used, then write a tweet based on it that is accurate to "
+                "what the pr is and finally post it."
+            ),
+            additional_info=pr_content,
+            id='0',
+        )
+        task = workforce.process_task(human_task)
+        print(f"Final Result: {task.result}")
+    else:
+        human_task = Task(
+            content=(
+                "Get the infomation on the PR and do reseach on what tool was "
+                "used, then write a tweet based on it that is accurate to "
+                "what the pr is. No need to post it on twitter, only return "
+                "the tweet."
+            ),
+            additional_info=pr_content,
+            id='0',
+        )
 
+        task = workforce.process_task(human_task)
+
+        # URL encode the text
+        encoded_text = urllib.parse.quote(task.result)
+
+        print(
+            "Click here to make a post!\n"
+            f"https://x.com/intent/post?text={encoded_text}"
+        )
+
+
+def main():
     pr_content = textwrap.dedent(
         """\
         ## Description
@@ -180,19 +213,7 @@ def main():
         worker=twitter_agent,
     )
 
-    human_task = Task(
-        content=(
-            "Get the infomation on the PR and do reseach on what tool was used"
-            " Then create a tweet based on it that is accurate to what the pr "
-            "is and finally post it."
-        ),
-        additional_info=pr_content,
-        id='0',
-    )
-
-    task = workforce.process_task(human_task)
-
-    print('Final Result of Original task:\n', task.result)
+    write_tweet(workforce, pr_content, direct_post=False)
 
     agentops.end_session("Success")
 
