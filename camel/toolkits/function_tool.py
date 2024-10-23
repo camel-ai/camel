@@ -492,12 +492,12 @@ class FunctionTool:
 
 
         Args:
-            max_retries (Optional[int], optional): The maximum number of 
-                retries for schema generation and validation if the process 
+            max_retries (Optional[int], optional): The maximum number of
+                retries for schema generation and validation if the process
                 fails. (default: :obj:`None`)
-            schema_assistant_model (Optional[BaseModelBackend], optional): An 
-                optional LLM backend model used for generating the docstring 
-                and schema. If not provided, a gpt-4o-mini model 
+            schema_assistant_model (Optional[BaseModelBackend], optional): An
+                optional LLM backend model used for generating the docstring
+                and schema. If not provided, a gpt-4o-mini model
                 will be created. (default: :obj:`None`)
 
         Returns:
