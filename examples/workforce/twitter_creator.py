@@ -140,7 +140,8 @@ def main():
         BaseMessage.make_assistant_message(
             role_name="Proof checker agent",
             content="You are going to check for grammer and spelling mistkes"
-            " in tweets",
+            " in tweets. Also make sure to not exceed the max length of 280 "
+            "characters. If it's too long, you need to shorten it.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.MISTRAL,
@@ -152,9 +153,7 @@ def main():
     twitter_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Twitter Agent",
-            content="You are an agent that can interact with Twitter. Make "
-            "sure to not exceed the max length of 280 characters when posting"
-            "tweet.",
+            content="You are an agent that can interact with Twitter.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.MISTRAL,
