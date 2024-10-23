@@ -14,7 +14,7 @@
 from mock import patch
 
 import examples.ai_society.role_playing
-import examples.tool_call.role_playing_with_functions
+import examples.toolkits.role_playing_with_functions
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
