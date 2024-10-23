@@ -40,8 +40,8 @@ def main(image_paths: list[str]) -> list[str]:
     )
 
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     dalle_agent = ChatAgent(

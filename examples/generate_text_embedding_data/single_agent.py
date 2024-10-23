@@ -66,8 +66,8 @@ def main() -> None:
             role_name="User", content="Start to generate!"
         )
         model = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
             model_config_dict=ChatGPTConfig(
                 temperature=0.0, response_format={"type": "json_object"}
             ).as_dict(),

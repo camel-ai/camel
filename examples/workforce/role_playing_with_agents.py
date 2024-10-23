@@ -41,8 +41,8 @@ def main():
         *GoogleMapsToolkit().get_tools(),
     ]
 
-    model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_4O_MINI
+    model_platform = ModelPlatformType.DEFAULT
+    model_type = ModelType.DEFAULT
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(
