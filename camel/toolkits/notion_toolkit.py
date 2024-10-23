@@ -75,14 +75,15 @@ class NotionToolkit(BaseToolkit):
         from notion_client import Client
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
-        self.notion_client = Client(auth=notion_token)
+
+        self.notion_client = Client(auth=self.notion_token)
 
     def list_all_pages(self) -> List[dict]:
-        """Lists all pages in the workspace.
+        r"""Lists all pages in the Notion workspace.
 
-          Returns:
+        Returns:
             A list of page objects with title and id.
-          """
+        """
         all_pages_info: List[dict] = []
         cursor = None
 
@@ -110,7 +111,7 @@ class NotionToolkit(BaseToolkit):
         return final_list
 
     def get_notion_block_text_content(self, block_id):
-        """Retrieves the content of a Notion page using the notion_client library.
+        """Retrieves the text content of a Notion block.
 
         Args:
             block_id (str): The ID of the Notion block to retrieve.

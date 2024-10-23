@@ -28,6 +28,7 @@ sys_msg = BaseMessage.make_assistant_message(
 tools = GoogleScholarToolkit(
     author_identifier="https://scholar.google.com/citations?user=JicYPdAAAAAJ&hl=en&oi=ao"
 ).get_tools()
+
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
 ).as_dict()
