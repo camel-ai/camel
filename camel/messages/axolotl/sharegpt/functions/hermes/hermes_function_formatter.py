@@ -15,19 +15,21 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
-from camel.messages.axolotl.sharegpt.functions.function_call_format import (
-    FunctionCallFormat,
+from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
+    FunctionCallFormatter,
 )
-from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
-from camel.messages.axolotl.sharegpt.functions.tool_response import (
+from camel.messages.axolotl.sharegpt.functions.hermes.hermes_tool_call import (
+    HermesToolCall,
+)
+from camel.messages.axolotl.sharegpt.functions.hermes.hermes_tool_response import (
     ToolResponse,
 )
 
 
-class HermesFunctionFormat(FunctionCallFormat):
+class HermesFunctionFormatter(FunctionCallFormatter):
     """Hermes-style function calling format implementation with validation"""
 
-    def extract_tool_calls(self, message: str) -> List[ToolCall]:
+    def extract_tool_calls(self, message: str) -> List[HermesToolCall]:
         tool_calls = []
         pattern = r"<tool_call>\s*({.*?})\s*</tool_call>"
         matches = re.finditer(pattern, message, re.DOTALL)
@@ -35,7 +37,7 @@ class HermesFunctionFormat(FunctionCallFormat):
         for match in matches:
             try:
                 call_dict = json.loads(match.group(1).replace("'", '"'))
-                tool_calls.append(ToolCall.model_validate(call_dict))
+                tool_calls.append(HermesToolCall.model_validate(call_dict))
             except Exception as e:
                 print(f"Warning: Failed to parse tool call: {e}")
                 continue
