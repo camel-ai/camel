@@ -55,6 +55,7 @@ Main Documentation
    cookbooks/create_your_first_agent.ipynb
    cookbooks/create_your_first_agents_society.ipynb
    cookbooks/agents_society.ipynb
+   cookbooks/model_speed_comparison.ipynb
    cookbooks/agents_message.ipynb
    cookbooks/agents_with_tools.ipynb
    cookbooks/agents_with_tools_from_Composio.ipynb

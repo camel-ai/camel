@@ -21,12 +21,13 @@ from camel.tasks import Task
 class PacketStatus(Enum):
     r"""The status of a packet. The packet can be in one of the following
     states:
+
     - ``SENT``: The packet has been sent to a worker.
     - ``RETURNED``: The packet has been returned by the worker, meaning that
-            the status of the task inside has been updated.
+      the status of the task inside has been updated.
     - ``ARCHIVED``: The packet has been archived, meaning that the content of
-            the task inside will not be changed. The task is considered
-            as a dependency.
+      the task inside will not be changed. The task is considered
+      as a dependency.
     """
 
     SENT = "SENT"
