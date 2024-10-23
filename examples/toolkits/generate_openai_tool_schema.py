@@ -68,22 +68,3 @@ user_msg = BaseMessage.make_user_message(role_name="User", content=user_prompt)
 response = camel_agent.step(user_msg)
 print("\nAssistant Response:")
 print(response.msg.content)
-
-print("""
-===============================================================================
-Warning: No model provided. Use GPT_4O_MINI to generate the schema for 
-the function get_perfect_square. Attempting to generate one using LLM.
-Successfully generated the OpenAI tool schema for 
-the function get_perfect_square.
-
-Generated OpenAI Tool Schema:
-{'type': 'function', 'function': {'name': 'get_perfect_square', 
-'description': 'Calculates the perfect square of a given integer.', 
-'parameters': {'properties': {'n': {'type': 'integer', 
-'description': 'The integer to be squared.'}}, 'required': ['n'], 
-'type': 'object'}}}
-      
-[FunctionCallingRecord(func_name='get_perfect_square', args={'n': 2024}, 
-result={'result': 4096576})]
-===============================================================================
-""")

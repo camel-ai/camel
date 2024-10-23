@@ -159,12 +159,12 @@ def generate_docstring(
 
     This function leverages a language model to generate a
     PEP 8/PEP 257-compliant docstring for a provided Python function.
-    If no model is supplied, a default GPT_4O_MINI is used.
+    If no model is supplied, a default gpt-4o-mini is used.
 
     Args:
         code (str): The source code of the function.
         model (Optional[BaseModelBackend]): An optional language model backend
-            instance. If not provided, a default GPT_4O_MINI is used.
+            instance. If not provided, a default gpt-4o-mini is used.
 
     Returns:
         str: The generated docstring.
@@ -249,12 +249,10 @@ class FunctionTool:
         schema_assistant_model (Optional[BaseModelBackend], optional): An
             assistant model (e.g., an LLM model) used to generate the schema
             if `use_schema_assistant` is enabled and no valid schema is
-            provided.
-            (default: :obj:`None`)
+            provided. (default: :obj:`None`)
         schema_generation_max_retries (int, optional): The maximum
             number of attempts to retry schema generation using the schema
-            assistant model if the previous attempts fail.
-            (default: 2)
+            assistant model if the previous attempts fail. (default: 2)
     """
 
     def __init__(
@@ -271,7 +269,6 @@ class FunctionTool:
         )
 
         if use_schema_assistant:
-            self.validate_openai_tool_schema(self.openai_tool_schema)
             schema = self.generate_openai_tool_schema(
                 schema_generation_max_retries, schema_assistant_model
             )
@@ -481,25 +478,27 @@ class FunctionTool:
 
     def generate_openai_tool_schema(
         self,
-        max_retries: int,
-        schema_assistant: Optional[BaseModelBackend] = None,
+        max_retries: Optional[int] = None,
+        schema_assistant_model: Optional[BaseModelBackend] = None,
     ) -> Dict[str, Any]:
         r"""Generates an OpenAI tool schema for the specified function.
 
         This method uses a language model (LLM) to generate the OpenAI tool
         schema for the specified function by first generating a docstring and
         then creating a schema based on the function's source code. If no LLM
-        is provided, it defaults to initializing a GPT_4O_MINI model. The
+        is provided, it defaults to initializing a gpt-4o-mini model. The
         schema generation and validation process is retried up to
         `max_retries` times in case of failure.
 
 
         Args:
-            max_retries (int): The maximum number of retries for schema
-                generation and validation if the process fails.
-            schema_assistant (Optional[BaseModelBackend]): An optional LLM
-                backend model used for generating the docstring and schema. If
-                not provided, a GPT_4O_MINI model will be created.
+            max_retries (Optional[int], optional): The maximum number of 
+                retries for schema generation and validation if the process 
+                fails. (default: :obj:`None`)
+            schema_assistant_model (Optional[BaseModelBackend], optional): An 
+                optional LLM backend model used for generating the docstring 
+                and schema. If not provided, a gpt-4o-mini model 
+                will be created. (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: The generated OpenAI tool schema for the function.
@@ -509,12 +508,12 @@ class FunctionTool:
             maximum number of retries, a ValueError is raised,
             prompting manual schema setting.
         """
-        if not schema_assistant:
+        if not schema_assistant_model:
             logger.warning(
                 "Warning: No model provided. "
-                "Use GPT_4O_MINI to generate the schema."
+                f"Use `{ModelType.GPT_4O_MINI.value}` to generate the schema."
             )
-            schema_assistant = ModelFactory.create(
+            schema_assistant_model = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig(temperature=1.0).as_dict(),
@@ -522,10 +521,10 @@ class FunctionTool:
         code = getsource(self.func)
         retries = 0
         # Retry loop to handle schema generation and validation
-        while retries < max_retries:
+        while retries <= max_retries:
             try:
                 # Generate the docstring and the schema
-                docstring = generate_docstring(code, schema_assistant)
+                docstring = generate_docstring(code, schema_assistant_model)
                 self.func.__doc__ = docstring
                 schema = get_openai_tool_schema(self.func)
                 # Validate the schema
