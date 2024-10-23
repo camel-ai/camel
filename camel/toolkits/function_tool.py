@@ -520,6 +520,8 @@ class FunctionTool:
             )
         code = getsource(self.func)
         retries = 0
+        if max_retries is None:
+            max_retries = 0
         # Retry loop to handle schema generation and validation
         while retries <= max_retries:
             try:
