@@ -26,11 +26,11 @@ from camel.messages import (
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
-from camel.messages.axolotl.sharegpt.functions.function_call_format import (
-    FunctionCallFormat,
+from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
+    FunctionCallFormatter,
 )
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_format import (
-    HermesFunctionFormat,
+from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
+    HermesFunctionFormatter,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
@@ -283,7 +283,7 @@ class BaseMessage:
     def from_sharegpt(
         cls,
         message: ShareGPTMessage,
-        function_format: FunctionCallFormat = HermesFunctionFormat(),
+        function_format: FunctionCallFormatter = HermesFunctionFormatter(),
     ) -> "BaseMessage":
         """Convert ShareGPT message to BaseMessage or FunctionCallingMessage"""
         role_mapping = {
@@ -340,7 +340,8 @@ class BaseMessage:
         )
 
     def to_sharegpt(
-        self, function_format: FunctionCallFormat = HermesFunctionFormat()
+        self,
+        function_format: FunctionCallFormatter = HermesFunctionFormatter(),
     ) -> ShareGPTMessage:
         """Convert BaseMessage to ShareGPT message"""
         # Convert role type to ShareGPT 'from' field
