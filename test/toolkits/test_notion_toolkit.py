@@ -67,37 +67,41 @@ def test_list_all_pages():
                 {
                     "id": "page-id-1",
                     "properties": {
-                        "title": [
-                            {"type": "text", "text": {"content": "Page 1"}}
-                        ]
+                        "title": {
+                            "title": [
+                                {"type": "text", "text": {"content": "Page 1"}}
+                            ]
+                        }
                     },
                 },
                 {
                     "id": "page-id-2",
                     "properties": {
-                        "title": [
-                            {"type": "text", "text": {"content": "Page 2"}}
-                        ]
+                        "title": {
+                            "title": [
+                                {"type": "text", "text": {"content": "Page 2"}}
+                            ]
+                        }
                     },
                 },
             ],
             "has_more": False,
         }
 
-    # Create a NotionToolkit instance
-    notion_client = NotionToolkit()
+        # Create a NotionToolkit instance
+        notion_client = NotionToolkit()
 
-    # Call the method under test
-    all_pages = notion_client.list_all_pages()
+        # Call the method under test
+        all_pages = notion_client.list_all_pages()
 
-    # Expected list of pages with titles and IDs
-    expected_pages = [
-        {"id": "page-id-1", "title": "Page 1"},
-        {"id": "page-id-2", "title": "Page 2"},
-    ]
+        # Expected list of pages with titles and IDs
+        expected_pages = [
+            {"id": "page-id-1", "title": "Page 1"},
+            {"id": "page-id-2", "title": "Page 2"},
+        ]
 
-    # Assert that the returned list matches the expectation
-    assert all_pages == expected_pages
+        # Assert that the returned list matches the expectation
+        assert all_pages == expected_pages
 
 
 def test_get_tools():
