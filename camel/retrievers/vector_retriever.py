@@ -99,7 +99,7 @@ class VectorRetriever(BaseRetriever):
 
         if isinstance(content, Element):
             elements = [content]
-        elif isinstance(content, IOBase):
+        elif isinstance(content, IO):
             elements = self.uio.parse_bytes(file=content, **kwargs) or []
         elif isinstance(content, str):
             # Check if the content is URL
