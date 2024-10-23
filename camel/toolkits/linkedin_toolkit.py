@@ -22,7 +22,7 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import handle_http_error
+from camel.utils import api_keys_required, handle_http_error
 
 LINKEDIN_POST_LIMIT = 1300
 
@@ -32,10 +32,14 @@ class LinkedInToolkit(BaseToolkit):
 
     This class provides methods for creating a post, deleting a post, and
     retrieving the authenticated user's profile information.
+
+    Args:
+        linkedin_token (Optional[str]): API key for authenticating with
+            the Linkedin API.
     """
 
-    def __init__(self):
-        self._access_token = self._get_access_token()
+    def __init__(self, linkedin_token: Optional[str] = None):
+        self._access_token = self._get_access_token(linkedin_token)
 
     def create_post(self, text: str) -> Optional[dict]:
         r"""Creates a post on LinkedIn for the authenticated user.
@@ -262,20 +266,24 @@ class LinkedInToolkit(BaseToolkit):
             FunctionTool(self.get_articles),
         ]
 
-    def _get_access_token(self) -> str:
+    @api_keys_required("LINKEDIN_ACCESS_TOKEN")
+    def _get_access_token(
+        self, linkedin_token: Optional[str] = None
+    ) -> Optional[str]:
         r"""Fetches the access token required for making LinkedIn API requests.
 
+        Args:
+            linkedin_token (Optional[str]): API key for authenticating with
+                the Linkedin API.
+
         Returns:
-            str: The OAuth 2.0 access token or warming message if the
-                environment variable `LINKEDIN_ACCESS_TOKEN` is not set or is
-                empty.
+            Optional[str]: The OAuth 2.0 access token if provided, otherwise,
+                returns `None`.
 
         Reference:
             You can apply for your personal LinkedIn API access token through
             the link below:
             https://www.linkedin.com/developers/apps
         """
-        token = os.getenv("LINKEDIN_ACCESS_TOKEN")
-        if not token:
-            return "Access token not found. Please set LINKEDIN_ACCESS_TOKEN."
+        token = linkedin_token or os.getenv("LINKEDIN_ACCESS_TOKEN")
         return token
