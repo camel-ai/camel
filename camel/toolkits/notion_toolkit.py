@@ -74,8 +74,8 @@ class NotionToolkit(BaseToolkit):
     """
 
     def __init__(
-            self,
-            notion_token: Optional[str] = None,
+        self,
+        notion_token: Optional[str] = None,
     ) -> None:
         r"""Initializes the NotionToolkit."""
         from notion_client import Client
@@ -112,8 +112,8 @@ class NotionToolkit(BaseToolkit):
                     (
                         title["text"]["content"]
                         for title in page["properties"]
-                    .get("title", {})
-                    .get("title", [])
+                        .get("title", {})
+                        .get("title", [])
                         if title["type"] == "text"
                     ),
                     None,
@@ -198,8 +198,8 @@ class NotionToolkit(BaseToolkit):
                     )
                 else:
                     text = (
-                            "Source sync block that another"
-                            + "blocked is synced with."
+                        "Source sync block that another"
+                        + "blocked is synced with."
                     )
             elif block_type == "table":
                 text = f"Table width: {block['table']['table_width']}"
