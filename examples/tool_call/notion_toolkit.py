@@ -78,7 +78,7 @@ print(str(response.info['tool_calls'])[:1000])
 usr_msg = BaseMessage.make_user_message(
     role_name="CAMEL User",
     content="Retrieves the text content of a Notion block which id is"
-    + "'12684f56-4caa-8080-be91-d7fb1a5834e3'",
+            + "'12684f56-4caa-8080-be91-d7fb1a5834e3'",
 )
 
 # Get response information
@@ -88,12 +88,11 @@ print(str(response.info['tool_calls'])[:1000])
 ==========================================================================
 [FunctionCallingRecord(func_name='get_notion_block_text_content', args=
 {'block_id': '12684f56-4caa-8080-be91-d7fb1a5834e3'}, result='hellonihao 
-buhao this is a test par [Needs case added] another par [Needs case added] 
-test [Needs case added] A cute cat: https://www.google.com/imgres?q=cat&
-imgurl=https%3A%2F%2Fi.natgeofe.com%2Fn%2F548467d8-c5f1-4551-9f58-6817a
-8d2c45e%2FNationalGeographic_2572187_square.jpg&imgrefurl=https%3A%2F%2Fwww.
-nationalgeographic.com%2Fanimals%2Fmammals%2Ffacts%2Fdomestic-cat&docid=K6Qd9XW
-nQFQCoM&tbnid=eAP244UcF5wdYM&vet=12ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA..
-i&w=3072&h=3072&hcb=2&ved=2ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA')]
-
+buhao this is a test par [Needs case added] another par [Needs case added]
+A cute cat: https://www.google.com/imgres?q=cat&imgurl=https%3A%2F%2Fi.
+natgeofe.com%2Fn%2F548467d8-c5f1-4551-9f58-6817a8d2c45e%2FNationalGeographic
+_2572187_square.jpg&imgrefurl=https%3A%2F%2Fwww.nationalgeographic.com%2F
+animals%2Fmammals%2Ffacts%2Fdomestic-cat&docid=K6Qd9XWnQFQCoM&tbnid=eAP24
+4UcF5wdYM&vet=12ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA..i&w=3072&h=307
+2&hcb=2&ved=2ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA')]
 """
