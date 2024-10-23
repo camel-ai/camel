@@ -13,35 +13,43 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import textwrap
 
+import agentops
+
 from camel.agents.chat_agent import ChatAgent
-from camel.loaders import Firecrawl
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
-from camel.tasks.task import Task
-from camel.toolkits import TWITTER_FUNCS, FunctionTool, SearchToolkit
+from camel.tasks import Task
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce import Workforce
 
-firecrawl = Firecrawl()
+agentops.init(default_tags=['Workforce Twitter Creator'])
+
+from camel.toolkits import (  # noqa: E402
+    TWITTER_FUNCS,
+    FunctionTool,
+    SearchToolkit,
+)
 
 
 def main():
+    # firecrawl = Firecrawl()
+    #
     # response = firecrawl.crawl(url="https://github.com/camel-ai/camel/pull/877")
-
+    #
     # pr_content = (response["data"][0]["markdown"])
 
     pr_content = textwrap.dedent(
         """\
         ## Description
-    
+
         Enhance the workforce component, containing a better interface and performance.
-    
+
         ## Motivation and Context
-    
+
         Close #796.
-    
+
         ## Implemented Tasks
-    
+
         - [x] use structured output feature supported by CAMEL
         - [x] auto tool selection when creating new worker
         - [x] more user-friendly interface https://github.com/camel-ai/camel/pull/713#discussion_r1691233380
@@ -77,42 +85,42 @@ def main():
     twitter_writer_prompt = textwrap.dedent(
         """\
         You are an expert social media manager. Your task is to take the information I give you and turn it into a tweet. You must follow this tweet format, rules, content structure, and recipe I have given you as a file to make sure all the tweets are written the same. Make sure you follow this system when making the tweet.
-    
+
         **Content Structure**:
         1. **What:** What we have done, Example: "We've just integrated the Wolfram_Alpha into the CAMEL framework."
         2. **Why:** Explain why this is good, example: "By doing so, we are providing all agents with a powerful tool for obtaining expert-level answers to a wide range of queries."
         3. **Who:** Explain which contributor did it, example: "Thanks to our contributor Ziyi Yang for working on this."
         4. **CTA:** Show them where they can see more, example: "Explore more here: https://github.com/camel-ai/camel/pull/494."
-    
+
         **Content Rules you must follow**:
         1. Always start the tweet with "We've just".
         2. Always mention CAMEL-AI fully the first time it appears in the tweet.
         3. Double-check your answers before sending back to me and use web searching if I send you a link.
-    
+
         Here are some examples  of how the output might look:
-    
+
         Input: "Togther AI, https://github.com/camel-ai/camel/pull/843"
-    
+
         Output:
         "📢 We've integrated Together AI into the 🐫 CAMEL framework!
         Their decentralized cloud services empower developers and researchers at organizations of all sizes to train, fine-tune, and deploy generative AI models.
         Thanks to our contributor Wendong-Fangfor this implementation. 🤝 Explore more here: https://github.com/camel-ai/camel/pull/843"
-    
+
         Input: "Integrate together ai, https://github.com/camel-ai/camel/pull/843"
-    
+
         Output:
         "📢 We've integrated Together AI into the 🐫 CAMEL framework!
         Their decentralized cloud services empower developers and researchers at organizations of all sizes to train, fine-tune, and deploy generative AI models.
         Thanks to our contributor Wendong-Fang for this implementation. 🤝 Explore more here: https://github.com/camel-ai/camel/pull/843"
-        
-        
+
+
         Input: "Integrate Reka model, https://github.com/camel-ai/camel/pull/845"
-        
+
         Output:
         "📢 We've integrated Reka AI's models into the🐫 CAMEL framework!
-        
+
         Efficient, natively multimodal models trained on thousands of GPUs. From Reka Core, which rivals industry giants, to Edge for on-device use and Flash for speed, Each model is designed for specific needs and is competitive across key metrics.
-        
+
         Thanks to our contributor omni_georgio for working on this.🤝 Explore more here: https://github.com/camel-ai/camel/pull/845"
         """  # noqa: E501
     )
@@ -144,7 +152,9 @@ def main():
     twitter_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Twitter Agent",
-            content="You are an agent that can interact with Twitter",
+            content="You are an agent that can interact with Twitter. Make "
+            "sure to not exceed the max length of 280 characters when posting"
+            "tweet.",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.MISTRAL,
@@ -184,6 +194,8 @@ def main():
     task = workforce.process_task(human_task)
 
     print('Final Result of Original task:\n', task.result)
+
+    agentops.end_session("Success")
 
 
 if __name__ == "__main__":
