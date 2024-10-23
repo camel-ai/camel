@@ -19,6 +19,7 @@ from camel.toolkits import FunctionTool, NotionToolkit
 def test_get_notion_block_text_content():
     with patch('notion_client.Client') as mock_client:
         # Mock the list_children method to return a sample block structure
+        mock_client = mock_client.return_value
         mock_client.blocks.children.list.return_value = {
             "results": [
                 {
