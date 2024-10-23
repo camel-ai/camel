@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import base64
 import io
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
@@ -25,6 +26,13 @@ from camel.messages import (
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
+from camel.messages.axolotl.sharegpt.functions.function_call_format import (
+    FunctionCallFormat,
+)
+from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_format import (
+    HermesFunctionFormat,
+)
+from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
@@ -270,6 +278,80 @@ class BaseMessage:
             start_idx = idx
 
         return text_prompts, code_prompts
+
+    @classmethod
+    def from_sharegpt(
+        cls,
+        message: ShareGPTMessage,
+        function_format: FunctionCallFormat = HermesFunctionFormat(),
+    ) -> "BaseMessage":
+        """Convert ShareGPT message to BaseMessage or FunctionCallingMessage"""
+        role_mapping = {
+            "system": ["system", RoleType.USER],
+            "human": ["user", RoleType.USER],
+            "gpt": ["assistant", RoleType.ASSISTANT],
+            "tool": ["function", RoleType.ASSISTANT],
+        }
+        role_name, role_type = role_mapping[message.from_]
+
+        # Check if this is a function-related message
+        if message.from_ == "gpt":
+            func_info = function_format.extract_tool_calls(message.value)
+            if (
+                func_info and len(func_info) == 1
+            ):  # TODO: Handle multiple tool calls
+                # Including cleaned content is useful to remind consumers of non-considered content
+                clean_content = re.sub(
+                    r"<tool_call>.*?</tool_call>",
+                    "",
+                    message.value,
+                    flags=re.DOTALL,
+                ).strip()
+                from camel.messages import FunctionCallingMessage
+
+                return FunctionCallingMessage(
+                    role_name=role_name,
+                    role_type=role_type,
+                    meta_dict=None,
+                    content=clean_content,
+                    func_name=func_info[0].__dict__["name"],
+                    args=func_info[0].__dict__["arguments"],
+                )
+        elif message.from_ == "tool":
+            func_info = function_format.extract_tool_response(message.value)
+            if func_info:
+                from camel.messages import FunctionCallingMessage
+
+                return FunctionCallingMessage(
+                    role_name=role_name,
+                    role_type=role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=func_info.__dict__["name"],
+                    result=func_info.__dict__["content"],
+                )
+
+        # Regular message
+        return cls(
+            role_name=role_name,
+            role_type=role_type,
+            meta_dict=None,
+            content=message.value,
+        )
+
+    def to_sharegpt(
+        self, function_format: FunctionCallFormat = HermesFunctionFormat()
+    ) -> ShareGPTMessage:
+        """Convert BaseMessage to ShareGPT message"""
+        # Convert role type to ShareGPT 'from' field
+        if self.role_type == RoleType.USER:
+            from_ = "system" if self.role_name == "system" else "human"
+        else:  # RoleType.ASSISTANT
+            from_ = "gpt"
+
+        # Function conversion code in FunctionCallingMessage
+
+        return ShareGPTMessage(from_=from_, value=self.content)
 
     def to_openai_message(
         self,

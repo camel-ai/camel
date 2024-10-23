@@ -13,11 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
 import re
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from camel.messages.axolotl.function_call_format import FunctionCallFormat
-from camel.messages.axolotl.tool_call import ToolCall
-from camel.messages.axolotl.tool_response import ToolResponse
+from camel.messages.axolotl.sharegpt.functions.function_call_format import (
+    FunctionCallFormat,
+)
+from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
+from camel.messages.axolotl.sharegpt.functions.tool_response import (
+    ToolResponse,
+)
 
 
 class HermesFunctionFormat(FunctionCallFormat):
@@ -51,10 +55,12 @@ class HermesFunctionFormat(FunctionCallFormat):
                 return None
         return None
 
-    def format_tool_call(self, content: str, tool_call: ToolCall) -> str:
-        tool_call_dict = tool_call.model_dump()
-        return f"{content}\n<tool_call>\n{json.dumps(tool_call_dict, indent=2)}\n</tool_call>"
+    def format_tool_call(
+        self, content: str, func_name: str, args: Dict[str, Any]
+    ) -> str:
+        tool_call_dict = {"name": func_name, "arguments": args}
+        return f"{content}\n<tool_call>\n{tool_call_dict}\n</tool_call>"
 
-    def format_tool_response(self, tool_response: ToolResponse) -> str:
-        response_dict = tool_response.model_dump()
-        return f"<tool_response>\n{json.dumps(response_dict, indent=2)}\n</tool_response>"
+    def format_tool_response(self, func_name: str, result: Any) -> str:
+        response_dict = {"name": func_name, "content": result}
+        return f"<tool_response>\n{response_dict}\n</tool_response>"

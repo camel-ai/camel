@@ -11,16 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.messages.axolotl.sharegpt.conversion import (
-    openai_to_sharegpt,
-    sharegpt_to_openai,
+from typing import List
+
+from camel.messages import BaseMessage
+from camel.messages.axolotl.sharegpt.functions.function_call_format import (
+    FunctionCallFormat,
+)
+from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_format import (
+    HermesFunctionFormat,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_conversation import (
     ShareGPTConversation,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
+from camel.messages.func_message import FunctionCallingMessage
 
+
+def sharegpt_to_camel_messages(
+    conversation: ShareGPTConversation,
+    function_format: FunctionCallFormat = HermesFunctionFormat(),
+) -> List[BaseMessage]:
+    """Convert ShareGPT conversation to list of CAMEL messages"""
+    return [
+        BaseMessage.from_sharegpt(msg, function_format) for msg in conversation
+    ]
+
+
+def camel_messages_to_sharegpt(
+    messages: List[BaseMessage],
+    function_format: FunctionCallFormat = HermesFunctionFormat(),
+) -> ShareGPTConversation:
+    """Convert list of CAMEL messages to ShareGPT conversation"""
+    sharegpt_messages = [msg.to_sharegpt(function_format) for msg in messages]
+    return ShareGPTConversation.model_validate(sharegpt_messages)
+
+
+# Example usage
 if __name__ == "__main__":
+    # Create a sample ShareGPT conversation
     sharegpt_conv = ShareGPTConversation.model_validate(
         [
             ShareGPTMessage(
@@ -28,7 +56,7 @@ if __name__ == "__main__":
             ),
             ShareGPTMessage(from_="human", value="What's Tesla's P/E ratio?"),
             ShareGPTMessage(
-                from_="assistant",
+                from_="gpt",
                 value="Let me check Tesla's stock fundamentals.\n<tool_call>\n{'name': 'get_stock_fundamentals', 'arguments': {'symbol': 'TSLA'}}\n</tool_call>",
             ),
             ShareGPTMessage(
@@ -38,19 +66,31 @@ if __name__ == "__main__":
 </tool_response>''',
             ),
             ShareGPTMessage(
-                from_="assistant",
+                from_="gpt",
                 value="Tesla (TSLA) currently has a P/E ratio of 49.60.",
             ),
         ]
     )
 
-    # Using default Hermes format
-    openai_messages = sharegpt_to_openai(sharegpt_conv)
-    print("OpenAI format:", openai_messages)
+    # Convert to CAMEL messages
+    camel_messages = sharegpt_to_camel_messages(sharegpt_conv)
 
-    # Convert back to ShareGPT format
-    converted_back = openai_to_sharegpt(openai_messages)
-    print(
-        "\nConverted back to ShareGPT format:",
-        converted_back.model_dump_json(indent=2, by_alias=True),
-    )
+    print("\nCAMEL Messages:")
+    for msg in camel_messages:
+        print(f"Role: {msg.role_name}")
+        print(f"Content: {msg.content}")
+        if isinstance(msg, FunctionCallingMessage):
+            print(f"Function Name: {msg.func_name}")
+            if msg.args:
+                print(f"Arguments: {msg.args}")
+            if msg.result:
+                print(f"Result: {msg.result}")
+        print()
+
+    # Convert back to ShareGPT
+    converted_back = camel_messages_to_sharegpt(camel_messages)
+    print("\nConverted back to ShareGPT:")
+    for msg in converted_back:
+        print(f"From: {msg.from_}")
+        print(f"Value: {msg.value}")
+        print()

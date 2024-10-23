@@ -20,6 +20,13 @@ from camel.messages import (
     OpenAIFunctionMessage,
     OpenAIMessage,
 )
+from camel.messages.axolotl.sharegpt.functions.function_call_format import (
+    FunctionCallFormat,
+)
+from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_format import (
+    HermesFunctionFormat,
+)
+from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.types import OpenAIBackendRole
 
 
@@ -60,6 +67,30 @@ class FunctionCallingMessage(BaseMessage):
             return self.to_openai_function_message()
         else:
             raise ValueError(f"Unsupported role: {role_at_backend}.")
+
+    def to_sharegpt(
+        self, function_format: FunctionCallFormat = HermesFunctionFormat()
+    ) -> ShareGPTMessage:
+        """Convert FunctionCallingMessage to ShareGPT message"""
+        if self.role_name == "assistant":
+            # This is a function call
+            content = function_format.format_tool_call(
+                self.content or "",
+                self.func_name,
+                self.args,
+            )
+            return ShareGPTMessage(from_="gpt", value=content)
+        elif self.role_name == "function":
+            # This is a function response
+            content = function_format.format_tool_response(
+                self.func_name,
+                self.result,
+            )
+            return ShareGPTMessage(from_="tool", value=content)
+        else:
+            raise ValueError(
+                f"Unexpected role_name for FunctionCallingMessage: {self.role_name}"
+            )
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.

@@ -11,28 +11,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC, abstractmethod
-from typing import List, Optional
-
-from camel.messages.axolotl.tool_call import ToolCall
-from camel.messages.axolotl.tool_response import ToolResponse
-
-
-class FunctionCallFormat(ABC):
-    """Abstract base class for function calling formats"""
-
-    @abstractmethod
-    def extract_tool_calls(self, message: str) -> List[ToolCall]:
-        pass
-
-    @abstractmethod
-    def extract_tool_response(self, message: str) -> Optional[ToolResponse]:
-        pass
-
-    @abstractmethod
-    def format_tool_call(self, content: str, tool_call: ToolCall) -> str:
-        pass
-
-    @abstractmethod
-    def format_tool_response(self, tool_response: ToolResponse) -> str:
-        pass

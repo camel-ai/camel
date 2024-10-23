@@ -41,15 +41,12 @@ class ShareGPTConversation(RootModel):
             curr, prev = messages[i], messages[i - 1]
 
             if curr.from_ == "tool":
-                if (
-                    prev.from_ != "assistant"
-                    or "<tool_call>" not in prev.value
-                ):
+                if prev.from_ != "gpt" or "<tool_call>" not in prev.value:
                     raise ValueError(
-                        f"Tool response at position {i} must follow an assistant message with a tool call"
+                        f"Tool response at position {i} must follow an gpt message with a tool call"
                     )
 
-            if curr.from_ == "assistant" and prev.from_ not in (
+            if curr.from_ == "gpt" and prev.from_ not in (
                 "human",
                 "tool",
             ):
