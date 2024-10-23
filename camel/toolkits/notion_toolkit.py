@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -94,9 +94,12 @@ class NotionToolkit(BaseToolkit):
         cursor = None
 
         while True:
-            response = self.notion_client.search(
-                filter={"property": "object", "value": "page"},
-                start_cursor=cursor,
+            response = cast(
+                dict,
+                self.notion_client.search(
+                    filter={"property": "object", "value": "page"},
+                    start_cursor=cursor,
+                ),
             )
             all_pages_info.extend(response["results"])
 
@@ -138,8 +141,11 @@ class NotionToolkit(BaseToolkit):
         cursor = None
 
         while True:
-            response = self.notion_client.blocks.children.list(
-                block_id=block_id, start_cursor=cursor
+            response = cast(
+                dict,
+                self.notion_client.blocks.children.list(
+                    block_id=block_id, start_cursor=cursor
+                ),
             )
             blocks.extend(response["results"])
 
