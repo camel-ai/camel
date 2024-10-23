@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
-from typing import List, Optional
 import os
+from typing import List, Optional
+
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
@@ -23,23 +23,27 @@ def get_plain_text_from_rich_text(rich_text):
 
     Args:
         rich_text: A list of dictionaries representing rich text elements.
-            Each dictionary should contain a key named "plain_text" with the plain text content.
+            Each dictionary should contain a key named "plain_text" with
+            the plain text content.
 
     Returns:
-        A string containing the combined plain text from all elements, joined together.
+        A string containing the combined plain text from all elements,
+        joined together.
     """
     plain_texts = [element.get("plain_text", "") for element in rich_text]
     return "".join(plain_texts)
 
 
 def get_media_source_text(block):
-    r"""Extracts the source URL and optional caption from a Notion media block.
+    r"""Extracts the source URL and optional caption from a
+    Notion media block.
 
     Args:
       block: A dictionary representing a Notion media block.
 
     Returns:
-      A string containing the source URL and caption (if available), separated by a colon.
+      A string containing the source URL and caption (if available),
+      separated by a colon.
     """
     if block.get(block.get("type"), {}).get("external"):
         source = block[block["type"]]["external"]["url"]
@@ -51,7 +55,9 @@ def get_media_source_text(block):
         source = "[Missing case for media block types]: " + block.type
 
     if len(block.get(block.get("type"), {}).get("caption", [])) > 0:
-        caption = get_plain_text_from_rich_text(block[block["type"]]["caption"])
+        caption = get_plain_text_from_rich_text(
+            block[block["type"]]["caption"]
+        )
         return caption + ": " + source
 
     return source
@@ -61,17 +67,17 @@ class NotionToolkit(BaseToolkit):
     r"""A toolkit for retrieving information from the user's notion pages.
 
     Attributes:
-        notion_token (Optional[str], optional): The notion_token used to interact with notion APIs.
-            (default: :obj:`None`)
-        notion_client (module): The notion module for interacting with the notion APIs.
+        notion_token (Optional[str], optional): The notion_token used to
+            interact with notion APIs.(default: :obj:`None`)
+        notion_client (module): The notion module for interacting with
+            the notion APIs.
     """
 
     def __init__(
             self,
             notion_token: Optional[str] = None,
     ) -> None:
-        r"""Initializes the NotionToolkit.
-        """
+        r"""Initializes the NotionToolkit."""
         from notion_client import Client
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
@@ -90,7 +96,7 @@ class NotionToolkit(BaseToolkit):
         while True:
             response = self.notion_client.search(
                 filter={"property": "object", "value": "page"},
-                start_cursor=cursor
+                start_cursor=cursor,
             )
             all_pages_info.extend(response["results"])
 
@@ -100,30 +106,41 @@ class NotionToolkit(BaseToolkit):
             cursor = response["next_cursor"]
 
         final_list = [
-            {"id": page["id"], "title": next(
-                (title["text"]["content"] for title in page["properties"].get("title", {}).get("title", []) if
-                 title["type"] == "text"),
-                None
-            )}
+            {
+                "id": page["id"],
+                "title": next(
+                    (
+                        title["text"]["content"]
+                        for title in page["properties"]
+                    .get("title", {})
+                    .get("title", [])
+                        if title["type"] == "text"
+                    ),
+                    None,
+                ),
+            }
             for page in all_pages_info
         ]
 
         return final_list
 
-    def get_notion_block_text_content(self, block_id):
+    def get_notion_block_text_content(self, block_id) -> str:
         """Retrieves the text content of a Notion block.
 
         Args:
             block_id (str): The ID of the Notion block to retrieve.
 
         Returns:
-            str: The text content of a Notion block, containing all the sub blocks.
+            str: The text content of a Notion block, containing all
+            the sub blocks.
         """
         blocks: List[dict] = []
         cursor = None
 
         while True:
-            response = self.notion_client.blocks.children.list(block_id=block_id, start_cursor=cursor)
+            response = self.notion_client.blocks.children.list(
+                block_id=block_id, start_cursor=cursor
+            )
             blocks.extend(response["results"])
 
             if not response["has_more"]:
@@ -131,11 +148,13 @@ class NotionToolkit(BaseToolkit):
 
             cursor = response["next_cursor"]
 
-        block_text_content = " ".join([self.get_text_from_block(sub_block) for sub_block in blocks])
+        block_text_content = " ".join(
+            [self.get_text_from_block(sub_block) for sub_block in blocks]
+        )
 
         return block_text_content
 
-    def get_text_from_block(self, block):
+    def get_text_from_block(self, block) -> str:
         r"""Extracts plain text from a Notion block based on its type.
 
         Args:
@@ -147,7 +166,9 @@ class NotionToolkit(BaseToolkit):
         # Get rich text for supported block types
         if block.get(block.get("type"), {}).get("rich_text"):
             # Empty string if it's an empty line
-            text = get_plain_text_from_rich_text(block[block["type"]]["rich_text"])
+            text = get_plain_text_from_rich_text(
+                block[block["type"]]["rich_text"]
+            )
         else:
             # Handle block types by case
             block_type = block.get("type")
@@ -170,10 +191,16 @@ class NotionToolkit(BaseToolkit):
                 if block["synced_block"].get("synced_from"):
                     text = (
                         f"This block is synced with a block with ID: "
-                        f"{block['synced_block']['synced_from'][block['synced_block']['synced_from']['type']]}"
+                        f"""
+                        {block['synced_block']['synced_from']
+                        [block['synced_block']['synced_from']['type']]}
+                        """
                     )
                 else:
-                    text = "Source sync block that another blocked is synced with."
+                    text = (
+                            "Source sync block that another"
+                            + "blocked is synced with."
+                    )
             elif block_type == "table":
                 text = f"Table width: {block['table']['table_width']}"
                 # Fetch children for full table data

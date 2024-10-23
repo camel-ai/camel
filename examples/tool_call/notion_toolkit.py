@@ -77,7 +77,8 @@ print(str(response.info['tool_calls'])[:1000])
 
 usr_msg = BaseMessage.make_user_message(
     role_name="CAMEL User",
-    content="Retrieves the text content of a Notion block which id is '12684f56-4caa-8080-be91-d7fb1a5834e3'",
+    content="Retrieves the text content of a Notion block which id is"
+    + "'12684f56-4caa-8080-be91-d7fb1a5834e3'",
 )
 
 # Get response information

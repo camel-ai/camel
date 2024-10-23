@@ -25,15 +25,20 @@ def test_get_notion_block_text_content():
                     "type": "paragraph",
                     "paragraph": {
                         "rich_text": [
-                            {"type": "text", "text": {"content": "This is a sample paragraph"}},
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": "This is a sample paragraph"
+                                },
+                            },
                         ]
-                    }
+                    },
                 },
                 {
                     "type": "unsupported",
-                }
+                },
             ],
-            "has_more": False
+            "has_more": False,
         }
 
         notion_client = NotionToolkit()
@@ -46,7 +51,9 @@ def test_get_notion_block_text_content():
 
         assert text_content == expected_text
 
-        mock_client.blocks.children.list.assert_called_once_with(block_id=block_id, start_cursor=None)
+        mock_client.blocks.children.list.assert_called_once_with(
+            block_id=block_id, start_cursor=None
+        )
 
 
 def test_list_all_pages():
@@ -55,17 +62,38 @@ def test_list_all_pages():
         mock_client.search.return_value = [
             {
                 "results": [
-                    {"id": "page-id-1", "properties": {"title": [{"type": "text", "text": {"content": "Page 1"}}]}},
-                    {"id": "page-id-2", "properties": {"title": [{"type": "text", "text": {"content": "Page 2"}}]}},
+                    {
+                        "id": "page-id-1",
+                        "properties": {
+                            "title": [
+                                {"type": "text", "text": {"content": "Page 1"}}
+                            ]
+                        },
+                    },
+                    {
+                        "id": "page-id-2",
+                        "properties": {
+                            "title": [
+                                {"type": "text", "text": {"content": "Page 2"}}
+                            ]
+                        },
+                    },
                 ],
-                "has_more": True
+                "has_more": True,
             },
             {
                 "results": [
-                    {"id": "page-id-3", "properties": {"title": [{"type": "text", "text": {"content": "Page 3"}}]}},
+                    {
+                        "id": "page-id-3",
+                        "properties": {
+                            "title": [
+                                {"type": "text", "text": {"content": "Page 3"}}
+                            ]
+                        },
+                    },
                 ],
-                "has_more": False
-            }
+                "has_more": False,
+            },
         ]
 
         # Create a NotionToolkit instance
