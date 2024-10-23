@@ -234,6 +234,13 @@ class LinkedInToolkit(BaseToolkit):
 
         response = requests.get(url, headers=headers)
 
+        if response.status_code != HTTPStatus.OK:
+            raise Exception(
+                f"Failed to get articles. "
+                f"Status code: {response.status_code}, "
+                f"Response: {response.text}"
+            )
+
         articles = response.json().get("elements", [])
 
         essential_articles = []
