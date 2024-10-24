@@ -25,7 +25,6 @@ Subpackages
    camel.toolkits
    camel.types
    camel.utils
-   camel.workforce
 
 Submodules
 ----------

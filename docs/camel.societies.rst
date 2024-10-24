@@ -20,6 +20,14 @@ camel.societies.role\_playing module
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   camel.societies.workforce
+
 Module contents
 ---------------
 
