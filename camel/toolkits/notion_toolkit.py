@@ -18,7 +18,7 @@ from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
-def get_plain_text_from_rich_text(rich_text):
+def get_plain_text_from_rich_text(rich_text: List[dict]):
     r"""Extracts plain text from a list of rich text elements.
 
     Args:
@@ -34,7 +34,7 @@ def get_plain_text_from_rich_text(rich_text):
     return "".join(plain_texts)
 
 
-def get_media_source_text(block):
+def get_media_source_text(block: dict) -> str:
     r"""Extracts the source URL and optional caption from a
     Notion media block.
 
@@ -52,7 +52,9 @@ def get_media_source_text(block):
     elif block.get(block.get("type"), {}).get("url"):
         source = block[block["type"]]["url"]
     else:
-        source = "[Missing case for media block types]: " + block.type
+        source = "[Missing case for media block types]: " + block.get(
+            "type", "Unknown Type"
+        )
 
     if len(block.get(block.get("type"), {}).get("caption", [])) > 0:
         caption = get_plain_text_from_rich_text(
@@ -77,7 +79,12 @@ class NotionToolkit(BaseToolkit):
         self,
         notion_token: Optional[str] = None,
     ) -> None:
-        r"""Initializes the NotionToolkit."""
+        r"""Initializes the NotionToolkit.
+
+        Args:
+            notion_token (Optional[str], optional): The optional notion_token
+            used to interact with notion APIs.(default: :obj:`None`)
+        """
         from notion_client import Client
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
@@ -127,7 +134,7 @@ class NotionToolkit(BaseToolkit):
 
         return final_list
 
-    def get_notion_block_text_content(self, block_id) -> str:
+    def get_notion_block_text_content(self, block_id: str) -> str:
         """Retrieves the text content of a Notion block.
 
         Args:
@@ -160,7 +167,7 @@ class NotionToolkit(BaseToolkit):
 
         return block_text_content
 
-    def get_text_from_block(self, block) -> str:
+    def get_text_from_block(self, block: dict) -> str:
         r"""Extracts plain text from a Notion block based on its type.
 
         Args:
