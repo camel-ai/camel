@@ -12,32 +12,32 @@ camel.workforce.base module
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.manager\_node module
+camel.workforce.prompts module
+---------------------------
+
+.. automodule:: camel.workforce.prompts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+camel.workforce.role\_playing\_worker module
 ------------------------------------
 
-.. automodule:: camel.workforce.manager_node
+.. automodule:: camel.workforce.role_playing_worker
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.role\_playing\_node module
+camel.workforce.single\_agent\_worker module
 ------------------------------------------
 
-.. automodule:: camel.workforce.role_playing_node
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.workforce.single\_agent\_node module
-------------------------------------------
-
-.. automodule:: camel.workforce.single_agent_node
+.. automodule:: camel.workforce.single_agent_worker
    :members:
    :undoc-members:
    :show-inheritance:
 
 camel.workforce.task\_channel module
-------------------------------------
+------------------------------------------
 
 .. automodule:: camel.workforce.task_channel
    :members:
@@ -52,10 +52,10 @@ camel.workforce.utils module
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.worker\_node module
+camel.workforce.worker module
 -----------------------------------
 
-.. automodule:: camel.workforce.worker_node
+.. automodule:: camel.workforce.worker
    :members:
    :undoc-members:
    :show-inheritance:
@@ -64,14 +64,6 @@ camel.workforce.workforce module
 --------------------------------
 
 .. automodule:: camel.workforce.workforce
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-camel.workforce.workforce\_prompt module
-----------------------------------------
-
-.. automodule:: camel.workforce.workforce_prompt
    :members:
    :undoc-members:
    :show-inheritance:

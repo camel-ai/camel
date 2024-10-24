@@ -63,7 +63,7 @@ model = ModelFactory.create(
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 # URL of the image
-url = "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png"
+url = "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png"
 response = requests.get(url)
 img = Image.open(BytesIO(response.content))
 

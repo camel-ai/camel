@@ -27,7 +27,7 @@ ______________________________________________________________________
 </p>
 
 <p align="center">
-  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png' width=800>
+  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png' width=800>
 </p>
 
 
@@ -116,7 +116,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.2 https://github.com/camel-ai/camel.git
+git clone -b v0.2.3 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -187,35 +187,7 @@ Please note that the environment variable is session-specific. If you open a new
     ```bash
     ollama pull llama3
     ```
-- Create a ModelFile similar the one below in your project directory.
-    ```bash
-    FROM llama3
-
-    # Set parameters
-    PARAMETER temperature 0.8
-    PARAMETER stop Result
-
-    # Sets a custom system message to specify the behavior of the chat assistant
-
-    # Leaving it blank for now.
-
-    SYSTEM """ """
-    ```
-- Create a script to get the base model (llama3) and create a custom model using the ModelFile above. Save this as a .sh file:
-    ```bash
-    #!/bin/zsh
-
-    # variables
-    model_name="llama3"
-    custom_model_name="camel-llama3"
-
-    #get the base model
-    ollama pull $model_name
-
-    #create the model file
-    ollama create $custom_model_name -f ./Llama3ModelFile
-    ```
-- Navigate to the directory where the script and ModelFile are located and run the script. Enjoy your Llama3 model, enhanced by CAMEL's excellent agents.
+- Run the script. Enjoy your Llama3 model, enhanced by CAMEL's excellent agents.
     ```python
     from camel.agents import ChatAgent
     from camel.messages import BaseMessage
@@ -225,7 +197,6 @@ Please note that the environment variable is session-specific. If you open a new
     ollama_model = ModelFactory.create(
         model_platform=ModelPlatformType.OLLAMA,
         model_type="llama3",
-        url="http://localhost:11434/v1",
         model_config_dict={"temperature": 0.4},
     )
 
@@ -327,8 +298,8 @@ We appreciate your interest in contributing to our open-source initiative. We pr
 ## Contact
 For more information please contact camel.ai.team@gmail.com.
 
-[python-image]: https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg
-[python-url]: https://docs.python.org/3.10/
+[python-image]: https://img.shields.io/badge/Python-3.10%2C%203.11%2C%203.12-brightgreen.svg
+[python-url]: https://www.python.org/
 [pytest-image]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml/badge.svg
 [pytest-url]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml
 [docs-image]: https://img.shields.io/badge/Documentation-grey.svg?logo=github

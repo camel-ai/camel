@@ -102,5 +102,11 @@ class OpenAISchemaConverter(BaseConverter):
             **self.model_config_dict,
         )
 
-        message = response.choices[0].message  # type: ignore[union-attr]
-        return message.parsed  # type: ignore[return-value]
+        message = response.choices[0].message
+
+        if not isinstance(message.parsed, BaseModel):
+            raise ValueError(
+                f"Expected a BaseModel, got {type(message.parsed)}"
+            )
+
+        return message.parsed
