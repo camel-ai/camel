@@ -59,7 +59,7 @@ html_theme_options = {
     "logo": {
         "text": f"CAMEL {release}",
         "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
-        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_dark.png",
+        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
     }
 }
 

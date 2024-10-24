@@ -25,9 +25,8 @@ from camel.toolkits.base import BaseToolkit
 
 
 class DalleToolkit(BaseToolkit):
-    r"""A class representing a toolkit for image generation using OpenAI's.
-
-    This class provides methods handle image generation using OpenAI's DALL-E.
+    r"""A class representing a toolkit for image generation using OpenAI's
+    DALL-E model.
     """
 
     def base64_to_image(self, base64_string: str) -> Optional[Image.Image]:
