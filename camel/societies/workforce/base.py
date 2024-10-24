@@ -14,8 +14,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from camel.workforce.task_channel import TaskChannel
-from camel.workforce.utils import check_if_running
+from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.utils import check_if_running
 
 
 class BaseNode(ABC):
