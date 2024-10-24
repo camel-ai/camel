@@ -16,6 +16,47 @@ from unittest.mock import patch
 from camel.toolkits import FunctionTool, NotionToolkit
 
 
+def test_get_user():
+    with patch('notion_client.Client') as mock_client:
+        # Mock the list_children method to return a sample block structure
+        mock_client = mock_client.return_value
+        mock_client.users.list.return_value = {
+            "results": [
+                {
+                    "object": "user",
+                    "id": "user id",
+                    "name": "abc",
+                    "avatar_url": "",
+                    "type": "person",
+                    "person": {"email": "abc@gmail.com"},
+                },
+                {
+                    "object": "user",
+                    "id": "test id",
+                    "name": "test",
+                    "avatar_url": "",
+                    "type": "bot",
+                    "bot": {
+                        "owner": {"type": "workspace", "workspace": "true"},
+                        "workspace_name": "workspace name",
+                    },
+                },
+            ],
+            "has_more": False,
+        }
+
+        notion_client = NotionToolkit()
+
+        users_list = notion_client.list_all_users()
+
+        expected_users = [
+            {"type": "person", "name": "abc", "workspace": ""},
+            {"type": "bot", "name": "test", "workspace": "workspace name"},
+        ]
+
+        assert users_list == expected_users
+
+
 def test_get_notion_block_text_content():
     with patch('notion_client.Client') as mock_client:
         # Mock the list_children method to return a sample block structure

@@ -91,6 +91,40 @@ class NotionToolkit(BaseToolkit):
 
         self.notion_client = Client(auth=self.notion_token)
 
+    def list_all_users(self) -> List[dict]:
+        r"""Lists all users in the Notion workspace.
+
+        Returns:
+            A list of user objects with name.
+        """
+        all_users_info: List[dict] = []
+        cursor = None
+
+        while True:
+            response = cast(
+                dict,
+                self.notion_client.users.list(start_cursor=cursor),
+            )
+            all_users_info.extend(response["results"])
+
+            if not response["has_more"]:
+                break
+
+            cursor = response["next_cursor"]
+
+        final_list = [
+            {
+                "type": user["type"],
+                "name": user["name"],
+                "workspace": user.get(user.get("type"), {}).get(
+                    "workspace_name", ""
+                ),
+            }
+            for user in all_users_info
+        ]
+
+        return final_list
+
     def list_all_pages(self) -> List[dict]:
         r"""Lists all pages in the Notion workspace.
 
