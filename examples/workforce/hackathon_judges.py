@@ -19,7 +19,7 @@ from camel.models import ModelFactory
 from camel.tasks import Task
 from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
+from camel.societies.workforce import Workforce
 
 
 def make_judge(

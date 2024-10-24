@@ -23,7 +23,7 @@ from camel.toolkits import (
     SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
+from camel.societies.workforce import Workforce
 
 
 def main():

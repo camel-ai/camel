@@ -18,7 +18,7 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
+from camel.societies.workforce import Workforce
 
 
 def main():

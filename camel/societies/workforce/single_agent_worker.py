@@ -22,9 +22,9 @@ from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
 from camel.utils import print_text_animated
-from camel.workforce.prompts import PROCESS_TASK_PROMPT
-from camel.workforce.utils import TaskResult
-from camel.workforce.worker import Worker
+from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
+from camel.societies.workforce.utils import TaskResult
+from camel.societies.workforce.worker import Worker
 
 
 class SingleAgentWorker(Worker):
