@@ -149,7 +149,11 @@ class VectorRetriever(BaseRetriever):
                             "content path": content.metadata.file_directory
                             or ""
                         }
+
                     chunk_metadata = {"metadata": chunk.metadata.to_dict()}
+                    # Remove the 'orig_elements' key if it exists
+                    chunk_metadata["metadata"].pop("orig_elements", "")
+
                     chunk_text = {"text": str(chunk)}
                     combined_dict = {
                         **content_path_info,
