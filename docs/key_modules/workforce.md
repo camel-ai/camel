@@ -74,7 +74,7 @@ then add worker nodes to the workforce. Here is an example of how you can do
 this:
 
 ```python
-from camel.workforce import Workforce
+from camel.societies.workforce import Workforce
 
 # Create a workforce instance
 workforce = Workforce("A Simple Workforce")
