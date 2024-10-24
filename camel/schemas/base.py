@@ -31,22 +31,6 @@ class BaseConverter(ABC):
     def __init__(self, output_schema: Optional[Type[BaseModel]] = None):
         self.output_schema = output_schema
 
-    @staticmethod
-    def get_format(
-        input_data: Optional[Union[str, type, Callable]] = None,
-    ) -> BaseModel:
-        """
-        Formats the input data into the expected response format.
-
-        Args:
-            input_data (Optional[Union[str, type, Callable]]):
-                The input data to be formatted. Defaults to None.
-
-        Returns:
-            BaseModel: The formatted response.
-        """
-        return get_format(input_data)
-
     @abstractmethod
     def convert(
         self, text: str, output_schema: Optional[Type[BaseModel]] = None

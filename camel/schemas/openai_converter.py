@@ -24,7 +24,12 @@ from camel.utils import (
 )
 
 from .base import BaseConverter
-from .prompts import DEFAULT_CONVERTER_PROMPTS
+
+
+DEFAULT_CONVERTER_PROMPTS = """
+    Extract key entities and attributes from the provided text,
+        and convert them into a structured JSON format.
+"""
 
 
 class OpenAISchemaConverter(BaseConverter):
@@ -53,10 +58,10 @@ class OpenAISchemaConverter(BaseConverter):
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         output_schema: Optional[Type[BaseModel]] = None,
-        prompt: Optional[str] = None,
+        prompt: Optional[str] = DEFAULT_CONVERTER_PROMPTS,
     ):
         self.model_type = model_type
-        self.prompt = prompt or DEFAULT_CONVERTER_PROMPTS
+        self.prompt = prompt
         self.model_config_dict = model_config_dict or {}
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._client = OpenAI(
@@ -70,7 +75,8 @@ class OpenAISchemaConverter(BaseConverter):
 
     @api_keys_required("OPENAI_API_KEY")
     def convert(
-        self, content: str, output_schema: Optional[Type[BaseModel]] = None
+        self, content: str, output_schema: Optional[Type[BaseModel]] = None,
+        prompt: Optional[str] = None
     ) -> BaseModel:
         """
         Formats the input content into the expected BaseModel
@@ -79,6 +85,7 @@ class OpenAISchemaConverter(BaseConverter):
             content (str): The content to be formatted.
             output_schema (Optional[Type[BaseModel]], optional):
                 The expected format of the response. Defaults to None.
+            prompt (Optional[str], optional): The prompt to be used.
 
         Returns:
             Optional[BaseModel]: The formatted response.
@@ -88,7 +95,7 @@ class OpenAISchemaConverter(BaseConverter):
 
         response = self._client.beta.chat.completions.parse(
             messages=[
-                {'role': 'system', 'content': self.prompt},
+                {'role': 'system', 'content': prompt or self.prompt},
                 {'role': 'user', 'content': content},
             ],
             model=self.model_type,
