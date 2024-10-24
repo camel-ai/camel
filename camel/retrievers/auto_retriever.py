@@ -126,62 +126,6 @@ class AutoRetriever:
 
         return collection_name
 
-    def _get_file_modified_date_from_file(
-        self, content_input_path: str
-    ) -> str:
-        r"""Retrieves the last modified date and time of a given file. This
-        function takes a file path as input and returns the last modified date
-        and time of that file.
-
-        Args:
-            content_input_path (str): The file path of the content whose
-                modified date is to be retrieved.
-
-        Returns:
-            str: The last modified time from file.
-        """
-        mod_time = os.path.getmtime(content_input_path)
-        readable_mod_time = datetime.datetime.fromtimestamp(
-            mod_time
-        ).isoformat(timespec='seconds')
-        return readable_mod_time
-
-    def _get_file_modified_date_from_storage(
-        self, vector_storage_instance: BaseVectorStorage
-    ) -> str:
-        r"""Retrieves the last modified date and time of a given file. This
-        function takes vector storage instance as input and returns the last
-        modified date from the metadata.
-
-        Args:
-            vector_storage_instance (BaseVectorStorage): The vector storage
-                where modified date is to be retrieved from metadata.
-
-        Returns:
-            str: The last modified date from vector storage.
-        """
-
-        # Insert any query to get modified date from vector db
-        # NOTE: Can be optimized when CAMEL vector storage support
-        # direct chunk payload extraction
-        query_vector_any = self.embedding_model.embed(obj="any_query")
-        query_any = VectorDBQuery(query_vector_any, top_k=1)
-        result_any = vector_storage_instance.query(query_any)
-
-        # Extract the file's last modified date from the metadata
-        # in the query result
-        if result_any[0].record.payload is not None:
-            file_modified_date_from_meta = result_any[0].record.payload[
-                "metadata"
-            ]['last_modified']
-        else:
-            raise ValueError(
-                "The vector storage exits but the payload is None,"
-                "please check the collection"
-            )
-
-        return file_modified_date_from_meta
-
     def run_vector_retriever(
         self,
         query: str,
@@ -246,34 +190,7 @@ class AutoRetriever:
                     collection_name
                 )
 
-                # Check the modified time of the input file path, only works
-                # for local path since no standard way for remote url
-                file_is_modified = False  # initialize with a default value
-                if (
-                    vector_storage_instance.status().vector_count != 0
-                    and isinstance(content, str)
-                    and os.path.exists(content)
-                ):
-                    # Get original modified date from file
-                    modified_date_from_file = (
-                        self._get_file_modified_date_from_file(content)
-                    )
-                    # Get modified date from vector storage
-                    modified_date_from_storage = (
-                        self._get_file_modified_date_from_storage(
-                            vector_storage_instance
-                        )
-                    )
-                    # Determine if the file has been modified since the last
-                    # check
-                    file_is_modified = (
-                        modified_date_from_file != modified_date_from_storage
-                    )
-
-                if (
-                    vector_storage_instance.status().vector_count == 0
-                    or file_is_modified
-                ):
+                if vector_storage_instance.status().vector_count == 0:
                     # Clear the vector storage
                     vector_storage_instance.clear()
                     # Process and store the content to the vector storage
