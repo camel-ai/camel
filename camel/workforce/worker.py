@@ -110,9 +110,11 @@ class Worker(BaseNode, ABC):
 
     @check_if_running(False)
     async def start(self):
+        r"""Start the worker."""
         await self._listen_to_channel()
 
     @check_if_running(True)
     def stop(self):
+        r"""Stop the worker."""
         self._running = False
         return

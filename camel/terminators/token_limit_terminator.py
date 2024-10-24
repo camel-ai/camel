@@ -53,5 +53,6 @@ class TokenLimitTerminator(BaseTerminator):
         return self._terminated, self._termination_reason
 
     def reset(self):
+        r"""Reset the terminator."""
         self._terminated = False
         self._termination_reason = None
