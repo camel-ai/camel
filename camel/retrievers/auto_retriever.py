@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import datetime
-import os
 import re
 import uuid
 from typing import (
@@ -31,7 +29,6 @@ from camel.storages import (
     BaseVectorStorage,
     MilvusStorage,
     QdrantStorage,
-    VectorDBQuery,
 )
 from camel.types import StorageType
 from camel.utils import Constants
