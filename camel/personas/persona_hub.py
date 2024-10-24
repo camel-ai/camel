@@ -15,12 +15,11 @@ import uuid
 from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
-from camel.embeddings import OpenAIEmbedding, SentenceTransformerEncoder
+from camel.embeddings import BaseEmbedding
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.personas import Persona
 from camel.prompts import TextPrompt
-from camel.types import EmbeddingModelType
 
 
 class PersonaHub:
@@ -197,16 +196,16 @@ persona_description: <BLANK>
 
     def deduplicate(
         self,
+        embedding_model: BaseEmbedding,  # Removed default value
         similarity_threshold: float = 0.85,
-        embedding_model: str = "text-embedding-3-small",
     ):
         r"""Remove similar personas from the group.
 
         Args:
             similarity_threshold (float): The similarity threshold for
             deduplication (default is 0.85).
-            embedding_model: The embedding model for similarity compairsion
-            (default is text-embedding-3-small).
+            embedding_model (BaseEmbedding): The embedding model
+            for similarity compairsion.
         """
         # Changed to default similarity threshold to 0.85 as the default
         # text-embedding-3-small model may give lower similarities than others
@@ -228,25 +227,27 @@ persona_description: <BLANK>
         self,
         persona1: Persona,
         persona2: Persona,
-        threshold: float,
-        embedding_model: str,
+        similarity_threshold: float,
+        embedding_model: BaseEmbedding,
     ) -> bool:
-        r"""Check if two personas are similar."""
+        r"""Check if two personas are similar by consine simlarity
+        of the embeddings of their descriptions.
 
-        # Set up persona encoder
-        encoder: Union[SentenceTransformerEncoder, OpenAIEmbedding]
-        try:
-            model_type = EmbeddingModelType(embedding_model)
-            encoder = OpenAIEmbedding(model_type=model_type)
-        except ValueError:
-            encoder = SentenceTransformerEncoder(model_name=embedding_model)
+        Args:
+        persona1 (Persona1): A persona.
+        persona2 (Persona2): The other persona.
+        similarity_threshold (float): The threshold on consine similarity
+        to determine whether the two personas are similar.
+        embedding_model (BaseEmbedding): The embedding model
+        for similarity compairsion.
+        """
 
         # Ensure persona descriptions are not None
         persona1_description = persona1.description or ""
         persona2_description = persona2.description or ""
 
-        persona1_embeddings = encoder.embed(persona1_description)
-        persona2_embeddings = encoder.embed(persona2_description)
+        persona1_embeddings = embedding_model.embed(persona1_description)
+        persona2_embeddings = embedding_model.embed(persona2_description)
 
         import numpy as np
 
@@ -259,7 +260,7 @@ persona_description: <BLANK>
             np.array(persona1_embeddings), np.array(persona2_embeddings)
         )
 
-        return similarity >= threshold
+        return similarity >= similarity_threshold
 
     def __len__(self):
         return len(self.personas)

@@ -17,9 +17,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from camel.embeddings import OpenAIEmbedding
 from camel.messages import BaseMessage
 from camel.personas import Persona, PersonaHub
-from camel.types import RoleType
+from camel.types import EmbeddingModelType, RoleType
 
 # Mock responses
 MOCK_TEXT_TO_PERSONA_RESPONSE = """
@@ -152,7 +153,11 @@ def test_deduplicate(persona_generator: PersonaHub):
     persona_generator.__setitem__(persona1)
     persona_generator.__setitem__(persona2)
 
-    persona_generator.deduplicate()
+    persona_generator.deduplicate(
+        embedding_model=OpenAIEmbedding(
+            model_type=EmbeddingModelType.TEXT_EMBEDDING_3_SMALL
+        )
+    )
 
     assert (
         len(persona_generator.personas) == 1
@@ -171,8 +176,10 @@ def test_is_similar(persona_generator: PersonaHub):
     assert persona_generator.is_similar(
         persona1=persona1,
         persona2=persona2,
-        threshold=0.85,
-        embedding_model="text-embedding-3-small",
+        similarity_threshold=0.85,
+        embedding_model=OpenAIEmbedding(
+            model_type=EmbeddingModelType.TEXT_EMBEDDING_3_SMALL
+        ),
     )
 
 
