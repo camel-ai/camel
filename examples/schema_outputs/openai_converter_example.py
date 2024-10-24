@@ -15,6 +15,7 @@
 from pydantic import BaseModel
 
 from camel.schemas import OpenAISchemaConverter
+from camel.utils import get_format
 
 
 def get_temperature(location: str, date: str, temperature: float):
@@ -32,8 +33,8 @@ temperature_template = (
 )
 
 
-target_format_from_str = OpenAISchemaConverter.get_format(temperature_template)
-target_format_from_function = OpenAISchemaConverter.get_format(get_temperature)
+target_format_from_str = get_format(temperature_template)
+target_format_from_function = get_format(get_temperature)
 target_format_from_model = Temperature
 
 

@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, cast
 
 from openai import OpenAI
 from pydantic import BaseModel
@@ -24,7 +24,6 @@ from camel.utils import (
 )
 
 from .base import BaseConverter
-
 
 DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the provided text,
@@ -75,8 +74,10 @@ class OpenAISchemaConverter(BaseConverter):
 
     @api_keys_required("OPENAI_API_KEY")
     def convert(
-        self, content: str, output_schema: Optional[Type[BaseModel]] = None,
-        prompt: Optional[str] = None
+        self,
+        content: str,
+        output_schema: Optional[Type[BaseModel]] = None,
+        prompt: Optional[str] = None,
     ) -> BaseModel:
         """
         Formats the input content into the expected BaseModel
@@ -92,10 +93,10 @@ class OpenAISchemaConverter(BaseConverter):
         """
         if output_schema is not None:
             self.model_config_dict["response_format"] = output_schema
-
+        prompt = cast(str, prompt or self.prompt)
         response = self._client.beta.chat.completions.parse(
             messages=[
-                {'role': 'system', 'content': prompt or self.prompt},
+                {'role': 'system', 'content': prompt},
                 {'role': 'user', 'content': content},
             ],
             model=self.model_type,

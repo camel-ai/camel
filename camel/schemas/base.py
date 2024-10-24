@@ -12,11 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Type, Union
+from typing import Optional, Type
 
 from pydantic import BaseModel
-
-from camel.utils import get_format
 
 
 class BaseConverter(ABC):
@@ -33,7 +31,10 @@ class BaseConverter(ABC):
 
     @abstractmethod
     def convert(
-        self, text: str, output_schema: Optional[Type[BaseModel]] = None
+        self,
+        text: str,
+        output_schema: Optional[Type[BaseModel]] = None,
+        prompt: Optional[str] = None,
     ) -> BaseModel:
         """
         Structures the input text into the expected response format.
@@ -42,6 +43,7 @@ class BaseConverter(ABC):
             text (str): The input text to be structured.
             output_schema (Optional[Type[BaseModel]], optional):
                 The expected format of the response. Defaults to None.
+            prompt (Optional[str], optional): The prompt to be used.
 
         Returns:
             Optional[BaseModel]: The structured response.

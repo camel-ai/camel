@@ -12,6 +12,5 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .openai_converter import OpenAISchemaConverter
-from .prompts import DEFAULT_CONVERTER_PROMPTS
 
-__all__ = ["OpenAISchemaConverter", "DEFAULT_CONVERTER_PROMPTS"]
+__all__ = ["OpenAISchemaConverter"]
