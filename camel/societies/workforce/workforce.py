@@ -25,9 +25,6 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
-from camel.tasks.task import Task, TaskState
-from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
-from camel.types import ModelPlatformType, ModelType
 from camel.societies.workforce.base import BaseNode
 from camel.societies.workforce.prompts import (
     ASSIGN_TASK_PROMPT,
@@ -43,6 +40,9 @@ from camel.societies.workforce.utils import (
     check_if_running,
 )
 from camel.societies.workforce.worker import Worker
+from camel.tasks.task import Task, TaskState
+from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
+from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
 

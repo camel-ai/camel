@@ -16,10 +16,10 @@ import textwrap
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks import Task
 from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.societies.workforce import Workforce
 
 
 def make_judge(

@@ -15,10 +15,10 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.societies.workforce import Workforce
 
 
 def main():

@@ -15,8 +15,8 @@ import pytest
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
-from camel.tasks.task import Task
 from camel.societies.workforce.single_agent_worker import SingleAgentWorker
+from camel.tasks.task import Task
 
 
 @pytest.mark.asyncio
