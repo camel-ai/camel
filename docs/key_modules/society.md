@@ -62,7 +62,7 @@ When using `RolePlaying` framework in CAMEL, predefined prompts are used to crea
 | output_language | str | The language to be output by the agents. |
 
 ## 2.2 `BabyAGI`
-Babyagi is framework from "Task-driven Autonomous Agent" <https://github.com/yoheinakajima/babyagi>`
+Babyagi is framework from "Task-driven Autonomous Agent" <https://github.com/yoheinakajima/babyagi>
 
 ## 3. Get Started
 
