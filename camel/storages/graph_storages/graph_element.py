@@ -13,9 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import ClassVar, List, Union
+from typing import List, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None  # type:ignore[misc,assignment]
 
 
 class Node(BaseModel):
@@ -61,10 +66,7 @@ class GraphElement(BaseModel):
             derived.
     """
 
-    from unstructured.documents.elements import Element
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    Element: ClassVar = Element
 
     nodes: List[Node]
     relationships: List[Relationship]
