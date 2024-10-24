@@ -13,12 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Union
+from typing import List, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-if TYPE_CHECKING:
+try:
     from unstructured.documents.elements import Element
+except ImportError:
+    Element = None  # type:ignore[misc,assignment]
 
 
 class Node(BaseModel):
