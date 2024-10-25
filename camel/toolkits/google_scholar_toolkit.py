@@ -77,21 +77,25 @@ class GoogleScholarToolkit(BaseToolkit):
         return author
 
     def get_author_publications(
-        self,
+        self, author: Optional[dict] = None
     ) -> List[str]:
         r"""Retrieves the titles of the author's publications.
+
+        Args:
+            author (Optional[dict]): The author's detailed information.
 
         Returns:
             List[str]: A list of publication titles authored by the author.
         """
-        author = self.get_author_detailed_info()
+        if author is None:
+            author = self.get_author_detailed_info()
         publication_titles = [
             pub['bib']['title'] for pub in author['publications']
         ]
         return publication_titles
 
     def get_publication_by_title(
-        self, publication_title: str
+        self, publication_title: str, author: Optional[dict] = None
     ) -> Optional[dict]:
         r"""Retrieves detailed information about a specific publication by its
         title. Note that this method cannot retrieve the full content of the
@@ -100,12 +104,14 @@ class GoogleScholarToolkit(BaseToolkit):
         Args:
             publication_title (str): The title of the publication to search
                 for.
+            author (Optional[dict]): The author's detailed information.
 
         Returns:
             Optional[dict]: A dictionary containing detailed information about
                 the publication if found; otherwise, `None`.
         """
-        author = self.get_author_detailed_info()
+        if author is None:
+            author = self.get_author_detailed_info()
         publications = author['publications']
         for publication in publications:
             if publication['bib']['title'] == publication_title:
