@@ -92,10 +92,10 @@ class NotionToolkit(BaseToolkit):
         self.notion_client = Client(auth=self.notion_token)
 
     def list_all_users(self) -> List[dict]:
-        r"""Lists all users in the Notion workspace.
+        r"""Lists all users via the Notion integration.
 
         Returns:
-            A list of user objects with name.
+            A list of user objects with type, name, and workspace.
         """
         all_users_info: List[dict] = []
         cursor = None
@@ -274,5 +274,6 @@ class NotionToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.list_all_pages),
+            FunctionTool(self.list_all_users),
             FunctionTool(self.get_notion_block_text_content),
         ]

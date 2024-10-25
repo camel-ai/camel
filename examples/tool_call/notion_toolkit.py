@@ -96,3 +96,18 @@ animals%2Fmammals%2Ffacts%2Fdomestic-cat&docid=K6Qd9XWnQFQCoM&tbnid=eAP24
 4UcF5wdYM&vet=12ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA..i&w=3072&h=307
 2&hcb=2&ved=2ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA')]
 """
+
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="List names of users via the Notion integration",
+)
+
+# Get response information
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+"""
+==========================================================================
+[FunctionCallingRecord(func_name='list_all_users', args={}, result=[{'type':
+'person', 'name': 'user a', 'workspace': ''}, {'type': 'bot', 'name':
+'test', 'workspace': "user a's Notion"}])]
+"""

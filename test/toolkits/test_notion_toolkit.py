@@ -148,5 +148,5 @@ def test_list_all_pages():
 def test_get_tools():
     toolkit = NotionToolkit()
     tools = toolkit.get_tools()
-    assert len(tools) == 2
+    assert len(tools) == 3
     assert all(isinstance(tool, FunctionTool) for tool in tools)
