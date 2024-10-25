@@ -17,6 +17,7 @@ import urllib.parse
 import agentops
 
 from camel.agents.chat_agent import ChatAgent
+from camel.loaders import Firecrawl
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
@@ -33,7 +34,7 @@ from camel.toolkits import (  # noqa: E402
 
 
 def write_tweet(
-    workforce: Workforce, pr_content: str, direct_post: bool
+    workforce: Workforce, additional_content: str, direct_post: bool
 ) -> None:
     if direct_post:
         human_task = Task(
@@ -42,7 +43,7 @@ def write_tweet(
                 "used, then write a tweet based on it that is accurate to "
                 "what the pr is and finally post it."
             ),
-            additional_info=pr_content,
+            additional_info=additional_content,
             id='0',
         )
         task = workforce.process_task(human_task)
@@ -55,7 +56,7 @@ def write_tweet(
                 "what the pr is. No need to post it on twitter, only return "
                 "the tweet."
             ),
-            additional_info=pr_content,
+            additional_info=additional_content,
             id='0',
         )
 
@@ -71,27 +72,13 @@ def write_tweet(
 
 
 def main():
-    pr_content = textwrap.dedent(
-        """\
-        ## Description
+    firecrawl = Firecrawl()
 
-        Enhance the workforce component, containing a better interface and performance.
+    response = firecrawl.crawl(url="https://devpost.com/software/aigremment")
 
-        ## Motivation and Context
+    hackathon_content = response["data"][1]["markdown"]
 
-        Close #796.
-
-        ## Implemented Tasks
-
-        - [x] use structured output feature supported by CAMEL
-        - [x] auto tool selection when creating new worker
-        - [x] more user-friendly interface https://github.com/camel-ai/camel/pull/713#discussion_r1691233380
-        - [x] enhance ROLEPLAY_SUMMERIZE_PROMPT https://github.com/camel-ai/camel/pull/713#discussion_r1691257385
-        - [x] task decompose only necessary when the original task can't be easily finished https://github.com/camel-ai/camel/pull/713#discussion_r1691189447
-        - [x] Better exit mechanism and error handing, like when a specific agent node fails to operate, output a warning or exit directly.
-        - [ ] integrate with agentops to track the progress
-        """  # noqa: E501
-    )
+    print(hackathon_content)
 
     search_toolkit = SearchToolkit()
     search_tools = [
@@ -117,46 +104,32 @@ def main():
     # Tweet writer
     twitter_writer_prompt = textwrap.dedent(
         """\
-        You are an expert social media manager. Your task is to take the information I give you and turn it into a tweet. You must follow this tweet format, rules, content structure, and recipe I have given you as a file to make sure all the tweets are written the same. Make sure you follow this system when making the tweet.
-
-        **Content Structure**:
-        1. **What:** What we have done, Example: "We've just integrated the Wolfram_Alpha into the CAMEL framework."
-        2. **Why:** Explain why this is good, example: "By doing so, we are providing all agents with a powerful tool for obtaining expert-level answers to a wide range of queries."
-        3. **Who:** Explain which contributor did it, example: "Thanks to our contributor Ziyi Yang for working on this."
-        4. **CTA:** Show them where they can see more, example: "Explore more here: https://github.com/camel-ai/camel/pull/494."
-
-        **Content Rules you must follow**:
-        1. Always start the tweet with "We've just".
-        2. Always mention CAMEL-AI fully the first time it appears in the tweet.
-        3. Double-check your answers before sending back to me and use web searching if I send you a link.
-
-        Here are some examples  of how the output might look:
-
-        Input: "Togther AI, https://github.com/camel-ai/camel/pull/843"
-
-        Output:
-        "📢 We've integrated Together AI into the 🐫 CAMEL framework!
-        Their decentralized cloud services empower developers and researchers at organizations of all sizes to train, fine-tune, and deploy generative AI models.
-        Thanks to our contributor Wendong-Fangfor this implementation. 🤝 Explore more here: https://github.com/camel-ai/camel/pull/843"
-
-        Input: "Integrate together ai, https://github.com/camel-ai/camel/pull/843"
-
-        Output:
-        "📢 We've integrated Together AI into the 🐫 CAMEL framework!
-        Their decentralized cloud services empower developers and researchers at organizations of all sizes to train, fine-tune, and deploy generative AI models.
-        Thanks to our contributor Wendong-Fang for this implementation. 🤝 Explore more here: https://github.com/camel-ai/camel/pull/843"
-
-
-        Input: "Integrate Reka model, https://github.com/camel-ai/camel/pull/845"
-
-        Output:
-        "📢 We've integrated Reka AI's models into the🐫 CAMEL framework!
-
-        Efficient, natively multimodal models trained on thousands of GPUs. From Reka Core, which rivals industry giants, to Edge for on-device use and Flash for speed, Each model is designed for specific needs and is competitive across key metrics.
-
-        Thanks to our contributor omni_georgio for working on this.🤝 Explore more here: https://github.com/camel-ai/camel/pull/845"
+        You are an expert social media manager. Your task is to take the information I give you and turn it into a tweet. You must follow this tweet format and rules:
+    
+        - Start by addressing a challenge related to the hackathon (e.g., "Making posts about your hackathon projects is a slow process...").
+        - Mention the solution you built, highlighting the CAMEL-AI hackathon.
+        - Include the technologies used, mentioning CAMEL-AI, MistralAI, and Firecrawl.
+        - Include a call to action (e.g., "See more: [link]").
+        - Use 1-2 appropriate emojis that match the tone and context.
+    
+        Your ouput should look like these , try and follow this structure exactly:
+    
+        Tweet to hackathon, output Example 1:
+            "Making posts about your hackathon projects is a slow process... 😓
+        
+            So I built a multi-agent system at the 🐫 @CAMELAIOrg hackathon to turn any hackathon into a tweet".
+        
+            See more: https://devpost.com/software/tweettohackathon "
+    
+        Find best product, output Example 2:
+            "It always takes forever to find a good product... ⏳
+        
+            So I built a multi-agent system at the 🐫 @CAMELAIOrg hackathon that can search the web for the best products "CAMEL-AI", "MistralAI", & "Firecrawl".
+        
+            See more: https://devpost.com/software/ "
         """  # noqa: E501
     )
+
     tweet_writer_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Tweet writer",
@@ -171,10 +144,8 @@ def main():
     # Proof checker agent
     proof_checker_agent = ChatAgent(
         BaseMessage.make_assistant_message(
-            role_name="Proof checker agent",
-            content="You are going to check for grammer and spelling mistkes"
-            " in tweets. Also make sure to not exceed the max length of 280 "
-            "characters. If it's too long, you need to shorten it.",
+            role_name="proof checker agent",
+            content="You check tweets and make them more funny",
         ),
         model=ModelFactory.create(
             model_platform=ModelPlatformType.MISTRAL,
@@ -195,7 +166,7 @@ def main():
         tools=TWITTER_FUNCS,
     )
 
-    workforce = Workforce('PR Tweet Writing Group')
+    workforce = Workforce('Tweet Writing Group')
 
     workforce.add_single_agent_worker(
         "Proof checker agent, an agent that can check for grammer "
@@ -205,15 +176,14 @@ def main():
         "An agent that can write tweets based on a report",
         worker=tweet_writer_agent,
     ).add_single_agent_worker(
-        "An agent who can do online searches to find out more "
-        "infomation about a pr",
+        "An agent who can do online searches for information",
         worker=tool_research_agent,
     ).add_single_agent_worker(
         "An agent who can interact with Twitter on user's behalf",
         worker=twitter_agent,
     )
 
-    write_tweet(workforce, pr_content, direct_post=False)
+    write_tweet(workforce, hackathon_content, direct_post=False)
 
     agentops.end_session("Success")
 
