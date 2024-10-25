@@ -217,6 +217,8 @@ class ChatAgent(BaseAgent):
         self.response_terminators = response_terminators or []
         self.init_messages()
 
+        self.tool_prompt_added = False
+
     # ruff: noqa: E501
     def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
         tool_prompts = []
@@ -448,7 +450,10 @@ class ChatAgent(BaseAgent):
             )
 
         if "llama" in self.model_type.lower():
-            if self.model_backend.model_config_dict.get("tools", None):
+            if (
+                self.model_backend.model_config_dict.get("tools", None)
+                and not self.tool_prompt_added
+            ):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
                 tool_sys_msg = BaseMessage.make_assistant_message(
@@ -457,6 +462,7 @@ class ChatAgent(BaseAgent):
                 )
 
                 self.update_memory(tool_sys_msg, OpenAIBackendRole.SYSTEM)
+                self.tool_prompt_added = True
 
             self.update_memory(input_message, OpenAIBackendRole.USER)
 
