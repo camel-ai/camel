@@ -62,21 +62,6 @@ print(str(response.info['tool_calls'])[:1000])
 
 usr_msg = BaseMessage.make_user_message(
     role_name="CAMEL User",
-    content="Lists all pages in the Notion workspace",
-)
-
-# Get response information
-response = camel_agent.step(usr_msg)
-print(str(response.info['tool_calls'])[:1000])
-"""
-==========================================================================
-[FunctionCallingRecord(func_name='list_all_pages', args={}, result=[{'id': 
-'12684f56-4caa-8080-be91-d7fb1a5834e3', 'title': 'test page'}, 
-{'id': '47a4fb54-e34b-4b45-9928-aa2802982eb8', 'title': 'Aigentbot'}])]
-"""
-
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
     content="Retrieves the text content of a Notion block which id is"
     + "'12684f56-4caa-8080-be91-d7fb1a5834e3'",
 )

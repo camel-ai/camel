@@ -18,7 +18,7 @@ from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
-def get_plain_text_from_rich_text(rich_text: List[dict]):
+def get_plain_text_from_rich_text(rich_text: List[dict]) -> str:
     r"""Extracts plain text from a list of rich text elements.
 
     Args:
@@ -27,8 +27,8 @@ def get_plain_text_from_rich_text(rich_text: List[dict]):
             the plain text content.
 
     Returns:
-        A string containing the combined plain text from all elements,
-        joined together.
+        str: A string containing the combined plain text from all elements,
+            joined together.
     """
     plain_texts = [element.get("plain_text", "") for element in rich_text]
     return "".join(plain_texts)
@@ -39,28 +39,29 @@ def get_media_source_text(block: dict) -> str:
     Notion media block.
 
     Args:
-      block: A dictionary representing a Notion media block.
+        block: A dictionary representing a Notion media block.
 
     Returns:
-      A string containing the source URL and caption (if available),
-      separated by a colon.
+        A string containing the source URL and caption (if available),
+            separated by a colon.
     """
-    if block.get(block.get("type"), {}).get("external"):
-        source = block[block["type"]]["external"]["url"]
-    elif block.get(block.get("type"), {}).get("file"):
-        source = block[block["type"]]["file"]["url"]
-    elif block.get(block.get("type"), {}).get("url"):
-        source = block[block["type"]]["url"]
-    else:
-        source = "[Missing case for media block types]: " + block.get(
-            "type", "Unknown Type"
-        )
+    block_type = block.get("type", "Unknown Type")
+    block_content = block.get(block_type, {})
 
-    if len(block.get(block.get("type"), {}).get("caption", [])) > 0:
-        caption = get_plain_text_from_rich_text(
-            block[block["type"]]["caption"]
+    # Extract source URL based on available types
+    source = (
+        block_content.get("external", {}).get("url")
+        or block_content.get("file", {}).get("url")
+        or block_content.get(
+            "url", "[Missing case for media block types]: " + block_type
         )
-        return caption + ": " + source
+    )
+
+    # Extract caption if available
+    caption_elements = block_content.get("caption", [])
+    if caption_elements:
+        caption = get_plain_text_from_rich_text(caption_elements)
+        return f"{caption}: {source}"
 
     return source
 
@@ -83,19 +84,18 @@ class NotionToolkit(BaseToolkit):
 
         Args:
             notion_token (Optional[str], optional): The optional notion_token
-            used to interact with notion APIs.(default: :obj:`None`)
+                used to interact with notion APIs.(default: :obj:`None`)
         """
         from notion_client import Client
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")
-
         self.notion_client = Client(auth=self.notion_token)
 
     def list_all_users(self) -> List[dict]:
         r"""Lists all users via the Notion integration.
 
         Returns:
-            A list of user objects with type, name, and workspace.
+            List[dict]: A list of user objects with type, name, and workspace.
         """
         all_users_info: List[dict] = []
         cursor = None
@@ -112,7 +112,7 @@ class NotionToolkit(BaseToolkit):
 
             cursor = response["next_cursor"]
 
-        final_list = [
+        formatted_users = [
             {
                 "type": user["type"],
                 "name": user["name"],
@@ -123,13 +123,13 @@ class NotionToolkit(BaseToolkit):
             for user in all_users_info
         ]
 
-        return final_list
+        return formatted_users
 
     def list_all_pages(self) -> List[dict]:
         r"""Lists all pages in the Notion workspace.
 
         Returns:
-            A list of page objects with title and id.
+            List[dict]: A list of page objects with title and id.
         """
         all_pages_info: List[dict] = []
         cursor = None
@@ -149,12 +149,12 @@ class NotionToolkit(BaseToolkit):
 
             cursor = response["next_cursor"]
 
-        final_list = [
+        formatted_pages = [
             {
-                "id": page["id"],
+                "id": page.get("id"),
                 "title": next(
                     (
-                        title["text"]["content"]
+                        title.get("text", {}).get("content")
                         for title in page["properties"]
                         .get("title", {})
                         .get("title", [])
@@ -166,17 +166,17 @@ class NotionToolkit(BaseToolkit):
             for page in all_pages_info
         ]
 
-        return final_list
+        return formatted_pages
 
     def get_notion_block_text_content(self, block_id: str) -> str:
-        """Retrieves the text content of a Notion block.
+        r"""Retrieves the text content of a Notion block.
 
         Args:
             block_id (str): The ID of the Notion block to retrieve.
 
         Returns:
             str: The text content of a Notion block, containing all
-            the sub blocks.
+                the sub blocks.
         """
         blocks: List[dict] = []
         cursor = None
@@ -205,10 +205,10 @@ class NotionToolkit(BaseToolkit):
         r"""Extracts plain text from a Notion block based on its type.
 
         Args:
-            block: A dictionary representing a Notion block.
+            block (dict): A dictionary representing a Notion block.
 
         Returns:
-            A string containing the extracted plain text and block type.
+            str: A string containing the extracted plain text and block type.
         """
         # Get rich text for supported block types
         if block.get(block.get("type"), {}).get("rich_text"):

@@ -100,6 +100,8 @@ arxiv2text = { version = "^0.1.14", optional = true }
 jupyter_client = { version = "^8.6.2", optional = true }
 ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
+notion-client = { version = "^2.2.1", optional = true }
+
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -123,7 +125,6 @@ cohere = { version = "^4.56", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true }
-notion-client = "^2.2.1"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -203,6 +204,7 @@ tools = [
     "textblob",
     "scholarly",
     "pdfplumber",
+    "notion-client",
 ]
 
 vector-databases = [
@@ -275,6 +277,7 @@ all = [
     "asknews",
     "scholarly",
     "pdfplumber",
+    "notion-client",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -441,5 +444,6 @@ module = [
     "praw",
     "textblob",
     "scholarly",
+    "notion-client",
 ]
 ignore_missing_imports = true
