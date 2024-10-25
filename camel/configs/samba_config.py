@@ -13,49 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
-
-
-class SambaFastAPIConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using the
-    SambaNova Fast API.
-
-    Args:
-        max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100.
-            (default: :obj:`2048`)
-        stop (Optional[Union[str,list[str]]]): Stop generation if this token
-            is detected. Or if one of these tokens is detected when providing
-            a string list.
-            (default: :obj:`None`)
-        stream (Optional[bool]): If True, partial message deltas will be sent
-            as data-only server-sent events as they become available.
-            Currently SambaNova Fast API only support stream mode.
-            (default: :obj:`True`)
-        stream_options (Optional[Dict]): Additional options for streaming.
-            (default: :obj:`{"include_usage": True}`)
-    """
-
-    max_tokens: Optional[int] = 2048
-    stop: Optional[Union[str, list[str]]] = None
-    stream: Optional[bool] = True
-    stream_options: Optional[Dict] = {"include_usage": True}  # noqa: RUF012
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = super().as_dict()
-        if "tools" in config_dict:
-            del config_dict["tools"]  # SambaNova does not support tool calling
-        return config_dict
-
-
-SAMBA_FAST_API_PARAMS = {
-    param for param in SambaFastAPIConfig().model_fields.keys()
-}
 
 
 class SambaVerseAPIConfig(BaseConfig):
