@@ -56,7 +56,7 @@ class GoogleScholarToolkit(BaseToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary containing author details. If no data
-            is available, returns an empty dictionary.
+                is available, returns an empty dictionary.
         """
         if self._author is None:
             self.get_author_detailed_info()
