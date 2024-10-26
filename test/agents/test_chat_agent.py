@@ -83,21 +83,24 @@ def test_chat_agent(model):
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
         assistant.reset()
 
-    user_msg = BaseMessage(
+    user_msg_bm = BaseMessage(
         role_name="Patient",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="Hello!",
     )
 
+    user_msg_str = "Hello!"
+
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
-        response = assistant.step(user_msg)
-        assert isinstance(response.msgs, list)
-        assert len(response.msgs) > 0
-        assert isinstance(response.terminated, bool)
-        assert response.terminated is False
-        assert isinstance(response.info, dict)
-        assert response.info['id'] is not None
+        for user_msg in [user_msg_bm, user_msg_str]:
+            response = assistant.step(user_msg)
+            assert isinstance(response.msgs, list)
+            assert len(response.msgs) > 0
+            assert isinstance(response.terminated, bool)
+            assert response.terminated is False
+            assert isinstance(response.info, dict)
+            assert response.info['id'] is not None
 
 
 @pytest.mark.model_backend

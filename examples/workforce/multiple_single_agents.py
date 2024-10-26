@@ -15,6 +15,7 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
     WEATHER_FUNCS,
@@ -23,7 +24,6 @@ from camel.toolkits import (
     SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
 
 
 def main():
@@ -35,8 +35,8 @@ def main():
 
     # Set up web searching agent
     search_agent_model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
@@ -49,8 +49,8 @@ def main():
 
     # Set up tour guide agent
     tour_guide_agent_model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     tour_guide_agent = ChatAgent(
@@ -69,8 +69,8 @@ def main():
             content="You can ask questions about your travel plans",
         ),
         model=ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O,
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
         ),
     )
 

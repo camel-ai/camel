@@ -14,7 +14,7 @@
 import os
 import warnings
 from io import IOBase
-from typing import Any, Dict, List, Optional, Union
+from typing import IO, TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -28,10 +28,8 @@ from camel.storages import (
 )
 from camel.utils import Constants
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 
 class VectorRetriever(BaseRetriever):
@@ -73,7 +71,7 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: Union[str, Element, IOBase],
+        content: Union[str, "Element", IO[bytes]],
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
         embed_batch: int = 50,
@@ -86,7 +84,7 @@ class VectorRetriever(BaseRetriever):
         specified vector storage.
 
         Args:
-            content (Union[str, Element, IOBase]): Local file path, remote
+            content (Union[str, Element, IO[bytes]]): Local file path, remote
                 URL, string content, Element object, or a binary file object.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
@@ -97,67 +95,77 @@ class VectorRetriever(BaseRetriever):
                 otherwise skip chunking. Defaults to True.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
+        from unstructured.documents.elements import Element
+
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IOBase):
             elements = self.uio.parse_bytes(file=content, **kwargs) or []
-        else:
+        elif isinstance(content, str):
             # Check if the content is URL
             parsed_url = urlparse(content)
             is_url = all([parsed_url.scheme, parsed_url.netloc])
             if is_url or os.path.exists(content):
-                elements = self.uio.parse_file_or_url(content, **kwargs) or []
+                elements = (
+                    self.uio.parse_file_or_url(input_path=content, **kwargs)
+                    or []
+                )
             else:
                 elements = [self.uio.create_element_from_text(text=content)]
+
         if not elements:
             warnings.warn(
                 f"No elements were extracted from the content: {content}"
             )
-            return
-
-        # Chunk the content if required
-        chunks = (
-            self.uio.chunk_elements(
-                chunk_type=chunk_type,
-                elements=elements,
-                max_characters=max_characters,
-            )
-            if should_chunk
-            else elements
-        )
-
-        # Process chunks in batches and store embeddings
-        for i in range(0, len(chunks), embed_batch):
-            batch_chunks = chunks[i : i + embed_batch]
-            batch_vectors = self.embedding_model.embed_list(
-                objs=[str(chunk) for chunk in batch_chunks]
+        else:
+            # Chunk the content if required
+            chunks = (
+                self.uio.chunk_elements(
+                    chunk_type=chunk_type,
+                    elements=elements,
+                    max_characters=max_characters,
+                )
+                if should_chunk
+                else elements
             )
 
-            records = []
-            # Prepare the payload for each vector record, includes the content
-            # path, chunk metadata, and chunk text
-            for vector, chunk in zip(batch_vectors, batch_chunks):
-                if isinstance(content, str):
-                    content_path_info = {"content path": content}
-                elif isinstance(content, IOBase):
-                    content_path_info = {"content path": "From file bytes"}
-                elif isinstance(content, Element):
-                    content_path_info = {
-                        "content path": content.metadata.file_directory
-                    }
-                chunk_metadata = {"metadata": chunk.metadata.to_dict()}
-                chunk_text = {"text": str(chunk)}
-                combined_dict = {
-                    **content_path_info,
-                    **chunk_metadata,
-                    **chunk_text,
-                }
-
-                records.append(
-                    VectorRecord(vector=vector, payload=combined_dict)
+            # Process chunks in batches and store embeddings
+            for i in range(0, len(chunks), embed_batch):
+                batch_chunks = chunks[i : i + embed_batch]
+                batch_vectors = self.embedding_model.embed_list(
+                    objs=[str(chunk) for chunk in batch_chunks]
                 )
 
-            self.storage.add(records=records)
+                records = []
+                # Prepare the payload for each vector record, includes the
+                # content path, chunk metadata, and chunk text
+                for vector, chunk in zip(batch_vectors, batch_chunks):
+                    if isinstance(content, str):
+                        content_path_info = {"content path": content}
+                    elif isinstance(content, IOBase):
+                        content_path_info = {"content path": "From file bytes"}
+                    elif isinstance(content, Element):
+                        content_path_info = {
+                            "content path": content.metadata.file_directory
+                            or ""
+                        }
+
+                    chunk_metadata = {"metadata": chunk.metadata.to_dict()}
+                    # Remove the 'orig_elements' key if it exists
+                    chunk_metadata["metadata"].pop("orig_elements", "")
+
+                    chunk_text = {"text": str(chunk)}
+                    combined_dict = {
+                        **content_path_info,
+                        **chunk_metadata,
+                        **chunk_text,
+                    }
+
+                    records.append(
+                        VectorRecord(vector=vector, payload=combined_dict)
+                    )
+
+                self.storage.add(records=records)
 
     def query(
         self,

@@ -15,10 +15,10 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
 
 
 def main():
@@ -41,8 +41,8 @@ def main():
         *GoogleMapsToolkit().get_tools(),
     ]
 
-    model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_4O_MINI
+    model_platform = ModelPlatformType.DEFAULT
+    model_type = ModelType.DEFAULT
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(

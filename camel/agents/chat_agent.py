@@ -114,8 +114,8 @@ class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
     Args:
-        system_message (BaseMessage, optional): The system message for the
-            chat agent.
+        system_message (Union[BaseMessage, str], optional): The system message
+            for the chat agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
@@ -144,7 +144,7 @@ class ChatAgent(BaseAgent):
 
     def __init__(
         self,
-        system_message: Optional[BaseMessage] = None,
+        system_message: Optional[Union[BaseMessage, str]] = None,
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -154,6 +154,11 @@ class ChatAgent(BaseAgent):
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
+        if isinstance(system_message, str):
+            system_message = BaseMessage.make_assistant_message(
+                role_name='Assistant', content=system_message
+            )
+
         self.orig_sys_message: Optional[BaseMessage] = system_message
         self._system_message: Optional[BaseMessage] = system_message
         self.role_name: str = (
@@ -166,8 +171,8 @@ class ChatAgent(BaseAgent):
             model
             if model is not None
             else ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
             )
         )
         self.output_language: Optional[str] = output_language
@@ -211,6 +216,8 @@ class ChatAgent(BaseAgent):
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
         self.init_messages()
+
+        self.tool_prompt_added = False
 
     # ruff: noqa: E501
     def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
@@ -414,18 +421,18 @@ class ChatAgent(BaseAgent):
 
     def step(
         self,
-        input_message: BaseMessage,
+        input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
         Args:
-            input_message (BaseMessage): The input message to the agent.
-                Its `role` field that specifies the role at backend may be
-                either `user` or `assistant` but it will be set to `user`
-                anyway since for the self agent any incoming message is
-                external.
+            input_message (Union[BaseMessage, str]): The input message to the
+                agent. For BaseMessage input, its `role` field that specifies
+                the role at backend may be either `user` or `assistant` but it
+                will be set to `user` anyway since for the self agent any
+                incoming message is external. For str input, the `role_name` would be `User`.
             response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
@@ -437,8 +444,16 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name='User', content=input_message
+            )
+
         if "llama" in self.model_type.lower():
-            if self.model_backend.model_config_dict.get("tools", None):
+            if (
+                self.model_backend.model_config_dict.get("tools", None)
+                and not self.tool_prompt_added
+            ):
                 tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
 
                 tool_sys_msg = BaseMessage.make_assistant_message(
@@ -447,6 +462,7 @@ class ChatAgent(BaseAgent):
                 )
 
                 self.update_memory(tool_sys_msg, OpenAIBackendRole.SYSTEM)
+                self.tool_prompt_added = True
 
             self.update_memory(input_message, OpenAIBackendRole.USER)
 
@@ -646,18 +662,18 @@ class ChatAgent(BaseAgent):
 
     async def step_async(
         self,
-        input_message: BaseMessage,
+        input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
 
         Args:
-            input_message (BaseMessage): The input message to the agent.
-                Its `role` field that specifies the role at backend may be
-                either `user` or `assistant` but it will be set to `user`
-                anyway since for the self agent any incoming message is
-                external.
+            input_message (Union[BaseMessage, str]): The input message to the
+                agent. For BaseMessage input, its `role` field that specifies
+                the role at backend may be either `user` or `assistant` but it
+                will be set to `user` anyway since for the self agent any
+                incoming message is external. For str input, the `role_name` would be `User`.
             response_format (Optional[Type[BaseModel]], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
@@ -669,6 +685,11 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name='User', content=input_message
+            )
+
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[FunctionCallingRecord] = []
