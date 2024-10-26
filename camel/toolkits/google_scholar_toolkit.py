@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -28,6 +28,8 @@ class GoogleScholarToolkit(BaseToolkit):
         is_author_name (bool): Flag to indicate if the identifier is a name.
             (default: :obj:`False`)
         scholarly (module): The scholarly module for querying Google Scholar.
+        author (Optional[Dict[str, Any]]): Cached author details, allowing
+            manual assignment if desired.
     """
 
     def __init__(
@@ -46,6 +48,35 @@ class GoogleScholarToolkit(BaseToolkit):
         self.scholarly = scholarly
         self.author_identifier = author_identifier
         self.is_author_name = is_author_name
+        self._author: Optional[Dict[str, Any]] = None
+
+    @property
+    def author(self) -> Dict[str, Any]:
+        r"""Getter for the author attribute, fetching details if not cached.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing author details. If no data
+            is available, returns an empty dictionary.
+        """
+        if self._author is None:
+            self.get_author_detailed_info()
+        return self._author or {}
+
+    @author.setter
+    def author(self, value: Optional[Dict[str, Any]]) -> None:
+        r"""Sets or overrides the cached author information.
+
+        Args:
+            value (Optional[Dict[str, Any]]): A dictionary containing author
+                details to cache or `None` to clear the cached data.
+
+        Raises:
+            ValueError: If `value` is not a dictionary or `None`.
+        """
+        if value is None or isinstance(value, dict):
+            self._author = value
+        else:
+            raise ValueError("Author must be a dictionary or None.")
 
     def _extract_author_id(self) -> Optional[str]:
         r"""Extracts the author ID from a Google Scholar URL if provided.
@@ -73,8 +104,8 @@ class GoogleScholarToolkit(BaseToolkit):
             author_id = self._extract_author_id()
             first_author_result = self.scholarly.search_author_id(id=author_id)
 
-        author = self.scholarly.fill(first_author_result)
-        return author
+        self._author = self.scholarly.fill(first_author_result)
+        return self._author  # type: ignore[return-value]
 
     def get_author_publications(
         self,
@@ -84,9 +115,8 @@ class GoogleScholarToolkit(BaseToolkit):
         Returns:
             List[str]: A list of publication titles authored by the author.
         """
-        author = self.get_author_detailed_info()
         publication_titles = [
-            pub['bib']['title'] for pub in author['publications']
+            pub['bib']['title'] for pub in self.author['publications']
         ]
         return publication_titles
 
@@ -105,8 +135,7 @@ class GoogleScholarToolkit(BaseToolkit):
             Optional[dict]: A dictionary containing detailed information about
                 the publication if found; otherwise, `None`.
         """
-        author = self.get_author_detailed_info()
-        publications = author['publications']
+        publications = self.author['publications']
         for publication in publications:
             if publication['bib']['title'] == publication_title:
                 return self.scholarly.fill(publication)
