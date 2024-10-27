@@ -37,22 +37,22 @@ def parse_wolfram_result(result) -> Dict[str, Any]:
     query = result.get('@inputstring', '')
 
     # Initialize a dictionary to hold structured output
-    output = {"query": query, "steps": [], "final_answer": None}
+    output = {"query": query, "pod_info": [], "final_answer": None}
 
     # Loop through each pod to extract the details
     for pod in result.get('pod', []):
-        step_info = {
+        pod_info = {
             "title": pod.get('@title', ''),
             "description": pod.get('subpod', {}).get('plaintext', ''),
             "image_url": pod.get('subpod', {}).get('img', {}).get('@src', ''),
         }
 
         # Add to steps list
-        output["steps"].append(step_info)
+        output["pod_info"].append(pod_info)
 
         # Get final answer
         if pod.get('@primary', False):
-            output["final_answer"] = step_info["description"]
+            output["final_answer"] = pod_info["description"]
 
     return output
 
@@ -319,6 +319,9 @@ class SearchToolkit(BaseToolkit):
         try:
             client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
             res = client.query(query)
+            print("@@@@@@@@@")
+            print(res)
+            print("@@@@@@@@@")
 
         except Exception as e:
             return f"Wolfram Alpha wasn't able to answer it. Error: {e}"
