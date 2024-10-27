@@ -259,7 +259,7 @@ def test_get_all_issues(monkeypatch):
     mock_issue.title = "Test Issue"
     github_toolkit.repo.get_issues.return_value = [mock_issue]
 
-    issues = github_toolkit.get_all_issues()
+    issues = github_toolkit.get_issue_list()
 
     expected_issues = [{"number": 1, "title": "Test Issue"}]
     assert (
@@ -292,7 +292,7 @@ def test_get_all_pull_requests(monkeypatch):
     mock_pr.title = "Test PR"
     github_toolkit.repo.get_pulls.return_value = [mock_pr]
 
-    prs = github_toolkit.get_all_pull_requests()
+    prs = github_toolkit.get_pull_request_list()
     expected_prs = [{"number": 1, "title": "Test PR"}]
 
     assert prs == expected_prs, f"Expected {expected_prs}, but got {prs}"

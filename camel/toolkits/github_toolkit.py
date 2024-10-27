@@ -14,7 +14,7 @@
 
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from github.ContentFile import ContentFile
 from pydantic import BaseModel
@@ -280,8 +280,6 @@ class GithubToolkit(BaseToolkit):
         )
 
         file = self.repo.get_contents(file_path)
-        from github.ContentFile import ContentFile
-
         if isinstance(file, ContentFile):
             self.repo.update_file(
                 file.path, body, new_content, file.sha, branch=branch_name
@@ -300,16 +298,21 @@ class GithubToolkit(BaseToolkit):
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
 
-    def get_all_issues(self, state: str = "open") -> List[Dict[str, object]]:
+    def get_issue_list(self, state: Literal["open", "closed", "all"] = "all") \
+        -> List[Dict[str, object]]:
         r"""Retrieves all issues from the GitHub repository.
 
         Args:
-            state (str): The state of issues to retrieve. Defaults to 'open'.
-            Options are 'open', 'closed', or 'all'.
+           state (Literal["open", "closed", "all"], optional): The state of 
+           pull requests to retrieve. 
+            Defaults to "all". Options are:
+            - "open": Retrieve only open pull requests.
+            - "closed": Retrieve only closed pull requests.
+            - "all": Retrieve all pull requests, regardless of state.
 
         Returns:
-            list: A list of dictionaries where each dictionary contains the
-                    issue number and title.
+            List[Dict[str, object]]: A list of dictionaries where each 
+            dictionary contains the issue number and title.
         """
         issues_info = []
         issues = self.repo.get_issues(state=state)
@@ -334,15 +337,18 @@ class GithubToolkit(BaseToolkit):
         except Exception as e:
             return f"can't get Issue number {issue_number}: {e!s}"
 
-    def get_all_pull_requests(
-        self, state: str = "open"
+    def get_pull_request_list(
+        self, state: Literal["open", "closed", "all"] = "all"
     ) -> List[Dict[str, object]]:
         r"""Retrieves all pull requests from the GitHub repository.
 
         Args:
-            state (str): The state of pull requests to retrieve. Defaults to
-            'open'.
-            Options are 'open', 'closed', or 'all'.
+            state (Literal["open", "closed", "all"], optional): The state of 
+            pull requests to retrieve. 
+            Defaults to "all". Options are:
+            - "open": Retrieve only open pull requests.
+            - "closed": Retrieve only closed pull requests.
+            - "all": Retrieve all pull requests, regardless of state.
 
         Returns:
             list: A list of dictionaries where each dictionary contains the
@@ -356,24 +362,23 @@ class GithubToolkit(BaseToolkit):
 
         return pull_requests_info
 
-    def get_pull_request_code(self, pr_number) -> List[Dict[str, str]]:
+    def get_pull_request_code(self, pr_number: int) -> List[Dict[str, str]]:
         r"""Retrieves the code changes of a specific pull request.
 
         Args:
             pr_number (int): The number of the pull request to retrieve.
 
         Returns:
-            list: A list of dictionaries where each dictionary contains the
-                file name and the corresponding code changes (patch).
+            List[Dict[str, str]]: A list of dictionaries where each dictionary 
+            contains the file name and the corresponding code changes (patch).
         """
         # Retrieve the specific pull request
         pr = self.repo.get_pull(number=pr_number)
 
         # Collect the file changes from the pull request
         files_changed = []
-        files = (
-            pr.get_files()
-        )  # Returns the files and their changes in the pull request
+        # Returns the files and their changes in the pull request
+        files = pr.get_files()
         for file in files:
             files_changed.append(
                 {
@@ -384,24 +389,24 @@ class GithubToolkit(BaseToolkit):
 
         return files_changed
 
-    def get_pull_request_comments(self, pr_number) -> List[Dict[str, str]]:
+    def get_pull_request_comments(self, pr_number: int) \
+    -> List[Dict[str, str]]:
         r"""Retrieves the comments from a specific pull request.
 
         Args:
             pr_number (int): The number of the pull request to retrieve.
 
         Returns:
-            list: A list of dictionaries where each dictionary contains the
-                user ID and the comment body.
+            List[Dict[str, str]]: A list of dictionaries where each dictionary 
+            contains the user ID and the comment body.
         """
         # Retrieve the specific pull request
         pr = self.repo.get_pull(number=pr_number)
 
         # Collect the comments from the pull request
         comments = []
-        for (
-            comment
-        ) in pr.get_comments():  # Returns all the comments in the pull request
+        # Returns all the comments in the pull request
+        for comment in pr.get_comments():  
             comments.append({"user": comment.user.login, "body": comment.body})
 
         return comments
@@ -409,8 +414,13 @@ class GithubToolkit(BaseToolkit):
     def get_all_file_paths(self, path: str = "") -> List[str]:
         r"""Recursively retrieves all file paths in the GitHub repository.
 
+        Args:
+            path (str, optional): The starting directory path from which to 
+            search for files. Defaults to an empty string (""), which starts 
+            from the root directory.
+
         Returns:
-            list: A list of file paths for all files in the repository.
+            List[str]: A list of file paths for all files in the repository.
         """
         files = []
         # Retrieves all contents of the current directory
