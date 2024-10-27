@@ -12,10 +12,49 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.utils import api_keys_required, dependencies_required
+
+
+def parse_wolfram_result(result) -> Dict[str, Any]:
+    r"""Parses a Wolfram Alpha API result into a structured dictionary format.
+
+    Args:
+        result: The API result returned from a Wolfram Alpha
+            query, structured with multiple pods, each containing specific
+            information related to the query.
+
+    Returns:
+        dict: A structured dictionary with the original query, a list of
+              step-by-step results, and the final answer (if designated as
+              primary).
+    """
+
+    # Extract the original query
+    query = result.get('@inputstring', '')
+
+    # Initialize a dictionary to hold structured output
+    output = {"query": query, "steps": [], "final_answer": None}
+
+    # Loop through each pod to extract the details
+    for pod in result.get('pod', []):
+        step_info = {
+            "title": pod.get('@title', ''),
+            "description": pod.get('subpod', {}).get('plaintext', ''),
+            "image_url": pod.get('subpod', {}).get('img', {}).get('@src', ''),
+        }
+
+        # Add to steps list
+        output["steps"].append(step_info)
+
+        # Get final answer
+        if pod.get('@primary', False):
+            output["final_answer"] = step_info["description"]
+
+    return output
 
 
 class SearchToolkit(BaseToolkit):
@@ -25,6 +64,7 @@ class SearchToolkit(BaseToolkit):
     search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha.
     """
 
+    @dependencies_required("wikipedia")
     def search_wiki(self, entity: str) -> str:
         r"""Search the entity in WikiPedia and return the summary of the
             required page, containing factual information about
@@ -37,13 +77,7 @@ class SearchToolkit(BaseToolkit):
             str: The search result. If the page corresponding to the entity
                 exists, return the summary of this entity in a string.
         """
-        try:
-            import wikipedia
-        except ImportError:
-            raise ImportError(
-                "Please install `wikipedia` first. You can install it "
-                "by running `pip install wikipedia`."
-            )
+        import wikipedia
 
         result: str
 
@@ -64,6 +98,7 @@ class SearchToolkit(BaseToolkit):
 
         return result
 
+    @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
         self, query: str, source: str = "text", max_results: int = 5
     ) -> List[Dict[str, Any]]:
@@ -151,6 +186,7 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
+    @api_keys_required("GOOGLE_API_KEY", "SEARCH_ENGINE_ID")
     def search_google(
         self, query: str, num_result_pages: int = 5
     ) -> List[Dict[str, Any]]:
@@ -251,7 +287,10 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
-    def query_wolfram_alpha(self, query: str, is_detailed: bool) -> str:
+    @dependencies_required("wolframalpha")
+    def query_wolfram_alpha(
+        self, query: str, is_detailed: bool = False
+    ) -> Union[str, Dict[str, Any]]:
         r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
         answer engine developed by Wolfram Research. It is offered as an online
         service that answers factual queries by computing answers from
@@ -260,18 +299,14 @@ class SearchToolkit(BaseToolkit):
         Args:
             query (str): The query to send to Wolfram Alpha.
             is_detailed (bool): Whether to include additional details in the
-                result.
+                result. (default::obj:`False`)
 
         Returns:
-            str: The result from Wolfram Alpha, formatted as a string.
+            Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
+                Returns a string if `is_detailed` is False, otherwise returns
+                a dictionary with detailed information.
         """
-        try:
-            import wolframalpha
-        except ImportError:
-            raise ImportError(
-                "Please install `wolframalpha` first. You can install it by"
-                " running `pip install wolframalpha`."
-            )
+        import wolframalpha
 
         WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
         if not WOLFRAMALPHA_APP_ID:
@@ -284,28 +319,16 @@ class SearchToolkit(BaseToolkit):
         try:
             client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
             res = client.query(query)
-            assumption = next(res.pods).text or "No assumption made."
-            answer = next(res.results).text or "No answer found."
+
         except Exception as e:
-            if isinstance(e, StopIteration):
-                return "Wolfram Alpha wasn't able to answer it"
-            else:
-                error_message = (
-                    f"Wolfram Alpha wasn't able to answer it" f"{e!s}."
-                )
-                return error_message
+            return f"Wolfram Alpha wasn't able to answer it. Error: {e}"
 
-        result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
+        pased_result = parse_wolfram_result(res)
 
-        # Add additional details in the result
         if is_detailed:
-            result += '\n'
-            for pod in res.pods:
-                result += '\n' + pod['@title'] + ':\n'
-                for sub in pod.subpods:
-                    result += (sub.plaintext or "None") + '\n'
+            return pased_result
 
-        return result.rstrip()  # Remove trailing whitespace
+        return pased_result["final_answer"]
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
