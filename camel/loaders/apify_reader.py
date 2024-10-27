@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
@@ -30,7 +31,7 @@ class Apify:
     ) -> None:
         from apify_client import ApifyClient
 
-        self._api_key = api_key
+        self._api_key = api_key or os.environ.get("APIFY_API_KEY")
         self.client = ApifyClient(token=self._api_key)
 
     def run_actor(
