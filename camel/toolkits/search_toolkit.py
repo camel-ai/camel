@@ -319,9 +319,6 @@ class SearchToolkit(BaseToolkit):
         try:
             client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
             res = client.query(query)
-            print("@@@@@@@@@")
-            print(res)
-            print("@@@@@@@@@")
 
         except Exception as e:
             return f"Wolfram Alpha wasn't able to answer it. Error: {e}"

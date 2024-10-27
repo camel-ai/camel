@@ -186,55 +186,48 @@ def test_search_duckduckgo_images():
 
 @patch('wolframalpha.Client')
 @patch('os.environ.get')
-def test_query_wolfram_alpha(mock_get, mock_client, search_toolkit):
+def test_query_wolfram_alpha(mock_get, mock_client):
     mock_get.return_value = 'FAKE_APP_ID'
 
-    # Create mock subpods objects
-    mock_subpods1 = [
-        MagicMock(plaintext="lim_(x->0) (sin^2(x))/x = 0"),
-        MagicMock(plaintext="lim_(x->-∞) (sin^2(x))/x = 0"),
-        MagicMock(plaintext="lim_(x->∞) (sin^2(x))/x = 0"),
-    ]
-    mock_subpods2 = [MagicMock(plaintext=None)]
-
-    # Create mock pods objects
-    mock_pod1 = MagicMock()
-    mock_pod1.subpods = mock_subpods1
-    mock_pod1.__getitem__.side_effect = lambda key: {'@title': 'Limit'}[key]
-
-    mock_pod2 = MagicMock()
-    mock_pod2.subpods = mock_subpods2
-    mock_pod2.__getitem__.side_effect = lambda key: {'@title': 'Plot'}[key]
-
-    # Create mock results object
-    mock_results = MagicMock(text="lim_(x->0) (sin^2(x))/x = 0")
-
-    # Create mock res object
     mock_res = MagicMock()
-    mock_res.pods.__iter__.return_value = iter([mock_pod1, mock_pod2])
-    mock_res.results.__iter__.return_value = iter([mock_results])
+    mock_res.get.side_effect = lambda key, default: {
+        '@inputstring': 'calculate limit of sinx^2/x',
+        'pod': [
+            {
+                '@title': 'Limit',
+                'subpod': {'plaintext': 'lim_(x->0) (sin^2(x))/x = 0'},
+            },
+            {
+                '@title': 'Plot',
+                'subpod': {'plaintext': None},
+            },
+        ],
+    }[key]
 
-    # Configure the text attribute of the object returned by the next method
-    mock_res.pods.__next__.return_value.text = "lim_(x->0) (sin^2(x))/x = 0"
-    mock_res.results.__next__.return_value.text = "lim_(x->0) (sin^2(x))/x = 0"
-
-    # Configure the mock client instance to return the mock response
     mock_instance = MagicMock()
     mock_instance.query.return_value = mock_res
+
     mock_client.return_value = mock_instance
 
-    result = search_toolkit.query_wolfram_alpha(
+    result = SearchToolkit().query_wolfram_alpha(
         "calculate limit of sinx^2/x", True
     )
-    expected_output = (
-        "Assumption:\n"
-        "lim_(x->0) (sin^2(x))/x = 0\n\n"
-        "Answer:\n"
-        "lim_(x->0) (sin^2(x))/x = 0\n\n"
-        "Limit:\n"
-        "lim_(x->0) (sin^2(x))/x = 0\n"
-        "lim_(x->-∞) (sin^2(x))/x = 0\n"
-        "lim_(x->∞) (sin^2(x))/x = 0\n\n"
-        "Plot:\nNone"
-    )
+
+    expected_output = {
+        "query": "calculate limit of sinx^2/x",
+        "pod_info": [
+            {
+                "title": "Limit",
+                "description": "lim_(x->0) (sin^2(x))/x = 0",
+                "image_url": '',
+            },
+            {
+                "title": "Plot",
+                "description": None,
+                "image_url": '',
+            },
+        ],
+        "final_answer": None,
+    }
+
     assert result == expected_output
