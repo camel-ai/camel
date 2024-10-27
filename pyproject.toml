@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.4"
+version = "0.2.6"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -100,6 +100,8 @@ arxiv2text = { version = "^0.1.14", optional = true }
 jupyter_client = { version = "^8.6.2", optional = true }
 ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
+notion-client = { version = "^2.2.1", optional = true }
+
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -202,6 +204,7 @@ tools = [
     "textblob",
     "scholarly",
     "pdfplumber",
+    "notion-client",
 ]
 
 vector-databases = [
@@ -274,6 +277,7 @@ all = [
     "asknews",
     "scholarly",
     "pdfplumber",
+    "notion-client",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -440,5 +444,6 @@ module = [
     "praw",
     "textblob",
     "scholarly",
+    "notion-client",
 ]
 ignore_missing_imports = true

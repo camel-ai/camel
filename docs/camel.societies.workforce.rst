@@ -1,69 +1,69 @@
-camel.workforce package
+camel.societies.workforce package
 =======================
 
 Submodules
 ----------
 
-camel.workforce.base module
+camel.societies.workforce.base module
 ---------------------------
 
-.. automodule:: camel.workforce.base
+.. automodule:: camel.societies.workforce.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.prompts module
+camel.societies.workforce.prompts module
 ---------------------------
 
-.. automodule:: camel.workforce.prompts
+.. automodule:: camel.societies.workforce.prompts
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.role\_playing\_worker module
+camel.societies.workforce.role\_playing\_worker module
 ------------------------------------
 
-.. automodule:: camel.workforce.role_playing_worker
+.. automodule:: camel.societies.workforce.role_playing_worker
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.single\_agent\_worker module
+camel.societies.workforce.single\_agent\_worker module
 ------------------------------------------
 
-.. automodule:: camel.workforce.single_agent_worker
+.. automodule:: camel.societies.workforce.single_agent_worker
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.task\_channel module
+camel.societies.workforce.task\_channel module
 ------------------------------------------
 
-.. automodule:: camel.workforce.task_channel
+.. automodule:: camel.societies.workforce.task_channel
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.utils module
+camel.societies.workforce.utils module
 ----------------------------
 
-.. automodule:: camel.workforce.utils
+.. automodule:: camel.societies.workforce.utils
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.worker module
+camel.societies.workforce.worker module
 -----------------------------------
 
-.. automodule:: camel.workforce.worker
+.. automodule:: camel.societies.workforce.worker
    :members:
    :undoc-members:
    :show-inheritance:
 
-camel.workforce.workforce module
+camel.societies.workforce.workforce module
 --------------------------------
 
-.. automodule:: camel.workforce.workforce
+.. automodule:: camel.societies.workforce.workforce
    :members:
    :undoc-members:
    :show-inheritance:
@@ -71,7 +71,7 @@ camel.workforce.workforce module
 Module contents
 ---------------
 
-.. automodule:: camel.workforce
+.. automodule:: camel.societies.workforce
    :members:
    :undoc-members:
    :show-inheritance:
