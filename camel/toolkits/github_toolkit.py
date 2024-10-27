@@ -304,20 +304,21 @@ class GithubToolkit(BaseToolkit):
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
 
-    def get_issue_list(self, state: Literal["open", "closed", "all"] = "all") \
-        -> List[Dict[str, object]]:
+    def get_issue_list(
+        self, state: Literal["open", "closed", "all"] = "all"
+    ) -> List[Dict[str, object]]:
         r"""Retrieves all issues from the GitHub repository.
 
         Args:
-           state (Literal["open", "closed", "all"], optional): The state of 
-           pull requests to retrieve. 
+           state (Literal["open", "closed", "all"], optional): The state of
+           pull requests to retrieve.
             Defaults to "all". Options are:
             - "open": Retrieve only open pull requests.
             - "closed": Retrieve only closed pull requests.
             - "all": Retrieve all pull requests, regardless of state.
 
         Returns:
-            List[Dict[str, object]]: A list of dictionaries where each 
+            List[Dict[str, object]]: A list of dictionaries where each
             dictionary contains the issue number and title.
         """
         issues_info = []
@@ -349,8 +350,8 @@ class GithubToolkit(BaseToolkit):
         r"""Retrieves all pull requests from the GitHub repository.
 
         Args:
-            state (Literal["open", "closed", "all"], optional): The state of 
-            pull requests to retrieve. 
+            state (Literal["open", "closed", "all"], optional): The state of
+            pull requests to retrieve.
             Defaults to "all". Options are:
             - "open": Retrieve only open pull requests.
             - "closed": Retrieve only closed pull requests.
@@ -375,7 +376,7 @@ class GithubToolkit(BaseToolkit):
             pr_number (int): The number of the pull request to retrieve.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries where each dictionary 
+            List[Dict[str, str]]: A list of dictionaries where each dictionary
             contains the file name and the corresponding code changes (patch).
         """
         # Retrieve the specific pull request
@@ -395,15 +396,16 @@ class GithubToolkit(BaseToolkit):
 
         return files_changed
 
-    def get_pull_request_comments(self, pr_number: int) \
-    -> List[Dict[str, str]]:
+    def get_pull_request_comments(
+        self, pr_number: int
+    ) -> List[Dict[str, str]]:
         r"""Retrieves the comments from a specific pull request.
 
         Args:
             pr_number (int): The number of the pull request to retrieve.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries where each dictionary 
+            List[Dict[str, str]]: A list of dictionaries where each dictionary
             contains the user ID and the comment body.
         """
         # Retrieve the specific pull request
@@ -412,7 +414,7 @@ class GithubToolkit(BaseToolkit):
         # Collect the comments from the pull request
         comments = []
         # Returns all the comments in the pull request
-        for comment in pr.get_comments():  
+        for comment in pr.get_comments():
             comments.append({"user": comment.user.login, "body": comment.body})
 
         return comments
@@ -421,8 +423,8 @@ class GithubToolkit(BaseToolkit):
         r"""Recursively retrieves all file paths in the GitHub repository.
 
         Args:
-            path (str, optional): The starting directory path from which to 
-            search for files. Defaults to an empty string (""), which starts 
+            path (str, optional): The starting directory path from which to
+            search for files. Defaults to an empty string (""), which starts
             from the root directory.
 
         Returns:
