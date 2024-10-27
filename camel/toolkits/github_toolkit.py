@@ -15,8 +15,6 @@
 import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Literal, Optional, Union
-
-from github.ContentFile import ContentFile
 from pydantic import BaseModel
 
 from camel.toolkits import FunctionTool
@@ -286,6 +284,8 @@ class GithubToolkit(BaseToolkit):
         )
 
         file = self.repo.get_contents(file_path)
+        
+        from github.ContentFile import ContentFile
         if isinstance(file, ContentFile):
             self.repo.update_file(
                 file.path, body, new_content, file.sha, branch=branch_name
@@ -431,6 +431,7 @@ class GithubToolkit(BaseToolkit):
             List[str]: A list of file paths for all files in the repository.
         """
         files = []
+        from github.ContentFile import ContentFile
         # Retrieves all contents of the current directory
         contents: Union[List[ContentFile], ContentFile] = (
             self.repo.get_contents(path)
@@ -456,6 +457,7 @@ class GithubToolkit(BaseToolkit):
         Returns:
             str: The decoded content of the file.
         """
+        from github.ContentFile import ContentFile
         file_content = self.repo.get_contents(file_path)
         if isinstance(file_content, ContentFile):
             return file_content.decoded_content.decode()
