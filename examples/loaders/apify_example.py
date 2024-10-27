@@ -17,12 +17,13 @@ from camel.loaders import Apify
 apify = Apify()
 
 run_input = {
-    "startUrls": [{ "url": "https://www.camel-ai.org/" }],
+    "startUrls": [{"url": "https://www.camel-ai.org/"}],
     "maxCrawlDepth": 0,
     "maxCrawlPages": 1,
 }
-actor_result = apify.run_actor(actor_id="apify/website-content-crawler", 
-                               run_input=run_input)
+actor_result = apify.run_actor(
+    actor_id="apify/website-content-crawler", run_input=run_input
+)
 
 print(actor_result["status"])
 '''
@@ -39,7 +40,8 @@ HoKb31FJzHm0ni51k
 '''
 
 dataset_result = apify.get_dataset_items(
-    dataset_id=actor_result["defaultDatasetId"])
+    dataset_id=actor_result["defaultDatasetId"]
+)
 
 print(dataset_result)
 '''
