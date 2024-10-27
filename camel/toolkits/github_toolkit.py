@@ -144,6 +144,12 @@ class GithubToolkit(BaseToolkit):
             FunctionTool(self.retrieve_issue),
             FunctionTool(self.create_pull_request),
             FunctionTool(self.retrieve_pull_requests),
+            FunctionTool(self.get_issue_list),
+            FunctionTool(self.get_issue_content),
+            FunctionTool(self.get_pull_request_list),
+            FunctionTool(self.get_pull_request_code),
+            FunctionTool(self.get_pull_request_comments),
+            FunctionTool(self.get_all_file_paths),
         ]
 
     def get_github_access_token(self) -> str:
