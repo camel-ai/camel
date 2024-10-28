@@ -57,4 +57,5 @@ __all__ = [
     'TogetherAIModel',
     'YiModel',
     'QwenModel',
+    'FakeLLMModel',
 ]

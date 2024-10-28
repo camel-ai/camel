@@ -405,3 +405,20 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         return mistral_request
+
+
+class FakeTokenCounter(BaseTokenCounter):
+    r"""A fake token counter for testing purposes. Simply returns the total number of words
+    of all messages."""
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        num_tokens = 0
+        for message in messages:
+            content = message.get("content")
+            if isinstance(content, str):
+                num_tokens += len(content.split())
+            elif isinstance(content, List):
+                for c in content:
+                    if c["type"] == "text":
+                        num_tokens += len(c["text"].split())
+        return num_tokens

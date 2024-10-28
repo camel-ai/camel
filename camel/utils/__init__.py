@@ -39,6 +39,7 @@ from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    FakeTokenCounter,
     GeminiTokenCounter,
     LiteLLMTokenCounter,
     MistralTokenCounter,
@@ -60,6 +61,7 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'LiteLLMTokenCounter',
+    'FakeTokenCounter',
     'Constants',
     'text_extract_from_web',
     'create_chunks',
