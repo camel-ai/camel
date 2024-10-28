@@ -167,7 +167,7 @@ class Apify:
     def get_dataset_items(
         self,
         dataset_id: str,
-    ) -> Optional[List]:
+    ) -> List:
         r"""Get items from a dataset on the Apify platform.
 
         Args:
