@@ -23,10 +23,8 @@ from pydantic import create_model
 from pydantic.fields import FieldInfo
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
-from camel.models import BaseModelBackend, ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.models import BaseModelBackend
+from camel.types import ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
 
 logger = logging.getLogger(__name__)
@@ -155,7 +153,7 @@ def generate_docstring(
     code: str,
     model: Optional[BaseModelBackend] = None,
 ) -> str:
-    """Generates a docstring for a given function code using LLM.
+    r"""Generates a docstring for a given function code using LLM.
 
     This function leverages a language model to generate a
     PEP 8/PEP 257-compliant docstring for a provided Python function.
@@ -204,25 +202,12 @@ def generate_docstring(
     **Task**: Generate a docstring for the function below.
 
     '''
-    # Create the assistant model if not provided
-    if not model:
-        model = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig(temperature=1.0).as_dict(),
-        )
     # Initialize assistant with system message and model
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
+    assistant_sys_msg = "You are a helpful assistant."
     docstring_assistant = ChatAgent(assistant_sys_msg, model=model)
 
     # Create user message to prompt the assistant
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=docstring_prompt + code,
-    )
+    user_msg = docstring_prompt + code
 
     # Get the response containing the generated docstring
     response = docstring_assistant.step(user_msg)
@@ -505,18 +490,13 @@ class FunctionTool:
 
         Raises:
             ValueError: If schema generation or validation fails after the
-            maximum number of retries, a ValueError is raised,
-            prompting manual schema setting.
+                maximum number of retries, a ValueError is raised, prompting
+                manual schema setting.
         """
         if not schema_assistant_model:
             logger.warning(
                 "Warning: No model provided. "
                 f"Use `{ModelType.GPT_4O_MINI.value}` to generate the schema."
-            )
-            schema_assistant_model = ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig(temperature=1.0).as_dict(),
             )
         code = getsource(self.func)
         retries = 0
