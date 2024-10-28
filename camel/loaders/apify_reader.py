@@ -48,7 +48,7 @@ class Apify:
         timeout_secs: Optional[int] = None,
         webhooks: Optional[list] = None,
         wait_secs: Optional[int] = None,
-    ) -> Dict:
+    ) -> Optional[Dict]:
         r"""Run an actor on the Apify platform.
 
         Args:
@@ -123,7 +123,7 @@ class Apify:
     def get_dataset(
         self,
         dataset_id: str,
-    ) -> Dict:
+    ) -> Optional[Dict]:
         r"""Get a dataset from the Apify platform.
 
         Args:
