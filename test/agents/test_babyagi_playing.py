@@ -26,8 +26,8 @@ from camel.types import (
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        (FakeLLMModel(model_type=ModelType.DEFAULT), 3),
-        pytest.param(None, 3, marks=pytest.mark.model_backend),
+        FakeLLMModel(model_type=ModelType.DEFAULT),
+        pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
 
@@ -62,7 +62,7 @@ def test_babyagi_playing_init(model):
 
 
 @parametrize
-def test_babyagi_playing_step(model, call_count):
+def test_babyagi_playing_step(model, call_count=3):
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
@@ -84,26 +84,26 @@ def test_babyagi_playing_step(model, call_count):
 
         assert isinstance(
             assistant_response.msgs, list
-        ), f"(calling round {i}) assistant_response.msgs is not a list"
+        ), f"(calling round {i+1}) assistant_response.msgs is not a list"
         assert (
             len(assistant_response.msgs) == 1
-        ), f"(calling round {i}) assistant_response.msgs is not of length 1"
+        ), f"(calling round {i+1}) assistant_response.msgs is not of length 1"
         assert isinstance(
             assistant_response.msgs[0], BaseMessage
-        ), f"(calling round {i}) assistant_response.msgs[0] is not a BaseMessage"
+        ), f"(calling round {i+1}) assistant_response.msgs[0] is not a BaseMessage"
         assert isinstance(
             assistant_response.terminated, bool
-        ), f"(calling round {i}) assistant_response.terminated is not a bool"
+        ), f"(calling round {i+1}) assistant_response.terminated is not a bool"
         assert (
             assistant_response.terminated is False
-        ), f"(calling round {i}) assistant_response.terminated is not False"
+        ), f"(calling round {i+1}) assistant_response.terminated is not False"
         assert isinstance(
             assistant_response.info, dict
-        ), f"(calling round {i}) assistant_response.info is not a dict"
+        ), f"(calling round {i+1}) assistant_response.info is not a dict"
 
         assert (
             len(babyagi_playing.subtasks) > 0
-        ), f"(calling round {i}) babyagi_playing.subtasks is empty"
+        ), f"(calling round {i+1}) babyagi_playing.subtasks is empty"
         assert (
-            len(babyagi_playing.solved_subtasks) == 1
-        ), f"(calling round {i}) babyagi_playing.solved_subtasks is not of length 1"
+            len(babyagi_playing.solved_subtasks) == i+1
+        ), f"(calling round {i+1}) babyagi_playing.solved_subtasks is not of length {i+1}"

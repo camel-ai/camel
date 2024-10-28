@@ -94,22 +94,22 @@ def test_chat_agent(model, call_count):
                 response = assistant.step(user_msg)
                 assert isinstance(
                     response.msgs, list
-                ), f"(calling round {i}) AssertionError: response.msgs is not a list"
+                ), f"(calling round {i+1}) AssertionError: response.msgs is not a list"
                 assert (
                     len(response.msgs) > 0
-                ), f"(calling round {i}) AssertionError: response.msgs is empty"
+                ), f"(calling round {i+1}) AssertionError: response.msgs is empty"
                 assert isinstance(
                     response.terminated, bool
-                ), f"(calling round {i}) AssertionError: response.terminated is not a boolean"
+                ), f"(calling round {i+1}) AssertionError: response.terminated is not a boolean"
                 assert (
                     response.terminated is False
-                ), f"(calling round {i}) AssertionError: response.terminated is True"
+                ), f"(calling round {i+1}) AssertionError: response.terminated is True"
                 assert isinstance(
                     response.info, dict
-                ), f"(calling round {i}) AssertionError: response.info is not a dictionary"
+                ), f"(calling round {i+1}) AssertionError: response.info is not a dictionary"
                 assert (
                     response.info["id"] is not None
-                ), f"(calling round {i}) AssertionError: response.info['id'] is None"
+                ), f"(calling round {i+1}) AssertionError: response.info['id'] is None"
 
 
 @pytest.mark.model_backend
@@ -202,12 +202,12 @@ def test_chat_agent_step_with_structure_response(call_count=3):
 
         assert joke_response_keys.issubset(
             response_content_keys
-        ), f"(calling round {i}) Missing keys: {joke_response_keys - response_content_keys}"
+        ), f"(calling round {i+1}) Missing keys: {joke_response_keys - response_content_keys}"
 
         for key in joke_response_keys:
             assert (
                 key in response_content_json
-            ), f"(calling round {i}) Key {key} not found in response content"
+            ), f"(calling round {i+1}) Key {key} not found in response content"
 
 
 @pytest.mark.model_backend
@@ -248,12 +248,12 @@ def test_chat_agent_step_with_external_tools(call_count=3):
         response = external_tool_agent.step(usr_msg)
         assert (
             not response.msg.content
-        ), f"(calling round {i}) AssertionError: response.msg.content is not empty"
+        ), f"(calling round {i+1}) AssertionError: response.msg.content is not empty"
 
         external_tool_request = response.info["external_tool_request"]
         assert (
             external_tool_request.function.name == "sub"
-        ), f"(calling round {i}) AssertionError: external_tool_request.function.name is not 'sub'"
+        ), f"(calling round {i+1}) AssertionError: external_tool_request.function.name is not 'sub'"
 
 
 @pytest.mark.model_backend
@@ -313,10 +313,10 @@ def test_chat_agent_step_exceed_token_number(call_count=3):
         response = assistant.step(user_msg)
         assert (
             len(response.msgs) == 0
-        ), f"(calling round {i}) AssertionError: len(response.msgs) is {len(response.msgs)}, not 0"
+        ), f"(calling round {i+1}) AssertionError: len(response.msgs) is {len(response.msgs)}, not 0"
         assert (
             response.terminated
-        ), f"(calling round {i}) AssertionError: response.terminated is not True"
+        ), f"(calling round {i+1}) AssertionError: response.terminated is not True"
 
 
 @pytest.mark.model_backend
@@ -354,16 +354,16 @@ def test_chat_agent_multiple_return_messages(n, call_count=3):
 
         assert (
             assistant_with_sys_msg_response.msgs is not None
-        ), f"(calling round {i}) AssertionError: assistant_with_sys_msg_response.msgs is None"
+        ), f"(calling round {i+1}) AssertionError: assistant_with_sys_msg_response.msgs is None"
         assert (
             len(assistant_with_sys_msg_response.msgs) == n
-        ), f"(calling round {i}) AssertionError: len(assistant_with_sys_msg_response.msgs) != {n}"
+        ), f"(calling round {i+1}) AssertionError: len(assistant_with_sys_msg_response.msgs) != {n}"
         assert (
             assistant_without_sys_msg_response.msgs is not None
-        ), f"(calling round {i}) AssertionError: assistant_without_sys_msg_response.msgs is None"
+        ), f"(calling round {i+1}) AssertionError: assistant_without_sys_msg_response.msgs is None"
         assert (
             len(assistant_without_sys_msg_response.msgs) == n
-        ), f"(calling round {i}) AssertionError: len(assistant_without_sys_msg_response.msgs) != {n}"
+        ), f"(calling round {i+1}) AssertionError: len(assistant_without_sys_msg_response.msgs) != {n}"
 
 
 @pytest.mark.model_backend

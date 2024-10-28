@@ -225,16 +225,16 @@ def test_role_playing_role_sequence(
         assistant_role_sequence.append(record["role"])
 
     assert user_role_sequence == [
-        'system',
-        'user',
-        'assistant',
-        'user',
-        'assistant',
+        "system",
+        "user",
+        "assistant",
+        "user",
+        "assistant",
     ]
     assert assistant_role_sequence == [
-        'system',
-        'user',
-        'assistant',
-        'user',
-        'assistant',
+        "system",
+        "user",
+        "assistant",
+        "user",
+        "assistant",
     ]

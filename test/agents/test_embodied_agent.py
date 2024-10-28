@@ -33,9 +33,9 @@ def test_get_action_space_prompt():
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
     )
     agent = EmbodiedAgent(
-        sys_msg, tool_agents=[HuggingFaceToolAgent('hugging_face_tool_agent')]
+        sys_msg, tool_agents=[HuggingFaceToolAgent("hugging_face_tool_agent")]
     )
-    assert 'hugging_face_tool_agent' in agent.get_tool_agent_names()
+    assert "hugging_face_tool_agent" in agent.get_tool_agent_names()
 
 
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")
@@ -63,15 +63,15 @@ def test_step(call_count=3):
             response = embodied_agent.step(user_msg)
         except (binascii.Error, requests.exceptions.ConnectionError) as ex:
             print(
-                f"(calling round {i}) Warning: caught an exception, ignoring it since it is a known issue of Huggingface ({ex!s})"
+                f"(calling round {i+1}) Warning: caught an exception, ignoring it since it is a known issue of Huggingface ({ex!s})"
             )
             return
         assert isinstance(
             response.msg, BaseMessage
-        ), f"(calling round {i}) response.msg is not a BaseMessage"
+        ), f"(calling round {i+1}) response.msg is not a BaseMessage"
         assert (
             not response.terminated
-        ), f"(calling round {i}) response.terminated is not False"
+        ), f"(calling round {i+1}) response.terminated is not False"
         assert isinstance(
             response.info, dict
-        ), f"(calling round {i}) response.info is not a dict"
+        ), f"(calling round {i+1}) response.info is not a dict"

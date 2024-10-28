@@ -39,12 +39,12 @@ def test_hugging_face_tool_agent_step(call_count=3):
             result = agent.step("Generate an image of a boat in the water")
         except (binascii.Error, requests.exceptions.ConnectionError) as ex:
             print(
-                f"(calling round {i}) Warning: caught an exception, ignoring it since it is a known issue of Huggingface ({ex!s})"
+                f"(calling round {i+1}) Warning: caught an exception, ignoring it since it is a known issue of Huggingface ({ex!s})"
             )
             return
         assert isinstance(
             result, PngImageFile
-        ), f"(calling round {i}) result is not a PngImageFile"
+        ), f"(calling round {i+1}) result is not a PngImageFile"
 
 
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")
