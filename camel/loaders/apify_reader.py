@@ -74,9 +74,9 @@ class Apify:
             wait_secs (int, optional): The maximum number of seconds the server
                 waits for finish. If not provided, waits indefinitely.
 
-
         Returns:
-            dict: The output data from the actor.
+                        Optional[dict]: The output data from the actor if success, 
+                :obj:`None` if not.
             # please use the 'defaultDatasetId' to get the dataset
 
         Raises:
@@ -193,7 +193,7 @@ class Apify:
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         desc: Optional[bool] = None,
-    ) -> Optional[List]:
+    ) -> List[dict]:
         r"""Get all named datasets from the Apify platform.
 
         Args:
@@ -206,10 +206,9 @@ class Apify:
                 descending order based on their modification date
 
         Returns:
-            dict: The datasets.
+            List[dict]: The datasets.
 
         Raises:
-
             RuntimeError: If the datasets fail to be retrieved.
         """
         try:
