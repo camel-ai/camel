@@ -84,26 +84,26 @@ def test_babyagi_playing_step(model, call_count=3):
 
         assert isinstance(
             assistant_response.msgs, list
-        ), f"(calling round {i+1}) assistant_response.msgs is not a list"
+        ), f"Error in calling round {i+1}"
         assert (
             len(assistant_response.msgs) == 1
-        ), f"(calling round {i+1}) assistant_response.msgs is not of length 1"
+        ), f"Error in calling round {i+1}"
         assert isinstance(
             assistant_response.msgs[0], BaseMessage
-        ), f"(calling round {i+1}) assistant_response.msgs[0] is not a BaseMessage"
+        ), f"Error in calling round {i+1}"
         assert isinstance(
             assistant_response.terminated, bool
-        ), f"(calling round {i+1}) assistant_response.terminated is not a bool"
+        ), f"Error in calling round {i+1}"
         assert (
             assistant_response.terminated is False
-        ), f"(calling round {i+1}) assistant_response.terminated is not False"
+        ), f"Error in calling round {i+1}"
         assert isinstance(
             assistant_response.info, dict
-        ), f"(calling round {i+1}) assistant_response.info is not a dict"
+        ), f"Error in calling round {i+1}"
 
         assert (
             len(babyagi_playing.subtasks) > 0
-        ), f"(calling round {i+1}) babyagi_playing.subtasks is empty"
+        ), f"Error in calling round {i+1}"
         assert (
-            len(babyagi_playing.solved_subtasks) == i+1
-        ), f"(calling round {i+1}) babyagi_playing.solved_subtasks is not of length {i+1}"
+            len(babyagi_playing.solved_subtasks) == i + 1
+        ), f"Error in calling round {i+1}"

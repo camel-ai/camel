@@ -199,8 +199,10 @@ def test_role_playing_with_function(call_count=3):
 
 
 def test_role_playing_role_sequence(
-    model=FakeLLMModel(model_type=ModelType.DEFAULT),
+    model=None,
 ):
+    if model is None:
+        model = FakeLLMModel(model_type=ModelType.DEFAULT)
     task_prompt = "Develop a trading bot for the stock market"
     role_playing = RolePlaying(
         assistant_role_name="Python Programmer",

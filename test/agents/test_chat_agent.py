@@ -94,22 +94,20 @@ def test_chat_agent(model, call_count):
                 response = assistant.step(user_msg)
                 assert isinstance(
                     response.msgs, list
-                ), f"(calling round {i+1}) AssertionError: response.msgs is not a list"
-                assert (
-                    len(response.msgs) > 0
-                ), f"(calling round {i+1}) AssertionError: response.msgs is empty"
+                ), f"Error in calling round {i+1}"
+                assert len(response.msgs) > 0, f"Error in calling round {i+1}"
                 assert isinstance(
                     response.terminated, bool
-                ), f"(calling round {i+1}) AssertionError: response.terminated is not a boolean"
+                ), f"Error in calling round {i+1}"
                 assert (
                     response.terminated is False
-                ), f"(calling round {i+1}) AssertionError: response.terminated is True"
+                ), f"Error in calling round {i+1}"
                 assert isinstance(
                     response.info, dict
-                ), f"(calling round {i+1}) AssertionError: response.info is not a dictionary"
+                ), f"Error in calling round {i+1}"
                 assert (
                     response.info["id"] is not None
-                ), f"(calling round {i+1}) AssertionError: response.info['id'] is None"
+                ), f"Error in calling round {i+1}"
 
 
 @pytest.mark.model_backend
@@ -163,22 +161,24 @@ def test_chat_agent_step_with_structure_response(call_count=3):
         meta_dict=None,
         content="You are a help assistant.",
     )
+    tool_calls = [
+        ChatCompletionMessageToolCall(
+            id="call_mock123456",
+            function=Function(
+                arguments='{ \
+                    "joke":"What do you call fake spaghetti? An impasta!", \
+                    "funny_level":"6" \
+                }',
+                name="return_json_response",
+            ),
+            type="function",
+        )
+    ]
     assistant = ChatAgent(
         system_message=system_msg,
         model=FakeLLMModel(
             model_type=ModelType.DEFAULT,
-            completion_kwargs={
-                "tool_calls": [
-                    ChatCompletionMessageToolCall(
-                        id="call_mock123456",
-                        function=Function(
-                            arguments='{"joke":"What do you call fake spaghetti? An impasta!","funny_level":"6"}',
-                            name="return_json_response",
-                        ),
-                        type="function",
-                    )
-                ]
-            },
+            completion_kwargs={"tool_calls": tool_calls},
         ),
     )
 
@@ -202,12 +202,12 @@ def test_chat_agent_step_with_structure_response(call_count=3):
 
         assert joke_response_keys.issubset(
             response_content_keys
-        ), f"(calling round {i+1}) Missing keys: {joke_response_keys - response_content_keys}"
+        ), f"Error in calling round {i+1}"
 
         for key in joke_response_keys:
             assert (
                 key in response_content_json
-            ), f"(calling round {i+1}) Key {key} not found in response content"
+            ), f"Error in calling round {i+1}"
 
 
 @pytest.mark.model_backend
@@ -246,14 +246,12 @@ def test_chat_agent_step_with_external_tools(call_count=3):
 
     for i in range(call_count):
         response = external_tool_agent.step(usr_msg)
-        assert (
-            not response.msg.content
-        ), f"(calling round {i+1}) AssertionError: response.msg.content is not empty"
+        assert not response.msg.content, f"Error in calling round {i+1}"
 
         external_tool_request = response.info["external_tool_request"]
         assert (
             external_tool_request.function.name == "sub"
-        ), f"(calling round {i+1}) AssertionError: external_tool_request.function.name is not 'sub'"
+        ), f"Error in calling round {i+1}"
 
 
 @pytest.mark.model_backend
@@ -311,12 +309,8 @@ def test_chat_agent_step_exceed_token_number(call_count=3):
 
     for i in range(call_count):
         response = assistant.step(user_msg)
-        assert (
-            len(response.msgs) == 0
-        ), f"(calling round {i+1}) AssertionError: len(response.msgs) is {len(response.msgs)}, not 0"
-        assert (
-            response.terminated
-        ), f"(calling round {i+1}) AssertionError: response.terminated is not True"
+        assert len(response.msgs) == 0, f"Error in calling round {i+1}"
+        assert response.terminated, f"Error in calling round {i+1}"
 
 
 @pytest.mark.model_backend
@@ -354,16 +348,16 @@ def test_chat_agent_multiple_return_messages(n, call_count=3):
 
         assert (
             assistant_with_sys_msg_response.msgs is not None
-        ), f"(calling round {i+1}) AssertionError: assistant_with_sys_msg_response.msgs is None"
+        ), f"Error in calling round {i+1}"
         assert (
             len(assistant_with_sys_msg_response.msgs) == n
-        ), f"(calling round {i+1}) AssertionError: len(assistant_with_sys_msg_response.msgs) != {n}"
+        ), f"Error in calling round {i+1}"
         assert (
             assistant_without_sys_msg_response.msgs is not None
-        ), f"(calling round {i+1}) AssertionError: assistant_without_sys_msg_response.msgs is None"
+        ), f"Error in calling round {i+1}"
         assert (
             len(assistant_without_sys_msg_response.msgs) == n
-        ), f"(calling round {i+1}) AssertionError: len(assistant_without_sys_msg_response.msgs) != {n}"
+        ), f"Error in calling round {i+1}"
 
 
 @pytest.mark.model_backend

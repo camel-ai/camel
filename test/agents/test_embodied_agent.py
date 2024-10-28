@@ -63,15 +63,13 @@ def test_step(call_count=3):
             response = embodied_agent.step(user_msg)
         except (binascii.Error, requests.exceptions.ConnectionError) as ex:
             print(
-                f"(calling round {i+1}) Warning: caught an exception, ignoring it since it is a known issue of Huggingface ({ex!s})"
+                f"Error in calling round {i+1} "
+                "Warning: caught an exception, ignoring it since "
+                f"it is a known issue of Huggingface ({ex!s})"
             )
             return
         assert isinstance(
             response.msg, BaseMessage
-        ), f"(calling round {i+1}) response.msg is not a BaseMessage"
-        assert (
-            not response.terminated
-        ), f"(calling round {i+1}) response.terminated is not False"
-        assert isinstance(
-            response.info, dict
-        ), f"(calling round {i+1}) response.info is not a dict"
+        ), f"Error in calling round {i+1}"
+        assert not response.terminated, f"Error in calling round {i+1}"
+        assert isinstance(response.info, dict), f"Error in calling round {i+1}"

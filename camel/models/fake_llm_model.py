@@ -37,7 +37,8 @@ from camel.utils import (
 
 
 class FakeLLMModel(BaseModelBackend):
-    r"""Fake LLM for test purposes. Users can set mock responses for specific inputs.
+    r"""Fake LLM for test purposes. Users can set mock responses for
+        specific inputs.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -56,9 +57,11 @@ class FakeLLMModel(BaseModelBackend):
         responses (Optional[Dict[str, str]], optional): A dictionary of mock
             user messages and corresponding responses. If the user message is
             found in the dictionary, the response will be returned; otherwise
-            it will be "I'm not sure how to respond to that." (default: :obj:`None`)
+            it will be "I'm not sure how to respond to that."
+            (default: :obj:`None`)
         completion_kwargs (Optional[Dict[str, Any]], optional): A dictionary of
-            completion kwargs to be used in the mock response choices. (default: :obj:`None`)
+            completion kwargs to be used in the mock response choices.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -71,8 +74,9 @@ class FakeLLMModel(BaseModelBackend):
         responses: Optional[Dict[str, str]] = None,
         completion_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
-        # Initialize config dictionary with ChatGPTConfig if not provided.
-        # Fake model doesn't actually use model_config_dict, just for compatibility.
+        """Initialize config dictionary with ChatGPTConfig if not provided.
+        Fake llm doesn't actually use model_config_dict,
+        just for compatibility."""
         if model_config_dict is None:
             model_config_dict = ChatGPTConfig().as_dict()
         super().__init__(
@@ -83,7 +87,8 @@ class FakeLLMModel(BaseModelBackend):
         self._responses = {
             "Hi!": "Hello!",
             "What is the weather today?": "It's sunny outside.",
-            "Tell me a joke.": "Why don't skeletons fight each other? They don't have the guts!",
+            "Tell me a joke.": "Why don't skeletons fight each other? "
+            "They don't have the guts!",
         }
         if responses:
             self._responses.update(responses)
@@ -134,8 +139,12 @@ class FakeLLMModel(BaseModelBackend):
 
         Returns:
             ChatCompletion:
-                A ChatCompletion object formatted for the OpenAI API. The stream mode is not supported in fake model, so it always returns a single ChatCompletion object. The response content is determined by the last user message in the input list.
-                Users cam specify mock responses for specific inputs in initialization or using `set_mock_response()` method.
+                A ChatCompletion object formatted for the OpenAI API.
+                The stream mode is not supported in fake model, so it always
+                returns a single ChatCompletion object. The response content
+                is determined by the last user message in the input list.
+                Users cam specify mock responses for specific inputs in
+                initialization or using `set_mock_response()` method.
         """
         user_message = ""
         content = messages[-1].get("content")
@@ -180,6 +189,7 @@ class FakeLLMModel(BaseModelBackend):
         return mock_response
 
     def check_model_config(self):
-        """Check the configuration for the mock backend (no special checks needed)."""
-        # We assume that all configs are acceptable for the mock model
+        """Check the configuration for the mock backend.
+        For mock LLM, we assume that all configs are acceptable
+        for the mock model."""
         pass
