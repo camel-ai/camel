@@ -31,6 +31,7 @@ from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
+from .phi_config import PHI_API_PARAMS, PHIConfig
 
 __all__ = [
     'BaseConfig',
@@ -38,6 +39,8 @@ __all__ = [
     'OPENAI_API_PARAMS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
+    'PHI_API_PARAMS',
+    'PHIConfig',
     'GROQ_API_PARAMS',
     'GroqConfig',
     'LiteLLMConfig',

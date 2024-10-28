@@ -32,6 +32,7 @@ from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
+from .phi_model import PHI_API_PARAMS
 
 __all__ = [
     'BaseModelBackend',
@@ -48,6 +49,7 @@ __all__ = [
     'NemotronModel',
     'OllamaModel',
     'VLLMModel',
+    'PHI_API_PARAMS',
     'GeminiModel',
     'OpenAICompatibleModel',
     'RekaModel',

@@ -108,6 +108,8 @@ class ModelType(UnifiedModelType, Enum):
     YI_SPARK = "yi-spark"
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
+    # Offline models
+    PHI_3_5_VISION = "microsoft/Phi-3.5-vision-instruct"
 
     def __str__(self):
         return self.value
@@ -516,6 +518,7 @@ class ModelPlatformType(Enum):
     ZHIPU = "zhipuai"
     GEMINI = "gemini"
     VLLM = "vllm"
+    PHI = "phi"
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
@@ -553,6 +556,16 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_phi(self) -> bool:
+        r"""Returns whether this type of models is a OFFLINE MODEL model.
+        Returns:
+            bool: Whether this type of models is OFFLINE MODEL.
+        """
+        return self in {
+            ModelType.PHI_3_5_VISION,
+        }
 
     @property
     def is_together(self) -> bool:

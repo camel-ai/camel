@@ -30,6 +30,7 @@ from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.yi_model import YiModel
+from camel.models.phi_model import PHIModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
 from camel.utils import BaseTokenCounter
@@ -112,6 +113,8 @@ class ModelFactory:
             model_class = YiModel
         elif model_platform.is_qwen and model_type.is_qwen:
             model_class = QwenModel
+        elif model_platform.is_phi_model and model_type.is_phi_model:
+            model_class = PHIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 
