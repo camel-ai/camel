@@ -153,11 +153,9 @@ from camel.tasks import (
     Task,
     TaskManager,
 )
-from camel.messages import BaseMessage
 
-sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant", content="You're a helpful assistant"
-)
+sys_msg = "You're a helpful assistant"
+
 # Set up an agent
 agent = ChatAgent(system_message=sys_msg)
 

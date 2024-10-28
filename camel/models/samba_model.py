@@ -147,7 +147,7 @@ class SambaModel(BaseModelBackend):
     def run(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs SambaNova's FastAPI service.
+        r"""Runs SambaNova's service.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
