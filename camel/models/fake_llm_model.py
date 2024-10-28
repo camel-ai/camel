@@ -155,7 +155,7 @@ class FakeLLMModel(BaseModelBackend):
             id="mock_response_id",
             choices=[
                 Choice(
-                    finish_reason='stop',
+                    finish_reason="stop",
                     index=0,
                     logprobs=None,
                     message=ChatCompletionMessage(
@@ -167,9 +167,9 @@ class FakeLLMModel(BaseModelBackend):
                 )
             ],
             created=123456789,
-            model='mock-model-2024',
-            object='chat.completion',
-            system_fingerprint='mock_fp_123456',
+            model="mock-model-2024",
+            object="chat.completion",
+            system_fingerprint="mock_fp_123456",
             usage=CompletionUsage(
                 completion_tokens=len(response_content.split()),
                 prompt_tokens=self.count_tokens_from_messages(messages),

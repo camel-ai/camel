@@ -48,7 +48,7 @@ from camel.types import (
 from camel.utils.async_func import sync_funcs_to_async
 
 parametrize = pytest.mark.parametrize(
-    'model, call_count',
+    "model, call_count",
     [
         (FakeLLMModel(model_type=ModelType.DEFAULT), 3),
         pytest.param(None, 3, marks=pytest.mark.model_backend),
@@ -108,7 +108,7 @@ def test_chat_agent(model, call_count):
                     response.info, dict
                 ), f"(calling round {i}) AssertionError: response.info is not a dictionary"
                 assert (
-                    response.info['id'] is not None
+                    response.info["id"] is not None
                 ), f"(calling round {i}) AssertionError: response.info['id'] is None"
 
 
@@ -168,14 +168,14 @@ def test_chat_agent_step_with_structure_response(call_count=3):
         model=FakeLLMModel(
             model_type=ModelType.DEFAULT,
             completion_kwargs={
-                'tool_calls': [
+                "tool_calls": [
                     ChatCompletionMessageToolCall(
-                        id='call_mock123456',
+                        id="call_mock123456",
                         function=Function(
                             arguments='{"joke":"What do you call fake spaghetti? An impasta!","funny_level":"6"}',
-                            name='return_json_response',
+                            name="return_json_response",
                         ),
-                        type='function',
+                        type="function",
                     )
                 ]
             },
@@ -246,7 +246,9 @@ def test_chat_agent_step_with_external_tools(call_count=3):
 
     for i in range(call_count):
         response = external_tool_agent.step(usr_msg)
-        assert not response.msg.content, f"(calling round {i}) AssertionError: response.msg.content is not empty"
+        assert (
+            not response.msg.content
+        ), f"(calling round {i}) AssertionError: response.msg.content is not empty"
 
         external_tool_request = response.info["external_tool_request"]
         assert (
@@ -312,11 +314,13 @@ def test_chat_agent_step_exceed_token_number(call_count=3):
         assert (
             len(response.msgs) == 0
         ), f"(calling round {i}) AssertionError: len(response.msgs) is {len(response.msgs)}, not 0"
-        assert response.terminated, f"(calling round {i}) AssertionError: response.terminated is not True"
+        assert (
+            response.terminated
+        ), f"(calling round {i}) AssertionError: response.terminated is not True"
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize('n', [1, 2, 3])
+@pytest.mark.parametrize("n", [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n, call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
@@ -363,7 +367,7 @@ def test_chat_agent_multiple_return_messages(n, call_count=3):
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize('n', [2])
+@pytest.mark.parametrize("n", [2])
 def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
@@ -561,7 +565,7 @@ def test_tool_calling_sync():
     agent_response = agent.step(user_msg)
 
     tool_calls: List[FunctionCallingRecord] = [
-        call for call in agent_response.info['tool_calls']
+        call for call in agent_response.info["tool_calls"]
     ]
 
     assert len(tool_calls) > 0
@@ -604,7 +608,7 @@ async def test_tool_calling_math_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls = agent_response.info['tool_calls']
+    tool_calls = agent_response.info["tool_calls"]
 
     assert tool_calls
     assert str(tool_calls[0]).startswith("Function Execution")
@@ -658,13 +662,13 @@ async def test_tool_calling_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls = agent_response.info['tool_calls']
+    tool_calls = agent_response.info["tool_calls"]
 
     assert tool_calls
     assert str(tool_calls[0]).startswith("Function Execution")
 
     assert tool_calls[0].func_name == "async_sleep"
-    assert tool_calls[0].args == {'second': 1}
+    assert tool_calls[0].args == {"second": 1}
     assert tool_calls[0].result == 1
 
 
@@ -690,7 +694,7 @@ def test_response_words_termination():
 
     assert agent.terminated
     assert agent_response.terminated
-    assert "goodbye" in agent_response.info['termination_reasons'][0]
+    assert "goodbye" in agent_response.info["termination_reasons"][0]
 
 
 def test_chat_agent_vision():
@@ -714,7 +718,7 @@ def test_chat_agent_vision():
     image = Image.new("RGB", (100, 100), "blue")
     image_list = []
     img_byte_arr = BytesIO()
-    image.save(img_byte_arr, format='PNG')
+    image.save(img_byte_arr, format="PNG")
     image = Image.open(img_byte_arr)
     image_list.append(image)
 
