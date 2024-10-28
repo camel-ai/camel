@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from apify_client.clients import DatasetClient
@@ -48,7 +48,7 @@ class Apify:
         timeout_secs: Optional[int] = None,
         webhooks: Optional[list] = None,
         wait_secs: Optional[int] = None,
-    ) -> Optional[Dict]:
+    ) -> Optional[dict]:
         r"""Run an actor on the Apify platform.
 
         Args:
@@ -123,7 +123,7 @@ class Apify:
     def get_dataset(
         self,
         dataset_id: str,
-    ) -> Optional[Dict]:
+    ) -> Optional[dict]:
         r"""Get a dataset from the Apify platform.
 
         Args:
@@ -146,7 +146,7 @@ class Apify:
         self,
         dataset_id: str,
         name: str,
-    ) -> Dict:
+    ) -> dict:
         r"""Update a dataset on the Apify platform.
 
         Args:
