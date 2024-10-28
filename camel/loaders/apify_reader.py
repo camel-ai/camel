@@ -12,10 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
     from apify_client.clients import DatasetClient
+
+from camel.utils import api_keys_required
 
 
 class Apify:
@@ -25,6 +27,7 @@ class Apify:
         api_key (Optional[str]): API key for authenticating with the Apify API.
     """
 
+    @api_keys_required("APIFY_API_KEY")
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -45,7 +48,7 @@ class Apify:
         timeout_secs: Optional[int] = None,
         webhooks: Optional[list] = None,
         wait_secs: Optional[int] = None,
-    ) -> Optional[dict]:
+    ) -> Dict:
         r"""Run an actor on the Apify platform.
 
         Args:
@@ -75,8 +78,7 @@ class Apify:
                 waits for finish. If not provided, waits indefinitely.
 
         Returns:
-                        Optional[dict]: The output data from the actor if success, 
-                :obj:`None` if not.
+            Optional[dict]: The output data from the actor if successful.
             # please use the 'defaultDatasetId' to get the dataset
 
         Raises:
@@ -121,7 +123,7 @@ class Apify:
     def get_dataset(
         self,
         dataset_id: str,
-    ) -> Optional[dict]:
+    ) -> Dict:
         r"""Get a dataset from the Apify platform.
 
         Args:
@@ -144,7 +146,7 @@ class Apify:
         self,
         dataset_id: str,
         name: str,
-    ) -> Optional[dict]:
+    ) -> Dict:
         r"""Update a dataset on the Apify platform.
 
         Args:
