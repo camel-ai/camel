@@ -15,12 +15,12 @@ import ast
 import asyncio
 from io import BytesIO
 from typing import List
-from unittest.mock import Mock
 
 import pytest
-from openai.types.chat.chat_completion import Choice
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.completion_usage import CompletionUsage
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+    Function,
+)
 from PIL import Image
 from pydantic import BaseModel, Field
 
@@ -30,7 +30,7 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
+from camel.models import FakeLLMModel, ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     FunctionTool,
@@ -38,7 +38,6 @@ from camel.toolkits import (
     SearchToolkit,
 )
 from camel.types import (
-    ChatCompletion,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
@@ -49,19 +48,16 @@ from camel.types import (
 from camel.utils.async_func import sync_funcs_to_async
 
 parametrize = pytest.mark.parametrize(
-    'model',
+    'model, call_count',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-        ),
-        pytest.param(None, marks=pytest.mark.model_backend),
+        (FakeLLMModel(model_type=ModelType.DEFAULT), 3),
+        pytest.param(None, 3, marks=pytest.mark.model_backend),
     ],
 )
 
 
 @parametrize
-def test_chat_agent(model):
+def test_chat_agent(model, call_count):
     model = model
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
@@ -93,14 +89,27 @@ def test_chat_agent(model):
     user_msg_str = "Hello!"
 
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
-        for user_msg in [user_msg_bm, user_msg_str]:
-            response = assistant.step(user_msg)
-            assert isinstance(response.msgs, list)
-            assert len(response.msgs) > 0
-            assert isinstance(response.terminated, bool)
-            assert response.terminated is False
-            assert isinstance(response.info, dict)
-            assert response.info['id'] is not None
+        for i in range(call_count):
+            for user_msg in [user_msg_bm, user_msg_str]:
+                response = assistant.step(user_msg)
+                assert isinstance(
+                    response.msgs, list
+                ), f"(calling round {i}) AssertionError: response.msgs is not a list"
+                assert (
+                    len(response.msgs) > 0
+                ), f"(calling round {i}) AssertionError: response.msgs is empty"
+                assert isinstance(
+                    response.terminated, bool
+                ), f"(calling round {i}) AssertionError: response.terminated is not a boolean"
+                assert (
+                    response.terminated is False
+                ), f"(calling round {i}) AssertionError: response.terminated is True"
+                assert isinstance(
+                    response.info, dict
+                ), f"(calling round {i}) AssertionError: response.info is not a dictionary"
+                assert (
+                    response.info['id'] is not None
+                ), f"(calling round {i}) AssertionError: response.info['id'] is None"
 
 
 @pytest.mark.model_backend
@@ -147,7 +156,7 @@ def test_chat_agent_stored_messages():
 
 
 @pytest.mark.model_backend
-def test_chat_agent_step_with_structure_response():
+def test_chat_agent_step_with_structure_response(call_count=3):
     system_msg = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -156,6 +165,21 @@ def test_chat_agent_step_with_structure_response():
     )
     assistant = ChatAgent(
         system_message=system_msg,
+        model=FakeLLMModel(
+            model_type=ModelType.DEFAULT,
+            completion_kwargs={
+                'tool_calls': [
+                    ChatCompletionMessageToolCall(
+                        id='call_mock123456',
+                        function=Function(
+                            arguments='{"joke":"What do you call fake spaghetti? An impasta!","funny_level":"6"}',
+                            name='return_json_response',
+                        ),
+                        type='function',
+                    )
+                ]
+            },
+        ),
     )
 
     class JokeResponse(BaseModel):
@@ -167,26 +191,27 @@ def test_chat_agent_step_with_structure_response():
         content="Tell a jokes.",
     )
 
-    response = assistant.step(user_msg, response_format=JokeResponse)
-    response_content_json = ast.literal_eval(response.msgs[0].content)
-    joke_response_keys = set(
-        JokeResponse.model_json_schema()["properties"].keys()
-    )
+    for i in range(call_count):
+        response = assistant.step(user_msg, response_format=JokeResponse)
+        response_content_json = ast.literal_eval(response.msgs[0].content)
+        joke_response_keys = set(
+            JokeResponse.model_json_schema()["properties"].keys()
+        )
 
-    response_content_keys = set(response_content_json.keys())
+        response_content_keys = set(response_content_json.keys())
 
-    assert joke_response_keys.issubset(
-        response_content_keys
-    ), f"Missing keys: {joke_response_keys - response_content_keys}"
+        assert joke_response_keys.issubset(
+            response_content_keys
+        ), f"(calling round {i}) Missing keys: {joke_response_keys - response_content_keys}"
 
-    for key in joke_response_keys:
-        assert (
-            key in response_content_json
-        ), f"Key {key} not found in response content"
+        for key in joke_response_keys:
+            assert (
+                key in response_content_json
+            ), f"(calling round {i}) Key {key} not found in response content"
 
 
 @pytest.mark.model_backend
-def test_chat_agent_step_with_external_tools():
+def test_chat_agent_step_with_external_tools(call_count=3):
     internal_tools = [FunctionTool(SearchToolkit().search_duckduckgo)]
     external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
@@ -219,11 +244,14 @@ def test_chat_agent_step_with_external_tools():
         "from the year that United States was founded?",
     )
 
-    response = external_tool_agent.step(usr_msg)
-    assert not response.msg.content
+    for i in range(call_count):
+        response = external_tool_agent.step(usr_msg)
+        assert not response.msg.content, f"(calling round {i}) AssertionError: response.msg.content is not empty"
 
-    external_tool_request = response.info["external_tool_request"]
-    assert external_tool_request.function.name == "sub"
+        external_tool_request = response.info["external_tool_request"]
+        assert (
+            external_tool_request.function.name == "sub"
+        ), f"(calling round {i}) AssertionError: external_tool_request.function.name is not 'sub'"
 
 
 @pytest.mark.model_backend
@@ -260,7 +288,7 @@ def test_chat_agent_messages_window():
 
 
 @pytest.mark.model_backend
-def test_chat_agent_step_exceed_token_number():
+def test_chat_agent_step_exceed_token_number(call_count=3):
     system_msg = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -279,14 +307,17 @@ def test_chat_agent_step_exceed_token_number():
         content="Tell me a joke.",
     )
 
-    response = assistant.step(user_msg)
-    assert len(response.msgs) == 0
-    assert response.terminated
+    for i in range(call_count):
+        response = assistant.step(user_msg)
+        assert (
+            len(response.msgs) == 0
+        ), f"(calling round {i}) AssertionError: len(response.msgs) is {len(response.msgs)}, not 0"
+        assert response.terminated, f"(calling round {i}) AssertionError: response.terminated is not True"
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize('n', [1, 2, 3])
-def test_chat_agent_multiple_return_messages(n):
+def test_chat_agent_multiple_return_messages(n, call_count=3):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -311,15 +342,24 @@ def test_chat_agent_multiple_return_messages(n):
         meta_dict=dict(),
         content="Tell me a joke.",
     )
-    assistant_with_sys_msg_response = assistant_with_sys_msg.step(user_msg)
-    assistant_without_sys_msg_response = assistant_without_sys_msg.step(
-        user_msg
-    )
+    for i in range(call_count):
+        assistant_with_sys_msg_response = assistant_with_sys_msg.step(user_msg)
+        assistant_without_sys_msg_response = assistant_without_sys_msg.step(
+            user_msg
+        )
 
-    assert assistant_with_sys_msg_response.msgs is not None
-    assert len(assistant_with_sys_msg_response.msgs) == n
-    assert assistant_without_sys_msg_response.msgs is not None
-    assert len(assistant_without_sys_msg_response.msgs) == n
+        assert (
+            assistant_with_sys_msg_response.msgs is not None
+        ), f"(calling round {i}) AssertionError: assistant_with_sys_msg_response.msgs is None"
+        assert (
+            len(assistant_with_sys_msg_response.msgs) == n
+        ), f"(calling round {i}) AssertionError: len(assistant_with_sys_msg_response.msgs) != {n}"
+        assert (
+            assistant_without_sys_msg_response.msgs is not None
+        ), f"(calling round {i}) AssertionError: assistant_without_sys_msg_response.msgs is None"
+        assert (
+            len(assistant_without_sys_msg_response.msgs) == n
+        ), f"(calling round {i}) AssertionError: len(assistant_without_sys_msg_response.msgs) != {n}"
 
 
 @pytest.mark.model_backend
@@ -660,11 +700,10 @@ def test_chat_agent_vision():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+    # Mock the OpenAI model return value
+    model = FakeLLMModel(
+        model_type=ModelType.DEFAULT,
+        responses={"Is this image blue? Just answer yes or no.": "Yes."},
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -686,31 +725,6 @@ def test_chat_agent_vision():
         content="Is this image blue? Just answer yes or no.",
         image_list=image_list,
         image_detail="low",
-    )
-    # Mock the OpenAI model return value:
-    agent.model_backend = Mock()
-    agent.model_backend.run.return_value = ChatCompletion(
-        id="mock_vision_id",
-        choices=[
-            Choice(
-                finish_reason='stop',
-                index=0,
-                logprobs=None,
-                message=ChatCompletionMessage(
-                    content='Yes.',
-                    role='assistant',
-                    function_call=None,
-                    tool_calls=None,
-                ),
-            )
-        ],
-        created=123456,
-        model='gpt-4-turbo-2024-04-09',
-        object='chat.completion',
-        system_fingerprint='fp_5d12056990',
-        usage=CompletionUsage(
-            completion_tokens=2, prompt_tokens=113, total_tokens=115
-        ),
     )
 
     agent_response = agent.step(user_msg)

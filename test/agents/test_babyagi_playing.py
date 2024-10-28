@@ -15,10 +15,9 @@ import pytest
 
 from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizationAgent
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
+from camel.models import FakeLLMModel
 from camel.societies import BabyAGI
 from camel.types import (
-    ModelPlatformType,
     ModelType,
     RoleType,
     TaskType,
@@ -27,11 +26,8 @@ from camel.types import (
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.STUB,
-        ),
-        pytest.param(None, marks=pytest.mark.model_backend),
+        (FakeLLMModel(model_type=ModelType.DEFAULT), 3),
+        pytest.param(None, 3, marks=pytest.mark.model_backend),
     ],
 )
 
@@ -66,7 +62,7 @@ def test_babyagi_playing_init(model):
 
 
 @parametrize
-def test_babyagi_playing_step(model):
+def test_babyagi_playing_step(model, call_count):
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
@@ -82,14 +78,32 @@ def test_babyagi_playing_step(model):
     print(f"Original task prompt:\n{task_prompt}\n")
     print(f"Specified task prompt:\n{babyagi_playing.specified_task_prompt}\n")
 
-    assistant_response = babyagi_playing.step()
+    for i in range(call_count):
+        # Call assistant for multiple times to make test units more robust
+        assistant_response = babyagi_playing.step()
 
-    assert isinstance(assistant_response.msgs, list)
-    assert len(assistant_response.msgs) == 1
-    assert isinstance(assistant_response.msgs[0], BaseMessage)
-    assert isinstance(assistant_response.terminated, bool)
-    assert assistant_response.terminated is False
-    assert isinstance(assistant_response.info, dict)
+        assert isinstance(
+            assistant_response.msgs, list
+        ), f"(calling round {i}) assistant_response.msgs is not a list"
+        assert (
+            len(assistant_response.msgs) == 1
+        ), f"(calling round {i}) assistant_response.msgs is not of length 1"
+        assert isinstance(
+            assistant_response.msgs[0], BaseMessage
+        ), f"(calling round {i}) assistant_response.msgs[0] is not a BaseMessage"
+        assert isinstance(
+            assistant_response.terminated, bool
+        ), f"(calling round {i}) assistant_response.terminated is not a bool"
+        assert (
+            assistant_response.terminated is False
+        ), f"(calling round {i}) assistant_response.terminated is not False"
+        assert isinstance(
+            assistant_response.info, dict
+        ), f"(calling round {i}) assistant_response.info is not a dict"
 
-    assert len(babyagi_playing.subtasks) > 0
-    assert len(babyagi_playing.solved_subtasks) == 1
+        assert (
+            len(babyagi_playing.subtasks) > 0
+        ), f"(calling round {i}) babyagi_playing.subtasks is empty"
+        assert (
+            len(babyagi_playing.solved_subtasks) == 1
+        ), f"(calling round {i}) babyagi_playing.solved_subtasks is not of length 1"

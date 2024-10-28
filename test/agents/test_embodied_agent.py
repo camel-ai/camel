@@ -19,7 +19,8 @@ import requests
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import RoleType
+from camel.models import FakeLLMModel
+from camel.types import ModelType, RoleType
 
 
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")
@@ -40,7 +41,7 @@ def test_get_action_space_prompt():
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")
 @pytest.mark.model_backend
 @pytest.mark.very_slow
-def test_step():
+def test_step(call_count=3):
     # Create an embodied agent
     role_name = "Artist"
     meta_dict = dict(role=role_name, task="Drawing")
@@ -48,19 +49,29 @@ def test_step():
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
     )
-    embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
+    embodied_agent = EmbodiedAgent(
+        sys_msg,
+        verbose=True,
+        model=FakeLLMModel(model_type=ModelType.DEFAULT),
+    )
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content="Draw all the Camelidae species.",
     )
-    try:
-        response = embodied_agent.step(user_msg)
-    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
-        print(
-            "Warning: caught an exception, ignoring it since "
-            f"it is a known issue of Huggingface ({ex!s})"
-        )
-        return
-    assert isinstance(response.msg, BaseMessage)
-    assert not response.terminated
-    assert isinstance(response.info, dict)
+    for i in range(call_count):
+        try:
+            response = embodied_agent.step(user_msg)
+        except (binascii.Error, requests.exceptions.ConnectionError) as ex:
+            print(
+                f"(calling round {i}) Warning: caught an exception, ignoring it since it is a known issue of Huggingface ({ex!s})"
+            )
+            return
+        assert isinstance(
+            response.msg, BaseMessage
+        ), f"(calling round {i}) response.msg is not a BaseMessage"
+        assert (
+            not response.terminated
+        ), f"(calling round {i}) response.terminated is not False"
+        assert isinstance(
+            response.info, dict
+        ), f"(calling round {i}) response.info is not a dict"

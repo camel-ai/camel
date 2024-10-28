@@ -16,7 +16,7 @@ import pytest
 from camel.agents import ChatAgent, CriticAgent
 from camel.human import Human
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
+from camel.models import FakeLLMModel, ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import (
@@ -108,7 +108,10 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     ],
 )
 def test_role_playing_step(
-    task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict
+    task_type,
+    extend_sys_msg_meta_dicts,
+    extend_task_specify_meta_dict,
+    call_count=3,
 ):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
@@ -127,24 +130,36 @@ def test_role_playing_step(
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 
-    assistant_response, user_response = role_playing.step(init_assistant_msg)
+    for i in range(call_count):
+        assistant_response, user_response = role_playing.step(
+            init_assistant_msg
+        )
 
-    for response in (assistant_response, user_response):
-        assert isinstance(response.msgs, list)
-        assert len(response.msgs) == 1
-        assert isinstance(response.msgs[0], BaseMessage)
-        assert isinstance(response.terminated, bool)
-        assert response.terminated is False
-        assert isinstance(response.info, dict)
+        for response in (assistant_response, user_response):
+            assert isinstance(
+                response.msgs, list
+            ), f"(calling round{i}) response.msgs is not a list"
+            assert (
+                len(response.msgs) == 1
+            ), f"(calling round{i}) len(response.msgs) is not 1"
+            assert isinstance(
+                response.msgs[0], BaseMessage
+            ), f"(calling round{i}) response.msgs[0] is not a BaseMessage"
+            assert isinstance(
+                response.terminated, bool
+            ), f"(calling round{i}) response.terminated is not a bool"
+            assert (
+                response.terminated is False
+            ), f"(calling round{i}) response.terminated is not False"
+            assert isinstance(
+                response.info, dict
+            ), f"(calling round{i}) response.info is not a dict"
 
 
 @pytest.mark.model_backend
-def test_role_playing_with_function():
+def test_role_playing_with_function(call_count=3):
     tools = MathToolkit().get_tools()
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-    )
+    model = FakeLLMModel(model_type=ModelType.DEFAULT)
 
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
@@ -160,17 +175,32 @@ def test_role_playing_with_function():
     )
 
     input_msg = role_playing.init_chat()
-    assistant_response, user_response = role_playing.step(input_msg)
-    for response in (assistant_response, user_response):
-        assert isinstance(response.msgs, list)
-        assert len(response.msgs) == 1
-        assert isinstance(response.msgs[0], BaseMessage)
-        assert isinstance(response.terminated, bool)
-        assert response.terminated is False
-        assert isinstance(response.info, dict)
+    for i in range(call_count):
+        assistant_response, user_response = role_playing.step(input_msg)
+        for response in (assistant_response, user_response):
+            assert isinstance(
+                response.msgs, list
+            ), f"(calling round{i}) response.msgs is not a list"
+            assert (
+                len(response.msgs) == 1
+            ), f"(calling round{i}) len(response.msgs) is not 1"
+            assert isinstance(
+                response.msgs[0], BaseMessage
+            ), f"(calling round{i}) response.msgs[0] is not a BaseMessage"
+            assert isinstance(
+                response.terminated, bool
+            ), f"(calling round{i}) response.terminated is not a bool"
+            assert (
+                response.terminated is False
+            ), f"(calling round{i}) response.terminated is not False"
+            assert isinstance(
+                response.info, dict
+            ), f"(calling round{i}) response.info is not a dict"
 
 
-def test_role_playing_role_sequence(model=None):
+def test_role_playing_role_sequence(
+    model=FakeLLMModel(model_type=ModelType.DEFAULT),
+):
     task_prompt = "Develop a trading bot for the stock market"
     role_playing = RolePlaying(
         assistant_role_name="Python Programmer",
