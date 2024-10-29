@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from .apify_reader import Apify
 from .base_io import File
 from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
@@ -23,5 +24,6 @@ __all__ = [
     'UnstructuredIO',
     'JinaURLReader',
     'Firecrawl',
+    'Apify',
     'ChunkrReader',
 ]
