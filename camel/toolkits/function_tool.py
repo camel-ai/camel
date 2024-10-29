@@ -254,6 +254,9 @@ class FunctionTool:
         )
 
         if use_schema_assistant:
+            if openai_tool_schema:
+                logger.warning(f"""The user-defined OpenAI tool schema will be
+                              overridden by the schema assistant model.""")
             schema = self.generate_openai_tool_schema(
                 schema_generation_max_retries, schema_assistant_model
             )
