@@ -315,7 +315,7 @@ class SearchToolkit(BaseToolkit):
         Args:
             query (str): The query to be searched.
             num_results (int): The number of search results to retrieve
-                (default is 10).
+                (default is `5`).
             **kwargs: Additional optional parameters supported by Tavily's API:
                 - search_depth (str): "basic" or "advanced" search depth.
                 - topic (str): The search category, e.g., "general" or "news."
@@ -338,20 +338,8 @@ class SearchToolkit(BaseToolkit):
                   `include_images` is True).
                 - 'published_date' (str): Publication date for news topics
                   (if available).
-
-        Returns:
-            {
-                'result_id': 1,
-                'title': 'OpenAI',
-                'description': 'An AI research organization...',
-                'long_description': 'OpenAI is a non-profit...',
-                'url': 'https://www.openai.com',
-                'content': 'OpenAI focuses on AI safety...',
-                'images': ['https://image.url/1.jpg'],
-                'published_date': '2024-09-15'
-            }
         """
-        from tavily import TavilyClient
+        from tavily import TavilyClient  # type: ignore[import-untyped]
 
         Tavily_API_KEY = os.getenv("TAVILY_API_KEY")
         if not Tavily_API_KEY:
