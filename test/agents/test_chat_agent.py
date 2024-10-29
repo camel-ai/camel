@@ -187,7 +187,7 @@ def test_chat_agent_step_with_structure_response():
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools():
-    internal_tools = SearchToolkit().get_tools()
+    internal_tools = [FunctionTool(SearchToolkit().search_duckduckgo)]
     external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
