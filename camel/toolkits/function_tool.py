@@ -363,7 +363,7 @@ class FunctionTool:
 
         Args:
             openai_function_schema (Dict[str, Any]): The function schema to
-            set within the OpenAI tool schema.
+                set within the OpenAI tool schema.
         """
         self.openai_tool_schema["function"] = openai_function_schema
 
