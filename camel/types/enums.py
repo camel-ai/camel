@@ -109,6 +109,7 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
     # Offline models
+    # Phi models
     PHI_3_5_VISION = "microsoft/Phi-3.5-vision-instruct"
 
     def __str__(self):
@@ -276,6 +277,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
         }
+    def is_phi(self) -> bool:
+        r"""Returns whether this type of models is served by Phi."""
+        return self in {ModelType.PHI_3_5_VISION}
 
     @property
     def token_limit(self) -> int:
@@ -559,12 +563,12 @@ class ModelPlatformType(Enum):
 
     @property
     def is_phi(self) -> bool:
-        r"""Returns whether this type of models is a OFFLINE MODEL model.
+        r"""Returns whether this type of models is a Phi model.
         Returns:
-            bool: Whether this type of models is OFFLINE MODEL.
+            bool: Whether this type of models is Phi model.
         """
         return self in {
-            ModelType.PHI_3_5_VISION,
+            ModelPlatformType.PHI,
         }
 
     @property

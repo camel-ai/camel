@@ -94,6 +94,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_phi(self) -> bool:
+        r"""Returns whether the model is a Phi model."""
+        return True
+
+    @property
     def is_reka(self) -> bool:
         r"""Returns whether the model is a Reka model."""
         return True
