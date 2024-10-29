@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import GeminiConfig, OpenSourceConfig
+from camel.configs import GeminiConfig
 from camel.models import GeminiModel
 from camel.types import ModelType
 from camel.utils import GeminiTokenCounter
@@ -29,7 +29,7 @@ from camel.utils import GeminiTokenCounter
         ModelType.GEMINI_1_5_PRO,
     ],
 )
-def test_gemini_model(model_type):
+def test_gemini_model(model_type: ModelType):
     model_config_dict = GeminiConfig().as_dict()
     model = GeminiModel(model_type, model_config_dict)
     assert model.model_type == model_type
@@ -42,11 +42,7 @@ def test_gemini_model(model_type):
 @pytest.mark.model_backend
 def test_gemini_model_unexpected_argument():
     model_type = ModelType.GEMINI_1_5_FLASH
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

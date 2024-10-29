@@ -14,9 +14,8 @@
 from typing import List, Literal
 
 from camel.interpreters import InternalPythonInterpreter
-from camel.toolkits import OpenAIFunction
-
-from .base import BaseToolkit
+from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
 
 
 class CodeExecutionToolkit(BaseToolkit):
@@ -58,12 +57,12 @@ class CodeExecutionToolkit(BaseToolkit):
             print(content)
         return content
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [OpenAIFunction(self.execute_code)]
+        return [FunctionTool(self.execute_code)]

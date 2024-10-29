@@ -89,14 +89,16 @@ def test_function_func_message(function_func_message: FunctionCallingMessage):
 def test_assistant_func_message_to_openai_function_message(
     assistant_func_message: FunctionCallingMessage,
 ):
-    with pytest.raises(
-        ValueError,
-        match=(
-            "Invalid request for converting into function message"
-            " due to missing function name or results."
-        ),
-    ):
+    expected_msg_dict: Dict[str, str] = {
+        "role": "function",
+        "name": "add",
+        "content": "{'result': {'None'}}",
+    }
+
+    assert (
         assistant_func_message.to_openai_function_message()
+        == expected_msg_dict
+    )
 
 
 def test_function_func_message_to_openai_assistant_message(

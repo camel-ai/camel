@@ -39,8 +39,8 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 )
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
     model_config_dict=assistant_model_config.as_dict(),
 )
 
@@ -68,7 +68,7 @@ user_msg = BaseMessage.make_user_message(
 )
 
 # Get response information
-response = camel_agent.step(user_msg, output_schema=Schema)
+response = camel_agent.step(user_msg, response_format=Schema)
 print(response.msgs[0].content)
 """
 {'current_age': '928', 'calculated_age': '938'}

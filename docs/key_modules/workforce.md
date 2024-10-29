@@ -6,6 +6,8 @@
 > brief view on the architecture of workforce, and how you can configure
 > and utilize it to solve tasks.
 
+For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](../cookbooks/workforce_judge_committee.ipynb)
+
 ## System Design
 
 ### Architecture
@@ -72,7 +74,7 @@ then add worker nodes to the workforce. Here is an example of how you can do
 this:
 
 ```python
-from camel.workforce import Workforce
+from camel.societies.workforce import Workforce
 
 # Create a workforce instance
 workforce = Workforce("A Simple Workforce")
