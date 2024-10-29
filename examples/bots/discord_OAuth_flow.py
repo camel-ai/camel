@@ -104,7 +104,10 @@ async def home():
     return RedirectResponse(oauth_url)
 
 @app.get("/callback")
-async def callback(request: Request):
+async def callback(
+  code: str,
+  state: Optional[str] = None
+):
     r"""Handle the OAuth callback from Discord.
 
     Args:
@@ -123,6 +126,8 @@ async def callback(request: Request):
 
     user_data = await oauth_client.get_user_info(access_token)
     return user_data
+
+
 def initiate_oauth_flow() -> str:
     r"""Initiate the OAuth flow by generating the authorization URL.
 
