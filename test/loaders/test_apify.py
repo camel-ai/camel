@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from unittest.mock import Mock, patch
 
 import pytest
@@ -24,6 +25,12 @@ def apify_client_mock():
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def set_env_vars():
+    with patch.dict(os.environ, {"APIFY_API_KEY": "test_api_key"}):
+        yield
+
+
 def test_init(apify_client_mock):
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
@@ -31,13 +38,14 @@ def test_init(apify_client_mock):
     apify_client_mock.assert_called_once_with(token=api_key)
 
 
-def test_run_actor(apify_client_mock):
+def test_run_actor():
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
     actor_id = "test_actor_id"
     run_input = {"key": "value"}
-    apify.client.actor.return_value.call.return_value = {"result": "success"}
-
+    mock_actor = Mock()
+    mock_actor.call.return_value = {"result": "success"}
+    apify.client.actor = Mock(return_value=mock_actor)
     result = apify.run_actor(actor_id, run_input=run_input)
     apify.client.actor.assert_called_once_with(actor_id)
     apify.client.actor.return_value.call.assert_called_once_with(
@@ -53,18 +61,18 @@ def test_run_actor(apify_client_mock):
     assert result == {"result": "success"}
 
 
-def test_get_dataset_client(apify_client_mock):
+def test_get_dataset_client():
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
     dataset_id = "test_dataset_id"
-    apify.client.dataset.return_value = "dataset_client"
-
+    mock_dataset = Mock()
+    apify.client.dataset = Mock(return_value=mock_dataset)
     result = apify.get_dataset_client(dataset_id)
     apify.client.dataset.assert_called_once_with(dataset_id)
-    assert result == "dataset_client"
+    assert result == mock_dataset
 
 
-def test_get_dataset(apify_client_mock):
+def test_get_dataset():
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
     dataset_id = "test_dataset_id"
@@ -76,7 +84,7 @@ def test_get_dataset(apify_client_mock):
     assert result == {"data": "dataset"}
 
 
-def test_update_dataset(apify_client_mock):
+def test_update_dataset():
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
     dataset_id = "test_dataset_id"
@@ -89,7 +97,7 @@ def test_update_dataset(apify_client_mock):
     assert result == {"name": name}
 
 
-def test_get_dataset_items(apify_client_mock):
+def test_get_dataset_items():
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
     dataset_id = "test_dataset_id"
@@ -101,7 +109,7 @@ def test_get_dataset_items(apify_client_mock):
     assert result == ["item1", "item2"]
 
 
-def test_get_datasets(apify_client_mock):
+def test_get_datasets():
     api_key = "test_api_key"
     apify = Apify(api_key=api_key)
     mock_client = Mock()
