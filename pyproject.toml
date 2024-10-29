@@ -94,6 +94,7 @@ nltk = { version = "3.8.1", optional = true }
 asknews = { version = "^0.7.43", optional = true }
 praw = { version = "^7.7.1", optional = true }
 textblob = { version = "^0.18.0.post0", optional = true }
+tavily-python = { version = "^0.5.0", optional = true }
 scholarly = { extras = ["tor"], version = "1.7.11", optional = true }
 arxiv = { version = "^2.1.3", optional = true }
 arxiv2text = { version = "^0.1.14", optional = true }
@@ -145,6 +146,7 @@ search_tools = [
     "duckduckgo-search",
     "wikipedia",
     "wolframalpha",
+    "tavily-python",
 ]
 
 model-platforms = [
@@ -304,6 +306,7 @@ all = [
     "azure-storage-blob",
     "google-cloud-storage",
     "botocore",
+    "tavily-python",
     "apify_client",
 ]
 
@@ -446,6 +449,7 @@ module = [
     "arxiv2text",
     "praw",
     "textblob",
+    "tavily-python",
     "scholarly",
     "notion-client",
 ]
