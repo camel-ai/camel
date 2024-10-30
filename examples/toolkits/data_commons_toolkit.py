@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.toolkits.data_commons import DataCommonsToolkit
+from camel.toolkits.data_commons_toolkit import DataCommonsToolkit
 
 # Initialize the DataCommonsToolkit
 dc_toolkit = DataCommonsToolkit()
@@ -71,7 +71,7 @@ Triples for California, Kentucky, and Maryland:
 # Example 3: Get Statistical Time Series
 place = "geoId/06"
 stat_var = "Count_Person"
-series = dc_toolkit.get_stat_series(place, stat_var)
+series = dc_toolkit.get_stat_time_series(place, stat_var)
 print("\nPopulation Time Series for California:")
 print(series)
 

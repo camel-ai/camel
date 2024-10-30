@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import patch
 
-from camel.toolkits.data_commons import DataCommonsToolkit
+from camel.toolkits.data_commons_toolkit import DataCommonsToolkit
 
 
 def test_query_data_commons():
