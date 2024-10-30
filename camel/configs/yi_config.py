@@ -48,7 +48,7 @@ class YiConfig(BaseConfig):
     """
 
     tool_choice: Optional[Union[dict[str, str], str]] = None
-    max_tokens: Optional[int] = 5000
+    max_tokens: Optional[int] = NOT_GIVEN
     top_p: float = 0.9
     temperature: float = 0.3
     stream: bool = False
