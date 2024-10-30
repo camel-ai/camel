@@ -41,6 +41,15 @@ The following table lists currently supported model platforms by CAMEL.
 | Anthropic | claude-2.0 | N |
 | Gemini | gemini-1.5-pro | Y |
 | Gemini | ggemini-1.5-flash | Y |
+| Lingyiwanwu | yi-lightning | N |
+| Lingyiwanwu | yi-large | N |
+| Lingyiwanwu | yi-medium | N |
+| Lingyiwanwu | yi-large-turbo | N |
+| Lingyiwanwu | yi-vision | Y |
+| Lingyiwanwu | yi-medium-200k | N |
+| Lingyiwanwu | yi-spark | N |
+| Lingyiwanwu | yi-large-rag | N |
+| Lingyiwanwu | yi-large-fc | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
