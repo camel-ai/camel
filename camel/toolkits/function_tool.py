@@ -562,6 +562,8 @@ warnings.simplefilter('always', DeprecationWarning)
 
 # Alias for backwards compatibility
 class OpenAIFunction(FunctionTool):
+    r"""Alias for backwards compatibility."""
+
     def __init__(self, *args, **kwargs):
         PURPLE = '\033[95m'
         RESET = '\033[0m'

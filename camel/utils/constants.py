@@ -14,6 +14,8 @@
 
 
 class Constants:
+    r"""A class containing constants used in CAMEL."""
+
     # This value defines the default size (both width and height) for images
     # extracted from a video.
     VIDEO_DEFAULT_IMAGE_SIZE = 768
