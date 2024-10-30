@@ -84,6 +84,9 @@ class TaskChannel:
         self._task_dict: Dict[str, Packet] = {}
 
     async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
+        r"""Get a task from the channel that has been returned by the
+        publisher.
+        """
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
@@ -96,6 +99,9 @@ class TaskChannel:
                 await self._condition.wait()
 
     async def get_assigned_task_by_assignee(self, assignee_id: str) -> Task:
+        r"""Get a task from the channel that has been assigned to the
+        assignee.
+        """
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
@@ -147,12 +153,14 @@ class TaskChannel:
             self._condition.notify_all()
 
     async def remove_task(self, task_id: str) -> None:
+        r"""Remove a task from the channel."""
         async with self._condition:
             self._task_id_list.remove(task_id)
             self._task_dict.pop(task_id)
             self._condition.notify_all()
 
     async def get_dependency_ids(self) -> List[str]:
+        r"""Get the IDs of all dependencies in the channel."""
         async with self._condition:
             dependency_ids = []
             for task_id in self._task_id_list:
@@ -162,11 +170,13 @@ class TaskChannel:
             return dependency_ids
 
     async def get_task_by_id(self, task_id: str) -> Task:
+        r"""Get a task from the channel by its ID."""
         async with self._condition:
             if task_id not in self._task_id_list:
                 raise ValueError(f"Task {task_id} not found.")
             return self._task_dict[task_id].task
 
     async def get_channel_debug_info(self) -> str:
+        r"""Get the debug information of the channel."""
         async with self._condition:
             return str(self._task_dict) + '\n' + str(self._task_id_list)
