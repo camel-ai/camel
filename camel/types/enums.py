@@ -328,11 +328,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
-            ModelType.YI_MEDIUM_200K,
         }:
             return 256_000
         elif self in {
