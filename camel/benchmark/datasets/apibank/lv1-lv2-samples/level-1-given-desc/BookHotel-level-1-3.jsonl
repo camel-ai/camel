@@ -1,0 +1,12 @@
+{"role": "User", "text": "Can you help me book a hotel room?"}
+{"role": "AI", "text": "Sure, I can help with that. What is the name of the hotel you want to book?"}
+{"role": "User", "text": "I want to book Marriott Hotel."}
+{"role": "AI", "text": "Great choice. What is your check-in date and check-out date?"}
+{"role": "User", "text": "My check-in date is 2022-05-20 and check-out date is 2022-05-22."}
+{"role": "AI", "text": "Okay, how many rooms do you want to book?"}
+{"role": "User", "text": "I need two rooms."}
+{"role": "AI", "text": "And how many adults and children will be staying in each room?"}
+{"role": "User", "text": "Two adults in each room and no children."}
+{"role": "AI", "text": "Okay, I will book two rooms for two adults in Marriott Hotel for 2022-05-20 to 2022-05-22."}
+{"role": "API", "api_name": "BookHotel", "param_dict": {"hotel_name": "Marriott Hotel", "check_in_time": "2022-05-20", "check_out_time": "2022-05-22", "room_count": "2", "adult_count": "2", "child_count": "0"}, "result": {"api_name": "BookHotel", "input": {"hotel_name": "Marriott Hotel", "check_in_time": "2022-05-20", "check_out_time": "2022-05-22", "room_count": 2, "adult_count": 2, "child_count": 0}, "output": "11", "exception": null}}
+{"role": "AI", "text": "Your hotel room is booked. Your order ID is XXXXXXXXX. Can I help with anything else?"}

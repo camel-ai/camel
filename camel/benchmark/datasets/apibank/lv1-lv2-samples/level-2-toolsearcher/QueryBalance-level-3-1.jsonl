@@ -1,0 +1,8 @@
+{"role": "User", "text": "Hello, can you help me check my balance?"}
+{"role": "AI", "text": "Sure, can you please provide me with your username, password and email address?"}
+{"role": "User", "text": "My username is foo, password is bar and email is foo@example.com."}
+{"role": "AI", "text": "Thank you. Let me authenticate you first."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "foo", "password": "bar"}, "result": {"api_name": "GetUserToken", "input": {"username": "foo", "password": "bar"}, "output": {"token": "z9x8c7v6b5n4m3q2w1"}, "exception": null}}
+{"role": "AI", "text": "Okay, I have received your token. Now I will check your balance."}
+{"role": "API", "api_name": "QueryBalance", "param_dict": {"token": "z9x8c7v6b5n4m3q2w1"}, "result": {"api_name": "QueryBalance", "input": {"token": "z9x8c7v6b5n4m3q2w1"}, "output": 682.01, "exception": null}}
+{"role": "AI", "text": "Your balance is $682.01. How else can I assist you today?"}

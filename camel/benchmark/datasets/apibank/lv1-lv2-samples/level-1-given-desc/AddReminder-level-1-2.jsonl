@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you add a reminder for me?"}
+{"role": "AI", "text": "Sure, when would you like to be reminded and what would you like me to remind you of?"}
+{"role": "User", "text": "Can you remind me to call John at 3 pm tomorrow? Today is 2022-05-24"}
+{"role": "AI", "text": "Got it. What's your username and password?"}
+{"role": "User", "text": "Username is user1 and password is user1pass."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user1", "password": "user1pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user1", "password": "user1pass"}, "output": {"token": "n9m8k7j6h5g4f3d2s1a0"}, "exception": null}}
+{"role": "API", "api_name": "AddReminder", "param_dict": {"token": "n9m8k7j6h5g4f3d2s1a0", "content": "Call John", "time": "2022-05-25 15:00:00"}, "result": {"api_name": "AddReminder", "input": {"token": "n9m8k7j6h5g4f3d2s1a0", "content": "Call John", "time": "2022-05-25 15:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your reminder has been added successfully. You will be reminded to call John at 3 pm tomorrow."}

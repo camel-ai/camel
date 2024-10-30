@@ -1,0 +1,9 @@
+{"role": "User", "text": "Can you help me open a bank account?"}
+{"role": "AI", "text": "Sure, I can help you with that. What account number would you like to use?"}
+{"role": "User", "text": "12345678"}
+{"role": "AI", "text": "And what password would you like to use for this account?"}
+{"role": "User", "text": "p@ssw0rd123!"}
+{"role": "AI", "text": "Lastly, what is your full name?"}
+{"role": "User", "text": "John Smith"}
+{"role": "API", "api_name": "OpenBankAccount", "param_dict": {"account": "12345678", "password": "p@ssw0rd123!", "name": "John Smith"}, "result": {"api_name": "OpenBankAccount", "input": {"account": "12345678", "password": "p@ssw0rd123!", "name": "John Smith"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Alright."}

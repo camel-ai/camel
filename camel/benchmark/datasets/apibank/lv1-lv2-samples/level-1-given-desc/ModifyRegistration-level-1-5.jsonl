@@ -1,0 +1,6 @@
+{"role": "User", "text": "Can you help me change my appointment?"}
+{"role": "AI", "text": "Sure, I can help with that. What's your appointment ID and the new date and doctor you want to reschedule it to?"}
+{"role": "User", "text": "My appointment ID is 90123456, and I want to change the date to October 15th and see Dr. Brown instead of Dr. Smith."}
+{"role": "AI", "text": "Okay, let me modify your registration with that information."}
+{"role": "API", "api_name": "ModifyRegistration", "param_dict": {"appointment_id": "90123456", "new_appointment_date": "2023-10-15", "new_appointment_doctor": "Dr. Brown"}, "result": {"api_name": "ModifyRegistration", "input": {"appointment_id": "90123456", "new_appointment_date": "2023-10-15", "new_appointment_doctor": "Dr. Brown"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Done. Your appointment has been rescheduled to October 15th with Dr. Brown."}

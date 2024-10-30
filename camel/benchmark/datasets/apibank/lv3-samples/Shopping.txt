@@ -1,0 +1,26 @@
+Scene: shopping
+
+First Utterance: Create an agenda for me about my shopping trip.
+
+Key Info:
+
+- "JohnDoe":{
+        "password":"pass123",
+        "token":"a9s8d7f6g5h4j3k2l1",
+        "email":"johndoe@example.com"
+    },
+
+Shopping mall name: XYZ Mall
+Date: 2023-04-02
+Items to buy: clothes, shoes, and groceries
+Budget: 5000 CNY
+Payment method: Credit card
+
+
+GT API Call:
+GetUserToken(username="JohnDoe", password="pass123")
+AddAgenda(token="b9c8d7e6f5g4h3i2j1", content="Go shopping at XYZ Mall", time="2023-04-02 10:00:00", location="XYZ Mall")
+AddReminder(token="b9c8d7e6f5g4h3i2j1", content="Don't forget to bring the credit card", time="2023-04-02 10:00:00")
+AddReminder(token="b9c8d7e6f5g4h3i2j1", content="Stick to the budget of 5000 CNY", time="2023-04-02 10:00:00")
+QueryBalance(token="b9c8d7e6f5g4h3i2j1")
+QueryAgenda(token="b9c8d7e6f5g4h3i2j1", content="Go shopping at XYZ Mall", time="2023-04-02 10:00:00", location="XYZ Mall")

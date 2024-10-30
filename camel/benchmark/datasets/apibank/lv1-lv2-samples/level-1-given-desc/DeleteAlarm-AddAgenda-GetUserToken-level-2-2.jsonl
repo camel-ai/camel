@@ -1,0 +1,20 @@
+{"role": "User", "text": "Can you delete my alarm at 7:00 a.m. on March 16th?"}
+{"role": "AI", "text": "Sure, I can help you with that. What's your username and password?"}
+{"role": "User", "text": "My username is JohnDoe and my password is pass123."}
+{"role": "AI", "text": "Let me check your credentials."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "I have received your token. What time is the alarm set for?"}
+{"role": "User", "text": "7:00 a.m. on March 16th."}
+{"role": "AI", "text": "Okay."}
+{"role": "API", "api_name": "DeleteAlarm", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "time": "2023-03-16 07:00:00"}, "result": {"api_name": "DeleteAlarm", "input": {"token": "a9s8d7f6g5h4j3k2l1", "time": "2023-03-16 07:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your alarm is now deleted. Is there anything else I can help you with?"}
+{"role": "User", "text": "Yes, can you add an agenda item for me?"}
+{"role": "AI", "text": "Of course. What's the content of the agenda?"}
+{"role": "User", "text": "I need to attend a meeting."}
+{"role": "AI", "text": "Where is the meeting located?"}
+{"role": "User", "text": "It's at the office downtown."}
+{"role": "AI", "text": "When is the meeting?"}
+{"role": "User", "text": "It's at 2:00 p.m. on March 18th."}
+{"role": "AI", "text": "Great, I'm ready to add your agenda item."}
+{"role": "API", "api_name": "AddAgenda", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "time": "2023-03-18 14:00:00", "content": "Attend meeting", "location": "Office downtown"}, "result": {"api_name": "AddAgenda", "input": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Attend meeting", "time": "2023-03-18 14:00:00", "location": "Office downtown"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your agenda has been added. Is there anything else I can help you with?"}

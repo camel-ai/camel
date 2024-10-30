@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you add \"Meeting with clients\" on December 15, 2023 at 2:00 PM at ABC company in AddAgenda API?"}
+{"role": "AI", "text": "Sure, let me add that to your agenda."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "API", "api_name": "AddAgenda", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Meeting with clients at ABC company", "time": "2023-12-15 14:00:00", "location": "ABC company"}, "result": {"api_name": "AddAgenda", "input": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Meeting with clients at ABC company", "time": "2023-12-15 14:00:00", "location": "ABC company"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "\"Meeting with clients at ABC company\" has been added to your agenda."}

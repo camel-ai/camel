@@ -1,0 +1,24 @@
+Scene: Financial Management
+
+First Utterance: Help me check the remaining money in the bank this month.
+
+
+Key Info:
+
+"JohnDoe":{
+"password":"pass123",
+"token":"a9s8d7f6g5h4j3k2l1",
+"email":"johndoe@example.com"
+},
+
+- Bank of China
+- Current balance: 5000 USD
+- Monthly salary: 3000 USD
+- Monthly expenses: 2000 USD
+- Credit card Time: 2023-04-15 00:00:00
+
+API Call:
+GetUserToken(username="JohnDoe", password="pass123")
+QueryBalance(token="a1b2c3d4e5f6")
+Calculator(formula="5000+3000-2000")
+AddReminder(token="a9s8d7f6g5h4j3k2l1", content="Pay credit card bill", time="2023-04-15 00:00:00")

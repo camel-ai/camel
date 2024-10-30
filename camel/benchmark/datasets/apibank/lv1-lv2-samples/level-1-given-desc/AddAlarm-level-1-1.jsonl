@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you help me set an alarm for 8 am tomorrow?"}
+{"role": "AI", "text": "Sure, to set an alarm, I need to authorize your account. Can you please provide your username and password?"}
+{"role": "User", "text": "Sure, my username is foo and password is bar."}
+{"role": "AI", "text": "Thank you. Let me get your token."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "foo", "password": "bar"}, "result": {"api_name": "GetUserToken", "input": {"username": "foo", "password": "bar"}, "output": {"token": "z9x8c7v6b5n4m3q2w1"}, "exception": null}}
+{"role": "AI", "text": "Okay, I got your token. What time do you want the alarm to be set for?"}
+{"role": "User", "text": "8 am tomorrow. Today is 2021-10-13."}
+{"role": "AI", "text": "Okay, I'm setting the alarm."}
+{"role": "API", "api_name": "AddAlarm", "param_dict": {"token": "z9x8c7v6b5n4m3q2w1", "time": "2021-10-14 08:00:00"}, "result": {"api_name": "AddAlarm", "input": {"token": "z9x8c7v6b5n4m3q2w1", "time": "2021-10-14 08:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Alarm has been set for 8 am tomorrow."}

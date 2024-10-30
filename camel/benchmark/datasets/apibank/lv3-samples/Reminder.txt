@@ -1,0 +1,24 @@
+Scene: Reminder Service
+
+First Utterance: Help me set up reminders for my upcoming appointments.
+
+Key Info:
+
+"JohnDoe":{
+        "password":"pass123",
+        "token":"a9s8d7f6g5h4j3k2l1",
+        "email":"johndoe@example.com"
+        },
+Appointment 1:
+Patient name: Jane Doe
+Doctor name: Dr. Smith
+Appointment date: 2023-04-05 09:00:00
+Appointment 2:
+Patient name: Jane Doe
+Doctor name: Dr. Johnson
+Appointment date: 2023-04-12 13:30:00
+API Calls:
+
+GetUserToken(username="JohnDoe", password="pass123")
+AddReminder(token="a9s8d7f6g5h4j3k2l1", content="Appointment with Dr. Smith", time="2023-04-05 09:00:00")
+AddReminder(token="a9s8d7f6g5h4j3k2l1", content="Appointment with Dr. Johnson", time="2023-04-12 13:30:00")

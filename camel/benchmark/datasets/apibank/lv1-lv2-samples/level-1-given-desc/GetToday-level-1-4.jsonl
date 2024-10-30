@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you please tell me the current date?"}
+{"role": "AI", "text": "Sure, I can help you with that."}
+{"role": "API", "api_name": "GetToday", "param_dict": {}, "result": {"api_name": "GetToday", "input": null, "output": "2023-03-31", "exception": null}}
+{"role": "AI", "text": "Today's date is 2023-03-31. How can I assist you further?"}

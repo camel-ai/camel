@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you please help me translate this text to Spanish?"}
+{"role": "AI", "text": "Sure, please tell me the text you would like me to translate."}
+{"role": "User", "text": "The quick brown fox jumps over the lazy dog."}
+{"role": "API", "api_name": "Translate", "param_dict": {"src": "The quick brown fox jumps over the lazy dog.", "tgt_lang": "es"}, "result": {"api_name": "Translate", "input": {"src": "The quick brown fox jumps over the lazy dog.", "tgt_lang": "es"}, "output": "El veloz zorro marr\u00f3n salta sobre el perro perezoso.", "exception": null}}
+{"role": "AI", "text": "The translated text is \"El veloz zorro marr\u00f3n salta sobre el perro perezoso.\". Is there anything else I can help you with?"}

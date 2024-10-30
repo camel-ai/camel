@@ -1,0 +1,25 @@
+Scene: Health Management
+
+First Utterance: Hello! Can you please help me record my health condition with your tools and services?
+
+Key Info:
+
+"JohnDoe":{
+    "password":"pass123",
+    "token":"a9s8d7f6g5h4j3k2l1",
+    "email":"johndoe@example.com"
+},
+
+Blood Pressure Monitor
+
+Smart Scale
+
+Glucometer
+
+Fitbit Tracker
+
+- GT API Call:
+RecordHealthData(user_id="JohnDoe", time="2023-03-31 08:00:00", health_data={"systolic_blood_pressure":120, "diastolic_blood_pressure":80})
+QueryHealthData(user_id="JohnDoe", start_time="2023-03-01", end_time="2023-03-31")
+AddReminder(token="a9s8d7f6g5h4j3k2l1", content="Take medication", time="2023-03-31 09:00:00")
+AddAlarm(token="a9s8d7f6g5h4j3k2l1", time="2023-04-01 09:00:00")

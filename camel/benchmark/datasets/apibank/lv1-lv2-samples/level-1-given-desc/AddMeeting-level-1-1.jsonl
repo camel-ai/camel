@@ -1,0 +1,15 @@
+{"role": "User", "text": "Can you help me schedule a meeting?"}
+{"role": "AI", "text": "Sure, I can help you with that. What would be the meeting topic?"}
+{"role": "User", "text": "It's about project updates."}
+{"role": "AI", "text": "Great! When should it start and end?"}
+{"role": "User", "text": "Let's schedule it for 2022-12-15 at 2 PM, and it should end by 4 PM."}
+{"role": "AI", "text": "And where would you like to hold the meeting?"}
+{"role": "User", "text": "We can host it in our conference room."}
+{"role": "AI", "text": "Who will be attending the meeting?"}
+{"role": "User", "text": "John Smith, Jane Doe and Adam Lee."}
+{"role": "AI", "text": "Okay. To schedule this meeting, I need to authenticate you. What is your username and password?"}
+{"role": "User", "text": "My username is JohnDoe, and my password is pass123."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "Okay, I have your token now."}
+{"role": "API", "api_name": "AddMeeting", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "project updates", "start_time": "2022-12-15 14:00:00", "end_time": "2022-12-15 16:00:00", "location": "conference room", "attendees": "['John Smith', 'Jane Doe', 'Adam Lee']"}, "result": {"api_name": "AddMeeting", "input": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "project updates", "start_time": "2022-12-15 14:00:00", "end_time": "2022-12-15 16:00:00", "location": "conference room", "attendees": ["John Smith", "Jane Doe", "Adam Lee"]}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your meeting has been scheduled!"}

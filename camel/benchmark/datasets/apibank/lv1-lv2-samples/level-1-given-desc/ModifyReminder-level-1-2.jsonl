@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you please modify my reminder to submit the proposal at 2 pm on March 25th?"}
+{"role": "AI", "text": "Sure, may I know your username and password?"}
+{"role": "User", "text": "My username is user3 and my password is user3pass."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user3", "password": "user3pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user3", "password": "user3pass"}, "output": {"token": "p9o8i7u6y5t4r3e2w1q"}, "exception": null}}
+{"role": "AI", "text": "Okay, I have retrieved your token. Now, please tell me the new time and content for your reminder."}
+{"role": "User", "text": "The content is \"Submit proposal\" and the time is \"2023-03-25 14:00:00\"."}
+{"role": "API", "api_name": "ModifyReminder", "param_dict": {"token": "p9o8i7u6y5t4r3e2w1q", "content": "Submit proposal", "time": "2023-03-25 14:00:00"}, "result": {"api_name": "ModifyReminder", "input": {"token": "p9o8i7u6y5t4r3e2w1q", "content": "Submit proposal", "time": "2023-03-25 14:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Alright, your reminder has been updated successfully."}

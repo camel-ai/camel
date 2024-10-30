@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you help me register on this site?"}
+{"role": "AI", "text": "Sure, I can help you with that. What username would you like to use?"}
+{"role": "User", "text": "My username is john123"}
+{"role": "AI", "text": "What password would you like to use?"}
+{"role": "User", "text": "My password is securepassword123"}
+{"role": "AI", "text": "And what email will you be using?"}
+{"role": "User", "text": "My email is john123@email.com"}
+{"role": "AI", "text": "Okay, I will now register you."}
+{"role": "API", "api_name": "RegisterUser", "param_dict": {"username": "john123", "password": "securepassword123", "email": "john123@email.com"}, "result": {"input": {"username": "john123", "password": "securepassword123", "email": "john123@email.com"}, "output": {"token": "nbrntp3fabnfbmohnkyaxrvj7uff0lyt"}, "exception": null}}
+{"role": "AI", "text": "You have been successfully registered!"}

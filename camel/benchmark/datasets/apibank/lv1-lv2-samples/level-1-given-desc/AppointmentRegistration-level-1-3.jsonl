@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you help me book an appointment with Dr. Smith?"}
+{"role": "AI", "text": "Sure, I can help you with that. To register the appointment, I need the name of the patient, doctor, and date of appointment. What is your name, the doctor's name, and the date you want to book?"}
+{"role": "User", "text": "My name is John, the doctor's name is Smith and I want to book the appointment on 2022-08-15."}
+{"role": "AI", "text": "Great! To confirm, you want to book an appointment with Dr. Smith on Monday. What time would you prefer?"}
+{"role": "User", "text": "At 2 PM."}
+{"role": "AI", "text": "Thank you."}
+{"role": "API", "api_name": "AppointmentRegistration", "param_dict": {"patient_name": "John", "date": "2022-08-15", "doctor_name": "Smith"}, "result": {"api_name": "AppointmentRegistration", "input": {"patient_name": "John", "date": "2022-08-15", "doctor_name": "Smith"}, "output": "11540956", "exception": null}}
+{"role": "AI", "text": "The API call was successful. Your appointment ID is 11540956. Is there anything else I can help you with?"}

@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you set an alarm for January 7th, 2023 at 8am?"}
+{"role": "AI", "text": "Sure, I can help with that. First, let me check if I have the alarm setting tool."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "set alarm"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "set alarm"}, "output": [{"name": "GetUserToken", "description": "Get the user token.", "input_parameters": {"username": {"type": "str", "description": "The username of the user."}, "password": {"type": "str", "description": "The password of the user."}}, "output_parameters": {"token": {"type": "str", "description": "The token of the user."}}, "desc_for_search": "get user tokenGet the user token."}, {"name": "AddAlarm", "description": "The API for setting an alarm includes a parameter for the time.", "input_parameters": {"token": {"type": "str", "description": "User's token."}, "time": {"type": "str", "description": "The time for alarm. Format: %Y-%m-%d %H:%M:%S"}}, "output_parameters": {"status": {"type": "str", "description": "success or failed"}}}], "exception": null}}
+{"role": "AI", "text": "Yes, we have it. Since this is a secure operation, I need to authenticate you first. Can you please provide your username and password?"}
+{"role": "User", "text": "My username is user4 and my password is user4pass."}
+{"role": "AI", "text": "Thank you, using this information I was able to get your token."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user4", "password": "user4pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user4", "password": "user4pass"}, "output": {"token": "q9w8e7r6t5y4u3i2o1"}, "exception": null}}
+{"role": "AI", "text": "Now let me set the alarm for you."}
+{"role": "API", "api_name": "AddAlarm", "param_dict": {"token": "q9w8e7r6t5y4u3i2o1", "time": "2023-01-07 08:00:00"}, "result": {"api_name": "AddAlarm", "input": {"token": "q9w8e7r6t5y4u3i2o1", "time": "2023-01-07 08:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Done! The alarm is set for January 7th, 2023 at 8am."}

@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you cancel a timer for my smart device?"}
+{"role": "AI", "text": "Sure, I can help you with that. What's the ID of your device?"}
+{"role": "User", "text": "It's 10000025."}
+{"role": "AI", "text": "When is the device scheduled to switch on or off?"}
+{"role": "User", "text": "It's supposed to turn on on March 19th 2023 at 9:30 AM."}
+{"role": "AI", "text": "Alright. Let me cancel the timed switch for you."}
+{"role": "API", "api_name": "CancelTimedSwitch", "param_dict": {"device_id": "10000025", "time": "2023-03-19 09:30:00"}, "result": {"api_name": "CancelTimedSwitch", "input": {"device_id": "10000025", "time": "2023-03-19 09:30:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Done. The timed switch has been cancelled successfully."}

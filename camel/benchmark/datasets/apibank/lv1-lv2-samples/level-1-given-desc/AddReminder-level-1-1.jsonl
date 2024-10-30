@@ -1,0 +1,12 @@
+{"role": "User", "text": "Can you set a reminder for me to call my mom tomorrow at 10 AM?"}
+{"role": "AI", "text": "Sure, I can help with that. Do you have an account with us?"}
+{"role": "User", "text": "Yes, my username is user1 and my password is user1pass."}
+{"role": "AI", "text": "Great. Let me authenticate you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user1", "password": "user1pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user1", "password": "user1pass"}, "output": {"token": "n9m8k7j6h5g4f3d2s1a0"}, "exception": null}}
+{"role": "AI", "text": "Got it. What's the content of the reminder?"}
+{"role": "User", "text": "\"Call mom\""}
+{"role": "AI", "text": "And what time do you want to be reminded?"}
+{"role": "User", "text": "\"2022-05-10 at 10 AM\""}
+{"role": "AI", "text": "Ok."}
+{"role": "API", "api_name": "AddReminder", "param_dict": {"token": "n9m8k7j6h5g4f3d2s1a0", "content": "Call mom", "time": "2022-05-10 10:00:00"}, "result": {"api_name": "AddReminder", "input": {"token": "n9m8k7j6h5g4f3d2s1a0", "content": "Call mom", "time": "2022-05-10 10:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your reminder is all set."}

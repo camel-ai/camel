@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you perform some basic arithmetic calculation for me?"}
+{"role": "AI", "text": "Sure, what calculation do you want me to perform?"}
+{"role": "User", "text": "What is the result of (5+3)*6?"}
+{"role": "API", "api_name": "Calculator", "param_dict": {"formula": "(5+3)*6"}, "result": {"api_name": "Calculator", "input": {"formula": "(5+3)*6"}, "output": 48.0, "exception": null}}
+{"role": "AI", "text": "The result of (5+3)*6 is 48."}

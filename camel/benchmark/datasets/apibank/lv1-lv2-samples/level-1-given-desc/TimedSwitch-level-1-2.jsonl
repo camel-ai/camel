@@ -1,0 +1,7 @@
+{"role": "User", "text": "Can you turn on my smart light at 7 PM tonight? Today is 2021-12-05."}
+{"role": "AI", "text": "Sure, I can help with that. What is the ID of your smart light device?"}
+{"role": "User", "text": "The ID is 1234."}
+{"role": "AI", "text": "Got it. And just to confirm, you want me to turn on the smart light at 7 PM tonight, correct?"}
+{"role": "User", "text": "That's right."}
+{"role": "API", "api_name": "TimedSwitch", "param_dict": {"device_id": "1234", "time": "2021-12-05 19:00:00", "on": "True"}, "result": {"api_name": "TimedSwitch", "input": {"device_id": "1234", "time": "2021-12-05 19:00:00", "on": true}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Okay, I've scheduled the smart light to turn on at 7 PM tonight. Is there anything else I can help you with?"}

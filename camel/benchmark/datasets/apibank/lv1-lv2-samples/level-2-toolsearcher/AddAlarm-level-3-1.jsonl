@@ -1,0 +1,11 @@
+{"role": "User", "text": "Can you help me set an alarm for 9:00 am on 7-15?"}
+{"role": "AI", "text": "Sure. Let me search for the appropriate tool first."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "alarm"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "alarm"}, "output": [{"name": "GetUserToken", "description": "Get the user token.", "input_parameters": {"username": {"type": "str", "description": "The username of the user."}, "password": {"type": "str", "description": "The password of the user."}}, "output_parameters": {"token": {"type": "str", "description": "The token of the user."}}, "desc_for_search": "get user tokenGet the user token."}, {"name": "AddAlarm", "description": "The API for setting an alarm includes a parameter for the time.", "input_parameters": {"token": {"type": "str", "description": "User's token."}, "time": {"type": "str", "description": "The time for alarm. Format: %Y-%m-%d %H:%M:%S"}}, "output_parameters": {"status": {"type": "str", "description": "success or failed"}}}], "exception": null}}
+{"role": "AI", "text": "Completed. I'll need to authenticate. Shall I go ahead and retrieve your token with your account information?"}
+{"role": "User", "text": "Yes please. My username is user4 and my password is user4pass."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user4", "password": "user4pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user4", "password": "user4pass"}, "output": {"token": "q9w8e7r6t5y4u3i2o1"}, "exception": null}}
+{"role": "AI", "text": "I was able to retrieve your token. Now, set the alarm for 9:00 am on 7-15."}
+{"role": "API", "api_name": "AddAlarm", "param_dict": {"token": "q9w8e7r6t5y4u3i2o1", "time": "2023-07-15 09:00:00"}, "result": {"api_name": "AddAlarm", "input": {"token": "q9w8e7r6t5y4u3i2o1", "time": "2023-07-15 09:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "The alarm has been set. Is there anything else you need help with?"}
+{"role": "User", "text": "No, that's all for now. Thank you."}
+{"role": "AI", "text": "You're welcome. Have a great day!"}
