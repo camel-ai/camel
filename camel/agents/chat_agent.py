@@ -1055,7 +1055,7 @@ class ChatAgent(BaseAgent):
             response.id,
         )
 
-    def _safe_model_dump(self, obj):
+    def _safe_model_dump(self, obj) -> dict:
         r"""Safely dump a Pydantic model to a dictionary.
 
         This method attempts to use the `model_dump` method if available,
