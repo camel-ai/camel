@@ -27,7 +27,7 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    YiTokenCounter,
+    OpenAITokenCounter,
     api_keys_required,
 )
 
@@ -109,7 +109,7 @@ class YiModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = YiTokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):

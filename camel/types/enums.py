@@ -92,7 +92,11 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE = "yi-large"
     YI_MEDIUM = "yi-medium"
     YI_LARGE_TURBO = "yi-large-turbo"
-
+    YI_VISION = "yi-vision"
+    YI_MEDIUM_200K = "yi-medium-200k"
+    YI_SPARK = "yi-spark"
+    YI_LARGE_RAG = "yi-large-rag"
+    YI_LARGE_FC = "yi-large-fc"
 
     def __str__(self):
         return self.value
@@ -239,6 +243,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE,
             ModelType.YI_MEDIUM,
             ModelType.YI_LARGE_TURBO,
+            ModelType.YI_VISION,
+            ModelType.YI_MEDIUM_200K,
+            ModelType.YI_SPARK,
+            ModelType.YI_LARGE_RAG,
+            ModelType.YI_LARGE_FC,
         }
 
     @property
@@ -273,6 +282,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LIGHTNING,
             ModelType.YI_MEDIUM,
             ModelType.YI_LARGE_TURBO,
+            ModelType.YI_VISION,
+            ModelType.YI_SPARK,
+            ModelType.YI_LARGE_RAG,
         }:
             return 16_384
         elif self in {
@@ -281,6 +293,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_MIXTRAL_8x7B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.YI_LARGE,
+            ModelType.YI_LARGE_FC,
         }:
             return 32_768
         elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
@@ -319,6 +332,7 @@ class ModelType(UnifiedModelType, Enum):
             return 200_000
         elif self in {
             ModelType.MISTRAL_CODESTRAL_MAMBA,
+            ModelType.YI_MEDIUM_200K,
         }:
             return 256_000
         elif self in {

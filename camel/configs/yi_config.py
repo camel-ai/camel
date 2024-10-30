@@ -13,12 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
-
-from pydantic import Field
+from typing import Optional, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class YiConfig(BaseConfig):
@@ -48,23 +45,6 @@ class YiConfig(BaseConfig):
             while higher values make it more diverse. (default: :obj:`0.3`)
         stream (bool, optional): If True, enables streaming output.
             (default: :obj:`False`)
-        stop (Union[str, Sequence[str], NotGiven], optional): Up to `4`
-            sequences where the API will stop generating further tokens.
-            (default: :obj:`NOT_GIVEN`)
-        presence_penalty (float, optional): Number between :obj:`-2.0` and
-            :obj:`2.0`. Positive values penalize new tokens based on whether
-            they appear in the text so far, increasing the model's likelihood
-            to talk about new topics. (default: :obj:`0.0`)
-        frequency_penalty (float, optional): Number between :obj:`-2.0` and
-            :obj:`2.0`. Positive values penalize new tokens based on their
-            existing frequency in the text so far, decreasing the model's
-            likelihood to repeat the same line verbatim. (default: :obj:`0.0`)
-        logit_bias (dict, optional): Modify the likelihood of specified tokens
-            appearing in the completion. Accepts a json object that maps tokens
-            (specified by their token ID in the tokenizer) to an associated
-            bias value from :obj:`-100` to :obj:`100`. (default: :obj:`{}`)
-        user (str, optional): A unique identifier representing your end-user,
-            which can help monitor and detect abuse. (default: :obj:`""`)
     """
 
     tool_choice: Optional[Union[dict[str, str], str]] = None
@@ -72,11 +52,6 @@ class YiConfig(BaseConfig):
     top_p: float = 0.9
     temperature: float = 0.3
     stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    presence_penalty: float = 0.0
-    frequency_penalty: float = 0.0
-    logit_bias: dict = Field(default_factory=dict)
-    user: str = ""
 
 
 YI_API_PARAMS = {param for param in YiConfig.model_fields.keys()}

@@ -405,28 +405,3 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         return mistral_request
-
-
-# The API does not provide official token counting for Yi models, using the default OpenAI tokenizer.
-class YiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: UnifiedModelType):
-        r"""Constructor for the token counter for Yi models.
-
-        Args:
-            model_type (UnifiedModelType): Model type for which tokens will be
-                counted.
-        """
-        self._internal_tokenizer = OpenAITokenCounter(model_type)
-
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count number of tokens in the provided message list using
-        the tokenizer specific to this type of model.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: Number of tokens in the messages.
-        """
-        return self._internal_tokenizer.count_tokens_from_messages(messages)

@@ -43,7 +43,6 @@ from .token_counting import (
     LiteLLMTokenCounter,
     MistralTokenCounter,
     OpenAITokenCounter,
-    YiTokenCounter,
     get_model_encoding,
 )
 

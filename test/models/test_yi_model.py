@@ -19,7 +19,6 @@ import pytest
 from camel.configs import YiConfig
 from camel.models import YiModel
 from camel.types import ModelType
-from camel.utils import YiTokenCounter
 
 
 @pytest.mark.model_backend
@@ -36,7 +35,6 @@ def test_yi_model(model_type: ModelType):
     model = YiModel(model_type)
     assert model.model_type == model_type
     assert model.model_config_dict == YiConfig().as_dict()
-    assert isinstance(model.token_counter, YiTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
