@@ -100,7 +100,8 @@ class TaskChannel:
 
     async def get_assigned_task_by_assignee(self, assignee_id: str) -> Task:
         r"""Get a task from the channel that has been assigned to the
-        assignee."""
+        assignee.
+        """
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
