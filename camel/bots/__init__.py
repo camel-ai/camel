@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .discord_app import DiscordApp
+from .discord import (
+    DiscordApp, DiscordOAuth
+)
 from .slack.models import (
     SlackAppMentionEventBody,
     SlackAppMentionEventProfile,
@@ -24,6 +26,7 @@ from .telegram_bot import TelegramBot
 
 __all__ = [
     'DiscordApp',
+    'DiscordOAuth'
     'SlackApp',
     'SlackAppMentionEventBody',
     'SlackAppMentionEventProfile',
