@@ -302,8 +302,7 @@ class ChatAgent(BaseAgent):
         return None
 
     def reset(self):
-        r"""Resets the :obj:`ChatAgent` to its initial state and returns the
-        stored messages.
+        r"""Resets the :obj:`ChatAgent` to its initial state.
         """
         self.terminated = False
         self.init_messages()
