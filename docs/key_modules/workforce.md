@@ -12,11 +12,12 @@ For more detailed usage information, please refer to our cookbook: [Create A Hac
 
 ### Architecture
 
-Workforce follows a hierarchical architecture. A workforce can consist of
-multiple worker nodes, and each of the worker nodes will contain an agent
-as the worker. The worker nodes are managed by a coordinator agent inside the
-workforce, and the coordinator agent will assign tasks to the worker nodes
-according to the description of the worker nodes, along with their tool sets.
+Workforce follows a hierarchical architecture. A workforce can consist of 
+multiple worker nodes, and each of the worker nodes will contain 
+one agent or multiple agents as the worker. The worker nodes are managed by 
+a coordinator agent inside the workforce, and the coordinator agent will assign 
+tasks to the worker nodes according to the description of the worker nodes, 
+along with their tool sets.
 
 Alongside the coordinator agent, there is also a task planner agent inside the
 workforce. The task planner agent will take the responsibility of decomposing
