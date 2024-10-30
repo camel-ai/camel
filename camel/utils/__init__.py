@@ -59,7 +59,6 @@ __all__ = [
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
-    'YiTokenCounter',
     'LiteLLMTokenCounter',
     'Constants',
     'text_extract_from_web',

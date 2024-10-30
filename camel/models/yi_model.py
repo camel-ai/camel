@@ -47,8 +47,8 @@ class YiModel(BaseModelBackend):
         url (Optional[str], optional): The url to the Yi service.
             (default: :obj:`https://api.lingyiwanwu.com/v1`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
-            use for the model. If not provided, :obj:`YiTokenCounter
-            (model_type)` will be used.
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
     """
 
