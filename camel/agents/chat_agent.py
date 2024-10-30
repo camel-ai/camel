@@ -243,10 +243,7 @@ class ChatAgent(BaseAgent):
             tool_description = tool_info['description']
             tool_json = json.dumps(tool_info, indent=4)
 
-            prompt = (
-                f"Use the function '{tool_name}' to '{tool_description}':\n"
-                f"{tool_json}\n"
-            )
+            prompt = f"Use the function '{tool_name}' to '{tool_description}':\n{tool_json}\n"
             tool_prompts.append(prompt)
 
         tool_prompt_str = "\n".join(tool_prompts)
@@ -302,8 +299,7 @@ class ChatAgent(BaseAgent):
         return None
 
     def reset(self):
-        r"""Resets the :obj:`ChatAgent` to its initial state.
-        """
+        r"""Resets the :obj:`ChatAgent` to its initial state."""
         self.terminated = False
         self.init_messages()
         for terminator in self.response_terminators:
@@ -977,7 +973,7 @@ class ChatAgent(BaseAgent):
                 made during this step.
             num_tokens (int): The number of tokens used in this step.
             external_tool_request (Optional[ChatCompletionMessageToolCall]):
-                Any external tool request made during this step. 
+                Any external tool request made during this step.
                 (default::obj:`None`)
 
         Returns:
