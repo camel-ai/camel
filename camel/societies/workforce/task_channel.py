@@ -85,7 +85,8 @@ class TaskChannel:
 
     async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
         r"""Get a task from the channel that has been returned by the
-        publisher."""
+        publisher.
+        """
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
