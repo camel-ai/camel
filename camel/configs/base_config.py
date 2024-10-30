@@ -44,8 +44,7 @@ class BaseConfig(ABC, BaseModel):
     @field_validator("tools", mode="before")
     @classmethod
     def fields_type_checking(cls, tools):
-        """
-        Validate the type of tools in the configuration.
+        r"""Validate the type of tools in the configuration.
 
         This method ensures that the tools provided in the configuration are
         instances of `FunctionTool`. If any tool is not an instance of
