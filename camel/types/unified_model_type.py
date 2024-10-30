@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
+import logging
 from threading import Lock
 from typing import TYPE_CHECKING, ClassVar, Dict, Union, cast
 
@@ -50,8 +50,13 @@ class UnifiedModelType(str):
 
     @property
     def token_limit(self) -> int:
-        r"""Returns the token limit for the model."""
-        return -1
+        r"""Returns the token limit for the model. Here we set the default
+        value as `999_999_999` if it's not provided from `model_config_dict`"""
+        logging.warning(
+            "Invalid or missing `max_tokens` in `model_config_dict`. "
+            "Defaulting to 999_999_999 tokens."
+        )
+        return 999_999_999
 
     @property
     def is_openai(self) -> bool:
@@ -70,7 +75,7 @@ class UnifiedModelType(str):
 
     @property
     def is_groq(self) -> bool:
-        r"""Returns whether the model is an Groq served model."""
+        r"""Returns whether the model is a Groq served model."""
         return True
 
     @property

@@ -35,8 +35,8 @@ from camel.toolkits import (  # noqa: E402
 )
 
 # Set up role playing session
-model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_4O_MINI
+model_platform = ModelPlatformType.DEFAULT
+model_type = ModelType.DEFAULT
 chat_turn_limit = 10
 task_prompt = (
     "Assume now is 2024 in the Gregorian calendar, "

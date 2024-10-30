@@ -47,12 +47,21 @@ jobs:
           name: dist
           path: dist
 
+      - name: Check tag for pre-release
+        id: prerelease_check
+        run: |
+          if [[ "${{ github.ref_name }}" == *a* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.prerelease_check.outputs.prerelease }}
           files: dist/*
 
   build-and-publish-image:
