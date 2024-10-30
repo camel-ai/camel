@@ -20,10 +20,15 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
+from camel.types import (
+    ModelType,
+    OpenAIImageType,
+    OpenAIVisionDetailType,
+    UnifiedModelType,
+)
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
@@ -38,145 +43,6 @@ SHORTEST_SIDE_PIXELS = 768
 SQUARE_PIXELS = 512
 SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
-
-
-def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
-    r"""Parse the message list into a single prompt following model-specific
-    formats.
-
-    Args:
-        messages (List[OpenAIMessage]): Message list with the chat history
-            in OpenAI API format.
-        model (ModelType): Model type for which messages will be parsed.
-
-    Returns:
-        str: A single prompt summarizing all the messages.
-    """
-    system_message = messages[0]["content"]
-
-    ret: str
-    if model in [
-        ModelType.LLAMA_2,
-        ModelType.LLAMA_3,
-        ModelType.GROQ_LLAMA_3_8B,
-        ModelType.GROQ_LLAMA_3_70B,
-    ]:
-        # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
-        seps = [" ", " </s><s>"]
-        role_map = {"user": "[INST]", "assistant": "[/INST]"}
-
-        system_prompt = f"[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n"
-        ret = ""
-        for i, msg in enumerate(messages[1:]):
-            role = role_map[msg["role"]]
-            content = msg["content"]
-            if content:
-                if not isinstance(content, str):
-                    raise ValueError(
-                        "Currently multimodal context is not "
-                        "supported by the token counter."
-                    )
-                if i == 0:
-                    ret += system_prompt + content
-                else:
-                    ret += role + " " + content + seps[i % 2]
-            else:
-                ret += role
-        return ret
-    elif model in [ModelType.VICUNA, ModelType.VICUNA_16K]:
-        seps = [" ", "</s>"]
-        role_map = {"user": "USER", "assistant": "ASSISTANT"}
-
-        system_prompt = f"{system_message}"
-        ret = system_prompt + seps[0]
-        for i, msg in enumerate(messages[1:]):
-            role = role_map[msg["role"]]
-            content = msg["content"]
-            if not isinstance(content, str):
-                raise ValueError(
-                    "Currently multimodal context is not "
-                    "supported by the token counter."
-                )
-            if content:
-                ret += role + ": " + content + seps[i % 2]
-            else:
-                ret += role + ":"
-        return ret
-    elif model == ModelType.GLM_4_OPEN_SOURCE:
-        system_prompt = f"[gMASK]<sop><|system|>\n{system_message}"
-        ret = system_prompt
-        for msg in messages[1:]:
-            role = msg["role"]
-            content = msg["content"]
-            if not isinstance(content, str):
-                raise ValueError(
-                    "Currently multimodal context is not "
-                    "supported by the token counter."
-                )
-            if content:
-                ret += "<|" + role + "|>" + "\n" + content
-            else:
-                ret += "<|" + role + "|>" + "\n"
-        return ret
-    elif model == ModelType.QWEN_2:
-        system_prompt = f"<|im_start|>system\n{system_message}<|im_end|>"
-        ret = system_prompt + "\n"
-        for msg in messages[1:]:
-            role = msg["role"]
-            content = msg["content"]
-            if not isinstance(content, str):
-                raise ValueError(
-                    "Currently multimodal context is not "
-                    "supported by the token counter."
-                )
-            if content:
-                ret += (
-                    '<|im_start|>'
-                    + role
-                    + '\n'
-                    + content
-                    + '<|im_end|>'
-                    + '\n'
-                )
-            else:
-                ret += '<|im_start|>' + role + '\n'
-        return ret
-    elif model == ModelType.GROQ_MIXTRAL_8_7B:
-        # Mistral/Mixtral format
-        system_prompt = f"<s>[INST] {system_message} [/INST]\n"
-        ret = system_prompt
-
-        for msg in messages[1:]:
-            if msg["role"] == "user":
-                ret += f"[INST] {msg['content']} [/INST]\n"
-            elif msg["role"] == "assistant":
-                ret += f"{msg['content']}</s>\n"
-
-            if not isinstance(msg['content'], str):
-                raise ValueError(
-                    "Currently multimodal context is not "
-                    "supported by the token counter."
-                )
-
-        return ret.strip()
-    elif model in [ModelType.GROQ_GEMMA_7B_IT, ModelType.GROQ_GEMMA_2_9B_IT]:
-        # Gemma format
-        ret = f"<bos>{system_message}\n"
-        for msg in messages:
-            if msg["role"] == "user":
-                ret += f"Human: {msg['content']}\n"
-            elif msg["role"] == "assistant":
-                ret += f"Assistant: {msg['content']}\n"
-
-            if not isinstance(msg['content'], str):
-                raise ValueError(
-                    "Currently multimodal context is not supported by the token counter."
-                )
-
-        ret += "<eos>"
-        return ret
-    else:
-        raise ValueError(f"Invalid model type: {model}")
 
 
 def get_model_encoding(value_for_tiktoken: str):
@@ -221,67 +87,15 @@ class BaseTokenCounter(ABC):
         pass
 
 
-class OpenSourceTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType, model_path: str):
-        r"""Constructor for the token counter for open-source models.
-
-        Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
-            model_path (str): The path to the model files, where the tokenizer
-                model should be located.
-        """
-
-        # Use a fast Rust-based tokenizer if it is supported for a given model.
-        # If a fast tokenizer is not available for a given model,
-        # a normal Python-based tokenizer is returned instead.
-        from transformers import AutoTokenizer
-
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=True,
-            )
-        except TypeError:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=False,
-            )
-        except Exception:
-            raise ValueError(
-                f"Invalid `model_path` ({model_path}) is provided. "
-                "Tokenizer loading failed."
-            )
-
-        self.tokenizer = tokenizer
-        self.model_type = model_type
-
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count number of tokens in the provided message list using
-        loaded tokenizer specific for this type of model.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: Number of tokens in the messages.
-        """
-        prompt = messages_to_prompt(messages, self.model_type)
-        input_ids = self.tokenizer(prompt).input_ids
-
-        return len(input_ids)
-
-
 class OpenAITokenCounter(BaseTokenCounter):
-    def __init__(self, model: ModelType):
+    def __init__(self, model: UnifiedModelType):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model (ModelType): Model type for which tokens will be counted.
+            model (UnifiedModelType): Model type for which tokens will be
+                counted.
         """
         self.model: str = model.value_for_tiktoken
-        self.model_type = model
 
         self.tokens_per_message: int
         self.tokens_per_name: int
@@ -404,15 +218,11 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Anthropic models.
+    @dependencies_required('anthropic')
+    def __init__(self):
+        r"""Constructor for the token counter for Anthropic models."""
+        from anthropic import Anthropic
 
-        Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
-        """
-
-        self.model_type = model_type
         self.client = Anthropic()
         self.tokenizer = self.client.get_tokenizer()
 
@@ -435,12 +245,16 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Gemini models."""
+    def __init__(self, model_type: UnifiedModelType):
+        r"""Constructor for the token counter for Gemini models.
+
+        Args:
+            model_type (UnifiedModelType): Model type for which tokens will be
+                counted.
+        """
         import google.generativeai as genai
 
-        self.model_type = model_type
-        self._client = genai.GenerativeModel(self.model_type.value)
+        self._client = genai.GenerativeModel(model_type)
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -468,12 +282,13 @@ class GeminiTokenCounter(BaseTokenCounter):
         return self._client.count_tokens(converted_messages).total_tokens
 
 
-class LiteLLMTokenCounter:
-    def __init__(self, model_type: str):
+class LiteLLMTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: UnifiedModelType):
         r"""Constructor for the token counter for LiteLLM models.
 
         Args:
-            model_type (str): Model type for which tokens will be counted.
+            model_type (UnifiedModelType): Model type for which tokens will be
+                counted.
         """
         self.model_type = model_type
         self._token_counter = None
@@ -538,7 +353,10 @@ class MistralTokenCounter(BaseTokenCounter):
         model_name = (
             "codestral-22b"
             if self.model_type
-            in {ModelType.MISTRAL_CODESTRAL, ModelType.MISTRAL_CODESTRAL_MAMBA}
+            in {
+                ModelType.MISTRAL_CODESTRAL,
+                ModelType.MISTRAL_CODESTRAL_MAMBA,
+            }
             else self.model_type.value
         )
 

@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -89,22 +90,98 @@ def test_google_api():
             assert result.status_code == 200
 
 
-def test_duckduckgo_api():
-    # Test DuckDuckGo Instant Answer API
-
-    url = "https://api.duckduckgo.com/"
-    params = {"q": "test", "format": "json"}
-    result = requests.get(url, params=params)
-
-    assert result.status_code == 200
+search_duckduckgo = SearchToolkit().search_duckduckgo
 
 
-def test_web_search(search_toolkit):
-    query = "What big things are happening in 2023?"
-    answer = search_toolkit.search_google(query)
-    assert answer is not None
-    answer = search_toolkit.search_duckduckgo(query)
-    assert answer is not None
+def test_search_duckduckgo_text():
+    # Mock the DDGS class and its text method
+    with mock.patch("duckduckgo_search.DDGS") as MockDDGS:
+        # Create a mock instance of DDGS
+        mock_ddgs_instance = MockDDGS.return_value
+        mock_ddgs_instance.text.return_value = [
+            {
+                "title": "Test Title 1",
+                "body": "Test Body 1",
+                "href": "https://example1.com",
+            },
+            {
+                "title": "Test Title 2",
+                "body": "Test Body 2",
+                "href": "https://example2.com",
+            },
+        ]
+
+        # Call the function with the mocked DDGS
+        result = search_duckduckgo(
+            query="test query", source="text", max_results=2
+        )
+
+        # Check if the result is as expected
+        assert result == [
+            {
+                "result_id": 1,
+                "title": "Test Title 1",
+                "description": "Test Body 1",
+                "url": "https://example1.com",
+            },
+            {
+                "result_id": 2,
+                "title": "Test Title 2",
+                "description": "Test Body 2",
+                "url": "https://example2.com",
+            },
+        ]
+
+        mock_ddgs_instance.text.assert_called_once_with(
+            keywords="test query", max_results=2
+        )
+
+
+def test_search_duckduckgo_images():
+    # Mock the DDGS class and its images method
+    with mock.patch("duckduckgo_search.DDGS") as MockDDGS:
+        mock_ddgs_instance = MockDDGS.return_value
+        mock_ddgs_instance.images.return_value = [
+            {
+                "title": "Image Title 1",
+                "image": "https://image1.com",
+                "url": "https://example1.com",
+                "source": "Example Source 1",
+            },
+            {
+                "title": "Image Title 2",
+                "image": "https://image2.com",
+                "url": "https://example2.com",
+                "source": "Example Source 2",
+            },
+        ]
+
+        # Call the function with the mocked DDGS for images
+        result = search_duckduckgo(
+            query="test query", source="images", max_results=2
+        )
+
+        # Check if the result matches the expected output
+        assert result == [
+            {
+                "result_id": 1,
+                "title": "Image Title 1",
+                "image": "https://image1.com",
+                "url": "https://example1.com",
+                "source": "Example Source 1",
+            },
+            {
+                "result_id": 2,
+                "title": "Image Title 2",
+                "image": "https://image2.com",
+                "url": "https://example2.com",
+                "source": "Example Source 2",
+            },
+        ]
+
+        mock_ddgs_instance.images.assert_called_once_with(
+            keywords="test query", max_results=2
+        )
 
 
 @patch('wolframalpha.Client')

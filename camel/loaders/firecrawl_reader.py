@@ -155,12 +155,12 @@ class Firecrawl:
         except Exception as e:
             raise RuntimeError(f"Failed to scrape the URL: {e}")
 
-    def structured_scrape(self, url: str, output_schema: BaseModel) -> Dict:
+    def structured_scrape(self, url: str, response_format: BaseModel) -> Dict:
         r"""Use LLM to extract structured data from given URL.
 
         Args:
             url (str): The URL to read.
-            output_schema (BaseModel): A pydantic model
+            response_format (BaseModel): A pydantic model
                 that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
@@ -176,7 +176,7 @@ class Firecrawl:
                 url,
                 {
                     'formats': ['extract'],
-                    'extract': {'schema': output_schema.model_json_schema()},
+                    'extract': {'schema': response_format.model_json_schema()},
                 },
             )
             return data.get("extract", {})

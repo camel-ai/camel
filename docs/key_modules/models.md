@@ -1,7 +1,9 @@
 # Models
 
 ## 1. Concept
-The model is the brain of the intelligent agent, responsible for processing all input and output data. By calling different models, the agent can execute operations such as text analysis, image recognition, or complex reasoning according to task requirements. CAMEL offers a range of standard and customizable interfaces, as well as seamless integrations with various components, to facilitate the development of applications with Large Language Models (LLMs). In this part, we will introduce models currently supported by CAMEL and the working principles and interaction methods with models. All the codes are also available on colab notebook [here](https://colab.research.google.com/drive/18hQLpte6WW2Ja3Yfj09NRiVY-6S2MFu7?usp=sharing).
+The model is the brain of the intelligent agent, responsible for processing all input and output data. By calling different models, the agent can execute operations such as text analysis, image recognition, or complex reasoning according to task requirements. CAMEL offers a range of standard and customizable interfaces, as well as seamless integrations with various components, to facilitate the development of applications with Large Language Models (LLMs). In this part, we will introduce models currently supported by CAMEL and the working principles and interaction methods with models. 
+
+All the codes are also available on colab notebook [here](https://colab.research.google.com/drive/18hQLpte6WW2Ja3Yfj09NRiVY-6S2MFu7?usp=sharing).
 
 
 ## 2. Supported Model Platforms
@@ -21,7 +23,11 @@ The following table lists currently supported model platforms by CAMEL.
 | Azure OpenAI | gpt-4-turbo | Y |
 | Azure OpenAI | gpt-4 | Y |
 | Azure OpenAI | gpt-3.5-turbo | Y |
+| OpenAI Compatible | Depends on the provider | ----- |
 | Mistral AI | mistral-large-2 | N |
+| Mistral AI | pixtral-12b-2409 | Y |
+| Mistral AI | ministral-8b-latest | N |
+| Mistral AI | ministral-3b-latest | N |
 | Mistral AI | open-mistral-nemo | N |
 | Mistral AI | codestral | N |
 | Mistral AI | open-mistral-7b | N |
@@ -49,9 +55,9 @@ The following table lists currently supported model platforms by CAMEL.
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
 
-## 3. Model Calling Template
+## 3. Using Models by API calling
 
-Here is the example code to use a chosen model. To utilize a different model, you can simply change three parameters the define your model to be used: `model_platform`, `model_type`, `model_config_dict` .
+Here is an example code to use a specific model (gpt-4o-mini). If you want to use another model, you can simply change these three parameters: `model_platform`, `model_type`, `model_config_dict` .
 
 ```python
 from camel.models import ModelFactory
@@ -68,19 +74,26 @@ model = ModelFactory.create(
 )
 
 # Define an assitant message
-system_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-)
+system_msg = "You are a helpful assistant."
 
 # Initialize the agent
 ChatAgent(system_msg, model=model)
 ```
 
-## 4. Open Source LLMs
-In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
+And if you want to use an OpenAI-compatible API, you can replace the `model` with the following code:
 
-While proprietary models like gpt-4o-mini and gpt-4o have set high standards for content generation, open-source alternatives offer viable solutions for experimentation and practical use. These models, supported by active communities and continuous improvements, provide flexibility and cost-effectiveness for developers and researchers.
+```python
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="a-string-representing-the-model-type",
+    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    model_config_dict={"temperature": 0.4, "max_tokens": 4096},
+)
+```
+
+## 4. Using On-Device Open Source Models
+In the current landscape, for those seeking highly stable content generation, OpenAI’s gpt-4o-mini, gpt-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
 
 ### 4.1 Using Ollama to Set Llama 3 Locally
 
@@ -91,7 +104,7 @@ While proprietary models like gpt-4o-mini and gpt-4o have set high standards for
 ollama pull llama3
 ```
 
-3. Create a `ModelFile` similar the one below in your project directory.
+3. Create a `ModelFile` similar the one below in your project directory. (Optional)
 
 ```
 FROM llama3
@@ -106,7 +119,7 @@ PARAMETER stop Result
 SYSTEM """ """
 ```
 
-4. Create a script to get the base model (llama3) and create a custom model using the `ModelFile` above. Save this as a `.sh` file:
+4. Create a script to get the base model (llama3) and create a custom model using the `ModelFile` above. Save this as a `.sh` file: (Optional)
 
 ```
 #!/bin/zsh
@@ -133,19 +146,16 @@ from camel.types import ModelPlatformType
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
     model_type="llama3",
-    url="http://localhost:11434/v1",
+    url="http://localhost:11434/v1", # Optional
     model_config_dict={"temperature": 0.4},
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
-agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+agent_sys_msg = "You are a helpful assistant."
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User", content="Say hi to CAMEL"
-)
+agent = ChatAgent(agent_sys_msg, model=ollama_model, token_limit=4096)
+
+user_msg = "Say hi to CAMEL"
+
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
@@ -171,26 +181,32 @@ from camel.types import ModelPlatformType
 vllm_model = ModelFactory.create(
     model_platform=ModelPlatformType.VLLM,
     model_type="microsoft/Phi-3-mini-4k-instruct",
-    url="http://localhost:8000/v1",
-    model_config_dict={"temperature": 0.0},
-    api_key="vllm",
+    url="http://localhost:8000/v1", # Optional
+    model_config_dict={"temperature": 0.0}, # Optional
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
-agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
+agent_sys_msg = "You are a helpful assistant."
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="Say hi to CAMEL AI",
-)
+agent = ChatAgent(agent_sys_msg, model=vllm_model, token_limit=4096)
+
+user_msg = "Say hi to CAMEL AI"
+
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
 
-## 5. Conclusion
+## 5. About Model Speed
+Model speed is a crucial factor in AI application performance. It affects both user experience and system efficiency, especially in real-time or interactive tasks. In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
+
+Key Insights:
+Smaller models like SambaNova’s Llama 8B and OpenAI's GPT-4O Mini typically offer faster responses.
+Larger models like SambaNova’s Llama 405B, while more powerful, tend to generate output more slowly due to their complexity.
+OpenAI models demonstrate relatively consistent performance, while SambaNova's Llama 8B significantly outperforms others in speed.
+The chart below illustrates the tokens per second achieved by each model during our tests:
+
+![Model Speed Comparison](https://i.postimg.cc/4xByytyZ/model-speed.png)
+
+## 6. Conclusion
 In conclusion, CAMEL empowers developers to explore and integrate these diverse models, unlocking new possibilities for innovative AI applications. The world of large language models offers a rich tapestry of options beyond just the well-known proprietary solutions. By guiding users through model selection, environment setup, and integration, CAMEL bridges the gap between cutting-edge AI research and practical implementation. Its hybrid approach, combining in-house implementations with third-party integrations, offers unparalleled flexibility and comprehensive support for LLM-based development. Don't just watch this transformation that is happening from the sidelines.
 
 Dive into the CAMEL documentation, experiment with different models, and be part of shaping the future of AI. The era of truly flexible and powerful AI is here - are you ready to make your mark?

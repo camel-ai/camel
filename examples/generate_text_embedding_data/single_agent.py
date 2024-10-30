@@ -20,7 +20,12 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 QUERY_TYPE_LIST = ["extremely long-tail", "long-tail", "common"]
 QUERY_LENGTH_LIST = ["less than 5 words", "5 to 15 words", "at least 10 words"]
@@ -61,8 +66,8 @@ def main() -> None:
             role_name="User", content="Start to generate!"
         )
         model = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
             model_config_dict=ChatGPTConfig(
                 temperature=0.0, response_format={"type": "json_object"}
             ).as_dict(),

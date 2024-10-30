@@ -23,8 +23,8 @@ from camel.utils import print_text_animated
 def main() -> None:
     task_prompt = "Write a book about the future of AI Society"
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
         model_config_dict=ChatGPTConfig(temperature=1.4, n=3).as_dict(),
     )
     assistant_agent_kwargs = dict(model=model)

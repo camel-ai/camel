@@ -16,6 +16,7 @@ Main Documentation
    :caption: Get Started
    :name: getting_started
 
+   get_started/installation.md
    get_started/setup.md
 
 .. toctree::
@@ -41,6 +42,7 @@ Main Documentation
    key_modules/tasks.md
    key_modules/loaders.md
    key_modules/storages.md
+   key_modules/society.md
    key_modules/embeddings.md
    key_modules/retrievers.md
    key_modules/workforce.md
@@ -53,6 +55,7 @@ Main Documentation
    cookbooks/create_your_first_agent.ipynb
    cookbooks/create_your_first_agents_society.ipynb
    cookbooks/agents_society.ipynb
+   cookbooks/model_speed_comparison.ipynb
    cookbooks/agents_message.ipynb
    cookbooks/agents_with_tools.ipynb
    cookbooks/agents_with_tools_from_Composio.ipynb
@@ -91,4 +94,4 @@ We are always happy to work with friends to continuously move forward with our o
 
 **For Coding Enthusiasts**:  Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate each and every commit. Get started by checking out the `Contributing Guidelines <https://github.com/camel-ai/camel/wiki/Contributing-Guidlines>`_ on GitHub.
 
-**For Interested Humans**: Connect with us on `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_ or `Discord <https://discord.gg/CNcNpquyDc>`_.
+**For Interested Humans**: Connect with us on `Discord <https://discord.camel-ai.org>`_, `WeChat <https://ghli.org/camel/wechat.png>`_, or `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_.

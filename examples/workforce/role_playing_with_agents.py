@@ -13,13 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce import Workforce
 
 
 def main():
@@ -42,15 +41,14 @@ def main():
         *GoogleMapsToolkit().get_tools(),
     ]
 
-    model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_3_5_TURBO
+    model_platform = ModelPlatformType.DEFAULT
+    model_type = ModelType.DEFAULT
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
         tools=function_list,
     )
@@ -58,7 +56,6 @@ def main():
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
     )
 

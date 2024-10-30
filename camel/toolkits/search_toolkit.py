@@ -15,7 +15,7 @@ import os
 from typing import Any, Dict, List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 
 
 class SearchToolkit(BaseToolkit):
@@ -305,22 +305,72 @@ class SearchToolkit(BaseToolkit):
                 for sub in pod.subpods:
                     result += (sub.plaintext or "None") + '\n'
 
-        return result.rstrip()  # Remove trailing whitespace
+        return result.rstrip()
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def tavily_search(
+        self, query: str, num_results: int = 5, **kwargs
+    ) -> List[Dict[str, Any]]:
+        r"""Use Tavily Search API to search information for the given query.
+
+        Args:
+            query (str): The query to be searched.
+            num_results (int): The number of search results to retrieve
+                (default is `5`).
+            **kwargs: Additional optional parameters supported by Tavily's API:
+                - search_depth (str): "basic" or "advanced" search depth.
+                - topic (str): The search category, e.g., "general" or "news."
+                - days (int): Time frame in days for news-related searches.
+                - max_results (int): Max number of results to return
+                  (overrides `num_results`).
+                See https://docs.tavily.com/docs/python-sdk/tavily-search/
+                api-reference for details.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing search
+                results. Each dictionary contains:
+                - 'result_id' (int): The result's index.
+                - 'title' (str): The title of the result.
+                - 'description' (str): A brief description of the result.
+                - 'long_description' (str): Detailed information, if available.
+                - 'url' (str): The URL of the result.
+                - 'content' (str): Relevant content from the search result.
+                - 'images' (list): A list of related images (if
+                  `include_images` is True).
+                - 'published_date' (str): Publication date for news topics
+                  (if available).
+        """
+        from tavily import TavilyClient  # type: ignore[import-untyped]
+
+        Tavily_API_KEY = os.getenv("TAVILY_API_KEY")
+        if not Tavily_API_KEY:
+            raise ValueError(
+                "`TAVILY_API_KEY` not found in environment variables. "
+                "Get `TAVILY_API_KEY` here: `https://www.tavily.com/api/`."
+            )
+
+        client = TavilyClient(Tavily_API_KEY)
+
+        try:
+            results = client.search(query, max_results=num_results, **kwargs)
+            return results
+        except Exception as e:
+            return [{"error": f"An unexpected error occurred: {e!s}"}]
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.search_wiki),
-            OpenAIFunction(self.search_google),
-            OpenAIFunction(self.search_duckduckgo),
-            OpenAIFunction(self.query_wolfram_alpha),
+            FunctionTool(self.search_wiki),
+            FunctionTool(self.search_google),
+            FunctionTool(self.search_duckduckgo),
+            FunctionTool(self.query_wolfram_alpha),
+            FunctionTool(self.tavily_search),
         ]
 
 
-SEARCH_FUNCS: List[OpenAIFunction] = SearchToolkit().get_tools()
+SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()

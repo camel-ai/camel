@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.1a"
+version = "0.2.6"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -27,11 +27,9 @@ repository = "https://github.com/camel-ai/camel"
 documentation = "https://docs.camel-ai.org"
 
 [tool.poetry.dependencies]
-python = ">=3.10.0,<3.12"
+python = ">=3.10,<3.13"
 numpy = "^1"
 openai = "^1.45.0"
-groq = "^0.5.0"
-anthropic = "^0.29.0"
 tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
@@ -41,23 +39,26 @@ docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
-jupyter_client = "^8.6.2"
-ipykernel = "^6.0.0"
 pandoc = "*"
 pillow = "^10.2.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
 google-generativeai = { version = "^0.6.0", optional = true }
-mistralai = { version = "^1.0.0", optional = true }
-reka-api = { version = "^3.0.8", optional = true } 
+mistralai = { version = "^1.1.0", optional = true }
+reka-api = { version = "^3.0.8", optional = true }
+anthropic = { version = "^0.29.0", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
 datasets = { version = "^2", optional = true }
-torch = { version = "^2", optional = true }
+torch = [
+    { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
+    # Torch 2.1.0 is used on non-arm64 macOS systems.
+    { version = "2.1.0", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
+]
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
@@ -75,9 +76,10 @@ googlemaps = { version = "^4.10.0", optional = true }
 requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
-unstructured = { extras = ["all-docs"], version = "^0.10", optional = true }
+unstructured = { extras = ["all-docs"], version = "^0.14", optional = true }
 firecrawl-py = { version = "^1.0.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
+slack-bolt = {version = "^1.20.1", optional = true}
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
 imageio = { extras = ["pyav"], version = "^2.34.2" }
@@ -89,10 +91,21 @@ azure-storage-blob = { version = "^12.21.0", optional = true }
 google-cloud-storage = { version = "^2.18.0", optional = true }
 botocore = { version = "^1.35.3", optional = true }
 nltk = { version = "3.8.1", optional = true }
+asknews = { version = "^0.7.43", optional = true }
 praw = { version = "^7.7.1", optional = true }
 textblob = { version = "^0.18.0.post0", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
 datacommons_pandas = { version = "^0.0.3", optional = true }
+tavily-python = { version = "^0.5.0", optional = true }
+scholarly = { extras = ["tor"], version = "1.7.11", optional = true }
+arxiv = { version = "^2.1.3", optional = true }
+arxiv2text = { version = "^0.1.14", optional = true }
+jupyter_client = { version = "^8.6.2", optional = true }
+ipykernel = { version = "^6.0.0", optional = true }
+pdfplumber = { version = "^0.11.0", optional = true }
+apify_client = { version = "^1.8.1", optional = true }
+notion-client = { version = "^2.2.1", optional = true }
+
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -135,6 +148,7 @@ search_tools = [
     "duckduckgo-search",
     "wikipedia",
     "wolframalpha",
+    "tavily-python",
 ]
 
 model-platforms = [
@@ -142,6 +156,7 @@ model-platforms = [
     "google-generativeai",
     "mistralai",
     "reka-api",
+    "anthropic",
 ]
 
 huggingface-agent = [
@@ -174,21 +189,30 @@ tools = [
     "openapi-spec-validator",
     "unstructured",
     "firecrawl-py",
+    "arxiv",
+    "arxiv2text",
     "nltk",
     "imageio",
     "pillow",
     "slack-sdk",
+    "slack-bolt",
     "pydub",
     "pygithub",
     "pyTelegramBotAPI",
     "discord.py",
     "docker",
     "jupyter_client",
+    "ipykernel",
     "agentops",
+    "asknews",
     "praw",
     "textblob",
     "datacommons",
     "datacommons_pandas",
+    "scholarly",
+    "pdfplumber",
+    "apify_client",
+    "notion-client",
 ]
 
 vector-databases = [
@@ -245,15 +269,23 @@ all = [
     "unstructured",
     "nltk",
     "firecrawl-py",
+    "arxiv",
+    "arxiv2text",
     "imageio",
     "slack-sdk",
+    "slack-bolt",
     "pydub",
     "pillow",
     "docker",
     "jupyter_client",
+    "ipykernel",
     "agentops",
     "praw",
     "textblob",
+    "asknews",
+    "scholarly",
+    "pdfplumber",
+    "notion-client",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -270,6 +302,7 @@ all = [
     "litellm",
     "mistralai",
     "google-generativeai",
+    "anthropic",
     "reka-api",
     # kv-storages
     "redis",
@@ -279,6 +312,8 @@ all = [
     "botocore",
     "datacommons",
     "datacommons_pandas",
+    "tavily-python",
+    "apify_client",
 ]
 
 [tool.poetry.group.dev]
@@ -323,11 +358,11 @@ quote-style = "preserve"
 
 [tool.ruff.lint]
 extend-select = [
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "PGH",  # pygrep-hooks
-    "RUF",  # ruff
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "PGH", # pygrep-hooks
+    "RUF", # ruff
     "E",
 ]
 
@@ -365,7 +400,6 @@ module = [
     "tiktoken",
     "openai",
     "openai.error",
-    "groq",
     "anthropic",
     "pytest",
     "_pytest.config",
@@ -403,6 +437,7 @@ module = [
     "pymilvus",
     "pillow",
     "slack-sdk",
+    "slack-bolt",
     "pydub",
     "pygithub",
     "litellm",
@@ -415,9 +450,15 @@ module = [
     "reka-api",
     "agentops",
     "botocore.*",
+    "asknews",
+    "arxiv",
+    "arxiv2text",
     "praw",
     "textblob",
     "datacommons",
     "datacommons_pandas",
+    "tavily-python",
+    "scholarly",
+    "notion-client",
 ]
 ignore_missing_imports = true

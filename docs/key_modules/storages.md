@@ -4,7 +4,7 @@ The Storage module is a comprehensive framework designed for handling various ty
 
 ## 2. Types
 
-### 2.1. Key Value Storages
+### 2.1 Key Value Storages
 **`BaseKeyValueStorage`**:
 
 - Purpose: Serves as the foundational abstract class for creating various key-value storage systems.
@@ -29,7 +29,7 @@ The Storage module is a comprehensive framework designed for handling various ty
 
 - Functionality: Includes methods for saving data in JSON format, loading, and clearing data.
 
-### 2.2. VectorDB Storages
+### 2.2 VectorDB Storages
 **`BaseVectorStorage`**:
 
 - Purpose: An abstract base class designed to be extended for specific vector storage implementations.
@@ -49,6 +49,25 @@ Reference: [Milvus](https://milvus.io/docs/overview.md/)
 - Description: A concrete implementation of `BaseVectorStorage`, tailored for interacting with Qdrant, a vector search engine.
 
 Reference: [Qdrant](https://qdrant.tech/)
+
+### 2.3 Graph Storages
+**`BaseGraphStorage`**:
+
+- Purpose: An abstract base class designed to be extended for specific graph storage implementations.
+
+- Features: Supports various operations like `get_client`, `get_schema`, `get_structured_schema`, `refresh_schema`, `add_triplet`, `delete_triplet`, and `query`. 
+
+**`NebulaGraph`**:
+
+- Description: A concrete implementation of `BaseGraphStorage`, tailored for interacting with NebulaGraph, an open source, distributed, scalable, lightning fast graph database.
+
+Reference: [NebulaGraph](https://www.nebula-graph.io/)
+
+**`Neo4jGraph`**:
+
+- Description: A concrete implementation of `BaseGraphStorage`, tailored for interacting with Neo4jGraph, one of the most trusted graph databse.
+
+Reference: [Neo4jGraph](https://neo4j.com/)
 
 ## 3. Get Started
 
@@ -163,4 +182,31 @@ qdrant_storage.clear()
 ```
 ```markdown
 >>> {'key2': 'value2'} 0.5669467095138407
+```
+
+### 3.5. Using `NebulaGraph`
+
+```python
+from camel.storages.graph_storages import NebulaGraph
+
+nebula_graph = NebulaGraph("your_host", "your_username", "your_password", "your_space")
+
+# Show existing tags
+query = 'SHOW TAGS;'
+print(nebula_graph.query(query))
+```
+
+### 3.5. Using `Neo4jGraph`
+
+```python
+from camel.storages import Neo4jGraph
+
+neo4j_graph = Neo4jGraph(
+    url="your_url",
+    username="your_username",
+    password="your_password",
+)
+
+query = "MATCH (n) DETACH DELETE n"
+print(neo4j_graph.query(query))
 ```
