@@ -45,6 +45,11 @@ The following table lists currently supported model platforms by CAMEL.
 | Lingyiwanwu | yi-large | N |
 | Lingyiwanwu | yi-medium | N |
 | Lingyiwanwu | yi-large-turbo | N |
+| Lingyiwanwu | yi-vision | Y |
+| Lingyiwanwu | yi-medium-200k | N |
+| Lingyiwanwu | yi-spark | N |
+| Lingyiwanwu | yi-large-rag | N |
+| Lingyiwanwu | yi-large-fc | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
