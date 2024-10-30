@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class YiConfig(BaseConfig):
@@ -48,7 +49,7 @@ class YiConfig(BaseConfig):
     """
 
     tool_choice: Optional[Union[dict[str, str], str]] = None
-    max_tokens: Optional[int] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     top_p: float = 0.9
     temperature: float = 0.3
     stream: bool = False
