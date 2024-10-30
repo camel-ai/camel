@@ -20,6 +20,7 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.nexa_model import NexaModel  # Add this import
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
@@ -81,6 +82,8 @@ class ModelFactory:
             model_class = OllamaModel
         elif model_platform.is_vllm:
             model_class = VLLMModel
+        elif model_platform.is_nexa:
+            model_class = NexaModel
         elif model_platform.is_openai_compatible_model:
             model_class = OpenAICompatibleModel
         elif model_platform.is_samba:

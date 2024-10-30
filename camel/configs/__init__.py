@@ -17,6 +17,7 @@ from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
+from .nexa_config import NEXA_API_PARAMS, NexaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
@@ -58,4 +59,6 @@ __all__ = [
     'SAMBA_CLOUD_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
+    'NEXA_API_PARAMS',
+    'NexaConfig',
 ]
