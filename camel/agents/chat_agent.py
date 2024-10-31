@@ -1108,7 +1108,7 @@ class ChatAgent(BaseAgent):
             tool = self.tools_dict[func_name]
             synthesis_mode = tool.synthesis_mode
         if synthesis_mode:
-            result = tool.synthesis_output(args_str)
+            result = tool.synthesize_output(args_str)
         else:
             # Pass the extracted arguments to the indicated function
             try:
@@ -1176,7 +1176,7 @@ class ChatAgent(BaseAgent):
             tool = self.tools_dict[func_name]
             synthesis_mode = tool.synthesis_mode
         if synthesis_mode:
-            result = tool.synthesis_output(args_str)
+            result = tool.synthesize_output(args_str)
             print("synthesis result: ", result)
         else:
             # Pass the extracted arguments to the indicated function

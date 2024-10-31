@@ -543,8 +543,8 @@ class FunctionTool:
                 logger.warning("Schema validation failed. Retrying...")
 
         return {}
-    
-    def synthesis_output(self, args: Optional[Dict[str, Any]] = None) -> Any:
+
+    def synthesize_output(self, args: Optional[Dict[str, Any]] = None) -> Any:
         """
         Synthesizes the execution output of the function.
 
