@@ -283,85 +283,6 @@ class FunctionTool:
                     f"{self.func.__name__}."
                 )
 
-    def synthesis_output(self, args: Optional[Dict[str, Any]] = None) -> Any:
-        """
-        Synthesizes the execution output of the function.
-
-        Generates the output of the function based on the provided arguments
-        and the synthesis mode. Uses an assistant model to perform synthesis
-        if specified.
-
-        Args:
-            args (Optional[Dict[str, Any]]): Arguments to pass to the function
-                during synthesis. Defaults to `None`.
-
-        Returns:
-            Any: Synthesized output from the function execution. If no
-            synthesis model is provided, a warning is logged.
-        """
-        function_string = inspect.getsource(self.func)
-        if self.func.__doc__ is not None:
-            function_string += f"\n{self.func.__doc__}"
-        if args is not None:
-            function_string += f"\n{args}"
-
-        if self.synthesis_assistant_model is None:
-            logger.warning(
-                "Warning: No model provided. "
-                f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the "
-                "output of the function."
-            )
-
-        assistant_sys_msg = "You are a helpful assistant."
-        synthesis_agent = ChatAgent(
-            assistant_sys_msg,
-            model=self.synthesis_assistant_model,
-        )
-
-        synthesize_prompt = '''
-**Role:** AI Assistant specialized in synthesizing tool execution outputs
-without actual execution.
-
-**Capabilities:**
-- Analyzes function docstrings and/or function bodies to understand their
-purpose and expected outputs.
-- Generates synthetic outputs based on the provided description and code logic.
-- Ensures the synthesized output is contextually accurate and aligns with the
-function's intended behavior.
-
-**Instructions:**
-1. **Input:** Provide either the function description, code, or both.
-2. **Output:** Synthesize the expected output of the function based on the
-provided information.
-3. **Guidelines:**
-   - If only the description is provided, infer the output based on it.
-   - If the code is provided, analyze the logic to determine the output.
-   - If both are provided, use the description to guide the interpretation of
-   the code.
-
-**Example:**
-- **User Input:**
-  
-python
-  def add(a, b):
-      """Adds two numbers together."""
-      return a + b
-
-- **Output:**
-  2
-
-**Note:**
-- Just return the synthesized output of the function without any explanation.
-- The output should in plain text withou any formatting.
-'''
-
-        user_msg = synthesize_prompt + function_string
-        response = synthesis_agent.step(
-            user_msg, response_format=self.response_format
-        )
-
-        return response.msg.content
-
     @staticmethod
     def validate_openai_tool_schema(
         openai_tool_schema: Dict[str, Any],
@@ -622,6 +543,86 @@ python
                 logger.warning("Schema validation failed. Retrying...")
 
         return {}
+    
+    def synthesis_output(self, args: Optional[Dict[str, Any]] = None) -> Any:
+        """
+        Synthesizes the execution output of the function.
+
+        Generates the output of the function based on the provided arguments
+        and the synthesis mode. Uses an assistant model to perform synthesis
+        if specified.
+
+        Args:
+            args (Optional[Dict[str, Any]]): Arguments to pass to the function
+                during synthesis. Defaults to `None`.
+
+        Returns:
+            Any: Synthesized output from the function execution. If no
+            synthesis model is provided, a warning is logged.
+        """
+        function_string = inspect.getsource(self.func)
+        if self.func.__doc__ is not None:
+            function_string += f"\n{self.func.__doc__}"
+        if args is not None:
+            function_string += f"\n{args}"
+
+        if self.synthesis_assistant_model is None:
+            logger.warning(
+                "Warning: No model provided. "
+                f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the "
+                "output of the function."
+            )
+
+        assistant_sys_msg = "You are a helpful assistant."
+        synthesis_agent = ChatAgent(
+            assistant_sys_msg,
+            model=self.synthesis_assistant_model,
+        )
+
+        synthesize_prompt = '''
+**Role:** AI Assistant specialized in synthesizing tool execution outputs
+without actual execution.
+
+**Capabilities:**
+- Analyzes function docstrings and/or function bodies to understand their
+purpose and expected outputs.
+- Generates synthetic outputs based on the provided description and code logic.
+- Ensures the synthesized output is contextually accurate and aligns with the
+function's intended behavior.
+
+**Instructions:**
+1. **Input:** Provide either the function description, code, or both.
+2. **Output:** Synthesize the expected output of the function based on the
+provided information.
+3. **Guidelines:**
+   - If only the description is provided, infer the output based on it.
+   - If the code is provided, analyze the logic to determine the output.
+   - If both are provided, use the description to guide the interpretation of
+   the code.
+
+**Example:**
+- **User Input:**
+  
+python
+  def add(a, b):
+      """Adds two numbers together."""
+      return a + b
+
+- **Output:**
+  2
+
+**Note:**
+- Just return the synthesized output of the function without any explanation.
+- The output should in plain text withou any formatting.
+'''
+
+        user_msg = synthesize_prompt + function_string
+        response = synthesis_agent.step(
+            user_msg,
+            response_format=self.response_format,
+        )
+
+        return response.msg.content
 
     @property
     def parameters(self) -> Dict[str, Any]:

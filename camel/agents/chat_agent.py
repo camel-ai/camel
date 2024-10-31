@@ -1109,7 +1109,6 @@ class ChatAgent(BaseAgent):
             synthesis_mode = tool.synthesis_mode
         if synthesis_mode:
             result = tool.synthesis_output(args_str)
-            print("synthesis result: ", result)
         else:
             # Pass the extracted arguments to the indicated function
             try:
