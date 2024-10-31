@@ -196,16 +196,16 @@ persona_description: <BLANK>
 
     def deduplicate(
         self,
-        embedding_model: BaseEmbedding,  # Removed default value
-        similarity_threshold: float = 0.85,
+        embedding_model: BaseEmbedding,
+        similarity_threshold: float = 0.7,
     ):
         r"""Remove similar personas from the group.
 
         Args:
             similarity_threshold (float): The similarity threshold for
-            deduplication (default is 0.85).
+                deduplication (default is 0.85).
             embedding_model (BaseEmbedding): The embedding model
-            for similarity compairsion.
+                for similarity compairsion.
         """
         # Changed to default similarity threshold to 0.85 as the default
         # text-embedding-3-small model may give lower similarities than others
@@ -215,7 +215,7 @@ persona_description: <BLANK>
         unique_personas: Dict[uuid.UUID, Persona] = {}
         for persona_id, persona in self.personas.items():
             if not any(
-                self.is_similar(
+                self._is_similar(
                     persona, up, similarity_threshold, embedding_model
                 )
                 for up in unique_personas.values()
@@ -223,23 +223,23 @@ persona_description: <BLANK>
                 unique_personas[persona_id] = persona
         self.personas = unique_personas
 
-    def is_similar(
+    def _is_similar(
         self,
         persona1: Persona,
         persona2: Persona,
         similarity_threshold: float,
         embedding_model: BaseEmbedding,
     ) -> bool:
-        r"""Check if two personas are similar by consine simlarity
+        r"""Check if two personas are similar by consine similarity
         of the embeddings of their descriptions.
 
         Args:
-        persona1 (Persona1): A persona.
-        persona2 (Persona2): The other persona.
-        similarity_threshold (float): The threshold on consine similarity
-        to determine whether the two personas are similar.
-        embedding_model (BaseEmbedding): The embedding model
-        for similarity compairsion.
+            persona1 (Persona1): A persona.
+            persona2 (Persona2): The other persona.
+            similarity_threshold (float): The threshold on consine similarity
+                to determine whether the two personas are similar.
+            embedding_model (BaseEmbedding): The embedding model
+                for similarity compairsion.
         """
 
         # Ensure persona descriptions are not None

@@ -173,7 +173,7 @@ def test_is_similar(persona_generator: PersonaHub):
         name="Test Persona 2",
         description="Test Description 2",
     )
-    assert persona_generator.is_similar(
+    assert persona_generator._is_similar(
         persona1=persona1,
         persona2=persona2,
         similarity_threshold=0.85,
