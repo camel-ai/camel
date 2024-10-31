@@ -245,8 +245,8 @@ class FunctionTool:
         synthesis_assistant_model (Optional[BaseModelBackend], optional):
             Model used for output synthesis in synthesis mode.
             (default: :obj:`None`)
-        response_format (Optional[BaseModel], optional): Format for the response
-            when synthesizing output. (default: :obj:`None`)
+        response_format (Optional[BaseModel], optional): Format for the
+            response when synthesizing output. (default: :obj:`None`)
     """
 
     def __init__(
@@ -296,8 +296,8 @@ class FunctionTool:
                 during synthesis. Defaults to `None`.
 
         Returns:
-            Any: Synthesized output from the function execution. If no synthesis
-            model is provided, a warning is logged.
+            Any: Synthesized output from the function execution. If no
+            synthesis model is provided, a warning is logged.
         """
         function_string = inspect.getsource(self.func)
         if self.func.__doc__ is not None:
@@ -308,7 +308,8 @@ class FunctionTool:
         if self.synthesis_assistant_model is None:
             logger.warning(
                 "Warning: No model provided. "
-                f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the output."
+                f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the "
+                "output of the function."
             )
 
         assistant_sys_msg = "You are a helpful assistant."
