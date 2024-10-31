@@ -13,15 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.toolkits import FunctionTool
-from camel.agents.chat_agent import ChatAgent
 from camel.models import OpenAIModel
-from camel.messages import BaseMessage
+from camel.toolkits import FunctionTool
 from camel.types import ModelType
+
 
 def sample_function(a, b):
     """Adds two numbers together."""
     return a + b
+
 
 @pytest.mark.model_backend
 def test_synthesize_output_with_args():
@@ -35,6 +35,7 @@ def test_synthesize_output_with_args():
     output = function_tool.synthesize_output(args=args)
 
     assert output.strip() == '5'
+
 
 @pytest.mark.model_backend
 def test_synthesize_output_without_args():
@@ -52,10 +53,10 @@ def test_synthesize_output_without_args():
     assert output is not None
     assert len(output.strip()) > 0
 
+
 @pytest.mark.model_backend
 def test_synthesize_output_with_response_format():
     # Assuming you have a custom response format
-    from camel.models import OpenAIModel
 
     # Create a response format if applicable (e.g., a Pydantic model)
     response_format = None
@@ -70,6 +71,7 @@ def test_synthesize_output_with_response_format():
     output = function_tool.synthesize_output(args=args)
 
     assert output.strip() == '5'
+
 
 @pytest.mark.model_backend
 def test_synthesis_output_with_custom_model():
