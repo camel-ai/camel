@@ -191,6 +191,7 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in all_tools
         }
+        self.tools_dict = {tool.get_function_name(): tool for tool in tools}
 
         # If the user hasn't configured tools in `BaseModelBackend`,
         # the tools set from `ChatAgent` will be used.
@@ -1102,14 +1103,22 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        # Pass the extracted arguments to the indicated function
-        try:
-            result = func(**args)
-        except Exception:
-            raise ValueError(
-                f"Execution of function {func.__name__} failed with "
-                f"arguments being {args}."
-            )
+        synthesis_mode = False
+        if func_name in self.tools_dict:
+            tool = self.tools_dict[func_name]
+            synthesis_mode = tool.synthesis_mode
+        if synthesis_mode:
+            result = tool.synthesis_output(args_str)
+            print("synthesis result: ", result)
+        else:
+            # Pass the extracted arguments to the indicated function
+            try:
+                result = func(**args)
+            except Exception:
+                raise ValueError(
+                    f"Execution of function {func.__name__} failed with "
+                    f"arguments being {args}."
+                )
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1163,14 +1172,22 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        # Pass the extracted arguments to the indicated function
-        try:
-            result = await func(**args)
-        except Exception:
-            raise ValueError(
-                f"Execution of function {func.__name__} failed with "
-                f"arguments being {args}."
-            )
+        synthesis_mode = False
+        if func_name in self.tools_dict:
+            tool = self.tools_dict[func_name]
+            synthesis_mode = tool.synthesis_mode
+        if synthesis_mode:
+            result = tool.synthesis_output(args_str)
+            print("synthesis result: ", result)
+        else:
+            # Pass the extracted arguments to the indicated function
+            try:
+                result = await func(**args)
+            except Exception:
+                raise ValueError(
+                    f"Execution of function {func.__name__} failed with "
+                    f"arguments being {args}."
+                )
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import inspect
 import logging
 import warnings
 from inspect import Parameter, getsource, signature
@@ -19,7 +20,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import Draft202012Validator as JSONValidator
-from pydantic import create_model
+from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 
 from camel.agents import ChatAgent
@@ -238,6 +239,14 @@ class FunctionTool:
         schema_generation_max_retries (int, optional): The maximum
             number of attempts to retry schema generation using the schema
             assistant model if the previous attempts fail. (default: 2)
+        synthesis_mode (Optional[bool], optional): Flag for enabling synthesis
+            mode, where output is synthesized based on the function's
+            execution. (default: :obj:`None`)
+        synthesis_assistant_model (Optional[BaseModelBackend], optional):
+            Model used for output synthesis in synthesis mode.
+            (default: :obj:`None`)
+        response_format (Optional[BaseModel], optional): Format for the response
+            when synthesizing output. (default: :obj:`None`)
     """
 
     def __init__(
@@ -247,11 +256,17 @@ class FunctionTool:
         use_schema_assistant: Optional[bool] = False,
         schema_assistant_model: Optional[BaseModelBackend] = None,
         schema_generation_max_retries: int = 2,
+        synthesis_mode: Optional[bool] = False,
+        synthesis_assistant_model: Optional[BaseModelBackend] = None,
+        response_format: Optional[BaseModel] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
+        self.synthesis_mode = synthesis_mode
+        self.synthesis_assistant_model = synthesis_assistant_model
+        self.response_format = response_format
 
         if use_schema_assistant:
             if openai_tool_schema:
@@ -267,6 +282,84 @@ class FunctionTool:
                     f"Failed to generate valid schema for "
                     f"{self.func.__name__}."
                 )
+
+    def synthesis_output(self, args: Optional[Dict[str, Any]] = None) -> Any:
+        """
+        Synthesizes the execution output of the function.
+
+        Generates the output of the function based on the provided arguments
+        and the synthesis mode. Uses an assistant model to perform synthesis
+        if specified.
+
+        Args:
+            args (Optional[Dict[str, Any]]): Arguments to pass to the function
+                during synthesis. Defaults to `None`.
+
+        Returns:
+            Any: Synthesized output from the function execution. If no synthesis
+            model is provided, a warning is logged.
+        """
+        function_string = inspect.getsource(self.func)
+        if self.func.__doc__ is not None:
+            function_string += f"\n{self.func.__doc__}"
+        if args is not None:
+            function_string += f"\n{args}"
+
+        if self.synthesis_assistant_model is None:
+            logger.warning(
+                "Warning: No model provided. "
+                f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the output."
+            )
+
+        assistant_sys_msg = "You are a helpful assistant."
+        synthesis_agent = ChatAgent(
+            assistant_sys_msg,
+            model=self.synthesis_assistant_model,
+        )
+
+        synthesize_prompt = '''
+**Role:** AI Assistant specialized in synthesizing tool execution outputs
+without actual execution.
+
+**Capabilities:**
+- Analyzes function docstrings and/or function bodies to understand their
+purpose and expected outputs.
+- Generates synthetic outputs based on the provided description and code logic.
+- Ensures the synthesized output is contextually accurate and aligns with the
+function's intended behavior.
+
+**Instructions:**
+1. **Input:** Provide either the function description, code, or both.
+2. **Output:** Synthesize the expected output of the function based on the
+provided information.
+3. **Guidelines:**
+   - If only the description is provided, infer the output based on it.
+   - If the code is provided, analyze the logic to determine the output.
+   - If both are provided, use the description to guide the interpretation of
+   the code.
+
+**Example:**
+- **User Input:**
+  
+python
+  def add(a, b):
+      """Adds two numbers together."""
+      return a + b
+
+- **Output:**
+  2
+
+**Note:**
+- Just return the synthesized output of the function without any explanation.
+- The output should in plain text withou any formatting.
+'''
+
+        user_msg = synthesize_prompt + function_string
+        response = synthesis_agent.step(
+            user_msg, response_format=self.response_format
+        )
+
+        return response.msg.content
 
     @staticmethod
     def validate_openai_tool_schema(
