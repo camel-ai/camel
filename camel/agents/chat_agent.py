@@ -1103,10 +1103,10 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        synthesis_mode: bool = tool.synthesis_mode or False
+        synthesis_mode = False
         if func_name in self.tools_dict:
             tool = self.tools_dict[func_name]
-            synthesis_mode = tool.synthesis_mode
+            synthesis_mode = tool.synthesis_mode or False
         if synthesis_mode:
             result = tool.synthesize_output(args)
         else:
@@ -1171,13 +1171,12 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        synthesis_mode: bool = tool.synthesis_mode or False
+        synthesis_mode = False
         if func_name in self.tools_dict:
             tool = self.tools_dict[func_name]
-            synthesis_mode = tool.synthesis_mode
+            synthesis_mode = tool.synthesis_mode or False
         if synthesis_mode:
             result = tool.synthesize_output(args)
-            print("synthesis result: ", result)
         else:
             # Pass the extracted arguments to the indicated function
             try:
