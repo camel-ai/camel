@@ -29,6 +29,7 @@ from .samba_model import SambaModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
+from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
@@ -51,4 +52,5 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'YiModel',
 ]

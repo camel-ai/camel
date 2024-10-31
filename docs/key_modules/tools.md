@@ -124,6 +124,13 @@ Here is a list of the available CAMEL tools and their descriptions:
 | TwitterToolkit | A Twitter operation toolkit for creating a tweet, deleting a tweet, and getting the authenticated user's profile information. | 
 | WeatherToolkit | A weather data toolkit which provides methods for fetching weather data for a given city using the OpenWeatherMap API. | 
 | RetrievalToolkit | A information retrieval toolkit for retrieving information from a local vector storage system based on a specified query. | 
+| ArxivToolkit | A toolkit for interacting with the arXiv API to search and download academic papers. | 
+| AskNewsToolkit | A class representing a toolkit for interacting with the AskNews API. | 
+| DalleToolkit | A class representing a toolkit for image generation using OpenAI's DALL-E model. | 
+| GoogleScholarToolkit | A toolkit for retrieving information about authors and their publications from Google Scholar. | 
+| LinkedInToolkit | A class representing a toolkit for LinkedIn operations. | 
+| RedditToolkit | A class representing a toolkit for Reddit operations. | 
+| WhatsAppToolkit | A class representing a toolkit for WhatsApp operations. | 
 
 
 ## 3. Conclusion

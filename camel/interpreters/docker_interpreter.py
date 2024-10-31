@@ -80,6 +80,11 @@ class DockerInterpreter(BaseInterpreter):
         self._container: Optional[Container] = None
 
     def __del__(self) -> None:
+        r"""Destructor for the DockerInterpreter class.
+
+        This method ensures that the Docker container is removed when the
+        interpreter is deleted.
+        """
         if self._container is not None:
             self._container.remove(force=True)
 

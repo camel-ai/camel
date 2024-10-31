@@ -17,9 +17,9 @@ from .function_tool import (
     OpenAIFunction,
     get_openai_function_schema,
     get_openai_tool_schema,
+    generate_docstring,
 )
 from .open_api_specs.security_config import openapi_security_config
-
 
 from .math_toolkit import MathToolkit, MATH_FUNCS
 from .search_toolkit import SearchToolkit, SEARCH_FUNCS
@@ -39,6 +39,7 @@ from .slack_toolkit import SlackToolkit
 from .twitter_toolkit import TwitterToolkit, TWITTER_FUNCS
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
+from .notion_toolkit import NotionToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -46,6 +47,7 @@ __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    "generate_docstring",
     'openapi_security_config',
     'GithubToolkit',
     'MathToolkit',
@@ -63,6 +65,7 @@ __all__ = [
     'AskNewsToolkit',
     'AsyncAskNewsToolkit',
     'GoogleScholarToolkit',
+    'NotionToolkit',
     'ArxivToolkit',
     'MATH_FUNCS',
     'SEARCH_FUNCS',

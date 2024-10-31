@@ -1,4 +1,4 @@
-FROM python:3.10-bullseye
+FROM python:3.10-bookworm
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - && \

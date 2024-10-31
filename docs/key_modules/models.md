@@ -1,7 +1,9 @@
 # Models
 
 ## 1. Concept
-The model is the brain of the intelligent agent, responsible for processing all input and output data. By calling different models, the agent can execute operations such as text analysis, image recognition, or complex reasoning according to task requirements. CAMEL offers a range of standard and customizable interfaces, as well as seamless integrations with various components, to facilitate the development of applications with Large Language Models (LLMs). In this part, we will introduce models currently supported by CAMEL and the working principles and interaction methods with models. All the codes are also available on colab notebook [here](https://colab.research.google.com/drive/18hQLpte6WW2Ja3Yfj09NRiVY-6S2MFu7?usp=sharing).
+The model is the brain of the intelligent agent, responsible for processing all input and output data. By calling different models, the agent can execute operations such as text analysis, image recognition, or complex reasoning according to task requirements. CAMEL offers a range of standard and customizable interfaces, as well as seamless integrations with various components, to facilitate the development of applications with Large Language Models (LLMs). In this part, we will introduce models currently supported by CAMEL and the working principles and interaction methods with models. 
+
+All the codes are also available on colab notebook [here](https://colab.research.google.com/drive/18hQLpte6WW2Ja3Yfj09NRiVY-6S2MFu7?usp=sharing).
 
 
 ## 2. Supported Model Platforms
@@ -39,6 +41,15 @@ The following table lists currently supported model platforms by CAMEL.
 | Anthropic | claude-2.0 | N |
 | Gemini | gemini-1.5-pro | Y |
 | Gemini | ggemini-1.5-flash | Y |
+| Lingyiwanwu | yi-lightning | N |
+| Lingyiwanwu | yi-large | N |
+| Lingyiwanwu | yi-medium | N |
+| Lingyiwanwu | yi-large-turbo | N |
+| Lingyiwanwu | yi-vision | Y |
+| Lingyiwanwu | yi-medium-200k | N |
+| Lingyiwanwu | yi-spark | N |
+| Lingyiwanwu | yi-large-rag | N |
+| Lingyiwanwu | yi-large-fc | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
@@ -72,10 +83,7 @@ model = ModelFactory.create(
 )
 
 # Define an assitant message
-system_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
+system_msg = "You are a helpful assistant."
 
 # Initialize the agent
 ChatAgent(system_msg, model=model)
@@ -105,7 +113,7 @@ In the current landscape, for those seeking highly stable content generation, Op
 ollama pull llama3
 ```
 
-3. Create a `ModelFile` similar the one below in your project directory.
+3. Create a `ModelFile` similar the one below in your project directory. (Optional)
 
 ```
 FROM llama3
@@ -120,7 +128,7 @@ PARAMETER stop Result
 SYSTEM """ """
 ```
 
-4. Create a script to get the base model (llama3) and create a custom model using the `ModelFile` above. Save this as a `.sh` file:
+4. Create a script to get the base model (llama3) and create a custom model using the `ModelFile` above. Save this as a `.sh` file: (Optional)
 
 ```
 #!/bin/zsh
@@ -147,19 +155,16 @@ from camel.types import ModelPlatformType
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
     model_type="llama3",
-    url="http://localhost:11434/v1",
+    url="http://localhost:11434/v1", # Optional
     model_config_dict={"temperature": 0.4},
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
-agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+agent_sys_msg = "You are a helpful assistant."
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User", content="Say hi to CAMEL"
-)
+agent = ChatAgent(agent_sys_msg, model=ollama_model, token_limit=4096)
+
+user_msg = "Say hi to CAMEL"
+
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
@@ -185,21 +190,16 @@ from camel.types import ModelPlatformType
 vllm_model = ModelFactory.create(
     model_platform=ModelPlatformType.VLLM,
     model_type="microsoft/Phi-3-mini-4k-instruct",
-    url="http://localhost:8000/v1",
-    model_config_dict={"temperature": 0.0},
-    api_key="vllm",
+    url="http://localhost:8000/v1", # Optional
+    model_config_dict={"temperature": 0.0}, # Optional
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
-agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
+agent_sys_msg = "You are a helpful assistant."
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="Say hi to CAMEL AI",
-)
+agent = ChatAgent(agent_sys_msg, model=vllm_model, token_limit=4096)
+
+user_msg = "Say hi to CAMEL AI"
+
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```

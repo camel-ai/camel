@@ -14,11 +14,17 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from camel.workforce.task_channel import TaskChannel
-from camel.workforce.utils import check_if_running
+from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.utils import check_if_running
 
 
 class BaseNode(ABC):
+    r"""Base class for all nodes in the workforce.
+
+    Args:
+        description (str): Description of the node.
+    """
+
     def __init__(self, description: str) -> None:
         self.node_id = str(id(self))
         self.description = description
@@ -27,7 +33,7 @@ class BaseNode(ABC):
 
     @check_if_running(False)
     def reset(self, *args: Any, **kwargs: Any) -> Any:
-        """Resets the node to its initial state."""
+        r"""Resets the node to its initial state."""
         self._channel = TaskChannel()
         self._running = False
 
