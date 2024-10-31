@@ -15,7 +15,7 @@ import inspect
 import logging
 import warnings
 from inspect import Parameter, getsource, signature
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
@@ -245,7 +245,7 @@ class FunctionTool:
         synthesis_assistant_model (Optional[BaseModelBackend], optional):
             Model used for output synthesis in synthesis mode.
             (default: :obj:`None`)
-        response_format (Optional[BaseModel], optional): Format for the
+        response_format (Optional[Type[BaseModel]], optional): Format for the
             response when synthesizing output. (default: :obj:`None`)
     """
 
@@ -258,7 +258,7 @@ class FunctionTool:
         schema_generation_max_retries: int = 2,
         synthesis_mode: Optional[bool] = False,
         synthesis_assistant_model: Optional[BaseModelBackend] = None,
-        response_format: Optional[BaseModel] = None,
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
