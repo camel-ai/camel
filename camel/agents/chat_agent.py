@@ -1103,7 +1103,7 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        synthesis_mode = False
+        synthesis_mode: bool = tool.synthesis_mode or False
         if func_name in self.tools_dict:
             tool = self.tools_dict[func_name]
             synthesis_mode = tool.synthesis_mode
@@ -1171,7 +1171,7 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        synthesis_mode = False
+        synthesis_mode: bool = tool.synthesis_mode or False
         if func_name in self.tools_dict:
             tool = self.tools_dict[func_name]
             synthesis_mode = tool.synthesis_mode
