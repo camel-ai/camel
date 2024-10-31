@@ -18,6 +18,7 @@ import logging
 import re
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -136,11 +137,13 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        tools (List[FunctionTool], optional): List of available
-            :obj:`FunctionTool`. (default: :obj:`None`)
-        external_tools (List[FunctionTool], optional): List of external tools
-            (:obj:`FunctionTool`) bind to one chat agent. When these tools
-            are called, the agent will directly return the request instead of
+        tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
+            of available :obj:`FunctionTool` or :obj:`Callable`. (default:
+            :obj:`None`)
+        external_tools (Optional[List[Union[FunctionTool, Callable]]],
+            optional): List of external tools (:obj:`FunctionTool` or or
+            :obj:`Callable`) bind to one chat agent. When these tools are
+            called, the agent will directly return the request instead of
             processing it. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
@@ -155,10 +158,11 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
-        tools: Optional[List[FunctionTool]] = None,
-        external_tools: Optional[List[FunctionTool]] = None,
+        tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+        external_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
+        # Initialize the system message, converting string to BaseMessage if needed
         if isinstance(system_message, str):
             system_message = BaseMessage.make_assistant_message(
                 role_name='Assistant', content=system_message
@@ -172,6 +176,8 @@ class ChatAgent(BaseAgent):
         self.role_type: RoleType = (
             getattr(system_message, 'role_type', None) or RoleType.ASSISTANT
         )
+
+        # Set up model backend, using defaults if not provided
         self.model_backend: BaseModelBackend = (
             model
             if model is not None
@@ -180,33 +186,37 @@ class ChatAgent(BaseAgent):
                 model_type=ModelType.DEFAULT,
             )
         )
+        self.model_type = self.model_backend.model_type
+
+        # Initialize output language if specified
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type = self.model_backend.model_type
+        # Initialize tools
+        if tools:
+            func_tools = self._initialize_tools(tools)
+            all_tools = func_tools
+        if external_tools:
+            external_func_tools = self._initialize_tools(external_tools)
+            all_tools = all_tools + external_func_tools
 
-        # tool registration
-        external_tools = external_tools or []
-        tools = tools or []
-        all_tools = tools + external_tools
+        # Create tool dictionaries and configure backend tools if necessary
         self.external_tool_names = [
-            tool.get_function_name() for tool in external_tools
+            tool.get_function_name() for tool in external_func_tools
         ]
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in all_tools
         }
 
-        # If the user hasn't configured tools in `BaseModelBackend`,
-        # the tools set from `ChatAgent` will be used.
-        # This design simplifies the interface while retaining tool-running
-        # capabilities for `BaseModelBackend`.
         if all_tools and not self.model_backend.model_config_dict.get("tools"):
             tool_schema_list = [
                 tool.get_openai_tool_schema() for tool in all_tools
             ]
             self.model_backend.model_config_dict['tools'] = tool_schema_list
             self.tool_schema_list = tool_schema_list
+
+        # Set up model configuration and memory management
         self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit
@@ -218,11 +228,24 @@ class ChatAgent(BaseAgent):
             context_creator, window_size=message_window_size
         )
 
+        # Initialize response handling
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
         self.init_messages()
-
         self.tool_prompt_added = False
+
+    def _initialize_tools(
+        self, tools: List[Union[FunctionTool, Callable]]
+    ) -> List[FunctionTool]:
+        r"""Helper method to initialize tools as FunctionTool instances."""
+        func_tools = []
+        for tool in tools:
+            if isinstance(tool, Callable) and not isinstance(
+                tool, FunctionTool
+            ):
+                tool = FunctionTool(tool)
+            func_tools.append(tool)
+        return func_tools
 
     # ruff: noqa: E501
     def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
