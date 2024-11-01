@@ -248,19 +248,13 @@ class GithubToolkit(BaseToolkit):
 
         return comments
 
-    def get_all_file_paths(
-        self, path: str = "", depth: int = 0, max_depth: int = 20
-    ) -> List[str]:
-        r"""Recursively get all file paths in the GitHub repository with
-        safeguards.
+    def get_all_file_paths(self, path: str = "") -> List[str]:
+        r"""Recursively retrieves all file paths in the GitHub repository.
 
         Args:
             path (str): The repository path to start the traversal from.
                 empty string means starts from the root directory.
                 (default::obj: `""`)
-            depth (int): The current recursion depth. (default::obj: `0`)
-            max_depth (int): The maximum recursion depth allowed.
-                (default::obj: `20`)
 
         Returns:
             List[str]: A list of file paths within the specified directory
@@ -269,36 +263,21 @@ class GithubToolkit(BaseToolkit):
         from github.ContentFile import ContentFile
 
         files: List[str] = []
-        visited_paths = set()  # Track visited paths to avoid cycles
-
-        # If max recursion depth is reached, stop further recursion
-        if depth > max_depth:
-            return files
 
         # Retrieves all contents of the current directory
-        try:
-            contents: Union[List[ContentFile], ContentFile] = (
-                self.repo.get_contents(path)
-            )
-        except Exception as e:
-            logger.error(f"Error fetching contents for path '{path}': {e}")
-            return files  # Skip this path if API call fails
+        contents: Union[List[ContentFile], ContentFile] = (
+            self.repo.get_contents(path)
+        )
 
         if isinstance(contents, ContentFile):
             files.append(contents.path)
         else:
             for content in contents:
-                if content.path in visited_paths:
-                    continue  # Avoid re-processing the same path
-                visited_paths.add(content.path)
-
                 if content.type == "dir":
-                    files.extend(
-                        self.get_all_file_paths(
-                            content.path, depth + 1, max_depth
-                        )
-                    )
+                    # If it's a directory, recursively retrieve its file paths
+                    files.extend(self.get_all_file_paths(content.path))
                 else:
+                    # If it's a file, add its path to the list
                     files.append(content.path)
         return files
 
