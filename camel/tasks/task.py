@@ -543,8 +543,8 @@ class TaskManagerWithState(TaskManager):
     def __init__(
         self,
         task,
+        initial_state: FunctionToolState,
         states: List[FunctionToolState],
-        initial_state: str,
         transitions: Optional[List[FunctionToolTransition]],
     ):
         super().__init__(task)
@@ -552,7 +552,7 @@ class TaskManagerWithState(TaskManager):
         self.machine = Machine(
             states=[state.name for state in states],
             transitions=[],
-            initial=initial_state,
+            initial=initial_state.name,
         )
 
         for transition in transitions or []:
