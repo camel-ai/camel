@@ -518,8 +518,8 @@ class FunctionToolTransition(TypedDict):
     """
 
     trigger: Task
-    source: str
-    dest: str
+    source: FunctionToolState
+    dest: FunctionToolState
 
 
 class TaskManagerWithState(TaskManager):
@@ -590,19 +590,22 @@ class TaskManagerWithState(TaskManager):
             self.state_space.append(state)
             self.machine.add_state(state.name)
 
-    def add_transition(self, trigger: Task, source: str, dest: str):
+    def add_transition(
+        self, trigger: Task, source: FunctionToolState, dest: FunctionToolState
+    ):
         r"""
         Adds a new transition to the state machine.
 
         Args:
             trigger (Task): The task that initiates this transition.
-            source (str): The name of the source state.
-            dest (str): The name of the destination state after the transition.
+            source (FunctionToolState): The source state.
+            dest (FunctionToolState): The destination state after the
+                transition.
         """
         trigger.add_on_task_complete(lambda: self.machine.trigger(trigger.id))
         if not self.exist(trigger.id):
             self.add_tasks(trigger)
-        self.machine.add_transition(trigger.id, source, dest)
+        self.machine.add_transition(trigger.id, source.name, dest.name)
 
     def get_current_tools(self) -> Optional[List[FunctionTool]]:
         r"""
@@ -626,15 +629,15 @@ class TaskManagerWithState(TaskManager):
         ]
         self.machine.remove_state(state_name)
 
-    def remove_transition(self, trigger: Task, source: str):
+    def remove_transition(self, trigger: Task, source: FunctionToolState):
         r"""
         Removes a transition from the machine.
 
         Args:
             trigger (Task): The task associated with the transition to remove.
-            source (str): The name of the source state.
+            source (FunctionToolState): The source state.
         """
-        self.machine.remove_transition(trigger.id, source)
+        self.machine.remove_transition(trigger.id, source.name)
 
     def reset(self):
         r"""
