@@ -50,6 +50,15 @@ The following table lists currently supported model platforms by CAMEL.
 | Lingyiwanwu | yi-spark | N |
 | Lingyiwanwu | yi-large-rag | N |
 | Lingyiwanwu | yi-large-fc | N |
+| Qwen | qwen-max | N |
+| Qwen | qwen-plus | N |
+| Qwen | qwen-turbo | N |
+| Qwen | qwen-long | N |
+| Qwen | qwen-vl-max | Y |
+| Qwen | qwen-vl-plus | Y |
+| Qwen | qwen-math-plus | N |
+| Qwen | qwen-math-turbo | N |
+| Qwen | qwen-coder-turbo | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
