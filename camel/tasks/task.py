@@ -14,13 +14,16 @@
 
 import re
 from enum import Enum
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Callable, Dict, List, Literal, Optional, TypedDict, Union
 
+from litellm import ConfigDict
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
+from camel.tasks.machine import Machine
+from camel.toolkits.function_tool import FunctionTool
 
 from .task_prompt import (
     TASK_COMPOSE_PROMPT,
@@ -75,8 +78,9 @@ class Task(BaseModel):
         state: The state which should be OPEN, RUNNING, DONE or DELETED.
         type: task type
         parent: The parent task, None for root task.
-        subtasks: The childrent sub-tasks for the task.
+        subtasks: The children sub-tasks for the task.
         result: The answer for the task.
+        onTaskComplete: The callback functions when the task is completed.
     """
 
     content: str
@@ -96,6 +100,8 @@ class Task(BaseModel):
     failure_count: int = 0
 
     additional_info: Optional[str] = None
+
+    onTaskComplete: List[Callable[[], None]] = []
 
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
@@ -119,6 +125,7 @@ class Task(BaseModel):
         r"""Reset Task to initial state."""
         self.state = TaskState.OPEN
         self.result = ""
+        self.onTaskComplete = []
 
     def update_result(self, result: str):
         r"""Set task result and mark the task as DONE.
@@ -128,6 +135,23 @@ class Task(BaseModel):
         """
         self.result = result
         self.set_state(TaskState.DONE)
+        for callback in self.onTaskComplete or []:
+            callback()
+
+    def add_on_task_complete(
+        self, callbacks: Union[Callable[[], None], List[Callable[[], None]]]
+    ):
+        r"""Adds one or more callbacks to the onTaskComplete list.
+
+        Args:
+            callbacks (Union[Callable[[], None], List[Callable[[], None]]]):
+                A single callback function or a list of callback functions to
+                be added.
+        """
+        if isinstance(callbacks, list):
+            self.onTaskComplete.extend(callbacks)
+        else:
+            self.onTaskComplete.append(callbacks)
 
     def set_id(self, id: str):
         self.id = id
@@ -289,8 +313,9 @@ class TaskManager:
     def __init__(self, task: Task):
         self.root_task: Task = task
         self.current_task_id: str = task.id
-        self.tasks: List[Task] = [task]
-        self.task_map: Dict[str, Task] = {task.id: task}
+        self.tasks: List[Task] = []
+        self.task_map: Dict[str, Task] = {}
+        self.add_tasks(task)
 
     def gen_task_id(self) -> str:
         r"""Generate a new task id."""
@@ -370,12 +395,48 @@ class TaskManager:
         r"""self.tasks and self.task_map will be updated by the input tasks."""
         if not tasks:
             return
-        if not isinstance(tasks, List):
-            tasks = [tasks]
+        tasks = tasks if isinstance(tasks, list) else [tasks]
+
         for task in tasks:
-            assert not self.exist(task.id), f"`{task.id}` already existed."
+            assert not self.exist(task.id), f"`{task.id}` already exists."
+            # Add callback to update the current task ID
+            task.add_on_task_complete(
+                self.create_update_current_task_id_callback(task)
+            )
         self.tasks = self.topological_sort(self.tasks + tasks)
         self.task_map = {task.id: task for task in self.tasks}
+
+    def create_update_current_task_id_callback(
+        self, task: Task
+    ) -> Callable[[], None]:
+        r"""
+        Creates a callback function to update `current_task_id` after the
+        specified task is completed.
+
+        The returned callback function, when called, sets `current_task_id` to
+        the ID of the next task in the `tasks` list. If the specified task is
+        the last one in the list, `current_task_id` is set to an empty string.
+
+        Args:
+            task (Task): The task after which `current_task_id` should be
+                updated.
+
+        Returns:
+            Callable[[], None]:
+                A callback function that, when invoked, updates
+                `current_task_id` to the next task's ID or clears it if the
+                specified task is the last in the list.
+        """
+
+        def update_current_task_id():
+            current_index = self.tasks.index(task)
+
+            if current_index + 1 < len(self.tasks):
+                self.current_task_id = self.tasks[current_index + 1].id
+            else:
+                self.current_task_id = ""
+
+        return update_current_task_id
 
     def evolve(
         self,
@@ -413,3 +474,170 @@ class TaskManager:
         if tasks:
             return tasks[0]
         return None
+
+
+class FunctionToolState(BaseModel):
+    """Represents a specific state of a function tool within a state machine.
+
+    Attributes:
+        name (str): The unique name of the state, serving as an identifier.
+        tools_space (Optional[List[FunctionTool]]): A list of `FunctionTool`
+            objects associated with this state. Defaults to an empty list.
+    """
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
+
+    name: str
+    tools_space: Optional[List[FunctionTool]] = []
+
+    def __eq__(self, other):
+        if isinstance(other, FunctionToolState):
+            return self.name == other.name
+        return False
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+
+class FunctionToolTransition(TypedDict):
+    """Defines a transition within a function tool state machine.
+
+    Attributes:
+        trigger (Task): The task that initiates this transition.
+        source (str): The name of the starting state.
+        dest (str): The name of the target state after the transition.
+    """
+
+    trigger: Task
+    source: str
+    dest: str
+
+
+class TaskManagerWithState(TaskManager):
+    r"""
+    A TaskManager with an integrated state machine supporting conditional
+    function calls based on task states and transitions.
+
+    Args:
+        task (Task): The primary task to manage.
+        states (List[FunctionToolState]): A list of all possible states.
+        initial_state (str): The initial state of the machine.
+        transitions (Optional[List[FunctionToolTransition]]): A list of state
+            transitions, each containing a trigger, source state, and
+            destination state.
+
+    Attributes:
+        state_space (List[FunctionToolState]): Collection of all states.
+        machine (Machine): Manages state transitions and tracks the current
+            state.
+    """
+
+    def __init__(
+        self,
+        task,
+        states: List[FunctionToolState],
+        initial_state: str,
+        transitions: Optional[List[FunctionToolTransition]],
+    ):
+        super().__init__(task)
+        self.state_space = states
+        self.machine = Machine(
+            states=[state.name for state in states],
+            transitions=[],
+            initial=initial_state,
+        )
+
+        for transition in transitions or []:
+            self.add_transition(
+                transition['trigger'],
+                transition['source'],
+                transition['dest'],
+            )
+
+    @property
+    def current_state(self) -> Optional[FunctionToolState]:
+        r"""
+        Retrieves the current state object based on the machine's active state
+        name.
+
+        Returns:
+            Optional[FunctionToolState]:
+                The state object with a `name` matching `self.machine.
+                current_state`, or `None` if no match is found.
+        """
+        for state in self.state_space:
+            if state.name == self.machine.current_state:
+                return state
+        return None
+
+    def add_state(self, state: FunctionToolState):
+        r"""
+        Adds a new state to both `state_space` and the machine.
+
+        Args:
+            state (FunctionToolState): The state object to be added.
+        """
+        if state not in self.state_space:
+            self.state_space.append(state)
+            self.machine.add_state(state.name)
+
+    def add_transition(self, trigger: Task, source: str, dest: str):
+        r"""
+        Adds a new transition to the state machine.
+
+        Args:
+            trigger (Task): The task that initiates this transition.
+            source (str): The name of the source state.
+            dest (str): The name of the destination state after the transition.
+        """
+        trigger.add_on_task_complete(lambda: self.machine.trigger(trigger.id))
+        if not self.exist(trigger.id):
+            self.add_tasks(trigger)
+        self.machine.add_transition(trigger.id, source, dest)
+
+    def get_current_tools(self) -> Optional[List[FunctionTool]]:
+        r"""
+        Retrieves the tools available in the current state.
+
+        Returns:
+            Optional[List[FunctionTool]]: The tools associated with the
+                current state.
+        """
+        return self.current_state.tools_space
+
+    def remove_state(self, state_name: str):
+        r"""
+        Removes a state from `state_space` and the machine.
+
+        Args:
+            state_name (str): The name of the state to remove.
+        """
+        self.state_space = [
+            state for state in self.state_space if state.name != state_name
+        ]
+        self.machine.remove_state(state_name)
+
+    def remove_transition(self, trigger: Task, source: str):
+        r"""
+        Removes a transition from the machine.
+
+        Args:
+            trigger (Task): The task associated with the transition to remove.
+            source (str): The name of the source state.
+        """
+        self.machine.remove_transition(trigger.id, source)
+
+    def reset(self):
+        r"""
+        Resets the machine to its initial state.
+        """
+        self.machine.reset()
