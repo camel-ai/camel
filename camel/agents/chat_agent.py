@@ -194,20 +194,23 @@ class ChatAgent(BaseAgent):
             self.set_output_language(self.output_language)
 
         # Initialize tools
+        all_tools = []
+        self.external_tool_names = []
         if tools:
             func_tools = self._initialize_tools(tools)
             all_tools = func_tools
         if external_tools:
             external_func_tools = self._initialize_tools(external_tools)
             all_tools = all_tools + external_func_tools
-
-        # Create tool dictionaries and configure backend tools if necessary
-        self.external_tool_names = [
-            tool.get_function_name() for tool in external_func_tools
-        ]
-        self.func_dict = {
-            tool.get_function_name(): tool.func for tool in all_tools
-        }
+            # Create tool dictionaries and configure backend tools if necessary
+            self.external_tool_names = [
+                tool.get_function_name() for tool in external_func_tools
+            ]
+        self.func_dict = (
+            {tool.get_function_name(): tool.func for tool in all_tools}
+            if all_tools
+            else {}
+        )
 
         if all_tools and not self.model_backend.model_config_dict.get("tools"):
             tool_schema_list = [
@@ -238,6 +241,8 @@ class ChatAgent(BaseAgent):
         self, tools: List[Union[FunctionTool, Callable]]
     ) -> List[FunctionTool]:
         r"""Helper method to initialize tools as FunctionTool instances."""
+        from camel.toolkits import FunctionTool
+
         func_tools = []
         for tool in tools:
             if not isinstance(tool, FunctionTool):
@@ -494,7 +499,7 @@ class ChatAgent(BaseAgent):
                 role_name='User', content=input_message
             )
 
-        if "llama" in self.model_type.lower():
+        if not self.model_type.support_native_tool_calling:
             if (
                 self.model_backend.model_config_dict.get("tools", None)
                 and not self.tool_prompt_added
@@ -668,10 +673,7 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if (
-                response_format is not None
-                and self.model_type.support_native_tool_calling
-            ):
+            if response_format is not None:
                 (
                     output_messages,
                     finish_reasons,
