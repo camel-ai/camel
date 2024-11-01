@@ -29,6 +29,11 @@ from camel.types import ModelType
         ModelType.QWEN_PLUS,
         ModelType.QWEN_TURBO,
         ModelType.QWEN_LONG,
+        ModelType.QWEN_VL_MAX,
+        ModelType.QWEN_VL_PLUS,
+        ModelType.QWEN_MATH_PLUS,
+        ModelType.QWEN_MATH_TURBO,
+        ModelType.QWEN_CODER_TURBO,
     ],
 )
 def test_qwen_model(model_type: ModelType):

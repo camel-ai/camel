@@ -108,12 +108,12 @@ class ModelFactory:
             model_class = MistralModel
         elif model_platform.is_reka and model_type.is_reka:
             model_class = RekaModel
-        elif model_type == ModelType.STUB:
-            model_class = StubModel
         elif model_platform.is_yi and model_type.is_yi:
             model_class = YiModel
         elif model_platform.is_qwen and model_type.is_qwen:
             model_class = QwenModel
+        elif model_type == ModelType.STUB:
+            model_class = StubModel
 
         if model_class is None:
             raise ValueError(

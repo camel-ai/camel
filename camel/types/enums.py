@@ -92,6 +92,11 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_PLUS = "qwen-plus"
     QWEN_TURBO = "qwen-turbo"
     QWEN_LONG = "qwen-long"
+    QWEN_VL_MAX = "qwen-vl-max"
+    QWEN_VL_PLUS = "qwen-vl-plus"
+    QWEN_MATH_PLUS = "qwen-math-plus"
+    QWEN_MATH_TURBO = "qwen-math-turbo"
+    QWEN_CODER_TURBO = "qwen-coder-turbo"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -263,6 +268,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_LONG,
+            ModelType.QWEN_VL_MAX,
+            ModelType.QWEN_VL_PLUS,
+            ModelType.QWEN_MATH_PLUS,
+            ModelType.QWEN_MATH_TURBO,
+            ModelType.QWEN_CODER_TURBO,
         }
 
     @property
@@ -280,6 +290,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
             ModelType.REKA_FLASH,
+            ModelType.QWEN_MATH_PLUS,
+            ModelType.QWEN_MATH_TURBO,
         }:
             return 4_096
         elif self in {
@@ -290,6 +302,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
+            ModelType.QWEN_VL_PLUS,
         }:
             return 8_192
         elif self in {
@@ -310,6 +323,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE,
             ModelType.YI_LARGE_FC,
             ModelType.QWEN_MAX,
+            ModelType.QWEN_VL_MAX,
         }:
             return 32_768
         elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
@@ -338,6 +352,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_1_405B,
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
+            ModelType.QWEN_CODER_TURBO,
         }:
             return 131_072
         elif self in {
