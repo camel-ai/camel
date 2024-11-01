@@ -12,13 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import logging
 import os
-from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import dependencies_required
+
+logger = logging.getLogger(__name__)
 
 
 class GithubToolkit(BaseToolkit):
@@ -47,10 +49,10 @@ class GithubToolkit(BaseToolkit):
                 with GitHub. If not provided, it will be obtained using the
                 `get_github_access_token` method.
         """
+        from github import Auth, Github
+
         if access_token is None:
             access_token = self.get_github_access_token()
-
-        from github import Auth, Github
 
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
@@ -136,16 +138,16 @@ class GithubToolkit(BaseToolkit):
         r"""Retrieves all issues from the GitHub repository.
 
         Args:
-            state (Literal["open", "closed", "all"], optional): The state of
-                pull requests to retrieve.
-                    Defaults to "all". Options are:
-                    - "open": Retrieve only open pull requests.
-                    - "closed": Retrieve only closed pull requests.
-                    - "all": Retrieve all pull requests, regardless of state.
+            state (Literal["open", "closed", "all"]): The state of pull
+                requests to retrieve. (default::obj: `all`)
+                Options are:
+                - "open": Retrieve only open pull requests.
+                - "closed": Retrieve only closed pull requests.
+                - "all": Retrieve all pull requests, regardless of state.
 
         Returns:
             List[Dict[str, object]]: A list of dictionaries where each
-            dictionary contains the issue number and title.
+                dictionary contains the issue number and title.
         """
         issues_info = []
         issues = self.repo.get_issues(state=state)
@@ -162,7 +164,7 @@ class GithubToolkit(BaseToolkit):
             issue_number (int): The number of the issue to retrieve.
 
         Returns:
-            str: issues content details
+            str: issues content details.
         """
         try:
             issue = self.repo.get_issue(number=issue_number)
@@ -171,16 +173,14 @@ class GithubToolkit(BaseToolkit):
             return f"can't get Issue number {issue_number}: {e!s}"
 
     def get_pull_request_list(
-        self, days: int = 0, state: Literal["open", "closed", "all"] = "all"
+        self, state: Literal["open", "closed", "all"] = "all"
     ) -> List[Dict[str, object]]:
         r"""Retrieves all pull requests from the GitHub repository.
 
         Args:
-            days (int, optional): The number of days to retrieve create pull
-                requests for. Defaults to 0 (retrieve from all dates).
-            state (Literal["open", "closed", "all"], optional): The state of
-                pull requests to retrieve.
-                Defaults to "all". Options are:
+            state (Literal["open", "closed", "all"]): The state of pull
+                requests to retrieve. (default::obj: `all`)
+                Options are:
                 - "open": Retrieve only open pull requests.
                 - "closed": Retrieve only closed pull requests.
                 - "all": Retrieve all pull requests, regardless of state.
@@ -191,17 +191,9 @@ class GithubToolkit(BaseToolkit):
         """
         pull_requests_info = []
         pull_requests = self.repo.get_pulls(state=state)
-        earliest_date: datetime = (
-            datetime.now(timezone.utc) - timedelta(days=days)
-            if days > 0
-            else None
-        )
 
         for pr in pull_requests:
-            if days == 0 or (pr.created_at > earliest_date):
-                pull_requests_info.append(
-                    {"number": pr.number, "title": pr.title}
-                )
+            pull_requests_info.append({"number": pr.number, "title": pr.title})
 
         return pull_requests_info
 
@@ -213,7 +205,8 @@ class GithubToolkit(BaseToolkit):
 
         Returns:
             List[Dict[str, str]]: A list of dictionaries where each dictionary
-            contains the file name and the corresponding code changes (patch).
+                contains the file name and the corresponding code changes
+                (patch).
         """
         # Retrieve the specific pull request
         pr = self.repo.get_pull(number=pr_number)
@@ -242,7 +235,7 @@ class GithubToolkit(BaseToolkit):
 
         Returns:
             List[Dict[str, str]]: A list of dictionaries where each dictionary
-            contains the user ID and the comment body.
+                contains the user ID and the comment body.
         """
         # Retrieve the specific pull request
         pr = self.repo.get_pull(number=pr_number)
@@ -255,33 +248,57 @@ class GithubToolkit(BaseToolkit):
 
         return comments
 
-    def get_all_file_paths(self, path: str = "") -> List[str]:
-        r"""Recursively retrieves all file paths in the GitHub repository.
+    def get_all_file_paths(
+        self, path: str = "", depth: int = 0, max_depth: int = 20
+    ) -> List[str]:
+        r"""Recursively get all file paths in the GitHub repository with
+        safeguards.
 
         Args:
-            path (str, optional): The starting directory path from which to
-                search for files. Defaults to an empty string (""), which 
-                starts from the root directory.
+            path (str): The repository path to start the traversal from.
+                empty string means starts from the root directory.
+                (default::obj: `""`)
+            depth (int): The current recursion depth. (default::obj: `0`)
+            max_depth (int): The maximum recursion depth allowed.
+                (default::obj: `20`)
 
         Returns:
-            List[str]: A list of file paths for all files in the repository.
+            List[str]: A list of file paths within the specified directory
+                structure.
         """
-        files = []
         from github.ContentFile import ContentFile
 
+        files: List[str] = []
+        visited_paths = set()  # Track visited paths to avoid cycles
+
+        # If max recursion depth is reached, stop further recursion
+        if depth > max_depth:
+            return files
+
         # Retrieves all contents of the current directory
-        contents: Union[List[ContentFile], ContentFile] = (
-            self.repo.get_contents(path)
-        )
+        try:
+            contents: Union[List[ContentFile], ContentFile] = (
+                self.repo.get_contents(path)
+            )
+        except Exception as e:
+            logger.error(f"Error fetching contents for path '{path}': {e}")
+            return files  # Skip this path if API call fails
+
         if isinstance(contents, ContentFile):
             files.append(contents.path)
         else:
             for content in contents:
+                if content.path in visited_paths:
+                    continue  # Avoid re-processing the same path
+                visited_paths.add(content.path)
+
                 if content.type == "dir":
-                    # If it's a directory, recursively retrieve its file paths
-                    files.extend(self.get_all_file_paths(content.path))
+                    files.extend(
+                        self.get_all_file_paths(
+                            content.path, depth + 1, max_depth
+                        )
+                    )
                 else:
-                    # If it's a file, add its path to the list
                     files.append(content.path)
         return files
 
@@ -303,12 +320,12 @@ class GithubToolkit(BaseToolkit):
             raise ValueError("PRs with multiple files aren't supported yet.")
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-            functions in the toolkit.
+        r"""Returns a list of FunctionTool objects representing the functions
+        in the toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
+            List[FunctionTool]: A list of FunctionTool objects representing
+                the functions in the toolkit.
         """
         return [
             FunctionTool(self.create_pull_request),
@@ -318,4 +335,5 @@ class GithubToolkit(BaseToolkit):
             FunctionTool(self.get_pull_request_code),
             FunctionTool(self.get_pull_request_comments),
             FunctionTool(self.get_all_file_paths),
+            FunctionTool(self.retrieve_file_content),
         ]
