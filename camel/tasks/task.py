@@ -16,8 +16,7 @@ import re
 from enum import Enum
 from typing import Callable, Dict, List, Literal, Optional, TypedDict, Union
 
-from litellm import ConfigDict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
