@@ -240,9 +240,7 @@ class ChatAgent(BaseAgent):
         r"""Helper method to initialize tools as FunctionTool instances."""
         func_tools = []
         for tool in tools:
-            if isinstance(tool, Callable) and not isinstance(
-                tool, FunctionTool
-            ):
+            if not isinstance(tool, FunctionTool):
                 tool = FunctionTool(tool)
             func_tools.append(tool)
         return func_tools
