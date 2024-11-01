@@ -10,10 +10,10 @@ class Gorilla(BenchmarkBase):
                 'huggingface']
     
     def get_tools(self, dataset):
-        pass
+        print("Gorilla datasets do not have API based tools. It's based on AST evaluation.")
     
     def eval(self, dataset, agent):
-        #get_llm_response(dataset, agent)
+        get_llm_response(dataset, agent)
         return eval_ast(dataset)
 
 

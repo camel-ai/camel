@@ -1,4 +1,4 @@
-from apis.api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 
 class CancelRegistration(API):
     description = 'This API cancels the registration of a patient given appointment ID.'

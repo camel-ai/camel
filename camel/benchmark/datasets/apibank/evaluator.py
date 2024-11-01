@@ -1,15 +1,47 @@
 import json
-from tool_manager import ToolManager
+from .tool_manager import ToolManager
 import re
 from rouge import Rouge
 import os
-from utils import ChatGPTWrapper, GPT4Wrapper
 import logging
 from tqdm import tqdm
-from api_call_extraction import parse_api_call
+from .api_call_extraction import parse_api_call
 from datetime import datetime
 import numpy as np
+from camel.messages import BaseMessage
 
+def agent_call(messages, agent):
+  # 逐条记录历史消息到 agent 的记忆
+    for i, msg in enumerate(messages):
+        # 根据角色选择不同的消息生成方法
+        if msg['role'] == 'user':
+            message = BaseMessage.make_user_message(
+                role_name="CAMEL User",
+                content=msg['content']
+            )
+        elif msg['role'] == 'assistant':
+            message = BaseMessage.make_assistant_message(
+                role_name="CAMEL Assistant",
+                content=msg['content']
+            )
+        elif msg['role'] == 'system':
+            message = BaseMessage.make_assistant_message(
+                role_name="System",
+                content=msg['content']
+            )
+        else:
+            raise ValueError(f"Unrecognized role: {msg['role']}")
+        
+        # 记录消息到 agent 的记忆
+        if i == len(messages) - 1:
+            break
+        agent.record_message(message)
+
+    response = agent.step(message)
+    model_output = response.msgs[0].content
+    print("\nanswer:", model_output)
+    agent.reset()
+    return model_output
 
 def calculate_rouge_l_score(reference, hypothesis):
     rouge = Rouge()
@@ -108,13 +140,14 @@ def get_api_call(model_output):
         return None
 
 
-def main(data_level =1, api_test_enabled = False):
-    if data_level == 1:
-        print('Level 1')
-        data_dir = 'lv1-lv2-samples/level-1-given-desc'
-    elif data_level == 2:
-        print('Level 2')
-        data_dir = 'lv1-lv2-samples/level-2-toolsearcher'
+def eval_apibank(data_level, api_test_enabled = False, agent = None):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if data_level == 'level1':
+        print('level1')
+        data_dir = os.path.join(current_dir, 'lv1-lv2-samples/level-1-given-desc')
+    elif data_level == 'level2':
+        print('level2')
+        data_dir = os.path.join(current_dir, 'lv1-lv2-samples/level-2-toolsearcher')
     else:
         raise ValueError('Invalid data level: {}'.format(data_level))
     
@@ -125,7 +158,7 @@ def main(data_level =1, api_test_enabled = False):
         tool_search_enabled = False
     else:
         tool_search_enabled = True
-    chatgpt = GPT4Wrapper()
+
     api_call_prompt = '''
 Based on the given API description and the existing conversation history 1..t, please generate the API request that the AI should call in step t+1 and output it in the format of [ApiName(key1='value1', key2='value2', ...)], replace the ApiName with the actual API name, and replace the key and value with the actual parameters. 
 Your output should start with a square bracket "[" and end with a square bracket "]". Do not output any other explanation or prompt or the result of the API call in your output. 
@@ -196,14 +229,8 @@ API descriptions:
                     else:
                         raise ValueError('Invalid chat role: {}'.format(item['role']))
                     messages.append({'role': chat_role, 'content': chat_content})
-
-                response = chatgpt.call(messages)
-
-
-                if isinstance(chatgpt, ChatGPTWrapper):
-                    model_output = response['choices'][0]['message']['content']
-                else:
-                    model_output = response['choices'][0]['text'].strip()
+                
+                model_output = agent_call(messages, agent)
 
                 api_call = get_api_call(model_output)
                 if api_call:
@@ -242,12 +269,8 @@ API descriptions:
                     else:
                         raise ValueError('Invalid chat role: {}'.format(item['role']))
                     messages.append({'role': chat_role, 'content': chat_content})
-                response = chatgpt.call(messages)
 
-                if isinstance(chatgpt, ChatGPTWrapper):
-                    model_output = response['choices'][0]['message']['content']
-                else:
-                    model_output = response['choices'][0]['text'].strip()
+                model_output = agent_call(messages, agent)
 
                 if model_output:
                     score = evaluator.evaluate(sample_id, model_output)
@@ -269,4 +292,3 @@ API descriptions:
         logging.info('Correct API calls: {}'.format(correct_api_calls))
         logging.info('Accuracy: {:.4f}'.format(correct_api_calls / total_api_calls))
 
-main(data_level =1, api_test_enabled = False)

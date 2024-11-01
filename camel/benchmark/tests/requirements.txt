@@ -6,3 +6,4 @@ tree_sitter==0.20.4
 tenacity==8.2.2
 pydantic==1.10.7
 rank-bm25==0.2.2
+httpx==0.23.0

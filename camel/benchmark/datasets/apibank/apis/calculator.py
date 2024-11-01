@@ -1,4 +1,4 @@
-from .api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 
 class Calculator(API):
     description = 'This API provides basic arithmetic operations: addition, subtraction, multiplication, and division.'

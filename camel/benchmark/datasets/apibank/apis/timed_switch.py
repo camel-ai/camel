@@ -1,4 +1,4 @@
-from apis import API
+from camel.benchmark.datasets.apibank.apis import API
 import datetime
 
 class TimedSwitch(API):

@@ -1,4 +1,4 @@
-from .api import API
+from camel.benchmark.datasets.apibank.apis.api  import API
 import datetime
 
 class GetToday(API):

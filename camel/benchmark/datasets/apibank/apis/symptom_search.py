@@ -1,4 +1,4 @@
-from apis.api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 
 class SymptomSearch(API):
     description = 'This API searches for a given symptom.'

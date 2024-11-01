@@ -3,7 +3,7 @@ import logging
 logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
 
 import json
-from apis.api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 import os
 
 class ToolSearcher(API):

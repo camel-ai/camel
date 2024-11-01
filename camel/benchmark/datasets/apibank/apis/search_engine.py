@@ -1,4 +1,4 @@
-from apis.api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 from rank_bm25 import BM25Okapi
 import numpy as np
 import nltk

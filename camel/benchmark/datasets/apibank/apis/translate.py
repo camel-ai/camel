@@ -1,4 +1,4 @@
-from apis.api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 # from api import API
 import googletrans
 from googletrans import Translator

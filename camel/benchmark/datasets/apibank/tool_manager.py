@@ -1,29 +1,55 @@
-from apis.tool_search import ToolSearcher
-from apis import API
+from .apis.tool_search import ToolSearcher
+from .apis import API
 import os
 import json
-from api_call_extraction import parse_api_call
+from .api_call_extraction import parse_api_call
+import importlib.util
+
+# class ToolManager:
+#     def __init__(self, apis_dir='./apis') -> None:
+#         import importlib.util
+        
+#         apis_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apis')
+#         all_apis = []
+#         # import all the file in the apis folder, and load all the classes
+#         except_files = ['__init__.py', 'api.py']
+#         for file in os.listdir(apis_dir):
+#             print("file:",file)
+#             if file.endswith('.py') and file not in except_files:
+#                 api_file = file.split('.')[0]
+#                 basename = os.path.basename(apis_dir)
+#                 print(f'"package name:", {basename}.{api_file}')
+#                 module = importlib.import_module(f'{basename}.{api_file}')
+#                 classes = [getattr(module, x) for x in dir(module) if isinstance(getattr(module, x), type)]
+#                 for cls in classes:
+#                     if issubclass(cls, API) and cls is not API:
+#                         all_apis.append(cls)
+
 class ToolManager:
     def __init__(self, apis_dir='./apis') -> None:
-        import importlib.util
-
+        apis_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'apis')
         all_apis = []
-        # import all the file in the apis folder, and load all the classes
         except_files = ['__init__.py', 'api.py']
         for file in os.listdir(apis_dir):
             if file.endswith('.py') and file not in except_files:
-                api_file = file.split('.')[0]
-                basename = os.path.basename(apis_dir)
-                module = importlib.import_module(f'{basename}.{api_file}')
-                classes = [getattr(module, x) for x in dir(module) if isinstance(getattr(module, x), type)]
-                for cls in classes:
-                    if issubclass(cls, API) and cls is not API:
-                        all_apis.append(cls)
+                module_name = file[:-3]  # Remove the .py extension
+                module_path = os.path.join(apis_dir, file)
 
+                # Load the module from the file path
+                spec = importlib.util.spec_from_file_location(module_name, module_path)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    classes = [getattr(module, x) for x in dir(module) if isinstance(getattr(module, x), type)]
+                    for cls in classes:
+                        if issubclass(cls, API) and cls is not API:
+                            all_apis.append(cls)
+                else:
+                    print(f"Could not load module {module_name} from {module_path}")
         classes = all_apis
 
         self.init_databases = {}
-        init_database_dir = './init_database'
+        init_database_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), './init_database')
         for file in os.listdir(init_database_dir):
             if file.endswith('.json'):
                 database_name = file.split('.')[0]

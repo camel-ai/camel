@@ -1,4 +1,4 @@
-from apis.api import API
+from camel.benchmark.datasets.apibank.apis.api import API
 
 class SpeechRecognition(API):
     description = 'This API recognizes the speech from a given audio url.'
