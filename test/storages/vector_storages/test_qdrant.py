@@ -73,6 +73,9 @@ def test_multiple_local_clients() -> None:
     status2 = storage2.status()
     assert status2.vector_count == 0
 
+    storage1.close_client()
+    storage2.close_client()
+
     shutil.rmtree(tmpdir)
 
 
