@@ -107,7 +107,10 @@ class QdrantStorage(BaseVectorStorage):
             hasattr(self, "delete_collection_on_del")
             and self.delete_collection_on_del
         ):
-            self._delete_collection(self.collection_name)
+            try:
+                self._delete_collection(self.collection_name)
+            except RuntimeError:
+                pass
 
     def _create_client(
         self,
@@ -309,7 +312,7 @@ class QdrantStorage(BaseVectorStorage):
 
     def delete(
         self,
-        ids: Optional[List[int]] = None,
+        ids: Optional[List[str]] = None,
         payload_filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
@@ -377,7 +380,7 @@ class QdrantStorage(BaseVectorStorage):
 
             op_info = self._client.delete(
                 collection_name=self.collection_name,
-                points_selector={"filter": Filter(must=filter_conditions)},
+                points_selector=Filter(must=filter_conditions),
                 **kwargs,
             )
 
@@ -436,7 +439,7 @@ class QdrantStorage(BaseVectorStorage):
             with_payload=True,
             with_vectors=True,
             limit=query.top_k,
-            filter=search_filter,
+            query_filter=search_filter,
             **kwargs,
         )
 

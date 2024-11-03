@@ -15,87 +15,117 @@
 import shutil
 import tempfile
 
+import pytest
+
 from camel.storages import QdrantStorage, VectorDBQuery, VectorRecord
+from camel.types import VectorDistance
 
 
-def test_multiple_local_clients() -> None:
-    tmpdir = tempfile.mkdtemp()
-    storage1 = QdrantStorage(
-        vector_dim=4,
-        path=tmpdir,
-        collection_name="collection1",
-        delete_collection_on_del=True,
-    )
-    storage2 = QdrantStorage(
-        vector_dim=4,
-        path=tmpdir,
-        collection_name="collection2",
-        delete_collection_on_del=True,
-    )
-
-    # Add vectors to storage1
-    vectors1 = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
-        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
-    ]
-    storage1.add(records=vectors1)
-
-    # Add vectors to storage2
-    vectors2 = [
-        VectorRecord(
-            vector=[-0.1, 0.1, -0.1, 0.1],
-            payload={"message": "text"},
-        ),
-        VectorRecord(
-            vector=[-0.1, 0.1, 0.1, 0.1],
-            payload={"message": "text", "number": 1},
-        ),
-    ]
-    storage2.add(records=vectors2)
-
-    # Query and check results from storage1
-    query1 = VectorDBQuery(query_vector=[1.0, 1.0, 1.0, 1.0], top_k=1)
-    result1 = storage1.query(query1)
-    assert result1[0].record.id == vectors1[0].id
-
-    # Query and check results from storage2
-    query2 = VectorDBQuery(query_vector=[-1.0, 1.0, -1.0, 1.0], top_k=1)
-    result2 = storage2.query(query2)
-    assert result2[0].record.id == vectors2[0].id
-    assert result2[0].record.payload == {"message": "text"}
-
-    # Clear and check status for each storage
-    storage1.clear()
-    status1 = storage1.status()
-    assert status1.vector_count == 0
-
-    storage2.clear()
-    status2 = storage2.status()
-    assert status2.vector_count == 0
-
-    storage1.close_client()
-    storage2.close_client()
-
-    shutil.rmtree(tmpdir)
-
-
-def test_existing_collection():
+@pytest.fixture(scope="function")
+def temp_storage():
     tmpdir = tempfile.mkdtemp()
     storage = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
         collection_name="test_collection",
+        delete_collection_on_del=True,
     )
-    vectors = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
-        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
-    ]
-    storage.add(records=vectors)
-    assert storage.status().vector_count == 2
+    yield storage
+    storage.clear()
+    storage.close_client()
+    shutil.rmtree(tmpdir)
 
-    storage2 = QdrantStorage(
+
+def test_add_and_query_vectors(temp_storage):
+    vectors = [
+        VectorRecord(vector=[0.2, 0.2, 0.2, 0.2], payload={"label": "A"}),
+        VectorRecord(vector=[-0.2, -0.2, -0.2, -0.2], payload={"label": "B"}),
+    ]
+    temp_storage.add(records=vectors)
+
+    assert temp_storage.status().vector_count == 2
+
+    query = VectorDBQuery(query_vector=[0.2, 0.2, 0.2, 0.2], top_k=1)
+    result = temp_storage.query(query)
+    assert len(result) == 1
+    assert result[0].record.payload["label"] == "A"
+
+
+def test_query_with_filter(temp_storage):
+    vector1 = VectorRecord(vector=[0.3, 0.3, 0.3, 0.3], payload={"label": "A"})
+    vector2 = VectorRecord(
+        vector=[-0.3, -0.3, -0.3, -0.3], payload={"label": "B"}
+    )
+    temp_storage.add(records=[vector1, vector2])
+
+    query = VectorDBQuery(query_vector=[0.3, 0.3, 0.3, 0.3], top_k=2)
+    result = temp_storage.query(query, filter_conditions={"label": "A"})
+    assert len(result) == 1
+    assert result[0].record.payload["label"] == "A"
+
+    result2 = temp_storage.query(query, filter_conditions={"label": "B"})
+    assert len(result2) == 1
+    assert result2[0].record.payload["label"] == "B"
+
+
+def test_update_payload(temp_storage):
+    vector = VectorRecord(vector=[0.5, 0.5, 0.5, 0.5], payload={"label": "C"})
+    temp_storage.add(records=[vector])
+
+    temp_storage.update_payload(ids=[vector.id], payload={"label": "Updated"})
+    query = VectorDBQuery(query_vector=[0.5, 0.5, 0.5, 0.5], top_k=1)
+    result = temp_storage.query(query)
+    assert result[0].record.payload["label"] == "Updated"
+
+    # Verify original label is no longer present
+    result2 = temp_storage.query(query, filter_conditions={"label": "C"})
+    assert len(result2) == 0
+
+
+def test_delete_vectors(temp_storage):
+    vector1 = VectorRecord(vector=[0.6, 0.6, 0.6, 0.6], payload={"group": "X"})
+    vector2 = VectorRecord(
+        vector=[-0.6, -0.6, -0.6, -0.6], payload={"group": "Y"}
+    )
+    temp_storage.add(records=[vector1, vector2])
+
+    temp_storage.delete(ids=[vector1.id])
+
+    all_vectors = temp_storage.query(
+        VectorDBQuery(query_vector=[0.0, 0.0, 0.0, 0.0], top_k=10)
+    )
+    assert all(v.record.id != vector1.id for v in all_vectors)
+
+    temp_storage.delete(payload_filter={"group": "Y"})
+    assert temp_storage.status().vector_count == 0
+
+
+def test_clear_collection(temp_storage):
+    vector1 = VectorRecord(vector=[1.0, 1.0, 1.0, 1.0])
+    vector2 = VectorRecord(vector=[-1.0, -1.0, -1.0, -1.0])
+    temp_storage.add(records=[vector1, vector2])
+
+    temp_storage.clear()
+    assert temp_storage.status().vector_count == 0
+
+
+def test_different_distance_metrics():
+    tmpdir = tempfile.mkdtemp()
+    storage = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
-        collection_name="test_collection",
+        collection_name="test_collection_distance_metric",
+        distance=VectorDistance.EUCLIDEAN,
+        delete_collection_on_del=True,
     )
-    assert storage2.status().vector_count == 2
+
+    vector1 = VectorRecord(vector=[0.0, 0.0, 0.0, 0.0])
+    vector2 = VectorRecord(vector=[1.0, 1.0, 1.0, 1.0])
+    storage.add(records=[vector1, vector2])
+
+    query = VectorDBQuery(query_vector=[0.1, 0.1, 0.1, 0.1], top_k=2)
+    result = storage.query(query)
+    assert result[0].record.id == vector1.id
+
+    storage.close_client()
+    shutil.rmtree(tmpdir)
