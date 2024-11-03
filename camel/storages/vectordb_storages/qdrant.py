@@ -12,7 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -310,6 +313,10 @@ class QdrantStorage(BaseVectorStorage):
                 f"{op_info}"
             )
 
+    def delete_collection(self) -> None:
+        """Deletes the entire collection in the Qdrant storage."""
+        self._delete_collection(self.collection_name)
+
     def delete(
         self,
         ids: Optional[List[str]] = None,
@@ -469,6 +476,6 @@ class QdrantStorage(BaseVectorStorage):
         pass
 
     @property
-    def client(self) -> Any:
+    def client(self) -> "QdrantClient":
         r"""Provides access to the underlying vector database client."""
         return self._client

@@ -28,10 +28,9 @@ def temp_storage():
         vector_dim=4,
         path=tmpdir,
         collection_name="test_collection",
-        delete_collection_on_del=True,
     )
     yield storage
-    storage.clear()
+    storage.delete_collection()
     storage.close_client()
     shutil.rmtree(tmpdir)
 
@@ -129,3 +128,19 @@ def test_different_distance_metrics():
 
     storage.close_client()
     shutil.rmtree(tmpdir)
+
+
+def test_delete_collection(temp_storage):
+    vectors = [
+        VectorRecord(vector=[0.2, 0.2, 0.2, 0.2], payload={"label": "A"}),
+        VectorRecord(vector=[-0.2, -0.2, -0.2, -0.2], payload={"label": "B"}),
+    ]
+    temp_storage.add(records=vectors)
+
+    assert temp_storage.status().vector_count == 2
+
+    temp_storage.delete_collection()
+
+    assert not temp_storage.client.collection_exists(
+        temp_storage.collection_name
+    )
