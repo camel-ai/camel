@@ -336,8 +336,8 @@ class QdrantStorage(BaseVectorStorage):
             **kwargs (Any): Additional keyword arguments.
 
         Examples:
-            >>> # Delete points with IDs 1, 2, and 3
-            >>> storage.delete(ids=[1, 2, 3])
+            >>> # Delete points with IDs "1", "2", and "3"
+            >>> storage.delete(ids=["1", "2", "3"])
             >>> # Delete points with payload filter
             >>> storage.delete(payload_filter={"name": "Alice"})
 
@@ -352,6 +352,7 @@ class QdrantStorage(BaseVectorStorage):
                 matching the `payload_filter` will be deleted.
         """
         from qdrant_client.http.models import (
+            Condition,
             FieldCondition,
             Filter,
             MatchValue,
@@ -368,7 +369,9 @@ class QdrantStorage(BaseVectorStorage):
         if ids:
             op_info = self._client.delete(
                 collection_name=self.collection_name,
-                points_selector=PointIdsList(points=ids),
+                points_selector=PointIdsList(
+                    points=cast(List[Union[int, str]], ids)
+                ),
                 **kwargs,
             )
             if op_info.status != UpdateStatus.COMPLETED:
@@ -379,15 +382,16 @@ class QdrantStorage(BaseVectorStorage):
             return
 
         if payload_filter:
-            filter_conditions = []
-            for key, value in payload_filter.items():
-                filter_conditions.append(
-                    FieldCondition(key=key, match=MatchValue(value=value))
-                )
+            filter_conditions = [
+                FieldCondition(key=key, match=MatchValue(value=value))
+                for key, value in payload_filter.items()
+            ]
 
             op_info = self._client.delete(
                 collection_name=self.collection_name,
-                points_selector=Filter(must=filter_conditions),
+                points_selector=Filter(
+                    must=cast(List[Condition], filter_conditions)
+                ),
                 **kwargs,
             )
 
@@ -425,6 +429,7 @@ class QdrantStorage(BaseVectorStorage):
                 storage based on similarity to the query vector.
         """
         from qdrant_client.http.models import (
+            Condition,
             FieldCondition,
             Filter,
             MatchValue,
@@ -437,7 +442,7 @@ class QdrantStorage(BaseVectorStorage):
                 FieldCondition(key=key, match=MatchValue(value=value))
                 for key, value in filter_conditions.items()
             ]
-            search_filter = Filter(must=must_conditions)
+            search_filter = Filter(must=cast(List[Condition], must_conditions))
 
         # Execute the search with optional filter
         search_result = self._client.search(
