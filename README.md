@@ -36,7 +36,14 @@ ______________________________________________________________________
 
 Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org/camel/wechat.png) or [*Slack*](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)) in pushing the boundaries of finding the scaling laws of agents.
 
-## Try it yourself
+## What Can You Build With CAMEL?
+
+
+## Why Should You Use CAMEL?
+
+
+
+## Try It Yourself
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
 <p align="center">
@@ -134,7 +141,22 @@ Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/mast
 
 ## Documentation
 
-[CAMEL package documentation pages](https://camel-ai.github.io/camel/).
+The [complete documentation](https://camel-ai.github.io/camel/) pages for the CAMEL package. Also, detailed tutorials for each part are provided below:
+
+| Agents  |   |   |   |
+|---|---|---|---|
+| [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html) | [Critic Agents and Tree Search](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html) |
+
+| Key Modules |  |  |  |  |  |  |  |  |  |  |  |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| [Models](https://docs.camel-ai.org/key_modules/models.html) | [Message](https://docs.camel-ai.org/key_modules/messages.html) | [Memory](https://docs.camel-ai.org/key_modules/memory.html) | [Tools](https://docs.camel-ai.org/key_modules/tools.html) | [Prompt](https://docs.camel-ai.org/key_modules/prompts.html) | [Task](https://docs.camel-ai.org/key_modules/tasks.html) | [Loaders](https://docs.camel-ai.org/key_modules/loaders.html) | [Storages](https://docs.camel-ai.org/key_modules/storages.html) | [Society](https://docs.camel-ai.org/key_modules/society.html) | [Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html) | [Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html) | [Workforce](https://docs.camel-ai.org/key_modules/workforce.html) |
+
+| Cookbooks |  |  |  |  |  |
+|---|---|---|---|---|---|
+| [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html) | [Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html) |[ Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html) | [Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html) |
+| [Using Tools from Composio](https://docs.camel-ai.org/cookbooks/agents_with_tools_from_Composio.html) | [Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html) | [RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html) | [Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html) | [Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html) | [Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html) |
+| [Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html) | [Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html) | [Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html) | [Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html) |  |  |
+
 
 ## Example
 
@@ -270,7 +292,21 @@ Please note that the environment variable is session-specific. If you open a new
 We implemented amazing research ideas from other works for you to build, compare and customize your agents. If you use any of these modules, please kindly cite the original works:
 - `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
 
+## Other Research Works Based on Camel
+- [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?
+
+- [CRAB](https://crab.camel-ai.org/): Cross-environment Agent Benchmark for Multimodal Language Model Agents.
+
+- OASIS: Open Agents Social Interaction Simulations on a Large Scale.
+
+We warmly invite you to use CAMEL for your impactful research.
+
 ## News
+📢 Added the Workforce module to the 🐫 CAMEL framework! For more details, see the [post](https://x.com/CamelAIOrg/status/1851682063830720912). (Oct 31, 2024)
+- Added subprocess support for ollama and vllm_project models. (Oct, 29, 2024)
+- Integrated firecrawl_dev's Map into the 🐫 CAMEL framework. (Oct, 22, 2024)
+- Integrated Nvidia's Llama-3.1-Nemotron-70b-Instruct! (Oct, 17, 2024)
+- ...
 - Released AI Society and Code dataset (April 2, 2023)
 - Initial release of `CAMEL` python library (March 21, 2023)
 
