@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import uuid
 from collections import defaultdict
 from collections.abc import Callable
 from typing import (
@@ -30,6 +31,7 @@ from typing import (
 )
 
 from openai.types.chat import ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
@@ -333,12 +335,10 @@ class ChatAgent(BaseAgent):
     If you choose to call a function ONLY reply in the following format with no
     prefix or suffix:
 
-    <function=example_function_name>{{"example_name": "example_value"}}
-    </function>
+    <function=example_function_name>{{"example_name": "example_value"}}</function>
 
     Reminder:
-    - Function calls MUST follow the specified format, start with <function=
-      and end with </function>
+    - Function calls MUST follow the specified format, start with <function= and end with </function>
     - Required parameters MUST be specified
     - Only call one function at a time
     - Put the entire function call reply on one line
@@ -558,7 +558,7 @@ class ChatAgent(BaseAgent):
                 role_name="Assistant", content=tool_prompt
             )
             self.update_memory(
-                tool_sys_msg, OpenAIBackendRole.ASSISTANT
+                tool_sys_msg, OpenAIBackendRole.SYSTEM
             )  # Not all LLMs support system msg
             self.tool_prompt_added = True
 
@@ -596,11 +596,32 @@ class ChatAgent(BaseAgent):
                 )
                 or (
                     not self.model_type.support_native_tool_calling
-                    and "</function>"  # type: ignore[operator]
+                    and "function"  # type: ignore[operator]
                     not in response.choices[0].message.content
                 )
             ):
                 break
+
+            if (
+                self.is_tools_added()
+                and not self.model_type.support_native_tool_calling
+            ):
+                parsed_content = self._parse_tool_response(
+                    response.choices[0].message.content  # type: ignore[arg-type]
+                )
+                if parsed_content:
+                    response.choices[0].message.tool_calls = [
+                        ChatCompletionMessageToolCall(
+                            id=str(uuid.uuid4()),
+                            function=Function(
+                                arguments=str(
+                                    parsed_content["arguments"]
+                                ).replace("'", '"'),
+                                name=str(parsed_content["function"]),
+                            ),
+                            type="function",
+                        )
+                    ]
 
             # Parse the function call from response content if available
             if response.choices[0].message.tool_calls:
