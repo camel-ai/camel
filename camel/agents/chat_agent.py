@@ -586,9 +586,19 @@ class ChatAgent(BaseAgent):
                 response_id,
             ) = self._step_model_response(openai_messages, num_tokens)
 
-            # Exit loop if response is not a function call, indicating a standard message response
-            if not self.is_tools_added() or not isinstance(
-                response, ChatCompletion
+            # Exit loop if response does not involve a tool call, indicating a standard response
+            if (
+                not self.is_tools_added()
+                or not isinstance(response, ChatCompletion)
+                or (
+                    self.model_type.support_native_tool_calling
+                    and response.choices[0].message.tool_calls is None
+                )
+                or (
+                    not self.model_type.support_native_tool_calling
+                    and "</function>"  # type: ignore[operator]
+                    not in response.choices[0].message.content
+                )
             ):
                 break
 
