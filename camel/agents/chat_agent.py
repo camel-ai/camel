@@ -192,30 +192,28 @@ class ChatAgent(BaseAgent):
             self.set_output_language(self.output_language)
 
         # Initialize tools
-        all_tools = []
-        self.external_tool_names = []
-        if tools:
-            func_tools = self._initialize_tools(tools)
-            all_tools = func_tools
-        if external_tools:
-            external_func_tools = self._initialize_tools(external_tools)
-            all_tools = all_tools + external_func_tools
-            # Create tool dictionaries and configure backend tools if necessary
-            self.external_tool_names = [
-                tool.get_function_name() for tool in external_func_tools
-            ]
-        self.func_dict = (
-            {tool.get_function_name(): tool.func for tool in all_tools}
-            if all_tools
-            else {}
+        self.tools: List[FunctionTool] = (
+            self._initialize_tools(tools) if tools else []
         )
+        self.external_tools: List[FunctionTool] = (
+            self._initialize_tools(external_tools) if external_tools else []
+        )
+        self.external_tool_names: List[str] = [
+            tool.get_function_name() for tool in self.external_tools
+        ]
+        self.all_tools = self.tools + self.external_tools or []
 
-        if all_tools and not self.model_backend.model_config_dict.get("tools"):
-            tool_schema_list = [
-                tool.get_openai_tool_schema() for tool in all_tools
+        # Create tool dictionaries and configure backend tools if necessary
+        self.func_dict = {
+            tool.get_function_name(): tool.func for tool in self.all_tools
+        }
+
+        if self.all_tools and not self.model_backend.model_config_dict.get(
+            "tools"
+        ):
+            self.model_backend.model_config_dict['tools'] = [
+                tool.get_openai_tool_schema() for tool in self.all_tools
             ]
-            self.model_backend.model_config_dict['tools'] = tool_schema_list
-            self.tool_schema_list = tool_schema_list
 
         # Set up model configuration and memory management
         self.model_config_dict = self.model_backend.model_config_dict
@@ -248,6 +246,61 @@ class ChatAgent(BaseAgent):
             func_tools.append(tool)
         return func_tools
 
+    def add_tool(
+        self, tool: Union[FunctionTool, Callable], is_external: bool = False
+    ) -> None:
+        r"""Add a tool to the agent, specifying if it's an external tool."""
+        initialized_tool = self._initialize_tools([tool])
+
+        if is_external:
+            self.external_tools = (
+                self.external_tools or []
+            ) + initialized_tool
+            self.external_tool_names.extend(
+                tool.get_function_name() for tool in initialized_tool
+            )
+        else:
+            self.tools = (self.tools or []) + initialized_tool
+
+        # Reinitialize func_dict to include all tools
+        self.all_tools = (self.tools or []) + (self.external_tools or [])
+        self.func_dict = {
+            tool.get_function_name(): tool.func for tool in self.all_tools
+        }
+
+    def remove_tool(self, tool_name: str, is_external: bool = False) -> bool:
+        r"""Remove a tool by name, specifying if it's an external tool."""
+        tool_list = self.external_tools if is_external else self.tools
+        if not tool_list:
+            return False
+
+        for tool in tool_list:
+            if tool.get_function_name() == tool_name:
+                tool_list.remove(tool)
+                if is_external:
+                    self.external_tool_names.remove(tool_name)
+                # Reinitialize the tool dictionary
+                self.all_tools = (self.tools or []) + (
+                    self.external_tools or []
+                )
+                self.func_dict = {
+                    tool.get_function_name(): tool.func
+                    for tool in self.all_tools
+                }
+                return True
+        return False
+
+    def list_tools(self) -> dict:
+        r"""List all tools, separated into normal and external tools."""
+        normal_tools = [
+            tool.get_function_name() for tool in (self.tools or [])
+        ]
+        external_tools = [
+            tool.get_function_name() for tool in (self.external_tools or [])
+        ]
+
+        return {"normal_tools": normal_tools, "external_tools": external_tools}
+
     # ruff: noqa: E501
     def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
         r"""Generates a tool prompt based on the provided tool schema list.
@@ -272,9 +325,7 @@ class ChatAgent(BaseAgent):
 
         tool_prompt_str = "\n".join(tool_prompts)
 
-        final_prompt = f'''
-    # Tool prompt
-    TOOL_PROMPT = f"""
+        final_prompt = f"""
     You have access to the following functions:
 
     {tool_prompt_str}
@@ -294,7 +345,6 @@ class ChatAgent(BaseAgent):
     - If there is no function call available, answer the question like normal 
       with your current knowledge and do not tell the user about function calls
     """
-    '''
         return final_prompt
 
     def _parse_tool_response(self, response: str):
@@ -481,7 +531,8 @@ class ChatAgent(BaseAgent):
                 `user` to indicate an external message.
             response_format (Optional[Type[BaseModel]], optional): Pydantic
                 model defining the expected structure of the response, used to
-                generate a structured response if provided. (default: None)
+                generate a structured response if provided. (default:
+                :obj:`None`)
 
         Returns:
             ChatAgentResponse: Contains output messages, a boolean for session
@@ -495,17 +546,19 @@ class ChatAgent(BaseAgent):
             )
 
         # Add tool prompt if model does not support native tool calling and tool prompt not yet added
-        if not self.model_type.support_native_tool_calling:
-            if (
-                self.model_backend.model_config_dict.get("tools")
-                and not self.tool_prompt_added
-            ):
-                tool_prompt = self._generate_tool_prompt(self.tool_schema_list)
-                tool_sys_msg = BaseMessage.make_assistant_message(
-                    role_name="Assistant", content=tool_prompt
-                )
-                self.update_memory(tool_sys_msg, OpenAIBackendRole.SYSTEM)
-                self.tool_prompt_added = True
+        if (
+            not self.model_type.support_native_tool_calling
+            and self.model_backend.model_config_dict.get("tools")
+            and not self.tool_prompt_added
+        ):
+            tool_prompt = self._generate_tool_prompt(
+                self.model_backend.model_config_dict['tools']
+            )
+            tool_sys_msg = BaseMessage.make_assistant_message(
+                role_name="Assistant", content=tool_prompt
+            )
+            self.update_memory(tool_sys_msg, OpenAIBackendRole.SYSTEM)
+            self.tool_prompt_added = True
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
