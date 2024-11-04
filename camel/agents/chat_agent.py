@@ -557,7 +557,9 @@ class ChatAgent(BaseAgent):
             tool_sys_msg = BaseMessage.make_assistant_message(
                 role_name="Assistant", content=tool_prompt
             )
-            self.update_memory(tool_sys_msg, OpenAIBackendRole.SYSTEM)
+            self.update_memory(
+                tool_sys_msg, OpenAIBackendRole.ASSISTANT
+            )  # Not all LLMs support system msg
             self.tool_prompt_added = True
 
         # Add user input to memory
