@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Union
 import base64
-from PIL import Image
 import io
+from typing import Any, Dict, List, Optional, Union
+
 from openai import Stream
+from PIL import Image
 from vllm import LLM, SamplingParams
-from vllm.multimodal.utils import fetch_image
 
 from camel.configs import PHI_API_PARAMS, PHIConfig
 from camel.messages import OpenAIMessage

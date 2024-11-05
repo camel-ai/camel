@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from io import BytesIO
+
 import requests
 from PIL import Image
-from io import BytesIO
 
 from camel.agents import ChatAgent
 from camel.configs import PHIConfig
@@ -43,9 +44,7 @@ response = requests.get(url)
 img = Image.open(BytesIO(response.content))
 
 user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="""what's in the image?""",
-    image_list=[img]
+    role_name="User", content="""what's in the image?""", image_list=[img]
 )
 
 # Get response information
