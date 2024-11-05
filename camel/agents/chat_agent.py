@@ -913,7 +913,7 @@ class ChatAgent(BaseAgent):
             num_tokens,
         )
 
-    def _step_model_response(
+    def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
@@ -936,6 +936,71 @@ class ChatAgent(BaseAgent):
             output_messages, finish_reasons, usage_dict, response_id = (
                 self.handle_stream_response(response, num_tokens)
             )
+
+        return (
+            response,
+            output_messages,
+            finish_reasons,
+            usage_dict,
+            response_id,
+        )
+
+    def _step_model_response(
+        self,
+        openai_messages: List[OpenAIMessage],
+        num_tokens: int,
+    ) -> tuple[
+        Union[ChatCompletion, Stream],
+        List[BaseMessage],
+        List[str],
+        Dict[str, int],
+        str,
+    ]:
+        (
+            response,
+            output_messages,
+            finish_reasons,
+            usage_dict,
+            response_id,
+        ) = self._get_model_response(openai_messages, num_tokens)
+
+        # Some OpenAI compatible interfaces do not support the 'n' parameter.
+        # We will call the API multiple times until we accumulate the expected number of completion choices.
+        expected_completion_choices = self.model_backend.model_config_dict.get(
+            'n', 1
+        )
+        # Set the maximum number of attempts to the expected number of completion choices
+        # to limit the number of model calls
+        max_attempts = expected_completion_choices
+        while (
+            len(output_messages) < expected_completion_choices
+            and max_attempts > 0
+        ):
+            try:
+                logger.warning(
+                    f"{self.role_type}[{self.role_name}] expected {expected_completion_choices} completion choices, "
+                    f"but only {len(output_messages)} were returned. "
+                    f"I will make another call until I accumulate {expected_completion_choices} choices"
+                )
+                (
+                    new_response,
+                    new_output_messages,
+                    new_finish_reasons,
+                    new_usage_dict,
+                    new_response_id,
+                ) = self._get_model_response(openai_messages, num_tokens)
+
+                # Concatenate the new output messages to the original output messages
+                output_messages.extend(new_output_messages)
+                finish_reasons.extend(new_finish_reasons)
+                for k, v in new_usage_dict.items():
+                    usage_dict[k] = (usage_dict.get(k, 0) or 0) + (
+                        v if v is not None else 0
+                    )
+                response_id = new_response_id
+            finally:
+                max_attempts -= 1
+
         return (
             response,
             output_messages,
