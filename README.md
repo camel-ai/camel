@@ -166,19 +166,22 @@ Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/mast
 
 The [complete documentation](https://camel-ai.github.io/camel/) pages for the CAMEL package. Also, detailed tutorials for each part are provided below:
 
-| Agents  |   |   |   |
-|---|---|---|---|
+### Agents
 | [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html) | [Critic Agents and Tree Search](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html) |
+|:---|:---|:---|:---|
 
-| Key Modules |  |  |  |  |  |  |  |  |  |  |  |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| [Models](https://docs.camel-ai.org/key_modules/models.html) | [Message](https://docs.camel-ai.org/key_modules/messages.html) | [Memory](https://docs.camel-ai.org/key_modules/memory.html) | [Tools](https://docs.camel-ai.org/key_modules/tools.html) | [Prompt](https://docs.camel-ai.org/key_modules/prompts.html) | [Task](https://docs.camel-ai.org/key_modules/tasks.html) | [Loaders](https://docs.camel-ai.org/key_modules/loaders.html) | [Storages](https://docs.camel-ai.org/key_modules/storages.html) | [Society](https://docs.camel-ai.org/key_modules/society.html) | [Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html) | [Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html) | [Workforce](https://docs.camel-ai.org/key_modules/workforce.html) |
 
-| Cookbooks |  |  |  |  |  |
-|---|---|---|---|---|---|
-| [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html) | [Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html) |[ Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html) | [Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html) |
-| [Using Tools from Composio](https://docs.camel-ai.org/cookbooks/agents_with_tools_from_Composio.html) | [Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html) | [RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html) | [Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html) | [Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html) | [Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html) |
+### Key Modules
+| [Models](https://docs.camel-ai.org/key_modules/models.html) | [Message](https://docs.camel-ai.org/key_modules/messages.html) | [Memory](https://docs.camel-ai.org/key_modules/memory.html) | [Tools](https://docs.camel-ai.org/key_modules/tools.html) | [Prompt](https://docs.camel-ai.org/key_modules/prompts.html) | [Task](https://docs.camel-ai.org/key_modules/tasks.html) | [Loaders](https://docs.camel-ai.org/key_modules/loaders.html) | [Storages](https://docs.camel-ai.org/key_modules/storages.html) | [Society](https://docs.camel-ai.org/key_modules/society.html) | [Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html) |
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html) | [Workforce](https://docs.camel-ai.org/key_modules/workforce.html) |  |  |  |  |  |  |  |  |
+
+### Cookbooks
+| [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html) | [Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html) |
+|:---|:---|:---|:---|
+| [Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html) | [Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html) | [Using Tools from Composio](https://docs.camel-ai.org/cookbooks/agents_with_tools_from_Composio.html) | [Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html) | [RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html) | [Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html) | [Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html) | [Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html) |
 | [Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html) | [Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html) | [Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html) | [Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html) |  |  |
+
 
 
 ## Examples
