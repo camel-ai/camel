@@ -12,14 +12,22 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Union
-
+import base64
+from PIL import Image
+import io
+from openai import Stream
 from vllm import LLM, SamplingParams
 from vllm.multimodal.utils import fetch_image
 
 from camel.configs import PHI_API_PARAMS, PHIConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    CompletionUsage,
+    ModelType,
+)
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
@@ -49,12 +57,6 @@ class PHIModel(BaseModelBackend):
 
     @property
     def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
@@ -62,10 +64,16 @@ class PHIModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, ChatCompletionChunk]:
-        question = messages[-1]['content']
-        image_urls = self.config.image_urls
-        image_data = [fetch_image(url) for url in image_urls]
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        question = messages[1]['content'][0]['text']
+        image_urls = messages[1]['content'][1]['image_url']
+        if not isinstance(image_urls, list):
+            image_urls = [image_urls]
+
+        image_data = messages[1]['content'][1]['image_url']['url']
+        base64_data = image_data.split(',')[1]
+        image_bytes = base64.b64decode(base64_data)
+        image_data = Image.open(io.BytesIO(image_bytes))
 
         sampling_params = SamplingParams(
             temperature=self.config.temperature,
@@ -85,23 +93,22 @@ class PHIModel(BaseModelBackend):
                 sampling_params=sampling_params,
             )
         elif self.config.method == "chat":
+            chat_messages = [
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": question}]
+                    + [
+                        {"type": "image_url", "image_url": {"url": url}}
+                        for url in image_urls
+                    ],
+                }
+            ]
             outputs = self.llm.chat(
-                [
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": question}]
-                        + [
-                            {"type": "image_url", "image_url": {"url": url}}
-                            for url in image_urls
-                        ],
-                    }
-                ],
-                sampling_params=sampling_params,
+                chat_messages, sampling_params=sampling_params
             )
         else:
             raise ValueError(f"Invalid method: {self.config.method}")
 
-        # Convert vLLM output to OpenAI-like format
         response = ChatCompletion(
             id="vllm_response",
             object="chat.completion",
@@ -117,11 +124,11 @@ class PHIModel(BaseModelBackend):
                     "finish_reason": "stop",
                 }
             ],
-            usage={
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0,
-            },
+            usage=CompletionUsage(
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            ),
         )
         return response
 
@@ -139,4 +146,4 @@ class PHIModel(BaseModelBackend):
 
     @property
     def stream(self) -> bool:
-        return False  # VLLM doesn't support streaming in this implementation
+        return False
