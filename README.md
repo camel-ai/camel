@@ -38,9 +38,32 @@ Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org
 
 ## What Can You Build With CAMEL?
 
+### 🤖 Customize Agents
+- Customizable agents are the fundamental entities of the CAMEL architecture. CAMEL empowers you to customize agents using our modular components for specific tasks.
+
+### ⚙️ Build Multi-Agent Systems
+- We propose a multi-agent framework to address agents' autonomous cooperation challenges, guiding agents toward task completion while maintaining human intentions.
+
+### 💻 Practical Applications
+- The CAMEL framework serves as a generic infrastructure for a wide range of multi-agent applications, including task automation, data generation, and world simulations.
+
 
 ## Why Should You Use CAMEL?
 
+1. Comprehensive Customization and Collaboration:
+
+    - Integrates over 20 advanced models and platforms (e.g., OpenAI models, open-source models, VLLMs).
+
+    - Supports extensive external tools (e.g., Twitter, Github, Goggle Maps, Reddit, Slack utilities).
+    - Includes memory and prompt components for deep customization.
+    - Facilitates complex multi-agent systems with advanced collaboration features.
+
+
+2. User-Friendly with Transparent Internal Structure:
+    - Designed for transparency and consistency in internal structure.
+
+    - Offers comprehensive tutorials and detailed docstrings for all functions.
+    - Ensures an approachable learning curve for newcomers.
 
 
 ## Try It Yourself
@@ -158,11 +181,7 @@ The [complete documentation](https://camel-ai.github.io/camel/) pages for the CA
 | [Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html) | [Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html) | [Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html) | [Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html) |  |  |
 
 
-## Example
-
-You can find a list of tasks for different sets of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
-
-As an example, to run the `role_playing.py` script:
+## Examples
 
 First, you need to add your OpenAI API key to system environment variables. The method to do this depends on your operating system and the shell you're using.
 
@@ -192,16 +211,108 @@ $env:OPENAI_API_BASE_URL="<inert your OpenAI API BASE URL>"  #(Should you utiliz
 
 Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
 
-After setting the OpenAI API key, you can run the script:
+
+Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
+
+After setting the OpenAI API key, you can run the `role_playing.py` script. Find tasks for various assistant-user roles [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
 
 ```bash
 # You can change the role pair and initial prompt in role_playing.py
 python examples/ai_society/role_playing.py
 ```
 
-Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
+Also feel free to run any that interest you among these scripts:
 
+```bash
+# You can change the role pair and initial prompt in these python files
 
+# Examples of two agents role-playing
+python examples/ai_society/role_playing.py
+
+# The agent answers questions by utilizing code execution tools.
+python examples/toolkits/code_execution_toolkit.py
+
+# Generating a knowledge graph with an agent
+python examples/knowledge_graph/knowledge_graph_agent_example.py  
+
+# Multiple agents collaborating to decompose and solve tasks
+python examples/workforce/multiple_single_agents.py 
+
+# Use agent to generate creative image
+python examples/vision/image_crafting.py
+```
+For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
+
+## Use Open AI Models as Backends
+- You can also customize your own agent after adding your OpenAI API key to system environment variables, such as running the script.
+    ```python
+    from camel.agents import ChatAgent
+    from camel.models import ModelFactory
+    from camel.types import ModelPlatformType, ModelType
+    from camel.configs import ChatGPTConfig
+
+    # Define the model, here in this case we use gpt-4o-mini
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=ChatGPTConfig().as_dict(), # [Optional] the config for model
+    )
+
+    sys_msg = 'You are a curious stone wondering about the universe.'
+
+    agent = ChatAgent(
+        system_message=sys_msg,
+        model=model,
+        message_window_size=10, # [Optional] the length for chat memory
+    )
+
+    # Define a user message
+    usr_msg = 'what is information in your mind?'
+
+    # Sending the message to the agent
+    response = agent.step(usr_msg)
+
+    # Check the response (just for illustrative purpose)
+    print(response.msgs[0].content)
+    ```
+- Advanced Features: Tool Usage
+    ```python
+    # Import the necessary tools
+    from camel.toolkits import MathToolkit, SearchToolkit
+
+    # Initialize the agent with list of tools
+    agent = ChatAgent(
+        system_message=sys_msg,
+        tools = [
+            *MathToolkit().get_tools(),
+            *SearchToolkit().get_tools(),
+        ]
+    )
+
+    # Let agent step the message
+    response = agent.step("What is CAMEL AI?")
+
+    # Check tool calling
+    print(response.info['tool_calls'])
+
+    # Get response content
+    print(response.msgs[0].content)
+    ```
+- Advanced Features: Memory
+    ```python
+    from camel.messages import BaseMessage
+
+    new_user_msg = BaseMessage.make_user_message(
+        role_name="CAMEL User",
+        content="This is a new user message would add to agent memory",
+    )
+
+    # Update the memory
+    agent.record_message(new_user_msg)
+
+    # Check the current memory
+    agent.memory.get_context()
+    ```
 ## Use Open-Source Models as Backends (ex. using Ollama to set Llama 3 locally)
 
 - Download [Ollama](https://ollama.com/download).
@@ -269,6 +380,8 @@ Please note that the environment variable is session-specific. If you open a new
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)
     ```
+
+
 
 ## Data (Hosted on Hugging Face)
 | Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |
