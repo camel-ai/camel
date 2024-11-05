@@ -332,11 +332,13 @@ class RolePlaying:
         """
         if self.model is not None:
             if assistant_agent_kwargs is None:
-                assistant_agent_kwargs = {}
-            assistant_agent_kwargs.update(dict(model=self.model))
+                assistant_agent_kwargs = {'model': self.model}
+            elif 'model' not in assistant_agent_kwargs:
+                assistant_agent_kwargs.update(dict(model=self.model))
             if user_agent_kwargs is None:
-                user_agent_kwargs = {}
-            user_agent_kwargs.update(dict(model=self.model))
+                user_agent_kwargs = {'model': self.model}
+            elif 'model' not in user_agent_kwargs:
+                user_agent_kwargs.update(dict(model=self.model))
 
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
