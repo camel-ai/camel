@@ -105,7 +105,7 @@ class RolePlaying:
         if model is not None:
             logger.warning(
                 "Model provided globally is set for all agents if not"
-                " already specified."
+                " already specified in agent_kwargs."
             )
 
         self.with_task_specify = with_task_specify
