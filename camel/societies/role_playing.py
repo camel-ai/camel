@@ -23,10 +23,10 @@ from camel.agents import (
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend
+from camel.models import BaseModelBackend, ModelFactory
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.types import RoleType, TaskType
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -55,7 +55,8 @@ class RolePlaying:
             If not specified, set the criteria to improve task performance.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. If specified, it will override the model in
-            all agents. (default: :obj:`None`)
+            all agents if not specified in agent-specific kwargs. (default:
+            :obj:`OpenAIModel` with `GPT_4O_MINI`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -103,16 +104,21 @@ class RolePlaying:
     ) -> None:
         if model is not None:
             logger.warning(
-                "The provided model will override the model settings in "
-                "all agents, including any configurations passed "
-                "through assistant_agent_kwargs, user_agent_kwargs, and "
-                "other agent-specific kwargs."
+                "Model provided globally is set for all agents if not"
+                " already specified."
             )
 
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
-        self.model = model
+        self.model: BaseModelBackend = (
+            model
+            if model is not None
+            else ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        )
         self.task_type = task_type
         self.task_prompt = task_prompt
 
@@ -204,8 +210,9 @@ class RolePlaying:
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
             if self.model is not None:
                 if task_specify_agent_kwargs is None:
-                    task_specify_agent_kwargs = {}
-                task_specify_agent_kwargs.update(dict(model=self.model))
+                    task_specify_agent_kwargs = {'model': self.model}
+                elif 'model' not in task_specify_agent_kwargs:
+                    task_specify_agent_kwargs.update(dict(model=self.model))
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -237,8 +244,9 @@ class RolePlaying:
         if self.with_task_planner:
             if self.model is not None:
                 if task_planner_agent_kwargs is None:
-                    task_planner_agent_kwargs = {}
-                task_planner_agent_kwargs.update(dict(model=self.model))
+                    task_planner_agent_kwargs = {'model': self.model}
+                elif 'model' not in task_planner_agent_kwargs:
+                    task_planner_agent_kwargs.update(dict(model=self.model))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
@@ -396,8 +404,9 @@ class RolePlaying:
                 )
                 if self.model is not None:
                     if critic_kwargs is None:
-                        critic_kwargs = {}
-                    critic_kwargs.update(dict(model=self.model))
+                        critic_kwargs = {'model': self.model}
+                    elif 'model' not in critic_kwargs:
+                        critic_kwargs.update(dict(model=self.model))
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
                     **(critic_kwargs or {}),
