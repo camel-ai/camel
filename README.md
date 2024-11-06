@@ -52,9 +52,9 @@ Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org
 
 1. Comprehensive Customization and Collaboration:
 
-    - Integrates over 20 advanced models and platforms (e.g., OpenAI models, open-source models, VLLMs).
+    - Integrates over 20 advanced model platforms (e.g., commercial models like OpenAI, open-source models such as Llama3, and self-deployment frameworks like Ollama.).
 
-    - Supports extensive external tools (e.g., Twitter, Github, Goggle Maps, Reddit, Slack utilities).
+    - Supports extensive external tools (e.g., Search, Twitter, Github, Goggle Maps, Reddit, Slack utilities).
     - Includes memory and prompt components for deep customization.
     - Facilitates complex multi-agent systems with advanced collaboration features.
 
@@ -62,7 +62,7 @@ Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org
 2. User-Friendly with Transparent Internal Structure:
     - Designed for transparency and consistency in internal structure.
 
-    - Offers comprehensive tutorials and detailed docstrings for all functions.
+    - Offers comprehensive [tutorials and detailed docstrings](https://docs.camel-ai.org/) for all functions.
     - Ensures an approachable learning curve for newcomers.
 
 
@@ -135,8 +135,6 @@ exit
 > ```
 
 
-
-
 Install `CAMEL` from source with conda and pip:
 ```sh
 # Create a conda virtual environment
@@ -167,22 +165,53 @@ Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/mast
 The [complete documentation](https://camel-ai.github.io/camel/) pages for the CAMEL package. Also, detailed tutorials for each part are provided below:
 
 ### Agents
-| [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html) | [Critic Agents and Tree Search](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html) |
-|:---|:---|:---|:---|
+Explore different types of agents, their roles, and their applications.
 
+- **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)**
+- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)**
+- **[Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)**
+- **[Critic Agents](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)**
+
+---
 
 ### Key Modules
-| [Models](https://docs.camel-ai.org/key_modules/models.html) | [Message](https://docs.camel-ai.org/key_modules/messages.html) | [Memory](https://docs.camel-ai.org/key_modules/memory.html) | [Tools](https://docs.camel-ai.org/key_modules/tools.html) | [Prompt](https://docs.camel-ai.org/key_modules/prompts.html) | [Task](https://docs.camel-ai.org/key_modules/tasks.html) | [Loaders](https://docs.camel-ai.org/key_modules/loaders.html) | [Storages](https://docs.camel-ai.org/key_modules/storages.html) | [Society](https://docs.camel-ai.org/key_modules/society.html) | [Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html) |
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html) | [Workforce](https://docs.camel-ai.org/key_modules/workforce.html) |  |  |  |  |  |  |  |  |
+Core components and utilities to build, operate, and enhance CAMEL-AI agents and societies.
+
+| Module | Description |
+|:---|:---|
+| **[Models](https://docs.camel-ai.org/key_modules/models.html)** | Model architectures and customization options for agent intelligence. |
+| **[Messages](https://docs.camel-ai.org/key_modules/messages.html)** | Messaging protocols for agent communication. |
+| **[Memory](https://docs.camel-ai.org/key_modules/memory.html)** | Memory storage and retrieval mechanisms. |
+| **[Tools](https://docs.camel-ai.org/key_modules/tools.html)** | Tools integration for specialized agent tasks. |
+| **[Prompts](https://docs.camel-ai.org/key_modules/prompts.html)** | Prompt engineering and customization. |
+| **[Tasks](https://docs.camel-ai.org/key_modules/tasks.html)** | Task creation and management for agent workflows. |
+| **[Loaders](https://docs.camel-ai.org/key_modules/loaders.html)** | Data loading tools for agent operation. |
+| **[Storages](https://docs.camel-ai.org/key_modules/storages.html)** | Storage solutions for agent. |
+| **[Society](https://docs.camel-ai.org/key_modules/society.html)** | Components for building agent societies and inter-agent collaboration. |
+| **[Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html)** | Embedding models for RAG. |
+| **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)** | Retrieval methods for knowledge access. |
+---
 
 ### Cookbooks
-| [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html) | [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html) | [Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html) | [Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html) |
-|:---|:---|:---|:---|
-| [Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html) | [Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html) | [Using Tools from Composio](https://docs.camel-ai.org/cookbooks/agents_with_tools_from_Composio.html) | [Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html) | [RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html) | [Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html) | [Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html) | [Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html) |
-| [Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html) | [Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html) | [Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html) | [Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html) |  |  |
+Practical guides and tutorials for implementing specific functionalities in CAMEL-AI agents and societies.
 
-
+| Cookbook | Description |
+|:---|:---|
+| **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
+| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
+| **[Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html)** | Advanced configurations for agent societies. |
+| **[Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html)** | Benchmarking models for performance. |
+| **[Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html)** | Best practices for message handling in agents. |
+| **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
+| **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html)** | Implementing memory systems in agents. |
+| **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
+| **[Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html)** | Techniques for effective prompt creation. |
+| **[Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html)** | Automating task generation for agents. |
+| **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html)** | Leveraging knowledge graphs with RAG. |
+| **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
+| **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |
+| **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
+| **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
 
 ## Examples
 
@@ -246,145 +275,9 @@ python examples/vision/image_crafting.py
 ```
 For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
 
-## Use Open AI Models as Backends
-- You can also customize your own agent after adding your OpenAI API key to system environment variables, such as running the script.
-    ```python
-    from camel.agents import ChatAgent
-    from camel.models import ModelFactory
-    from camel.types import ModelPlatformType, ModelType
-    from camel.configs import ChatGPTConfig
+## Utilize Various LLMs as Backends
 
-    # Define the model, here in this case we use gpt-4o-mini
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(), # [Optional] the config for model
-    )
-
-    sys_msg = 'You are a curious stone wondering about the universe.'
-
-    agent = ChatAgent(
-        system_message=sys_msg,
-        model=model,
-        message_window_size=10, # [Optional] the length for chat memory
-    )
-
-    # Define a user message
-    usr_msg = 'what is information in your mind?'
-
-    # Sending the message to the agent
-    response = agent.step(usr_msg)
-
-    # Check the response (just for illustrative purpose)
-    print(response.msgs[0].content)
-    ```
-- Advanced Features: Tool Usage
-    ```python
-    # Import the necessary tools
-    from camel.toolkits import MathToolkit, SearchToolkit
-
-    # Initialize the agent with list of tools
-    agent = ChatAgent(
-        system_message=sys_msg,
-        tools = [
-            *MathToolkit().get_tools(),
-            *SearchToolkit().get_tools(),
-        ]
-    )
-
-    # Let agent step the message
-    response = agent.step("What is CAMEL AI?")
-
-    # Check tool calling
-    print(response.info['tool_calls'])
-
-    # Get response content
-    print(response.msgs[0].content)
-    ```
-- Advanced Features: Memory
-    ```python
-    from camel.messages import BaseMessage
-
-    new_user_msg = BaseMessage.make_user_message(
-        role_name="CAMEL User",
-        content="This is a new user message would add to agent memory",
-    )
-
-    # Update the memory
-    agent.record_message(new_user_msg)
-
-    # Check the current memory
-    agent.memory.get_context()
-    ```
-## Use Open-Source Models as Backends (ex. using Ollama to set Llama 3 locally)
-
-- Download [Ollama](https://ollama.com/download).
-- After setting up Ollama, pull the Llama3 model by typing the following command into the terminal:
-    ```bash
-    ollama pull llama3
-    ```
-- Run the script. Enjoy your Llama3 model, enhanced by CAMEL's excellent agents.
-    ```python
-    from camel.agents import ChatAgent
-    from camel.messages import BaseMessage
-    from camel.models import ModelFactory
-    from camel.types import ModelPlatformType
-
-    ollama_model = ModelFactory.create(
-        model_platform=ModelPlatformType.OLLAMA,
-        model_type="llama3",
-        model_config_dict={"temperature": 0.4},
-    )
-
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User", content="Say hi to CAMEL"
-    )
-    assistant_response = agent.step(user_msg)
-    print(assistant_response.msg.content)
-    ```
-
-## Use Open-Source Models as Backends (ex. using vLLM to set Phi-3 locally)
-- [Install vLLM](https://docs.vllm.ai/en/latest/getting_started/installation.html)
-- After setting up vLLM, start an OpenAI compatible server for example by
-    ```bash
-    python -m vllm.entrypoints.openai.api_server --model microsoft/Phi-3-mini-4k-instruct --api-key vllm --dtype bfloat16
-    ```
-- Create and run following script (more details please refer to this [example](https://github.com/camel-ai/camel/blob/master/examples/models/vllm_model_example.py))
-    ```python
-    from camel.agents import ChatAgent
-    from camel.messages import BaseMessage
-    from camel.models import ModelFactory
-    from camel.types import ModelPlatformType
-
-    vllm_model = ModelFactory.create(
-        model_platform=ModelPlatformType.VLLM,
-        model_type="microsoft/Phi-3-mini-4k-instruct",
-        url="http://localhost:8000/v1",
-        model_config_dict={"temperature": 0.0},
-        api_key="vllm",
-    )
-
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="Say hi to CAMEL AI",
-    )
-    assistant_response = agent.step(user_msg)
-    print(assistant_response.msg.content)
-    ```
-
-
+For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models.html#).
 
 ## Data (Hosted on Hugging Face)
 | Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |
@@ -419,8 +312,8 @@ We warmly invite you to use CAMEL for your impactful research.
 
 ## News
 📢 Added the Workforce module to the 🐫 CAMEL framework! For more details, see the [post](https://x.com/CamelAIOrg/status/1851682063830720912). (Oct 31, 2024)
-- Added subprocess support for ollama and vllm_project models. (Oct, 29, 2024)
-- Integrated firecrawl_dev's Map into the 🐫 CAMEL framework. (Oct, 22, 2024)
+- Added subprocess support for Ollama and vLLM models. (Oct, 29, 2024)
+- Integrated Firecrawl's Map into the 🐫 CAMEL framework. (Oct, 22, 2024)
 - Integrated Nvidia's Llama-3.1-Nemotron-70b-Instruct! (Oct, 17, 2024)
 - ...
 - Released AI Society and Code dataset (April 2, 2023)
