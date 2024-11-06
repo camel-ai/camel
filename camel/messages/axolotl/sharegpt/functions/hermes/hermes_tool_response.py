@@ -28,8 +28,8 @@ class ToolResponse(BaseModel):
         pattern=r'^[a-zA-Z_][a-zA-Z0-9_]*$',
         description="The name of the tool that was called",
     )
-    content: Dict[str, Any] = Field(
-        description="The response content from the tool"
+    content: Any = Field(
+        description="The response content from the tool. Must be JSON serializable literal or object"
     )
 
     @field_validator('content')

@@ -23,7 +23,7 @@ class ShareGPTMessage(BaseModel):
         alias="from", description="The role of the message sender"
     )
     value: str = Field(
-        min_length=1,
+        min_length=0,
         max_length=100000,
         description="The content of the message",
     )

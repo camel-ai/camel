@@ -284,14 +284,26 @@ class BaseMessage:
         cls,
         message: ShareGPTMessage,
         function_format: FunctionCallFormatter = HermesFunctionFormatter(),
+        role_mapping=None,
     ) -> "BaseMessage":
-        """Convert ShareGPT message to BaseMessage or FunctionCallingMessage"""
-        role_mapping = {
-            "system": ["system", RoleType.USER],
-            "human": ["user", RoleType.USER],
-            "gpt": ["assistant", RoleType.ASSISTANT],
-            "tool": ["function", RoleType.ASSISTANT],
-        }
+        """Convert ShareGPT message to BaseMessage or FunctionCallingMessage.
+        Note tool calls and responses have an 'assistant' role in CAMEL
+
+        Args:
+            message (ShareGPTMessage): ShareGPT message to convert
+            function_format (FunctionCallFormatter, optional): Function call formatter to use. Defaults to HermesFunctionFormatter().
+            role_mapping (Dict[str, List[str, RoleType]], optional): Role mapping to use. Defaults to a CAMEL specific mapping.
+
+        Returns:
+            BaseMessage: Converted message
+        """
+        if role_mapping is None:
+            role_mapping = {
+                "system": ["system", RoleType.USER],
+                "human": ["user", RoleType.USER],
+                "gpt": ["assistant", RoleType.ASSISTANT],
+                "tool": ["assistant", RoleType.ASSISTANT],
+            }
         role_name, role_type = role_mapping[message.from_]
 
         # Check if this is a function-related message

@@ -73,7 +73,8 @@ class FunctionCallingMessage(BaseMessage):
         function_format: FunctionCallFormatter = HermesFunctionFormatter(),
     ) -> ShareGPTMessage:
         """Convert FunctionCallingMessage to ShareGPT message"""
-        if self.role_name == "assistant":
+        # The role of the message is an unreliable indicator of whether it is a function call or response, so use result
+        if self.result is None:
             # This is a function call
             content = function_format.format_tool_call(
                 self.content or "",
@@ -81,7 +82,7 @@ class FunctionCallingMessage(BaseMessage):
                 self.args,
             )
             return ShareGPTMessage(from_="gpt", value=content)
-        elif self.role_name == "function" or self.role_name == "tool":
+        else:
             # This is a function response
             # TODO: Allow for more flexible setting of tool role, optionally to be the same as assistant messages
             content = function_format.format_tool_response(
@@ -89,10 +90,6 @@ class FunctionCallingMessage(BaseMessage):
                 self.result,
             )
             return ShareGPTMessage(from_="tool", value=content)
-        else:
-            raise ValueError(
-                f"Unexpected role_name for FunctionCallingMessage: {self.role_name}"
-            )
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.

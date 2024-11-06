@@ -45,16 +45,15 @@ def assistant_func_call_message() -> FunctionCallingMessage:
 
 @pytest.fixture
 def function_result_message() -> FunctionCallingMessage:
-    role_name = "tool"
+    role_name = "function"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = "test function message"
 
     return FunctionCallingMessage(
         role_name=role_name,
         role_type=role_type,
         meta_dict=meta_dict,
-        content=content,
+        content="",
         func_name="add",
         result=3,
     )
@@ -182,6 +181,8 @@ def test_convert_function_call_and_response_to_from_sharegpt_hermes(
         sharegpt_function_result
     )
 
+    # Set reference function call to take on CAMEL function result role
+    function_result_message.role_name = "assistant"
     assert function_result_message == reconverted_function_result
 
 
