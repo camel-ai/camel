@@ -81,8 +81,9 @@ class FunctionCallingMessage(BaseMessage):
                 self.args,
             )
             return ShareGPTMessage(from_="gpt", value=content)
-        elif self.role_name == "function":
+        elif self.role_name == "function" or self.role_name == "tool":
             # This is a function response
+            # TODO: Allow for more flexible setting of tool role, optionally to be the same as assistant messages
             content = function_format.format_tool_response(
                 self.func_name,
                 self.result,
