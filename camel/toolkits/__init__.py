@@ -17,6 +17,7 @@ from .function_tool import (
     OpenAIFunction,
     get_openai_function_schema,
     get_openai_tool_schema,
+    generate_docstring,
 )
 from .open_api_specs.security_config import openapi_security_config
 
@@ -46,6 +47,7 @@ __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    "generate_docstring",
     'openapi_security_config',
     'GithubToolkit',
     'MathToolkit',

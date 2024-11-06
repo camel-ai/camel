@@ -550,8 +550,9 @@ class AgentOpsMeta(type):
         return super().__new__(cls, name, bases, dct)
 
 
-# Mock trak agent decorator for AgentOps
 def track_agent(*args, **kwargs):
+    r"""Mock track agent decorator for AgentOps."""
+
     def noop(f):
         return f
 

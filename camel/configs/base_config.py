@@ -20,6 +20,12 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class BaseConfig(ABC, BaseModel):
+    r"""Base configuration class for all models.
+
+    This class provides a common interface for all models, ensuring that all
+    models have a consistent set of attributes and methods.
+    """
+
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="forbid",
@@ -38,6 +44,12 @@ class BaseConfig(ABC, BaseModel):
     @field_validator("tools", mode="before")
     @classmethod
     def fields_type_checking(cls, tools):
+        r"""Validate the type of tools in the configuration.
+
+        This method ensures that the tools provided in the configuration are
+        instances of `FunctionTool`. If any tool is not an instance of
+        `FunctionTool`, it raises a ValueError.
+        """
         if tools is not None:
             from camel.toolkits import FunctionTool
 
@@ -50,6 +62,15 @@ class BaseConfig(ABC, BaseModel):
         return tools
 
     def as_dict(self) -> dict[str, Any]:
+        r"""Convert the current configuration to a dictionary.
+
+        This method converts the current configuration object to a dictionary
+        representation, which can be used for serialization or other purposes.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the current
+                configuration.
+        """
         config_dict = self.model_dump()
 
         tools_schema = None
