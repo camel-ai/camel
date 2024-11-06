@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -28,6 +29,7 @@ from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
 _qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
+logger = logging.getLogger(__name__)
 
 
 class QdrantStorage(BaseVectorStorage):
@@ -112,8 +114,11 @@ class QdrantStorage(BaseVectorStorage):
         ):
             try:
                 self._delete_collection(self.collection_name)
-            except RuntimeError:
-                pass
+            except RuntimeError as e:
+                logger.error(
+                    f"Failed to delete collection"
+                    f" '{self.collection_name}': {e}"
+                )
 
     def _create_client(
         self,
@@ -314,7 +319,7 @@ class QdrantStorage(BaseVectorStorage):
             )
 
     def delete_collection(self) -> None:
-        """Deletes the entire collection in the Qdrant storage."""
+        r"""Deletes the entire collection in the Qdrant storage."""
         self._delete_collection(self.collection_name)
 
     def delete(
@@ -327,13 +332,14 @@ class QdrantStorage(BaseVectorStorage):
         filters.
 
         Args:
-            ids (List[str]): List of unique identifiers for the vectors to be
-                deleted.
+            ids (Optional[List[str]], optional): List of unique identifiers
+                for the vectors to be deleted.
             payload_filter (Optional[Dict[str, Any]], optional): A filter for
                 the payload to delete points matching specific conditions. If
                 `ids` is provided, `payload_filter` will be ignored unless both
                 are combined explicitly.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to `QdrantClient.
+                delete`.
 
         Examples:
             >>> # Delete points with IDs "1", "2", and "3"
@@ -379,7 +385,6 @@ class QdrantStorage(BaseVectorStorage):
                     "Failed to delete vectors in Qdrant, operation info: "
                     f"{op_info}"
                 )
-            return
 
         if payload_filter:
             filter_conditions = [
