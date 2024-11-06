@@ -23,15 +23,14 @@ from camel.models.mistral_model import MistralModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
-from camel.models.qwen_model import QwenModel
 from camel.models.phi_model import PHIModel
+from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.yi_model import YiModel
-from camel.models.phi_model import PHIModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
 from camel.utils import BaseTokenCounter

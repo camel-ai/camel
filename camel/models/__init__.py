@@ -24,8 +24,8 @@ from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
-from .qwen_model import QwenModel
 from .phi_model import PHIModel
+from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
 from .stub_model import StubModel

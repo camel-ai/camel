@@ -99,8 +99,8 @@ class CohereRerankRetriever(BaseRetriever):
         )
         formatted_results = []
         for i in range(0, len(rerank_results.results)):
-            selected_chunk = retrieved_result[rerank_results[i].index]
-            selected_chunk['similarity score'] = rerank_results[
+            selected_chunk = retrieved_result[rerank_results[i].index]  # type: ignore[index]
+            selected_chunk['similarity score'] = rerank_results[  # type: ignore[index]
                 i
             ].relevance_score
             formatted_results.append(selected_chunk)

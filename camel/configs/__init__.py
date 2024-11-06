@@ -19,8 +19,8 @@ from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
-from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .phi_config import PHI_API_PARAMS, PHIConfig
+from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
     SAMBA_CLOUD_API_PARAMS,

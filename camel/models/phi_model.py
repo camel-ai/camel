@@ -65,12 +65,12 @@ class PHIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        question = messages[1]['content'][0]['text']
-        image_urls = messages[1]['content'][1]['image_url']
+        question = messages[1]['content'][0]['text']  # type: ignore[index]
+        image_urls = messages[1]['content'][1]['image_url']  # type: ignore[index]
         if not isinstance(image_urls, list):
             image_urls = [image_urls]
 
-        image_data = messages[1]['content'][1]['image_url']['url']
+        image_data = messages[1]['content'][1]['image_url']['url']  # type: ignore[index]
         base64_data = image_data.split(',')[1]
         image_bytes = base64.b64decode(base64_data)
         image_data = Image.open(io.BytesIO(image_bytes))
@@ -104,7 +104,8 @@ class PHIModel(BaseModelBackend):
                 }
             ]
             outputs = self.llm.chat(
-                chat_messages, sampling_params=sampling_params
+                chat_messages,  # type: ignore[arg-type]
+                sampling_params=sampling_params,  # type: ignore[arg-type]
             )
         else:
             raise ValueError(f"Invalid method: {self.config.method}")
@@ -115,7 +116,7 @@ class PHIModel(BaseModelBackend):
             created=0,
             model=self.config.model,
             choices=[
-                {
+                {  # type: ignore[list-item]
                     "index": 0,
                     "message": {
                         "role": "assistant",

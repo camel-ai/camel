@@ -108,7 +108,7 @@ class ModelType(UnifiedModelType, Enum):
     YI_SPARK = "yi-spark"
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
-    # Offline models
+
     # Phi models
     PHI_3_5_VISION = "microsoft/Phi-3.5-vision-instruct"
 
@@ -277,7 +277,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
         }
-    def is_phi(self) -> bool:
+
+    def is_phi(self) -> bool:  # type: ignore[override]
         r"""Returns whether this type of models is served by Phi."""
         return self in {ModelType.PHI_3_5_VISION}
 
