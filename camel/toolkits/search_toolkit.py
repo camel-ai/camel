@@ -12,49 +12,14 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Union
+
+import requests
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import api_keys_required, dependencies_required
-
-
-def parse_wolfram_result(result) -> Dict[str, Any]:
-    r"""Parses a Wolfram Alpha API result into a structured dictionary format.
-
-    Args:
-        result: The API result returned from a Wolfram Alpha
-            query, structured with multiple pods, each containing specific
-            information related to the query.
-
-    Returns:
-        dict: A structured dictionary with the original query, a list of
-              step-by-step results, and the final answer (if designated as
-              primary).
-    """
-
-    # Extract the original query
-    query = result.get('@inputstring', '')
-
-    # Initialize a dictionary to hold structured output
-    output = {"query": query, "pod_info": [], "final_answer": None}
-
-    # Loop through each pod to extract the details
-    for pod in result.get('pod', []):
-        pod_info = {
-            "title": pod.get('@title', ''),
-            "description": pod.get('subpod', {}).get('plaintext', ''),
-            "image_url": pod.get('subpod', {}).get('img', {}).get('@src', ''),
-        }
-
-        # Add to steps list
-        output["pod_info"].append(pod_info)
-
-        # Get final answer
-        if pod.get('@primary', False):
-            output["final_answer"] = pod_info["description"]
-
-    return output
 
 
 class SearchToolkit(BaseToolkit):
@@ -298,8 +263,9 @@ class SearchToolkit(BaseToolkit):
 
         Args:
             query (str): The query to send to Wolfram Alpha.
-            is_detailed (bool): Whether to include additional details in the
-                result. (default::obj:`False`)
+            is_detailed (bool): Whether to include additional details
+                including step by step information in the result.
+                (default::obj:`False`)
 
         Returns:
             Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
@@ -323,12 +289,101 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return f"Wolfram Alpha wasn't able to answer it. Error: {e}"
 
-        pased_result = parse_wolfram_result(res)
+        pased_result = self._parse_wolfram_result(res)
 
         if is_detailed:
+            step_info = self._get_wolframalpha_step_by_step_solution(
+                WOLFRAMALPHA_APP_ID, query
+            )
+            pased_result["steps"] = step_info
             return pased_result
 
         return pased_result["final_answer"]
+
+    def _parse_wolfram_result(self, result) -> Dict[str, Any]:
+        r"""Parses a Wolfram Alpha API result into a structured dictionary
+        format.
+
+        Args:
+            result: The API result returned from a Wolfram Alpha
+                query, structured with multiple pods, each containing specific
+                information related to the query.
+
+        Returns:
+            dict: A structured dictionary with the original query and the
+                final answer.
+        """
+
+        # Extract the original query
+        query = result.get('@inputstring', '')
+
+        # Initialize a dictionary to hold structured output
+        output = {"query": query, "pod_info": [], "final_answer": None}
+
+        # Loop through each pod to extract the details
+        for pod in result.get('pod', []):
+            pod_info = {
+                "title": pod.get('@title', ''),
+                "description": pod.get('subpod', {}).get('plaintext', ''),
+                "image_url": pod.get('subpod', {})
+                .get('img', {})
+                .get('@src', ''),
+            }
+
+            # Add to steps list
+            output["pod_info"].append(pod_info)
+
+            # Get final answer
+            if pod.get('@primary', False):
+                output["final_answer"] = pod_info["description"]
+
+        return output
+
+    def _get_wolframalpha_step_by_step_solution(
+        self, app_id: str, query: str
+    ) -> dict:
+        r"""Retrieve a step-by-step solution from the Wolfram Alpha API for a
+        given query.
+
+        Args:
+            app_id (str): Your Wolfram Alpha API application ID.
+            query (str): The mathematical or computational query to solve.
+
+        Returns:
+            dict: The step-by-step solution response text from the Wolfram
+                Alpha API.
+        """
+        # Define the base URL
+        url = "https://api.wolframalpha.com/v2/query"
+
+        # Set up the query parameters
+        params = {
+            'appid': app_id,
+            'input': query,
+            'podstate': ['Result__Step-by-step solution', 'Show all steps'],
+            'format': 'plaintext',
+        }
+
+        # Send the request
+        response = requests.get(url, params=params)
+        root = ET.fromstring(response.text)
+
+        # Extracting step-by-step hints and removing 'Hint: |'
+        steps = []
+        for subpod in root.findall(
+            ".//pod[@title='Results']//subpod[stepbystepcontenttype='SBSHintStep']//plaintext"
+        ):
+            if subpod.text:
+                step_text = subpod.text.strip()
+                cleaned_step = step_text.replace('Hint: |', '').strip()
+                steps.append(cleaned_step)
+
+        # Structuring the steps into a dictionary
+        structured_steps = {}
+        for i, step in enumerate(steps, start=1):
+            structured_steps[f"step{i}"] = step
+
+        return structured_steps
 
     def tavily_search(
         self, query: str, num_results: int = 5, **kwargs

@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
@@ -231,3 +231,78 @@ def test_query_wolfram_alpha(mock_get, mock_client):
     }
 
     assert result == expected_output
+
+
+def test_parse_wolfram_result():
+    sample_wolfram_result = {
+        "@inputstring": "What is 2+2?",
+        "pod": [
+            {
+                "@title": "Input",
+                "subpod": {
+                    "plaintext": "2 + 2",
+                    "img": {"@src": "http://example.com/image1.png"},
+                },
+            },
+            {
+                "@title": "Result",
+                "subpod": {
+                    "plaintext": "4",
+                    "img": {"@src": "http://example.com/image2.png"},
+                },
+                "@primary": "true",
+            },
+        ],
+    }
+    expected_output = {
+        "query": "What is 2+2?",
+        "pod_info": [
+            {
+                "title": "Input",
+                "description": "2 + 2",
+                "image_url": "http://example.com/image1.png",
+            },
+            {
+                "title": "Result",
+                "description": "4",
+                "image_url": "http://example.com/image2.png",
+            },
+        ],
+        "final_answer": "4",
+    }
+
+    result = SearchToolkit()._parse_wolfram_result(sample_wolfram_result)
+
+    assert (
+        result == expected_output
+    ), f"Expected {expected_output}, but got {result}"
+
+
+@patch('requests.get')
+def test_get_wolframalpha_step_by_step_solution(mock_get):
+    sample_response = """
+    <queryresult>
+        <pod title="Results">
+            <subpod>
+                <stepbystepcontenttype>SBSHintStep</stepbystepcontenttype>
+                <plaintext>Hint: | Step 1</plaintext>
+            </subpod>
+            <subpod>
+                <stepbystepcontenttype>SBSHintStep</stepbystepcontenttype>
+                <plaintext>Hint: | Step 2</plaintext>
+            </subpod>
+        </pod>
+    </queryresult>
+    """
+
+    mock_get.return_value = Mock(text=sample_response)
+
+    expected_steps = {"step1": "Step 1", "step2": "Step 2"}
+
+    result = SearchToolkit()._get_wolframalpha_step_by_step_solution(
+        "dummy_app_id", "dummy_query"
+    )
+
+    assert (
+        result == expected_steps
+    ), f"Expected {expected_steps}, but got {result}"
