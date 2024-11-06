@@ -184,10 +184,11 @@ def test_search_duckduckgo_images():
         )
 
 
+@patch('requests.get')
 @patch('wolframalpha.Client')
 @patch('os.environ.get')
-def test_query_wolfram_alpha(mock_get, mock_client):
-    mock_get.return_value = 'FAKE_APP_ID'
+def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
+    mock_get_env.return_value = 'FAKE_APP_ID'
 
     mock_res = MagicMock()
     mock_res.get.side_effect = lambda key, default: {
@@ -206,8 +207,23 @@ def test_query_wolfram_alpha(mock_get, mock_client):
 
     mock_instance = MagicMock()
     mock_instance.query.return_value = mock_res
-
     mock_client.return_value = mock_instance
+
+    mock_requests_get.return_value = MagicMock(status_code=200)
+    mock_requests_get.return_value.text = """
+    <queryresult success="true" error="false">
+        <pod title="Limit">
+            <subpod>
+                <plaintext>lim_(x->0) (sin^2(x))/x = 0</plaintext>
+            </subpod>
+        </pod>
+        <pod title="Plot">
+            <subpod>
+                <plaintext></plaintext>
+            </subpod>
+        </pod>
+    </queryresult>
+    """
 
     result = SearchToolkit().query_wolfram_alpha(
         "calculate limit of sinx^2/x", True
@@ -228,6 +244,7 @@ def test_query_wolfram_alpha(mock_get, mock_client):
             },
         ],
         "final_answer": None,
+        "steps": {},
     }
 
     assert result == expected_output
