@@ -54,7 +54,7 @@ Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org
 
     - Integrates over 20 advanced model platforms (e.g., commercial models like OpenAI, open-source models such as Llama3, and self-deployment frameworks like Ollama.).
 
-    - Supports extensive external tools (e.g., Search, Twitter, Github, Goggle Maps, Reddit, Slack utilities).
+    - Supports extensive external tools (e.g., Search, Twitter, Github, Google Maps, Reddit, Slack utilities).
     - Includes memory and prompt components for deep customization.
     - Facilitates complex multi-agent systems with advanced collaboration features.
 
