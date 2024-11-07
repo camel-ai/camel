@@ -50,6 +50,7 @@ class PHIModel(BaseModelBackend):
         self.config = PHIConfig(**model_config_dict)
         self.llm = LLM(
             model=self.config.model,
+            device=self.config.device,
             trust_remote_code=self.config.trust_remote_code,
             max_model_len=self.config.max_model_len,
             limit_mm_per_prompt=self.config.limit_mm_per_prompt,

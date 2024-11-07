@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import OpenSourceConfig, PHIConfig
+from camel.configs import PHIConfig
 from camel.models import PHIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -24,33 +24,29 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
-    [
-        "microsoft/Phi-3.5-vision-instruct",
-    ],
+    [ModelType.PHI_3_5_VISION],
 )
 def test_phi_model(model_type):
-    model_config_dict = PHIConfig().as_dict()
+    model_config_dict = PHIConfig(device="cpu").as_dict()
     model = PHIModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
+    assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
 def test_vllm_model_unexpected_argument():
     model_type = ModelType.PHI_3_5_VISION
-    model_config = OpenSourceConfig(
-        model_path="microsoft/Phi-3.5-vision-instruct",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "microsoft/Phi-3.5-vision-instruct"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into VLLM model backend."
+                "input into PHI model backend."
             )
         ),
     ):
