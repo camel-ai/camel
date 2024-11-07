@@ -354,6 +354,10 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 128_000
         elif self in {
+            ModelType.PHI_3_5_VISION,
+        }:
+            return 131_072
+        elif self in {
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
@@ -361,7 +365,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
         }:
-            return 131_072
+            return 128_000
         elif self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,

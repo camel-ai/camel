@@ -139,7 +139,7 @@ class PHIModel(BaseModelBackend):
             if param not in PHI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into VLLM model backend."
+                    "input into PHI model backend."
                 )
 
     @property
