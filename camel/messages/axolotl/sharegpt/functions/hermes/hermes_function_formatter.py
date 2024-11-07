@@ -21,7 +21,7 @@ from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
 from camel.messages.axolotl.sharegpt.functions.hermes.hermes_tool_call import (
     HermesToolCall,
 )
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_tool_response import (
+from camel.messages.axolotl.sharegpt.functions.tool_response import (
     ToolResponse,
 )
 
@@ -50,7 +50,8 @@ class HermesFunctionFormatter(FunctionCallFormatter):
 
         if match:
             try:
-                response_dict = json.loads(match.group(1).replace("'", '"'))
+                response_json = match.group(1)
+                response_dict = json.loads(response_json.replace("'", '"'))
                 return ToolResponse.model_validate(response_dict)
             except Exception as e:
                 print(f"Warning: Failed to parse tool response: {e}")

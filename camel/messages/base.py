@@ -291,8 +291,10 @@ class BaseMessage:
 
         Args:
             message (ShareGPTMessage): ShareGPT message to convert
-            function_format (FunctionCallFormatter, optional): Function call formatter to use. Defaults to HermesFunctionFormatter().
-            role_mapping (Dict[str, List[str, RoleType]], optional): Role mapping to use. Defaults to a CAMEL specific mapping.
+            function_format (FunctionCallFormatter, optional):
+             Function call formatter to use. Defaults to Hermes.
+            role_mapping (Dict[str, List[str, RoleType]], optional):
+             Role mapping to use. Defaults to a CAMEL specific mapping.
 
         Returns:
             BaseMessage: Converted message
@@ -312,7 +314,8 @@ class BaseMessage:
             if (
                 func_info and len(func_info) == 1
             ):  # TODO: Handle multiple tool calls
-                # Including cleaned content is useful to remind consumers of non-considered content
+                # Including cleaned content is useful to
+                # remind consumers of non-considered content
                 clean_content = re.sub(
                     r"<tool_call>.*?</tool_call>",
                     "",
