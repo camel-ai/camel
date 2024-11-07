@@ -253,7 +253,7 @@ After setting the OpenAI API key, you can run the `role_playing.py` script. Find
 python examples/ai_society/role_playing.py
 ```
 
-Also feel free to run any that interest you among these scripts:
+Also feel free to run any scripts below that interest you:
 
 ```bash
 # You can change the role pair and initial prompt in these python files
