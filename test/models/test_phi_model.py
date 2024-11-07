@@ -33,6 +33,7 @@ def test_phi_model(model_type):
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
