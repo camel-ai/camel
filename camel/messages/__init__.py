@@ -25,6 +25,18 @@ OpenAIUserMessage = ChatCompletionUserMessageParam
 OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
 OpenAIMessage = ChatCompletionMessageParam
 
+from .axolotl.sharegpt.functions.function_call_formatter import (
+    FunctionCallFormatter,
+)
+from .axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
+    HermesFunctionFormatter,
+)
+from .axolotl.sharegpt.sharegpt_conversation import (
+    ShareGPTConversation,
+)
+from .axolotl.sharegpt.sharegpt_message import (
+    ShareGPTMessage,
+)
 from .base import BaseMessage  # noqa: E402
 from .func_message import FunctionCallingMessage  # noqa: E402
 
@@ -34,6 +46,10 @@ __all__ = [
     'OpenAIUserMessage',
     'OpenAIFunctionMessage',
     'OpenAIMessage',
+    'FunctionCallFormatter',
+    'HermesFunctionFormatter',
+    'ShareGPTConversation',
+    'ShareGPTMessage',
     'BaseMessage',
     'FunctionCallingMessage',
 ]
