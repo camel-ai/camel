@@ -168,7 +168,7 @@ def test_convert_function_call_and_response_to_from_sharegpt_hermes(
     sharegpt_function_call = assistant_func_call_message.to_sharegpt()
 
     # Check the function call contains a hermes function call
-    # TODO: Consider using code from https://github.com/NousResearch/Hermes-Function-Calling/blob/main/validator.py # noqa
+    # TODO: Consider using code from https://github.com/NousResearch/Hermes-Function-Calling/blob/main/validator.py # noqa: E501
     #  and adjacent files
     assert "<tool_call>" in sharegpt_function_call.value
 
