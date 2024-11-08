@@ -10,7 +10,7 @@ if __name__ == "__main__":
         .add(CodeExecutionToolkit().get_tools(), "camel.toolkits.CodeExecutionToolkit")
     )
 
-    with runtime as r:
+    with runtime as r: # using with statement to automatically close the runtime
         print("Waiting for runtime to be ready...")
         while not r.ok:
             r.wait()
@@ -32,6 +32,10 @@ if __name__ == "__main__":
         print(f"Subtract 5 - 3: {sub.func(a=5, b=3)}")
         print(f"Multiply 2 * 3: {mul.func(a=2, b=3)}")
         print(f"Execute code: {code_exec.func(code='1 + 2')}")
+        
+    # you can also use the runtime without the with statement
+    # runtime.build()
+    # runtime.stop()
 
 """
 Add 1 + 2: 3
