@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
@@ -184,57 +184,142 @@ def test_search_duckduckgo_images():
         )
 
 
+@patch('requests.get')
 @patch('wolframalpha.Client')
 @patch('os.environ.get')
-def test_query_wolfram_alpha(mock_get, mock_client, search_toolkit):
-    mock_get.return_value = 'FAKE_APP_ID'
+def test_query_wolfram_alpha(mock_get_env, mock_client, mock_requests_get):
+    mock_get_env.return_value = 'FAKE_APP_ID'
 
-    # Create mock subpods objects
-    mock_subpods1 = [
-        MagicMock(plaintext="lim_(x->0) (sin^2(x))/x = 0"),
-        MagicMock(plaintext="lim_(x->-∞) (sin^2(x))/x = 0"),
-        MagicMock(plaintext="lim_(x->∞) (sin^2(x))/x = 0"),
-    ]
-    mock_subpods2 = [MagicMock(plaintext=None)]
-
-    # Create mock pods objects
-    mock_pod1 = MagicMock()
-    mock_pod1.subpods = mock_subpods1
-    mock_pod1.__getitem__.side_effect = lambda key: {'@title': 'Limit'}[key]
-
-    mock_pod2 = MagicMock()
-    mock_pod2.subpods = mock_subpods2
-    mock_pod2.__getitem__.side_effect = lambda key: {'@title': 'Plot'}[key]
-
-    # Create mock results object
-    mock_results = MagicMock(text="lim_(x->0) (sin^2(x))/x = 0")
-
-    # Create mock res object
     mock_res = MagicMock()
-    mock_res.pods.__iter__.return_value = iter([mock_pod1, mock_pod2])
-    mock_res.results.__iter__.return_value = iter([mock_results])
+    mock_res.get.side_effect = lambda key, default: {
+        '@inputstring': 'calculate limit of sinx^2/x',
+        'pod': [
+            {
+                '@title': 'Limit',
+                'subpod': {'plaintext': 'lim_(x->0) (sin^2(x))/x = 0'},
+            },
+            {
+                '@title': 'Plot',
+                'subpod': {'plaintext': None},
+            },
+        ],
+    }[key]
 
-    # Configure the text attribute of the object returned by the next method
-    mock_res.pods.__next__.return_value.text = "lim_(x->0) (sin^2(x))/x = 0"
-    mock_res.results.__next__.return_value.text = "lim_(x->0) (sin^2(x))/x = 0"
-
-    # Configure the mock client instance to return the mock response
     mock_instance = MagicMock()
     mock_instance.query.return_value = mock_res
     mock_client.return_value = mock_instance
 
-    result = search_toolkit.query_wolfram_alpha(
+    mock_requests_get.return_value = MagicMock(status_code=200)
+    mock_requests_get.return_value.text = """
+    <queryresult success="true" error="false">
+        <pod title="Limit">
+            <subpod>
+                <plaintext>lim_(x->0) (sin^2(x))/x = 0</plaintext>
+            </subpod>
+        </pod>
+        <pod title="Plot">
+            <subpod>
+                <plaintext></plaintext>
+            </subpod>
+        </pod>
+    </queryresult>
+    """
+
+    result = SearchToolkit().query_wolfram_alpha(
         "calculate limit of sinx^2/x", True
     )
-    expected_output = (
-        "Assumption:\n"
-        "lim_(x->0) (sin^2(x))/x = 0\n\n"
-        "Answer:\n"
-        "lim_(x->0) (sin^2(x))/x = 0\n\n"
-        "Limit:\n"
-        "lim_(x->0) (sin^2(x))/x = 0\n"
-        "lim_(x->-∞) (sin^2(x))/x = 0\n"
-        "lim_(x->∞) (sin^2(x))/x = 0\n\n"
-        "Plot:\nNone"
-    )
+
+    expected_output = {
+        "query": "calculate limit of sinx^2/x",
+        "pod_info": [
+            {
+                "title": "Limit",
+                "description": "lim_(x->0) (sin^2(x))/x = 0",
+                "image_url": '',
+            },
+            {
+                "title": "Plot",
+                "description": None,
+                "image_url": '',
+            },
+        ],
+        "final_answer": None,
+        "steps": {},
+    }
+
     assert result == expected_output
+
+
+def test_parse_wolfram_result():
+    sample_wolfram_result = {
+        "@inputstring": "What is 2+2?",
+        "pod": [
+            {
+                "@title": "Input",
+                "subpod": {
+                    "plaintext": "2 + 2",
+                    "img": {"@src": "http://example.com/image1.png"},
+                },
+            },
+            {
+                "@title": "Result",
+                "subpod": {
+                    "plaintext": "4",
+                    "img": {"@src": "http://example.com/image2.png"},
+                },
+                "@primary": "true",
+            },
+        ],
+    }
+    expected_output = {
+        "query": "What is 2+2?",
+        "pod_info": [
+            {
+                "title": "Input",
+                "description": "2 + 2",
+                "image_url": "http://example.com/image1.png",
+            },
+            {
+                "title": "Result",
+                "description": "4",
+                "image_url": "http://example.com/image2.png",
+            },
+        ],
+        "final_answer": "4",
+    }
+
+    result = SearchToolkit()._parse_wolfram_result(sample_wolfram_result)
+
+    assert (
+        result == expected_output
+    ), f"Expected {expected_output}, but got {result}"
+
+
+@patch('requests.get')
+def test_get_wolframalpha_step_by_step_solution(mock_get):
+    sample_response = """
+    <queryresult>
+        <pod title="Results">
+            <subpod>
+                <stepbystepcontenttype>SBSHintStep</stepbystepcontenttype>
+                <plaintext>Hint: | Step 1</plaintext>
+            </subpod>
+            <subpod>
+                <stepbystepcontenttype>SBSHintStep</stepbystepcontenttype>
+                <plaintext>Hint: | Step 2</plaintext>
+            </subpod>
+        </pod>
+    </queryresult>
+    """
+
+    mock_get.return_value = Mock(text=sample_response)
+
+    expected_steps = {"step1": "Step 1", "step2": "Step 2"}
+
+    result = SearchToolkit()._get_wolframalpha_step_by_step_solution(
+        "dummy_app_id", "dummy_query"
+    )
+
+    assert (
+        result == expected_steps
+    ), f"Expected {expected_steps}, but got {result}"
