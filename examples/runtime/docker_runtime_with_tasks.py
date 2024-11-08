@@ -26,7 +26,15 @@ from camel.runtime import DockerRuntime
 # tools
 toolkit = CodeExecutionToolkit(verbose=True)
 
-runtime = DockerRuntime("xukunliu/camel").add(toolkit.get_tools(), "camel.toolkits.CodeExecutionToolkit(verbose=True)", True)
+runtime = (
+    DockerRuntime("xukunliu/camel")
+    .add(
+        toolkit.get_tools(),
+        "camel.toolkits.CodeExecutionToolkit(unsafe_mode=True, import_white_list=['os', 'sys'])",
+        True,
+    )
+    .add_task("mkdir /home/test")
+)
 
 tools = runtime.get_tools()
 
@@ -46,9 +54,10 @@ model = ModelFactory.create(
 assistant_sys_msg = BaseMessage.make_assistant_message(
     role_name="Teacher",
     content=(
-        "You are a personal math tutor and programmer. "
-        "When asked a math question, "
+        "You are a personal assistant and programmer. "
+        "When asked a question, "
         "write and run Python code to answer the question."
+        "Your code will be executed using eval()."
     ),
 )
 
@@ -65,8 +74,7 @@ agent.reset()
 with runtime as r:
     r.wait()
     prompt = (
-        "Weng earns $12 an hour for babysitting. "
-        "Yesterday, she just did 51 minutes of babysitting. How much did she earn?"
+        "List all directories in /home"
     )
     user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
     print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
@@ -76,22 +84,6 @@ with runtime as r:
         print_text_animated(Fore.GREEN + f"Agent response:\n{msg.content}\n")
 
 
-# ruff: noqa: E501
-"""
-===============================================================================
-user prompt:
-Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of babysitting. How much did she earn?
-
-Executed the code below:
-```py
-hourly_rate = 12
-minutes_worked = 51
-hourly_earnings = hourly_rate / 60 * minutes_worked
-hourly_earnings
-```
-> Executed Results:
-10.200000000000001
-Agent response:
-Weng earned $10.20 for babysitting for 51 minutes at a rate of $12 per hour.
-===============================================================================
-"""
+# TODO: unlock unsafe mode
+# This example can not be run in the current version of CAMEL because
+# the InternalPythonInterpreter does not support most of the built-in functions.

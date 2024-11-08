@@ -1,5 +1,6 @@
+import json
 import logging
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import time
 from pydantic import BaseModel
@@ -12,6 +13,7 @@ from random import randint
 import requests
 import tarfile
 import io
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ class DockerRuntime(BaseRuntime):
 
     def __init__(self, image: str, port: int = 8000, remove: bool = True, **kwargs):
         super().__init__()
-        
+
         import docker  # type: ignore[import]
         from docker.types import Mount  # type: ignore[import]
 
@@ -38,6 +40,8 @@ class DockerRuntime(BaseRuntime):
         self.mounts = dict()
         self.cp = {api_path: "/home"}
         self.entrypoint = dict()
+        self.return_stdout = dict()
+        self.tasks = []
 
         self.docker_config = kwargs
         self.image = image
@@ -65,6 +69,154 @@ class DockerRuntime(BaseRuntime):
         self.cp[source] = dest
         return self
 
+    def add_task(
+        self,
+        cmd: str | List[str],
+        stdout: bool = True,
+        stderr: bool = True,
+        stdin: bool = False,
+        tty: bool = False,
+        privileged: bool = False,
+        user: str = "",
+        detach: bool = False,
+        stream: bool = False,
+        socket: bool = False,
+        environment: Optional[Dict[str, str] | List[str]] = None,
+        workdir: Optional[str] = None,
+        demux: bool = False,
+    ) -> "DockerRuntime":
+        """
+        Add a task to run a command inside the container when building. Similar to
+        ``docker exec``.
+
+        Args:
+            cmd (str or list): Command to be executed
+            stdout (bool): Attach to stdout. Default: ``True``
+            stderr (bool): Attach to stderr. Default: ``True``
+            stdin (bool): Attach to stdin. Default: ``False``
+            tty (bool): Allocate a pseudo-TTY. Default: False
+            privileged (bool): Run as privileged.
+            user (str): User to execute command as. Default: root
+            detach (bool): If true, detach from the exec command.
+                Default: False
+            stream (bool): Stream response data. Default: False
+            socket (bool): Return the connection socket to allow custom
+                read/write operations. Default: False
+            environment (dict or list): A dictionary or a list of strings in
+                the following format ``["PASSWORD=xxx"]`` or
+                ``{"PASSWORD": "xxx"}``.
+            workdir (str): Path to working directory for this exec session
+            demux (bool): Return stdout and stderr separately
+
+        Returns:
+            (ExecResult): A tuple of (exit_code, output)
+                exit_code: (int):
+                    Exit code for the executed command or ``None`` if
+                    either ``stream`` or ``socket`` is ``True``.
+                output: (generator, bytes, or tuple):
+                    If ``stream=True``, a generator yielding response chunks.
+                    If ``socket=True``, a socket object for the connection.
+                    If ``demux=True``, a tuple of two bytes: stdout and stderr.
+                    A bytestring containing response data otherwise.
+
+        Raises:
+            :py:class:`docker.errors.APIError`
+                If the server returns an error.
+        """
+        self.tasks.append(
+            {
+                "cmd": cmd,
+                "stdout": stdout,
+                "stderr": stderr,
+                "stdin": stdin,
+                "tty": tty,
+                "privileged": privileged,
+                "user": user,
+                "detach": detach,
+                "stream": stream,
+                "socket": socket,
+                "environment": environment,
+                "workdir": workdir,
+                "demux": demux,
+            }
+        )
+        return self
+
+    def exec_run(
+        self,
+        cmd: str | List[str],
+        stdout: bool = True,
+        stderr: bool = True,
+        stdin: bool = False,
+        tty: bool = False,
+        privileged: bool = False,
+        user: str = "",
+        detach: bool = False,
+        stream: bool = False,
+        socket: bool = False,
+        environment: Optional[Dict[str, str] | List[str]] = None,
+        workdir: Optional[str] = None,
+        demux: bool = False,
+    ) -> Any:
+        """
+        Run a command inside this container. Similar to
+        ``docker exec``.
+
+        Args:
+            cmd (str or list): Command to be executed
+            stdout (bool): Attach to stdout. Default: ``True``
+            stderr (bool): Attach to stderr. Default: ``True``
+            stdin (bool): Attach to stdin. Default: ``False``
+            tty (bool): Allocate a pseudo-TTY. Default: False
+            privileged (bool): Run as privileged.
+            user (str): User to execute command as. Default: root
+            detach (bool): If true, detach from the exec command.
+                Default: False
+            stream (bool): Stream response data. Default: False
+            socket (bool): Return the connection socket to allow custom
+                read/write operations. Default: False
+            environment (dict or list): A dictionary or a list of strings in
+                the following format ``["PASSWORD=xxx"]`` or
+                ``{"PASSWORD": "xxx"}``.
+            workdir (str): Path to working directory for this exec session
+            demux (bool): Return stdout and stderr separately
+
+        Returns:
+            (ExecResult): A tuple of (exit_code, output)
+                exit_code: (int):
+                    Exit code for the executed command or ``None`` if
+                    either ``stream`` or ``socket`` is ``True``.
+                output: (generator, bytes, or tuple):
+                    If ``stream=True``, a generator yielding response chunks.
+                    If ``socket=True``, a socket object for the connection.
+                    If ``demux=True``, a tuple of two bytes: stdout and stderr.
+                    A bytestring containing response data otherwise.
+
+        Raises:
+            :py:class:`docker.errors.APIError`
+                If the server returns an error.
+        """
+        if not self.container:
+            raise RuntimeError(
+                "Container does not exist. Please build the container first."
+            )
+
+        return self.container.exec_run(
+            cmd,
+            stdout=stdout,
+            stderr=stderr,
+            stdin=stdin,
+            tty=tty,
+            privileged=privileged,
+            user=user,
+            detach=detach,
+            stream=stream,
+            socket=socket,
+            environment=environment,
+            workdir=workdir,
+            demux=demux,
+        )
+
     def build(self) -> "DockerRuntime":
         if self.container:
             logger.warning("Container already exists. Nothing to build.")
@@ -84,7 +236,7 @@ class DockerRuntime(BaseRuntime):
             "detach": True,
             "mounts": mounts,
             "command": "sleep infinity",
-            ** self.docker_config,  # Add any additional Docker configurations provided
+            **self.docker_config,  # Add any additional Docker configurations provided
         }
         container_params["ports"] = {"8000/tcp": self.port}
         try:
@@ -119,40 +271,64 @@ class DockerRuntime(BaseRuntime):
                     f"Failed to copy file {local_path} to container: {str(e)}"
                 )
 
+        if self.tasks:
+            for task in tqdm(self.tasks, desc="Running tasks"):
+                self.exec_run(**task)
+
         exec = ["python3", "api.py", *list(self.entrypoint.values())]
 
-        self.container.exec_run(exec, workdir="/home", detach=True)
+        self.exec_run(exec, workdir="/home", detach=True)
 
         logger.info(f"Container started on port {self.port}")
         return self
 
-    def add(self, funcs: FunctionTool | List[FunctionTool], entrypoint: str) -> "DockerRuntime":
+    def add(
+        self,
+        funcs: FunctionTool | List[FunctionTool],
+        entrypoint: str,
+        return_stdout: bool = False,
+    ) -> "DockerRuntime":
         if not isinstance(funcs, list):
             funcs = [funcs]
+        if "(" in entrypoint:
+            _, params = entrypoint.split("(")
+            params = f"dict({params}"
+            try:
+                _ = eval(params)
+            except Exception as e:
+                logger.error(f"Error evaluating parameters: {e}")
+                raise "Currently DockerRuntime only supports dict parameters for entrypoint."
 
         for func in funcs:
             inner_func = func.func
 
             # Create a wrapper that explicitly binds `func`
             @wraps(inner_func)
-            def wrapper(*args, inner_func=inner_func, func=func, **kwargs):
+            def wrapper(*args, func=func, return_stdout=return_stdout, **kwargs):
                 for key, value in kwargs.items():
                     if isinstance(value, BaseModel):
                         kwargs[key] = value.model_dump()
-
+                
                 resp = requests.post(
                     f"http://localhost:{self.port}/{func.get_function_name()}",
-                    json=dict(args=args, kwargs=kwargs),
+                    json=dict(args=args, kwargs=kwargs, return_stdout=return_stdout),
                 )
                 if resp.status_code != 200:
+                    logger.error(
+                        f"Failed to execute function: {func.get_function_name()}, status code: {resp.status_code}, response: {resp.text}"
+                    )
                     return {
-                        "error": f"Failed to execute function: {func.get_function_name()}"
+                        "error": f"Failed to execute function: {func.get_function_name()}, response: {resp.text}"
                     }
-                return resp.json()
+                data = resp.json()
+                if return_stdout:
+                    print(data["stdout"])
+                return json.loads(data["output"])
 
             func.func = wrapper
             self.tools_map[func.get_function_name()] = func
         self.entrypoint[func.get_function_name()] = entrypoint
+        self.return_stdout[func.get_function_name()] = return_stdout
 
         return self
 
@@ -181,21 +357,19 @@ class DockerRuntime(BaseRuntime):
             return True
         except requests.exceptions.ConnectionError:
             return False
-    
+
     def wait(self, timeout: int = 10) -> bool:
         for _ in range(timeout):
             if self.ok:
                 return True
             time.sleep(1)
         return False
-        
+
     def __enter__(self) -> "DockerRuntime":
         if not self.container:
             return self.build()
         logger.warning("Container already exists. Returning existing container.")
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
-    
-    
