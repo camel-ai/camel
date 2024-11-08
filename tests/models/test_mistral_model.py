@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import MistralConfig, OpenSourceConfig
+from camel.configs import MistralConfig
 from camel.models import MistralModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -32,6 +32,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.MISTRAL_MIXTRAL_8x22B,
         ModelType.MISTRAL_CODESTRAL,
         ModelType.MISTRAL_CODESTRAL_MAMBA,
+        ModelType.MISTRAL_PIXTRAL_12B,
     ],
 )
 def test_mistral_model(model_type):
@@ -47,11 +48,7 @@ def test_mistral_model(model_type):
 @pytest.mark.model_backend
 def test_mistral_model_unexpected_argument():
     model_type = ModelType.MISTRAL_LARGE
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.as_dict()
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,

@@ -31,8 +31,8 @@ assistant_model_config = ChatGPTConfig(
 )
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
     model_config_dict=assistant_model_config.as_dict(),
 )
 
@@ -54,7 +54,10 @@ print(task.to_string())
 task_manager = TaskManager(task)
 
 evolved_task = task_manager.evolve(task, agent=agent)
-print(evolved_task.to_string())
+if evolved_task is not None:
+    print(evolved_task.to_string())
+else:
+    print("Evolved task is None.")
 
 
 new_tasks = task.decompose(agent=agent)

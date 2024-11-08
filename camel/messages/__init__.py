@@ -32,6 +32,7 @@ __all__ = [
     'OpenAISystemMessage',
     'OpenAIAssistantMessage',
     'OpenAIUserMessage',
+    'OpenAIFunctionMessage',
     'OpenAIMessage',
     'BaseMessage',
     'FunctionCallingMessage',

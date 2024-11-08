@@ -14,6 +14,8 @@
 import uuid
 import warnings
 from typing import (
+    IO,
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -23,7 +25,8 @@ from typing import (
     Union,
 )
 
-from unstructured.documents.elements import Element
+if TYPE_CHECKING:
+    from unstructured.documents.elements import Element
 
 
 class UnstructuredIO:
@@ -39,33 +42,34 @@ class UnstructuredIO:
     @staticmethod
     def create_element_from_text(
         text: str,
-        element_id: Optional[Union[str, uuid.UUID]] = None,
+        element_id: Optional[str] = None,
         embeddings: Optional[List[float]] = None,
         filename: Optional[str] = None,
         file_directory: Optional[str] = None,
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
-        parent_id: Optional[Union[str, uuid.UUID]] = None,
-    ) -> Element:
+        parent_id: Optional[str] = None,
+    ) -> "Element":
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
         Args:
             text (str): The text content for the element.
-            element_id (Optional[Union[str, uuid.UUID]], optional): Unique
-                identifier for the element. Defaults to `None`.
-            embeddings (Optional[List[float]], optional): A list of float
-                numbers representing the text embeddings. Defaults to `None`.
+            element_id (Optional[str], optional): Unique identifier for the
+                element. (default: :obj:`None`)
+            embeddings (List[float], optional): A list of float
+                numbers representing the text embeddings.
+                (default: :obj:`None`)
             filename (Optional[str], optional): The name of the file the
-                element is associated with. Defaults to `None`.
+                element is associated with. (default: :obj:`None`)
             file_directory (Optional[str], optional): The directory path where
-                the file is located. Defaults to `None`.
+                the file is located. (default: :obj:`None`)
             last_modified (Optional[str], optional): The last modified date of
-                the file. Defaults to `None`.
-            filetype (Optional[str], optional): The type of the file. Defaults
-                to `None`.
-            parent_id (Optional[Union[str, uuid.UUID]], optional): The
-                identifier of the parent element. Defaults to `None`.
+                the file. (default: :obj:`None`)
+            filetype (Optional[str], optional): The type of the file.
+                (default: :obj:`None`)
+            parent_id (Optional[str], optional): The identifier of the parent
+                element. (default: :obj:`None`)
 
         Returns:
             Element: An instance of Text with the provided content and
@@ -83,7 +87,7 @@ class UnstructuredIO:
 
         return Text(
             text=text,
-            element_id=element_id or uuid.uuid4(),
+            element_id=element_id or str(uuid.uuid4()),
             metadata=metadata,
             embeddings=embeddings,
         )
@@ -92,7 +96,7 @@ class UnstructuredIO:
     def parse_file_or_url(
         input_path: str,
         **kwargs: Any,
-    ) -> Union[List[Element], None]:
+    ) -> Union[List["Element"], None]:
         r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
@@ -108,7 +112,7 @@ class UnstructuredIO:
                 specified.
 
         Notes:
-            Available document types:
+            Supported file types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
 
@@ -118,25 +122,23 @@ class UnstructuredIO:
         import os
         from urllib.parse import urlparse
 
+        from unstructured.partition.auto import partition
+
         # Check if the input is a URL
         parsed_url = urlparse(input_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
 
+        # Handling URL
         if is_url:
-            # Handling URL
-            from unstructured.partition.html import partition_html
-
             try:
-                elements = partition_html(url=input_path, **kwargs)
+                elements = partition(url=input_path, **kwargs)
                 return elements
             except Exception:
                 warnings.warn(f"Failed to parse the URL: {input_path}")
                 return None
 
+        # Handling file
         else:
-            # Handling file
-            from unstructured.partition.auto import partition
-
             # Check if the file exists
             if not os.path.exists(input_path):
                 raise FileNotFoundError(
@@ -153,6 +155,39 @@ class UnstructuredIO:
                 return None
 
     @staticmethod
+    def parse_bytes(
+        file: IO[bytes], **kwargs: Any
+    ) -> Union[List["Element"], None]:
+        r"""Parses a bytes stream and converts its contents into elements.
+
+        Args:
+            file (IO[bytes]): The file in bytes format to be parsed.
+            **kwargs: Extra kwargs passed to the partition function.
+
+        Returns:
+            Union[List[Element], None]: List of elements after parsing the file
+                if successful, otherwise `None`.
+
+        Notes:
+            Supported file types:
+                "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+                "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
+
+        References:
+            https://docs.unstructured.io/open-source/core-functionality/partitioning
+        """
+
+        from unstructured.partition.auto import partition
+
+        try:
+            # Use partition to process the bytes stream
+            elements = partition(file=file, **kwargs)
+            return elements
+        except Exception as e:
+            warnings.warn(f"Failed to partition the file stream: {e}")
+            return None
+
+    @staticmethod
     def clean_text_data(
         text: str,
         clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
@@ -162,7 +197,7 @@ class UnstructuredIO:
 
         This function applies multiple text cleaning utilities by calling the
         `unstructured` library's cleaning bricks for operations like
-        replacing unicode quotes, removing extra whitespace, dashes, non-ascii
+        replacing Unicode quotes, removing extra whitespace, dashes, non-ascii
         characters, and more.
 
         If no cleaning options are provided, a default set of cleaning
@@ -249,7 +284,8 @@ class UnstructuredIO:
                 )
             else:
                 raise ValueError(
-                    f"'{func_name}' is not a valid function in `unstructured`."
+                    f"'{func_name}' is not a valid function in "
+                    "`Unstructured IO`."
                 )
 
         return cleaned_text
@@ -406,8 +442,8 @@ class UnstructuredIO:
 
     @staticmethod
     def chunk_elements(
-        elements: List[Any], chunk_type: str, **kwargs
-    ) -> List[Element]:
+        elements: List["Element"], chunk_type: str, **kwargs
+    ) -> List["Element"]:
         r"""Chunks elements by titles.
 
         Args:

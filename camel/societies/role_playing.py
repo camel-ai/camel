@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -22,10 +23,13 @@ from camel.agents import (
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend
+from camel.models import BaseModelBackend, ModelFactory
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.types import RoleType, TaskType
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
 
 
 class RolePlaying:
@@ -51,7 +55,8 @@ class RolePlaying:
             If not specified, set the criteria to improve task performance.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. If specified, it will override the model in
-            all agents. (default: :obj:`None`)
+            all agents if not specified in agent-specific kwargs. (default:
+            :obj:`OpenAIModel` with `GPT_4O_MINI`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -97,10 +102,23 @@ class RolePlaying:
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
     ) -> None:
+        if model is not None:
+            logger.warning(
+                "Model provided globally is set for all agents if not"
+                " already specified in agent_kwargs."
+            )
+
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
-        self.model = model
+        self.model: BaseModelBackend = (
+            model
+            if model is not None
+            else ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+        )
         self.task_type = task_type
         self.task_prompt = task_prompt
 
@@ -137,8 +155,8 @@ class RolePlaying:
 
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
-        self.assistant_sys_msg: BaseMessage
-        self.user_sys_msg: BaseMessage
+        self.assistant_sys_msg: Optional[BaseMessage]
+        self.user_sys_msg: Optional[BaseMessage]
         self._init_agents(
             init_assistant_sys_msg,
             init_user_sys_msg,
@@ -192,8 +210,9 @@ class RolePlaying:
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
             if self.model is not None:
                 if task_specify_agent_kwargs is None:
-                    task_specify_agent_kwargs = {}
-                task_specify_agent_kwargs.update(dict(model=self.model))
+                    task_specify_agent_kwargs = {'model': self.model}
+                elif 'model' not in task_specify_agent_kwargs:
+                    task_specify_agent_kwargs.update(dict(model=self.model))
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -225,8 +244,9 @@ class RolePlaying:
         if self.with_task_planner:
             if self.model is not None:
                 if task_planner_agent_kwargs is None:
-                    task_planner_agent_kwargs = {}
-                task_planner_agent_kwargs.update(dict(model=self.model))
+                    task_planner_agent_kwargs = {'model': self.model}
+                elif 'model' not in task_planner_agent_kwargs:
+                    task_planner_agent_kwargs.update(dict(model=self.model))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
@@ -320,11 +340,13 @@ class RolePlaying:
         """
         if self.model is not None:
             if assistant_agent_kwargs is None:
-                assistant_agent_kwargs = {}
-            assistant_agent_kwargs.update(dict(model=self.model))
+                assistant_agent_kwargs = {'model': self.model}
+            elif 'model' not in assistant_agent_kwargs:
+                assistant_agent_kwargs.update(dict(model=self.model))
             if user_agent_kwargs is None:
-                user_agent_kwargs = {}
-            user_agent_kwargs.update(dict(model=self.model))
+                user_agent_kwargs = {'model': self.model}
+            elif 'model' not in user_agent_kwargs:
+                user_agent_kwargs.update(dict(model=self.model))
 
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
@@ -382,8 +404,9 @@ class RolePlaying:
                 )
                 if self.model is not None:
                     if critic_kwargs is None:
-                        critic_kwargs = {}
-                    critic_kwargs.update(dict(model=self.model))
+                        critic_kwargs = {'model': self.model}
+                    elif 'model' not in critic_kwargs:
+                        critic_kwargs.update(dict(model=self.model))
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
                     **(critic_kwargs or {}),
@@ -442,9 +465,11 @@ class RolePlaying:
         )
         if init_msg_content is None:
             init_msg_content = default_init_msg_content
+
         # Initialize a message sent by the assistant
         init_msg = BaseMessage.make_assistant_message(
-            role_name=self.assistant_sys_msg.role_name,
+            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
+            or "assistant",
             content=init_msg_content,
         )
 

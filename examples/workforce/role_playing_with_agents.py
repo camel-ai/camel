@@ -13,16 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import MathToolkit, SearchToolkit, WeatherToolkit
+from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce.manager_node import ManagerNode
-from camel.workforce.role_playing_node import RolePlayingNode
-from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.workforce import Workforce
 
 
 def main():
@@ -39,65 +35,49 @@ def main():
     guide_agent = ChatAgent(guide_sysmsg)
     planner_agent = ChatAgent(planner_sysmsg)
 
-    guide_worker_node = SingleAgentNode('tour guide', guide_agent)
-    planner_worker_node = SingleAgentNode('planner', planner_agent)
-
-    tools_list = [
-        *MathToolkit().get_tools(),
-        *WeatherToolkit().get_tools(),
-        *SearchToolkit().get_tools(),
+    function_list = [
+        *SEARCH_FUNCS,
+        *WEATHER_FUNCS,
+        *GoogleMapsToolkit().get_tools(),
     ]
-    user_model_config = ChatGPTConfig(temperature=0.0)
-    assistant_model_config = ChatGPTConfig(
-        tools=tools_list,
-        temperature=0.0,
-    )
-    model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_4O_MINI
+
+    model_platform = ModelPlatformType.DEFAULT
+    model_type = ModelType.DEFAULT
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=assistant_model_config.as_dict(),
         ),
-        tools=tools_list,
+        tools=function_list,
     )
     user_agent_kwargs = dict(
         model=ModelFactory.create(
             model_platform=model_platform,
             model_type=model_type,
-            model_config_dict=user_model_config.as_dict(),
         ),
     )
-    research_rp_worker_node = RolePlayingNode(
+
+    workforce = Workforce('a travel group')
+    workforce.add_role_playing_worker(
         'research Group',
         assistant_role_name,
         user_role_name,
         assistant_agent_kwargs,
         user_agent_kwargs,
         1,
-    )
+    ).add_single_agent_worker(
+        'tour guide', guide_agent
+    ).add_single_agent_worker('planner', planner_agent)
 
     human_task = Task(
         content="research history of Paris and plan a tour.",
         id='0',
     )
-
-    root_node = ManagerNode(
-        description='a travel group',
-        children=[
-            guide_worker_node,
-            planner_worker_node,
-            research_rp_worker_node,
-        ],
-    )
-
-    workforce = Workforce(root_node)
     task = workforce.process_task(human_task)
 
-    print('Final Result of Origin task:\n', task.result)
+    print('Final result of original task:\n', task.result)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import hashlib
 import importlib
 import os
 import platform
@@ -258,18 +257,18 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             missing_environment_keys = [
                 k for k in required_keys if k not in os.environ
             ]
             if (
-                not getattr(self, '_api_key', None)
+                not (args and getattr(args[0], '_api_key', None))
                 and missing_environment_keys
             ):
                 raise ValueError(
                     f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
 
         return cast(F, wrapper)
 
@@ -382,10 +381,17 @@ def json_to_function_code(json_obj: Dict) -> str:
     docstring_args = []
     return_keys = []
 
+    prop_to_python = {
+        'string': 'str',
+        'number': 'float',
+        'integer': 'int',
+        'boolean': 'bool',
+    }
+
     for prop in required:
         description = properties[prop]['description']
         prop_type = properties[prop]['type']
-        python_type = 'str' if prop_type == 'string' else prop_type
+        python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
         docstring_args.append(
             f"        {prop} ({python_type}): {description}."
@@ -544,8 +550,9 @@ class AgentOpsMeta(type):
         return super().__new__(cls, name, bases, dct)
 
 
-# Mock trak agent decorator for AgentOps
 def track_agent(*args, **kwargs):
+    r"""Mock track agent decorator for AgentOps."""
+
     def noop(f):
         return f
 
@@ -573,67 +580,30 @@ def handle_http_error(response: requests.Response) -> str:
         return "HTTP Error"
 
 
-def generate_temp_directory(
-    file_url: str | None, base_folder: str = "temp_files"
-) -> str:
-    """Generate the directory path for storing temporary files based on the
-    file URL. If file_url is None, a default folder under base_folder is used.
+def retry_request(
+    func: Callable, retries: int = 3, delay: int = 1, *args: Any, **kwargs: Any
+) -> Any:
+    r"""Retries a function in case of any errors.
 
     Args:
-        file_url (str | None): The URL of the file. If None, use a default
-        folder.
-        base_folder (str): The base folder name for storing the temporary
-        files.
+        func (Callable): The function to be retried.
+        retries (int): Number of retry attempts. (default: :obj:`3`)
+        delay (int): Delay between retries in seconds. (default: :obj:`1`)
+        *args: Arguments to pass to the function.
+        **kwargs: Keyword arguments to pass to the function.
 
     Returns:
-        str: The path to the directory where the file will be stored.
+        Any: The result of the function call if successful.
+
+    Raises:
+        Exception: If all retry attempts fail.
     """
-    project_root = os.getcwd()
-
-    if file_url:
-        file_hash = hashlib.md5(file_url.encode('utf-8')).hexdigest()
-        temp_directory = os.path.join(project_root, base_folder, file_hash)
-    else:
-        # Use a default folder name when file_url is None
-        temp_directory = os.path.join(project_root, base_folder, "default")
-
-    os.makedirs(temp_directory, exist_ok=True)
-
-    return temp_directory
-
-
-def calculate_file_hash(file_path: str) -> str:
-    """Calculate the MD5 hash of a file for comparison.
-
-    Args:
-        file_path (str): The path to the file for which the hash will be
-        calculated.
-
-    Returns:
-        str: The MD5 hash value of the file content as a string.
-    """
-    hash_md5 = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
-
-
-def file_exists_and_is_identical(
-    existing_file: str, new_file_path: str
-) -> bool:
-    """Check if a file already exists and if its content matches a new file.
-
-    Args:
-        existing_file (str): The path to the existing file.
-        new_file_path (str): The path to the newly downloaded file for
-        comparison.
-
-    Returns:
-        bool: True if the files are identical, False otherwise.
-    """
-    if os.path.exists(existing_file):
-        existing_hash = calculate_file_hash(existing_file)
-        new_hash = calculate_file_hash(new_file_path)
-        return existing_hash == new_hash
-    return False
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise

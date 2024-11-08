@@ -18,7 +18,12 @@ from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
-from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
+from camel.types import (
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+    TaskType,
+)
 
 
 class _CamelJSONEncoder(json.JSONEncoder):

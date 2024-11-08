@@ -46,7 +46,6 @@ from .token_counting import (
     LiteLLMTokenCounter,
     MistralTokenCounter,
     OpenAITokenCounter,
-    OpenSourceTokenCounter,
     get_model_encoding,
 )
 
@@ -63,7 +62,6 @@ __all__ = [
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
-    'OpenSourceTokenCounter',
     'LiteLLMTokenCounter',
     'Constants',
     'text_extract_from_web',

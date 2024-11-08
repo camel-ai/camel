@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents.chat_agent import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
@@ -43,12 +42,9 @@ def main():
         content="Draw a picture of a camel.",
     )
 
-    model_config = ChatGPTConfig(tools=DalleToolkit().get_tools())
-
     model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.as_dict(),
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
 
     dalle_agent = ChatAgent(
