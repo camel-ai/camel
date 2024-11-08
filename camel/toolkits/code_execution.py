@@ -27,19 +27,19 @@ class CodeExecutionToolkit(BaseToolkit):
 
     def __init__(
         self,
-        sandbox: Literal[
-            "internal_python", "jupyter", "docker"
-        ] = "internal_python",
+        sandbox: Literal["internal_python", "jupyter", "docker"] = "internal_python",
         verbose: bool = False,
+        unsafe_mode: bool = False,
+        import_whitelist: List[str] = [],
     ) -> None:
         # TODO: Add support for docker and jupyter.
         self.verbose = verbose
         if sandbox == "internal_python":
-            self.interpreter = InternalPythonInterpreter()
-        else:
-            raise RuntimeError(
-                f"The sandbox type `{sandbox}` is not supported."
+            self.interpreter = InternalPythonInterpreter(
+                unsafe_mode=unsafe_mode, import_whitelist=import_whitelist
             )
+        else:
+            raise RuntimeError(f"The sandbox type `{sandbox}` is not supported.")
 
     def execute_code(self, code: str) -> str:
         r"""Execute a given code snippet.
