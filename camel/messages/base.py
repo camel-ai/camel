@@ -81,6 +81,25 @@ class BaseMessage:
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.LOW,
     ) -> "BaseMessage":
+        r"""Create a new user message.
+
+        Args:
+            role_name (str): The name of the user role.
+            content (str): The content of the message.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
+                dictionary for the message.
+            video_bytes (Optional[bytes]): Optional bytes of a video
+                associated with the message.
+            image_list (Optional[List[Image.Image]]): Optional list of PIL
+                Image objects associated with the message.
+            image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
+                the images associated with the message.
+            video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
+                the videos associated with the message.
+
+        Returns:
+            BaseMessage: The new user message.
+        """
         return cls(
             role_name,
             RoleType.USER,
@@ -107,6 +126,25 @@ class BaseMessage:
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.LOW,
     ) -> "BaseMessage":
+        r"""Create a new assistant message.
+
+        Args:
+            role_name (str): The name of the assistant role.
+            content (str): The content of the message.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
+                dictionary for the message.
+            video_bytes (Optional[bytes]): Optional bytes of a video
+                associated with the message.
+            image_list (Optional[List[Image.Image]]): Optional list of PIL
+                Image objects associated with the message.
+            image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
+                the images associated with the message.
+            video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
+                the videos associated with the message.
+
+        Returns:
+            BaseMessage: The new assistant message.
+        """
         return cls(
             role_name,
             RoleType.ASSISTANT,

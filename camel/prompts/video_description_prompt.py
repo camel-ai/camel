@@ -19,6 +19,14 @@ from camel.types import RoleType
 
 # flake8: noqa :E501
 class VideoDescriptionPromptTemplateDict(TextPromptDict):
+    r"""A dictionary containing :obj:`TextPrompt` used in the `VideoDescription`
+    task.
+
+    Attributes:
+        ASSISTANT_PROMPT (TextPrompt): A prompt for the AI assistant to
+            provide a shot description of the content of the current video.
+    """
+
     ASSISTANT_PROMPT = TextPrompt(
         """You are a master of video analysis. 
         Please provide a shot description of the content of the current video."""

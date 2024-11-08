@@ -106,7 +106,18 @@ class VectorDBMemory(AgentMemory):
 
 class LongtermAgentMemory(AgentMemory):
     r"""An implementation of the :obj:`AgentMemory` abstract base class for
-    augumenting ChatHistoryMemory with VectorDBMemory.
+    augmenting ChatHistoryMemory with VectorDBMemory.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        chat_history_block (Optional[ChatHistoryBlock], optional): A chat
+            history block. If `None`, a :obj:`ChatHistoryBlock` will be used.
+            (default: :obj:`None`)
+        vector_db_block (Optional[VectorDBBlock], optional): A vector database
+            block. If `None`, a :obj:`VectorDBBlock` will be used.
+            (default: :obj:`None`)
+        retrieve_limit (int, optional): The maximum number of messages
+            to be added into the context.  (default: :obj:`3`)
     """
 
     def __init__(
@@ -123,9 +134,21 @@ class LongtermAgentMemory(AgentMemory):
         self._current_topic: str = ""
 
     def get_context_creator(self) -> BaseContextCreator:
+        r"""Returns the context creator used by the memory.
+
+        Returns:
+            BaseContextCreator: The context creator used by the memory.
+        """
         return self._context_creator
 
     def retrieve(self) -> List[ContextRecord]:
+        r"""Retrieves context records from both the chat history and the vector
+        database.
+
+        Returns:
+            List[ContextRecord]: A list of context records retrieved from both
+                the chat history and the vector database.
+        """
         chat_history = self.chat_history_block.retrieve()
         vector_db_retrieve = self.vector_db_block.retrieve(
             self._current_topic, self.retrieve_limit

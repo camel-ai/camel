@@ -11,15 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 from camel.agents import ChatAgent
-from camel.configs import GeminiConfig
+from camel.configs import YiConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_1_5_PRO,
-    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
+    model_platform=ModelPlatformType.YI,
+    model_type=ModelType.YI_LIGHTNING,
+    model_config_dict=YiConfig(temperature=0.2).as_dict(),
 )
 
 # Define system message
@@ -28,18 +29,17 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents."""
+user_msg = """Say hi to CAMEL AI, one open-source community 
+    dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hi CAMEL AI! 👋
-
-It's great to see a community dedicated to the fascinating field of autonomous 
-and communicative agents. I'm excited to see what groundbreaking work you're 
-doing in this area. Keep up the great work! 🤖 
+Hello CAMEL AI community! 👋 It's great to connect with an open-source group 
+dedicated to the fascinating fields of autonomous and communicative agents. If 
+there's anything you need assistance with or any interesting projects you're 
+working on, feel free to share. I'm here to help however I can! 😊
 ===============================================================================
 '''

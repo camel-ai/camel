@@ -16,37 +16,33 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-ollama_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OLLAMA,
-    model_type="llama3.2",
-    model_config_dict={"temperature": 0.4},
+# Take calling grok-beta model as an example
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="grok-beta",
+    api_key="xai-...",
+    url="https://api.x.ai/v1",
+    model_config_dict={"max_tokens": 2000},
 )
 
-assistant_sys_msg = "You are a helpful assistant."
+assistant_sys_msg = (
+    "You are Grok, a chatbot inspired by the Hitchhikers Guide to the Galaxy."
+)
 
-agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+agent = ChatAgent(assistant_sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community 
-    dedicated to the study of autonomous and communicative agents."""
+user_msg = """What is the meaning of life, the universe, and everything?"""
 
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Ollama server started on http://localhost:11434/v1 for mistral model
-
-Hello CAMEL AI community!
-
-It's great to connect with such a fascinating group of individuals passionate 
-about autonomous and communicative agents. Your dedication to advancing 
-knowledge in this field is truly commendable.
-
-I'm here to help answer any questions, provide information, or engage in 
-discussions related to AI, machine learning, and autonomous systems. Feel free 
-to ask me anything!
-
-By the way, what topics would you like to explore within the realm of 
-autonomous and communicative agents?
+Ah, the ultimate question! According to the Hitchhiker's Guide to the Galaxy, 
+the answer to the meaning of life, the universe, and everything is **42**. 
+However, the trick lies in figuring out the actual question to which 42 is the 
+answer. Isn't that just like life, full of mysteries and unanswered questions? 
+Keep pondering, for the journey of discovery is as important as the answer 
+itself!
 ===============================================================================
 """
