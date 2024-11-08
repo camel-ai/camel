@@ -13,15 +13,18 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from typing import Any, Dict, Optional, Type, cast
+from typing import Any, Callable, Dict, Optional, Type, cast
 
 from openai import OpenAI
 from pydantic import BaseModel
 
 from camel.types import ModelType
+from camel.types.enums import ModelPlatformType
 from camel.utils import (
     api_keys_required,
 )
+from camel.utils import get_format
+from camel.models import ModelFactory
 
 from .base import BaseConverter
 
@@ -56,31 +59,26 @@ class OpenAISchemaConverter(BaseConverter):
         model_type: ModelType = ModelType.GPT_4O_MINI,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        output_schema: Optional[Type[BaseModel]] = None,
         prompt: Optional[str] = DEFAULT_CONVERTER_PROMPTS,
     ):
         self.model_type = model_type
         self.prompt = prompt
         self.model_config_dict = model_config_dict or {}
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self._client = OpenAI(
-            timeout=60,
-            max_retries=3,
+        self._client = ModelFactory.create(
+            ModelPlatformType.OPENAI,
+            model_type,
             api_key=api_key,
         )
-        BaseConverter.__init__(self, output_schema)
-        if output_schema is not None:
-            self.model_config_dict["response_format"] = output_schema
+        super().__init__()
 
     @api_keys_required("OPENAI_API_KEY")
     def convert(
         self,
         content: str,
-        output_schema: Optional[Type[BaseModel]] = None,
-        prompt: Optional[str] = None,
+        output_schema: Type[BaseModel] | str | Callable,
     ) -> BaseModel:
-        """
-        Formats the input content into the expected BaseModel
+        r"""Formats the input content into the expected BaseModel
 
         Args:
             content (str): The content to be formatted.
@@ -89,14 +87,19 @@ class OpenAISchemaConverter(BaseConverter):
             prompt (Optional[str], optional): The prompt to be used.
 
         Returns:
-            Optional[BaseModel]: The formatted response.
+            BaseModel: The formatted response.
         """
-        if output_schema is not None:
-            self.model_config_dict["response_format"] = output_schema
-        prompt = cast(str, prompt or self.prompt)
+        if not isinstance(output_schema, type):
+            output_schema = get_format(output_schema)
+        elif not issubclass(output_schema, BaseModel):
+            raise ValueError(
+                f"Expected a BaseModel, got {type(output_schema)}"
+            )
+
+        self.model_config_dict["response_format"] = output_schema
         response = self._client.beta.chat.completions.parse(
             messages=[
-                {'role': 'system', 'content': prompt},
+                {'role': 'system', 'content': self.prompt},
                 {'role': 'user', 'content': content},
             ],
             model=self.model_type,

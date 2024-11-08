@@ -16,18 +16,19 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Type, Union
 
-from pydantic import create_model
+from pydantic import BaseModel, create_model
 from pydantic.dataclasses import dataclass
 
 
-def get_format(input_data: Optional[Union[str, type, Callable]] = None):
-    """
-    A multi-purpose function that can be used as a normal function,
+def get_format(
+    input_data: Optional[Union[str, type, Callable]] = None
+) -> Type[BaseModel]:
+    r"""A multi-purpose function that can be used as a normal function,
         a class decorator, or a function decorator.
 
-    Parameters:
+    Args:
     input_data (Optional[Union[str, type, Callable]]):
         - If a string is provided, it should be a JSON-encoded string
             that will be converted into a BaseModel.
@@ -35,9 +36,8 @@ def get_format(input_data: Optional[Union[str, type, Callable]] = None):
             its arguments are converted into a BaseModel.
 
     Returns:
-    - A BaseModel instance if used as a normal function with a JSON string.
-    - A decorated function if used as a function decorator,
-        returning a BaseModel instance of the function's arguments.
+        Type[BaseModel]: The BaseModel class that will be used to
+            structure the input data.
     """
     if isinstance(input_data, str):
         data_dict = json.loads(input_data)

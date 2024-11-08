@@ -26,8 +26,8 @@ class BaseConverter(ABC):
             format of the response. (default: :obj:`None`)
     """
 
-    def __init__(self, output_schema: Optional[Type[BaseModel]] = None):
-        self.output_schema = output_schema
+    def __init__(self):
+        pass
 
     @abstractmethod
     def convert(
@@ -36,8 +36,7 @@ class BaseConverter(ABC):
         output_schema: Optional[Type[BaseModel]] = None,
         prompt: Optional[str] = None,
     ) -> BaseModel:
-        """
-        Structures the input text into the expected response format.
+        r"""Structures the input text into the expected response format.
 
         Args:
             text (str): The input text to be structured.

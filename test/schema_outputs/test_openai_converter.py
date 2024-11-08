@@ -28,7 +28,7 @@ def get_temperature(location: str, date: str, temperature: float):
     print(f"Temperature in {location} on {date} is {temperature} degrees.")
 
 
-def test_openaistructure_with_str_template():
+def test_openai_converter_with_str_template():
     temperature_template = (
         '{"location": "Beijing", "date": "2023-09-01", "temperature": 30.0}'
     )
@@ -49,7 +49,7 @@ def test_openaistructure_with_str_template():
     }
 
 
-def test_openaistructure_with_function():
+def test_openai_converter_with_function():
     target_format_from_function = get_format(get_temperature)
 
     model = OpenAISchemaConverter(
@@ -67,7 +67,7 @@ def test_openaistructure_with_function():
     }
 
 
-def test_openaistructure_with_model():
+def test_openai_converter_with_model():
     target_format_from_model = Temperature
 
     model = OpenAISchemaConverter(
