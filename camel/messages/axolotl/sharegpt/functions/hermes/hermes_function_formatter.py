@@ -18,15 +18,23 @@ from typing import Any, Dict, List, Optional
 from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
     FunctionCallFormatter,
 )
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_tool_call import (
-    HermesToolCall,
-)
+from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
 from camel.messages.axolotl.sharegpt.functions.tool_response import (
     ToolResponse,
 )
 
 
-class HermesFunctionFormatter(FunctionCallFormatter):
+class HermesToolResponse(ToolResponse):
+    """Represents a single tool/function call with validation"""
+
+
+class HermesToolCall(ToolCall):
+    """Represents a single tool/function call with validation"""
+
+
+class HermesFunctionFormatter(
+    FunctionCallFormatter[HermesToolCall, HermesToolResponse]
+):
     """Hermes-style function calling format implementation with validation"""
 
     def extract_tool_calls(self, message: str) -> List[HermesToolCall]:
@@ -44,7 +52,9 @@ class HermesFunctionFormatter(FunctionCallFormatter):
 
         return tool_calls
 
-    def extract_tool_response(self, message: str) -> Optional[ToolResponse]:
+    def extract_tool_response(
+        self, message: str
+    ) -> Optional[HermesToolResponse]:
         pattern = r"<tool_response>\s*({.*?})\s*</tool_response>"
         match = re.search(pattern, message, re.DOTALL)
 
@@ -52,7 +62,7 @@ class HermesFunctionFormatter(FunctionCallFormatter):
             try:
                 response_json = match.group(1)
                 response_dict = json.loads(response_json.replace("'", '"'))
-                return ToolResponse.model_validate(response_dict)
+                return HermesToolResponse.model_validate(response_dict)
             except Exception as e:
                 print(f"Warning: Failed to parse tool response: {e}")
                 return None

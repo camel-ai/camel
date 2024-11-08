@@ -12,19 +12,27 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
+
+from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
+from camel.messages.axolotl.sharegpt.functions.tool_response import (
+    ToolResponse,
+)
+
+CallT = TypeVar('CallT', bound=ToolCall, covariant=True)
+ResponseT = TypeVar('ResponseT', bound=ToolResponse, covariant=True)
 
 
-class FunctionCallFormatter(ABC):
+class FunctionCallFormatter(ABC, Generic[CallT, ResponseT]):
     """Abstract base class for function calling formats"""
 
     @abstractmethod
-    def extract_tool_calls(self, message: str) -> List[Dict[str, Any]]:
+    def extract_tool_calls(self, message: str) -> List[CallT]:
         """Extract function call info from a message string"""
         pass
 
     @abstractmethod
-    def extract_tool_response(self, message: str) -> Optional[Dict[str, Any]]:
+    def extract_tool_response(self, message: str) -> Optional[ResponseT]:
         """Extract function response info from a message string"""
         pass
 

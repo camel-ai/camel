@@ -29,8 +29,8 @@ from camel.messages import (
 from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
     FunctionCallFormatter,
 )
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
-    HermesFunctionFormatter,
+from camel.messages.axolotl.sharegpt.functions.hermes import (
+    hermes_function_formatter as hff,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
@@ -41,6 +41,8 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import Constants
+
+HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 @dataclass
@@ -283,7 +285,7 @@ class BaseMessage:
     def from_sharegpt(
         cls,
         message: ShareGPTMessage,
-        function_format: FunctionCallFormatter = HermesFunctionFormatter(),
+        function_format: Optional[FunctionCallFormatter[Any, Any]] = None,
         role_mapping=None,
     ) -> "BaseMessage":
         """Convert ShareGPT message to BaseMessage or FunctionCallingMessage.
@@ -299,6 +301,7 @@ class BaseMessage:
         Returns:
             BaseMessage: Converted message
         """
+
         if role_mapping is None:
             role_mapping = {
                 "system": ["system", RoleType.USER],
@@ -307,6 +310,9 @@ class BaseMessage:
                 "tool": ["assistant", RoleType.ASSISTANT],
             }
         role_name, role_type = role_mapping[message.from_]
+
+        if function_format is None:
+            function_format = HermesFunctionFormatter()
 
         # Check if this is a function-related message
         if message.from_ == "gpt":
@@ -333,8 +339,8 @@ class BaseMessage:
                     args=func_info[0].__dict__["arguments"],
                 )
         elif message.from_ == "tool":
-            func_info = function_format.extract_tool_response(message.value)
-            if func_info:
+            func_r_info = function_format.extract_tool_response(message.value)
+            if func_r_info:
                 from camel.messages import FunctionCallingMessage
 
                 return FunctionCallingMessage(
@@ -342,8 +348,8 @@ class BaseMessage:
                     role_type=role_type,
                     meta_dict=None,
                     content="",
-                    func_name=func_info.__dict__["name"],
-                    result=func_info.__dict__["content"],
+                    func_name=func_r_info.__dict__["name"],
+                    result=func_r_info.__dict__["content"],
                 )
 
         # Regular message
@@ -356,9 +362,18 @@ class BaseMessage:
 
     def to_sharegpt(
         self,
-        function_format: FunctionCallFormatter = HermesFunctionFormatter(),
+        function_format: Optional[FunctionCallFormatter] = None,
     ) -> ShareGPTMessage:
-        """Convert BaseMessage to ShareGPT message"""
+        """Convert BaseMessage to ShareGPT message
+
+        Args:
+            function_format (FunctionCallFormatter): Function call formatter
+            to use. Defaults to Hermes.
+        """
+
+        if function_format is None:
+            function_format = HermesFunctionFormatter()
+
         # Convert role type to ShareGPT 'from' field
         if self.role_type == RoleType.USER:
             from_ = "system" if self.role_name == "system" else "human"
@@ -366,8 +381,7 @@ class BaseMessage:
             from_ = "gpt"
 
         # Function conversion code in FunctionCallingMessage
-
-        return ShareGPTMessage(from_=from_, value=self.content)
+        return ShareGPTMessage(from_=from_, value=self.content)  # type: ignore[call-arg]
 
     def to_openai_message(
         self,

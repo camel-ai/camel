@@ -29,7 +29,8 @@ class ToolResponse(BaseModel):
         description="The name of the tool that was called",
     )
     content: Any = Field(
-        description="The response content from the tool. Must be JSON serializable literal or object"
+        description="The response content from the tool."
+        " Must be JSON serializable literal or object"
     )
 
     @field_validator('content')

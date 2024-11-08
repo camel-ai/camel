@@ -23,11 +23,17 @@ from camel.messages import (
 from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
     FunctionCallFormatter,
 )
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
-    HermesFunctionFormatter,
+from camel.messages.axolotl.sharegpt.functions.hermes import (
+    hermes_function_formatter as hff,
+)
+from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
+from camel.messages.axolotl.sharegpt.functions.tool_response import (
+    ToolResponse,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.types import OpenAIBackendRole
+
+HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 @dataclass
@@ -70,26 +76,42 @@ class FunctionCallingMessage(BaseMessage):
 
     def to_sharegpt(
         self,
-        function_format: FunctionCallFormatter = HermesFunctionFormatter(),
+        function_format: Optional[
+            FunctionCallFormatter[ToolCall, ToolResponse]
+        ] = None,
     ) -> ShareGPTMessage:
-        """Convert FunctionCallingMessage to ShareGPT message"""
-        # The role of the message is an unreliable indicator of whether it is a function call or response, so use result
+        """
+        Convert FunctionCallingMessage to ShareGPT message
+
+        Args:
+            function_format (FunctionCallFormatter[ToolCall, ToolResponse],
+                                                                optional):
+                The function formatter to use. Defaults to None.
+        """
+
+        if function_format is None:
+            function_format = HermesFunctionFormatter()
+        # The role of the message is an unreliable indicator of whether
+        # it is a function call or response, so use result
         if self.result is None:
             # This is a function call
+            # TODO: split the incoming types to be more specific
+            #  and remove the type ignores
             content = function_format.format_tool_call(
-                self.content or "",
-                self.func_name,
-                self.args,
+                self.content or "",  # type: ignore[arg-type]
+                self.func_name,  # type: ignore[arg-type]
+                self.args,  # type: ignore[arg-type]
             )
-            return ShareGPTMessage(from_="gpt", value=content)
+            return ShareGPTMessage(from_="gpt", value=content)  # type: ignore[call-arg]
         else:
             # This is a function response
-            # TODO: Allow for more flexible setting of tool role, optionally to be the same as assistant messages
+            # TODO: Allow for more flexible setting of tool role,
+            #  optionally to be the same as assistant messages
             content = function_format.format_tool_response(
-                self.func_name,
-                self.result,
+                self.func_name,  # type: ignore[arg-type]
+                self.result,  # type: ignore[arg-type]
             )
-            return ShareGPTMessage(from_="tool", value=content)
+            return ShareGPTMessage(from_="tool", value=content)  # type: ignore[call-arg]
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
