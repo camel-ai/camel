@@ -322,41 +322,6 @@ print(task_output)
                     }]}]}}
 ```
 
-### 3.6. Using `Firecrawl Reader`
-
-Initialize the client and set the URL from which we want to retrieve information. When the status is "completed," the information retrieval is finished and ready for reading.
-```python
-firecrawl = Firecrawl()
-
-response = firecrawl.crawl(url="https://www.camel-ai.org/about")
-print(response["status"])
-```
-```markdown
->>>completed
-```
-
-Directly retrieve information from the returned results.
-```python
-print(response["data"][0]["markdown"])
-```
-```markdown
->>>Camel-AI Team
-
-We are finding the  
-scaling law of agent
-
-🐫 CAMEL is an open-source library designed for the study of autonomous and 
-communicative agents. We believe that studying these agents on a large scale 
-offers valuable insights into their behaviors, capabilities, and potential 
-risks. To facilitate research in this field, we implement and support various 
-types of agents, tasks, prompts, models, and simulated environments.
-
-**We are** always looking for more **contributors** and **collaborators**.  
-Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
-shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
- or [Discord](https://discord.gg/CNcNpquyDc)...
-```
-
 ### 3.6. Using `Jina Reader`
 
 Initialize the client and set the URL from which we want to retrieve information, then print the response.
