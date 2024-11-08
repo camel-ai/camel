@@ -1,16 +1,32 @@
-from camel.toolkits import MATH_FUNCS
-from camel.toolkits import CodeExecutionToolkit
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.runtime import DockerRuntime
-
+from camel.toolkits import MATH_FUNCS, CodeExecutionToolkit
 
 if __name__ == "__main__":
     runtime = (
-        DockerRuntime("xukunliu/camel")
+        DockerRuntime("xukunliu/camel")  # change to your own docker image
         .add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS")
-        .add(CodeExecutionToolkit().get_tools(), "camel.toolkits.CodeExecutionToolkit")
+        .add(
+            CodeExecutionToolkit().get_tools(),
+            "camel.toolkits.CodeExecutionToolkit",
+        )
     )
 
-    with runtime as r: # using with statement to automatically close the runtime
+    with (
+        runtime as r
+    ):  # using with statement to automatically close the runtime
         print("Waiting for runtime to be ready...")
         while not r.ok:
             r.wait()
@@ -32,7 +48,7 @@ if __name__ == "__main__":
         print(f"Subtract 5 - 3: {sub.func(a=5, b=3)}")
         print(f"Multiply 2 * 3: {mul.func(a=2, b=3)}")
         print(f"Execute code: {code_exec.func(code='1 + 2')}")
-        
+
     # you can also use the runtime without the with statement
     # runtime.build()
     # runtime.stop()

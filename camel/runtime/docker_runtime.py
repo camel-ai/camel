@@ -1,26 +1,44 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import io
 import json
 import logging
-from typing import Any, Dict, List, Optional
-
+import os
+import tarfile
 import time
+from functools import wraps
+from pathlib import Path
+from random import randint
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+import requests  # type: ignore[import-untyped]
 from pydantic import BaseModel
+from tqdm import tqdm  # type: ignore[import-untyped]
+
 from camel.runtime import BaseRuntime
 from camel.toolkits import FunctionTool
-from pathlib import Path
-from functools import wraps
-import os
-from random import randint
-import requests
-import tarfile
-import io
-from tqdm import tqdm
+
+if TYPE_CHECKING:
+    from docker.models.containers import Container
 
 logger = logging.getLogger(__name__)
 
 
 class DockerRuntime(BaseRuntime):
     r"""A class representing a runtime environment using Docker.
-    This class automatically wraps functions to be executed in a Docker container.
+    This class automatically wraps functions to be executed
+    in a Docker container.
 
     Attributes:
         image (str): The name of the Docker image to use for the runtime.
@@ -28,21 +46,21 @@ class DockerRuntime(BaseRuntime):
         remove (bool): Whether to remove the container after stopping it.
     """
 
-    def __init__(self, image: str, port: int = 8000, remove: bool = True, **kwargs):
+    def __init__(
+        self, image: str, port: int = 8000, remove: bool = True, **kwargs
+    ):
         super().__init__()
 
         import docker  # type: ignore[import]
-        from docker.types import Mount  # type: ignore[import]
 
         self.client = docker.from_env()
-        self.container = None
+        self.container: Optional[Container] = None
 
         api_path = Path(__file__).parent / "api.py"
-        self.mounts = dict()
-        self.cp = {api_path: "/home"}
-        self.entrypoint = dict()
-        self.return_stdout = dict()
-        self.tasks = []
+        self.mounts: Dict[Path, Path] = dict()
+        self.cp: Dict[Path, Path] = {api_path: Path("/home")}
+        self.entrypoint: Dict[str, str] = dict()
+        self.tasks: List[Dict[str, Any]] = []
 
         self.docker_config = kwargs
         self.image = image
@@ -50,7 +68,9 @@ class DockerRuntime(BaseRuntime):
         self.remove = remove
 
         if not self.client.images.list(name=self.image):
-            logger.warning(f"Image {self.image} not found. Pulling from Docker Hub.")
+            logger.warning(
+                f"Image {self.image} not found. Pulling from Docker Hub."
+            )
             self.client.images.pull(self.image)
 
     def mount(self, path: str, mount_path: str) -> "DockerRuntime":
@@ -58,35 +78,37 @@ class DockerRuntime(BaseRuntime):
 
         Args:
             path (str): The local path to mount.
-            mount_path (str): The path to mount the local directory to in the container.
+            mount_path (str): The path to mount the local
+                directory to in the container.
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
         """
 
-        path, mount_path = Path(path), Path(mount_path)
-        assert path.exists(), f"Path {path} does not exist."
-        assert path.is_dir(), f"Path {path} is not a directory."
-        assert path.is_absolute(), f"Path {path} is not absolute."
-        assert mount_path.is_absolute(), f"Mount path {mount_path} is not absolute."
+        _path, _mount_path = Path(path), Path(mount_path)
+        assert _path.exists(), f"Path {_path} does not exist."
+        assert _path.is_dir(), f"Path {_path} is not a directory."
+        assert _path.is_absolute(), f"Path {_path} is not absolute."
+        assert (
+            _mount_path.is_absolute()
+        ), f"Mount path {_mount_path} is not absolute."
 
-        self.mounts[path] = mount_path
+        self.mounts[_path] = _mount_path
         return self
 
     def copy(self, source: str, dest: str) -> "DockerRuntime":
         r"""Copy a file or directory to the container.
 
         Args:
-            source (str): The local path to the file or directory to copy.
-            dest (str): The path to copy the file or directory to in the container.
-
+            source (str): The local path to the file.
+            dest (str): The path to copy the file to in the container.
         Returns:
             DockerRuntime: The DockerRuntime instance.
         """
-        source, dest = Path(source), Path(dest)
-        assert source.exists(), f"Source {source} does not exist."
+        _source, _dest = Path(source), Path(dest)
+        assert _source.exists(), f"Source {_source} does not exist."
 
-        self.cp[source] = dest
+        self.cp[_source] = _dest
         return self
 
     def add_task(
@@ -105,8 +127,8 @@ class DockerRuntime(BaseRuntime):
         workdir: Optional[str] = None,
         demux: bool = False,
     ) -> "DockerRuntime":
-        r"""Add a task to run a command inside the container when building. Similar to
-        ``docker exec``.
+        r"""Add a task to run a command inside the container when building.
+        Similar to ``docker exec``.
 
         Args:
             cmd (str or list): Command to be executed
@@ -251,7 +273,9 @@ class DockerRuntime(BaseRuntime):
         mounts = []
         for local_path, mount_path in self.mounts.items():
             mounts.append(
-                Mount(target=str(mount_path), source=str(local_path), type="bind")
+                Mount(
+                    target=str(mount_path), source=str(local_path), type="bind"
+                )
             )
 
         container_params = {
@@ -259,13 +283,13 @@ class DockerRuntime(BaseRuntime):
             "detach": True,
             "mounts": mounts,
             "command": "sleep infinity",
-            **self.docker_config,  # Add any additional Docker configurations provided
+            **self.docker_config,
         }
         container_params["ports"] = {"8000/tcp": self.port}
         try:
             self.container = self.client.containers.create(**container_params)
         except docker.errors.APIError as e:
-            raise RuntimeError(f"Failed to create container: {str(e)}")
+            raise RuntimeError(f"Failed to create container: {e!s}")
 
         try:
             self.container.start()
@@ -276,7 +300,7 @@ class DockerRuntime(BaseRuntime):
                 time.sleep(1)
 
         except docker.errors.APIError as e:
-            raise RuntimeError(f"Failed to start container: {str(e)}")
+            raise RuntimeError(f"Failed to start container: {e!s}")
 
         # Copy files to the container if specified
         for local_path, container_path in self.cp.items():
@@ -284,14 +308,16 @@ class DockerRuntime(BaseRuntime):
             try:
                 with io.BytesIO() as tar_stream:
                     with tarfile.open(fileobj=tar_stream, mode="w") as tar:
-                        tar.add(local_path, arcname=os.path.basename(local_path))
+                        tar.add(
+                            local_path, arcname=os.path.basename(local_path)
+                        )
                     tar_stream.seek(0)
                     self.container.put_archive(
                         str(container_path), tar_stream.getvalue()
                     )
             except docker.errors.APIError as e:
                 raise RuntimeError(
-                    f"Failed to copy file {local_path} to container: {str(e)}"
+                    f"Failed to copy file {local_path} to container: {e!s}"
                 )
 
         if self.tasks:
@@ -305,7 +331,7 @@ class DockerRuntime(BaseRuntime):
         logger.info(f"Container started on port {self.port}")
         return self
 
-    def add(
+    def add(  # type: ignore[override]
         self,
         funcs: FunctionTool | List[FunctionTool],
         entrypoint: str,
@@ -314,7 +340,8 @@ class DockerRuntime(BaseRuntime):
         r"""Add a function or list of functions to the runtime.
 
         Args:
-            funcs (FunctionTool or List[FunctionTool]): The function or list of functions to add.
+            funcs (FunctionTool or List[FunctionTool]): The function or
+                list of functions to add.
             entrypoint (str): The entrypoint for the function.
             return_stdout (bool): Whether to return the stdout of the function.
 
@@ -331,28 +358,40 @@ class DockerRuntime(BaseRuntime):
                 _ = eval(params)
             except Exception as e:
                 logger.error(f"Error evaluating parameters: {e}")
-                raise "Currently DockerRuntime only supports dict parameters for entrypoint."
+                raise Exception(
+                    "Currently DockerRuntime only supports dict"
+                    "parameters for entrypoint."
+                )
 
         for func in funcs:
             inner_func = func.func
 
             # Create a wrapper that explicitly binds `func`
             @wraps(inner_func)
-            def wrapper(*args, func=func, return_stdout=return_stdout, **kwargs):
+            def wrapper(
+                *args, func=func, return_stdout=return_stdout, **kwargs
+            ):
                 for key, value in kwargs.items():
                     if isinstance(value, BaseModel):
                         kwargs[key] = value.model_dump()
 
                 resp = requests.post(
                     f"http://localhost:{self.port}/{func.get_function_name()}",
-                    json=dict(args=args, kwargs=kwargs, return_stdout=return_stdout),
+                    json=dict(
+                        args=args, kwargs=kwargs, return_stdout=return_stdout
+                    ),
                 )
                 if resp.status_code != 200:
                     logger.error(
-                        f"Failed to execute function: {func.get_function_name()}, status code: {resp.status_code}, response: {resp.text}"
+                        f"""ailed to execute function: 
+                        {func.get_function_name()}, 
+                        status code: {resp.status_code}, 
+                        response: {resp.text}"""
                     )
                     return {
-                        "error": f"Failed to execute function: {func.get_function_name()}, response: {resp.text}"
+                        "error": f"""Failed to execute function:
+                        {func.get_function_name()}, 
+                        response: {resp.text}"""
                     }
                 data = resp.json()
                 if return_stdout:
@@ -362,7 +401,6 @@ class DockerRuntime(BaseRuntime):
             func.func = wrapper
             self.tools_map[func.get_function_name()] = func
         self.entrypoint[func.get_function_name()] = entrypoint
-        self.return_stdout[func.get_function_name()] = return_stdout
 
         return self
 
@@ -434,10 +472,11 @@ class DockerRuntime(BaseRuntime):
         """
         if not self.container:
             return self.build()
-        logger.warning("Container already exists. Returning existing container.")
+        logger.warning(
+            "Container already exists. Returning existing container."
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        r"""Exit the context manager.
-        """
+        r"""Exit the context manager."""
         self.stop()

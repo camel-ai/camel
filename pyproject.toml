@@ -240,6 +240,12 @@ retrievers = [
     "cohere",
 ]
 
+runtime = [
+    "docker",
+    "fastapi",
+    "uvicorn",
+]
+
 all = [
     # huggingface-agent
     "transformers",
@@ -314,6 +320,8 @@ all = [
     "datacommons_pandas",
     "tavily-python",
     "apify_client",
+    "fastapi",
+    "uvicorn",
 ]
 
 [tool.poetry.group.dev]

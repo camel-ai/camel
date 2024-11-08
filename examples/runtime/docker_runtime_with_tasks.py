@@ -18,19 +18,20 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.runtime import DockerRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
-from camel.runtime import DockerRuntime
 
 # tools
 toolkit = CodeExecutionToolkit(verbose=True)
 
 runtime = (
-    DockerRuntime("xukunliu/camel")
+    DockerRuntime("xukunliu/camel")  # change to your own docker image
     .add(
         toolkit.get_tools(),
-        "camel.toolkits.CodeExecutionToolkit(unsafe_mode=True, import_white_list=['os', 'sys'])",
+        "camel.toolkits.CodeExecutionToolkit"
+        "(unsafe_mode=True, import_white_list=['os', 'sys'])",
         True,
     )
     .add_task("mkdir /home/test")
@@ -73,9 +74,7 @@ agent.reset()
 
 with runtime as r:
     r.wait()
-    prompt = (
-        "List all directories in /home"
-    )
+    prompt = "List all directories in /home"
     user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
     print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 
@@ -86,4 +85,5 @@ with runtime as r:
 
 # TODO: unlock unsafe mode
 # This example can not be run in the current version of CAMEL because
-# the InternalPythonInterpreter does not support most of the built-in functions.
+# the InternalPythonInterpreter does not support
+# most of the built-in functions.
