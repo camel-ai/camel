@@ -267,16 +267,14 @@ class FunctionTool:
         )
         self.synthesis_output = synthesis_output
         self.synthesize_output_model = synthesize_output_model
+        self.synthesize_output_format: Optional[type[BaseModel]] = None
+        return_annotation = inspect.signature(self.func).return_annotation
         if synthesize_output_format is not None:
             self.synthesize_output_format = synthesize_output_format
-        else:
-            return_annotation = inspect.signature(self.func).return_annotation
-            if isinstance(return_annotation, type) and issubclass(
-                return_annotation, BaseModel
-            ):
-                self.synthesize_output_format = return_annotation
-            else:
-                self.synthesize_output_format = None
+        elif isinstance(return_annotation, type) and issubclass(
+            return_annotation, BaseModel
+        ):
+            self.synthesize_output_format = return_annotation
 
         if synthesize_schema:
             if openai_tool_schema:
@@ -572,7 +570,7 @@ class FunctionTool:
         return {}
 
     def synthesize_execution_output(
-        self, kwds: Optional[Dict[str, Any]] = {}
+        self, kwds: Optional[Dict[str, Any]] = None
     ) -> Any:
         r"""
         Synthesizes the execution output of the function.
@@ -583,7 +581,7 @@ class FunctionTool:
 
         kwds:
             kwds (Optional[Dict[str, Any]]): Arguments to pass to the function
-                during synthesis. Defaults to `{}`.
+                during synthesis. Defaults to `None`.
 
         Returns:
             Any: Synthesized output from the function execution. If no

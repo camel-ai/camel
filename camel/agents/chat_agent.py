@@ -191,7 +191,7 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in all_tools
         }
-        self.tools_dict = {
+        self.tool_dict = {
             tool.get_function_name(): tool for tool in all_tools
         }
 
@@ -1101,10 +1101,8 @@ class ChatAgent(BaseAgent):
             raise RuntimeError("Tool call is None")
         func_name = choice.message.tool_calls[0].function.name
 
-        args_str: str = choice.message.tool_calls[0].function.arguments
-        args = json.loads(args_str)
-
-        tool = self.tools_dict[func_name]
+        args = json.loads(choice.message.tool_calls[0].function.arguments)
+        tool = self.tool_dict[func_name]
         result = tool(**args)
 
         assist_msg = FunctionCallingMessage(
@@ -1155,10 +1153,8 @@ class ChatAgent(BaseAgent):
             raise RuntimeError("Tool call is None")
         func_name = choice.message.tool_calls[0].function.name
 
-        args_str: str = choice.message.tool_calls[0].function.arguments
-        args = json.loads(args_str)
-
-        tool = self.tools_dict[func_name]
+        args = json.loads(choice.message.tool_calls[0].function.arguments)
+        tool = self.tool_dict[func_name]
         result = tool(**args)
 
         assist_msg = FunctionCallingMessage(
