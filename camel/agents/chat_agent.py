@@ -191,9 +191,7 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in all_tools
         }
-        self.tool_dict = {
-            tool.get_function_name(): tool for tool in all_tools
-        }
+        self.tool_dict = {tool.get_function_name(): tool for tool in all_tools}
 
         # If the user hasn't configured tools in `BaseModelBackend`,
         # the tools set from `ChatAgent` will be used.
@@ -1155,7 +1153,7 @@ class ChatAgent(BaseAgent):
 
         args = json.loads(choice.message.tool_calls[0].function.arguments)
         tool = self.tool_dict[func_name]
-        result = tool(**args)
+        result = await tool(**args)
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
