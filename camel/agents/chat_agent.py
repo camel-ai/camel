@@ -1103,7 +1103,7 @@ class ChatAgent(BaseAgent):
 
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
-        
+
         tool = self.tools_dict[func_name]
         result = tool(**args)
 

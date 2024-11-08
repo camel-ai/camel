@@ -46,8 +46,11 @@ def movie_data_by_id(id: int) -> Dict[str, Any]:
             "error": str(e),
         }
 
+
 real_get_movie = FunctionTool(movie_data_by_id)
-synthesized_get_movie = FunctionTool(movie_data_by_id, synthesis_output=True, synthesize_schema=True)
+synthesized_get_movie = FunctionTool(
+    movie_data_by_id, synthesis_output=True, synthesize_schema=True
+)
 
 assistant_sys_msg = "You are a helpful assistant."
 

@@ -271,8 +271,9 @@ class FunctionTool:
             self.synthesize_output_format = synthesize_output_format
         else:
             return_annotation = inspect.signature(self.func).return_annotation
-            if isinstance(return_annotation, type) and \
-                issubclass(return_annotation, BaseModel):
+            if isinstance(return_annotation, type) and issubclass(
+                return_annotation, BaseModel
+            ):
                 self.synthesize_output_format = return_annotation
             else:
                 self.synthesize_output_format = None
@@ -291,7 +292,7 @@ class FunctionTool:
                     f"Failed to synthesize a valid schema for "
                     f"{self.func.__name__}."
                 )
-            
+
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         if self.synthesis_output:
             result = self.synthesize_execution_output(kwds)
@@ -571,8 +572,8 @@ class FunctionTool:
         return {}
 
     def synthesize_execution_output(
-            self, kwds: Optional[Dict[str, Any]] = {}
-        ) -> Any:
+        self, kwds: Optional[Dict[str, Any]] = {}
+    ) -> Any:
         r"""
         Synthesizes the execution output of the function.
 
@@ -589,18 +590,20 @@ class FunctionTool:
             synthesis model is provided, a warning is logged.
         """
         function_string = inspect.getsource(self.func)
-        
+
         if self.func.__doc__ is not None:
             tree = ast.parse(function_string)
-            func_node = (tree.body[0]
-                        if isinstance(tree.body[0], ast.FunctionDef)
-                        else None)
+            func_node = (
+                tree.body[0]
+                if isinstance(tree.body[0], ast.FunctionDef)
+                else None
+            )
             if func_node:
                 existing_docstring = ast.get_docstring(func_node)
                 if existing_docstring != self.func.__doc__:
                     func_node.body[0] = ast.Expr(
-                        value=ast.Constant(value=self.func.__doc__, kind=None
-                    ))
+                        value=ast.Constant(value=self.func.__doc__, kind=None)
+                    )
                     function_string = ast.unparse(tree)
         function_string += f"\nkwds:\n{kwds}"
 
@@ -643,7 +646,7 @@ kwds:
 - Just return the synthesized output of the function without any explanation.
 - The output should in plain text withou any formatting.
 '''
-        
+
         synthesis_agent = ChatAgent(
             assistant_sys_msg,
             model=self.synthesize_output_model,
