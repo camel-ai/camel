@@ -76,6 +76,7 @@ class VectorRetriever(BaseRetriever):
         max_characters: int = 500,
         embed_batch: int = 50,
         should_chunk: bool = True,
+        extra_payload: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from local file path, remote URL, string
@@ -93,9 +94,13 @@ class VectorRetriever(BaseRetriever):
             embed_batch (int): Size of batch for embeddings. Defaults to `50`.
             should_chunk (bool): If True, divide the content into chunks,
                 otherwise skip chunking. Defaults to True.
+            extra_payload (Optional[dict]): Extra payload to be added to the
+                vector storage. Defaults to None.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         from unstructured.documents.elements import Element
+
+        elements = []
 
         if isinstance(content, Element):
             elements = [content]
@@ -137,6 +142,7 @@ class VectorRetriever(BaseRetriever):
                 )
 
                 records = []
+                content_path_info = {}
                 # Prepare the payload for each vector record, includes the
                 # content path, chunk metadata, and chunk text
                 for vector, chunk in zip(batch_vectors, batch_chunks):
@@ -159,6 +165,7 @@ class VectorRetriever(BaseRetriever):
                         **content_path_info,
                         **chunk_metadata,
                         **chunk_text,
+                        **extra_payload,
                     }
 
                     records.append(
