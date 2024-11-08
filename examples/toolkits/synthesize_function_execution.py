@@ -22,7 +22,7 @@ from camel.toolkits import FunctionTool
 
 
 # example function
-def Movie_Data_By_Id(id: int) -> Dict[str, Any]:
+def movie_data_by_id(id: int) -> Dict[str, Any]:
     '''
     Response Schema: {
       "rank": "integer",
@@ -33,17 +33,21 @@ def Movie_Data_By_Id(id: int) -> Dict[str, Any]:
       "description": "string",
     }
     '''
-    url = f"https://imdb-top-100-movies.p.rapidapi.com/{id}"
-    headers = {
-        "x-rapidapi-key": "Your API Key",
-        "x-rapidapi-host": "imdb-top-100-movies.p.rapidapi.com",
-    }
-    response = requests.get(url, headers=headers)
-    return response.json()
+    try:
+        url = f"https://imdb-top-100-movies.p.rapidapi.com/{id}"
+        headers = {
+            "x-rapidapi-key": "Your API Key",
+            "x-rapidapi-host": "imdb-top-100-movies.p.rapidapi.com",
+        }
+        response = requests.get(url, headers=headers)
+        return response.json()
+    except Exception as e:
+        return {
+            "error": str(e),
+        }
 
-
-real_get_movie = FunctionTool(Movie_Data_By_Id)
-synthesized_get_movie = FunctionTool(Movie_Data_By_Id, synthesis_mode=True)
+real_get_movie = FunctionTool(movie_data_by_id)
+synthesized_get_movie = FunctionTool(movie_data_by_id, synthesis_output=True, synthesize_schema=True)
 
 assistant_sys_msg = "You are a helpful assistant."
 

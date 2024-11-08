@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import ast
 import inspect
 import logging
 import warnings
@@ -228,59 +229,83 @@ class FunctionTool:
         openai_tool_schema (Optional[Dict[str, Any]], optional): A
             user-defined OpenAI tool schema to override the default result.
             (default: :obj:`None`)
-        use_schema_assistant (Optional[bool], optional): Whether to enable the
-            use of a schema assistant model to automatically generate the
+        synthesize_schema (Optional[bool], optional): Whether to enable the
+            use of a schema assistant model to automatically synthesize the
             schema if validation fails or no valid schema is provided.
             (default: :obj:`False`)
-        schema_assistant_model (Optional[BaseModelBackend], optional): An
-            assistant model (e.g., an LLM model) used to generate the schema
-            if `use_schema_assistant` is enabled and no valid schema is
+        synthesize_schema_model (Optional[BaseModelBackend], optional): An
+            assistant model (e.g., an LLM model) used to synthesize the schema
+            if `synthesize_schema` is enabled and no valid schema is
             provided. (default: :obj:`None`)
-        schema_generation_max_retries (int, optional): The maximum
-            number of attempts to retry schema generation using the schema
+        synthesize_schema_max_retries (int, optional): The maximum
+            number of attempts to retry schema synthesis using the schema
             assistant model if the previous attempts fail. (default: 2)
-        synthesis_mode (Optional[bool], optional): Flag for enabling synthesis
-            mode, where output is synthesized based on the function's
-            execution. (default: :obj:`None`)
-        synthesis_assistant_model (Optional[BaseModelBackend], optional):
+        synthesis_output (Optional[bool], optional): Flag for enabling
+            synthesis output mode, where output is synthesized based on the
+            function's execution. (default: :obj:`None`)
+        synthesize_output_model (Optional[BaseModelBackend], optional):
             Model used for output synthesis in synthesis mode.
             (default: :obj:`None`)
-        response_format (Optional[Type[BaseModel]], optional): Format for the
-            response when synthesizing output. (default: :obj:`None`)
+        synthesize_output_format (Optional[Type[BaseModel]], optional): Format
+            for the response when synthesizing output. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         func: Callable,
         openai_tool_schema: Optional[Dict[str, Any]] = None,
-        use_schema_assistant: Optional[bool] = False,
-        schema_assistant_model: Optional[BaseModelBackend] = None,
-        schema_generation_max_retries: int = 2,
-        synthesis_mode: Optional[bool] = False,
-        synthesis_assistant_model: Optional[BaseModelBackend] = None,
-        response_format: Optional[Type[BaseModel]] = None,
+        synthesize_schema: Optional[bool] = False,
+        synthesize_schema_model: Optional[BaseModelBackend] = None,
+        synthesize_schema_max_retries: int = 2,
+        synthesis_output: Optional[bool] = False,
+        synthesize_output_model: Optional[BaseModelBackend] = None,
+        synthesize_output_format: Optional[Type[BaseModel]] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
-        self.synthesis_mode = synthesis_mode
-        self.synthesis_assistant_model = synthesis_assistant_model
-        self.response_format = response_format
+        self.synthesis_output = synthesis_output
+        self.synthesize_output_model = synthesize_output_model
+        if synthesize_output_format is not None:
+            self.synthesize_output_format = synthesize_output_format
+        else:
+            return_annotation = inspect.signature(self.func).return_annotation
+            if isinstance(return_annotation, type) and \
+                issubclass(return_annotation, BaseModel):
+                self.synthesize_output_format = return_annotation
+            else:
+                self.synthesize_output_format = None
 
-        if use_schema_assistant:
+        if synthesize_schema:
             if openai_tool_schema:
                 logger.warning("""The user-defined OpenAI tool schema will be
                               overridden by the schema assistant model.""")
-            schema = self.generate_openai_tool_schema(
-                schema_generation_max_retries, schema_assistant_model
+            schema = self.synthesize_openai_tool_schema(
+                synthesize_schema_max_retries, synthesize_schema_model
             )
             if schema:
                 self.openai_tool_schema = schema
             else:
                 raise ValueError(
-                    f"Failed to generate valid schema for "
+                    f"Failed to synthesize a valid schema for "
                     f"{self.func.__name__}."
+                )
+            
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        if self.synthesis_output:
+            result = self.synthesize_execution_output(kwds)
+            return result
+        else:
+            # Pass the extracted arguments to the indicated function
+            try:
+                result = self.func(*args, **kwds)
+                return result
+            except Exception as e:
+                raise ValueError(
+                    f"Execution of function {self.func.__name__} failed with "
+                    f"arguments {args} and {kwds}. "
+                    f"Error: {e}"
                 )
 
     @staticmethod
@@ -479,52 +504,53 @@ class FunctionTool:
             param_name
         ] = value
 
-    def generate_openai_tool_schema(
+    def synthesize_openai_tool_schema(
         self,
         max_retries: Optional[int] = None,
-        schema_assistant_model: Optional[BaseModelBackend] = None,
+        synthesize_schema_model: Optional[BaseModelBackend] = None,
     ) -> Dict[str, Any]:
-        r"""Generates an OpenAI tool schema for the specified function.
+        r"""Synthesizes an OpenAI tool schema for the specified function.
 
-        This method uses a language model (LLM) to generate the OpenAI tool
+        This method uses a language model (LLM) to synthesize the OpenAI tool
         schema for the specified function by first generating a docstring and
         then creating a schema based on the function's source code. If no LLM
         is provided, it defaults to initializing a gpt-4o-mini model. The
-        schema generation and validation process is retried up to
+        schema synthesis and validation process is retried up to
         `max_retries` times in case of failure.
 
 
         Args:
             max_retries (Optional[int], optional): The maximum number of
-                retries for schema generation and validation if the process
+                retries for schema synthesis and validation if the process
                 fails. (default: :obj:`None`)
-            schema_assistant_model (Optional[BaseModelBackend], optional): An
-                optional LLM backend model used for generating the docstring
+            synthesize_schema_model (Optional[BaseModelBackend], optional): An
+                optional LLM backend model used for synthesizing the docstring
                 and schema. If not provided, a gpt-4o-mini model
                 will be created. (default: :obj:`None`)
 
         Returns:
-            Dict[str, Any]: The generated OpenAI tool schema for the function.
+            Dict[str, Any]: The synthesis OpenAI tool schema for the function.
 
         Raises:
-            ValueError: If schema generation or validation fails after the
+            ValueError: If schema synthesis or validation fails after the
                 maximum number of retries, a ValueError is raised, prompting
                 manual schema setting.
         """
-        if not schema_assistant_model:
+        if not synthesize_schema_model:
             logger.warning(
                 "Warning: No model provided. "
-                f"Use `{ModelType.GPT_4O_MINI.value}` to generate the schema."
+                f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the "
+                "schema."
             )
         code = getsource(self.func)
         retries = 0
         if max_retries is None:
             max_retries = 0
-        # Retry loop to handle schema generation and validation
+        # Retry loop to handle schema synthesis and validation
         while retries <= max_retries:
             try:
                 # Generate the docstring and the schema
-                docstring = generate_docstring(code, schema_assistant_model)
+                docstring = generate_docstring(code, synthesize_schema_model)
                 self.func.__doc__ = docstring
                 schema = get_openai_tool_schema(self.func)
                 # Validate the schema
@@ -535,7 +561,7 @@ class FunctionTool:
                 retries += 1
                 if retries == max_retries:
                     raise ValueError(
-                        f"Failed to generate the OpenAI tool Schema after "
+                        f"Failed to synthesize the OpenAI tool Schema after "
                         f"{max_retries} retries. "
                         f"Please set the OpenAI tool schema for "
                         f"function {self.func.__name__} manually."
@@ -544,82 +570,89 @@ class FunctionTool:
 
         return {}
 
-    def synthesize_output(self, args: Optional[Dict[str, Any]] = None) -> Any:
-        """
+    def synthesize_execution_output(
+            self, kwds: Optional[Dict[str, Any]] = {}
+        ) -> Any:
+        r"""
         Synthesizes the execution output of the function.
 
-        Generates the output of the function based on the provided arguments
+        Synthesizes the output of the function based on the provided arguments
         and the synthesis mode. Uses an assistant model to perform synthesis
         if specified.
 
-        Args:
-            args (Optional[Dict[str, Any]]): Arguments to pass to the function
-                during synthesis. Defaults to `None`.
+        kwds:
+            kwds (Optional[Dict[str, Any]]): Arguments to pass to the function
+                during synthesis. Defaults to `{}`.
 
         Returns:
             Any: Synthesized output from the function execution. If no
             synthesis model is provided, a warning is logged.
         """
         function_string = inspect.getsource(self.func)
+        
         if self.func.__doc__ is not None:
-            function_string += f"\n{self.func.__doc__}"
-        if args is not None:
-            function_string += f"\n{args}"
+            tree = ast.parse(function_string)
+            func_node = (tree.body[0]
+                        if isinstance(tree.body[0], ast.FunctionDef)
+                        else None)
+            if func_node:
+                existing_docstring = ast.get_docstring(func_node)
+                if existing_docstring != self.func.__doc__:
+                    func_node.body[0] = ast.Expr(
+                        value=ast.Constant(value=self.func.__doc__, kind=None
+                    ))
+                    function_string = ast.unparse(tree)
+        function_string += f"\nkwds:\n{kwds}"
 
-        if self.synthesis_assistant_model is None:
+        if self.synthesize_output_model is None:
             logger.warning(
                 "Warning: No model provided. "
                 f"Use `{ModelType.GPT_4O_MINI.value}` to synthesize the "
                 "output of the function."
             )
 
-        assistant_sys_msg = "You are a helpful assistant."
-        synthesis_agent = ChatAgent(
-            assistant_sys_msg,
-            model=self.synthesis_assistant_model,
-        )
-
-        synthesize_prompt = '''
+        assistant_sys_msg = '''
 **Role:** AI Assistant specialized in synthesizing tool execution outputs
 without actual execution.
 
 **Capabilities:**
-- Analyzes function docstrings and/or function bodies to understand their
+- Analyzes function to understand their
 purpose and expected outputs.
-- Generates synthetic outputs based on the provided description and code logic.
+- Generates synthetic outputs based on the function logic.
 - Ensures the synthesized output is contextually accurate and aligns with the
 function's intended behavior.
 
 **Instructions:**
-1. **Input:** Provide either the function description, code, or both.
+1. **Input:** Provide the function code and the function docstring.
 2. **Output:** Synthesize the expected output of the function based on the
-provided information.
-3. **Guidelines:**
-   - If only the description is provided, infer the output based on it.
-   - If the code is provided, analyze the logic to determine the output.
-   - If both are provided, use the description to guide the interpretation of
-   the code.
+provided kwds.
 
 **Example:**
 - **User Input:**
-  
-python
-  def add(a, b):
-      """Adds two numbers together."""
-      return a + b
+def add(a, b):
+    """Adds two numbers together."""
+    return a + b
+
+kwds:
+{{'a': 1, 'b': 2}}
 
 - **Output:**
-  2
+3
 
 **Note:**
 - Just return the synthesized output of the function without any explanation.
 - The output should in plain text withou any formatting.
 '''
+        
+        synthesis_agent = ChatAgent(
+            assistant_sys_msg,
+            model=self.synthesize_output_model,
+        )
 
-        user_msg = synthesize_prompt + function_string
+        user_msg = function_string
         response = synthesis_agent.step(
             user_msg,
-            response_format=self.response_format,
+            response_format=self.synthesize_output_format,
         )
 
         return response.msg.content

@@ -24,28 +24,28 @@ def sample_function(a, b):
 
 
 @pytest.mark.model_backend
-def test_synthesize_output_with_args():
+def test_synthesize_execution_output_with_kwds():
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_mode=True,
-        # Not providing synthesis_assistant_model to use default model
+        synthesis_output=True,
+        # Not providing synthesize_output_model to use default model
     )
 
-    args = {'a': 2, 'b': 3}
-    output = function_tool.synthesize_output(args=args)
+    kwds = {'a': 2, 'b': 3}
+    output = function_tool.synthesize_execution_output(kwds=kwds)
 
     assert output.strip() == '5'
 
 
 @pytest.mark.model_backend
-def test_synthesize_output_without_args():
+def test_synthesize_execution_output_without_kwds():
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_mode=True,
-        # Not providing synthesis_assistant_model to use default model
+        synthesis_output=True,
+        # Not providing synthesize_output_model to use default model
     )
 
-    output = function_tool.synthesize_output()
+    output = function_tool.synthesize_execution_output()
 
     # Since no arguments are provided, the assistant may return an error
     # message or synthesized output.
@@ -55,20 +55,20 @@ def test_synthesize_output_without_args():
 
 
 @pytest.mark.model_backend
-def test_synthesize_output_with_response_format():
+def test_synthesize_execution_output_with_synthesize_output_format():
     # Assuming you have a custom response format
 
     # Create a response format if applicable (e.g., a Pydantic model)
-    response_format = None
+    synthesize_output_format = None
 
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_mode=True,
-        response_format=response_format,
+        synthesis_output=True,
+        synthesize_output_format=synthesize_output_format,
     )
 
-    args = {'a': 2, 'b': 3}
-    output = function_tool.synthesize_output(args=args)
+    kwds = {'a': 2, 'b': 3}
+    output = function_tool.synthesize_execution_output(kwds=kwds)
 
     assert output.strip() == '5'
 
@@ -80,11 +80,11 @@ def test_synthesis_output_with_custom_model():
 
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_mode=True,
-        synthesis_assistant_model=custom_model,
+        synthesis_output=True,
+        synthesize_output_model=custom_model,
     )
 
-    args = {'a': 10, 'b': 15}
-    output = function_tool.synthesize_output(args=args)
+    kwds = {'a': 10, 'b': 15}
+    output = function_tool.synthesize_execution_output(kwds=kwds)
 
     assert output.strip() == '25'
