@@ -17,13 +17,15 @@ import pytest
 
 from camel.memories import ContextRecord
 from camel.messages import BaseMessage, FunctionCallingMessage
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
-    HermesFunctionFormatter,
+from camel.messages.axolotl.sharegpt.functions.hermes import (
+    hermes_function_formatter as hff,
 )
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+
+HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 @pytest.fixture
@@ -166,7 +168,7 @@ def test_convert_function_call_and_response_to_from_sharegpt_hermes(
     sharegpt_function_call = assistant_func_call_message.to_sharegpt()
 
     # Check the function call contains a hermes function call
-    # TODO: Consider using code from https://github.com/NousResearch/Hermes-Function-Calling/blob/main/validator.py
+    # TODO: Consider using code from https://github.com/NousResearch/Hermes-Function-Calling/blob/main/validator.py # noqa
     #  and adjacent files
     assert "<tool_call>" in sharegpt_function_call.value
 

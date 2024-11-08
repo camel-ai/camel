@@ -14,14 +14,16 @@
 from typing import List
 
 from camel.messages import BaseMessage
-from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
-    HermesFunctionFormatter,
+from camel.messages.axolotl.sharegpt.functions.hermes import (
+    hermes_function_formatter as hff,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_conversation import (
     ShareGPTConversation,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.messages.func_message import FunctionCallingMessage
+
+HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 def sharegpt_to_camel_messages(
