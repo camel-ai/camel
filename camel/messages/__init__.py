@@ -18,13 +18,6 @@ from camel.types import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-
-OpenAISystemMessage = ChatCompletionSystemMessageParam
-OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
-OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
-OpenAIMessage = ChatCompletionMessageParam
-
 from .axolotl.sharegpt.functions.function_call_formatter import (
     FunctionCallFormatter,
 )
@@ -37,6 +30,14 @@ from .axolotl.sharegpt.sharegpt_conversation import (
 from .axolotl.sharegpt.sharegpt_message import (
     ShareGPTMessage,
 )
+
+OpenAISystemMessage = ChatCompletionSystemMessageParam
+OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
+OpenAIUserMessage = ChatCompletionUserMessageParam
+OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
+OpenAIMessage = ChatCompletionMessageParam
+
+
 from .base import BaseMessage  # noqa: E402
 from .func_message import FunctionCallingMessage  # noqa: E402
 
