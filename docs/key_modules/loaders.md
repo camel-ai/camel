@@ -226,3 +226,175 @@ Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
 shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
  or [Discord](https://discord.gg/CNcNpquyDc)...
 ```
+
+### 3.5. Using `Chunkr Reader`
+
+Initialize the client and set the local PDF file path, then use the generated task id to featch the output.
+
+```python
+from camel.loaders import ChunkrReader
+
+chunkr = ChunkrReader()
+
+task_id = chunkr.submit_task(
+    file_path="/Users/enrei/Large Language Model based Multi-Agents- A Survey of Progress and Challenges.pdf",
+    model="Fast",
+    ocr_strategy="Auto",
+    target_chunk_length=512,
+)
+
+print(task_id)
+```
+```markdown
+>>>"7becf001-6f07-4f63-bddf-5633df363bbb"
+```
+
+Featch the output.
+```python
+task_output = chunkr.get_task_output(
+    task_id="7becf001-6f07-4f63-bddf-5633df363bbb"
+)
+
+print(task_output)
+```
+```markdown
+>>>{
+    "task_id": "7becf001-6f07-4f63-bddf-5633df363bbb",
+    "status": "Succeeded",
+    "created_at": "2024-11-08T12:45:04.260765Z",
+    "finished_at": "2024-11-08T12:45:48.942365Z",
+    "expires_at": null,
+    "message": "Task succeeded",
+    "output": {
+        "chunks": [
+            {
+                "segments": [
+                    {
+                        "segment_id": "d53ec931-3779-41be-a220-3fe4da2770c5",
+                        "bbox": {
+                            "left": 224.16666,
+                            "top": 370.0,
+                            "width": 2101.6665,
+                            "height": 64.166664
+                        },
+                        "page_number": 1,
+                        "page_width": 2550.0,
+                        "page_height": 3300.0,
+                        "content": "Large Language Model based Multi-Agents: A Survey of Progress and Challenges",
+                        "segment_type": "Title",
+                        "ocr": null,
+                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/e68161bd-5d39-4cbf-afb2-5c6640a05522/7becf001-6f07-4f63-bddf-5633df363bbb/images/d53ec931-3779-41be-a220-3fe4da2770c5.jpg?x-id=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=GOOG1E67ULNM7PPHKQDVSRZD64OWC4CJTKOHXCOIDKI5QCMJK4U6ROEJQSOJM%2F20241108%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20241108T125023Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7d2854d7d87ef0b152ac342dfdc0caa7c2ac10418e9445b73c584a9b34736fbf",
+                        "html": "<h1>Large Language Model based Multi-Agents: A Survey of Progress and Challenges</h1>",
+                        "markdown": "# Large Language Model based Multi-Agents: A Survey of Progress and Challenges\n\n"
+                    }
+                ],
+                "chunk_length": 11
+            },
+            {
+                "segments": [
+                    {
+                        "segment_id": "7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a",
+                        "bbox": {
+                            "left": 432.49997,
+                            "top": 474.16666,
+                            "width": 1659.9999,
+                            "height": 122.49999
+                        },
+                        "page_number": 1,
+                        "page_width": 2550.0,
+                        "page_height": 3300.0,
+                        "content": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020",
+                        "segment_type": "Text",
+                        "ocr": null,
+                        "image": "https://chunkmydocs-bucket-prod.storage.googleapis.com/e68161bd-5d39-4cbf-afb2-5c6640a05522/7becf001-6f07-4f63-bddf-5633df363bbb/images/7bb38fc7-c1b3-4153-a3cc-116c0b9caa0a.jpg?x-id=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=GOOG1E67ULNM7PPHKQDVSRZD64OWC4CJTKOHXCOIDKI5QCMJK4U6ROEJQSOJM%2F20241108%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20241108T125023Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=14b9a5048ff052a3641d100ec60da1b1a26e512e9863d09619bfe8237a2bdf80",
+                        "html": "<p>Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020</p>",
+                        "markdown": "Taicheng Guo 1 , Xiuying Chen 2 , Yaqi Wang 3 \u2217 , Ruidi Chang , Shichao Pei 4 , Nitesh V. Chawla 1 , Olaf Wiest 1 , Xiangliang Zhang 1 \u2020\n\n"
+                    },
+                    {
+                        "segment_id": "35c9e3ab-399c-43af-8f9e-60f5d9263c80",
+                        "bbox": {
+                            "left": 440.8333,
+                            "top": 599.1666,
+                            "width": 1668.3333,
+                            "height": 64.166664
+                        },
+                        "page_number": 1,...
+                    }]}]}}
+```
+
+### 3.6. Using `Firecrawl Reader`
+
+Initialize the client and set the URL from which we want to retrieve information. When the status is "completed," the information retrieval is finished and ready for reading.
+```python
+firecrawl = Firecrawl()
+
+response = firecrawl.crawl(url="https://www.camel-ai.org/about")
+print(response["status"])
+```
+```markdown
+>>>completed
+```
+
+Directly retrieve information from the returned results.
+```python
+print(response["data"][0]["markdown"])
+```
+```markdown
+>>>Camel-AI Team
+
+We are finding the  
+scaling law of agent
+
+🐫 CAMEL is an open-source library designed for the study of autonomous and 
+communicative agents. We believe that studying these agents on a large scale 
+offers valuable insights into their behaviors, capabilities, and potential 
+risks. To facilitate research in this field, we implement and support various 
+types of agents, tasks, prompts, models, and simulated environments.
+
+**We are** always looking for more **contributors** and **collaborators**.  
+Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
+shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
+ or [Discord](https://discord.gg/CNcNpquyDc)...
+```
+
+### 3.6. Using `Jina Reader`
+
+Initialize the client and set the URL from which we want to retrieve information, then print the response.
+
+```python
+from camel.loaders import JinaURLReader
+from camel.types.enums import JinaReturnFormat
+
+jina_reader = JinaURLReader(return_format=JinaReturnFormat.MARKDOWN)
+response = jina_reader.read_content("https://docs.camel-ai.org/")
+
+print(response)
+```
+```markdown
+>>>Welcome to CAMEL’s documentation! — CAMEL 0.2.6 documentation
+===============
+
+[Skip to main content](https://docs.camel-ai.org/#main-content)
+
+Back to top Ctrl+K
+
+ [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.6](https://docs.camel-ai.org/#)
+
+Search Ctrl+K
+
+Get Started
+
+*   [Installation](https://docs.camel-ai.org/get_started/installation.html)
+*   [API Setup](https://docs.camel-ai.org/get_started/setup.html)
+
+Agents
+
+*   [Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)
+*   [Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)
+*   [Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)
+*   [Critic Agents and Tree Search](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)
+
+Key Modules
+
+*   [Models](https://docs.camel-ai...)
+```
