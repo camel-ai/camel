@@ -19,10 +19,10 @@ from typing import List
 
 from colorama import Fore
 
+from camel.societies.workforce.base import BaseNode
+from camel.societies.workforce.task_channel import TaskChannel
+from camel.societies.workforce.utils import check_if_running
 from camel.tasks.task import Task, TaskState
-from camel.workforce.base import BaseNode
-from camel.workforce.task_channel import TaskChannel
-from camel.workforce.utils import check_if_running
 
 logger = logging.getLogger(__name__)
 
@@ -110,9 +110,11 @@ class Worker(BaseNode, ABC):
 
     @check_if_running(False)
     async def start(self):
+        r"""Start the worker."""
         await self._listen_to_channel()
 
     @check_if_running(True)
     def stop(self):
+        r"""Stop the worker."""
         self._running = False
         return

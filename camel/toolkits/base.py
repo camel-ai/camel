@@ -19,5 +19,14 @@ from camel.utils import AgentOpsMeta
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
+    r"""Base class for toolkits."""
+
     def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
         raise NotImplementedError("Subclasses must implement this method.")

@@ -87,6 +87,28 @@ class ModelType(UnifiedModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # Qwen models (Aliyun)
+    QWEN_MAX = "qwen-max"
+    QWEN_PLUS = "qwen-plus"
+    QWEN_TURBO = "qwen-turbo"
+    QWEN_LONG = "qwen-long"
+    QWEN_VL_MAX = "qwen-vl-max"
+    QWEN_VL_PLUS = "qwen-vl-plus"
+    QWEN_MATH_PLUS = "qwen-math-plus"
+    QWEN_MATH_TURBO = "qwen-math-turbo"
+    QWEN_CODER_TURBO = "qwen-coder-turbo"
+
+    # Yi models (01-ai)
+    YI_LIGHTNING = "yi-lightning"
+    YI_LARGE = "yi-large"
+    YI_MEDIUM = "yi-medium"
+    YI_LARGE_TURBO = "yi-large-turbo"
+    YI_VISION = "yi-vision"
+    YI_MEDIUM_200K = "yi-medium-200k"
+    YI_SPARK = "yi-spark"
+    YI_LARGE_RAG = "yi-large-rag"
+    YI_LARGE_FC = "yi-large-fc"
+
     def __str__(self):
         return self.value
 
@@ -221,6 +243,39 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_yi(self) -> bool:
+        r"""Returns whether this type of models is Yi model.
+
+        Returns:
+            bool: Whether this type of models is Yi.
+        """
+        return self in {
+            ModelType.YI_LIGHTNING,
+            ModelType.YI_LARGE,
+            ModelType.YI_MEDIUM,
+            ModelType.YI_LARGE_TURBO,
+            ModelType.YI_VISION,
+            ModelType.YI_MEDIUM_200K,
+            ModelType.YI_SPARK,
+            ModelType.YI_LARGE_RAG,
+            ModelType.YI_LARGE_FC,
+        }
+
+    @property
+    def is_qwen(self) -> bool:
+        return self in {
+            ModelType.QWEN_MAX,
+            ModelType.QWEN_PLUS,
+            ModelType.QWEN_TURBO,
+            ModelType.QWEN_LONG,
+            ModelType.QWEN_VL_MAX,
+            ModelType.QWEN_VL_PLUS,
+            ModelType.QWEN_MATH_PLUS,
+            ModelType.QWEN_MATH_TURBO,
+            ModelType.QWEN_CODER_TURBO,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -235,6 +290,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
             ModelType.REKA_FLASH,
+            ModelType.QWEN_MATH_PLUS,
+            ModelType.QWEN_MATH_TURBO,
         }:
             return 4_096
         elif self in {
@@ -245,10 +302,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
+            ModelType.QWEN_VL_PLUS,
         }:
             return 8_192
         elif self in {
             ModelType.GPT_3_5_TURBO,
+            ModelType.YI_LIGHTNING,
+            ModelType.YI_MEDIUM,
+            ModelType.YI_LARGE_TURBO,
+            ModelType.YI_VISION,
+            ModelType.YI_SPARK,
+            ModelType.YI_LARGE_RAG,
         }:
             return 16_384
         elif self in {
@@ -256,6 +320,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
             ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.YI_LARGE,
+            ModelType.YI_LARGE_FC,
+            ModelType.QWEN_MAX,
+            ModelType.QWEN_VL_MAX,
         }:
             return 32_768
         elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
@@ -282,6 +350,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.QWEN_PLUS,
+            ModelType.QWEN_TURBO,
+            ModelType.QWEN_CODER_TURBO,
         }:
             return 131_072
         elif self in {
@@ -290,6 +361,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
         elif self in {
@@ -301,6 +373,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_1_5_PRO,
         }:
             return 1_048_576
+        elif self in {
+            ModelType.QWEN_LONG,
+        }:
+            return 10_000_000
         else:
             raise ValueError("Unknown model type")
 
@@ -445,6 +521,8 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
+    YI = "lingyiwanwu"
+    QWEN = "tongyi-qianwen"
 
     @property
     def is_openai(self) -> bool:
@@ -516,6 +594,16 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_yi(self) -> bool:
+        r"""Returns whether this platform is Yi."""
+        return self is ModelPlatformType.YI
+
+    @property
+    def is_qwen(self) -> bool:
+        r"""Returns whether this platform is Qwen."""
+        return self is ModelPlatformType.QWEN
 
 
 class AudioModelType(Enum):
