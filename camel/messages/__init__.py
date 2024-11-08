@@ -18,11 +18,12 @@ from camel.types import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+
+from .axolotl import (
+    HermesFunctionFormatter,
+)
 from .axolotl.sharegpt.functions.function_call_formatter import (
     FunctionCallFormatter,
-)
-from .axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
-    HermesFunctionFormatter,
 )
 from .axolotl.sharegpt.sharegpt_conversation import (
     ShareGPTConversation,
