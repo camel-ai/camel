@@ -25,6 +25,7 @@ class DockerRuntime(BaseRuntime):
     Attributes:
         image (str): The name of the Docker image to use for the runtime.
         port (int): The port number to use for the runtime API.
+        remove (bool): Whether to remove the container after stopping it.
     """
 
     def __init__(self, image: str, port: int = 8000, remove: bool = True, **kwargs):
@@ -53,6 +54,16 @@ class DockerRuntime(BaseRuntime):
             self.client.images.pull(self.image)
 
     def mount(self, path: str, mount_path: str) -> "DockerRuntime":
+        r"""Mount a local directory to the container.
+
+        Args:
+            path (str): The local path to mount.
+            mount_path (str): The path to mount the local directory to in the container.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
+
         path, mount_path = Path(path), Path(mount_path)
         assert path.exists(), f"Path {path} does not exist."
         assert path.is_dir(), f"Path {path} is not a directory."
@@ -63,6 +74,15 @@ class DockerRuntime(BaseRuntime):
         return self
 
     def copy(self, source: str, dest: str) -> "DockerRuntime":
+        r"""Copy a file or directory to the container.
+
+        Args:
+            source (str): The local path to the file or directory to copy.
+            dest (str): The path to copy the file or directory to in the container.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
         source, dest = Path(source), Path(dest)
         assert source.exists(), f"Source {source} does not exist."
 
@@ -85,8 +105,7 @@ class DockerRuntime(BaseRuntime):
         workdir: Optional[str] = None,
         demux: bool = False,
     ) -> "DockerRuntime":
-        """
-        Add a task to run a command inside the container when building. Similar to
+        r"""Add a task to run a command inside the container when building. Similar to
         ``docker exec``.
 
         Args:
@@ -158,8 +177,7 @@ class DockerRuntime(BaseRuntime):
         workdir: Optional[str] = None,
         demux: bool = False,
     ) -> Any:
-        """
-        Run a command inside this container. Similar to
+        r"""Run a command inside this container. Similar to
         ``docker exec``.
 
         Args:
@@ -218,6 +236,11 @@ class DockerRuntime(BaseRuntime):
         )
 
     def build(self) -> "DockerRuntime":
+        r"""Build the Docker container and start it.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
         if self.container:
             logger.warning("Container already exists. Nothing to build.")
             return self
@@ -288,6 +311,17 @@ class DockerRuntime(BaseRuntime):
         entrypoint: str,
         return_stdout: bool = False,
     ) -> "DockerRuntime":
+        r"""Add a function or list of functions to the runtime.
+
+        Args:
+            funcs (FunctionTool or List[FunctionTool]): The function or list of functions to add.
+            entrypoint (str): The entrypoint for the function.
+            return_stdout (bool): Whether to return the stdout of the function.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
+
         if not isinstance(funcs, list):
             funcs = [funcs]
         if "(" in entrypoint:
@@ -308,7 +342,7 @@ class DockerRuntime(BaseRuntime):
                 for key, value in kwargs.items():
                     if isinstance(value, BaseModel):
                         kwargs[key] = value.model_dump()
-                
+
                 resp = requests.post(
                     f"http://localhost:{self.port}/{func.get_function_name()}",
                     json=dict(args=args, kwargs=kwargs, return_stdout=return_stdout),
@@ -333,9 +367,23 @@ class DockerRuntime(BaseRuntime):
         return self
 
     def reset(self) -> "DockerRuntime":
+        r"""Reset the DockerRuntime instance.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
+
         return self.stop().build()
 
     def stop(self, remove: bool | None = None) -> "DockerRuntime":
+        r"""stop the Docker container.
+
+        Args:
+            remove (bool): Whether to remove the container after stopping it.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
         if self.container:
             self.container.stop()
             if remove is None:
@@ -350,6 +398,11 @@ class DockerRuntime(BaseRuntime):
 
     @property
     def ok(self) -> bool:
+        r"""Check if the API Server is running.
+
+        Returns:
+            bool: Whether the API Server is running.
+        """
         if not self.container:
             return False
         try:
@@ -359,6 +412,14 @@ class DockerRuntime(BaseRuntime):
             return False
 
     def wait(self, timeout: int = 10) -> bool:
+        r"""Wait for the API Server to be ready.
+
+        Args:
+            timeout (int): The number of seconds to wait.
+
+        Returns:
+            bool: Whether the API Server is ready.
+        """
         for _ in range(timeout):
             if self.ok:
                 return True
@@ -366,10 +427,17 @@ class DockerRuntime(BaseRuntime):
         return False
 
     def __enter__(self) -> "DockerRuntime":
+        r"""Enter the context manager.
+
+        Returns:
+            DockerRuntime: The DockerRuntime instance.
+        """
         if not self.container:
             return self.build()
         logger.warning("Container already exists. Returning existing container.")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        r"""Exit the context manager.
+        """
         self.stop()
