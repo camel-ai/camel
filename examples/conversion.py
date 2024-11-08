@@ -14,9 +14,6 @@
 from typing import List
 
 from camel.messages import BaseMessage
-from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
-    FunctionCallFormatter,
-)
 from camel.messages.axolotl.sharegpt.functions.hermes.hermes_function_formatter import (
     HermesFunctionFormatter,
 )
@@ -29,20 +26,21 @@ from camel.messages.func_message import FunctionCallingMessage
 
 def sharegpt_to_camel_messages(
     conversation: ShareGPTConversation,
-    function_format: FunctionCallFormatter = HermesFunctionFormatter(),
 ) -> List[BaseMessage]:
     """Convert ShareGPT conversation to list of CAMEL messages"""
     return [
-        BaseMessage.from_sharegpt(msg, function_format) for msg in conversation
+        BaseMessage.from_sharegpt(msg, HermesFunctionFormatter())
+        for msg in conversation
     ]
 
 
 def camel_messages_to_sharegpt(
     messages: List[BaseMessage],
-    function_format: FunctionCallFormatter = HermesFunctionFormatter(),
 ) -> ShareGPTConversation:
     """Convert list of CAMEL messages to ShareGPT conversation"""
-    sharegpt_messages = [msg.to_sharegpt(function_format) for msg in messages]
+    sharegpt_messages = [
+        msg.to_sharegpt(HermesFunctionFormatter()) for msg in messages
+    ]
     return ShareGPTConversation.model_validate(sharegpt_messages)
 
 
@@ -57,12 +55,16 @@ if __name__ == "__main__":
             ShareGPTMessage(from_="human", value="What's Tesla's P/E ratio?"),
             ShareGPTMessage(
                 from_="gpt",
-                value="Let me check Tesla's stock fundamentals.\n<tool_call>\n{'name': 'get_stock_fundamentals', 'arguments': {'symbol': 'TSLA'}}\n</tool_call>",
+                value="Let me check Tesla's stock fundamentals.\n"
+                "<tool_call>\n{'name': 'get_stock_fundamentals',"
+                " 'arguments': {'symbol': 'TSLA'}}\n</tool_call>",
             ),
             ShareGPTMessage(
                 from_="tool",
                 value='''<tool_response>
-{"name": "get_stock_fundamentals", "content": {"symbol": "TSLA", "company_name": "Tesla, Inc.", "sector": "Consumer Cyclical", "pe_ratio": 49.604652}}
+{"name": "get_stock_fundamentals", "content": 
+{"symbol": "TSLA", "company_name": "Tesla, Inc.", 
+"sector": "Consumer Cyclical", "pe_ratio": 49.604652}}
 </tool_response>''',
             ),
             ShareGPTMessage(
