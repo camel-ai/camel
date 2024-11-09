@@ -49,6 +49,10 @@ if __name__ == "__main__":
         print(f"Multiply 2 * 3: {mul.func(a=2, b=3)}")
         print(f"Execute code: {code_exec.func(code='1 + 2')}")
 
+        print("Documents: ", r.docs)
+        # you can open this url in browser to see the API Endpoints
+        # before the runtime is stopped.
+
     # you can also use the runtime without the with statement
     # runtime.build()
     # runtime.stop()
@@ -63,4 +67,5 @@ Execute code: Executed the code below:
 ```
 > Executed Results:
 3
+Documents:  http://localhost:8000/docs
 """

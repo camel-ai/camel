@@ -480,3 +480,12 @@ class DockerRuntime(BaseRuntime):
     def __exit__(self, exc_type, exc_val, exc_tb):
         r"""Exit the context manager."""
         self.stop()
+
+    @property
+    def docs(self) -> str:
+        r"""Get the URL for the API documentation.
+
+        Returns:
+            str: The URL for the API documentation.
+        """
+        return f"http://localhost:{self.port}/docs"
