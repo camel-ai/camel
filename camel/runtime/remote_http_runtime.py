@@ -1,19 +1,34 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import atexit
-from functools import wraps
 import json
 import logging
-from pathlib import Path
+import subprocess
 import time
+from functools import wraps
+from pathlib import Path
+from subprocess import Popen
 from typing import Dict, List, Optional
-from pydantic import BaseModel
 
 import requests
-import subprocess
-from subprocess import Popen
+from pydantic import BaseModel
+
 from camel.runtime import BaseRuntime
 from camel.toolkits.function_tool import FunctionTool
 
 logger = logging.getLogger(__name__)
+
 
 class RemoteHttpRuntime(BaseRuntime):
     r"""A runtime that runs functions in a remote HTTP server.
@@ -25,7 +40,9 @@ class RemoteHttpRuntime(BaseRuntime):
         python_exec (str): The python executable to run the API server.
     """
 
-    def __init__(self, host: str, port: int = 8000, python_exec: str = "python3"):
+    def __init__(
+        self, host: str, port: int = 8000, python_exec: str = "python3"
+    ):
         super().__init__()
         self.host = host
         self.port = port
@@ -36,18 +53,24 @@ class RemoteHttpRuntime(BaseRuntime):
 
     def build(self) -> "RemoteHttpRuntime":
         r"""Build the API server.
-        
+
         Returns:
             RemoteHttpRuntime: The current runtime.
         """
-        self.process = subprocess.Popen([self.python_exec, str(self.api_path)] + list(self.entrypoint.values()))
+        self.process = subprocess.Popen(
+            [
+                self.python_exec,
+                str(self.api_path),
+                *list(self.entrypoint.values()),
+            ]
+        )
         atexit.register(self._cleanup)
         return self
 
     def _cleanup(self):
         r"""Clean up the API server when exiting."""
 
-        if self.process and self.process.poll() is None: 
+        if self.process and self.process.poll() is None:
             self.process.terminate()
             self.process.wait()
             self.process = None
@@ -158,7 +181,7 @@ class RemoteHttpRuntime(BaseRuntime):
 
     def stop(self) -> "RemoteHttpRuntime":
         r"""Stop the API server.
-        
+
         Returns:
             RemoteHttpRuntime: The current runtime.
         """
@@ -167,7 +190,7 @@ class RemoteHttpRuntime(BaseRuntime):
 
     def reset(self) -> "RemoteHttpRuntime":
         r"""Reset the API server.
-        
+
         Returns:
             RemoteHttpRuntime: The current runtime.
         """

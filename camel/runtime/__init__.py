@@ -13,10 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseRuntime
 from .docker_runtime import DockerRuntime
+from .llm_guard_runtime import LLMGuardRuntime
 from .remote_http_runtime import RemoteHttpRuntime
 
 # TODO: Add Celery Runtime to support distributed computing,
 # Rate Limiting, Load Balancing, etc.
 
-__all__ = ["BaseRuntime", "DockerRuntime", "RemoteHttpRuntime"]
-
+__all__ = [
+    "BaseRuntime",
+    "DockerRuntime",
+    "RemoteHttpRuntime",
+    "LLMGuardRuntime",
+]
