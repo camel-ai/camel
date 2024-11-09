@@ -130,8 +130,6 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         import yt_dlp
 
-        url = _standardize_url(url)
-
         video_template = os.path.join(
             self._download_directory, '%(title)s.%(ext)s'
         )
