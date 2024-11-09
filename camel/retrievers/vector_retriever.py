@@ -76,6 +76,7 @@ class VectorRetriever(BaseRetriever):
         max_characters: int = 500,
         embed_batch: int = 50,
         should_chunk: bool = True,
+        extra_info: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from local file path, remote URL, string
@@ -93,6 +94,8 @@ class VectorRetriever(BaseRetriever):
             embed_batch (int): Size of batch for embeddings. Defaults to `50`.
             should_chunk (bool): If True, divide the content into chunks,
                 otherwise skip chunking. Defaults to True.
+            extra_info (Optional[dict]): Extra information to be added
+                to the payload. Defaults to None.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         from unstructured.documents.elements import Element
@@ -153,12 +156,13 @@ class VectorRetriever(BaseRetriever):
                     chunk_metadata = {"metadata": chunk.metadata.to_dict()}
                     # Remove the 'orig_elements' key if it exists
                     chunk_metadata["metadata"].pop("orig_elements", "")
-
+                    extra_info = extra_info or {}
                     chunk_text = {"text": str(chunk)}
                     combined_dict = {
                         **content_path_info,
                         **chunk_metadata,
                         **chunk_text,
+                        **extra_info,
                     }
 
                     records.append(
