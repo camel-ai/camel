@@ -14,6 +14,7 @@
 import importlib
 import io
 import json
+import os
 import sys
 from typing import Dict
 
@@ -22,6 +23,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from camel.toolkits import BaseToolkit
+
+sys.path.append(os.getcwd())
 
 modules_functions = sys.argv[1:]
 
