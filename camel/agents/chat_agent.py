@@ -429,7 +429,7 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the current system
         message.
         """
-        if self.orig_sys_message is not None:
+        if self._system_message is not None:
             system_record = MemoryRecord(
                 message=self._system_message,
                 role_at_backend=OpenAIBackendRole.SYSTEM,
