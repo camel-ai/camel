@@ -23,10 +23,10 @@ from camel.agents import (
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend, ModelFactory
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -111,14 +111,7 @@ class RolePlaying:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
-        self.model: BaseModelBackend = (
-            model
-            if model is not None
-            else ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
-            )
-        )
+        self.model: BaseModelBackend = model
         self.task_type = task_type
         self.task_prompt = task_prompt
 
