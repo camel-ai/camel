@@ -427,7 +427,7 @@ class ChatAgent(BaseAgent):
 
     def init_messages(self) -> None:
         r"""Initializes the stored messages list with the initial system
-        message with language setting.
+        message.
         """
         if self.orig_sys_message is not None:
             system_record = MemoryRecord(
