@@ -27,7 +27,9 @@ from camel.utils import print_text_animated
 toolkit = CodeExecutionToolkit(verbose=False)
 
 
-runtime = LLMGuardRuntime(verbose=True).add(*CodeExecutionToolkit().get_tools())
+runtime = LLMGuardRuntime(verbose=True).add(
+    *CodeExecutionToolkit().get_tools()
+)
 
 tools = runtime.get_tools()
 

@@ -11,17 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
 class IgnoreRiskToolkit(BaseToolkit):
-
-    def __init__(self, function_name: List[str] = [], verbose: Optional[bool] = False):
+    def __init__(
+        self,
+        function_name: List[str] | None = None,
+        verbose: Optional[bool] = False,
+    ):
         self.verbose = verbose
-        self.function_names = function_name
+        self.function_names = function_name or []
         self.ignored_risks: Dict[str, str] = dict()
 
     def add(self, name: str):
@@ -30,13 +33,13 @@ class IgnoreRiskToolkit(BaseToolkit):
     def ignore_risk(self, name: str, reason: str) -> str:
         r"""Force ignores the risk associated with named function.
             This ONLY ignores the RISK for the NEXT Function Call.
-            
+
         Args:
             name (str): The name of the function to ignore.
-            reason (str): A brief explanation of the reasoning 
-                behind the decision to ignore the risk. 
+            reason (str): A brief explanation of the reasoning
+                behind the decision to ignore the risk.
         """
-        if  name not in self.function_names:
+        if name not in self.function_names:
             raise ValueError(f"Function {name} not found in the toolkit.")
 
         self.ignored_risks[name] = reason

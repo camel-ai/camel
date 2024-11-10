@@ -11,38 +11,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from functools import wraps
 import json
 import logging
+from functools import wraps
 from typing import List, Optional
-from camel.configs import BaseConfig
-from camel.models import BaseModelBackend
+
+from camel.agents import ChatAgent
+from camel.configs import BaseConfig, ChatGPTConfig
+from camel.models import BaseModelBackend, ModelFactory
 from camel.runtime import BaseRuntime
 from camel.runtime.utils.function_risk_toolkit import FunctionRiskToolkit
 from camel.runtime.utils.ignore_risk_toolkit import IgnoreRiskToolkit
-from camel.models import ModelFactory
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
-from camel.agents import ChatAgent
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are a function safety evaluator tasked with assessing the potential risk level of a given function based on both its description and parameters. Your goal is to determine if the function may pose any harm to the user's environment, such as deleting files, executing arbitrary code, or accessing sensitive information. Pay special attention to the provided parameters — even if a function has the potential to be dangerous, its actual parameters may indicate harmless behavior, and the risk level should be adjusted accordingly. Use the `function_risk` tool to assign a risk score to the function, based on the following criteria:
+PROMPT = """You are a function safety evaluator tasked with assessing the 
+potential risk level of a given function based on both its description 
+and parameters. Your goal is to determine if the function may pose any 
+harm to the user's environment, such as deleting files, executing 
+arbitrary code, or accessing sensitive information. Pay special attention 
+to the provided parameters — even if a function has the potential to be 
+dangerous, its actual parameters may indicate harmless behavior, and the 
+risk level should be adjusted accordingly. Use the `function_risk` tool to 
+assign a risk score to the function, based on the following criteria:
 
-- **Score 1**: No harm. This includes simple operations like mathematical calculations, content searches, or data retrievals that do not impact the user's environment or access sensitive resources. This also includes functions with potentially dangerous capabilities that have harmless, controlled parameters that ensure safe execution.
-- **Score 2**: Minimal harm. The function might read user files, retrieve non-sensitive data, or access other low-risk resources, posing little risk to the user.
-- **Score 3**: Risk present. The function might delete files, modify the file system, execute arbitrary code, or access sensitive data, which could negatively impact the user's environment. However, if the actual parameters provided clearly indicate safe and restricted usage, this risk should be downgraded accordingly.
+- **Score 1**: No harm. This includes simple operations like mathematical 
+    calculations, content searches, or data retrievals that do not impact 
+    the user's environment or access sensitive resources. This also 
+    includes functions with potentially dangerous capabilities that have 
+    harmless, controlled parameters that ensure safe execution.
+- **Score 2**: Minimal harm. The function might read user files, retrieve 
+    non-sensitive data, or access other low-risk resources, 
+    posing little risk to the user.
+- **Score 3**: Risk present. The function might delete files, modify the 
+    file system, execute arbitrary code, or access sensitive data, which 
+    could negatively impact the user's environment. However, if the 
+    actual parameters provided clearly indicate safe and restricted 
+    usage, this risk should be downgraded accordingly.
 
-When evaluating, always consider both the function's description and its specific parameters. If the function appears risky due to its design but the provided parameters indicate a safe and non-impactful operation, adjust the risk score to reflect this. Assign an appropriate risk score and provide a brief explanation of your reasoning based on the function's description and the actual parameters given.
-YOU MUST USE THE `function_risk` TOOL TO ASSESS THE RISK LEVEL OF EACH FUNCTION.
+When evaluating, always consider both the function's description and its 
+specific parameters. If the function appears risky due to its design but 
+the provided parameters indicate a safe and non-impactful operation, 
+adjust the risk score to reflect this. Assign an appropriate risk score 
+and provide a brief explanation of your reasoning based on the function's 
+description and the actual parameters given.
+YOU MUST USE THE `function_risk` TOOL TO ASSESS THE RISK 
+LEVEL OF EACH FUNCTION.
 """
 
 
 class LLMGuardRuntime(BaseRuntime):
-    r"""A runtime that evaluates the risk level of functions using a language model.
-    
+    r"""A runtime that evaluates the risk level of functions using
+        a language model.
+
     Arguments:
         prompt (str): The prompt to use for the language model.
         threshold (int): The risk threshold for functions.
@@ -50,6 +73,7 @@ class LLMGuardRuntime(BaseRuntime):
         config (BaseConfig): The configuration for the language model.
         verbose (bool): Whether to print verbose output.
     """
+
     def __init__(
         self,
         prompt: str = PROMPT,
@@ -111,12 +135,20 @@ class LLMGuardRuntime(BaseRuntime):
             # Create a wrapper that explicitly binds `func`
             @wraps(inner_func)
             def wrapper(
-                *args, func=func, inner_func=inner_func, threshold=threshold, **kwargs
+                *args,
+                func=func,
+                inner_func=inner_func,
+                threshold=threshold,
+                **kwargs,
             ):
                 function_name = func.get_function_name()
                 if function_name in self.ignore_toolkit.ignored_risks:
-                    reason = self.ignore_toolkit.ignored_risks.pop(function_name)
-                    logger.info(f"Ignored risk for function {function_name}: {reason}")
+                    reason = self.ignore_toolkit.ignored_risks.pop(
+                        function_name
+                    )
+                    logger.info(
+                        f"Ignored risk for function {function_name}: {reason}"
+                    )
                     return inner_func(*args, **kwargs)
                 self.agent.init_messages()
                 resp = self.agent.step(
@@ -130,21 +162,32 @@ class LLMGuardRuntime(BaseRuntime):
                 tool_call = resp.info.get("external_tool_request", None)
                 if not tool_call:
                     logger.error("No tool call found in response.")
-                    return {"error": "Risk assessment failed. Disabling function."}
+                    return {
+                        "error": "Risk assessment failed. Disabling function."
+                    }
                 data = tool_call.function.arguments
                 data = json.loads(data)
                 if threshold < data["score"]:
-                    message = f"Risk assessment not passed for function {function_name}." \
-                    f"Score: {data["score"]} > Threshold: {threshold}\nReason: {data["reason"]}"
+                    message = (
+                        f"Risk assessment not passed for {function_name}."
+                        f"Score: {data["score"]} > Threshold: {threshold}"
+                        f"\nReason: {data["reason"]}"
+                    )
                     logger.warning(message)
                     return {"error": message}
 
                 logger.info(
-                    f"Function {function_name} passed risk assessment. Score: {data['score']}, Reason: {data['reason']}"
+                    (
+                        f"Function {function_name} passed risk assessment."
+                        f"Score: {data['score']}, Reason: {data['reason']}"
+                    )
                 )
                 if self.verbose:
                     print(
-                        f"Function {function_name} passed risk assessment. Score: {data['score']}, Reason: {data['reason']}"
+                        (
+                            f"Function {function_name} passed risk assessment."
+                            f"Score: {data['score']}, Reason: {data['reason']}"
+                        )
                     )
                 return inner_func(*args, **kwargs)
 

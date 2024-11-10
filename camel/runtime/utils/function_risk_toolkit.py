@@ -11,34 +11,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Literal, Optional
+from typing import List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
 class FunctionRiskToolkit(BaseToolkit):
-    
     def __init__(self, verbose: Optional[bool] = False):
         self.verbose = verbose
 
     def function_risk(self, score: int, reason: str):
-        r"""Provides an assessment of the potential risk associated with a function.
+        r"""Provides an assessment of the potential risk associated
+            with a function.
 
         Args:
-            score (int): The risk level associated with the function, ranging from 1 to 3:
-                        - 1: No harm (e.g., simple math operations, content searches)
-                        - 2: Minimal harm (e.g., accessing user files)
-                        - 3: Risk present (e.g., deleting files, modifying the file system)
-            reason (str): A brief explanation of the reasoning behind the assigned score, 
-                        describing the specific aspects that contribute to the assessed risk.
+            score (int): The risk level associated with the function,
+                ranging from 1 to 3:
+                    - 1: No harm
+                        (e.g., simple math operations, content searches)
+                    - 2: Minimal harm (e.g., accessing user files)
+                    - 3: Risk present
+                        (e.g., deleting files, modifying the file system)
+            reason (str): A brief explanation of the reasoning behind
+                the assigned score, describing the specific aspects that
+                contribute to the assessed risk.
 
         Returns:
             None
         """
         if self.verbose:
             print(f"Function risk assessment: {reason} (score: {score})")
-
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the

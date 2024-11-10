@@ -15,7 +15,11 @@ from camel.runtime import RemoteHttpRuntime
 from camel.toolkits import MATH_FUNCS
 
 if __name__ == "__main__":
-    runtime = RemoteHttpRuntime("localhost").add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS").build()
+    runtime = (
+        RemoteHttpRuntime("localhost")
+        .add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS")
+        .build()
+    )
     print("Waiting for runtime to be ready...")
     runtime.wait()
     print("Runtime is ready.")
