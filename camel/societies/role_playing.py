@@ -111,7 +111,7 @@ class RolePlaying:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
-        self.model: BaseModelBackend = model
+        self.model = model
         self.task_type = task_type
         self.task_prompt = task_prompt
 
