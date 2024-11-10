@@ -219,10 +219,10 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.terminated: bool = False
-        self.response_terminators = response_terminators or []
         self.init_messages()
 
+        self.terminated: bool = False
+        self.response_terminators = response_terminators or []
         self.tool_prompt_added = False
 
     # ruff: noqa: E501
@@ -369,22 +369,15 @@ class ChatAgent(BaseAgent):
         )
         if self.orig_sys_message is not None:
             content = self.orig_sys_message.content + language_prompt
-            self._system_message = self.orig_sys_message.create_new_instance(
+            self.orig_sys_message = self.orig_sys_message.create_new_instance(
                 content
             )
         else:
-            self._system_message = BaseMessage.make_assistant_message(
+            self.orig_sys_message = BaseMessage.make_assistant_message(
                 role_name="Assistant",
                 content=language_prompt,
             )
-
-        system_record = MemoryRecord(
-            message=self._system_message,
-            role_at_backend=OpenAIBackendRole.SYSTEM,
-        )
-        self.memory.clear()
-        self.memory.write_record(system_record)
-        return self._system_message
+        return self.orig_sys_message
 
     def get_info(
         self,
@@ -427,7 +420,7 @@ class ChatAgent(BaseAgent):
 
     def init_messages(self) -> None:
         r"""Initializes the stored messages list with the initial system
-        message.
+        message with language setting.
         """
         if self.orig_sys_message is not None:
             system_record = MemoryRecord(
