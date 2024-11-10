@@ -170,8 +170,8 @@ class LLMGuardRuntime(BaseRuntime):
                 if threshold < data["score"]:
                     message = (
                         f"Risk assessment not passed for {function_name}."
-                        f"Score: {data["score"]} > Threshold: {threshold}"
-                        f"\nReason: {data["reason"]}"
+                        f"Score: {data['score']} > Threshold: {threshold}"
+                        f"\nReason: {data['reason']}"
                     )
                     logger.warning(message)
                     return {"error": message}
