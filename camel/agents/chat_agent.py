@@ -180,9 +180,6 @@ class ChatAgent(BaseAgent):
                 model_type=ModelType.DEFAULT,
             )
         )
-        self.output_language: Optional[str] = output_language
-        if self.output_language is not None:
-            self.set_output_language(self.output_language)
 
         self.model_type = self.model_backend.model_type
 
@@ -217,6 +214,16 @@ class ChatAgent(BaseAgent):
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size
         )
+
+        self.output_language: Optional[str] = output_language
+        if self.output_language is not None:
+            self.set_output_language(self.output_language)
+            system_record = MemoryRecord(
+                message=self._system_message,  # type:ignore[arg-type]
+                role_at_backend=OpenAIBackendRole.SYSTEM,
+            )
+            self.memory.clear()
+            self.memory.write_record(system_record)
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
@@ -366,9 +373,9 @@ class ChatAgent(BaseAgent):
             "\nRegardless of the input language, "
             f"you must output text in {output_language}."
         )
-        if self.orig_sys_message is not None:
-            content = self.orig_sys_message.content + language_prompt
-            self._system_message = self.orig_sys_message.create_new_instance(
+        if self._system_message is not None:
+            content = self._system_message.content + language_prompt
+            self._system_message = self._system_message.create_new_instance(
                 content
             )
             return self._system_message
@@ -420,7 +427,7 @@ class ChatAgent(BaseAgent):
 
     def init_messages(self) -> None:
         r"""Initializes the stored messages list with the initial system
-        message.
+        message with language setting.
         """
         if self.orig_sys_message is not None:
             system_record = MemoryRecord(
