@@ -180,9 +180,6 @@ class ChatAgent(BaseAgent):
                 model_type=ModelType.DEFAULT,
             )
         )
-        self.output_language: Optional[str] = output_language
-        if self.output_language is not None:
-            self.set_output_language(self.output_language)
 
         self.model_type = self.model_backend.model_type
 
@@ -217,6 +214,10 @@ class ChatAgent(BaseAgent):
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size
         )
+
+        self.output_language: Optional[str] = output_language
+        if self.output_language is not None:
+            self.set_output_language(self.output_language)
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
@@ -371,13 +372,19 @@ class ChatAgent(BaseAgent):
             self._system_message = self.orig_sys_message.create_new_instance(
                 content
             )
-            return self._system_message
         else:
             self._system_message = BaseMessage.make_assistant_message(
                 role_name="Assistant",
                 content=language_prompt,
             )
-            return self._system_message
+
+        system_record = MemoryRecord(
+            message=self._system_message,
+            role_at_backend=OpenAIBackendRole.SYSTEM,
+        )
+        self.memory.clear()
+        self.memory.write_record(system_record)
+        return self._system_message
 
     def get_info(
         self,
