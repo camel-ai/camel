@@ -426,12 +426,12 @@ class ChatAgent(BaseAgent):
         }
 
     def init_messages(self) -> None:
-        r"""Initializes the stored messages list with the initial system
+        r"""Initializes the stored messages list with the current system
         message.
         """
-        if self.orig_sys_message is not None:
+        if self._system_message is not None:
             system_record = MemoryRecord(
-                message=self.orig_sys_message,
+                message=self._system_message,
                 role_at_backend=OpenAIBackendRole.SYSTEM,
             )
             self.memory.clear()
