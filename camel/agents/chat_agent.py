@@ -218,12 +218,6 @@ class ChatAgent(BaseAgent):
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
-            system_record = MemoryRecord(
-                message=self._system_message,  # type:ignore[arg-type]
-                role_at_backend=OpenAIBackendRole.SYSTEM,
-            )
-            self.memory.clear()
-            self.memory.write_record(system_record)
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
@@ -373,18 +367,24 @@ class ChatAgent(BaseAgent):
             "\nRegardless of the input language, "
             f"you must output text in {output_language}."
         )
-        if self._system_message is not None:
-            content = self._system_message.content + language_prompt
-            self._system_message = self._system_message.create_new_instance(
+        if self.orig_sys_message is not None:
+            content = self.orig_sys_message.content + language_prompt
+            self._system_message = self.orig_sys_message.create_new_instance(
                 content
             )
-            return self._system_message
         else:
             self._system_message = BaseMessage.make_assistant_message(
                 role_name="Assistant",
                 content=language_prompt,
             )
-            return self._system_message
+
+        system_record = MemoryRecord(
+            message=self._system_message,
+            role_at_backend=OpenAIBackendRole.SYSTEM,
+        )
+        self.memory.clear()
+        self.memory.write_record(system_record)
+        return self._system_message
 
     def get_info(
         self,
