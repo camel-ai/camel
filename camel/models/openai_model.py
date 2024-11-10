@@ -123,7 +123,7 @@ class OpenAIModel(BaseModelBackend):
 
             self.model_config_dict["temperature"] = 1.0
             self.model_config_dict["top_p"] = 1.0
-            self.model_config_dict["n"] = 1.0
+            self.model_config_dict["n"] = 1
             self.model_config_dict["presence_penalty"] = 0.0
             self.model_config_dict["frequency_penalty"] = 0.0
 
