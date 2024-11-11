@@ -46,7 +46,7 @@ def test_vllm_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into PHI model backend."
+                "input into Phi model backend."
             )
         ),
     ):
