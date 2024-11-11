@@ -74,11 +74,11 @@ class Persona(BaseModel):
 
     def dict(self, *args, **kwargs):
         # Output: {'name': 'Alice', 'description': None, 't2p_prompt': '...', 'p2p_prompt': '...', 'id': 'f47ac10b-58cc-4372-a567-0e02b2c3d479'}  # noqa: E501
-        d = super().dict(*args, **kwargs)
+        d = super().model_dump(*args, **kwargs)
         d['id'] = self.id
         return d
 
     def json(self, *args, **kwargs):
         # Output: '{"name": "Alice", "description": null, "t2p_prompt": "...", "p2p_prompt": "...", "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479"}'  # noqa: E501
         d = self.dict(*args, **kwargs)
-        return super().json(d, *args, **kwargs)
+        return super().model_dump_json(d, *args, **kwargs)

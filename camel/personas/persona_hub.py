@@ -12,7 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import uuid
-from typing import Dict, List, Optional, Union
+from functools import lru_cache
+from typing import Dict, List, Literal, Optional, Union
+
+import numpy as np
 
 from camel.agents import ChatAgent
 from camel.embeddings import BaseEmbedding
@@ -76,7 +79,11 @@ class PersonaHub:
         else:
             raise KeyError("Persona ID not found")
 
-    def text_to_persona(self, text: str, action: str = "read") -> Persona:
+    def text_to_persona(
+        self,
+        text: str,
+        action: Literal["read", "write", "like", "dislike"] = "read",
+    ) -> Persona:
         r"""Infers a specific persona who is likely to [read|write|like|dislike
         |...] the given text.
 
@@ -223,6 +230,26 @@ persona_description: <BLANK>
                 unique_personas[persona_id] = persona
         self.personas = unique_personas
 
+    @staticmethod
+    @lru_cache(maxsize=128)
+    def _get_embedding(
+        embedding_model: BaseEmbedding, description: Optional[str]
+    ):
+        r"""Cache embeddings to reduce recomputation."""
+        return embedding_model.embed(description)
+
+    @staticmethod
+    def _cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+        r"""Copmute the cosine similarity of two vectors.
+
+        Args:
+            vec1 (np.ndarray): Vector 1
+            vec2 (np.ndarray): Vector 2
+        """
+        return np.dot(vec1, vec2) / (
+            np.linalg.norm(vec1) * np.linalg.norm(vec2)
+        )
+
     def _is_similar(
         self,
         persona1: Persona,
@@ -246,17 +273,14 @@ persona_description: <BLANK>
         persona1_description = persona1.description or ""
         persona2_description = persona2.description or ""
 
-        persona1_embeddings = embedding_model.embed(persona1_description)
-        persona2_embeddings = embedding_model.embed(persona2_description)
+        persona1_embeddings = self._get_embedding(
+            embedding_model, persona1_description
+        )
+        persona2_embeddings = self._get_embedding(
+            embedding_model, persona2_description
+        )
 
-        import numpy as np
-
-        def cosine_similarity(vec1, vec2):
-            return np.dot(vec1, vec2) / (
-                np.linalg.norm(vec1) * np.linalg.norm(vec2)
-            )
-
-        similarity = cosine_similarity(
+        similarity = self._cosine_similarity(
             np.array(persona1_embeddings), np.array(persona2_embeddings)
         )
 
