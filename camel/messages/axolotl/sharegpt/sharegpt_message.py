@@ -28,19 +28,6 @@ class ShareGPTMessage(BaseModel):
         description="The content of the message",
     )
 
-    @field_validator('value')
-    @classmethod
-    def validate_value_content(cls, v: str) -> str:
-        """Validate message content contains printable characters"""
-        if not v.strip():
-            raise ValueError(
-                "Message content cannot be empty or just whitespace"
-            )
-        if not any(c.isprintable() for c in v):
-            raise ValueError(
-                "Message must contain at least one printable character"
-            )
-        return v.strip()
 
     model_config = {
         "populate_by_name": True,
