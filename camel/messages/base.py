@@ -21,16 +21,12 @@ import numpy as np
 from PIL import Image
 
 from camel.messages import (
+    FunctionCallFormatter,
+    HermesFunctionFormatter,
     OpenAIAssistantMessage,
     OpenAIMessage,
     OpenAISystemMessage,
     OpenAIUserMessage,
-)
-from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
-    FunctionCallFormatter,
-)
-from camel.messages.axolotl.sharegpt.functions.hermes import (
-    hermes_function_formatter as hff,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
@@ -41,8 +37,6 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import Constants
-
-HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 @dataclass
@@ -288,18 +282,18 @@ class BaseMessage:
         function_format: Optional[FunctionCallFormatter[Any, Any]] = None,
         role_mapping=None,
     ) -> "BaseMessage":
-        """Convert ShareGPT message to BaseMessage or FunctionCallingMessage.
+        r"""Convert ShareGPT message to BaseMessage or FunctionCallingMessage.
         Note tool calls and responses have an 'assistant' role in CAMEL
 
         Args:
-            message (ShareGPTMessage): ShareGPT message to convert
-            function_format (FunctionCallFormatter, optional):
-             Function call formatter to use. Defaults to Hermes.
-            role_mapping (Dict[str, List[str, RoleType]], optional):
-             Role mapping to use. Defaults to a CAMEL specific mapping.
+            message (ShareGPTMessage): ShareGPT message to convert.
+            function_format (FunctionCallFormatter, optional): Function call
+                formatter to use. (default: :obj:`HermesFunctionFormatter()`.
+            role_mapping (Dict[str, List[str, RoleType]], optional): Role
+                mapping to use. Defaults to a CAMEL specific mapping.
 
         Returns:
-            BaseMessage: Converted message
+            BaseMessage: Converted message.
         """
 
         if role_mapping is None:
