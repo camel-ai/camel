@@ -21,14 +21,38 @@ from camel.configs.base_config import BaseConfig
 
 
 class PHIConfig(BaseConfig):
-    model: str = "microsoft/Phi-3.5-vision-instruct"
+    r"""Defines the parameters for configuring the PHI model.
+
+    Attributes:
+        trust_remote_code (bool): Whether to trust remote code.
+        Defaults to True.
+        max_model_len (int): The maximum length of the model.
+        Defaults to 4096.
+        limit_mm_per_prompt (dict): The limit of multimodal data per prompt.
+        Defaults to {"image": 2}.
+        temperature (Optional[float]): The temperature to use for sampling.
+        Defaults to None.
+        max_tokens (Optional[int]): The maximum number of tokens to generate.
+        Defaults to None.
+        stop_token_ids (Optional[List[int]]):
+        The token IDs to stop generation.Defaults to None.
+        question (str): The question to ask the model.
+        Defaults to an empty string.
+        device (str): The device to use for running the model.
+        Defaults to "auto".
+
+    Example:
+        >>> config = PHIConfig(temperature=0.5, max_tokens=100)
+        >>> print(config.temperature)
+        0.5
+    """
+
     trust_remote_code: bool = True
     max_model_len: int = 4096
     limit_mm_per_prompt: dict = Field(default_factory=lambda: {"image": 2})
-    temperature: float = 0.0
-    max_tokens: int = 128
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
     stop_token_ids: Optional[List[int]] = None
-    method: str = "generate"
     question: str = ""
     device: str = "auto"
 
