@@ -20,12 +20,14 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class ToolResponse(BaseModel):
-    """Represents a tool/function response with validation"""
+    """Represents a tool/function response with validation. This is a
+    base class and default implementation for tool responses, for the purpose
+    of converting between different formats.
+    """
 
     name: str = Field(
         min_length=1,
         max_length=256,
-        pattern=r'^[a-zA-Z_][a-zA-Z0-9_]*$',
         description="The name of the tool that was called",
     )
     content: Any = Field(
@@ -37,8 +39,6 @@ class ToolResponse(BaseModel):
     @classmethod
     def validate_content(cls, v: Dict[str, Any]) -> Dict[str, Any]:
         """Validate response content structure"""
-        if not v:
-            raise ValueError("Response content cannot be empty")
 
         # Ensure content is JSON-serializable
         try:
