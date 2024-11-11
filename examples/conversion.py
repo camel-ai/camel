@@ -13,14 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List
 
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, HermesFunctionFormatter
 from camel.messages.axolotl.sharegpt.sharegpt_conversation import (
     ShareGPTConversation,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.messages.func_message import FunctionCallingMessage
-
-from camel.messages import HermesFunctionFormatter
 
 
 def sharegpt_to_camel_messages(
