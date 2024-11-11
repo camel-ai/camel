@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
-import re
 from typing import Any, Dict
 
 from pydantic import BaseModel, Field, field_validator
@@ -35,13 +34,6 @@ class ToolCall(BaseModel):
     @classmethod
     def validate_arguments(cls, v: Dict[str, Any]) -> Dict[str, Any]:
         """Validate argument structure and content"""
-        if not v:
-            raise ValueError("Arguments dictionary cannot be empty")
-
-        # Check argument keys follow valid parameter naming
-        for key in v.keys():
-            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', key):
-                raise ValueError(f"Invalid argument name: {key}")
 
         # Try to serialize arguments to ensure they're JSON-compatible
         try:
