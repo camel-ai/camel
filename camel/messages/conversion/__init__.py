@@ -11,29 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Literal
 
-from pydantic import BaseModel, Field
+from .models import (
+    ShareGPTConversation,
+    ShareGPTMessage,
+    ToolCall,
+    ToolResponse,
+)
+from .sharegpt import HermesFunctionFormatter
 
-
-class ShareGPTMessage(BaseModel):
-    r"""A single message in ShareGPT format with enhanced validation"""
-
-    from_: Literal["human", "gpt", "system", "tool"] = Field(
-        alias="from", description="The role of the message sender"
-    )
-    value: str = Field(
-        min_length=0,
-        max_length=100000,
-        description="The content of the message",
-    )
-
-    model_config = {
-        "populate_by_name": True,
-        "extra": "forbid",
-        "json_schema_extra": {
-            "examples": [
-                {"from": "human", "value": "What's the weather like today?"}
-            ]
-        },
-    }
+__all__ = [
+    'ShareGPTMessage',
+    'ShareGPTConversation',
+    'HermesFunctionFormatter',
+    'ToolCall',
+    'ToolResponse',
+]

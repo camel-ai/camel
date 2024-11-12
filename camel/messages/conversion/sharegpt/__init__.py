@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .sharegpt.functions import HermesFunctionFormatter
+
+from .hermes import HermesFunctionFormatter
 
 __all__ = [
     'HermesFunctionFormatter',

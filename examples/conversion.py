@@ -14,17 +14,17 @@
 from typing import List
 
 from camel.messages import BaseMessage, HermesFunctionFormatter
-from camel.messages.axolotl.sharegpt.sharegpt_conversation import (
+from camel.messages.conversion import (
     ShareGPTConversation,
+    ShareGPTMessage,
 )
-from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.messages.func_message import FunctionCallingMessage
 
 
 def sharegpt_to_camel_messages(
     conversation: ShareGPTConversation,
 ) -> List[BaseMessage]:
-    """Convert ShareGPT conversation to list of CAMEL messages"""
+    r"""Convert ShareGPT conversation to list of CAMEL messages"""
     return [
         BaseMessage.from_sharegpt(msg, HermesFunctionFormatter())
         for msg in conversation
@@ -34,7 +34,7 @@ def sharegpt_to_camel_messages(
 def camel_messages_to_sharegpt(
     messages: List[BaseMessage],
 ) -> ShareGPTConversation:
-    """Convert list of CAMEL messages to ShareGPT conversation"""
+    r"""Convert list of CAMEL messages to ShareGPT conversation"""
     sharegpt_messages = [
         msg.to_sharegpt(HermesFunctionFormatter()) for msg in messages
     ]

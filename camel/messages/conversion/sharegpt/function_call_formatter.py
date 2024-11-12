@@ -14,8 +14,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
-from camel.messages.axolotl.sharegpt.functions.tool_response import (
+from camel.messages.conversion import (
+    ToolCall,
     ToolResponse,
 )
 

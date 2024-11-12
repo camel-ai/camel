@@ -21,14 +21,14 @@ from camel.messages import (
     OpenAIFunctionMessage,
     OpenAIMessage,
 )
-from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
-    FunctionCallFormatter,
-)
-from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
-from camel.messages.axolotl.sharegpt.functions.tool_response import (
+from camel.messages.conversion import (
+    ShareGPTMessage,
+    ToolCall,
     ToolResponse,
 )
-from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
+from camel.messages.conversion.sharegpt.function_call_formatter import (
+    FunctionCallFormatter,
+)
 from camel.types import OpenAIBackendRole
 
 

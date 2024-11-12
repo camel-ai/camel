@@ -28,7 +28,7 @@ from camel.messages import (
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
-from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
+from camel.messages.conversion import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,

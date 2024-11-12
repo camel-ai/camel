@@ -19,17 +19,15 @@ from camel.types import (
     ChatCompletionUserMessageParam,
 )
 
-from .axolotl import (
+from .conversion import (
     HermesFunctionFormatter,
+    ShareGPTMessage,
 )
-from .axolotl.sharegpt.functions.function_call_formatter import (
-    FunctionCallFormatter,
-)
-from .axolotl.sharegpt.sharegpt_conversation import (
+from .conversion.models import (
     ShareGPTConversation,
 )
-from .axolotl.sharegpt.sharegpt_message import (
-    ShareGPTMessage,
+from .conversion.sharegpt.function_call_formatter import (
+    FunctionCallFormatter,
 )
 
 OpenAISystemMessage = ChatCompletionSystemMessageParam

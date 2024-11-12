@@ -16,16 +16,15 @@ from typing import Any, Dict, List
 import pytest
 
 from camel.memories import ContextRecord
-from camel.messages import BaseMessage, FunctionCallingMessage
-from camel.messages.axolotl.sharegpt.functions.hermes import (
-    hermes_function_formatter as hff,
+from camel.messages import (
+    BaseMessage,
+    FunctionCallingMessage,
+    HermesFunctionFormatter,
 )
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
-
-HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 @pytest.fixture

@@ -15,12 +15,12 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
-from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
-    FunctionCallFormatter,
-)
-from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
-from camel.messages.axolotl.sharegpt.functions.tool_response import (
+from camel.messages.conversion import (
+    ToolCall,
     ToolResponse,
+)
+from camel.messages.conversion.sharegpt.function_call_formatter import (
+    FunctionCallFormatter,
 )
 
 
