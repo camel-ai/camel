@@ -19,13 +19,13 @@ from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 
 
 class ShareGPTConversation(RootModel):
-    """A full conversation in ShareGPT format with validation"""
+    r"""A full conversation in ShareGPT format with validation"""
 
     root: List[ShareGPTMessage]
 
     @model_validator(mode='after')
     def validate_conversation_flow(self) -> 'ShareGPTConversation':
-        """Validate the conversation follows logical message order"""
+        r"""Validate the conversation follows logical message order"""
         messages = self.root
 
         if not messages:

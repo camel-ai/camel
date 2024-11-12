@@ -295,6 +295,7 @@ class BaseMessage:
         Returns:
             BaseMessage: Converted message.
         """
+        from camel.messages import FunctionCallingMessage
 
         if role_mapping is None:
             role_mapping = {
@@ -322,7 +323,6 @@ class BaseMessage:
                     message.value,
                     flags=re.DOTALL,
                 ).strip()
-                from camel.messages import FunctionCallingMessage
 
                 return FunctionCallingMessage(
                     role_name=role_name,
@@ -335,8 +335,6 @@ class BaseMessage:
         elif message.from_ == "tool":
             func_r_info = function_format.extract_tool_response(message.value)
             if func_r_info:
-                from camel.messages import FunctionCallingMessage
-
                 return FunctionCallingMessage(
                     role_name=role_name,
                     role_type=role_type,
@@ -358,11 +356,11 @@ class BaseMessage:
         self,
         function_format: Optional[FunctionCallFormatter] = None,
     ) -> ShareGPTMessage:
-        """Convert BaseMessage to ShareGPT message
+        r"""Convert BaseMessage to ShareGPT message
 
         Args:
             function_format (FunctionCallFormatter): Function call formatter
-            to use. Defaults to Hermes.
+                to use. Defaults to Hermes.
         """
 
         if function_format is None:

@@ -25,19 +25,32 @@ from camel.messages.axolotl.sharegpt.functions.tool_response import (
 
 
 class HermesToolResponse(ToolResponse):
-    """Represents a single tool/function call with validation"""
+    r"""Represents a single tool/function call with validation"""
+
+    pass
 
 
 class HermesToolCall(ToolCall):
-    """Represents a single tool/function call with validation"""
+    r"""Represents a single tool/function call with validation"""
+
+    pass
 
 
 class HermesFunctionFormatter(
     FunctionCallFormatter[HermesToolCall, HermesToolResponse]
 ):
-    """Hermes-style function calling format implementation with validation"""
+    r"""Hermes-style function calling format implementation with validation"""
 
     def extract_tool_calls(self, message: str) -> List[HermesToolCall]:
+        r"""Extracts all tool calls from the provided message string.
+
+        Args:
+            message (str): The input message string containing potential tool
+                calls.
+
+        Returns:
+            List[HermesToolCall]: A list of parsed HermesToolCall objects.
+        """
         tool_calls = []
         pattern = r"<tool_call>\s*({.*?})\s*</tool_call>"
         matches = re.finditer(pattern, message, re.DOTALL)
@@ -55,6 +68,16 @@ class HermesFunctionFormatter(
     def extract_tool_response(
         self, message: str
     ) -> Optional[HermesToolResponse]:
+        r"""Extracts a single tool response from the provided message string.
+
+        Args:
+            message (str): The input message string containing a potential
+                tool response.
+
+        Returns:
+            Optional[HermesToolResponse]: A parsed HermesToolResponse object,
+                or None if no valid response is found.
+        """
         pattern = r"<tool_response>\s*({.*?})\s*</tool_response>"
         match = re.search(pattern, message, re.DOTALL)
 
@@ -71,9 +94,35 @@ class HermesFunctionFormatter(
     def format_tool_call(
         self, content: str, func_name: str, args: Dict[str, Any]
     ) -> str:
+        r"""Formats a tool call message with the given content, function name,
+        and arguments.
+
+        Args:
+            content (str): The content or message to be included in the tool
+                call.
+            func_name (str): The name of the function being called.
+            args (Dict[str, Any]): A dictionary of arguments to be passed to
+                the function.
+
+        Returns:
+            str: A formatted string representing the tool call in Hermes
+                format.
+        """
         tool_call_dict = {"name": func_name, "arguments": args}
         return f"{content}\n<tool_call>\n{tool_call_dict}\n</tool_call>"
 
     def format_tool_response(self, func_name: str, result: Any) -> str:
+        r"""Formats a tool response message with the given function name and
+        result.
+
+        Args:
+            func_name (str): The name of the function whose result is being
+                returned.
+            result (Any): The result to be included in the tool response.
+
+        Returns:
+            str: A formatted string representing the tool response in Hermes
+                format.
+        """
         response_dict = {"name": func_name, "content": result}
         return f"<tool_response>\n{response_dict}\n</tool_response>"

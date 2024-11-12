@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional
 
 from camel.messages import (
     BaseMessage,
+    HermesFunctionFormatter,
     OpenAIAssistantMessage,
     OpenAIFunctionMessage,
     OpenAIMessage,
@@ -23,17 +24,12 @@ from camel.messages import (
 from camel.messages.axolotl.sharegpt.functions.function_call_formatter import (
     FunctionCallFormatter,
 )
-from camel.messages.axolotl.sharegpt.functions.hermes import (
-    hermes_function_formatter as hff,
-)
 from camel.messages.axolotl.sharegpt.functions.tool_call import ToolCall
 from camel.messages.axolotl.sharegpt.functions.tool_response import (
     ToolResponse,
 )
 from camel.messages.axolotl.sharegpt.sharegpt_message import ShareGPTMessage
 from camel.types import OpenAIBackendRole
-
-HermesFunctionFormatter = hff.HermesFunctionFormatter
 
 
 @dataclass

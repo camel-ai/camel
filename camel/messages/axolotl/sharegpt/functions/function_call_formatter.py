@@ -24,26 +24,26 @@ ResponseT = TypeVar('ResponseT', bound=ToolResponse, covariant=True)
 
 
 class FunctionCallFormatter(ABC, Generic[CallT, ResponseT]):
-    """Abstract base class for function calling formats"""
+    r"""Abstract base class for function calling formats"""
 
     @abstractmethod
     def extract_tool_calls(self, message: str) -> List[CallT]:
-        """Extract function call info from a message string"""
+        r"""Extract function call info from a message string"""
         pass
 
     @abstractmethod
     def extract_tool_response(self, message: str) -> Optional[ResponseT]:
-        """Extract function response info from a message string"""
+        r"""Extract function response info from a message string"""
         pass
 
     @abstractmethod
     def format_tool_call(
         self, content: str, func_name: str, args: Dict[str, Any]
     ) -> str:
-        """Format a function call into a message string"""
+        r"""Format a function call into a message string"""
         pass
 
     @abstractmethod
     def format_tool_response(self, func_name: str, result: Any) -> str:
-        """Format a function response into a message string"""
+        r"""Format a function response into a message string"""
         pass

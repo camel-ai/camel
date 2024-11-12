@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 
 class ShareGPTMessage(BaseModel):
-    """A single message in ShareGPT format with enhanced validation"""
+    r"""A single message in ShareGPT format with enhanced validation"""
 
     from_: Literal["human", "gpt", "system", "tool"] = Field(
         alias="from", description="The role of the message sender"
