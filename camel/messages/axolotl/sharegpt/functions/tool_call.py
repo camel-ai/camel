@@ -23,7 +23,6 @@ class ToolCall(BaseModel):
     name: str = Field(
         min_length=1,
         max_length=256,
-        pattern=r'^[a-zA-Z_][a-zA-Z0-9_]*$',
         description="The name of the tool to call",
     )
     arguments: Dict[str, Any] = Field(
