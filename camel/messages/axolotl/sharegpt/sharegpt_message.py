@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class ShareGPTMessage(BaseModel):
@@ -27,7 +27,6 @@ class ShareGPTMessage(BaseModel):
         max_length=100000,
         description="The content of the message",
     )
-
 
     model_config = {
         "populate_by_name": True,
