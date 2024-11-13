@@ -11,11 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import List
+
 import pytest
 
+from camel.memories import ContextRecord
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, RoleType
+from camel.societies import RolePlaying
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+    TaskType,
+)
 
 
 @pytest.fixture
@@ -125,3 +136,45 @@ def test_base_message():
         **(meta_dict or {}),
         "content": content,
     }
+
+
+@pytest.mark.model_backend
+def test_roleplay_sharegpt_conversion():
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+    )
+
+    role_playing = RolePlaying(
+        assistant_role_name="assistant",
+        assistant_agent_kwargs=dict(
+            model=model,
+            tools=[],
+        ),
+        user_role_name="user",
+        user_agent_kwargs=dict(model=model),
+        task_prompt="Perform the task",
+        task_specify_agent_kwargs=dict(model=model),
+        task_type=TaskType.AI_SOCIETY,
+    )
+    input_msg = role_playing.init_chat()
+    role_playing.step(input_msg)
+
+    records: List[ContextRecord] = (
+        role_playing.assistant_agent.memory.retrieve()
+    )
+    original_messages = []
+    sharegpt_msgs = []
+
+    for record in records:
+        message = record.memory_record.message
+        # Remove meta_dict to avoid comparison issues
+        message.meta_dict = None
+        original_messages.append(message)
+        sharegpt_msgs.append(message.to_sharegpt())
+
+    converted_back = []
+    for msg in sharegpt_msgs:
+        converted_back.append(BaseMessage.from_sharegpt(msg))
+
+    assert converted_back == original_messages
