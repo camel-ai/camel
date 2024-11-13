@@ -59,6 +59,10 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen-math-plus | N |
 | Qwen | qwen-math-turbo | N |
 | Qwen | qwen-coder-turbo | N |
+| Qwen | qwen2.5-coder-32b-instruct | N |
+| Qwen | qwen2.5-72b-instruct | N |
+| Qwen | qwen2.5-32b-instruct | N |
+| Qwen | qwen2.5-14b-instruct | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
