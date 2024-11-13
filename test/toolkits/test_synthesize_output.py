@@ -24,24 +24,24 @@ def sample_function(a, b):
 
 
 @pytest.mark.model_backend
-def test_synthesize_execution_output_with_kwds():
+def test_synthesize_execution_output_with_kwargs():
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_output=True,
+        synthesize_output=True,
         # Not providing synthesize_output_model to use default model
     )
 
-    kwds = {'a': 2, 'b': 3}
-    output = function_tool.synthesize_execution_output(kwds=kwds)
+    kwargs = {'a': 2, 'b': 3}
+    output = function_tool.synthesize_execution_output(kwargs=kwargs)
 
     assert output.strip() == '5'
 
 
 @pytest.mark.model_backend
-def test_synthesize_execution_output_without_kwds():
+def test_synthesize_execution_output_without_kwargs():
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_output=True,
+        synthesize_output=True,
         # Not providing synthesize_output_model to use default model
     )
 
@@ -63,28 +63,28 @@ def test_synthesize_execution_output_with_synthesize_output_format():
 
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_output=True,
+        synthesize_output=True,
         synthesize_output_format=synthesize_output_format,
     )
 
-    kwds = {'a': 2, 'b': 3}
-    output = function_tool.synthesize_execution_output(kwds=kwds)
+    kwargs = {'a': 2, 'b': 3}
+    output = function_tool.synthesize_execution_output(kwargs=kwargs)
 
     assert output.strip() == '5'
 
 
 @pytest.mark.model_backend
-def test_synthesis_output_with_custom_model():
+def test_synthesize_output_with_custom_model():
     # Use a specific model by specifying model_type
     custom_model = OpenAIModel(model_type=ModelType.GPT_4O_MINI)
 
     function_tool = FunctionTool(
         func=sample_function,
-        synthesis_output=True,
+        synthesize_output=True,
         synthesize_output_model=custom_model,
     )
 
-    kwds = {'a': 10, 'b': 15}
-    output = function_tool.synthesize_execution_output(kwds=kwds)
+    kwargs = {'a': 10, 'b': 15}
+    output = function_tool.synthesize_execution_output(kwargs=kwargs)
 
     assert output.strip() == '25'
