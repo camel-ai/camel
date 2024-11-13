@@ -209,6 +209,9 @@ Please note that the environment variable is session-specific. If you open a new
 
 After setting the OpenAI API key, you can run the `role_playing.py` script. Find tasks for various assistant-user roles [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
 
+For more details about the key names in project and how to apply key, 
+you can refer to [here](https://github.com/camel-ai/camel/api_key).
+
 ```bash
 # You can change the role pair and initial prompt in role_playing.py
 python examples/ai_society/role_playing.py
