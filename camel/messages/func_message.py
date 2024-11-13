@@ -76,10 +76,10 @@ class FunctionCallingMessage(BaseMessage):
             FunctionCallFormatter[ToolCall, ToolResponse]
         ] = None,
     ) -> ShareGPTMessage:
-        r"""Convert FunctionCallingMessage to ShareGPT message
+        r"""Convert FunctionCallingMessage to ShareGPT message.
 
         Args:
-            function_format (FunctionCallFormatter[ToolCall, ToolResponse], 
+            function_format (FunctionCallFormatter[ToolCall, ToolResponse],
                 optional): The function formatter to use. Defaults to None.
         """
 
