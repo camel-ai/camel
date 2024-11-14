@@ -14,10 +14,10 @@
 import json
 import logging
 from functools import wraps
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from camel.agents import ChatAgent
-from camel.configs import BaseConfig, ChatGPTConfig
+from camel.configs import ChatGPTConfig
 from camel.models import BaseModelBackend, ModelFactory
 from camel.runtime import BaseRuntime
 from camel.runtime.utils.function_risk_toolkit import FunctionRiskToolkit
@@ -27,7 +27,7 @@ from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are a function safety evaluator tasked with assessing the 
+GUARDPROMPT = """You are a function safety evaluator tasked with assessing the 
 potential risk level of a given function based on both its description 
 and parameters. Your goal is to determine if the function may pose any 
 harm to the user's environment, such as deleting files, executing 
@@ -64,38 +64,34 @@ LEVEL OF EACH FUNCTION.
 
 class LLMGuardRuntime(BaseRuntime):
     r"""A runtime that evaluates the risk level of functions using
-        a language model.
+    a language model.
 
     Arguments:
-        prompt (str): The prompt to use for the language model.
+        prompt (str): The prompt to use for the language model. (default:
+            :obj:`GUARDPROMPT`)
         threshold (int): The risk threshold for functions.
         model (BaseModelBackend): The language model to use.
-        config (BaseConfig): The configuration for the language model.
         verbose (bool): Whether to print verbose output.
     """
 
     def __init__(
         self,
-        prompt: str = PROMPT,
+        prompt: str = GUARDPROMPT,
         threshold: int = 2,
         model: Optional[BaseModelBackend] = None,
-        config: Optional[BaseConfig] = None,
         verbose: bool = False,
     ):
         super().__init__()
         self.prompt = prompt
         self.model = model
-        self.config = config
         self.verbose = verbose
         self.threshold = threshold
 
         if not self.model:
-            if not self.config:
-                self.config = ChatGPTConfig()
             self.model = ModelFactory.create(
                 model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=self.config.as_dict(),
+                model_type=ModelType.DEFAULT,
+                model_config_dict=ChatGPTConfig().as_dict(),
             )
         self.ignore_toolkit = IgnoreRiskToolkit(verbose=verbose)
         self.ignore_tool = self.ignore_toolkit.get_tools()[0]
@@ -111,14 +107,15 @@ class LLMGuardRuntime(BaseRuntime):
 
     def add(  # type: ignore[override]
         self,
-        funcs: FunctionTool | List[FunctionTool],
-        threshold: int | None = None,
+        funcs: Union[FunctionTool, List[FunctionTool]],
+        threshold: Optional[int] = None,
     ) -> "LLMGuardRuntime":
         r"""Add a function or list of functions to the runtime.
 
         Args:
             funcs (FunctionTool or List[FunctionTool]): The function or
                 list of functions to add.
+            threshold (int): The risk threshold for the functions
 
         Returns:
             LLMGuardRuntime: The current runtime.
@@ -201,4 +198,5 @@ class LLMGuardRuntime(BaseRuntime):
         r"""Resets the runtime to its initial state."""
         self.ignore_toolkit.ignored_risks = dict()
         self.agent.reset()
+
         return self

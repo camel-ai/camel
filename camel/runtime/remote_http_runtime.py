@@ -19,7 +19,7 @@ import time
 from functools import wraps
 from pathlib import Path
 from subprocess import Popen
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from pydantic import BaseModel
@@ -79,7 +79,8 @@ class RemoteHttpRuntime(BaseRuntime):
         self,
         funcs: FunctionTool | List[FunctionTool],
         entrypoint: str,
-        return_stdout: bool = False,
+        arguments: Optional[Dict[str, Any]] = None,
+        redirect_stdout: bool = False,
     ) -> "RemoteHttpRuntime":
         r"""Add a function or list of functions to the runtime.
 
@@ -87,24 +88,17 @@ class RemoteHttpRuntime(BaseRuntime):
             funcs (FunctionTool or List[FunctionTool]): The function or
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
-            return_stdout (bool): Whether to return the stdout of the function.
+            arguments (Dict[str, Any]): The arguments for the function.
+            redirect_stdout (bool): Whether to return the stdout of
+                the function.
 
         Returns:
             RemoteHttpRuntime: The current runtime.
         """
         if not isinstance(funcs, list):
             funcs = [funcs]
-        if "(" in entrypoint:
-            _, params = entrypoint.split("(")
-            params = f"dict({params}"
-            try:
-                _ = eval(params)
-            except Exception as e:
-                logger.error(f"Error evaluating parameters: {e}")
-                raise Exception(
-                    "Currently DockerRuntime only supports dict"
-                    "parameters for entrypoint."
-                )
+        if arguments is not None:
+            entrypoint += json.dumps(arguments)
 
         for func in funcs:
             inner_func = func.func
@@ -112,7 +106,7 @@ class RemoteHttpRuntime(BaseRuntime):
             # Create a wrapper that explicitly binds `func`
             @wraps(inner_func)
             def wrapper(
-                *args, func=func, return_stdout=return_stdout, **kwargs
+                *args, func=func, redirect_stdout=redirect_stdout, **kwargs
             ):
                 for key, value in kwargs.items():
                     if isinstance(value, BaseModel):
@@ -121,7 +115,9 @@ class RemoteHttpRuntime(BaseRuntime):
                 resp = requests.post(
                     f"http://{self.host}:{self.port}/{func.get_function_name()}",
                     json=dict(
-                        args=args, kwargs=kwargs, return_stdout=return_stdout
+                        args=args,
+                        kwargs=kwargs,
+                        redirect_stdout=redirect_stdout,
                     ),
                 )
                 if resp.status_code != 200:
@@ -137,7 +133,7 @@ class RemoteHttpRuntime(BaseRuntime):
                         response: {resp.text}"""
                     }
                 data = resp.json()
-                if return_stdout:
+                if redirect_stdout:
                     print(data["stdout"])
                 return json.loads(data["output"])
 

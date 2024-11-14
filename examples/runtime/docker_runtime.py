@@ -21,6 +21,7 @@ if __name__ == "__main__":
         .add(
             CodeExecutionToolkit().get_tools(),
             "camel.toolkits.CodeExecutionToolkit",
+            dict(verbose=True),
         )
     )
 
@@ -28,8 +29,7 @@ if __name__ == "__main__":
         runtime as r
     ):  # using with statement to automatically close the runtime
         print("Waiting for runtime to be ready...")
-        while not r.ok:
-            r.wait()
+        r.wait()
         print("Runtime is ready.")
 
         tools = r.get_tools()

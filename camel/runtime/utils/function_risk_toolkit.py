@@ -18,6 +18,12 @@ from camel.toolkits.base import BaseToolkit
 
 
 class FunctionRiskToolkit(BaseToolkit):
+    r"""A toolkit for assessing the risk associated with functions.
+
+    Attributes:
+        verbose (Optional[bool]): Whether to print verbose output.
+    """
+
     def __init__(self, verbose: Optional[bool] = False):
         self.verbose = verbose
 

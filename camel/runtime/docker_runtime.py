@@ -22,11 +22,11 @@ from pathlib import Path
 from random import randint
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-import requests  # type: ignore[import-untyped]
+import requests
 from pydantic import BaseModel
-from tqdm import tqdm  # type: ignore[import-untyped]
+from tqdm import tqdm
 
-from camel.runtime import BaseRuntime
+from camel.runtime import BaseRuntime, TaskConfig
 from camel.toolkits import FunctionTool
 
 if TYPE_CHECKING:
@@ -44,6 +44,8 @@ class DockerRuntime(BaseRuntime):
         image (str): The name of the Docker image to use for the runtime.
         port (int): The port number to use for the runtime API.
         remove (bool): Whether to remove the container after stopping it.
+        kwargs (dict): Additional keyword arguments to pass to the
+            Docker client.
     """
 
     def __init__(
@@ -51,7 +53,7 @@ class DockerRuntime(BaseRuntime):
     ):
         super().__init__()
 
-        import docker  # type: ignore[import]
+        import docker
 
         self.client = docker.from_env()
         self.container: Optional[Container] = None
@@ -60,7 +62,7 @@ class DockerRuntime(BaseRuntime):
         self.mounts: Dict[Path, Path] = dict()
         self.cp: Dict[Path, Path] = {api_path: Path("/home")}
         self.entrypoint: Dict[str, str] = dict()
-        self.tasks: List[Dict[str, Any]] = []
+        self.tasks: List[TaskConfig] = []
 
         self.docker_config = kwargs
         self.image = image
@@ -86,12 +88,14 @@ class DockerRuntime(BaseRuntime):
         """
 
         _path, _mount_path = Path(path), Path(mount_path)
-        assert _path.exists(), f"Path {_path} does not exist."
-        assert _path.is_dir(), f"Path {_path} is not a directory."
-        assert _path.is_absolute(), f"Path {_path} is not absolute."
-        assert (
-            _mount_path.is_absolute()
-        ), f"Mount path {_mount_path} is not absolute."
+        if not _path.exists():
+            raise FileNotFoundError(f"Path {_path} does not exist.")
+        if not _path.is_dir():
+            raise NotADirectoryError(f"Path {_path} is not a directory.")
+        if not _path.is_absolute():
+            raise ValueError(f"Path {_path} is not absolute.")
+        if not _mount_path.is_absolute():
+            raise ValueError(f"Mount path {_mount_path} is not absolute.")
 
         self.mounts[_path] = _mount_path
         return self
@@ -102,134 +106,52 @@ class DockerRuntime(BaseRuntime):
         Args:
             source (str): The local path to the file.
             dest (str): The path to copy the file to in the container.
+
         Returns:
             DockerRuntime: The DockerRuntime instance.
         """
         _source, _dest = Path(source), Path(dest)
-        assert _source.exists(), f"Source {_source} does not exist."
+        if not _source.exists():
+            raise FileNotFoundError(f"Source {_source} does not exist.")
 
         self.cp[_source] = _dest
         return self
 
     def add_task(
         self,
-        cmd: str | List[str],
-        stdout: bool = True,
-        stderr: bool = True,
-        stdin: bool = False,
-        tty: bool = False,
-        privileged: bool = False,
-        user: str = "",
-        detach: bool = False,
-        stream: bool = False,
-        socket: bool = False,
-        environment: Optional[Dict[str, str] | List[str]] = None,
-        workdir: Optional[str] = None,
-        demux: bool = False,
+        task: TaskConfig,
     ) -> "DockerRuntime":
         r"""Add a task to run a command inside the container when building.
-        Similar to ``docker exec``.
+        Similar to `docker exec`.
 
         Args:
-            cmd (str or list): Command to be executed
-            stdout (bool): Attach to stdout. Default: ``True``
-            stderr (bool): Attach to stderr. Default: ``True``
-            stdin (bool): Attach to stdin. Default: ``False``
-            tty (bool): Allocate a pseudo-TTY. Default: False
-            privileged (bool): Run as privileged.
-            user (str): User to execute command as. Default: root
-            detach (bool): If true, detach from the exec command.
-                Default: False
-            stream (bool): Stream response data. Default: False
-            socket (bool): Return the connection socket to allow custom
-                read/write operations. Default: False
-            environment (dict or list): A dictionary or a list of strings in
-                the following format ``["PASSWORD=xxx"]`` or
-                ``{"PASSWORD": "xxx"}``.
-            workdir (str): Path to working directory for this exec session
-            demux (bool): Return stdout and stderr separately
+            task (TaskConfig): The configuration for the task.
 
         Returns:
-            (ExecResult): A tuple of (exit_code, output)
-                exit_code: (int):
-                    Exit code for the executed command or ``None`` if
-                    either ``stream`` or ``socket`` is ``True``.
-                output: (generator, bytes, or tuple):
-                    If ``stream=True``, a generator yielding response chunks.
-                    If ``socket=True``, a socket object for the connection.
-                    If ``demux=True``, a tuple of two bytes: stdout and stderr.
-                    A bytestring containing response data otherwise.
-
-        Raises:
-            :py:class:`docker.errors.APIError`
-                If the server returns an error.
+            DockerRuntime: The DockerRuntime instance.
         """
-        self.tasks.append(
-            {
-                "cmd": cmd,
-                "stdout": stdout,
-                "stderr": stderr,
-                "stdin": stdin,
-                "tty": tty,
-                "privileged": privileged,
-                "user": user,
-                "detach": detach,
-                "stream": stream,
-                "socket": socket,
-                "environment": environment,
-                "workdir": workdir,
-                "demux": demux,
-            }
-        )
+        self.tasks.append(task)
         return self
 
     def exec_run(
         self,
-        cmd: str | List[str],
-        stdout: bool = True,
-        stderr: bool = True,
-        stdin: bool = False,
-        tty: bool = False,
-        privileged: bool = False,
-        user: str = "",
-        detach: bool = False,
-        stream: bool = False,
-        socket: bool = False,
-        environment: Optional[Dict[str, str] | List[str]] = None,
-        workdir: Optional[str] = None,
-        demux: bool = False,
+        task: TaskConfig,
     ) -> Any:
         r"""Run a command inside this container. Similar to
         ``docker exec``.
 
         Args:
-            cmd (str or list): Command to be executed
-            stdout (bool): Attach to stdout. Default: ``True``
-            stderr (bool): Attach to stderr. Default: ``True``
-            stdin (bool): Attach to stdin. Default: ``False``
-            tty (bool): Allocate a pseudo-TTY. Default: False
-            privileged (bool): Run as privileged.
-            user (str): User to execute command as. Default: root
-            detach (bool): If true, detach from the exec command.
-                Default: False
-            stream (bool): Stream response data. Default: False
-            socket (bool): Return the connection socket to allow custom
-                read/write operations. Default: False
-            environment (dict or list): A dictionary or a list of strings in
-                the following format ``["PASSWORD=xxx"]`` or
-                ``{"PASSWORD": "xxx"}``.
-            workdir (str): Path to working directory for this exec session
-            demux (bool): Return stdout and stderr separately
+            task (TaskConfig): The configuration for the task.
 
         Returns:
             (ExecResult): A tuple of (exit_code, output)
                 exit_code: (int):
-                    Exit code for the executed command or ``None`` if
-                    either ``stream`` or ``socket`` is ``True``.
+                    Exit code for the executed command or `None` if
+                    either `stream` or `socket` is `True`.
                 output: (generator, bytes, or tuple):
-                    If ``stream=True``, a generator yielding response chunks.
-                    If ``socket=True``, a socket object for the connection.
-                    If ``demux=True``, a tuple of two bytes: stdout and stderr.
+                    If `stream=True`, a generator yielding response chunks.
+                    If `socket=True`, a socket object for the connection.
+                    If `demux=True`, a tuple of two bytes: stdout and stderr.
                     A bytestring containing response data otherwise.
 
         Raises:
@@ -241,24 +163,14 @@ class DockerRuntime(BaseRuntime):
                 "Container does not exist. Please build the container first."
             )
 
-        return self.container.exec_run(
-            cmd,
-            stdout=stdout,
-            stderr=stderr,
-            stdin=stdin,
-            tty=tty,
-            privileged=privileged,
-            user=user,
-            detach=detach,
-            stream=stream,
-            socket=socket,
-            environment=environment,
-            workdir=workdir,
-            demux=demux,
-        )
+        return self.container.exec_run(**task.model_dump())
 
-    def build(self) -> "DockerRuntime":
+    def build(self, time_out: int = 15) -> "DockerRuntime":
         r"""Build the Docker container and start it.
+
+        Args:
+            time_out (int): The number of seconds to wait for the container to
+                start.
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -294,9 +206,11 @@ class DockerRuntime(BaseRuntime):
         try:
             self.container.start()
             # Wait for the container to start
-            while self.container.status != "running":
+            for _ in range(time_out):
                 self.container.reload()
-                logger.info(f"Container status: {self.container.status}")
+                logger.debug(f"Container status: {self.container.status}")
+                if self.container.status == "running":
+                    break
                 time.sleep(1)
 
         except docker.errors.APIError as e:
@@ -322,11 +236,11 @@ class DockerRuntime(BaseRuntime):
 
         if self.tasks:
             for task in tqdm(self.tasks, desc="Running tasks"):
-                self.exec_run(**task)
+                self.exec_run(task)
 
         exec = ["python3", "api.py", *list(self.entrypoint.values())]
 
-        self.exec_run(exec, workdir="/home", detach=True)
+        self.container.exec_run(exec, workdir="/home", detach=True)
 
         logger.info(f"Container started on port {self.port}")
         return self
@@ -335,7 +249,8 @@ class DockerRuntime(BaseRuntime):
         self,
         funcs: FunctionTool | List[FunctionTool],
         entrypoint: str,
-        return_stdout: bool = False,
+        arguments: Optional[Dict[str, Any]] = None,
+        redirect_stdout: bool = False,
     ) -> "DockerRuntime":
         r"""Add a function or list of functions to the runtime.
 
@@ -343,7 +258,8 @@ class DockerRuntime(BaseRuntime):
             funcs (FunctionTool or List[FunctionTool]): The function or
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
-            return_stdout (bool): Whether to return the stdout of the function.
+            redirect_stdout (bool): Whether to return the stdout of
+                the function.
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -351,17 +267,9 @@ class DockerRuntime(BaseRuntime):
 
         if not isinstance(funcs, list):
             funcs = [funcs]
-        if "(" in entrypoint:
-            _, params = entrypoint.split("(")
-            params = f"dict({params}"
-            try:
-                _ = eval(params)
-            except Exception as e:
-                logger.error(f"Error evaluating parameters: {e}")
-                raise Exception(
-                    "Currently DockerRuntime only supports dict"
-                    "parameters for entrypoint."
-                )
+
+        if arguments is not None:
+            entrypoint += json.dumps(arguments)
 
         for func in funcs:
             inner_func = func.func
@@ -369,7 +277,7 @@ class DockerRuntime(BaseRuntime):
             # Create a wrapper that explicitly binds `func`
             @wraps(inner_func)
             def wrapper(
-                *args, func=func, return_stdout=return_stdout, **kwargs
+                *args, func=func, redirect_stdout=redirect_stdout, **kwargs
             ):
                 for key, value in kwargs.items():
                     if isinstance(value, BaseModel):
@@ -378,7 +286,9 @@ class DockerRuntime(BaseRuntime):
                 resp = requests.post(
                     f"http://localhost:{self.port}/{func.get_function_name()}",
                     json=dict(
-                        args=args, kwargs=kwargs, return_stdout=return_stdout
+                        args=args,
+                        kwargs=kwargs,
+                        redirect_stdout=redirect_stdout,
                     ),
                 )
                 if resp.status_code != 200:
@@ -394,7 +304,7 @@ class DockerRuntime(BaseRuntime):
                         response: {resp.text}"""
                     }
                 data = resp.json()
-                if return_stdout:
+                if redirect_stdout:
                     print(data["stdout"])
                 return json.loads(data["output"])
 

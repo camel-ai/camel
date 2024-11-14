@@ -29,8 +29,9 @@ toolkit = CodeExecutionToolkit(verbose=True)
 # change to your own docker image
 runtime = DockerRuntime("xukunliu/camel").add(
     toolkit.get_tools(),
-    "camel.toolkits.CodeExecutionToolkit(verbose=True)",
-    True,
+    "camel.toolkits.CodeExecutionToolkit",
+    dict(verbose=True),
+    redirect_stdout=True,
 )
 
 tools = runtime.get_tools()
@@ -42,7 +43,7 @@ assistant_model_config = ChatGPTConfig(
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
+    model_type=ModelType.GPT_4O,
     model_config_dict=assistant_model_config.as_dict(),
 )
 

@@ -24,7 +24,8 @@ class CodeExecutionToolkit(BaseToolkit):
     Args:
         sandbox (str): the environment type used to execute code.
         verbose (bool): whether to print the output of the code execution.
-        unsafe_mode (bool): whether to enable unsafe mode.
+        unsafe_mode (bool):  If `True`, the interpreter runs the code
+            by `eval()` without any security check. (default: :obj:`False`)
         import_white_list (List[str]): a list of allowed imports.
     """
 

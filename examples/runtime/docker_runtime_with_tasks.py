@@ -18,7 +18,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.runtime import DockerRuntime
+from camel.runtime import DockerRuntime, TaskConfig
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
@@ -30,11 +30,15 @@ runtime = (
     DockerRuntime("xukunliu/camel")  # change to your own docker image
     .add(
         toolkit.get_tools(),
-        "camel.toolkits.CodeExecutionToolkit"
-        "(unsafe_mode=True, import_white_list=['os', 'sys'])",
+        "camel.toolkits.CodeExecutionToolkit",
+        {"unsafe_mode": True, "import_white_list": ["os", "sys"]},
         True,
     )
-    .add_task("mkdir /home/test")
+    .add_task(
+        TaskConfig(
+            cmd="mkdir /home/test",
+        )
+    )
 )
 
 tools = runtime.get_tools()

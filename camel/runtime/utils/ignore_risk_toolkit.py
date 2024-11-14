@@ -18,6 +18,14 @@ from camel.toolkits.base import BaseToolkit
 
 
 class IgnoreRiskToolkit(BaseToolkit):
+    r"""A toolkit for ignoring risks associated with functions.
+
+    Attributes:
+        function_names (List[str]): A list of function names to
+            ignore risks for.
+        verbose (Optional[bool]): Whether to print verbose output.
+    """
+
     def __init__(
         self,
         function_name: List[str] | None = None,
@@ -28,6 +36,11 @@ class IgnoreRiskToolkit(BaseToolkit):
         self.ignored_risks: Dict[str, str] = dict()
 
     def add(self, name: str):
+        r"""Adds a function to the toolkit.
+
+        Args:
+            name (str): The name of the function to add.
+        """
         self.function_names.append(name)
 
     def ignore_risk(self, name: str, reason: str) -> str:

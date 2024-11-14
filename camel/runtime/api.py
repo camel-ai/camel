@@ -14,6 +14,7 @@
 import importlib
 import io
 import json
+import logging
 import os
 import sys
 from typing import Dict
@@ -24,11 +25,13 @@ from fastapi.responses import JSONResponse
 
 from camel.toolkits import BaseToolkit
 
+logger = logging.getLogger(__name__)
+
 sys.path.append(os.getcwd())
 
 modules_functions = sys.argv[1:]
 
-print(f"Modules and functions: {modules_functions}")
+logger.info(f"Modules and functions: {modules_functions}")
 
 app = FastAPI()
 
@@ -47,14 +50,14 @@ async def general_exception_handler(request: Request, exc: Exception):
 for module_function in modules_functions:
     try:
         init_params = dict()
-        if "(" in module_function:
-            module_function, params = module_function.split("(")
-            params = f"dict({params}"
-            init_params = eval(params)
+        if "{" in module_function:
+            module_function, params = module_function.split("{")
+            params = "{" + params
+            init_params = json.loads(params)
 
         module_name, function_name = module_function.rsplit(".", 1)
 
-        print(f"Importing {module_name} and function {function_name}")
+        logger.info(f"Importing {module_name} and function {function_name}")
 
         module = importlib.import_module(module_name)
         function = getattr(module, function_name)
@@ -68,11 +71,11 @@ for module_function in modules_functions:
 
             @app.post(f"/{func.get_function_name()}")
             async def dynamic_function(data: Dict, func=func):
-                return_output = data.get('return_stdout', False)
-                if return_output:
+                redirect_stdout = data.get('redirect_stdout', False)
+                if redirect_stdout:
                     sys.stdout = io.StringIO()
                 response_data = func.func(*data['args'], **data['kwargs'])
-                if return_output:
+                if redirect_stdout:
                     sys.stdout.seek(0)
                     output = sys.stdout.read()
                     sys.stdout = sys.__stdout__
@@ -83,7 +86,7 @@ for module_function in modules_functions:
                 return {"output": json.dumps(response_data)}
 
     except (ImportError, AttributeError) as e:
-        print(f"Error importing {module_function}: {e}")
+        logger.error(f"Error importing {module_function}: {e}")
 
 
 if __name__ == "__main__":

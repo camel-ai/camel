@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseRuntime
+from .configs import TaskConfig
 from .docker_runtime import DockerRuntime
 from .llm_guard_runtime import LLMGuardRuntime
 from .remote_http_runtime import RemoteHttpRuntime
@@ -24,4 +25,5 @@ __all__ = [
     "DockerRuntime",
     "RemoteHttpRuntime",
     "LLMGuardRuntime",
+    "TaskConfig",
 ]
