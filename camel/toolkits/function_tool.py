@@ -581,15 +581,15 @@ class FunctionTool:
 
     def synthesize_execution_output(
         self,
-        args: Optional[set] = None,
+        args: Optional[tuple[Any, ...]] = None,
         kwargs: Optional[Dict[str, Any]] = None,
     ) -> Any:
         r"""Synthesizes the output of the function based on the provided
         positional arguments and keyword arguments.
 
         Args:
-            args (Optional[set]): Positional arguments to pass to the function
-                during synthesis. (default: :obj:`None`)
+            args (Optional[tuple]): Positional arguments to pass to the
+                function during synthesis. (default: :obj:`None`)
             kwargs (Optional[Dict[str, Any]]): Keyword arguments to pass to the
                 function during synthesis. (default: :obj:`None`)
 
@@ -646,7 +646,7 @@ def sum(a, b, c=0):
     return a + b + c
 
 - **Input Arguments:**
-args: [1, 2]
+args: (1, 2)
 kwargs: {"c": 3}
 
 - **Output:**
