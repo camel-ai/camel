@@ -36,14 +36,14 @@ def sample_function(a: int, b: str = "default") -> bool:
 
 
 @patch.object(FunctionTool, 'validate_openai_tool_schema')
-@patch.object(FunctionTool, 'generate_openai_tool_schema')
-def test_generate_openai_tool_schema(
+@patch.object(FunctionTool, 'synthesize_openai_tool_schema')
+def test_synthesize_openai_tool_schema(
     mock_generate_schema, mock_validate_schema
 ):
     # Mock the validate_openai_tool_schema return None
     mock_validate_schema.return_value = None
 
-    # Mock the generate_openai_tool_schema to return a specific schema
+    # Mock the synthesize_openai_tool_schema to return a specific schema
     mock_schema = {
         'type': 'function',
         'function': {
@@ -73,11 +73,11 @@ def test_generate_openai_tool_schema(
     }
     mock_generate_schema.return_value = mock_schema
 
-    # Create FunctionTool instance with use_schema_assistant=True
+    # Create FunctionTool instance with synthesize_schema=True
     function_tool = FunctionTool(
         func=sample_function,
-        use_schema_assistant=True,
-        schema_assistant_model=None,
+        synthesize_schema=True,
+        synthesize_schema_model=None,
     )
 
     # Assert that the generated schema matches the expected schema
@@ -189,12 +189,12 @@ def test_function_tool_generate_schema_with_retries(
         mock_response,
     ]
 
-    # Create FunctionTool instance with use_schema_assistant=True
+    # Create FunctionTool instance with synthesize_schema=True
     function_tool = FunctionTool(
         func=sample_function,
-        use_schema_assistant=True,
-        schema_assistant_model=mock_model,
-        schema_generation_max_retries=2,
+        synthesize_schema=True,
+        synthesize_schema_model=mock_model,
+        synthesize_schema_max_retries=2,
     )
 
     expected_schema = {
