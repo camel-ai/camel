@@ -43,8 +43,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    'recommonmark',
     'sphinxawesome_theme',
+    'myst_parser',
 ]
 
 templates_path = ['_templates']
@@ -61,14 +61,11 @@ html_theme_options = {
     "navbar_center": ["navbar-nav"],
     "navbar_end": ["navbar-icon-links"],
     "navbar_persistent": ["search-button"],
-    "logo_light": "_static/logo_primary.jpg",
-    "logo_dark": "_static/logo_primary.jpg",
+    "logo_light": "_static/logo_primary_light.svg",
+    "logo_dark": "_static/logo_primary_dark.svg",
 }
 
-html_search_language = {
-    "en",
-    "zh",
-}
+html_search_language = 'en'
 
 html_static_path = ['_static']
 html_css_files = [
