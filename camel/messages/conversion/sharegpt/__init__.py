@@ -12,9 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-__version__ = '0.2.9'
+
+from .hermes import HermesFunctionFormatter
 
 __all__ = [
-    '__version__',
-    'camel',
+    'HermesFunctionFormatter',
 ]
