@@ -314,7 +314,7 @@ class FunctionTool:
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         if self.synthesize_output:
-            result = self.synthesize_execution_output(kwargs)
+            result = self.synthesize_execution_output(args, kwargs)
             return result
         else:
             # Pass the extracted arguments to the indicated function
@@ -580,21 +580,27 @@ class FunctionTool:
         return {}
 
     def synthesize_execution_output(
-        self, kwargs: Optional[Dict[str, Any]] = None
+        self,
+        args: Optional[set] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
     ) -> Any:
         r"""Synthesizes the output of the function based on the provided
-        arguments.
+        positional arguments and keyword arguments.
 
-        kwargs:
-            kwargs (Optional[Dict[str, Any]]): Keyword arguments to pass to
-                the function during synthesis. (default: :obj:`None`)
+        Args:
+            args (Optional[set]): Positional arguments to pass to the function
+                during synthesis. (default: :obj:`None`)
+            kwargs (Optional[Dict[str, Any]]): Keyword arguments to pass to the
+                function during synthesis. (default: :obj:`None`)
 
         Returns:
             Any: Synthesized output from the function execution. If no
                 synthesis model is provided, a warning is logged.
         """
+        # Retrieve the function source code
         function_string = inspect.getsource(self.func)
 
+        # Check and update docstring if necessary
         if self.func.__doc__ is not None:
             tree = ast.parse(function_string)
             func_node = (
@@ -609,46 +615,55 @@ class FunctionTool:
                         value=ast.Constant(value=self.func.__doc__, kind=None)
                     )
                     function_string = ast.unparse(tree)
-        function_string += f"\nkwargs:\n{kwargs}"
 
+        # Append the args and kwargs information to the function string
+        if args:
+            function_string += f"\nargs:\n{list(args)}"
+        if kwargs:
+            function_string += f"\nkwargs:\n{kwargs}"
+
+        # Define the assistant system message
         assistant_sys_msg = '''
 **Role:** AI Assistant specialized in synthesizing tool execution outputs
 without actual execution.
 
 **Capabilities:**
 - Analyzes function to understand their
-purpose and expected outputs.
+  purpose and expected outputs.
 - Generates synthetic outputs based on the function logic.
 - Ensures the synthesized output is contextually accurate and aligns with the
-function's intended behavior.
+  function's intended behavior.
 
 **Instructions:**
-1. **Input:** Provide the function code and the function docstring.
+1. **Input:** Provide the function code, function docstring, args, and kwargs.
 2. **Output:** Synthesize the expected output of the function based on the
-provided kwargs.
+   provided args and kwargs.
 
 **Example:**
 - **User Input:**
-def add(a, b):
-    """Adds two numbers together."""
-    return a + b
+def sum(a, b, c=0):
+    """Adds three numbers together."""
+    return a + b + c
 
-- **Input Argumements:**
-{{'a': 1, 'b': 2}}
+- **Input Arguments:**
+args: [1, 2]
+kwargs: {"c": 3}
 
 - **Output:**
-3
+6
 
 **Note:**
 - Just return the synthesized output of the function without any explanation.
-- The output should in plain text withou any formatting.
+- The output should be in plain text without any formatting.
 '''
 
+        # Initialize the synthesis agent
         synthesis_agent = ChatAgent(
             assistant_sys_msg,
             model=self.synthesize_output_model,
         )
 
+        # User message combining function string and additional context
         user_msg = function_string
         response = synthesis_agent.step(
             user_msg,

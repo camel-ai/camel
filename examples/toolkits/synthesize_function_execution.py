@@ -12,10 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-
 from typing import Any, Dict
 
 import requests
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool
@@ -55,27 +55,28 @@ def movie_data_by_id(id: int) -> Dict[str, Any]:
         }
 
 
+# Define the response format for movie data
+class MovieResponse(BaseModel):
+    title: str = Field(description="The title of the movie.")
+    rating: str = Field(description="The movie's rating.")
+
+
 real_get_movie = FunctionTool(movie_data_by_id)
 synthesized_get_movie = FunctionTool(movie_data_by_id, synthesize_output=True)
 
 assistant_sys_msg = "You are a helpful assistant."
+user_msg = "What is the title and rating of the movie with id 2048"
 
 print("Synthesize output: False")
-agent = ChatAgent(
-    assistant_sys_msg,
-    tools=[real_get_movie],
-)
-user_msg = "What is the title and rating of the movie with id 2048"
-assistant_response = agent.step(user_msg)
+real_agent = ChatAgent(assistant_sys_msg, tools=[real_get_movie])
+assistant_response = real_agent.step(user_msg)
 print(assistant_response.msg.content)
 
 print("\nSynthesize output: True")
-agent = ChatAgent(
-    assistant_sys_msg,
-    tools=[synthesized_get_movie],
+synthesized_agent = ChatAgent(assistant_sys_msg, tools=[synthesized_get_movie])
+assistant_response = synthesized_agent.step(
+    user_msg, response_format=MovieResponse
 )
-user_msg = "What is the title and rating of the movie with id 2048"
-assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 
 """
