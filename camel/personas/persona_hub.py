@@ -11,18 +11,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import ast
+import re
 import uuid
 from functools import lru_cache
 from typing import Dict, List, Literal, Optional, Union
 
 import numpy as np
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.embeddings import BaseEmbedding
-from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.personas import Persona
 from camel.prompts import TextPrompt
+
+
+# Set structured output schema
+class PersonaResponse(BaseModel):
+    persona_name: str = Field(description="The name of the persona")
+    persona_description: str = Field(
+        description="The description of the persona"
+    )
 
 
 class PersonaHub:
@@ -39,7 +49,7 @@ class PersonaHub:
 
     Args:
         model (BaseModelBackend, optional): The model to use for persona
-        generation and manipulation.
+            generation and manipulation. (default: :obj:`None`)
     """
 
     def __init__(
@@ -69,7 +79,7 @@ class PersonaHub:
             raise KeyError("Persona ID not found")
 
     def __getitem__(self, persona_id: uuid.UUID) -> Persona:
-        """Get a persona by ID.
+        r"""Get a persona by ID.
 
         Args:
             persona_id (uuid.UUID): The ID of the persona to retrieve.
@@ -90,7 +100,7 @@ class PersonaHub:
         Args:
             text (str): The input text for which to infer a persona.
             action (str): The action associated with the persona (default is
-            "read").
+                "read").
 
         Returns:
             Persona: The inferred persona.
@@ -100,41 +110,23 @@ class PersonaHub:
         t2p_prompt: Union[TextPrompt, str] = persona.t2p_prompt
         t2p_prompt_instruction = t2p_prompt.format(action=action, text=text)
 
-        t2p_prompt_instruction_msg = BaseMessage.make_user_message(
-            role_name="User",
-            content=t2p_prompt_instruction,
+        # Set Agent to generate personal
+        t2p_agent = ChatAgent(
+            system_message="You are a helpful assistant", model=self.model
         )
-
-        sys_msg = BaseMessage.make_assistant_message(
-            role_name="System",
-            content="I am a helpful assistant",
-        )
-
-        t2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
         t2p_agent.reset()
 
-        from pydantic import BaseModel, Field
-
-        class PersonaResponse(BaseModel):
-            persona_name: str = Field(description="The name of the persona")
-            persona_description: str = Field(
-                description="The description of the persona"
+        # Get output from agent
+        try:
+            response = t2p_agent.step(
+                t2p_prompt_instruction,
+                response_format=PersonaResponse,  # type: ignore[arg-type]
             )
-
-        response = t2p_agent.step(
-            t2p_prompt_instruction_msg,
-            response_format=PersonaResponse,  # type: ignore[arg-type]
-        )
-
-        if response.terminated:
-            raise RuntimeError("Text to persona step failed.")
-        msg: BaseMessage = response.msg
-
-        import ast
-
-        parsed_content = ast.literal_eval(msg.content)
-        persona.name = parsed_content["persona_name"]
-        persona.description = parsed_content["persona_description"]
+            parsed_content = ast.literal_eval(response.msg.content)
+            persona.name = parsed_content["persona_name"]
+            persona.description = parsed_content["persona_description"]
+        except Exception as e:
+            raise RuntimeError(f"Text to persona step failed: {e}")
 
         return persona
 
@@ -144,7 +136,7 @@ class PersonaHub:
 
         Args:
             persona (Persona): The persona from which to derive related
-            personas.
+                personas.
 
         Returns:
             Dict[uuid.UUID, Persona]: A dictionary of related personas.
@@ -167,58 +159,52 @@ persona_description: <BLANK>
             + answer_template
         )
 
-        p2p_prompt_instruction_msg = BaseMessage.make_user_message(
-            role_name="User",
-            content=p2p_prompt_instruction,
+        p2p_agent = ChatAgent(
+            system_message="You're a helpful assistant.", model=self.model
         )
-
-        sys_msg = BaseMessage.make_assistant_message(
-            role_name="System",
-            content="I am a helpful assistant",
-        )
-
-        p2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
         p2p_agent.reset()
 
-        response = p2p_agent.step(p2p_prompt_instruction_msg)
+        # Get output from agent
+        try:
+            response = p2p_agent.step(
+                p2p_prompt_instruction  # type: ignore[arg-type]
+            )
+            # Structured output (TODO: Use a more robust parser)
+            pattern = r"(\d+)\.\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*(?=\d+\.|$)"  # noqa: E501
+            matches = re.findall(pattern, response.msg.content, re.DOTALL)
 
-        if response.terminated:
-            raise RuntimeError("Persona to persona step failed.")
-        msg: BaseMessage = response.msg
-
-        import re
-
-        # Structured output (TODO: Use a more robust parser)
-        pattern = r"(\d+)\.\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*(?=\d+\.|$)"  # noqa: E501
-        matches = re.findall(pattern, msg.content, re.DOTALL)
-
-        personas: Dict[uuid.UUID, Persona] = {}
-        for match in matches:
-            name = match[1].strip()
-            description = match[2].strip()
-            new_persona = Persona(name=name, description=description)
-            personas[new_persona.id] = new_persona
+            personas: Dict[uuid.UUID, Persona] = {}
+            for match in matches:
+                name = match[1].strip()
+                description = match[2].strip()
+                new_persona = Persona(name=name, description=description)
+                personas[new_persona.id] = new_persona
+        except Exception as e:
+            raise RuntimeError(f"Persona to persona step failed: {e}")
 
         return personas
 
     def deduplicate(
         self,
-        embedding_model: BaseEmbedding,
-        similarity_threshold: float = 0.7,
-    ):
+        embedding_model: Optional[BaseEmbedding] = None,
+        similarity_threshold: float = 0.85,
+    ) -> None:
         r"""Remove similar personas from the group.
 
         Args:
-            similarity_threshold (float): The similarity threshold for
-                deduplication (default is 0.85).
             embedding_model (BaseEmbedding): The embedding model
-                for similarity compairsion.
+                for similarity compairsion. (default is `None`).
+            similarity_threshold (float): The similarity threshold for
+                deduplication (default is `0.85`).
         """
         # Changed to default similarity threshold to 0.85 as the default
         # text-embedding-3-small model may give lower similarities than others
-
         # This is a simplified version. Need to implement a more
         # sophisticated deduplication algorithm as described in the paper.
+        if not embedding_model:
+            from camel.embeddings import OpenAIEmbedding
+
+            embedding_model = OpenAIEmbedding()
         unique_personas: Dict[uuid.UUID, Persona] = {}
         for persona_id, persona in self.personas.items():
             if not any(
@@ -234,7 +220,7 @@ persona_description: <BLANK>
     @lru_cache(maxsize=128)
     def _get_embedding(
         embedding_model: BaseEmbedding, description: Optional[str]
-    ):
+    ) -> list[float]:
         r"""Cache embeddings to reduce recomputation."""
         return embedding_model.embed(description)
 
