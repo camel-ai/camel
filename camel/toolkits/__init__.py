@@ -14,7 +14,6 @@
 # ruff: noqa: I001
 from .function_tool import (
     FunctionTool,
-    OpenAIFunction,
     get_openai_function_schema,
     get_openai_tool_schema,
     generate_docstring,
@@ -44,7 +43,6 @@ from .notion_toolkit import NotionToolkit
 __all__ = [
     'BaseToolkit',
     'FunctionTool',
-    'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
     "generate_docstring",
