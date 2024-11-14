@@ -12,9 +12,18 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-__version__ = '0.2.9'
+from .models import (
+    ShareGPTConversation,
+    ShareGPTMessage,
+    ToolCall,
+    ToolResponse,
+)
+from .sharegpt import HermesFunctionFormatter
 
 __all__ = [
-    '__version__',
-    'camel',
+    'ShareGPTMessage',
+    'ShareGPTConversation',
+    'HermesFunctionFormatter',
+    'ToolCall',
+    'ToolResponse',
 ]
