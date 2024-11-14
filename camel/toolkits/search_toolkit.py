@@ -326,8 +326,14 @@ class SearchToolkit(BaseToolkit):
             subpod_data = pod.get('subpod', {})
             if isinstance(subpod_data, list):
                 # If it's a list, get the first item for 'plaintext' and 'img'
-                description = subpod_data[0].get('plaintext', '')
-                image_url = subpod_data[0].get('img', {}).get('@src', '')
+                description, image_url = next(
+                    (
+                        (data['plaintext'], data['img'])
+                        for data in subpod_data
+                        if "plaintext" in data and "img" in data
+                    ),
+                    ("", ""),
+                )
             else:
                 # Otherwise, handle it as a dictionary
                 description = subpod_data.get('plaintext', '')
