@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
+from pydantic import BaseModel, Field
 
 from camel.models import OpenAIModel
 from camel.toolkits import FunctionTool
@@ -54,12 +55,16 @@ def test_synthesize_execution_output_without_kwargs():
     assert len(output.strip()) > 0
 
 
+class FormattedResponse(BaseModel):
+    sum_value: int = Field(description="The sum value.")
+
+
 @pytest.mark.model_backend
 def test_synthesize_execution_output_with_synthesize_output_format():
     # Assuming you have a custom response format
 
     # Create a response format if applicable (e.g., a Pydantic model)
-    synthesize_output_format = None
+    synthesize_output_format = FormattedResponse
 
     function_tool = FunctionTool(
         func=sample_function,
@@ -70,7 +75,7 @@ def test_synthesize_execution_output_with_synthesize_output_format():
     kwargs = {'a': 2, 'b': 3}
     output = function_tool.synthesize_execution_output(kwargs=kwargs)
 
-    assert output.strip() == '5'
+    assert output.strip() == "{'sum_value': 5}"
 
 
 @pytest.mark.model_backend

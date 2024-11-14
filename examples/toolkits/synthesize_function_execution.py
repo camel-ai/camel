@@ -23,16 +23,15 @@ from camel.toolkits import FunctionTool
 
 # example function
 def movie_data_by_id(id: int) -> Dict[str, Any]:
-    """
-    Fetch movie data by its ID from the IMDB Top 100 Movies API.
+    r"""Fetch movie data by its ID from the IMDB Top 100 Movies API.
 
-    Parameters:
+    Args:
         id (int): The ID of the movie to retrieve information for.
 
     Returns:
         Dict[str, Any]: A dictionary with the following keys:
             - rank (int): The rank of the movie in the top 100 list.
-            - title (str): The title of the movie.
+            - movie_title (str): The title of the movie.
             - rating (str): The movie's rating.
             - id (str): The unique identifier of the movie.
             - year (int): The release year of the movie.
@@ -57,20 +56,24 @@ def movie_data_by_id(id: int) -> Dict[str, Any]:
 
 # Define the response format for movie data
 class MovieResponse(BaseModel):
-    title: str = Field(description="The title of the movie.")
     rating: str = Field(description="The movie's rating.")
+    description: str = Field(description="A brief description of the movie.")
+    movie_title: str = Field(description="The title of the movie.")
 
 
 real_get_movie = FunctionTool(movie_data_by_id)
 synthesized_get_movie = FunctionTool(movie_data_by_id, synthesize_output=True)
 
 assistant_sys_msg = "You are a helpful assistant."
-user_msg = "What is the title and rating of the movie with id 2048"
+user_msg = (
+    "What is the rating, description and movie_title of the movie with id 2048"
+)
 
 print("Synthesize output: False")
 real_agent = ChatAgent(assistant_sys_msg, tools=[real_get_movie])
 assistant_response = real_agent.step(user_msg)
 print(assistant_response.msg.content)
+
 
 print("\nSynthesize output: True")
 synthesized_agent = ChatAgent(assistant_sys_msg, tools=[synthesized_get_movie])
@@ -81,16 +84,20 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Warning: No synthesize_output_model provided. Use `gpt-4o-mini` to synthesize
+Warning: No synthesize_output_model provided. Use `gpt-4o-mini` to synthesize 
 the output.
 Synthesize output: False
-It seems that I am unable to access the movie data at the moment due to a
-subscription issue. However, you can usually find movie information such as
-title and rating on popular movie databases like IMDb or Rotten Tomatoes. If
-you have any other questions or need assistance with something else, feel free
-to ask!
+It seems that I'm unable to access the movie data at the moment due to a 
+subscription issue with the API. However, if you provide me with the title of 
+the movie or any other details, I can help you find information about it!
+===============================================================================
+"""
 
+"""
+===============================================================================
 Synthesize output: True
-The title of the movie with ID 2048 is "Inception" and its rating is 8.8.
+{'rating': '8.8', 'description': 'A thief who steals corporate secrets through 
+the use of dream-sharing technology is given the inverse task of planting an 
+idea into the mind of a CEO.', 'movie_title': 'Inception'}
 ===============================================================================
 """

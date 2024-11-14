@@ -242,7 +242,7 @@ class FunctionTool:
             assistant model if the previous attempts fail. (default: 2)
         synthesize_output (Optional[bool], optional): Flag for enabling
             synthesis output mode, where output is synthesized based on the
-            function's execution. (default: :obj:`None`)
+            function's execution. (default: :obj:`False`)
         synthesize_output_model (Optional[BaseModelBackend], optional):
             Model used for output synthesis in synthesis mode.
             (default: :obj:`None`)
@@ -597,11 +597,14 @@ class FunctionTool:
             Any: Synthesized output from the function execution. If no
                 synthesis model is provided, a warning is logged.
         """
+        import textwrap
+
         # Retrieve the function source code
         function_string = inspect.getsource(self.func)
 
         # Check and update docstring if necessary
         if self.func.__doc__ is not None:
+            function_string = textwrap.dedent(function_string)
             tree = ast.parse(function_string)
             func_node = (
                 tree.body[0]
@@ -698,25 +701,3 @@ kwargs: {"c": 3}
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
-
-
-warnings.simplefilter('always', DeprecationWarning)
-
-
-# Alias for backwards compatibility
-class OpenAIFunction(FunctionTool):
-    r"""Alias for backwards compatibility."""
-
-    def __init__(self, *args, **kwargs):
-        PURPLE = '\033[95m'
-        RESET = '\033[0m'
-
-        def purple_warning(msg):
-            warnings.warn(
-                PURPLE + msg + RESET, DeprecationWarning, stacklevel=2
-            )
-
-        purple_warning(
-            "OpenAIFunction is deprecated, please use FunctionTool instead."
-        )
-        super().__init__(*args, **kwargs)
