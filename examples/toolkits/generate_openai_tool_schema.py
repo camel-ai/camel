@@ -25,7 +25,7 @@ def get_perfect_square(n: int) -> int:
 # Create a FunctionTool with the function
 function_tool = FunctionTool(
     get_perfect_square,
-    use_schema_assistant=True,
+    synthesize_schema=True,
 )
 print("\nGenerated OpenAI Tool Schema:")
 print(function_tool.get_openai_tool_schema())

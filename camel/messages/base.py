@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import base64
 import io
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
@@ -20,11 +21,14 @@ import numpy as np
 from PIL import Image
 
 from camel.messages import (
+    FunctionCallFormatter,
+    HermesFunctionFormatter,
     OpenAIAssistantMessage,
     OpenAIMessage,
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
+from camel.messages.conversion import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
@@ -270,6 +274,106 @@ class BaseMessage:
             start_idx = idx
 
         return text_prompts, code_prompts
+
+    @classmethod
+    def from_sharegpt(
+        cls,
+        message: ShareGPTMessage,
+        function_format: Optional[FunctionCallFormatter[Any, Any]] = None,
+        role_mapping=None,
+    ) -> "BaseMessage":
+        r"""Convert ShareGPT message to BaseMessage or FunctionCallingMessage.
+        Note tool calls and responses have an 'assistant' role in CAMEL
+
+        Args:
+            message (ShareGPTMessage): ShareGPT message to convert.
+            function_format (FunctionCallFormatter, optional): Function call
+                formatter to use. (default: :obj:`HermesFunctionFormatter()`.
+            role_mapping (Dict[str, List[str, RoleType]], optional): Role
+                mapping to use. Defaults to a CAMEL specific mapping.
+
+        Returns:
+            BaseMessage: Converted message.
+        """
+        from camel.messages import FunctionCallingMessage
+
+        if role_mapping is None:
+            role_mapping = {
+                "system": ["system", RoleType.USER],
+                "human": ["user", RoleType.USER],
+                "gpt": ["assistant", RoleType.ASSISTANT],
+                "tool": ["assistant", RoleType.ASSISTANT],
+            }
+        role_name, role_type = role_mapping[message.from_]
+
+        if function_format is None:
+            function_format = HermesFunctionFormatter()
+
+        # Check if this is a function-related message
+        if message.from_ == "gpt":
+            func_info = function_format.extract_tool_calls(message.value)
+            if (
+                func_info and len(func_info) == 1
+            ):  # TODO: Handle multiple tool calls
+                # Including cleaned content is useful to
+                # remind consumers of non-considered content
+                clean_content = re.sub(
+                    r"<tool_call>.*?</tool_call>",
+                    "",
+                    message.value,
+                    flags=re.DOTALL,
+                ).strip()
+
+                return FunctionCallingMessage(
+                    role_name=role_name,
+                    role_type=role_type,
+                    meta_dict=None,
+                    content=clean_content,
+                    func_name=func_info[0].__dict__["name"],
+                    args=func_info[0].__dict__["arguments"],
+                )
+        elif message.from_ == "tool":
+            func_r_info = function_format.extract_tool_response(message.value)
+            if func_r_info:
+                return FunctionCallingMessage(
+                    role_name=role_name,
+                    role_type=role_type,
+                    meta_dict=None,
+                    content="",
+                    func_name=func_r_info.__dict__["name"],
+                    result=func_r_info.__dict__["content"],
+                )
+
+        # Regular message
+        return cls(
+            role_name=role_name,
+            role_type=role_type,
+            meta_dict=None,
+            content=message.value,
+        )
+
+    def to_sharegpt(
+        self,
+        function_format: Optional[FunctionCallFormatter] = None,
+    ) -> ShareGPTMessage:
+        r"""Convert BaseMessage to ShareGPT message
+
+        Args:
+            function_format (FunctionCallFormatter): Function call formatter
+                to use. Defaults to Hermes.
+        """
+
+        if function_format is None:
+            function_format = HermesFunctionFormatter()
+
+        # Convert role type to ShareGPT 'from' field
+        if self.role_type == RoleType.USER:
+            from_ = "system" if self.role_name == "system" else "human"
+        else:  # RoleType.ASSISTANT
+            from_ = "gpt"
+
+        # Function conversion code in FunctionCallingMessage
+        return ShareGPTMessage(from_=from_, value=self.content)  # type: ignore[call-arg]
 
     def to_openai_message(
         self,

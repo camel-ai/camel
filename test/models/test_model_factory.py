@@ -31,7 +31,7 @@ parametrize = pytest.mark.parametrize(
     'model_platform, model_type',
     [
         (ModelPlatformType.OPENAI, ModelType.GPT_3_5_TURBO),
-        (ModelPlatformType.OPENAI, ModelType.GPT_4_TURBO),
+        (ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI),
     ],
 )
 
@@ -50,11 +50,11 @@ parameterize_token_counter = pytest.mark.parametrize(
         ),
         (
             ModelPlatformType.OPENAI,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
             ChatGPTConfig().as_dict(),
             None,
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
         # Test Stub model
         # Stub model uses StubTokenCounter as default
@@ -70,9 +70,9 @@ parameterize_token_counter = pytest.mark.parametrize(
             ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
             ModelType.STUB,
             ChatGPTConfig().as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
         # Test Anthropic model
         # Anthropic model uses AnthropicTokenCounter as default
@@ -97,9 +97,9 @@ parameterize_token_counter = pytest.mark.parametrize(
             ModelPlatformType.GEMINI,
             ModelType.GEMINI_1_5_FLASH,
             GeminiConfig().as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
         # Test Ollama model
         (
@@ -114,9 +114,9 @@ parameterize_token_counter = pytest.mark.parametrize(
             ModelPlatformType.OLLAMA,
             "gpt-3.5-turbo",
             OllamaConfig().as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
     ],
 )

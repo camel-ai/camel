@@ -177,6 +177,7 @@ encoders = [
 tools = [
     "beautifulsoup4",
     "docx2txt",
+    "functools",
     "PyMuPDF",
     "wikipedia",
     "duckduckgo-search",

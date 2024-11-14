@@ -163,11 +163,11 @@ class WhatsAppToolkit(BaseToolkit):
             return f"Failed to retrieve business profile: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of OpenAIFunction objects representing the
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects for the
+            List[FunctionTool]: A list of FunctionTool objects for the
                 toolkit methods.
         """
         return [
