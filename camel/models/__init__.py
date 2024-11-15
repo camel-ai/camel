@@ -45,6 +45,7 @@ __all__ = [
     'ZhipuAIModel',
     'CohereModel',
     'ModelFactory',
+    'ModelManager',
     'LiteLLMModel',
     'OpenAIAudioModels',
     'NemotronModel',

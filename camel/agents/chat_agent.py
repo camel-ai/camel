@@ -41,7 +41,7 @@ from camel.memories import (
     ScoreBasedContextCreator,
 )
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.models import BaseModelBackend, ModelFactory
+from camel.models import BaseModelBackend, ModelFactory, ModelManager
 from camel.responses import ChatAgentResponse
 from camel.types import (
     ChatCompletion,
@@ -150,7 +150,9 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: Optional[Union[BaseMessage, str]] = None,
-        model: Optional[BaseModelBackend] = None,
+        model: Optional[
+            Union[BaseModelBackend, List[BaseModelBackend]]
+        ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -172,7 +174,7 @@ class ChatAgent(BaseAgent):
         self.role_type: RoleType = (
             getattr(system_message, 'role_type', None) or RoleType.ASSISTANT
         )
-        self.model_backend: BaseModelBackend = (
+        self.model_backend = ModelManager(
             model
             if model is not None
             else ModelFactory.create(
