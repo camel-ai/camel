@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Optional, Union, Dict, List
+from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel
+
 
 class TaskConfig(BaseModel):
     r"""A configuration for a task to run a command inside the container.
@@ -37,6 +39,7 @@ class TaskConfig(BaseModel):
         workdir (str): Path to working directory for this exec session
         demux (bool): Return stdout and stderr separately
     """
+
     cmd: Union[str, List[str]]
     stdout: bool = True
     stderr: bool = True
