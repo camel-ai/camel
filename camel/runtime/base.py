@@ -31,7 +31,7 @@ class BaseRuntime(ABC):
         funcs: FunctionTool | list[FunctionTool],
         *args: Any,
         **kwargs: Any,
-    ) -> FunctionTool:
+    ) -> "BaseRuntime":
         r"""Adds a new tool to the runtime."""
         pass
 
