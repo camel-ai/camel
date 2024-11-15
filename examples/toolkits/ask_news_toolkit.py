@@ -16,26 +16,27 @@ from camel.toolkits import AskNewsToolkit
 
 ask_news = AskNewsToolkit()
 
-news_output = ask_news.get_news(query="camel-ai")
-print(news_output[:1000])
+# news_output = ask_news.get_news(query="President of United States")
+# print(news_output[:1000])
 
 """
 ===============================================================================
 <doc>
 [1]:
-Title: Robot Creates Painting of Alan Turing for $130,000 to $195,000 Auction
-Summary: A robot named 'Ai-Da' created a painting of Alan Turing, a British 
-mathematician and father of modern computer science, using artificial 
-intelligence technology. The painting is part of an online auction that will 
-take place from October 31 to November 7, and is estimated to be worth between 
-$130,000 and $195,000. Ai-Da is a highly advanced robot that has arms and a 
-face that resembles a human, complete with brown hair. The robot was created 
-in 2019 by a team led by Aidan Meller, an art dealer and founder of Ai-Da 
-Robot Studio, in collaboration with experts in artificial intelligence from 
-the universities of Oxford and Birmingham. Ai-Da uses AI to create paintings 
-or sculptures, and has cameras in its eyes and electronic arms. According to 
-Ai-Da, 'Through my works on Alan Turing, I celebrate his achievements and 
-contributions to the development of computing and artificial intelligence.' T
+Title: Can Elon Musk Become President of the United States?
+Summary: Elon Musk, the American billionaire, has been appointed to lead the 
+Department of Government Efficiency in Donald Trump's upcoming administration, 
+sparking speculation about his potential presidential ambitions. However, 
+according to the US Constitution, the President must be a natural-born citizen 
+of the United States. As Musk was born in South Africa and became a Canadian 
+citizen through his mother, he does not meet this requirement. While he 
+acquired US citizenship in 2002, this does not make him a natural-born 
+citizen. Additionally, the Constitution requires the President to be at least 
+35 years old and a resident of the United States for at least 14 years. Musk 
+can, however, hold other government positions, as the requirement of being a 
+natural-born citizen only applies to the President and Vice President. Many 
+non-US-born citizens have held prominent government positions in the past, 
+including Henry
 ===============================================================================
 """
 
@@ -50,5 +51,5 @@ print(web_search_output)
 reddit_output = ask_news.search_reddit(keywords=["camel-ai", "multi-agent"])
 print(reddit_output)
 
-finance_output = ask_news.finance_query(asset="bitcoin")
+finance_output = ask_news.query_finance(asset="bitcoin")
 print(finance_output)
