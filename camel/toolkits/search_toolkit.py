@@ -474,7 +474,9 @@ class SearchToolkit(BaseToolkit):
 
         # Replace http with https and add https if not present
         if not url.startswith("https://"):
-            url = "https://" + url.lstrip("https://").lstrip("http://")
+            url = "https://" + url.removeprefix("https://").removeprefix(
+                "http://"
+            )
 
         jina_url = f"https://r.jina.ai/{url}"
         headers = {}
@@ -498,24 +500,29 @@ class SearchToolkit(BaseToolkit):
         context_chars: int = 700,
         max_instances: int = 3,
     ) -> str:
-        """Fetch the content of a URL and return context around all instances of a specific string.
+        """Fetch the content of a URL and return context around all
+            instances of a specific string.
 
         Args:
             url (str): The URL to fetch content from.
             search_string (str): The string to search for in the content.
-            context_chars (int): Number of characters to return before and after each found string.
+            context_chars (int): Number of characters to return before and
+                after each found string.
             max_instances (int): Maximum number of instances to return.
 
         Returns:
-            str: The context around all found instances of the string, or an error message if not found.
+            str: The context around all found instances of the string,
+                or an error message if not found.
 
-        If there are no results, try again with a more likely search string. Start with a more likely string and only use a less likely string if the first one has too many results.
+        If there are no results, try again with a more likely search string.
+        Start with a more likely string and only use a less likely
+        string if the first one has too many results.
         """
         content = self.get_url_content(url)
         if content.startswith("Error fetching URL content"):
             return content
 
-        instances = []
+        instances: List[str] = []
         start = 0
         while True:
             index = content.lower().find(search_string.lower(), start)
@@ -545,8 +552,11 @@ class SearchToolkit(BaseToolkit):
     def planning(self, plan: str) -> str:
         """A function for planning
 
-        This function takes a thought as a string parameter and returns the thought.
-        Use this to think out loud before using any tools, and for planning. Call as many times, and with as many lines of thought, as needed.
+        This function takes a thought as a string parameter and
+        returns the thought.
+        Use this to think out loud before using any tools, and for
+        planning. Call as many times, and with as many lines of thought,
+            as needed.
 
         Args:
             plan (str): The thought
@@ -558,19 +568,25 @@ class SearchToolkit(BaseToolkit):
         print(f"Planning: {plan}")
         return "Planned"
 
-    # Make a function for getting content from a URL, that skips the first n characters and gives the next m characters, up to a maximum of 1000 characters.
+    # Make a function for getting content from a URL, that skips the first
+    # n characters and gives the next m characters, up to a maximum
+    # of 1000 characters.
     def get_url_content_with_offset_updated(
         self, url: str, offset: int, length: int
     ) -> str:
-        """Fetch the content of a URL and return the content starting from an offset and up to a given length.
+        """Fetch the content of a URL and return the content
+        starting from an offset and up to a given length.
 
         Args:
             url (str): The URL to fetch content from.
-            offset (int): The number of characters to skip from the start of the content.
+            offset (int): The number of characters to skip from
+                the start of the content.
             length (int): The number of characters to return.
 
         Returns:
-            str: The content starting from the offset and up to the length, or an error message if the URL content could not be fetched.
+            str: The content starting from the offset and up to
+                the length, or an error message if the URL content
+                could not be fetched.
         """
         if offset < 0:
             return "Offset must be a non-negative integer."

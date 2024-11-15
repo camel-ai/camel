@@ -1,15 +1,27 @@
-from copy import deepcopy
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
 import logging
 import random
 import re
 import string
-from typing import Any, Dict, List, Literal, Optional, Union
-from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
-from pathlib import Path
+from typing import Any, List, Literal, Optional, Union
+
 from tqdm import tqdm
 
+from camel.agents import ChatAgent
+from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 
@@ -24,7 +36,6 @@ def run_task(model_config, agent_config, msg):
 
 
 class GAIABenchmark(BaseBenchmark):
-
     def __init__(
         self,
         data_dir: str,
@@ -69,24 +80,29 @@ class GAIABenchmark(BaseBenchmark):
     def train(self):
         raise NotImplementedError("GAIA does not have a training set.")
 
-    def run(
+    def run(  # type: ignore[override]
         self,
         agent: ChatAgent,
         on: Literal["train", "valid", "test"],
-        level: Union[List[Literal[1, 2, 3]], Literal["all"]],
+        level: Union[List[int], Literal["all"]],
         randomize: bool = False,
         subset: Optional[int] = None,
     ) -> "GAIABenchmark":
         if on not in ["valid", "test"]:
-            raise ValueError(f"Invalid value for `on`: {on}, expected 'valid' or 'test'.")
+            raise ValueError(
+                f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
+            )
         if isinstance(level, str) and level == "all":
             levels = [1, 2, 3]
         elif isinstance(level, int):
             levels = [level]
         else:
             levels = level
-        if all([l not in [1, 2, 3] for l in levels]):
-            raise ValueError(f"Invalid value for `level`: {level}, expected 1, 2, 3 or 'all'.")
+        if any(_level not in [1, 2, 3] for _level in levels):
+            raise ValueError(
+                f"Invalid value for `level`: {level},"
+                " expected 1, 2, 3 or 'all'."
+            )
 
         logger.info(f"Running benchmark on {on} set at levels {levels}.")
         datas = [data for data in self._data[on] if data["Level"] in levels]
@@ -98,7 +114,7 @@ class GAIABenchmark(BaseBenchmark):
         self._results = []
         agent = self._inject(agent)
         with open(self.save_to, "w") as f:
-            for task in tqdm(datas, desc=f"Running"):
+            for task in tqdm(datas, desc="Running"):
                 if task["file_name"] != "":
                     logger.info("Skipping task with file_name.")
                     continue
@@ -109,7 +125,9 @@ class GAIABenchmark(BaseBenchmark):
                 final_answer = task["Final answer"]
                 try:
                     result = agent.step(msg)
-                    model_answer = self.get_final_answer(result.msgs[0].content)
+                    model_answer = self.get_final_answer(
+                        result.msgs[0].content
+                    )
                     tool_calls = result.info.get("tool_calls", [])
                     score = self.question_scorer(model_answer, final_answer)
                     self._results.append(
@@ -117,15 +135,17 @@ class GAIABenchmark(BaseBenchmark):
                             "task_id": task["task_id"],
                             "model_answer": model_answer,
                             "ground_truth": final_answer,
-                            "tool_calls": list(
-                                map(lambda x: x.model_dump(), tool_calls)
-                            ),
+                            "tool_calls": [
+                                tool.model_dump() for tool in tool_calls
+                            ],
                             "error": None,
                             "score": int(score),
                         }
                     )
                 except Exception as e:
-                    logger.warning(f"Error in processing task: {task['task_id']}")
+                    logger.warning(
+                        f"Error in processing task: {task['task_id']}"
+                    )
                     self._results.append(
                         {
                             "task_id": task["task_id"],
@@ -148,7 +168,7 @@ class GAIABenchmark(BaseBenchmark):
     # scorer part
     # https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/scorer.py
     def question_scorer(self, model_answer: str, ground_truth: str) -> bool:
-        def is_float(element: any) -> bool:
+        def is_float(element: Any) -> bool:
             try:
                 float(element)
                 return True
@@ -161,7 +181,9 @@ class GAIABenchmark(BaseBenchmark):
             return normalized_answer == float(ground_truth)
 
         elif any(char in ground_truth for char in [",", ";"]):
-            logger.info(f"Evaluating {model_answer} as a comma separated list.")
+            logger.info(
+                f"Evaluating {model_answer} as a comma separated list."
+            )
             gt_elems = self.split_string(ground_truth)
             ma_elems = self.split_string(model_answer)
 
@@ -194,10 +216,14 @@ class GAIABenchmark(BaseBenchmark):
         try:
             return float(number_str)
         except ValueError:
-            logger.error(f"String {number_str} cannot be normalized to number str.")
+            logger.error(
+                f"String {number_str} cannot be normalized to number str."
+            )
             return float("inf")
 
-    def split_string(self, s: str, char_list: Optional[List[str]] = None) -> list[str]:
+    def split_string(
+        self, s: str, char_list: Optional[List[str]] = None
+    ) -> list[str]:
         if char_list is None:
             char_list = [",", ";"]
         pattern = f"[{''.join(char_list)}]"

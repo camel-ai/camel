@@ -55,7 +55,8 @@ class MathToolkit(BaseToolkit):
         Args:
             a (float): The multiplier in the multiplication.
             b (float): The multiplicand in the multiplication.
-            decimal_places (int, optional): The number of decimal places to round to. Defaults to 2.
+            decimal_places (int, optional): The number of decimal
+                places to round to. Defaults to 2.
 
         Returns:
             float: The product of the two numbers.
@@ -68,7 +69,8 @@ class MathToolkit(BaseToolkit):
         Args:
             a (float): The dividend in the division.
             b (float): The divisor in the division.
-            decimal_places (int, optional): The number of decimal places to round to. Defaults to 2.
+            decimal_places (int, optional): The number of
+                decimal places to round to. Defaults to 2.
 
         Returns:
             float: The result of dividing :obj:`a` by :obj:`b`.
@@ -80,7 +82,8 @@ class MathToolkit(BaseToolkit):
 
         Args:
             a (float): The number to be rounded.
-            decimal_places (int, optional): The number of decimal places to round to. Defaults to 0.
+            decimal_places (int, optional): The number of decimal places
+                to round to. Defaults to 0.
 
         Returns:
             float: The rounded number.
