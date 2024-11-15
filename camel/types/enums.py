@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from enum import Enum, EnumMeta
 from typing import cast
 
@@ -26,7 +27,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = "gpt-4o-mini"
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -517,7 +518,7 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
-    DEFAULT = "openai"
+    DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
     AZURE = "azure"
