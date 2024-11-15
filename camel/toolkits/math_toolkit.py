@@ -96,11 +96,11 @@ class MathToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.add),
-            OpenAIFunction(self.sub),
-            OpenAIFunction(self.multiply),
-            OpenAIFunction(self.divide),
-            OpenAIFunction(self.round),
+            FunctionTool(self.add),
+            FunctionTool(self.sub),
+            FunctionTool(self.multiply),
+            FunctionTool(self.divide),
+            FunctionTool(self.round),
         ]
 
 

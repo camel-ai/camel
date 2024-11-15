@@ -585,7 +585,7 @@ class SearchToolkit(BaseToolkit):
 
         return content[offset : offset + length]
 
-    def get_tools(self) -> List[OpenAIFunction]:
+    def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of OpenAIFunction objects representing the
         functions in the toolkit.
 
@@ -594,14 +594,14 @@ class SearchToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.search_wiki),
-            OpenAIFunction(self.search_google),
-            OpenAIFunction(self.search_duckduckgo),
-            OpenAIFunction(self.query_wolfram_alpha),
-            OpenAIFunction(self.get_url_content),
-            OpenAIFunction(self.get_url_content_with_context),
-            OpenAIFunction(self.get_url_content_with_offset_updated),
-            OpenAIFunction(self.planning),
+            FunctionTool(self.search_wiki),
+            FunctionTool(self.search_google),
+            FunctionTool(self.search_duckduckgo),
+            FunctionTool(self.query_wolfram_alpha),
+            FunctionTool(self.get_url_content),
+            FunctionTool(self.get_url_content_with_context),
+            FunctionTool(self.get_url_content_with_offset_updated),
+            FunctionTool(self.planning),
         ]
 
 
