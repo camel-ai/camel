@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Union
 
 from camel.toolkits import FunctionTool
 
@@ -28,7 +28,7 @@ class BaseRuntime(ABC):
     @abstractmethod
     def add(
         self,
-        funcs: FunctionTool | list[FunctionTool],
+        funcs: Union[FunctionTool, List[FunctionTool]],
         *args: Any,
         **kwargs: Any,
     ) -> FunctionTool:

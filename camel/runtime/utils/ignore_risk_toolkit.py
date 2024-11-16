@@ -20,15 +20,16 @@ from camel.toolkits.base import BaseToolkit
 class IgnoreRiskToolkit(BaseToolkit):
     r"""A toolkit for ignoring risks associated with functions.
 
-    Attributes:
-        function_names (List[str]): A list of function names to
-            ignore risks for.
+    Args:
+        function_names (Optional[List[str]]): A list of function names to
+            ignore risks for. (default::obj:`None`)
         verbose (Optional[bool]): Whether to print verbose output.
+            (default::obj:`False`)
     """
 
     def __init__(
         self,
-        function_name: List[str] | None = None,
+        function_name: Optional[List[str]] = None,
         verbose: Optional[bool] = False,
     ):
         self.verbose = verbose
@@ -44,8 +45,8 @@ class IgnoreRiskToolkit(BaseToolkit):
         self.function_names.append(name)
 
     def ignore_risk(self, name: str, reason: str) -> str:
-        r"""Force ignores the risk associated with named function.
-            This ONLY ignores the RISK for the NEXT Function Call.
+        r"""Force ignores the risk associated with named function. This ONLY
+        ignores the RISK for the NEXT Function Call.
 
         Args:
             name (str): The name of the function to ignore.
@@ -65,7 +66,7 @@ class IgnoreRiskToolkit(BaseToolkit):
         functions in the toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
+            List[FunctionTool]: A list of FunctionTool objects representing
+                the functions in the toolkit.
         """
         return [FunctionTool(self.ignore_risk)]

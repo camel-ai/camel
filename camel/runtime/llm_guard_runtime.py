@@ -20,9 +20,8 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import BaseModelBackend, ModelFactory
 from camel.runtime import BaseRuntime
-from camel.runtime.utils.function_risk_toolkit import FunctionRiskToolkit
-from camel.runtime.utils.ignore_risk_toolkit import IgnoreRiskToolkit
-from camel.toolkits.function_tool import FunctionTool
+from camel.runtime.utils import FunctionRiskToolkit, IgnoreRiskToolkit
+from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
@@ -69,15 +68,15 @@ class LLMGuardRuntime(BaseRuntime):
     Arguments:
         prompt (str): The prompt to use for the language model. (default:
             :obj:`GUARDPROMPT`)
-        threshold (int): The risk threshold for functions.
-        model (BaseModelBackend): The language model to use.
-        verbose (bool): Whether to print verbose output.
+        model (BaseModelBackend): The language model to use. (default::obj:
+            `None`)
+        verbose (bool): Whether to print verbose output. (default::obj:
+            `False`)
     """
 
     def __init__(
         self,
         prompt: str = GUARDPROMPT,
-        threshold: int = 2,
         model: Optional[BaseModelBackend] = None,
         verbose: bool = False,
     ):
@@ -85,7 +84,6 @@ class LLMGuardRuntime(BaseRuntime):
         self.prompt = prompt
         self.model = model
         self.verbose = verbose
-        self.threshold = threshold
 
         if not self.model:
             self.model = ModelFactory.create(
@@ -108,14 +106,15 @@ class LLMGuardRuntime(BaseRuntime):
     def add(  # type: ignore[override]
         self,
         funcs: Union[FunctionTool, List[FunctionTool]],
-        threshold: Optional[int] = None,
+        threshold: int = 2,
     ) -> "LLMGuardRuntime":
         r"""Add a function or list of functions to the runtime.
 
         Args:
             funcs (FunctionTool or List[FunctionTool]): The function or
                 list of functions to add.
-            threshold (int): The risk threshold for the functions
+            threshold (int): The risk threshold for functions.
+                (default::obj:`2`)
 
         Returns:
             LLMGuardRuntime: The current runtime.
@@ -123,8 +122,6 @@ class LLMGuardRuntime(BaseRuntime):
 
         if not isinstance(funcs, list):
             funcs = [funcs]
-        if threshold is None:
-            threshold = self.threshold
 
         for func in funcs:
             inner_func = func.func

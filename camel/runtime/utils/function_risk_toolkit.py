@@ -20,8 +20,9 @@ from camel.toolkits.base import BaseToolkit
 class FunctionRiskToolkit(BaseToolkit):
     r"""A toolkit for assessing the risk associated with functions.
 
-    Attributes:
+    Args:
         verbose (Optional[bool]): Whether to print verbose output.
+            (default::obj:`False`)
     """
 
     def __init__(self, verbose: Optional[bool] = False):
@@ -42,9 +43,6 @@ class FunctionRiskToolkit(BaseToolkit):
             reason (str): A brief explanation of the reasoning behind
                 the assigned score, describing the specific aspects that
                 contribute to the assessed risk.
-
-        Returns:
-            None
         """
         if self.verbose:
             print(f"Function risk assessment: {reason} (score: {score})")

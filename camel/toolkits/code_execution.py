@@ -22,11 +22,13 @@ class CodeExecutionToolkit(BaseToolkit):
     r"""A tookit for code execution.
 
     Args:
-        sandbox (str): the environment type used to execute code.
-        verbose (bool): whether to print the output of the code execution.
+        sandbox (str): The environment type used to execute code.
+        verbose (bool): Whether to print the output of the code execution.
+            (default: :obj:`False`)
         unsafe_mode (bool):  If `True`, the interpreter runs the code
             by `eval()` without any security check. (default: :obj:`False`)
-        import_white_list (List[str]): a list of allowed imports.
+        import_white_list ( Optional[List[str]]): A list of allowed imports.
+            (default: :obj:`None`)
     """
 
     def __init__(
