@@ -144,7 +144,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.6 https://github.com/camel-ai/camel.git
+git clone -b v0.2.9 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -160,62 +160,23 @@ pip install -e .[all] # (Optional)
 
 Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
 
-## Documentation
+## Quick Start
 
-The [complete documentation](https://camel-ai.github.io/camel/) pages for the CAMEL package. Also, detailed tutorials for each part are provided below:
+By default, the agent uses the `ModelType.DEFAULT` model from the `ModelPlatformType.DEFAULT`. You can configure the default model platform and model type using environment variables. If these are not set, the agent will fall back to the default settings:
 
-### Agents
-Explore different types of agents, their roles, and their applications.
+- `ModelPlatformType.DEFAULT = "openai"`
 
-- **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)**
-- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)**
-- **[Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)**
-- **[Critic Agents](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)**
+- `ModelType.DEFAULT = "gpt-4o-mini"`
 
----
+### Setting Default Model Platform and Model Type (Optional)
 
-### Key Modules
-Core components and utilities to build, operate, and enhance CAMEL-AI agents and societies.
+You can customize the default model platform and model type by setting the following environment variables:
+```bash
+export DEFAULT_MODEL_PLATFORM_TYPE=<your preferred platform>  # e.g., openai, anthropic, etc.
+export DEFAULT_MODEL_TYPE=<your preferred model>  # e.g., gpt-3.5-turbo, gpt-4o-mini, etc.
+```
 
-| Module | Description |
-|:---|:---|
-| **[Models](https://docs.camel-ai.org/key_modules/models.html)** | Model architectures and customization options for agent intelligence. |
-| **[Messages](https://docs.camel-ai.org/key_modules/messages.html)** | Messaging protocols for agent communication. |
-| **[Memory](https://docs.camel-ai.org/key_modules/memory.html)** | Memory storage and retrieval mechanisms. |
-| **[Tools](https://docs.camel-ai.org/key_modules/tools.html)** | Tools integration for specialized agent tasks. |
-| **[Prompts](https://docs.camel-ai.org/key_modules/prompts.html)** | Prompt engineering and customization. |
-| **[Tasks](https://docs.camel-ai.org/key_modules/tasks.html)** | Task creation and management for agent workflows. |
-| **[Loaders](https://docs.camel-ai.org/key_modules/loaders.html)** | Data loading tools for agent operation. |
-| **[Storages](https://docs.camel-ai.org/key_modules/storages.html)** | Storage solutions for agent. |
-| **[Society](https://docs.camel-ai.org/key_modules/society.html)** | Components for building agent societies and inter-agent collaboration. |
-| **[Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html)** | Embedding models for RAG. |
-| **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)** | Retrieval methods for knowledge access. |
----
-
-### Cookbooks
-Practical guides and tutorials for implementing specific functionalities in CAMEL-AI agents and societies.
-
-| Cookbook | Description |
-|:---|:---|
-| **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
-| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
-| **[Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html)** | Advanced configurations for agent societies. |
-| **[Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html)** | Benchmarking models for performance. |
-| **[Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html)** | Best practices for message handling in agents. |
-| **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
-| **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html)** | Implementing memory systems in agents. |
-| **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
-| **[Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html)** | Techniques for effective prompt creation. |
-| **[Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html)** | Automating task generation for agents. |
-| **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html)** | Leveraging knowledge graphs with RAG. |
-| **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
-| **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |
-| **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
-| **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
-
-## Examples
-
-First, you need to add your OpenAI API key to system environment variables. The method to do this depends on your operating system and the shell you're using.
+### Setting Your Model API Key (Using OpenAI as an Example)
 
 **For Bash shell (Linux, macOS, Git Bash on Windows):**
 
@@ -274,6 +235,59 @@ python examples/workforce/multiple_single_agents.py
 python examples/vision/image_crafting.py
 ```
 For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
+
+## Documentation
+
+The [complete documentation](https://camel-ai.github.io/camel/) pages for the CAMEL package. Also, detailed tutorials for each part are provided below:
+
+### Agents
+Explore different types of agents, their roles, and their applications.
+
+- **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)**
+- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)**
+- **[Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)**
+- **[Critic Agents](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)**
+
+---
+
+### Key Modules
+Core components and utilities to build, operate, and enhance CAMEL-AI agents and societies.
+
+| Module | Description |
+|:---|:---|
+| **[Models](https://docs.camel-ai.org/key_modules/models.html)** | Model architectures and customization options for agent intelligence. |
+| **[Messages](https://docs.camel-ai.org/key_modules/messages.html)** | Messaging protocols for agent communication. |
+| **[Memory](https://docs.camel-ai.org/key_modules/memory.html)** | Memory storage and retrieval mechanisms. |
+| **[Tools](https://docs.camel-ai.org/key_modules/tools.html)** | Tools integration for specialized agent tasks. |
+| **[Prompts](https://docs.camel-ai.org/key_modules/prompts.html)** | Prompt engineering and customization. |
+| **[Tasks](https://docs.camel-ai.org/key_modules/tasks.html)** | Task creation and management for agent workflows. |
+| **[Loaders](https://docs.camel-ai.org/key_modules/loaders.html)** | Data loading tools for agent operation. |
+| **[Storages](https://docs.camel-ai.org/key_modules/storages.html)** | Storage solutions for agent. |
+| **[Society](https://docs.camel-ai.org/key_modules/society.html)** | Components for building agent societies and inter-agent collaboration. |
+| **[Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html)** | Embedding models for RAG. |
+| **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)** | Retrieval methods for knowledge access. |
+---
+
+### Cookbooks
+Practical guides and tutorials for implementing specific functionalities in CAMEL-AI agents and societies.
+
+| Cookbook | Description |
+|:---|:---|
+| **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
+| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
+| **[Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html)** | Advanced configurations for agent societies. |
+| **[Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html)** | Benchmarking models for performance. |
+| **[Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html)** | Best practices for message handling in agents. |
+| **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
+| **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html)** | Implementing memory systems in agents. |
+| **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
+| **[Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html)** | Techniques for effective prompt creation. |
+| **[Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html)** | Automating task generation for agents. |
+| **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html)** | Leveraging knowledge graphs with RAG. |
+| **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
+| **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |
+| **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
+| **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
 
 ## Utilize Various LLMs as Backends
 
