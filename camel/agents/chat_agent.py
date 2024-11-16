@@ -186,6 +186,7 @@ class ChatAgent(BaseAgent):
                 model_type=ModelType.DEFAULT,
             )
         )
+        self.model_type = self.model_backend.model_type
 
         # Initialize tools
         self.tools: List[FunctionTool] = (
@@ -203,7 +204,9 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in self.all_tools
         }
-        self.tool_dict = {tool.get_function_name(): tool for tool in all_tools}
+        self.tool_dict = {
+            tool.get_function_name(): tool for tool in self.all_tools
+        }
 
         if self.all_tools and not self.model_backend.model_config_dict.get(
             "tools"
@@ -267,6 +270,9 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in self.all_tools
         }
+        self.tool_dict = {
+            tool.get_function_name(): tool for tool in self.all_tools
+        }
 
     def remove_tool(self, tool_name: str, is_external: bool = False) -> bool:
         r"""Remove a tool by name, specifying if it's an external tool."""
@@ -286,6 +292,9 @@ class ChatAgent(BaseAgent):
                 self.func_dict = {
                     tool.get_function_name(): tool.func
                     for tool in self.all_tools
+                }
+                self.tool_dict = {
+                    tool.get_function_name(): tool for tool in self.all_tools
                 }
                 return True
         return False
