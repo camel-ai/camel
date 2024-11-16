@@ -14,7 +14,6 @@
 
 import io
 import logging
-import os
 import re
 import tempfile
 from pathlib import Path
@@ -94,6 +93,8 @@ class VideoDownloaderToolkit(BaseToolkit):
             download_directory or tempfile.mkdtemp()
         ).resolve()
 
+        print(f"self._download_directory: {self._download_directory}")
+
         try:
             self._download_directory.mkdir(parents=True, exist_ok=True)
         except FileExistsError:
@@ -106,7 +107,6 @@ class VideoDownloaderToolkit(BaseToolkit):
             )
 
         logger.info(f"Video will be downloaded to {self._download_directory}")
-        print(f"Video will be downloaded to {self._download_directory}")
 
     def __del__(self) -> None:
         r"""Deconstructor for the VideoDownloaderToolkit class.
@@ -130,9 +130,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         import yt_dlp
 
-        video_template = os.path.join(
-            self._download_directory, '%(title)s.%(ext)s'
-        )
+        video_template = self._download_directory / "%(title)s.%(ext)s"
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': video_template,
@@ -143,7 +141,8 @@ class VideoDownloaderToolkit(BaseToolkit):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 # Download the video and get the filename
-                return ydl.prepare_filename(ydl.extract_info(url))
+                info = ydl.extract_info(url, download=True)
+                return ydl.prepare_filename(info)
         except yt_dlp.utils.DownloadError as e:
             raise RuntimeError(f"Failed to download video: {e}")
 
@@ -198,7 +197,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             interval = video_length // (timestamps + 1)
             tss = [int((i + 1) * interval) for i in range(timestamps)]
         else:
-            tss = timestamps
+            tss = [ts for ts in timestamps if 0 <= ts <= video_length]
 
         images = [_capture_screenshot(video_file, ts) for ts in tss]
 

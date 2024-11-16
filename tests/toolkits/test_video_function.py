@@ -11,23 +11,64 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 from camel.toolkits.video_toolkit import VideoDownloaderToolkit
 
 
-def test_video_bytes_download():
-    downloader = VideoDownloaderToolkit()
-    video_bytes = downloader.get_video_bytes(
-        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+@pytest.fixture
+def mock_downloader():
+    with (
+        patch("builtins.open", mock_open(read_data=b"test")),
+        patch("yt_dlp.YoutubeDL") as mock_youtube_dl,
+        patch('tempfile.mkdtemp') as mock_mkdtemp,
+        patch('pathlib.Path.mkdir'),
+        patch('ffmpeg.input') as mock_ffmpeg_input,
+        patch('ffmpeg.probe') as mock_ffmpeg_probe,
+        patch('PIL.Image.open'),
+    ):
+        mock_ydl_instance = MagicMock()
+        mock_ydl_instance.prepare_filename.return_value = "test.mp4"
+        mock_youtube_dl.return_value.__enter__.return_value = mock_ydl_instance
+
+        mock_mkdtemp.return_value = "C:\\temp\\abcdefg"
+
+        mock_ffmpeg = MagicMock()
+        mock_ffmpeg_input.return_value = mock_ffmpeg
+        mock_ffmpeg.filter.return_value = mock_ffmpeg
+        mock_ffmpeg.output.return_value = mock_ffmpeg
+        mock_ffmpeg.run.return_value = (b"test", b"test")
+
+        mock_ffmpeg_probe.return_value = {'format': {'duration': 10}}
+
+        yield VideoDownloaderToolkit()
+
+
+def test_video_bytes_download(mock_downloader):
+    video_bytes = mock_downloader.get_video_bytes(
+        video_url="https://test_video.mp4",
     )
     assert len(video_bytes) > 0
+    assert video_bytes == b"test"
 
 
-def test_video_screenshots_download():
-    downloader = VideoDownloaderToolkit()
-    screenshots = downloader.get_video_screenshots(
-        'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_30MB.mp4',
+def test_video_screenshots_download(mock_downloader):
+    screenshots = mock_downloader.get_video_screenshots(
+        "https://test_video.mp4",
         [1, 3, 5],
     )
+    assert len(screenshots) == 3
 
-    assert len(screenshots) == 3, "Number of screenshots captured is incorrect"
+    screenshots = mock_downloader.get_video_screenshots(
+        "https://test_video.mp4",
+        [1, 3, 5, 111],
+    )
+    assert len(screenshots) == 3
+
+    screenshots = mock_downloader.get_video_screenshots(
+        "https://test_video.mp4",
+        2,
+    )
+    assert len(screenshots) == 2
