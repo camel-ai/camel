@@ -75,7 +75,7 @@ class UnifiedModelType(str):
 
     @property
     def is_groq(self) -> bool:
-        r"""Returns whether the model is an Groq served model."""
+        r"""Returns whether the model is a Groq served model."""
         return True
 
     @property
@@ -96,6 +96,16 @@ class UnifiedModelType(str):
     @property
     def is_reka(self) -> bool:
         r"""Returns whether the model is a Reka model."""
+        return True
+
+    @property
+    def is_yi(self) -> bool:
+        r"""Returns whether the model is a Yi model."""
+        return True
+
+    @property
+    def is_qwen(self) -> bool:
+        r"""Returns whether the model is a Qwen model."""
         return True
 
     @property

@@ -1,6 +1,6 @@
 🐫 **Welcome to CAMEL!** 🐫
 
-Thank you for your interest in contributing to the CAMEL project! 🎉 We're excited to have your support. As an open-source initiative in a rapidly evolving and open-ended field, we wholeheartedly welcome contributions of all kinds. Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate your enthusiasm and efforts. 🙌  You are welcome to join our [discord](https://discord.gg/eNsRwtnT) for more efficient communication. 💬
+Thank you for your interest in contributing to the CAMEL project! 🎉 We're excited to have your support. As an open-source initiative in a rapidly evolving and open-ended field, we wholeheartedly welcome contributions of all kinds. Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate your enthusiasm and efforts. 🙌  You are welcome to join our [discord](https://discord.camel-ai.org/) for more efficient communication. 💬
 
 ## Join Our Community 🌍
 
@@ -13,7 +13,7 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 - Chinese Speakers: Mondays at 9 PM UTC+8. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/94271505221)
 
 ### Our Communication Channels 💬
-- **Discord:** [Join here](https://discord.gg/CNcNpquyDc)
+- **Discord:** [Join here](https://discord.camel-ai.org/)
 - **WeChat:** Scan the QR code [here](https://ghli.org/camel/wechat.png)
 - **Slack:** [Join here](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
 

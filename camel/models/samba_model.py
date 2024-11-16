@@ -39,6 +39,14 @@ from camel.utils import (
     api_keys_required,
 )
 
+try:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import LLMEvent, record
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    LLMEvent = None
+
 
 class SambaModel(BaseModelBackend):
     r"""SambaNova service interface.
@@ -139,7 +147,7 @@ class SambaModel(BaseModelBackend):
     def run(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs SambaNova's FastAPI service.
+        r"""Runs SambaNova's service.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -181,6 +189,21 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
+
+            # Add AgentOps LLM Event tracking
+            if LLMEvent:
+                llm_event = LLMEvent(
+                    thread_id=response.id,
+                    prompt=" ".join(
+                        [message.get("content") for message in messages]  # type: ignore[misc]
+                    ),
+                    prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
+                    completion=response.choices[0].message.content,
+                    completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
+                    model=self.model_type,
+                )
+                record(llm_event)
+
             return response
 
         elif self._url == "https://sambaverse.sambanova.ai/api/predict":
@@ -215,6 +238,21 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
+
+            # Add AgentOps LLM Event tracking
+            if LLMEvent:
+                llm_event = LLMEvent(
+                    thread_id=response.id,
+                    prompt=" ".join(
+                        [message.get("content") for message in messages]  # type: ignore[misc]
+                    ),
+                    prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
+                    completion=response.choices[0].message.content,
+                    completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
+                    model=self.model_type,
+                )
+                record(llm_event)
+
             return response
 
         # Handle SambaNova's Sambaverse API

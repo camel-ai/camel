@@ -29,19 +29,13 @@ model = ModelFactory.create(
 )
 
 # Define system message
-sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
+sys_msg = "You are a helpful assistant."
 
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents.""",
-)
+user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
+    study of autonomous and communicative agents."""
 
 # Get response information
 response = camel_agent.step(user_msg)
@@ -63,7 +57,7 @@ model = ModelFactory.create(
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 # URL of the image
-url = "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png"
+url = "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png"
 response = requests.get(url)
 img = Image.open(BytesIO(response.content))
 

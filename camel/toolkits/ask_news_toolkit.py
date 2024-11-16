@@ -66,15 +66,12 @@ class AskNewsToolkit(BaseToolkit):
         r"""Initialize the AskNewsToolkit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """
-        from asknews_sdk import AskNewsSDK  # type: ignore[import]
+        from asknews_sdk import AskNewsSDK
 
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
 
-        if client_id and client_secret:
-            self.asknews_client = AskNewsSDK(client_id, client_secret)
-        else:
-            self.asknews_client = None
+        self.asknews_client = AskNewsSDK(client_id, client_secret)
 
     def get_news(
         self,
@@ -182,7 +179,6 @@ class AskNewsToolkit(BaseToolkit):
                     for story in response.stories
                 ]
             }
-
             return stories_data
 
         except Exception as e:
@@ -368,10 +364,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
 
-        if client_id and client_secret:
-            self.asknews_client = AsyncAskNewsSDK(client_id, client_secret)
-        else:
-            self.asknews_client = None
+        self.asknews_client = AsyncAskNewsSDK(client_id, client_secret)
 
     async def get_news(
         self,
@@ -647,7 +640,3 @@ class AsyncAskNewsToolkit(BaseToolkit):
             FunctionTool(self.search_reddit),
             FunctionTool(self.query_finance),
         ]
-
-
-ASKNEWS_FUNCS: List[FunctionTool] = AskNewsToolkit().get_tools()
-ASYNC_ASKNEWS_FUNCS: List[FunctionTool] = AsyncAskNewsToolkit().get_tools()

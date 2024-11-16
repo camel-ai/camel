@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.2.2'
+release = '0.2.9'
 
 html_favicon = (
     'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
@@ -58,8 +58,8 @@ html_theme = 'sphinx_book_theme'
 html_theme_options = {
     "logo": {
         "text": f"CAMEL {release}",
-        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
-        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
+        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
     }
 }
 

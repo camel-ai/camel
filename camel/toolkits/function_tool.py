@@ -11,17 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import ast
+import inspect
+import logging
 import warnings
-from inspect import Parameter, signature
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple
+from inspect import Parameter, getsource, signature
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import Draft202012Validator as JSONValidator
-from pydantic import create_model
+from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 
+from camel.agents import ChatAgent
+from camel.models import BaseModelBackend, ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
+
+logger = logging.getLogger(__name__)
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:
@@ -143,6 +151,71 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     return openai_tool_schema
 
 
+def generate_docstring(
+    code: str,
+    model: Optional[BaseModelBackend] = None,
+) -> str:
+    r"""Generates a docstring for a given function code using LLM.
+
+    This function leverages a language model to generate a
+    PEP 8/PEP 257-compliant docstring for a provided Python function.
+    If no model is supplied, a default gpt-4o-mini is used.
+
+    Args:
+        code (str): The source code of the function.
+        model (Optional[BaseModelBackend]): An optional language model backend
+            instance. If not provided, a default gpt-4o-mini is used.
+
+    Returns:
+        str: The generated docstring.
+    """
+    # Create the docstring prompt
+    docstring_prompt = '''
+    **Role**: Generate professional Python docstrings conforming to 
+    PEP 8/PEP 257.
+
+    **Requirements**:
+    - Use appropriate format: reST, Google, or NumPy, as needed.
+    - Include parameters, return values, and exceptions.
+    - Reference any existing docstring in the function and 
+      retain useful information.
+
+    **Input**: Python function.
+
+    **Output**: Docstring content (plain text, no code markers).
+
+    **Example:**
+
+    Input:
+    ```python
+    def add(a: int, b: int) -> int:
+        return a + b
+    ```
+
+    Output:
+    Adds two numbers.
+    Args:
+        a (int): The first number.
+        b (int): The second number.
+
+    Returns:
+        int: The sum of the two numbers.
+
+    **Task**: Generate a docstring for the function below.
+
+    '''
+    # Initialize assistant with system message and model
+    assistant_sys_msg = "You are a helpful assistant."
+    docstring_assistant = ChatAgent(assistant_sys_msg, model=model)
+
+    # Create user message to prompt the assistant
+    user_msg = docstring_prompt + code
+
+    # Get the response containing the generated docstring
+    response = docstring_assistant.step(user_msg)
+    return response.msg.content
+
+
 class FunctionTool:
     r"""An abstraction of a function that OpenAI chat models can call. See
     https://platform.openai.com/docs/api-reference/chat/create.
@@ -151,22 +224,109 @@ class FunctionTool:
     provide a user-defined tool schema to override.
 
     Args:
-        func (Callable): The function to call.The tool schema is parsed from
-            the signature and docstring by default.
-        openai_tool_schema (Optional[Dict[str, Any]], optional): A user-defined
-            openai tool schema to override the default result.
+        func (Callable): The function to call. The tool schema is parsed from
+            the function signature and docstring by default.
+        openai_tool_schema (Optional[Dict[str, Any]], optional): A
+            user-defined OpenAI tool schema to override the default result.
             (default: :obj:`None`)
+        synthesize_schema (Optional[bool], optional): Whether to enable the
+            use of a schema assistant model to automatically synthesize the
+            schema if validation fails or no valid schema is provided.
+            (default: :obj:`False`)
+        synthesize_schema_model (Optional[BaseModelBackend], optional): An
+            assistant model (e.g., an LLM model) used to synthesize the schema
+            if `synthesize_schema` is enabled and no valid schema is
+            provided. (default: :obj:`None`)
+        synthesize_schema_max_retries (int, optional): The maximum
+            number of attempts to retry schema synthesis using the schema
+            assistant model if the previous attempts fail. (default: 2)
+        synthesize_output (Optional[bool], optional): Flag for enabling
+            synthesis output mode, where output is synthesized based on the
+            function's execution. (default: :obj:`False`)
+        synthesize_output_model (Optional[BaseModelBackend], optional):
+            Model used for output synthesis in synthesis mode.
+            (default: :obj:`None`)
+        synthesize_output_format (Optional[Type[BaseModel]], optional): Format
+            for the response when synthesizing output. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         func: Callable,
         openai_tool_schema: Optional[Dict[str, Any]] = None,
+        synthesize_schema: Optional[bool] = False,
+        synthesize_schema_model: Optional[BaseModelBackend] = None,
+        synthesize_schema_max_retries: int = 2,
+        synthesize_output: Optional[bool] = False,
+        synthesize_output_model: Optional[BaseModelBackend] = None,
+        synthesize_output_format: Optional[Type[BaseModel]] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
+        self.synthesize_output = synthesize_output
+        self.synthesize_output_model = synthesize_output_model
+        if synthesize_output and synthesize_output_model is None:
+            self.synthesize_output_model = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
+            logger.warning(
+                "Warning: No synthesize_output_model provided. "
+                f"Use `{self.synthesize_output_model.model_type}` to "
+                "synthesize the output."
+            )
+        self.synthesize_output_format: Optional[type[BaseModel]] = None
+        return_annotation = inspect.signature(self.func).return_annotation
+        if synthesize_output_format is not None:
+            self.synthesize_output_format = synthesize_output_format
+        elif isinstance(return_annotation, type) and issubclass(
+            return_annotation, BaseModel
+        ):
+            self.synthesize_output_format = return_annotation
+
+        self.synthesize_schema_model = synthesize_schema_model
+        if synthesize_schema:
+            if openai_tool_schema:
+                logger.warning("""The user-defined OpenAI tool schema will be
+                              overridden by the schema assistant model.""")
+            if self.synthesize_schema_model is None:
+                self.synthesize_schema_model = ModelFactory.create(
+                    model_platform=ModelPlatformType.DEFAULT,
+                    model_type=ModelType.DEFAULT,
+                )
+                logger.warning(
+                    "Warning: No synthesize_schema_model provided. "
+                    f"Use `{self.synthesize_schema_model.model_type}` to "
+                    "synthesize the schema."
+                )
+            schema = self.synthesize_openai_tool_schema(
+                synthesize_schema_max_retries
+            )
+            if schema:
+                self.openai_tool_schema = schema
+            else:
+                raise ValueError(
+                    f"Failed to synthesize a valid schema for "
+                    f"{self.func.__name__}."
+                )
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        if self.synthesize_output:
+            result = self.synthesize_execution_output(args, kwargs)
+            return result
+        else:
+            # Pass the extracted arguments to the indicated function
+            try:
+                result = self.func(*args, **kwargs)
+                return result
+            except Exception as e:
+                raise ValueError(
+                    f"Execution of function {self.func.__name__} failed with "
+                    f"arguments {args} and {kwargs}. "
+                    f"Error: {e}"
+                )
 
     @staticmethod
     def validate_openai_tool_schema(
@@ -185,17 +345,18 @@ class FunctionTool:
         Raises:
             ValidationError: If the schema does not comply with the
                 specifications.
-            ValueError: If the function description or parameter descriptions
-                are missing in the schema.
             SchemaError: If the parameters do not meet JSON Schema reference
                 specifications.
         """
         # Check the type
         if not openai_tool_schema["type"]:
-            raise ValueError("miss type")
-        # Check the function description
-        if not openai_tool_schema["function"]["description"]:
-            raise ValueError("miss function description")
+            raise ValueError("miss `type` in tool schema.")
+
+        # Check the function description, if no description then raise warming
+        if not openai_tool_schema["function"].get("description"):
+            warnings.warn(f"""Function description is missing for 
+                          {openai_tool_schema['function']['name']}. This may 
+                          affect the quality of tool calling.""")
 
         # Validate whether parameters
         # meet the JSON Schema reference specifications.
@@ -208,14 +369,15 @@ class FunctionTool:
             JSONValidator.check_schema(parameters)
         except SchemaError as e:
             raise e
-        # Check the parameter description
+
+        # Check the parameter description, if no description then raise warming
         properties: Dict[str, Any] = parameters["properties"]
         for param_name in properties.keys():
             param_dict = properties[param_name]
             if "description" not in param_dict:
-                raise ValueError(
-                    f'miss description of parameter "{param_name}"'
-                )
+                warnings.warn(f"""Parameter description is missing for 
+                            {param_dict}. This may affect the quality of tool 
+                            calling.""")
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.
@@ -260,8 +422,8 @@ class FunctionTool:
         r"""Sets the schema of the function within the OpenAI tool schema.
 
         Args:
-            openai_function_schema (Dict[str, Any]): The function schema to set
-                within the OpenAI tool schema.
+            openai_function_schema (Dict[str, Any]): The function schema to
+                set within the OpenAI tool schema.
         """
         self.openai_tool_schema["function"] = openai_function_schema
 
@@ -362,6 +524,157 @@ class FunctionTool:
             param_name
         ] = value
 
+    def synthesize_openai_tool_schema(
+        self,
+        max_retries: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        r"""Synthesizes an OpenAI tool schema for the specified function.
+
+        This method uses a language model (LLM) to synthesize the OpenAI tool
+        schema for the specified function by first generating a docstring and
+        then creating a schema based on the function's source code. The
+        schema synthesis and validation process is retried up to
+        `max_retries` times in case of failure.
+
+        Args:
+            max_retries (Optional[int], optional): The maximum number of
+                retries for schema synthesis and validation if the process
+                fails. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The synthesis OpenAI tool schema for the function.
+
+        Raises:
+            ValueError: If schema synthesis or validation fails after the
+                maximum number of retries, a ValueError is raised, prompting
+                manual schema setting.
+        """
+        code = getsource(self.func)
+        retries = 0
+        if max_retries is None:
+            max_retries = 0
+        # Retry loop to handle schema synthesis and validation
+        while retries <= max_retries:
+            try:
+                # Generate the docstring and the schema
+                docstring = generate_docstring(
+                    code, self.synthesize_schema_model
+                )
+                self.func.__doc__ = docstring
+                schema = get_openai_tool_schema(self.func)
+                # Validate the schema
+                self.validate_openai_tool_schema(schema)
+                return schema
+
+            except Exception as e:
+                retries += 1
+                if retries == max_retries:
+                    raise ValueError(
+                        f"Failed to synthesize the OpenAI tool Schema after "
+                        f"{max_retries} retries. "
+                        f"Please set the OpenAI tool schema for "
+                        f"function {self.func.__name__} manually."
+                    ) from e
+                logger.warning("Schema validation failed. Retrying...")
+
+        return {}
+
+    def synthesize_execution_output(
+        self,
+        args: Optional[tuple[Any, ...]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        r"""Synthesizes the output of the function based on the provided
+        positional arguments and keyword arguments.
+
+        Args:
+            args (Optional[tuple]): Positional arguments to pass to the
+                function during synthesis. (default: :obj:`None`)
+            kwargs (Optional[Dict[str, Any]]): Keyword arguments to pass to the
+                function during synthesis. (default: :obj:`None`)
+
+        Returns:
+            Any: Synthesized output from the function execution. If no
+                synthesis model is provided, a warning is logged.
+        """
+        import textwrap
+
+        # Retrieve the function source code
+        function_string = inspect.getsource(self.func)
+
+        # Check and update docstring if necessary
+        if self.func.__doc__ is not None:
+            function_string = textwrap.dedent(function_string)
+            tree = ast.parse(function_string)
+            func_node = (
+                tree.body[0]
+                if isinstance(tree.body[0], ast.FunctionDef)
+                else None
+            )
+            if func_node:
+                existing_docstring = ast.get_docstring(func_node)
+                if existing_docstring != self.func.__doc__:
+                    func_node.body[0] = ast.Expr(
+                        value=ast.Constant(value=self.func.__doc__, kind=None)
+                    )
+                    function_string = ast.unparse(tree)
+
+        # Append the args and kwargs information to the function string
+        if args:
+            function_string += f"\nargs:\n{list(args)}"
+        if kwargs:
+            function_string += f"\nkwargs:\n{kwargs}"
+
+        # Define the assistant system message
+        assistant_sys_msg = '''
+**Role:** AI Assistant specialized in synthesizing tool execution outputs
+without actual execution.
+
+**Capabilities:**
+- Analyzes function to understand their
+  purpose and expected outputs.
+- Generates synthetic outputs based on the function logic.
+- Ensures the synthesized output is contextually accurate and aligns with the
+  function's intended behavior.
+
+**Instructions:**
+1. **Input:** Provide the function code, function docstring, args, and kwargs.
+2. **Output:** Synthesize the expected output of the function based on the
+   provided args and kwargs.
+
+**Example:**
+- **User Input:**
+def sum(a, b, c=0):
+    """Adds three numbers together."""
+    return a + b + c
+
+- **Input Arguments:**
+args: (1, 2)
+kwargs: {"c": 3}
+
+- **Output:**
+6
+
+**Note:**
+- Just return the synthesized output of the function without any explanation.
+- The output should be in plain text without any formatting.
+'''
+
+        # Initialize the synthesis agent
+        synthesis_agent = ChatAgent(
+            assistant_sys_msg,
+            model=self.synthesize_output_model,
+        )
+
+        # User message combining function string and additional context
+        user_msg = function_string
+        response = synthesis_agent.step(
+            user_msg,
+            response_format=self.synthesize_output_format,
+        )
+
+        return response.msg.content
+
     @property
     def parameters(self) -> Dict[str, Any]:
         r"""Getter method for the property :obj:`parameters`.
@@ -388,23 +701,3 @@ class FunctionTool:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
-
-
-warnings.simplefilter('always', DeprecationWarning)
-
-
-# Alias for backwards compatibility
-class OpenAIFunction(FunctionTool):
-    def __init__(self, *args, **kwargs):
-        PURPLE = '\033[95m'
-        RESET = '\033[0m'
-
-        def purple_warning(msg):
-            warnings.warn(
-                PURPLE + msg + RESET, DeprecationWarning, stacklevel=2
-            )
-
-        purple_warning(
-            "OpenAIFunction is deprecated, please use FunctionTool instead."
-        )
-        super().__init__(*args, **kwargs)
