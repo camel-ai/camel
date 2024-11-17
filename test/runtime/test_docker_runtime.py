@@ -13,14 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 from camel.runtime import DockerRuntime
-from camel.toolkits import MATH_FUNCS, CodeExecutionToolkit
+from camel.toolkits import MathToolkit, CodeExecutionToolkit
 
 
 @pytest.mark.skip(reason="Need Docker environment to run this test.")
 def test_docker_runtime():
     runtime = (
         DockerRuntime("xukunliu/camel")  # change to your own docker image
-        .add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS")
+        .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
         .add(
             CodeExecutionToolkit().get_tools(),
             "camel.toolkits.CodeExecutionToolkit",
@@ -50,15 +50,4 @@ def test_docker_runtime():
         assert r.docs == "http://localhost:8000/docs"
 
 
-"""
-Add 1 + 2: 3
-Subtract 5 - 3: 2
-Multiply 2 * 3: 6
-Execute code: Executed the code below:
-```py
-1 + 2
-```
-> Executed Results:
-3
-Documents:  http://localhost:8000/docs
-"""
+

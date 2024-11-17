@@ -13,31 +13,22 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 from camel.runtime import RemoteHttpRuntime
-from camel.toolkits import MATH_FUNCS
+from camel.toolkits import MathToolkit
 
 def test_remote_http_runtime():
     runtime = (
         RemoteHttpRuntime("localhost")
-        .add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS")
+        .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
         .build()
     )
     print("Waiting for runtime to be ready...")
     runtime.wait()
     print("Runtime is ready.")
     add, sub, mul = runtime.get_tools()
-    
+
     assert add.func(1, 2) == 3
     assert sub.func(5, 3) == 2
     assert mul.func(2, 3) == 6
-    
+
     assert runtime.docs == "http://localhost:8000/docs"
 
-
-"""
-Waiting for runtime to be ready...
-Runtime is ready.
-Add 1 + 2: 3
-Subtract 5 - 3: 2
-Multiply 2 * 3: 6
-Documents:  http://localhost:8000/docs
-"""

@@ -12,12 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.runtime import RemoteHttpRuntime
-from camel.toolkits import MATH_FUNCS
+from camel.toolkits import MathToolkit
 
 if __name__ == "__main__":
     runtime = (
         RemoteHttpRuntime("localhost")
-        .add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS")
+        .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
         .build()
     )
     print("Waiting for runtime to be ready...")

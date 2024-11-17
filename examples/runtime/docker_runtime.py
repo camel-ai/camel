@@ -12,12 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.runtime import DockerRuntime
-from camel.toolkits import MATH_FUNCS, CodeExecutionToolkit
+from camel.toolkits import MathToolkit, CodeExecutionToolkit
 
 if __name__ == "__main__":
     runtime = (
         DockerRuntime("xukunliu/camel")  # change to your own docker image
-        .add(MATH_FUNCS, "camel.toolkits.MATH_FUNCS")
+        .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
         .add(
             CodeExecutionToolkit().get_tools(),
             "camel.toolkits.CodeExecutionToolkit",
