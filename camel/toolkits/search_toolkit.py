@@ -49,9 +49,7 @@ class SearchToolkit(BaseToolkit):
         try:
             result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
         except wikipedia.exceptions.DisambiguationError as e:
-            result = wikipedia.summary(
-                e.options[0], sentences=5, auto_suggest=False
-            )
+            result = wikipedia.summary(e.options[0], sentences=5, auto_suggest=False)
         except wikipedia.exceptions.PageError:
             result = (
                 "There is no page in Wikipedia corresponding to entity "
@@ -219,18 +217,10 @@ class SearchToolkit(BaseToolkit):
 
                 # Iterate over 10 results found
                 for i, search_item in enumerate(search_items, start=1):
-                    # Check metatags are present
-                    if "pagemap" not in search_item:
-                        continue
-                    if "metatags" not in search_item["pagemap"]:
-                        continue
-                    if (
-                        "og:description"
-                        in search_item["pagemap"]["metatags"][0]
-                    ):
-                        long_description = search_item["pagemap"]["metatags"][
-                            0
-                        ]["og:description"]
+                    if "og:description" in search_item["pagemap"]["metatags"][0]:
+                        long_description = search_item["pagemap"]["metatags"][0][
+                            "og:description"
+                        ]
                     else:
                         long_description = "N/A"
                     # Get the page title
@@ -279,7 +269,7 @@ class SearchToolkit(BaseToolkit):
         """
         import wolframalpha
 
-        WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
+        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
         if not WOLFRAMALPHA_APP_ID:
             raise ValueError(
                 "`WOLFRAMALPHA_APP_ID` not found in environment "
@@ -320,20 +310,20 @@ class SearchToolkit(BaseToolkit):
         """
 
         # Extract the original query
-        query = result.get('@inputstring', '')
+        query = result.get("@inputstring", "")
 
         # Initialize a dictionary to hold structured output
         output = {"query": query, "pod_info": [], "final_answer": None}
 
         # Loop through each pod to extract the details
-        for pod in result.get('pod', []):
+        for pod in result.get("pod", []):
             # Handle the case where subpod might be a list
-            subpod_data = pod.get('subpod', {})
+            subpod_data = pod.get("subpod", {})
             if isinstance(subpod_data, list):
                 # If it's a list, get the first item for 'plaintext' and 'img'
                 description, image_url = next(
                     (
-                        (data['plaintext'], data['img'])
+                        (data["plaintext"], data["img"])
                         for data in subpod_data
                         if "plaintext" in data and "img" in data
                     ),
@@ -341,11 +331,11 @@ class SearchToolkit(BaseToolkit):
                 )
             else:
                 # Otherwise, handle it as a dictionary
-                description = subpod_data.get('plaintext', '')
-                image_url = subpod_data.get('img', {}).get('@src', '')
+                description = subpod_data.get("plaintext", "")
+                image_url = subpod_data.get("img", {}).get("@src", "")
 
             pod_info = {
-                "title": pod.get('@title', ''),
+                "title": pod.get("@title", ""),
                 "description": description,
                 "image_url": image_url,
             }
@@ -354,14 +344,12 @@ class SearchToolkit(BaseToolkit):
             output["pod_info"].append(pod_info)
 
             # Get final answer
-            if pod.get('@primary', False):
+            if pod.get("@primary", False):
                 output["final_answer"] = description
 
         return output
 
-    def _get_wolframalpha_step_by_step_solution(
-        self, app_id: str, query: str
-    ) -> dict:
+    def _get_wolframalpha_step_by_step_solution(self, app_id: str, query: str) -> dict:
         r"""Retrieve a step-by-step solution from the Wolfram Alpha API for a
         given query.
 
@@ -378,10 +366,10 @@ class SearchToolkit(BaseToolkit):
 
         # Set up the query parameters
         params = {
-            'appid': app_id,
-            'input': query,
-            'podstate': ['Result__Step-by-step solution', 'Show all steps'],
-            'format': 'plaintext',
+            "appid": app_id,
+            "input": query,
+            "podstate": ["Result__Step-by-step solution", "Show all steps"],
+            "format": "plaintext",
         }
 
         # Send the request
@@ -393,16 +381,16 @@ class SearchToolkit(BaseToolkit):
         # Find all subpods within the 'Results' pod
         for subpod in root.findall(".//pod[@title='Results']//subpod"):
             # Check if the subpod has the desired stepbystepcontenttype
-            content_type = subpod.find('stepbystepcontenttype')
+            content_type = subpod.find("stepbystepcontenttype")
             if content_type is not None and content_type.text in [
-                'SBSStep',
-                'SBSHintStep',
+                "SBSStep",
+                "SBSHintStep",
             ]:
-                plaintext = subpod.find('plaintext')
+                plaintext = subpod.find("plaintext")
                 if plaintext is not None and plaintext.text:
                     step_text = plaintext.text.strip()
                     cleaned_step = step_text.replace(
-                        'Hint: |', ''
+                        "Hint: |", ""
                     ).strip()  # Remove 'Hint: |' if present
                     steps.append(cleaned_step)
 
@@ -462,131 +450,8 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return [{"error": f"An unexpected error occurred: {e!s}"}]
 
-    def get_url_content(self, url: str) -> str:
-        """Fetch the content of a URL using the r.jina.ai service.
-
-        Args:
-            url (str): The URL to fetch content from.
-
-        Returns:
-            str: The markdown content of the URL.
-        """
-
-        # Replace http with https and add https if not present
-        if not url.startswith("https://"):
-            url = "https://" + url.lstrip("https://").lstrip("http://")
-
-        jina_url = f"https://r.jina.ai/{url}"
-        headers = {}
-        if os.environ.get('JINA_PROXY_URL'):
-            headers['X-Proxy-Url'] = os.environ.get('JINA_PROXY_URL')
-
-        auth_token = os.environ.get('JINA_AUTH_TOKEN')
-        if auth_token:
-            headers['Authorization'] = f'Bearer {auth_token}'
-        try:
-            response = requests.get(jina_url, headers=headers)
-            response.raise_for_status()
-            return response.text
-        except requests.RequestException as e:
-            return f"Error fetching URL content: {e!s}"
-
-    def get_url_content_with_context(
-        self,
-        url: str,
-        search_string: str,
-        context_chars: int = 700,
-        max_instances: int = 3,
-    ) -> str:
-        """Fetch the content of a URL and return context around all instances of a specific string.
-
-        Args:
-            url (str): The URL to fetch content from.
-            search_string (str): The string to search for in the content.
-            context_chars (int): Number of characters to return before and after each found string.
-            max_instances (int): Maximum number of instances to return.
-
-        Returns:
-            str: The context around all found instances of the string, or an error message if not found.
-
-        If there are no results, try again with a more likely search string. Start with a more likely string and only use a less likely string if the first one has too many results.
-        """
-        content = self.get_url_content(url)
-        if content.startswith("Error fetching URL content"):
-            return content
-
-        instances = []
-        start = 0
-        while True:
-            index = content.lower().find(search_string.lower(), start)
-            if index == -1 or len(instances) >= max_instances:
-                break
-
-            context_start = max(0, index - context_chars)
-            context_end = min(
-                len(content), index + len(search_string) + context_chars
-            )
-            instance_context = content[context_start:context_end]
-            instances.append(
-                f"Instance {len(instances) + 1}:\n{instance_context}\n"
-            )
-
-            start = index + len(search_string)
-
-        if instances:
-            return (
-                f"Found {len(instances)} instance(s) of '{search_string}':\n\n"
-                + '\n'.join(instances)
-            )
-        else:
-            return f"Search string '{search_string}' not found in the content."
-
-    # TODO: Move elsewhere
-    def planning(self, plan: str) -> str:
-        """A function for planning
-
-        This function takes a thought as a string parameter and returns the thought.
-        Use this to think out loud before using any tools, and for planning. Call as many times, and with as many lines of thought, as needed.
-
-        Args:
-            plan (str): The thought
-            explanation (str): An optional explanation
-
-        Returns:
-            str: An empty string.
-        """
-        print(f"Planning: {plan}")
-        return "Planned"
-
-    # Make a function for getting content from a URL, that skips the first n characters and gives the next m characters, up to a maximum of 1000 characters.
-    def get_url_content_with_offset_updated(
-        self, url: str, offset: int, length: int
-    ) -> str:
-        """Fetch the content of a URL and return the content starting from an offset and up to a given length.
-
-        Args:
-            url (str): The URL to fetch content from.
-            offset (int): The number of characters to skip from the start of the content.
-            length (int): The number of characters to return.
-
-        Returns:
-            str: The content starting from the offset and up to the length, or an error message if the URL content could not be fetched.
-        """
-        if offset < 0:
-            return "Offset must be a non-negative integer."
-        if length < 1:
-            return "Length must be a positive integer."
-        if length > 2000:
-            return "Length must be at most 2000."
-
-        content = self.get_url_content(url)
-        if content.startswith("Error fetching URL content"):
-            return content
-
-        return content[offset : offset + length]
-
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of OpenAIFunction objects representing the
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
@@ -598,11 +463,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
             FunctionTool(self.query_wolfram_alpha),
-            FunctionTool(self.get_url_content),
-            FunctionTool(self.get_url_content_with_context),
-            FunctionTool(self.get_url_content_with_offset_updated),
-            FunctionTool(self.planning),
+            FunctionTool(self.tavily_search),
         ]
-
-
-SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()

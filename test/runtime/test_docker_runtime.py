@@ -16,6 +16,7 @@ from camel.runtime import DockerRuntime
 from camel.toolkits import MATH_FUNCS, CodeExecutionToolkit
 
 
+@pytest.mark.skip(reason="Need Docker environment to run this test.")
 def test_docker_runtime():
     runtime = (
         DockerRuntime("xukunliu/camel")  # change to your own docker image
