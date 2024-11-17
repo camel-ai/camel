@@ -24,6 +24,7 @@ In CAMEL, a tool is an `FunctionTool` that LLMs can call.
 Developers can create custom tools tailored to their agent’s specific needs with ease. Here's how you can define and use a custom tool:
 
 **Example: Adding Two Numbers**
+
 First, define your function and wrap it using the `FunctionTool`
 
 ```python
@@ -46,9 +47,9 @@ add_tool = FunctionTool(add)
 ```
 
 **Accessing Tool Properties**
+
 Once your tool is defined, you can inspect its properties using built-in methods:
 
-Get Function Name
 Retrieve the function's name:
 
 ```python
@@ -59,7 +60,6 @@ print(add_tool.get_function_name())
 >>> add
 ```
 
-Get Function Description
 Get the description of what the function does:
 
 ```python
@@ -70,7 +70,6 @@ print(add_tool.get_function_description())
 >>> Adds two numbers.
 ```
 
-Get OpenAI Function Schema
 Fetch the schema representation for OpenAI functions:
 
 ```python
@@ -88,7 +87,6 @@ print(add_tool.get_openai_function_schema())
   'type': 'object'}}
 ```
 
-Get OpenAI Tool Schema
 Retrieve the tool schema, compatible with OpenAI's structure:
 
 ```python
