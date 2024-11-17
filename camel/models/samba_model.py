@@ -158,7 +158,8 @@ class SambaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-
+        if "tools" in self.model_config_dict:
+            del self.model_config_dict["tools"]
         if self.model_config_dict.get("stream") is True:
             return self._run_streaming(messages)
         else:

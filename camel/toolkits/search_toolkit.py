@@ -472,6 +472,3 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
         ]
-
-
-SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()

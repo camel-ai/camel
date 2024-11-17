@@ -17,7 +17,7 @@ import ast
 import asyncio
 import logging
 from collections import deque
-from typing import Callable, Deque, Dict, List, Optional, Union
+from typing import Deque, Dict, List, Optional
 
 from colorama import Fore
 
@@ -41,12 +41,7 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
-from camel.toolkits import (
-    SEARCH_FUNCS,
-    WEATHER_FUNCS,
-    FunctionTool,
-    GoogleMapsToolkit,
-)
+from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
@@ -357,9 +352,9 @@ class Workforce(BaseNode):
             return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
 
         # Default tools for a new agent
-        function_list: List[Union[FunctionTool, Callable]] = [
-            *SEARCH_FUNCS,
-            *WEATHER_FUNCS,
+        function_list = [
+            *SearchToolkit().get_tools(),
+            *WeatherToolkit().get_tools(),
             *GoogleMapsToolkit().get_tools(),
         ]
 
