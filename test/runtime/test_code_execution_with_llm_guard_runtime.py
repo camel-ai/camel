@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
-from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -21,7 +19,7 @@ from camel.models import ModelFactory
 from camel.runtime import LLMGuardRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import print_text_animated
+
 
 def test_code_execution_with_llm_guard_runtime():
     runtime = LLMGuardRuntime(verbose=True).add(
@@ -67,7 +65,8 @@ def test_code_execution_with_llm_guard_runtime():
 
     prompt = (
         "Weng earns $12 an hour for babysitting. "
-        "Yesterday, she just did 51 minutes of babysitting. How much did she earn?"
+        "Yesterday, she just did 51 minutes of babysitting."
+        "How much did she earn?"
     )
     user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
 

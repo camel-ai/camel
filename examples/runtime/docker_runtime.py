@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.runtime import DockerRuntime
-from camel.toolkits import MathToolkit, CodeExecutionToolkit
+from camel.toolkits import CodeExecutionToolkit, MathToolkit
 
 if __name__ == "__main__":
     runtime = (

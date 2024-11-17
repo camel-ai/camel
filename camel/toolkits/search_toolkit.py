@@ -49,7 +49,9 @@ class SearchToolkit(BaseToolkit):
         try:
             result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
         except wikipedia.exceptions.DisambiguationError as e:
-            result = wikipedia.summary(e.options[0], sentences=5, auto_suggest=False)
+            result = wikipedia.summary(
+                e.options[0], sentences=5, auto_suggest=False
+            )
         except wikipedia.exceptions.PageError:
             result = (
                 "There is no page in Wikipedia corresponding to entity "
@@ -217,10 +219,13 @@ class SearchToolkit(BaseToolkit):
 
                 # Iterate over 10 results found
                 for i, search_item in enumerate(search_items, start=1):
-                    if "og:description" in search_item["pagemap"]["metatags"][0]:
-                        long_description = search_item["pagemap"]["metatags"][0][
-                            "og:description"
-                        ]
+                    if (
+                        "og:description"
+                        in search_item["pagemap"]["metatags"][0]
+                    ):
+                        long_description = search_item["pagemap"]["metatags"][
+                            0
+                        ]["og:description"]
                     else:
                         long_description = "N/A"
                     # Get the page title
@@ -349,7 +354,9 @@ class SearchToolkit(BaseToolkit):
 
         return output
 
-    def _get_wolframalpha_step_by_step_solution(self, app_id: str, query: str) -> dict:
+    def _get_wolframalpha_step_by_step_solution(
+        self, app_id: str, query: str
+    ) -> dict:
         r"""Retrieve a step-by-step solution from the Wolfram Alpha API for a
         given query.
 

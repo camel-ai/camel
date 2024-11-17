@@ -12,8 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
+
 from camel.runtime import DockerRuntime
-from camel.toolkits import MathToolkit, CodeExecutionToolkit
+from camel.toolkits import CodeExecutionToolkit, MathToolkit
 
 
 @pytest.mark.skip(reason="Need Docker environment to run this test.")
@@ -28,7 +29,9 @@ def test_docker_runtime():
         )
     )
 
-    with runtime as r:  # using with statement to automatically close the runtime
+    with (
+        runtime as r
+    ):  # using with statement to automatically close the runtime
         print("Waiting for runtime to be ready...")
         r.wait()
         print("Runtime is ready.")
@@ -48,6 +51,3 @@ def test_docker_runtime():
         assert mul.func(a=2, b=3) == 6
 
         assert r.docs == "http://localhost:8000/docs"
-
-
-

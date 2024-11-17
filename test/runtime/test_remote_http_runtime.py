@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
 from camel.runtime import RemoteHttpRuntime
 from camel.toolkits import MathToolkit
+
 
 def test_remote_http_runtime():
     runtime = (
@@ -31,4 +31,3 @@ def test_remote_http_runtime():
     assert mul.func(2, 3) == 6
 
     assert runtime.docs == "http://localhost:8000/docs"
-
