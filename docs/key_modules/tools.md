@@ -21,7 +21,10 @@ In CAMEL, a tool is an `FunctionTool` that LLMs can call.
 
 ### 2.1 How to Define Your Own Tool?
 
-Developers can create custom tools tailored to their agent’s specific needs:
+Developers can create custom tools tailored to their agent’s specific needs with ease. Here's how you can define and use a custom tool:
+
+**Example: Adding Two Numbers**
+First, define your function and wrap it using the `FunctionTool`
 
 ```python
 from camel.toolkits import FunctionTool
@@ -37,9 +40,16 @@ def add(a: int, b: int) -> int:
         integer: The sum of the two numbers.
     """
     return a + b
-    
+
+# Wrap the function with FunctionTool
 add_tool = FunctionTool(add)
 ```
+
+**Accessing Tool Properties**
+Once your tool is defined, you can inspect its properties using built-in methods:
+
+Get Function Name
+Retrieve the function's name:
 
 ```python
 print(add_tool.get_function_name())
@@ -49,6 +59,9 @@ print(add_tool.get_function_name())
 >>> add
 ```
 
+Get Function Description
+Get the description of what the function does:
+
 ```python
 print(add_tool.get_function_description())
 ```
@@ -56,6 +69,9 @@ print(add_tool.get_function_description())
 ```markdown
 >>> Adds two numbers.
 ```
+
+Get OpenAI Function Schema
+Fetch the schema representation for OpenAI functions:
 
 ```python
 print(add_tool.get_openai_function_schema())
@@ -71,6 +87,9 @@ print(add_tool.get_openai_function_schema())
   'required': ['a', 'b'],
   'type': 'object'}}
 ```
+
+Get OpenAI Tool Schema
+Retrieve the tool schema, compatible with OpenAI's structure:
 
 ```python
 print(add_tool.get_openai_tool_schema())
@@ -109,6 +128,21 @@ from camel.toolkits import SearchToolkit
 
 google_tool = FunctionTool(SearchToolkit().search_google)
 wiki_tool = FunctionTool(SearchToolkit().search_wiki)
+```
+
+### 2.3 Passing Tools to `ChatAgent`
+Enhance the functionality of a ChatAgent by passing custom tools during initialization. Here's how you can do it:
+
+```python
+from camel.agents import ChatAgent
+
+# Initialize a ChatAgent with your custom tools
+tool_agent = ChatAgent(
+    tools=tools,
+)
+
+# Interact with the agent
+response = tool_agent.step("A query related to the tool you added")
 ```
 
 Here is a list of the available CAMEL tools and their descriptions:
