@@ -480,7 +480,7 @@ class ChatAgent(BaseAgent):
         Args:
             session_id (str, optional): The ID of the chat session.
             usage (Dict[str, int], optional): Information about the usage of
-                the LLM model.
+                the LLM.
             termination_reasons (List[str]): The reasons for the termination
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
@@ -640,7 +640,12 @@ class ChatAgent(BaseAgent):
             if response.choices[0].message.tool_calls:
                 tool_call_request = response.choices[0].message.tool_calls[0]
 
-                # External tool call: return directly with output info
+                # Normal function calling and record update
+                tool_call_records.append(
+                    self._step_tool_call_and_update(response)
+                )
+
+                # External tool call: return with output info
                 if tool_call_request.function.name in self.external_tool_names:
                     info = self._step_get_info(
                         output_messages,
@@ -656,11 +661,6 @@ class ChatAgent(BaseAgent):
                         terminated=self.terminated,
                         info=info,
                     )
-
-                # Normal function calling and record update
-                tool_call_records.append(
-                    self._step_tool_call_and_update(response)
-                )
 
         # Handle structured output if a response format is provided
         if response_format is not None:
