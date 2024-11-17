@@ -369,7 +369,7 @@ class Workforce(BaseNode):
             model_config_dict=model_config_dict,
         )
 
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)
+        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
