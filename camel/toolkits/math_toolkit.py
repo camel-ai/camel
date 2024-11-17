@@ -102,6 +102,3 @@ class MathToolkit(BaseToolkit):
             FunctionTool(self.divide),
             FunctionTool(self.round),
         ]
-
-
-MATH_FUNCS: List[FunctionTool] = MathToolkit().get_tools()

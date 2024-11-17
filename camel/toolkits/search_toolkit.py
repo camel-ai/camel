@@ -603,6 +603,3 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.get_url_content_with_offset_updated),
             FunctionTool(self.planning),
         ]
-
-
-SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()
