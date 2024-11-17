@@ -578,6 +578,15 @@ class ChatAgent(BaseAgent):
             return self._handle_step(response_format, tool_call_records, False)
 
         # Multi-step mode: loop until a final response
+        if (
+            self.model_backend.model_config_dict.get("tool_choice")
+            == "required"
+        ):
+            raise ValueError(
+                "`tool_choice` cannot be set to `required` for multi-step"
+                " mode. To proceed, set `single_iteration` to `True`."
+            )
+
         return self._handle_step(response_format, tool_call_records, True)
 
     def _needs_tool_prompt(self) -> bool:
