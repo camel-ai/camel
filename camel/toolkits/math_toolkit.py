@@ -74,6 +74,3 @@ class MathToolkit(BaseToolkit):
             FunctionTool(self.sub),
             FunctionTool(self.mul),
         ]
-
-
-MATH_FUNCS: List[FunctionTool] = MathToolkit().get_tools()

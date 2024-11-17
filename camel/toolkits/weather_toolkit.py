@@ -168,6 +168,3 @@ class WeatherToolkit(BaseToolkit):
         return [
             FunctionTool(self.get_weather_data),
         ]
-
-
-WEATHER_FUNCS: List[FunctionTool] = WeatherToolkit().get_tools()
