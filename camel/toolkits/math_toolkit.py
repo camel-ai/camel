@@ -49,7 +49,7 @@ class MathToolkit(BaseToolkit):
         """
         return a - b
 
-    def multiply(self, a: float, b: float, decimal_places: int = 2) -> float:
+    def mul(self, a: float, b: float, decimal_places: int = 2) -> float:
         r"""Multiplies two numbers.
 
         Args:
@@ -98,7 +98,7 @@ class MathToolkit(BaseToolkit):
         return [
             FunctionTool(self.add),
             FunctionTool(self.sub),
-            FunctionTool(self.multiply),
+            FunctionTool(self.mul),
             FunctionTool(self.divide),
             FunctionTool(self.round),
         ]
