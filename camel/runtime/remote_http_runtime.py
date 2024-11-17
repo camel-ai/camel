@@ -19,7 +19,7 @@ import time
 from functools import wraps
 from pathlib import Path
 from subprocess import Popen
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 from pydantic import BaseModel
@@ -34,10 +34,11 @@ class RemoteHttpRuntime(BaseRuntime):
     r"""A runtime that runs functions in a remote HTTP server.
     You need to run the API server in the remote server first.
 
-    Attributes:
+    Args:
         host (str): The host of the remote server.
-        port (int): The port of the remote server.
+        port (int): The port of the remote server. (default::obj: `8000`)
         python_exec (str): The python executable to run the API server.
+            (default::obj: `python3`)
     """
 
     def __init__(
@@ -77,20 +78,21 @@ class RemoteHttpRuntime(BaseRuntime):
 
     def add(  # type: ignore[override]
         self,
-        funcs: FunctionTool | List[FunctionTool],
+        funcs: Union[FunctionTool, List[FunctionTool]],
         entrypoint: str,
-        arguments: Optional[Dict[str, Any]] = None,
         redirect_stdout: bool = False,
+        arguments: Optional[Dict[str, Any]] = None,
     ) -> "RemoteHttpRuntime":
         r"""Add a function or list of functions to the runtime.
 
         Args:
-            funcs (FunctionTool or List[FunctionTool]): The function or
+            funcs (Union[FunctionTool, List[FunctionTool]]): The function or
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
-            arguments (Dict[str, Any]): The arguments for the function.
             redirect_stdout (bool): Whether to return the stdout of
-                the function.
+                the function. (default::obj: `False`)
+            arguments (Optional[Dict[str, Any]]): The arguments for the
+                function. (default::obj: `None`)
 
         Returns:
             RemoteHttpRuntime: The current runtime.
@@ -160,7 +162,7 @@ class RemoteHttpRuntime(BaseRuntime):
         r"""Wait for the API Server to be ready.
 
         Args:
-            timeout (int): The number of seconds to wait.
+            timeout (int): The number of seconds to wait. (default::obj: `10`)
 
         Returns:
             bool: Whether the API Server is ready.
