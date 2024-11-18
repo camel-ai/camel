@@ -20,6 +20,7 @@ from camel.configs import CohereConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import (
+    FunctionTool,
     MathToolkit,
     SearchToolkit,
 )
@@ -42,7 +43,7 @@ def main(
 
     tools_list = [
         *MathToolkit().get_tools(),
-        *SearchToolkit().get_tools(),
+        FunctionTool(SearchToolkit().search_duckduckgo),
     ]
     assistant_model_config = CohereConfig(
         temperature=0.2,
