@@ -17,7 +17,7 @@ from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
+from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -36,8 +36,8 @@ def main():
     planner_agent = ChatAgent(planner_sysmsg)
 
     function_list = [
-        *SEARCH_FUNCS,
-        *WEATHER_FUNCS,
+        *SearchToolkit().get_tools(),
+        *WeatherToolkit().get_tools(),
         *GoogleMapsToolkit().get_tools(),
     ]
 

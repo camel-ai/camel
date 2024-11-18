@@ -322,12 +322,27 @@ class SearchToolkit(BaseToolkit):
 
         # Loop through each pod to extract the details
         for pod in result.get('pod', []):
+            # Handle the case where subpod might be a list
+            subpod_data = pod.get('subpod', {})
+            if isinstance(subpod_data, list):
+                # If it's a list, get the first item for 'plaintext' and 'img'
+                description, image_url = next(
+                    (
+                        (data['plaintext'], data['img'])
+                        for data in subpod_data
+                        if "plaintext" in data and "img" in data
+                    ),
+                    ("", ""),
+                )
+            else:
+                # Otherwise, handle it as a dictionary
+                description = subpod_data.get('plaintext', '')
+                image_url = subpod_data.get('img', {}).get('@src', '')
+
             pod_info = {
                 "title": pod.get('@title', ''),
-                "description": pod.get('subpod', {}).get('plaintext', ''),
-                "image_url": pod.get('subpod', {})
-                .get('img', {})
-                .get('@src', ''),
+                "description": description,
+                "image_url": image_url,
             }
 
             # Add to steps list
@@ -335,7 +350,7 @@ class SearchToolkit(BaseToolkit):
 
             # Get final answer
             if pod.get('@primary', False):
-                output["final_answer"] = pod_info["description"]
+                output["final_answer"] = description
 
         return output
 
@@ -368,15 +383,23 @@ class SearchToolkit(BaseToolkit):
         response = requests.get(url, params=params)
         root = ET.fromstring(response.text)
 
-        # Extracting step-by-step hints and removing 'Hint: |'
+        # Extracting step-by-step steps, including 'SBSStep' and 'SBSHintStep'
         steps = []
-        for subpod in root.findall(
-            ".//pod[@title='Results']//subpod[stepbystepcontenttype='SBSHintStep']//plaintext"
-        ):
-            if subpod.text:
-                step_text = subpod.text.strip()
-                cleaned_step = step_text.replace('Hint: |', '').strip()
-                steps.append(cleaned_step)
+        # Find all subpods within the 'Results' pod
+        for subpod in root.findall(".//pod[@title='Results']//subpod"):
+            # Check if the subpod has the desired stepbystepcontenttype
+            content_type = subpod.find('stepbystepcontenttype')
+            if content_type is not None and content_type.text in [
+                'SBSStep',
+                'SBSHintStep',
+            ]:
+                plaintext = subpod.find('plaintext')
+                if plaintext is not None and plaintext.text:
+                    step_text = plaintext.text.strip()
+                    cleaned_step = step_text.replace(
+                        'Hint: |', ''
+                    ).strip()  # Remove 'Hint: |' if present
+                    steps.append(cleaned_step)
 
         # Structuring the steps into a dictionary
         structured_steps = {}
@@ -449,6 +472,3 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
         ]
-
-
-SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()

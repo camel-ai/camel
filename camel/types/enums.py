@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from enum import Enum, EnumMeta
 from typing import cast
 
@@ -26,7 +27,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = "gpt-4o-mini"
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -97,6 +98,10 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MATH_PLUS = "qwen-math-plus"
     QWEN_MATH_TURBO = "qwen-math-turbo"
     QWEN_CODER_TURBO = "qwen-coder-turbo"
+    QWEN_2_5_CODER_32B = "qwen2.5-coder-32b-instruct"
+    QWEN_2_5_72B = "qwen2.5-72b-instruct"
+    QWEN_2_5_32B = "qwen2.5-32b-instruct"
+    QWEN_2_5_14B = "qwen2.5-14b-instruct"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -273,6 +278,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_PLUS,
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_72B,
+            ModelType.QWEN_2_5_32B,
+            ModelType.QWEN_2_5_14B,
         }
 
     @property
@@ -344,6 +353,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_72B,
+            ModelType.QWEN_2_5_32B,
+            ModelType.QWEN_2_5_14B,
         }:
             return 128_000
         elif self in {
@@ -505,7 +518,7 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
-    DEFAULT = "openai"
+    DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
     AZURE = "azure"
