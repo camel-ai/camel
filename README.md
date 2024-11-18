@@ -209,17 +209,13 @@ Please note that the environment variable is session-specific. If you open a new
 
 **Setup in your python scripts:**
 To simplify the process of managing environment variables, you can use the python-dotenv library. This allows you to store sensitive information like API keys in a .env file and load them into your application dynamically.
-1. Install the python-dotenv library: Run the following command to install the library:
-```bash
-pip install python-dotenv
-```
-2. Modify .env file in the root directory of CAMEL and fill the following lines:
+1. Modify .env file in the root directory of CAMEL and fill the following lines:
 ```bash
 OPENAI_API_KEY=<fill your API KEY here>
 OPENAI_API_BASE_URL=<fill your API BASE URL here>
 ```
 Replace <fill your API KEY here> and <fill your API BASE URL here> with your actual API key and base URL, respectively.
-3. Load the .env file in your Python script: Use the load_dotenv() function from the dotenv module to load the variables from the .env file into the environment. Here's an example:
+2. Load the .env file in your Python script: Use the load_dotenv() function from the dotenv module to load the variables from the .env file into the environment. Here's an example:
 ```python
 from dotenv import load_dotenv
 import os
