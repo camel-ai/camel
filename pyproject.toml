@@ -123,7 +123,7 @@ redis = { version = "^5.0.6", optional = true }
 
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
-cohere = { version = "^4.56", optional = true }
+cohere = { version = "^5.11.0", optional = true }
 
 # test
 pytest = { version = "^7", optional = true }

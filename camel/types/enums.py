@@ -88,6 +88,12 @@ class ModelType(UnifiedModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # Cohere models
+    COHERE_COMMAND_R = "command-r"
+    COHERE_COMMAND_LIGHT = "command-light"
+    COHERE_COMMAND = "command"
+    COHERE_COMMAND_NIGHTLY = "command-nightly"
+
     # Qwen models (Aliyun)
     QWEN_MAX = "qwen-max"
     QWEN_PLUS = "qwen-plus"
@@ -248,6 +254,20 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this type of models is a Cohere model.
+
+        Returns:
+            bool: Whether this type of models is Cohere.
+        """
+        return self in {
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }
+
+    @property
     def is_yi(self) -> bool:
         r"""Returns whether this type of models is Yi model.
 
@@ -386,6 +406,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_1_5_PRO,
         }:
             return 1_048_576
+        elif self in {
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }:
+            return 4_096
         elif self in {
             ModelType.QWEN_LONG,
         }:
@@ -534,6 +561,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
+    COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
 
@@ -607,6 +635,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this platform is Cohere."""
+        return self is ModelPlatformType.COHERE
 
     @property
     def is_yi(self) -> bool:
