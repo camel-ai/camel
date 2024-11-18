@@ -147,7 +147,7 @@ class BaseModelBackend(ABC):
 class ModelManager:
     def __init__(
         self,
-        models: Optional[Union[BaseModelBackend, List[BaseModelBackend]]],
+        models: Union[BaseModelBackend, List[BaseModelBackend]],
         scheduling_strategy: str = "round_robin",
     ):
         """
@@ -186,6 +186,12 @@ class ModelManager:
         Assuming that all models instances are the same type."""
         return self.models[0].model_config_dict if self.models else None
 
+    @model_config_dict.setter
+    def model_config_dict(self, model_config_dict: Dict[str, Any]):
+        """Set model_config_dict to all models."""
+        for model in self.models:
+            model.model_config_dict = model_config_dict
+
     @property
     def token_limit(self):
         """Return token_limit of the first model.
@@ -198,13 +204,7 @@ class ModelManager:
         Assuming that all models instances are the same type."""
         return self.models[0].token_counter if self.models else None
 
-    @model_config_dict.setter
-    def model_config_dict(self, model_config_dict):
-        """Set model_config_dict to all models."""
-        for model in self.models:
-            model.model_config_dict = model_config_dict
-
-    def round_robin(self):
+    def round_robin(self) -> BaseModelBackend:
         """Return models one by one in simple round-robin fashion."""
         return next(self.models_cycle)
 

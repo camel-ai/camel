@@ -12,9 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from typing import TYPE_CHECKING, List
+
 import pytest
 from mock import Mock
 
+from camel.models import BaseModelBackend
 from camel.models.base_model import ModelManager
 
 
@@ -39,6 +42,8 @@ def test_model_manager(
         if models_number > 1
         else Mock()
     )
+    if TYPE_CHECKING:
+        assert type(models) == List[BaseModelBackend]
     model_manager = ModelManager(models, scheduling_strategy=strategy)
     # The statement below shall be updated after new strategies are introduced.
     assert model_manager.scheduling_strategy.__name__ == "round_robin"
@@ -47,4 +52,6 @@ def test_model_manager(
     for _ in range(calls_count):
         model_manager.run(["message"] for _ in range(calls_count))
     for model in model_manager.models:
+        if TYPE_CHECKING:
+            assert isinstance(model, Mock)
         assert model.run.call_count == times_each_model_called
