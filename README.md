@@ -207,7 +207,7 @@ Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each c
 
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
-**Setting Up the `.env` File:**
+**For `.env` File:**
 
 To simplify the process of managing API Keys, you can use store information in a `.env` file and load them into your application dynamically.
 
@@ -233,7 +233,7 @@ you can refer to [here](https://github.com/camel-ai/camel/.env).
 
 > [!TIP]
 > By default, the load_dotenv() function does not overwrite existing environment variables that are already set in your system. It only populates variables that are missing.
-If you need to overwrite existing environment variables with the values from your .env file, use the override=True parameter:
+If you need to overwrite existing environment variables with the values from your `.env` file, use the `override=True` parameter:
 > ```python
 > load_dotenv(override=True)
 > ```
