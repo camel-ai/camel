@@ -11,14 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import ast
+import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import uuid
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from cohere.types import ChatMessageV2, ChatResponse
 
-from camel.configs import COHERE_API_PARAMS
+from camel.configs import COHERE_API_PARAMS, CohereConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -44,41 +47,49 @@ class CohereModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ):
         import cohere
 
+        if model_config_dict is None:
+            model_config_dict = CohereConfig().as_dict()
+
         api_key = api_key or os.environ.get("COHERE_API_KEY")
-        url = url or os.environ.get("COHERE_SERVER_URL")
+        url = url or os.environ.get("COHERE_API_BASE_URL")
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self.tool_call_id = None
         self._client = cohere.ClientV2(api_key=self._api_key)
 
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
-        usage = {
-            "prompt_tokens": response.usage.tokens.input_tokens or 0,  # type: ignore[union-attr]
-            "completion_tokens": response.usage.tokens.output_tokens or 0,  # type: ignore[union-attr]
-            "total_tokens": (response.usage.tokens.input_tokens or 0)  # type: ignore[union-attr]
-            + (response.usage.tokens.output_tokens or 0),  # type: ignore[union-attr]
-        }
+        if response.usage and response.usage.tokens:
+            input_tokens = response.usage.tokens.input_tokens or 0
+            output_tokens = response.usage.tokens.output_tokens or 0
+            usage = {
+                "prompt_tokens": input_tokens,
+                "completion_tokens": output_tokens,
+                "total_tokens": input_tokens + output_tokens,
+            }
+        else:
+            usage = {}
 
-        tool_calls = response.message.tool_calls  # type: ignore[union-attr]
+        tool_calls = response.message.tool_calls
         choices = []
         if tool_calls:
             for tool_call in tool_calls:
                 openai_tool_calls = [
                     dict(
-                        id=tool_call.id,  # type: ignore[union-attr]
+                        id=tool_call.id,
                         function={
-                            "name": tool_call.function.name,  # type: ignore[union-attr]
-                            "arguments": tool_call.function.arguments,  # type: ignore[union-attr]
-                        },
+                            "name": tool_call.function.name,
+                            "arguments": tool_call.function.arguments,
+                        }
+                        if tool_call.function
+                        else {},
                         type=tool_call.type,
                     )
                 ]
@@ -87,7 +98,7 @@ class CohereModel(BaseModelBackend):
                     index=None,
                     message={
                         "role": "assistant",
-                        "content": response.message.tool_plan,  # type: ignore[union-attr]
+                        "content": response.message.tool_plan,
                         "tool_calls": openai_tool_calls,
                     },
                     finish_reason=response.finish_reason
@@ -125,10 +136,6 @@ class CohereModel(BaseModelBackend):
     def _to_cohere_chatmessage(
         self, messages: List[OpenAIMessage]
     ) -> List["ChatMessageV2"]:
-        import ast
-        import json
-        import uuid
-
         from cohere.types import ToolCallV2Function
         from cohere.types.chat_message_v2 import (
             AssistantChatMessageV2,
@@ -138,6 +145,7 @@ class CohereModel(BaseModelBackend):
             UserChatMessageV2,
         )
 
+        tool_call_id = None
         new_messages = []
         for msg in messages:
             role = msg.get("role")
@@ -146,40 +154,39 @@ class CohereModel(BaseModelBackend):
 
             if role == "user":
                 new_message = UserChatMessageV2(role="user", content=content)  # type: ignore[arg-type]
-            elif role == "function":
+            elif role in {"tool", "function"}:
                 new_message = ToolChatMessageV2(
                     role="tool",
-                    tool_call_id=self.tool_call_id,  # type: ignore[arg-type]
+                    tool_call_id=tool_call_id,  # type: ignore[arg-type]
                     content=content,  # type: ignore[assignment,arg-type]
                 )
             elif role == "assistant":
-                if function_call is None:
+                if not function_call:
                     new_message = AssistantChatMessageV2(  # type: ignore[assignment]
                         role="assistant",
                         content=content,  # type: ignore[arg-type]
                     )
-                    continue
-                arguments = function_call.get("arguments")  # type: ignore[attr-defined]
-                arguments_dict = ast.literal_eval(arguments)
-                arguments_json = json.dumps(arguments_dict)
-                assis_tool_call_id = str(uuid.uuid4())
-                self.tool_call_id = assis_tool_call_id  # type: ignore[assignment]
-                new_message = AssistantChatMessageV2(  # type: ignore[assignment]
-                    role="assistant",
-                    tool_calls=[
-                        ToolCallV2(
-                            id=assis_tool_call_id,
-                            type="function",
-                            function=ToolCallV2Function(
-                                name=function_call.get("name"),  # type: ignore[attr-defined]
-                                arguments=arguments_json,  # type: ignore[attr-defined]
-                            ),
-                        )
-                    ]
-                    if function_call
-                    else None,
-                    content=content,  # type: ignore[arg-type]
-                )
+                else:
+                    arguments = function_call.get("arguments")  # type: ignore[attr-defined]
+                    arguments_dict = ast.literal_eval(arguments)
+                    arguments_json = json.dumps(arguments_dict)
+
+                    assis_tool_call_id = str(uuid.uuid4())
+                    tool_call_id = assis_tool_call_id
+                    new_message = AssistantChatMessageV2(  # type: ignore[assignment]
+                        role="assistant",
+                        tool_calls=[
+                            ToolCallV2(
+                                id=assis_tool_call_id,
+                                type="function",
+                                function=ToolCallV2Function(
+                                    name=function_call.get("name"),  # type: ignore[attr-defined]
+                                    arguments=arguments_json,  # type: ignore[attr-defined]
+                                ),
+                            )
+                        ],
+                        content=content,  # type: ignore[arg-type]
+                    )
             elif role == "system":
                 new_message = SystemChatMessageV2(  # type: ignore[assignment]
                     role="system",
@@ -252,8 +259,9 @@ class CohereModel(BaseModelBackend):
         return openai_response
 
     def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Cohere API.
+        r"""Check whether the model configuration contains any unexpected
+        arguments to Cohere API.
+
         Raises:
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments to Cohere API.

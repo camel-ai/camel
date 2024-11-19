@@ -27,7 +27,7 @@ class CohereConfig(BaseConfig):
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
             (default: :obj:`0.3`)
-        documents (dict, optional): A list of relevant documents that the
+        documents (list, optional): A list of relevant documents that the
             model can cite to generate a more accurate reply. Each document is
             either a string or document object with content and metadata.
             (default: :obj:`None`)
@@ -63,7 +63,7 @@ class CohereConfig(BaseConfig):
     """
 
     temperature: Optional[float] = 0.2
-    documents: Optional[dict] = None
+    documents: Optional[list] = None
     max_tokens: Optional[int] = None
     stop_sequences: Optional[List[str]] = None
     seed: Optional[int] = None

@@ -90,6 +90,7 @@ class ModelType(UnifiedModelType, Enum):
     REKA_EDGE = "reka-edge"
 
     # Cohere models
+    COHERE_COMMAND_R_PLUS = "command-r-plus"
     COHERE_COMMAND_R = "command-r"
     COHERE_COMMAND_LIGHT = "command-light"
     COHERE_COMMAND = "command"
@@ -263,6 +264,7 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is Cohere.
         """
         return self in {
+            ModelType.COHERE_COMMAND_R_PLUS,
             ModelType.COHERE_COMMAND_R,
             ModelType.COHERE_COMMAND_LIGHT,
             ModelType.COHERE_COMMAND,
@@ -323,6 +325,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_FLASH,
             ModelType.QWEN_MATH_PLUS,
             ModelType.QWEN_MATH_TURBO,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_LIGHT,
         }:
             return 4_096
         elif self in {
@@ -379,6 +383,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_NIGHTLY,
         }:
             return 128_000
         elif self in {
@@ -409,13 +416,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
         }:
             return 1_048_576
-        elif self in {
-            ModelType.COHERE_COMMAND_R,
-            ModelType.COHERE_COMMAND_LIGHT,
-            ModelType.COHERE_COMMAND,
-            ModelType.COHERE_COMMAND_NIGHTLY,
-        }:
-            return 4_096
         elif self in {
             ModelType.QWEN_LONG,
         }:

@@ -47,7 +47,7 @@ class MathToolkit(BaseToolkit):
         Returns:
             integer: The result of subtracting :obj:`b` from :obj:`a`.
         """
-        return int(a) - int(b)
+        return a - b
 
     def mul(self, a: int, b: int) -> int:
         r"""Multiplies two integers.
