@@ -40,7 +40,8 @@ The following table lists currently supported model platforms by CAMEL.
 | Anthropic | claude-3-opus-20240229 | Y |
 | Anthropic | claude-2.0 | N |
 | Gemini | gemini-1.5-pro | Y |
-| Gemini | ggemini-1.5-flash | Y |
+| Gemini | gemini-1.5-flash | Y |
+| Gemini | gemini-exp-1114 | Y |
 | Lingyiwanwu | yi-lightning | N |
 | Lingyiwanwu | yi-large | N |
 | Lingyiwanwu | yi-medium | N |

@@ -70,6 +70,7 @@ class ModelType(UnifiedModelType, Enum):
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
+    GEMINI_EXP_1114 = "gemini-exp-1114"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -238,6 +239,7 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_EXP_1114,
         }
 
     @property
@@ -404,6 +406,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
         }:
             return 1_048_576
         elif self in {
