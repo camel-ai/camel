@@ -12,32 +12,39 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 # ruff: noqa: I001
-from .openai_function import (
-    OpenAIFunction,
+from .function_tool import (
+    FunctionTool,
     get_openai_function_schema,
     get_openai_tool_schema,
+    generate_docstring,
 )
 from .open_api_specs.security_config import openapi_security_config
 
-from .google_maps_toolkit import GoogleMapsToolkit
-from .math_toolkit import MathToolkit, MATH_FUNCS
-from .open_api_toolkit import OpenAPIToolkit
-from .retrieval_toolkit import RetrievalToolkit
-from .search_toolkit import SearchToolkit, SEARCH_FUNCS
-from .twitter_toolkit import TwitterToolkit
-from .weather_toolkit import WeatherToolkit, WEATHER_FUNCS
-from .slack_toolkit import SlackToolkit
-from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
+from .math_toolkit import MathToolkit
+from .search_toolkit import SearchToolkit
+from .weather_toolkit import WeatherToolkit
+from .dalle_toolkit import DalleToolkit
+from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
-
+from .base import BaseToolkit
+from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
+from .google_scholar_toolkit import GoogleScholarToolkit
+from .arxiv_toolkit import ArxivToolkit
+from .slack_toolkit import SlackToolkit
+from .twitter_toolkit import TwitterToolkit
+from .open_api_toolkit import OpenAPIToolkit
+from .retrieval_toolkit import RetrievalToolkit
+from .notion_toolkit import NotionToolkit
 
 __all__ = [
-    'OpenAIFunction',
+    'BaseToolkit',
+    'FunctionTool',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    "generate_docstring",
     'openapi_security_config',
     'GithubToolkit',
     'MathToolkit',
@@ -52,8 +59,9 @@ __all__ = [
     'LinkedInToolkit',
     'RedditToolkit',
     'CodeExecutionToolkit',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'DALLE_FUNCS',
+    'AskNewsToolkit',
+    'AsyncAskNewsToolkit',
+    'GoogleScholarToolkit',
+    'NotionToolkit',
+    'ArxivToolkit',
 ]

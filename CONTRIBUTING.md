@@ -1,6 +1,6 @@
 🐫 **Welcome to CAMEL!** 🐫
 
-Thank you for your interest in contributing to the CAMEL project! 🎉 We're excited to have your support. As an open-source initiative in a rapidly evolving and open-ended field, we wholeheartedly welcome contributions of all kinds. Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate your enthusiasm and efforts. 🙌  You are welcome to join our [slack](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ) for more efficient communication. 💬
+Thank you for your interest in contributing to the CAMEL project! 🎉 We're excited to have your support. As an open-source initiative in a rapidly evolving and open-ended field, we wholeheartedly welcome contributions of all kinds. Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate your enthusiasm and efforts. 🙌  You are welcome to join our [discord](https://discord.camel-ai.org/) for more efficient communication. 💬
 
 ## Join Our Community 🌍
 
@@ -9,13 +9,13 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 - Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
 
 ### Developer Meeting Time & Link 💻
-- English speakers: Mondays at 5 PM GMT+1. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/91735108083)
+- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/aWfgSTh5?event=1288737688794435634)
 - Chinese Speakers: Mondays at 9 PM UTC+8. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/94271505221)
 
 ### Our Communication Channels 💬
-- **Slack:** [Join here](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
-- **Discord:** [Join here](https://discord.gg/CNcNpquyDc)
+- **Discord:** [Join here](https://discord.camel-ai.org/)
 - **WeChat:** Scan the QR code [here](https://ghli.org/camel/wechat.png)
+- **Slack:** [Join here](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)
 
 ## Guidelines 📝
 
@@ -161,10 +161,6 @@ cd camel
 poetry shell
 
 # Install camel from source
-# It takes about 75s to resolve dependencies and 10s to install them, depending on your hardware and network
-poetry install --with dev,docs
-
-# Or if you want to use all other extra packages
 poetry install --with dev,docs -E all  # (Suggested for developers, needed to pass all tests)
 
 # The following command installs a pre-commit hook into the local git repo,
@@ -184,6 +180,9 @@ exit
 These commands will install all the necessary dependencies for running the package, examples, linting, formatting, tests, and coverage.
 
 To verify that everything is set up correctly, run `pytest .` This will ensure that all tests pass successfully. ✅
+
+> [!TIP]
+> You need to config different API Keys as environment variables to pass all tests.
 
 ## Common Actions 🔄
 

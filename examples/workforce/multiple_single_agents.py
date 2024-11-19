@@ -13,94 +13,90 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
-from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, GoogleMapsToolkit
+from camel.toolkits import (
+    FunctionTool,
+    GoogleMapsToolkit,
+    SearchToolkit,
+    WeatherToolkit,
+)
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce.manager_node import ManagerNode
-from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.workforce import Workforce
 
 
 def main():
-    # set the tools for the tool_agent
-    tools_list = [
-        *SEARCH_FUNCS,
-        *WEATHER_FUNCS,
-        *GoogleMapsToolkit().get_tools(),
+    search_toolkit = SearchToolkit()
+    search_tools = [
+        FunctionTool(search_toolkit.search_google),
+        FunctionTool(search_toolkit.search_duckduckgo),
     ]
-    # configure the model of tool_agent
-    model_config_dict = ChatGPTConfig(
-        tools=tools_list,
-        temperature=0.0,
-    ).as_dict()
 
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config_dict,
+    # Set up web searching agent
+    search_agent_model = ModelFactory.create(
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
-
-    # set tool_agent
-    tool_agent = ChatAgent(
+    search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Tools calling opertor",
-            content="You are a helpful assistant",
+            role_name="Web searching agent",
+            content="You can search online for information",
         ),
-        model=model,
-        tools=tools_list,
+        model=search_agent_model,
+        tools=[*search_tools, *WeatherToolkit().get_tools()],
     )
-    # set tour_guide_agent
+
+    # Set up tour guide agent
+    tour_guide_agent_model = ModelFactory.create(
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
+    )
+
     tour_guide_agent = ChatAgent(
         BaseMessage.make_assistant_message(
-            role_name="tour guide",
-            content="You have to lead everyone to have fun",
-        )
+            role_name="Tour guide",
+            content="You are a tour guide",
+        ),
+        model=tour_guide_agent_model,
+        tools=GoogleMapsToolkit().get_tools(),
     )
-    # traveler_agent
+
+    # Set up traveler agent
     traveler_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Traveler",
             content="You can ask questions about your travel plans",
-        )
+        ),
+        model=ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+        ),
     )
 
-    # wrap the single agent into the worker nodes
-    tour_guide_worker_node = SingleAgentNode(
-        description='tour guide',
+    workforce = Workforce('A travel group')
+
+    workforce.add_single_agent_worker(
+        "A tour guide",
         worker=tour_guide_agent,
+    ).add_single_agent_worker(
+        "A traveler", worker=traveler_agent
+    ).add_single_agent_worker(
+        "An agent who can do online searches", worker=search_agent
     )
-    traveler_worker_node = SingleAgentNode(
-        description='Traveler', worker=traveler_agent
-    )
-    tool_worker_node = SingleAgentNode(
-        description='Tools(eg.weather tools) calling opertor',
-        worker=tool_agent,
-    )
+
     # specify the task to be solved
     human_task = Task(
         content=(
-            "Plan a Paris tour itinerary for today"
-            "taking into account the weather now."
+            "Plan a one-week trip to Paris, considering some historical places"
+            " to visit and weather conditions."
         ),
         id='0',
     )
-    # create a manager node to combine all worker nodes
-    root_node = ManagerNode(
-        description='A travel group',
-        children=[
-            tour_guide_worker_node,
-            traveler_worker_node,
-            tool_worker_node,
-        ],
-    )
 
-    workforce = Workforce(root_node)
     task = workforce.process_task(human_task)
 
-    print('Final Result of Origin task:\n', task.result)
+    print('Final Result of Original task:\n', task.result)
 
 
 if __name__ == "__main__":

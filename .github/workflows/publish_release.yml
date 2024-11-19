@@ -1,4 +1,4 @@
-name: Publish camel to PyPI / GitHub
+name: Publish CAMEL to PyPI / GitHub
 
 on:
   push:
@@ -8,43 +8,94 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-n-publish:
+  build-and-publish-pypi:
     name: Build and publish to PyPI
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v1.17
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and publish to PyPI
+        uses: JRubics/poetry-publish@v2.0
         with:
+          python_version: '3.10'
           pypi_token: ${{ secrets.PYPI_API_KEY }}
-          ignore_dev_requirements: "yes"
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      - name: Upload built artifacts
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
+          name: dist
+          path: dist
 
-      - name: Get Asset name
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-and-publish-pypi
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Check tag for pre-release
+        id: prerelease_check
         run: |
-          export PKG=$(ls dist/ | grep tar)
-          set -- $PKG
-          echo "name=$1" >> $GITHUB_ENV
-      - name: Upload Release Asset (sdist) to GitHub
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if [[ "${{ github.ref_name }}" == *a* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Release to GitHub
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/${{ env.name }}
-          asset_name: ${{ env.name }}
-          asset_content_type: application/zip
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ steps.prerelease_check.outputs.prerelease }}
+          files: dist/*
+
+  build-and-publish-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: .container/minimal_build/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          platforms: linux/amd64,linux/arm64
+          sbom: false
+          provenance: false
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}

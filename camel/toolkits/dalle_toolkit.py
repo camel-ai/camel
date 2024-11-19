@@ -20,14 +20,13 @@ from typing import List, Optional
 from openai import OpenAI
 from PIL import Image
 
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
 class DalleToolkit(BaseToolkit):
-    r"""A class representing a toolkit for image generation using OpenAI's.
-
-    This class provides methods handle image generation using OpenAI's DALL-E.
+    r"""A class representing a toolkit for image generation using OpenAI's
+    DALL-E model.
     """
 
     def base64_to_image(self, base64_string: str) -> Optional[Image.Image]:
@@ -132,15 +131,12 @@ class DalleToolkit(BaseToolkit):
 
         return image_path
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [OpenAIFunction(self.get_dalle_img)]
-
-
-DALLE_FUNCS: List[OpenAIFunction] = DalleToolkit().get_tools()
+        return [FunctionTool(self.get_dalle_img)]

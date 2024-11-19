@@ -14,11 +14,19 @@
 
 from typing import List
 
+from camel.toolkits import FunctionTool
 from camel.utils import AgentOpsMeta
-
-from .openai_function import OpenAIFunction
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
-    def get_tools(self) -> List[OpenAIFunction]:
+    r"""Base class for toolkits."""
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects
+                representing the functions in the toolkit.
+        """
         raise NotImplementedError("Subclasses must implement this method.")

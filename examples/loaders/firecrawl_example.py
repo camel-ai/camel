@@ -20,19 +20,7 @@ from camel.loaders import Firecrawl
 
 firecrawl = Firecrawl()
 
-job_id = firecrawl.crawl(
-    url="https://www.camel-ai.org/about", wait_until_done=False
-)
-
-print(job_id)
-
-'''
-===============================================================================
-d2123e54-63c9-4feb-98f9-03b7ddeb0f1f
-===============================================================================
-'''
-
-response = firecrawl.check_crawl_job("d2123e54-63c9-4feb-98f9-03b7ddeb0f1f")
+response = firecrawl.crawl(url="https://www.camel-ai.org/about")
 
 print(response["status"])
 '''
@@ -80,7 +68,7 @@ class TopArticlesSchema(BaseModel):
 
 
 response = firecrawl.structured_scrape(
-    url='https://news.ycombinator.com', output_schema=TopArticlesSchema
+    url='https://news.ycombinator.com', response_format=TopArticlesSchema
 )
 
 print(response)

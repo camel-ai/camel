@@ -21,15 +21,16 @@ from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .nemotron_model import NemotronModel
 from .ollama_model import OllamaModel
-from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
-from .openai_compatibility_model import OpenAICompatibilityModel
+from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
+from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
+from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
@@ -41,7 +42,6 @@ __all__ = [
     'GroqModel',
     'StubModel',
     'ZhipuAIModel',
-    'OpenSourceModel',
     'ModelFactory',
     'LiteLLMModel',
     'OpenAIAudioModels',
@@ -49,8 +49,10 @@ __all__ = [
     'OllamaModel',
     'VLLMModel',
     'GeminiModel',
-    'OpenAICompatibilityModel',
+    'OpenAICompatibleModel',
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'YiModel',
+    'QwenModel',
 ]

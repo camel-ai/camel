@@ -18,7 +18,6 @@ from camel.configs import (
     ChatGPTConfig,
     GeminiConfig,
     OllamaConfig,
-    OpenSourceConfig,
 )
 from camel.models import ModelFactory
 from camel.models.stub_model import StubTokenCounter
@@ -26,15 +25,13 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     OpenAITokenCounter,
-    OpenSourceTokenCounter,
 )
 
 parametrize = pytest.mark.parametrize(
     'model_platform, model_type',
     [
         (ModelPlatformType.OPENAI, ModelType.GPT_3_5_TURBO),
-        (ModelPlatformType.OPENAI, ModelType.GPT_4_TURBO),
-        (ModelPlatformType.OPEN_SOURCE, ModelType.STUB),
+        (ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI),
     ],
 )
 
@@ -53,16 +50,16 @@ parameterize_token_counter = pytest.mark.parametrize(
         ),
         (
             ModelPlatformType.OPENAI,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
             ChatGPTConfig().as_dict(),
             None,
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
         # Test Stub model
         # Stub model uses StubTokenCounter as default
         (
-            ModelPlatformType.OPEN_SOURCE,
+            ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
             ModelType.STUB,
             ChatGPTConfig().as_dict(),
             None,
@@ -70,12 +67,12 @@ parameterize_token_counter = pytest.mark.parametrize(
             None,
         ),
         (
-            ModelPlatformType.OPEN_SOURCE,
+            ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
             ModelType.STUB,
             ChatGPTConfig().as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
         # Test Anthropic model
         # Anthropic model uses AnthropicTokenCounter as default
@@ -95,37 +92,14 @@ parameterize_token_counter = pytest.mark.parametrize(
             OpenAITokenCounter,
             ModelType.GPT_3_5_TURBO,
         ),
-        # Test OpenSource model (take VICUNA as an example)
-        (
-            ModelPlatformType.OPEN_SOURCE,
-            ModelType.VICUNA,
-            OpenSourceConfig(
-                model_path="lmsys/vicuna-7b-v1.5",
-                server_url="http://localhost:8000/v1",
-            ).as_dict(),
-            None,
-            OpenSourceTokenCounter,
-            ModelType.VICUNA,
-        ),
-        (
-            ModelPlatformType.OPEN_SOURCE,
-            ModelType.VICUNA,
-            OpenSourceConfig(
-                model_path="lmsys/vicuna-7b-v1.5",
-                server_url="http://localhost:8000/v1",
-            ).as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
-            OpenAITokenCounter,
-            ModelType.GPT_4,
-        ),
-        # Test OpenSource model (take VICUNA as an example)
+        # Test GEMINI model
         (
             ModelPlatformType.GEMINI,
             ModelType.GEMINI_1_5_FLASH,
             GeminiConfig().as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
         # Test Ollama model
         (
@@ -140,9 +114,9 @@ parameterize_token_counter = pytest.mark.parametrize(
             ModelPlatformType.OLLAMA,
             "gpt-3.5-turbo",
             OllamaConfig().as_dict(),
-            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter(ModelType.GPT_4O_MINI),
             OpenAITokenCounter,
-            ModelType.GPT_4,
+            ModelType.GPT_4O_MINI,
         ),
     ],
 )

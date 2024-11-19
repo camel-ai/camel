@@ -15,7 +15,7 @@
 from typing import List
 
 from camel.toolkits.base import BaseToolkit
-from camel.toolkits.openai_function import OpenAIFunction
+from camel.toolkits.function_tool import FunctionTool
 
 
 class MathToolkit(BaseToolkit):
@@ -61,19 +61,16 @@ class MathToolkit(BaseToolkit):
         """
         return a * b
 
-    def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects
+            List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.add),
-            OpenAIFunction(self.sub),
-            OpenAIFunction(self.mul),
+            FunctionTool(self.add),
+            FunctionTool(self.sub),
+            FunctionTool(self.mul),
         ]
-
-
-MATH_FUNCS: List[OpenAIFunction] = MathToolkit().get_tools()

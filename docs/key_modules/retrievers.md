@@ -1,4 +1,7 @@
 # Retrievers
+
+For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/agents_with_rag.ipynb)
+
 ## 1. Concept
 The Retrievers module is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
 
@@ -10,11 +13,11 @@ Vector Retriever typically refers to a method or system used in information retr
 
 Here's a brief overview of how it works:
 
-- Embedding Model: First, it uses an [embedding model](https://github.com/camel-ai/camel/wiki/Embeddings). This model turns text into a mathematical form (vectors).
+- Embedding Model: First, it uses an embedding model. This model turns text into a mathematical form (vectors).
 
-- Storing Information: The module takes large documents, breaks them down into smaller chunks, and then uses the embedding model to turn these chunks into vectors. These vectors are stored in a [vector storage](https://github.com/camel-ai/camel/wiki/Storages).
+- Storing Information: The module takes large documents, breaks them down into smaller chunks, and then uses the embedding model to turn these chunks into vectors. These vectors are stored in a vector storage.
 
-- Retrieving Information: When we ask a question or make a query, the [embedding model](https://github.com/camel-ai/camel/wiki/Embeddings) translates our question into vector and then searches in this [vector storage](https://github.com/camel-ai/camel/wiki/Storages) for the closest matching vector. The closest matches are likely the most relevant pieces of information we are looking for.
+- Retrieving Information: When we ask a question or make a query, the embedding model translates our question into vector and then searches in this vector storage for the closest matching vector. The closest matches are likely the most relevant pieces of information we are looking for.
 
 
 ### 2.2. Keyword Retriever

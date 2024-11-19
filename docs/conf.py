@@ -24,20 +24,18 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-project = ''
+project = 'CAMEL'
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = 'V0.2.0'
+release = '0.2.9'
 
 html_favicon = 'misc/favicon.png'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
-}
+source_suffix = ['.rst', '.md']
+
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -45,6 +43,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinxawesome_theme',
     'myst_parser',
+    'nbsphinx',
 ]
 
 templates_path = ['_templates']
@@ -57,17 +56,22 @@ html_theme = "sphinxawesome_theme"
 
 # Update theme options for sphinx_awesome_theme
 html_theme_options = {
-    "navbar_start": ["navbar-logo"],
-    "navbar_center": ["navbar-nav"],
-    "navbar_end": ["navbar-icon-links"],
-    "navbar_persistent": ["search-button"],
-    "logo_light": "_static/logo_primary_light.svg",
-    "logo_dark": "_static/logo_primary_dark.svg",
+    "logo": {
+        "text": f"CAMEL {release}",
+        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+    }
 }
 
-html_search_language = 'en'
+nbsphinx_execute = 'never'
+nbsphinx_allow_errors = True
+nbsphinx_prolog = r"""
+.. raw:: html
 
-html_static_path = ['_static']
-html_css_files = [
-    'custom.css',
-]
+    <style>
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        display: none;
+    }
+    </style>
+"""
