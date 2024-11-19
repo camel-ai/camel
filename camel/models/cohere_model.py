@@ -32,8 +32,6 @@ from camel.utils import (
 )
 
 try:
-    import os
-
     if os.getenv("AGENTOPS_API_KEY") is not None:
         from agentops import LLMEvent, record
     else:
