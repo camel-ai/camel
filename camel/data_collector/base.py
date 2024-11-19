@@ -23,6 +23,8 @@ from camel.types.enums import OpenAIBackendRole
 
 
 class BaseDataCollector(ABC):
+    r"""Base class for data collectors."""
+
     def __init__(self):
         self.history: Dict[
             str, List[Tuple[int, OpenAIBackendRole, BaseMessage]]
@@ -38,6 +40,15 @@ class BaseDataCollector(ABC):
         role: OpenAIBackendRole,
         name: Optional[str] = None,
     ) -> Self:
+        r"""Record a message.
+
+        Args:
+            message (Union[BaseMessage, ChatAgentResponse]):
+                The message to record.
+            role (OpenAIBackendRole): The role of the message.
+            name (Optional[str], optional):
+                The name of the agent. Defaults to None.
+        """
         if name is None:
             if len(self.agents) > 1:
                 raise ValueError(
@@ -54,6 +65,13 @@ class BaseDataCollector(ABC):
         return self
 
     def _inject(self, agent: ChatAgent, name: Optional[str] = None) -> Self:
+        r"""Inject an agent.
+
+        Args:
+            agent (ChatAgent): The agent to inject.
+            name (Optional[str], optional):
+                The name of the agent. Defaults to None.
+        """
         name = name or agent.role_name
         if not name:
             name = f"{agent.__class__.__name__}_{len(self.agents)}"
@@ -81,6 +99,14 @@ class BaseDataCollector(ABC):
         agent: Union[List[ChatAgent], ChatAgent],
         name: Optional[Union[str, List[Optional[str]]]] = None,
     ) -> Self:
+        r"""Inject agents.
+
+        Args:
+            agent (Union[List[ChatAgent], ChatAgent]):
+                The agent(s) to inject.
+            name (Optional[Union[str, List[Optional[str]]], optional):
+                The name(s) of the agent(s). Defaults to None.
+        """
         if not isinstance(agent, list):
             agent = [agent]
         if name is None:
@@ -92,18 +118,27 @@ class BaseDataCollector(ABC):
         return self
 
     def start(self) -> Self:
+        r"""Start recording."""
         self._recording = True
         return self
 
     def stop(self) -> Self:
+        r"""Stop recording."""
         self._recording = False
         return self
 
     @property
     def recording(self) -> bool:
+        r"""Whether the collector is recording."""
         return self._recording
 
     def reset(self, reset_agents: bool = True):
+        r"""Reset the collector.
+
+        Args:
+            reset_agents (bool, optional):
+                Whether to reset the agents. Defaults to True.
+        """
         self.history = defaultdict(list)
         self._id = 0
         if reset_agents:
@@ -112,7 +147,13 @@ class BaseDataCollector(ABC):
 
     @abstractmethod
     def convert(self) -> Any:
+        r"""Convert the collected data."""
         pass
 
     def save(self, path: str):
+        r"""Save the collected data.
+
+        Args:
+            path (str): The path to save the data.
+        """
         raise NotImplementedError

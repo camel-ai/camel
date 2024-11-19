@@ -34,6 +34,7 @@ class ShareGPTDataCollector(BaseDataCollector):
         agent: Union[List[ChatAgent], ChatAgent],
         name: Optional[Union[str, List[Optional[str]]]] = None,
     ) -> Self:
+        r"""Inject an agent into the data collector."""
         if len(self.agents) > 1:
             raise ValueError("ShareGPTDataCollector only supports one agent")
         if isinstance(agent, list):
@@ -53,6 +54,7 @@ class ShareGPTDataCollector(BaseDataCollector):
         return self
 
     def convert(self) -> Dict[str, Any]:
+        r"""Convert the collected data into a dictionary."""
         if self.agent_name is None:
             raise ValueError("No agent injected")
         if history := self.history.get(self.agent_name):
