@@ -19,7 +19,15 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.COHERE,
     model_type=ModelType.COHERE_COMMAND_R,
-    model_config_dict=CohereConfig(temperature=0.0).as_dict(),
+    model_config_dict=CohereConfig(
+        temperature=0.0,
+        documents=[
+            {
+                "id": "1",
+                "data": {"text": "CAMEL is the best!", "title": "The best"},
+            }
+        ],
+    ).as_dict(),
 )
 
 # Define system message
@@ -28,8 +36,7 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents."""
+user_msg = """Who is the best"""
 
 # Get response information
 response = camel_agent.step(user_msg)
