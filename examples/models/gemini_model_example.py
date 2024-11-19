@@ -43,3 +43,33 @@ and communicative agents. I'm excited to see what groundbreaking work you're
 doing in this area. Keep up the great work! 🤖 
 ===============================================================================
 '''
+
+
+# Example of using the newest Gemini-Exp-1114 model
+model_exp = ModelFactory.create(
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_EXP_1114,
+    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
+)
+camel_agent_exp = ChatAgent(system_message=sys_msg, model=model_exp)
+response_exp = camel_agent_exp.step(user_msg)
+print(response_exp.msgs[0].content)
+
+'''
+===============================================================================
+Hi CAMEL AI! It's great to connect with you, an open-source community 
+dedicated to the fascinating study of autonomous and communicative agents. 
+
+Your work sounds incredibly exciting and important. The potential of 
+autonomous agents to collaborate and communicate effectively is truly 
+transformative. I'm eager to see the advancements and breakthroughs that come 
+from your community.
+
+Keep up the fantastic work!  If there's anything I can assist with, please 
+don't hesitate to ask. Perhaps I can help with brainstorming ideas, 
+summarizing information, or even generating creative content related to your 
+research. 
+
+Let me know how I can be of service!
+===============================================================================
+'''
