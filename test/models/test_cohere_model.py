@@ -29,6 +29,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.COHERE_COMMAND_LIGHT,
         ModelType.COHERE_COMMAND,
         ModelType.COHERE_COMMAND_NIGHTLY,
+        ModelType.COHERE_COMMAND_R_PLUS,
     ],
 )
 def test_cohere_model(model_type):
