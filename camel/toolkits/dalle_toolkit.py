@@ -140,6 +140,3 @@ class DalleToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [FunctionTool(self.get_dalle_img)]
-
-
-DALLE_FUNCS: List[FunctionTool] = DalleToolkit().get_tools()

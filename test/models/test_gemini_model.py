@@ -27,6 +27,7 @@ from camel.utils import GeminiTokenCounter
     [
         ModelType.GEMINI_1_5_FLASH,
         ModelType.GEMINI_1_5_PRO,
+        ModelType.GEMINI_EXP_1114,
     ],
 )
 def test_gemini_model(model_type: ModelType):
