@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .models import (
+from .alpaca import AlpacaItem
+from .conversation_models import (
     ShareGPTConversation,
     ShareGPTMessage,
     ToolCall,
@@ -24,6 +24,7 @@ __all__ = [
     'ShareGPTMessage',
     'ShareGPTConversation',
     'HermesFunctionFormatter',
+    'AlpacaItem',
     'ToolCall',
     'ToolResponse',
 ]
