@@ -56,11 +56,8 @@ html_theme = "sphinxawesome_theme"
 
 # Update theme options for sphinx_awesome_theme
 html_theme_options = {
-    "logo": {
-        "text": f"CAMEL {release}",
-        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
-        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
-    }
+    "logo_light": "_static/logo_primary_light.svg",
+    "logo_dark": "_static/logo_primary_dark.svg",
 }
 
 nbsphinx_execute = 'never'
