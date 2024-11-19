@@ -1,9 +1,19 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
 from collections import defaultdict
-import dataclasses
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, Self
-
-from anthropic import BaseModel
+from typing import Any, Dict, List, Optional, Self, Tuple, Union
 
 from camel.agents.base import BaseAgent
 from camel.agents.chat_agent import ChatAgent
@@ -13,22 +23,27 @@ from camel.types.enums import OpenAIBackendRole
 
 
 class BaseDataCollector(ABC):
-
     def __init__(self):
-        self.history: Dict[str, List[Tuple[int, OpenAIBackendRole, BaseMessage]]] = (
-            defaultdict(list)
-        )
+        self.history: Dict[
+            str, List[Tuple[int, OpenAIBackendRole, BaseMessage]]
+        ] = defaultdict(list)
         self._recording = False
         self.agents: List[Tuple[str, BaseAgent]] = []
         self._id = 0
         self.data: List[Dict[str, Any]] = []
 
     def step(
-        self, message: Union[BaseMessage, ChatAgentResponse], role: OpenAIBackendRole, name: Optional[str] = None
+        self,
+        message: Union[BaseMessage, ChatAgentResponse],
+        role: OpenAIBackendRole,
+        name: Optional[str] = None,
     ) -> Self:
         if name is None:
             if len(self.agents) > 1:
-                raise ValueError("DataCollector has multiple agents, please specify the agent name")
+                raise ValueError(
+                    "DataCollector has multiple agents, "
+                    "please specify the agent name"
+                )
             name = self.agents[0][0]
         if isinstance(message, ChatAgentResponse):
             if len(message.msgs) != 1:
@@ -49,7 +64,9 @@ class BaseDataCollector(ABC):
 
         ori_update_memory = agent.update_memory
 
-        def update_memory(message: BaseMessage, role: OpenAIBackendRole) -> None:
+        def update_memory(
+            message: BaseMessage, role: OpenAIBackendRole
+        ) -> None:
             if self._recording:
                 self.history[name].append((self._id, role, message))
                 self._id += 1
@@ -57,10 +74,13 @@ class BaseDataCollector(ABC):
 
         agent.update_memory = update_memory  # type: ignore[method-assign]
 
-
         return self
 
-    def inject(self, agent: Union[List[ChatAgent], ChatAgent], name: Optional[Union[str, List[str]]] = None) -> Self:
+    def inject(
+        self,
+        agent: Union[List[ChatAgent], ChatAgent],
+        name: Optional[Union[str, List[Optional[str]]]] = None,
+    ) -> Self:
         if not isinstance(agent, list):
             agent = [agent]
         if name is None:

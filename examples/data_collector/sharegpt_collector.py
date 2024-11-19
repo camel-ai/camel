@@ -12,15 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import json
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.data_collector import ShareGPTDataCollector
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.data_collector import ShareGPTDataCollector
-import json
-
 
 tool_list = MathToolkit().get_tools()
 
@@ -42,7 +42,7 @@ agent = ChatAgent(
         content="You are a helpful assistant",
     ),
     model=model,
-    tools=tool_list
+    tools=tool_list,
 )
 collector = ShareGPTDataCollector().inject(agent).start()
 
@@ -54,10 +54,9 @@ usr_msg = BaseMessage.make_user_message(
 # This will directly run the internal tool
 response = agent.step(usr_msg)
 
-print(
-    json.dumps(collector.convert(), indent=4)
-)
+print(json.dumps(collector.convert(), indent=4))
 
+# ruff: noqa: E501
 """
 {
     "system": "You are a helpful assistant",
