@@ -35,8 +35,8 @@ class AlpacaItem(BaseModel):
     @field_validator('instruction', 'output')
     def no_section_markers(cls, v: str) -> str:
         """Ensures fields don't contain section markers like '### Response:'"""
-        if '###' in v:
-            raise ValueError("Field cannot contain section markers ('###')")
+        if '### Response' in v or '### Instruction' in v or '### Input' in v:
+            raise ValueError("Field cannot contain section markers")
         return v.strip()
 
     @classmethod
