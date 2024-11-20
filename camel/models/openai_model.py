@@ -151,6 +151,7 @@ class OpenAIModel(BaseModelBackend):
     def _to_chat_completion(
         self, response: "ParsedChatCompletion"
     ) -> ChatCompletion:
+        # TODO: Handle n > 1 or warn consumers it's not supported
         choice = dict(
             index=response.choices[0].index,
             message={
