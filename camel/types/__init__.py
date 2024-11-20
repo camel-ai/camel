@@ -40,6 +40,7 @@ from .openai_types import (
     Choice,
     CompletionUsage,
     NotGiven,
+    ParsedChatCompletion,
 )
 from .unified_model_type import UnifiedModelType
 
@@ -71,4 +72,5 @@ __all__ = [
     'UnifiedModelType',
     'NOT_GIVEN',
     'NotGiven',
+    'ParsedChatCompletion',
 ]
