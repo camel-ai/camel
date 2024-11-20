@@ -42,9 +42,15 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinxawesome_theme',
-    'myst_parser',
-    'nbsphinx',
+    'myst_nb',
 ]
+
+myst_enable_extensions = [
+    "dollarmath",
+    "colon_fence",
+]
+nb_execution_mode = "off"
+nb_render_unexecuted_notebooks = False
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -55,6 +61,11 @@ html_permalinks_icon = "<span>^</span>"
 html_theme = "sphinxawesome_theme"
 
 # Update theme options for sphinx_awesome_theme
+html_static_path = ['_static']
+
+html_css_files = [
+    'custom.css',
+]
 html_theme_options = {
     "logo_light": "_static/logo_primary_light.svg",
     "logo_dark": "_static/logo_primary_dark.svg",

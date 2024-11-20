@@ -2,3 +2,8 @@ img {
   width: auto;
   height: 24px; 
 }
+
+.highlight .err {
+    border: none !important;
+    background-color: transparent !important;
+}
