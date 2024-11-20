@@ -131,7 +131,7 @@ class OpenAIModel(BaseModelBackend):
         if self.model_config_dict.get("response_format"):
             # stream is not supported in beta.chat.completions.parse
             if "stream" in self.model_config_dict:
-                del self.model_config_dict[key]
+                del self.model_config_dict["stream"]
 
             response = self._client.beta.chat.completions.parse(
                 messages=messages,
