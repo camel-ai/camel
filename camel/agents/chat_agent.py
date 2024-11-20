@@ -476,6 +476,15 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        if (
+            self.model_backend.model_config_dict.get("response_format")
+            and response_format
+        ):
+            raise ValueError(
+                "The `response_format` parameter cannot be set both in "
+                "the model configuration and in the ChatAgent step."
+            )
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name='User', content=input_message
