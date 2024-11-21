@@ -20,6 +20,7 @@ pip install sphinxawesome-theme
 pip install sphinx-autobuild
 pip install myst_parser
 pip install nbsphinx
+pip install myst_nb
 ```
 
 3. Build the document and launch the HTML documentation.
