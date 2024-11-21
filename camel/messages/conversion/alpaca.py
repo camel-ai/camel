@@ -28,9 +28,13 @@ class AlpacaItem(BaseModel):
         output (str): The response/answer to the instruction
     """
 
-    instruction: str = Field(..., min_length=1)
-    input: str = Field(default="")
-    output: str = Field(..., min_length=1)
+    instruction: str = Field(description="The instruction/question/prompt")
+    input: str = Field(
+        description="Optional context or input for the task."
+        " For example, when the instruction is \"Summarize the "
+        "following article\", the input is the article."
+    )
+    output: str = Field(description="The response/answer to the instruction")
 
     @field_validator('instruction', 'output')
     def no_section_markers(cls, v: str) -> str:
