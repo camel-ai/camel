@@ -15,43 +15,45 @@ import re
 
 import pytest
 
-from camel.configs import GeminiConfig
-from camel.models import GeminiModel
+from camel.configs import CohereConfig
+from camel.models import CohereModel
 from camel.types import ModelType
-from camel.utils import GeminiTokenCounter
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GEMINI_1_5_FLASH,
-        ModelType.GEMINI_1_5_PRO,
-        ModelType.GEMINI_EXP_1114,
+        ModelType.COHERE_COMMAND_R,
+        ModelType.COHERE_COMMAND_LIGHT,
+        ModelType.COHERE_COMMAND,
+        ModelType.COHERE_COMMAND_NIGHTLY,
+        ModelType.COHERE_COMMAND_R_PLUS,
     ],
 )
-def test_gemini_model(model_type: ModelType):
-    model_config_dict = GeminiConfig().as_dict()
-    model = GeminiModel(model_type, model_config_dict)
+def test_cohere_model(model_type):
+    model_config_dict = CohereConfig().as_dict()
+    model = CohereModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, GeminiTokenCounter)
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_gemini_model_unexpected_argument():
-    model_type = ModelType.GEMINI_1_5_FLASH
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_cohere_model_unexpected_argument():
+    model_type = ModelType.COHERE_COMMAND_R
+    model_config_dict = {"model_path", "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Gemini model backend."
+                "input into Cohere model backend."
             )
         ),
     ):
-        _ = GeminiModel(model_type, model_config_dict)
+        _ = CohereModel(model_type, model_config_dict)

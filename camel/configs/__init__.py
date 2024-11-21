@@ -14,6 +14,7 @@
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
+from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
@@ -61,6 +62,8 @@ __all__ = [
     'SAMBA_CLOUD_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
+    'CohereConfig',
+    'COHERE_API_PARAMS',
     'YiConfig',
     'YI_API_PARAMS',
     'QwenConfig',
