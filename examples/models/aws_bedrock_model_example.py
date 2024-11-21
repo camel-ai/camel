@@ -11,10 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
-from camel.agents import ChatAgent
-
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AWS_BEDROCK,

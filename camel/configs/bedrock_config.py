@@ -28,11 +28,11 @@ class BedrockConfig(BaseConfig):
         tool_choice (Union[dict[str, str], str], optional): The tool choice.
     """
 
-    max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
-    top_p: Optional[float] = None
+    max_tokens: Optional[int] = 400
+    temperature: Optional[float] = 0.7
+    top_p: Optional[float] = 0.7
     top_k: Optional[int] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
-    
+
 
 BEDROCK_API_PARAMS = {param for param in BedrockConfig.model_fields.keys()}
