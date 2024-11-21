@@ -15,10 +15,12 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 from camel.agents import ChatAgent
 
+
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AWS_BEDROCK,
     model_type="meta.llama3-70b-instruct-v1:0",
 )
+# sys_msg = "You are a helpful assistant."
 
 camel_agent = ChatAgent(model=model)
 

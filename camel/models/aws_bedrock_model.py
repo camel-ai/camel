@@ -78,6 +78,13 @@ class AWSBedrockModel(BaseModelBackend):
             secret_access_key or os.environ.get("AWS_SECRET_ACCESS_KEY")
         )
         access_key_id = access_key_id or os.environ.get("AWS_ACCESS_KEY_ID")
+        self.toolconfig = {}
+        self.model_config = {}
+        extra_config = self.model_config_dict
+        self.model_config['maxTokens'] = extra_config.pop('max_tokens', None)
+        self.model_config['topP'] = extra_config.pop('top_p', None)
+        self.toolconfig['tools'] = extra_config.pop('tools', None)
+        self.toolconfig['toolChoices'] = extra_config.pop('tool_choices', None)
         self.client = boto3.client(
             service_name = 'bedrock-runtime',
             region_name=region_name,
@@ -93,7 +100,7 @@ class AWSBedrockModel(BaseModelBackend):
         return self._token_counter
     
     @api_keys_required("AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID")
-    def run(self, message: List[OpenAIMessage]) -> ChatCompletion:
+    def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
         r"""Runs the query to the backend model.
 
         Args:
@@ -104,15 +111,23 @@ class AWSBedrockModel(BaseModelBackend):
             ChatCompletion: The response object in OpenAI's format.
         """
         try:
-            print(self._to_aws_bedrock_msg(message))
-            model_config = self.model_config_dict
-            model_config['maxTokens'] = model_config.pop('max_tokens')
-            model_config['topP'] = model_config.pop('top_p')
-            model_config.pop('tools')
+            system_messages = [
+                msg for msg in messages if msg["role"] == "system"
+            ]
+            messages = [
+                msg for msg in messages if msg["role"] != "system"
+            ]
+            system_prompt = (
+                [{"text": system_messages[0]["content"]}] 
+                if system_messages else None
+                )
             response = self.client.converse(
                 modelId=self.model_type,
-                messages=self._to_aws_bedrock_msg(message),
-                inferenceConfig=model_config,
+                system = system_prompt,
+                messages=self._to_aws_bedrock_msg(messages),
+                inferenceConfig=self.model_config,
+                toolConfig=self.toolconfig,
+                additional_model_fieds = self.model_config_dict,
             )
             return self._to_openai_response(response)
         except Exception as e:
@@ -129,6 +144,7 @@ class AWSBedrockModel(BaseModelBackend):
             List[Dict[str, Any]]: Message list with the chat history in AWS
                 Bedrock API format.
         """
+        print(message)
         bedrock_messages = []
         for msg in message:
             if msg["role"] not in ['assistant', 'user']:

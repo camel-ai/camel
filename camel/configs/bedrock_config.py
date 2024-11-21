@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Optional
+from typing import Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -23,14 +23,16 @@ class BedrockConfig(BaseConfig):
     Args:
         maxTokens (int, optional): The maximum number of tokens.
         temperatue (float, optional): Controls the randomness of the output.
-        top_k (int, optional): Only sample from the top K options for each
-            subsequent token.
         top_p (float, optional): Use nucleus sampling.
+        top_k (int, optional): Use top-k sampling.
+        tool_choice (Union[dict[str, str], str], optional): The tool choice.
     """
 
-    max_tokens: Optional[int] = 400
-    temperature: Optional[float] = 0.7
-    top_p: Optional[float] = 0.7
-
+    max_tokens: Optional[int] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    tool_choice: Optional[Union[dict[str, str], str]] = None
+    
 
 BEDROCK_API_PARAMS = {param for param in BedrockConfig.model_fields.keys()}
