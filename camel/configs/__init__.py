@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
+from .bedrock_config import BEDROCK_API_PARAMS, BedrockConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
@@ -67,4 +68,6 @@ __all__ = [
     'YI_API_PARAMS',
     'QwenConfig',
     'QWEN_API_PARAMS',
+    'BedrockConfig',
+    'BEDROCK_API_PARAMS',
 ]

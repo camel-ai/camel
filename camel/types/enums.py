@@ -567,6 +567,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    AWS_BEDROCK = "aws-bedrock"
 
     @property
     def is_openai(self) -> bool:
@@ -653,6 +654,11 @@ class ModelPlatformType(Enum):
     def is_qwen(self) -> bool:
         r"""Returns whether this platform is Qwen."""
         return self is ModelPlatformType.QWEN
+
+    @property
+    def is_aws_bedrock(self) -> bool:
+        r"""Returns whether this platform is AWS Bedrock."""
+        return self is ModelPlatformType.AWS_BEDROCK
 
 
 class AudioModelType(Enum):
