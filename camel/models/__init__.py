@@ -20,6 +20,7 @@ from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
+from .model_manager import ModelManager
 from .nemotron_model import NemotronModel
 from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels

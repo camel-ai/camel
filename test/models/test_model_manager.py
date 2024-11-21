@@ -18,7 +18,7 @@ import pytest
 from mock import Mock
 
 from camel.models import BaseModelBackend
-from camel.models.base_model import ModelManager
+from camel.models.model_manager import ModelManager
 
 
 @pytest.mark.model_backend
@@ -29,6 +29,8 @@ from camel.models.base_model import ModelManager
         (3, "round_robin", 9, 3),
         (1, "not_existent", 9, 9),
         (3, "not_existent", 9, 3),
+        (3, "always_first", 9, 9),
+        (3, "random_model", 9, 9),
     ],
 )
 def test_model_manager(
@@ -42,16 +44,46 @@ def test_model_manager(
         if models_number > 1
         else Mock()
     )
+
     if TYPE_CHECKING:
         assert type(models) == List[BaseModelBackend]
+
     model_manager = ModelManager(models, scheduling_strategy=strategy)
-    # The statement below shall be updated after new strategies are introduced.
-    assert model_manager.scheduling_strategy.__name__ == "round_robin"
+
     assert isinstance(model_manager.models, list)
     assert len(model_manager.models) == models_number
+    assert model_manager.current_model_index == 0
     for _ in range(calls_count):
         model_manager.run(["message"] for _ in range(calls_count))
-    for model in model_manager.models:
-        if TYPE_CHECKING:
-            assert isinstance(model, Mock)
-        assert model.run.call_count == times_each_model_called
+
+    if strategy in ("not_existent", "round_robin"):
+        assert model_manager.scheduling_strategy.__name__ == "round_robin"
+        for model in model_manager.models:
+            if TYPE_CHECKING:
+                assert isinstance(model.run, Mock)
+            assert model.run.call_count == times_each_model_called
+    if strategy == "always_first":
+        assert model_manager.scheduling_strategy.__name__ == "always_first"
+        assert models[0].run.call_count == times_each_model_called
+
+    if strategy == "random_model":
+        assert model_manager.scheduling_strategy.__name__ == "random_model"
+        total_calls = 0
+        for model in model_manager.models:
+            if TYPE_CHECKING:
+                assert isinstance(model.run, Mock)
+            total_calls += model.run.call_count
+        assert total_calls == times_each_model_called
+
+
+def test_model_manager_always_first_turns_into_round_robin():
+    models = [Mock(run=Mock(side_effect=Exception())) for _ in range(3)]
+    model_manager = ModelManager(models, scheduling_strategy="always_first")
+    assert model_manager.scheduling_strategy.__name__ == "always_first"
+    assert model_manager.current_model_index == 0
+    with pytest.raises(Exception):  # noqa: B017
+        model_manager.run(["message"])
+    assert model_manager.scheduling_strategy.__name__ == "round_robin"
+    with pytest.raises(Exception):  # noqa: B017
+        model_manager.run(["message"])
+    assert model_manager.current_model_index == 1

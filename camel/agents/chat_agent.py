@@ -79,6 +79,10 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 
+class ModelProcessingError(Exception):
+    """Raised when an error occurs during model processing."""
+
+
 class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
@@ -945,8 +949,31 @@ class ChatAgent(BaseAgent):
         str,
     ]:
         r"""Internal function for agent step model response."""
+
+        response = None
         # Obtain the model's response
-        response = self.model_backend.run(openai_messages)
+        for _ in range(len(self.model_backend.models)):
+            try:
+                response = self.model_backend.run(openai_messages)
+            except Exception as exc:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                continue
+        if not response:
+            raise ModelProcessingError(
+                "Unable to process messages: none of the provided models "
+                "run succesfully."
+            )
+
+        logger.info(
+            f"Model {self.model_backend.model_type}, "
+            f"index {self.model_backend.current_model_index}, "
+            f"processed these messages: {openai_messages}"
+        )
 
         if isinstance(response, ChatCompletion):
             output_messages, finish_reasons, usage_dict, response_id = (
