@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import MathToolkit
+from camel.toolkits import FunctionTool, MathToolkit, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -38,10 +38,20 @@ openai_model = ModelFactory.create(
 )
 
 # Set agent
-camel_agent = ChatAgent(model=openai_model, tools=MathToolkit().get_tools())
+camel_agent = ChatAgent(
+    model=openai_model,
+    tools=[
+        *MathToolkit().get_tools(),
+        FunctionTool(SearchToolkit().search_duckduckgo),
+    ],
+)
 
 # Set user message
-user_msg = """give me some student infos, use 2024 minus 1996 as their age"""
+user_msg = """give me some student infos, use 2024 minus 1996 as their age
+"""
+
+user_msg_2 = """give me some student infos, use 2024 minus 1996 as their age, 
+search internet to get the most famous peoples in 2024 as their name"""
 
 # Get response information
 response = camel_agent.step(user_msg)
