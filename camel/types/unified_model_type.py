@@ -99,6 +99,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether the model is a Cohere model."""
+        return True
+
+    @property
     def is_yi(self) -> bool:
         r"""Returns whether the model is a Yi model."""
         return True

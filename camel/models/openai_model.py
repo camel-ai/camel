@@ -24,6 +24,7 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
+    ParsedChatCompletion,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -127,12 +128,49 @@ class OpenAIModel(BaseModelBackend):
             self.model_config_dict["presence_penalty"] = 0.0
             self.model_config_dict["frequency_penalty"] = 0.0
 
+        if self.model_config_dict.get("response_format"):
+            # stream is not supported in beta.chat.completions.parse
+            if "stream" in self.model_config_dict:
+                del self.model_config_dict["stream"]
+
+            response = self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **self.model_config_dict,
+            )
+
+            return self._to_chat_completion(response)
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
         )
         return response
+
+    def _to_chat_completion(
+        self, response: "ParsedChatCompletion"
+    ) -> ChatCompletion:
+        # TODO: Handle n > 1 or warn consumers it's not supported
+        choice = dict(
+            index=response.choices[0].index,
+            message={
+                "role": response.choices[0].message.role,
+                "content": response.choices[0].message.content,
+                "tool_calls": response.choices[0].message.tool_calls,
+            },
+            finish_reason=response.choices[0].finish_reason,
+        )
+
+        obj = ChatCompletion.construct(
+            id=response.id,
+            choices=[choice],
+            created=response.created,
+            model=response.model,
+            object="chat.completion",
+            usage=response.usage,
+        )
+        return obj
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
