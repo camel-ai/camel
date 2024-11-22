@@ -18,10 +18,10 @@ from camel.models import ModelFactory
 from camel.societies.workforce import Workforce
 from camel.tasks.task import Task
 from camel.toolkits import (
-    WEATHER_FUNCS,
     FunctionTool,
     GoogleMapsToolkit,
     SearchToolkit,
+    WeatherToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
 
@@ -44,7 +44,7 @@ def main():
             content="You can search online for information",
         ),
         model=search_agent_model,
-        tools=[*search_tools, *WEATHER_FUNCS],
+        tools=[*search_tools, *WeatherToolkit().get_tools()],
     )
 
     # Set up tour guide agent

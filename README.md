@@ -207,6 +207,37 @@ Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each c
 
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
+**For `.env` File:**
+
+To simplify the process of managing API Keys, you can use store information in a `.env` file and load them into your application dynamically.
+
+1. Modify .env file in the root directory of CAMEL and fill the following lines:
+
+```bash
+OPENAI_API_KEY=<fill your API KEY here>
+```
+
+Replace <fill your API KEY here> with your actual API key.
+
+2. Load the .env file in your Python script: Use the load_dotenv() function from the dotenv module to load the variables from the .env file into the environment. Here's an example:
+
+```python
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from the .env file
+load_dotenv()
+```
+For more details about the key names in project and how to apply key, 
+you can refer to [here](https://github.com/camel-ai/camel/.env).
+
+> [!TIP]
+> By default, the load_dotenv() function does not overwrite existing environment variables that are already set in your system. It only populates variables that are missing.
+If you need to overwrite existing environment variables with the values from your `.env` file, use the `override=True` parameter:
+> ```python
+> load_dotenv(override=True)
+> ```
+
 After setting the OpenAI API key, you can run the `role_playing.py` script. Find tasks for various assistant-user roles [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
 
 ```bash
