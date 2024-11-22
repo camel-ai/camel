@@ -13,10 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
 import logging
+import os
 import random
 import re
 import string
-from typing import Any, List, Literal, Optional, Union
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from tqdm import tqdm
 
@@ -24,6 +26,7 @@ from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
+from camel.retrievers.auto_retriever import AutoRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +43,16 @@ class GAIABenchmark(BaseBenchmark):
         self,
         data_dir: str,
         save_to: str,
+        retriever: AutoRetriever,
+        retrieve_kwargs: Optional[Dict[str, Any]] = None,
         processes: int = 1,
     ):
         super().__init__("gaia", data_dir, save_to, processes)
+        self._retriever = retriever
+        self._retriever_dir = Path(
+            self._retriever.vector_storage_local_path or os.getcwd()
+        )
+        self._retrieve_kwargs = retrieve_kwargs or dict()
 
     def download(self):
         from huggingface_hub import snapshot_download
@@ -87,7 +97,7 @@ class GAIABenchmark(BaseBenchmark):
         level: Union[List[int], Literal["all"]],
         randomize: bool = False,
         subset: Optional[int] = None,
-    ) -> "GAIABenchmark":
+    ) -> Dict[str, Any]:
         if on not in ["valid", "test"]:
             raise ValueError(
                 f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
@@ -116,8 +126,37 @@ class GAIABenchmark(BaseBenchmark):
         with open(self.save_to, "w") as f:
             for task in tqdm(datas, desc="Running"):
                 if task["file_name"] != "":
-                    logger.info("Skipping task with file_name.")
-                    continue
+                    tmp = Path(task["file_name"])
+                    if not tmp.exists():
+                        logger.info(
+                            f"Skipping task because file: {tmp} not found."
+                        )
+                        continue
+                    if tmp.suffix in ['.pdf', '.docx', '.doc', '.txt']:
+                        retriever_dir = self._retriever_dir / task["task_id"]
+                        self._retriever.vector_storage_local_path = (
+                            retriever_dir
+                        )
+                        if not retriever_dir.exists():
+                            retriever_dir.mkdir(parents=True)
+                        retrieved_info = self._retriever.run_vector_retriever(
+                            query=task["Question"],
+                            contents=[task['file_name']],
+                            **self._retrieve_kwargs,
+                        )
+                        retrieved_content = [
+                            i["text"]  # type: ignore[index]
+                            for i in retrieved_info["Retrieved Context"]
+                        ]
+                        if retrieved_content:
+                            task["Question"] += "\n".join(retrieved_content)
+                    else:
+                        logger.info(
+                            f"Skipping task because {tmp.suffix} ",
+                            "format not supported.",
+                        )
+                        continue
+
                 msg = BaseMessage.make_user_message(
                     role_name="User",
                     content=task["Question"],
@@ -163,7 +202,11 @@ class GAIABenchmark(BaseBenchmark):
                 f.write(json.dumps(self._results[-1], indent=2) + "\n")
                 f.flush()
 
-        return self
+        return {
+            "total": len(self._results),
+            "correct": sum(r["score"] for r in self._results),
+            "results": self._results,
+        }
 
     # scorer part
     # https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/scorer.py
