@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
-from camel.messages.base import BaseMessage
-from camel.models.model_factory import ModelFactory
-from camel.prompts.prompt_templates import PromptTemplateGenerator
-from camel.toolkits.search_toolkit import SearchToolkit
-from camel.toolkits.video_toolkit import VideoDownloaderToolkit
-from camel.types.enums import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.prompts import PromptTemplateGenerator
+from camel.toolkits import SearchToolkit, VideoDownloaderToolkit
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 
 def detect_image_obj(image_list) -> None:

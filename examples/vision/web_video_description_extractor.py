@@ -12,13 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
+from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.prompts.prompt_templates import PromptTemplateGenerator
-from camel.toolkits.video_toolkit import VideoDownloaderToolkit
-from camel.types import ModelPlatformType, ModelType
-from camel.types.enums import RoleType, TaskType
+from camel.prompts import PromptTemplateGenerator
+from camel.toolkits import VideoDownloaderToolkit
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 video_url = (
     'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'

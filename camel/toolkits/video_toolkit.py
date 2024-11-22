@@ -93,7 +93,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             download_directory or tempfile.mkdtemp()
         ).resolve()
 
-        print(f"self._download_directory: {self._download_directory}")
+        logger.info(f"self._download_directory: {self._download_directory}")
 
         try:
             self._download_directory.mkdir(parents=True, exist_ok=True)
@@ -141,10 +141,11 @@ class VideoDownloaderToolkit(BaseToolkit):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 # Download the video and get the filename
+                logger.info(f"Downloading video from {url}...")
                 info = ydl.extract_info(url, download=True)
                 return ydl.prepare_filename(info)
         except yt_dlp.utils.DownloadError as e:
-            raise RuntimeError(f"Failed to download video: {e}")
+            raise RuntimeError(f"Failed to download video from {url}: {e}")
 
     def get_video_bytes(
         self,
@@ -194,8 +195,12 @@ class VideoDownloaderToolkit(BaseToolkit):
             raise RuntimeError(f"Failed to determine video length: {e.stderr}")
 
         if isinstance(timestamps, int):
+            if timestamps <= 0:
+                raise ValueError(
+                    "Number of screenshots must be greater than zero."
+                )
             interval = video_length // (timestamps + 1)
-            tss = [int((i + 1) * interval) for i in range(timestamps)]
+            tss = [round((i + 1) * interval) for i in range(timestamps)]
         else:
             tss = [ts for ts in timestamps if 0 <= ts <= video_length]
 
@@ -204,11 +209,11 @@ class VideoDownloaderToolkit(BaseToolkit):
         return images
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of OpenAIFunction objects representing the
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects representing
+            List[FunctionTool]: A list of FunctionTool objects representing
                 the functions in the toolkit.
         """
         return [
