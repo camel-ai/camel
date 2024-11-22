@@ -39,6 +39,19 @@ def run_task(model_config, agent_config, msg):
 
 
 class GAIABenchmark(BaseBenchmark):
+    r"""GAIA Benchmark
+
+    Args:
+        data_dir (str): The directory to save the data.
+        save_to (str): The file to save the results.
+        retriever (AutoRetriever): The retriever to use
+            for retrieving the content.
+        retrieve_kwargs (Dict[str, Any], optional): The kwargs
+            to pass to the retriever. Defaults to None.
+        processes (int, optional): The number of processes
+            to use. Defaults to 1.
+    """
+
     def __init__(
         self,
         data_dir: str,
@@ -55,6 +68,7 @@ class GAIABenchmark(BaseBenchmark):
         self._retrieve_kwargs = retrieve_kwargs or dict()
 
     def download(self):
+        r"""Download the GAIA dataset."""
         from huggingface_hub import snapshot_download
 
         snapshot_download(
@@ -65,6 +79,12 @@ class GAIABenchmark(BaseBenchmark):
         )
 
     def load(self, force_download=False):
+        r"""Load the GAIA dataset.
+
+        Args:
+            force_download (bool, optional): Whether to
+                force download the data.
+        """
         if force_download:
             logger.info("Force downloading data.")
             self.download()
@@ -98,6 +118,21 @@ class GAIABenchmark(BaseBenchmark):
         randomize: bool = False,
         subset: Optional[int] = None,
     ) -> Dict[str, Any]:
+        r"""Run the benchmark.
+
+        Args:
+            agent (ChatAgent): The agent to run the benchmark.
+            on (Literal["valid", "test"]): The set to run the benchmark.
+            level (Union[List[int], Literal["all"]]): The level to run
+                the benchmark.
+            randomize (bool, optional): Whether to randomize the data.
+                Defaults to False.
+            subset (Optional[int], optional): The subset of data to run.
+                Defaults to None.
+
+        Returns:
+            Dict[str, Any]: The results of the benchmark.
+        """
         if on not in ["valid", "test"]:
             raise ValueError(
                 f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
@@ -211,6 +246,16 @@ class GAIABenchmark(BaseBenchmark):
     # scorer part
     # https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/scorer.py
     def question_scorer(self, model_answer: str, ground_truth: str) -> bool:
+        r"""Scorer for the GAIA benchmark.
+
+        Args:
+            model_answer (str): The model answer.
+            ground_truth (str): The ground truth answer.
+
+        Returns:
+            bool: The score of the model
+        """
+
         def is_float(element: Any) -> bool:
             try:
                 float(element)
@@ -267,12 +312,29 @@ class GAIABenchmark(BaseBenchmark):
     def split_string(
         self, s: str, char_list: Optional[List[str]] = None
     ) -> list[str]:
+        r"""Split a string based on a list of characters.
+
+        Args:
+            s (str): The string to split.
+            char_list (Optional[List[str]], optional): T
+                he list of characters to split on.
+                Defaults to None.
+        """
         if char_list is None:
             char_list = [",", ";"]
         pattern = f"[{''.join(char_list)}]"
         return re.split(pattern, s)
 
     def normalize_str(self, input_str, remove_punct=True) -> str:
+        r"""Normalize a string.
+
+        Args:
+            input_str: The input string to normalize.
+            remove_punct: Whether to remove punctuation.
+
+        Returns:
+            str: The normalized string.
+        """
         no_spaces = re.sub(r"\s", "", input_str)
         if remove_punct:
             translator = str.maketrans("", "", string.punctuation)
@@ -281,6 +343,14 @@ class GAIABenchmark(BaseBenchmark):
             return no_spaces.lower()
 
     def get_final_answer(self, content: str) -> str:
+        r"""Get the final answer from the content.
+
+        Args:
+            content (str): The content to extract the final answer from.
+
+        Returns:
+            str: The final answer.
+        """
         final_answer_index = content.find("FINAL ANSWER")
         if final_answer_index == -1:
             return "FINAL ANSWER not found"
