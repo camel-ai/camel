@@ -420,3 +420,7 @@ logs/
 datasets_test/
 evaluation_data/
 camel_data/
+
+#Benchmark
+benchmark/gaia/Dataset
+benchmark/gaia/results.jsonl
