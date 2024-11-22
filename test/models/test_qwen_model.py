@@ -34,6 +34,10 @@ from camel.types import ModelType
         ModelType.QWEN_MATH_PLUS,
         ModelType.QWEN_MATH_TURBO,
         ModelType.QWEN_CODER_TURBO,
+        ModelType.QWEN_2_5_CODER_32B,
+        ModelType.QWEN_2_5_72B,
+        ModelType.QWEN_2_5_32B,
+        ModelType.QWEN_2_5_14B,
     ],
 )
 def test_qwen_model(model_type: ModelType):

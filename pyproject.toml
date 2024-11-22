@@ -36,7 +36,7 @@ jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
 docstring-parser = "^0.15"
-pydantic = ">=1.9,<3"
+pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
@@ -49,6 +49,8 @@ google-generativeai = { version = "^0.6.0", optional = true }
 mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.29.0", optional = true }
+cohere = { version = "^5.11.0", optional = true }
+
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -124,7 +126,6 @@ redis = { version = "^5.0.6", optional = true }
 
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
-cohere = { version = "^4.56", optional = true }
 
 # test
 pytest = { version = "^7", optional = true }
@@ -158,6 +159,7 @@ model-platforms = [
     "mistralai",
     "reka-api",
     "anthropic",
+    "cohere",
 ]
 
 huggingface-agent = [
@@ -178,6 +180,7 @@ encoders = [
 tools = [
     "beautifulsoup4",
     "docx2txt",
+    "functools",
     "PyMuPDF",
     "wikipedia",
     "duckduckgo-search",
@@ -302,6 +305,7 @@ all = [
     # model platforms
     "litellm",
     "mistralai",
+    "cohere",
     "google-generativeai",
     "anthropic",
     "reka-api",
@@ -448,6 +452,7 @@ module = [
     "google.*",
     "google_generativeai",
     "mistralai",
+    "cohere",
     "reka-api",
     "agentops",
     "botocore.*",

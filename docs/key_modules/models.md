@@ -40,7 +40,8 @@ The following table lists currently supported model platforms by CAMEL.
 | Anthropic | claude-3-opus-20240229 | Y |
 | Anthropic | claude-2.0 | N |
 | Gemini | gemini-1.5-pro | Y |
-| Gemini | ggemini-1.5-flash | Y |
+| Gemini | gemini-1.5-flash | Y |
+| Gemini | gemini-exp-1114 | Y |
 | Lingyiwanwu | yi-lightning | N |
 | Lingyiwanwu | yi-large | N |
 | Lingyiwanwu | yi-medium | N |
@@ -59,6 +60,10 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen-math-plus | N |
 | Qwen | qwen-math-turbo | N |
 | Qwen | qwen-coder-turbo | N |
+| Qwen | qwen2.5-coder-32b-instruct | N |
+| Qwen | qwen2.5-72b-instruct | N |
+| Qwen | qwen2.5-32b-instruct | N |
+| Qwen | qwen2.5-14b-instruct | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |

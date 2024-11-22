@@ -16,6 +16,7 @@ from typing import Dict, Optional, Type, Union
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.cohere_model import CohereModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
@@ -109,6 +110,8 @@ class ModelFactory:
             model_class = MistralModel
         elif model_platform.is_reka and model_type.is_reka:
             model_class = RekaModel
+        elif model_platform.is_cohere and model_type.is_cohere:
+            model_class = CohereModel
         elif model_platform.is_yi and model_type.is_yi:
             model_class = YiModel
         elif model_platform.is_qwen and model_type.is_qwen:

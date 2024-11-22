@@ -122,8 +122,8 @@ class ChatAgent(BaseAgent):
         system_message (Union[BaseMessage, str], optional): The system message
             for the chat agent.
         model (BaseModelBackend, optional): The model backend to use for
-            generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_4O_MINI`)
+            generating responses. (default: :obj:`ModelPlatformType.DEFAULT`
+            with `ModelType.DEFAULT`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -193,6 +193,7 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in all_tools
         }
+        self.tool_dict = {tool.get_function_name(): tool for tool in all_tools}
 
         # If the user hasn't configured tools in `BaseModelBackend`,
         # the tools set from `ChatAgent` will be used.
@@ -475,6 +476,15 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        if (
+            self.model_backend.model_config_dict.get("response_format")
+            and response_format
+        ):
+            raise ValueError(
+                "The `response_format` parameter cannot be set both in "
+                "the model configuration and in the ChatAgent step."
+            )
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name='User', content=input_message
@@ -882,6 +892,7 @@ class ChatAgent(BaseAgent):
 
         # Replace the original tools with the structuring function
         self.func_dict = {func.get_function_name(): func.func}
+        self.tool_dict = {func.get_function_name(): func}
         self.model_backend.model_config_dict = original_model_dict.copy()
         self.model_backend.model_config_dict["tools"] = [
             func.get_openai_tool_schema()
@@ -1182,19 +1193,10 @@ class ChatAgent(BaseAgent):
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool call is None")
         func_name = choice.message.tool_calls[0].function.name
-        func = self.func_dict[func_name]
 
-        args_str: str = choice.message.tool_calls[0].function.arguments
-        args = json.loads(args_str)
-
-        # Pass the extracted arguments to the indicated function
-        try:
-            result = func(**args)
-        except Exception:
-            raise ValueError(
-                f"Execution of function {func.__name__} failed with "
-                f"arguments being {args}."
-            )
+        args = json.loads(choice.message.tool_calls[0].function.arguments)
+        tool = self.tool_dict[func_name]
+        result = tool(**args)
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1243,19 +1245,10 @@ class ChatAgent(BaseAgent):
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool call is None")
         func_name = choice.message.tool_calls[0].function.name
-        func = self.func_dict[func_name]
 
-        args_str: str = choice.message.tool_calls[0].function.arguments
-        args = json.loads(args_str)
-
-        # Pass the extracted arguments to the indicated function
-        try:
-            result = await func(**args)
-        except Exception:
-            raise ValueError(
-                f"Execution of function {func.__name__} failed with "
-                f"arguments being {args}."
-            )
+        args = json.loads(choice.message.tool_calls[0].function.arguments)
+        tool = self.tool_dict[func_name]
+        result = await tool(**args)
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
