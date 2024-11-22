@@ -36,7 +36,7 @@ jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
 docstring-parser = "^0.15"
-pydantic = ">=1.9,<3"
+pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
@@ -129,7 +129,7 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 # test
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
-mock = { version = "^5", optional = true }
+mock = { version = "^5", optional = true}
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -243,6 +243,12 @@ retrievers = [
     "cohere",
 ]
 
+runtime = [
+    "docker",
+    "fastapi",
+    "uvicorn",
+]
+
 all = [
     # huggingface-agent
     "transformers",
@@ -318,6 +324,8 @@ all = [
     "datacommons_pandas",
     "tavily-python",
     "apify_client",
+    "fastapi",
+    "uvicorn",
 ]
 
 [tool.poetry.group.dev]
