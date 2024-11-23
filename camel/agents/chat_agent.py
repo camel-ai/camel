@@ -554,14 +554,21 @@ class ChatAgent(BaseAgent):
             ChatAgentResponse: Contains output messages, a termination status
                 flag, and session information.
         """
-        # Convert input message to BaseMessage if necessary
-        input_message = (
-            BaseMessage.make_user_message(
-                role_name="User", content=input_message
+
+        if (
+            self.model_backend.model_config_dict.get("response_format")
+            and response_format
+        ):
+            raise ValueError(
+                "The `response_format` parameter cannot be set both in "
+                "the model configuration and in the ChatAgent step."
             )
-            if isinstance(input_message, str)
-            else input_message
-        )
+
+        # Convert input message to BaseMessage if necessary
+        if isinstance(input_message, str):
+            input_message = BaseMessage.make_user_message(
+                role_name='User', content=input_message
+            )
 
         # Handle tool prompt injection if needed
         if self._needs_tool_prompt() and not self.tool_prompt_added:
