@@ -253,20 +253,26 @@ class ChatAgent(BaseAgent):
         self, tool: Union[FunctionTool, Callable], is_external: bool = False
     ) -> None:
         r"""Add a tool to the agent, specifying if it's an external tool."""
+        # Initialize the tool
         initialized_tool = self._initialize_tools([tool])
 
+        # Helper function to merge tools
+        def merge_tools(existing_tools: List, new_tools: List) -> List:
+            return (existing_tools or []) + new_tools
+
+        # Update tools or external tools based on is_external flag
         if is_external:
-            self.external_tools = (
-                self.external_tools or []
-            ) + initialized_tool
+            self.external_tools = merge_tools(
+                self.external_tools, initialized_tool
+            )
             self.external_tool_names.extend(
                 tool.get_function_name() for tool in initialized_tool
             )
         else:
-            self.tools = (self.tools or []) + initialized_tool
+            self.tools = merge_tools(self.tools, initialized_tool)
 
-        # Reinitialize func_dict to include all tools
-        self.all_tools = (self.tools or []) + (self.external_tools or [])
+        # Rebuild all_tools, func_dict, and tool_dict
+        self.all_tools = merge_tools(self.tools, self.external_tools)
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in self.all_tools
         }
