@@ -119,7 +119,10 @@ class DiscordApp:
         self._client.run(self.token)  # type: ignore[arg-type]
 
     def get_oauth_url(
-        self, session_id: Optional[str] = None, permissions: Optional[int] = 8
+        self,
+        session_id: str,
+        permissions: Optional[int] = 8,
+        redirect: Optional[bool] = True
     ) -> str:
         r"""Generate an OAuth URL to invite the bot to a Discord server.
 
@@ -128,11 +131,11 @@ class DiscordApp:
         """
         invite_url = (
             f"https://discord.com/oauth2/authorize?client_id"
-            f"={self.client_id}&"
-            f"permissions={permissions}&scope=bot&response_type=code"
+            f"={self.client_id}&permissions={permissions}&"
+            f"scope=bot&response_type=code&state={session_id}"
         )
-        if session_id is not None:
-            invite_url += f"&state={session_id}"
+        if redirect:
+            invite_url += f"&redirect_uri={self.redirect_uri}"
         return invite_url
 
     async def on_ready(self) -> None:
