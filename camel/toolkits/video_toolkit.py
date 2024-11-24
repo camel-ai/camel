@@ -17,7 +17,7 @@ import logging
 import re
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from PIL import Image
 
@@ -41,12 +41,12 @@ def _standardize_url(url: str) -> str:
     return url
 
 
-def _capture_screenshot(video_file: str, timestamp: int) -> Image.Image:
+def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     r"""Capture a screenshot from a video file at a specific timestamp.
 
     Args:
         video_file (str): The path to the video file.
-        timestamp (int): The time in seconds from which to capture the
+        timestamp (float): The time in seconds from which to capture the
           screenshot.
 
     Returns:
@@ -93,8 +93,6 @@ class VideoDownloaderToolkit(BaseToolkit):
             download_directory or tempfile.mkdtemp()
         ).resolve()
 
-        logger.info(f"self._download_directory: {self._download_directory}")
-
         try:
             self._download_directory.mkdir(parents=True, exist_ok=True)
         except FileExistsError:
@@ -133,7 +131,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         video_template = self._download_directory / "%(title)s.%(ext)s"
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
-            'outtmpl': video_template,
+            'outtmpl': str(video_template),
             'force_generic_extractor': True,
             'cookiefile': self._cookies_path,
         }
@@ -168,16 +166,14 @@ class VideoDownloaderToolkit(BaseToolkit):
         return video_bytes
 
     def get_video_screenshots(
-        self, video_url: str, timestamps: Union[List[int], int]
+        self, video_url: str, amount: int
     ) -> List[Image.Image]:
         r"""Capture screenshots from the video at specified timestamps or by
         dividing the video into equal parts if an integer is provided.
 
         Args:
-            video_url (str): The URL of the video to download. (required)
-            timestamps (Union[List[int], int]): A list of timestamps (in
-                seconds) from which to capture the screenshots, or an integer
-                specifying the number of evenly spaced screenshots to capture.
+            video_url (str): The URL of the video to take screenshots.
+            amount (int): the amount of evenly split screenshots to capture.
 
         Returns:
             List[Image.Image]: A list of screenshots as Image.Image.
@@ -194,17 +190,10 @@ class VideoDownloaderToolkit(BaseToolkit):
         except ffmpeg.Error as e:
             raise RuntimeError(f"Failed to determine video length: {e.stderr}")
 
-        if isinstance(timestamps, int):
-            if timestamps <= 0:
-                raise ValueError(
-                    "Number of screenshots must be greater than zero."
-                )
-            interval = video_length // (timestamps + 1)
-            tss = [round((i + 1) * interval) for i in range(timestamps)]
-        else:
-            tss = [ts for ts in timestamps if 0 <= ts <= video_length]
+        interval = video_length / (amount + 1)
+        timestamps = [i * interval for i in range(1, amount + 1)]
 
-        images = [_capture_screenshot(video_file, ts) for ts in tss]
+        images = [_capture_screenshot(video_file, ts) for ts in timestamps]
 
         return images
 

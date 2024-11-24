@@ -14,14 +14,10 @@
 import argparse
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
 from camel.toolkits.video_toolkit import VideoDownloaderToolkit
 from camel.types import (
-    ModelPlatformType,
-    ModelType,
     RoleType,
     TaskType,
 )
@@ -49,19 +45,7 @@ def detect_image_obj(image_list) -> None:
     print(sys_msg)
     print("=" * 49)
 
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content=sys_msg,
-    )
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
-    )
-    agent = ChatAgent(
-        assistant_sys_msg,
-        model=model,
-    )
+    agent = ChatAgent(sys_msg)
 
     user_msg = BaseMessage.make_user_message(
         role_name="User",

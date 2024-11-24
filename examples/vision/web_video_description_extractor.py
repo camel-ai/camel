@@ -12,36 +12,24 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
 from camel.toolkits import VideoDownloaderToolkit
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 video_url = (
-    'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
+    "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
 )
 downloader = VideoDownloaderToolkit()
 
 # Get the video bytes
 video_bytes = downloader.get_video_bytes(video_url)
 
-sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
+sys_msg = PromptTemplateGenerator().get_prompt_from_key(
     TaskType.VIDEO_DESCRIPTION, RoleType.ASSISTANT
 )
-sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content=sys_msg_prompt,
-)
 
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().as_dict(),
-)
-
-camel_agent = ChatAgent(sys_msg, model=model)
+camel_agent = ChatAgent(sys_msg)
 
 # Create user message with video bytes
 user_msg = BaseMessage.make_user_message(
