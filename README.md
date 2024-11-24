@@ -164,9 +164,10 @@ Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/mast
 
 By default, the agent uses the `ModelType.DEFAULT` model from the `ModelPlatformType.DEFAULT`. You can configure the default model platform and model type using environment variables. If these are not set, the agent will fall back to the default settings:
 
-- `ModelPlatformType.DEFAULT = "openai"`
-
-- `ModelType.DEFAULT = "gpt-4o-mini"`
+```bash
+ModelPlatformType.DEFAULT = "openai"
+ModelType.DEFAULT = "gpt-4o-mini"
+```
 
 ### Setting Default Model Platform and Model Type (Optional)
 
@@ -345,6 +346,8 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 ## Implemented Research Ideas from Other Works
 We implemented amazing research ideas from other works for you to build, compare and customize your agents. If you use any of these modules, please kindly cite the original works:
 - `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+
+- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 
 ## Other Research Works Based on Camel
 - [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?
