@@ -38,6 +38,8 @@ from .twitter_toolkit import TwitterToolkit
 from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
+from .human_toolkit import HumanToolkit
+from .video_toolkit import VideoDownloaderToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -64,4 +66,6 @@ __all__ = [
     'GoogleScholarToolkit',
     'NotionToolkit',
     'ArxivToolkit',
+    'HumanToolkit',
+    'VideoDownloaderToolkit',
 ]

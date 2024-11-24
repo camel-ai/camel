@@ -13,9 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Type, Union
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -104,11 +104,36 @@ class ChatGPTConfig(BaseConfig):
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: Union[dict, NotGiven] = NOT_GIVEN
+    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
     tool_choice: Optional[Union[dict[str, str], str]] = None
+
+    def as_dict(self) -> dict[str, Any]:
+        r"""Convert the current configuration to a dictionary.
+
+        This method converts the current configuration object to a dictionary
+        representation, which can be used for serialization or other purposes.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the current
+                configuration.
+        """
+        config_dict = self.model_dump()
+        if self.tools:
+            from camel.toolkits import FunctionTool
+
+            tools_schema = []
+            for tool in self.tools:
+                if not isinstance(tool, FunctionTool):
+                    raise ValueError(
+                        f"The tool {tool} should "
+                        "be an instance of `FunctionTool`."
+                    )
+                tools_schema.append(tool.get_openai_tool_schema())
+        config_dict["tools"] = NOT_GIVEN
+        return config_dict
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

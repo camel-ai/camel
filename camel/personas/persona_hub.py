@@ -31,12 +31,16 @@ from camel.prompts import TextPrompt
 class PersonaResponse(BaseModel):
     persona_name: str = Field(description="The name of the persona")
     persona_description: str = Field(
-        description="The description of the persona"
+        description="The description of the persona."
     )
 
 
 class PersonaHub:
-    r"""PersonaHub proposes a novel persona-driven data synthesis methodology
+    r"""The PersonaHub adapted from `"Scaling Synthetic Data Creation with 1,
+    000,000,000 Personas"
+    <https://github.com/tencent-ailab/persona-hub>`_.
+
+    PersonaHub proposes a novel persona-driven data synthesis methodology
     that leverages various perspectives within a large language model (LLM) to
     create diverse synthetic data. By showcasing PersonaHub's use cases in
     synthesizing high-quality mathematical and logical reasoning problems,
@@ -45,7 +49,7 @@ class PersonaHub:
     synthesis is versatile, scalable, flexible, and easy to use, potentially
     driving a paradigm shift in synthetic data creation and applications in
     practice, which may have a profound impact on LLM research and development.
-    Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094
+    Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094.
 
     Args:
         model (BaseModelBackend, optional): The model to use for persona
@@ -76,7 +80,7 @@ class PersonaHub:
         if persona_id in self.personas:
             del self.personas[persona_id]
         else:
-            raise KeyError("Persona ID not found")
+            raise KeyError("Persona ID not found.")
 
     def __getitem__(self, persona_id: uuid.UUID) -> Persona:
         r"""Get a persona by ID.
@@ -87,7 +91,7 @@ class PersonaHub:
         if persona_id in self.personas:
             return self.personas[persona_id]
         else:
-            raise KeyError("Persona ID not found")
+            raise KeyError("Persona ID not found.")
 
     def text_to_persona(
         self,
@@ -107,8 +111,12 @@ class PersonaHub:
         """
         persona = Persona()
 
-        t2p_prompt: Union[TextPrompt, str] = persona.t2p_prompt
-        t2p_prompt_instruction = t2p_prompt.format(action=action, text=text)
+        text_to_persona_prompt: Union[TextPrompt, str] = (
+            persona.text_to_persona_prompt
+        )
+        text_to_persona_prompt_instruction = text_to_persona_prompt.format(
+            action=action, text=text
+        )
 
         # Set Agent to generate personal
         t2p_agent = ChatAgent(
@@ -119,7 +127,7 @@ class PersonaHub:
         # Get output from agent
         try:
             response = t2p_agent.step(
-                t2p_prompt_instruction,
+                text_to_persona_prompt_instruction,
                 response_format=PersonaResponse,  # type: ignore[arg-type]
             )
             parsed_content = ast.literal_eval(response.msg.content)
@@ -141,7 +149,9 @@ class PersonaHub:
         Returns:
             Dict[uuid.UUID, Persona]: A dictionary of related personas.
         """
-        p2p_prompt: Union[TextPrompt, str] = persona.p2p_prompt
+        persona_to_persona_prompt: Union[TextPrompt, str] = (
+            persona.persona_to_persona_prompt
+        )
         answer_template = """
 You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
 ===== ANSWER TEMPLATE =====
@@ -151,8 +161,8 @@ persona_description: <BLANK>
 n. persona_name: <BLANK>
 persona_description: <BLANK>
 """  # noqa: E501
-        p2p_prompt_instruction = (
-            p2p_prompt.format(
+        persona_to_persona_prompt_instruction = (
+            persona_to_persona_prompt.format(
                 persona_name=persona.name,
                 persona_description=persona.description,
             )
@@ -167,7 +177,7 @@ persona_description: <BLANK>
         # Get output from agent
         try:
             response = p2p_agent.step(
-                p2p_prompt_instruction  # type: ignore[arg-type]
+                persona_to_persona_prompt_instruction  # type: ignore[arg-type]
             )
             # Structured output (TODO: Use a more robust parser)
             pattern = r"(\d+)\.\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*(?=\d+\.|$)"  # noqa: E501

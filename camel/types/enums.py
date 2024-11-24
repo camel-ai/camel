@@ -89,6 +89,13 @@ class ModelType(UnifiedModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # Cohere models
+    COHERE_COMMAND_R_PLUS = "command-r-plus"
+    COHERE_COMMAND_R = "command-r"
+    COHERE_COMMAND_LIGHT = "command-light"
+    COHERE_COMMAND = "command"
+    COHERE_COMMAND_NIGHTLY = "command-nightly"
+
     # Qwen models (Aliyun)
     QWEN_MAX = "qwen-max"
     QWEN_PLUS = "qwen-plus"
@@ -250,6 +257,21 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this type of models is a Cohere model.
+
+        Returns:
+            bool: Whether this type of models is Cohere.
+        """
+        return self in {
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }
+
+    @property
     def is_yi(self) -> bool:
         r"""Returns whether this type of models is Yi model.
 
@@ -303,6 +325,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_FLASH,
             ModelType.QWEN_MATH_PLUS,
             ModelType.QWEN_MATH_TURBO,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_LIGHT,
         }:
             return 4_096
         elif self in {
@@ -359,6 +383,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_NIGHTLY,
         }:
             return 128_000
         elif self in {
@@ -537,6 +564,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
+    COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
 
@@ -610,6 +638,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this platform is Cohere."""
+        return self is ModelPlatformType.COHERE
 
     @property
     def is_yi(self) -> bool:
