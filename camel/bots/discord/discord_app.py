@@ -14,8 +14,10 @@
 import logging
 import os
 from typing import TYPE_CHECKING, List, Optional
-from camel.utils import dependencies_required
+
 from fastapi import FastAPI
+
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from discord import Message
@@ -26,6 +28,7 @@ logger = logging.getLogger(__name__)
 CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 REDIRECT_URI = "http://localhost:8000/callback"
+
 
 class DiscordApp:
     r"""A class representing a Discord app that uses the `discord.py` library
@@ -91,7 +94,8 @@ class DiscordApp:
         self.client_secret = client_secret or CLIENT_SECRET
         if not all([client_id, client_secret]):
             raise ValueError(
-                "DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET must be set for OAuth."
+                "DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET must be set "
+                "for OAuth."
             )
         self.redirect_uri = redirect_uri or REDIRECT_URI
 
@@ -115,18 +119,18 @@ class DiscordApp:
         self._client.run(self.token)  # type: ignore[arg-type]
 
     def get_oauth_url(
-        self,
-        session_id: Optional[str] = None,
-        permissions: Optional[int] = 8
+        self, session_id: Optional[str] = None, permissions: Optional[int] = 8
     ) -> str:
         r"""Generate an OAuth URL to invite the bot to a Discord server.
 
         This method returns a link that allows users to invite the bot to
         their Discord server with specific permissions.
         """
-        invite_url = (f"https://discord.com/oauth2/authorize?client_id"
-                      f"={self.client_id}&"
-                     f"permissions={permissions}&scope=bot&response_type=code")
+        invite_url = (
+            f"https://discord.com/oauth2/authorize?client_id"
+            f"={self.client_id}&"
+            f"permissions={permissions}&scope=bot&response_type=code"
+        )
         if session_id is not None:
             invite_url += f"state={session_id}"
         return invite_url

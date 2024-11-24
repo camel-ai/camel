@@ -24,7 +24,6 @@ from .telegram_bot import TelegramBot
 
 __all__ = [
     'DiscordApp',
-    'DiscordOAuth'
     'SlackApp',
     'SlackAppMentionEventBody',
     'SlackAppMentionEventProfile',
