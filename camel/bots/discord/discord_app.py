@@ -11,15 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import asyncio
 import logging
 import os
-import httpx
-import uvicorn
 from typing import TYPE_CHECKING, List, Optional
 from camel.utils import dependencies_required
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI
 
 if TYPE_CHECKING:
     from discord import Message
@@ -30,40 +26,6 @@ logger = logging.getLogger(__name__)
 CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 REDIRECT_URI = "http://localhost:8000/callback"
-TOKEN_URL = "https://discord.com/api/oauth2/token"
-USER_URL = "https://discord.com/api/users/@me"
-
-class DiscordOAuth:
-    def __init__(self, client_id: str, client_secret: str, redirect_uri: str) -> None:
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-
-    def get_oauth_url(self) -> str:
-        return (
-            f"https://discord.com/api/oauth2/authorize?client_id={self.client_id}"
-            f"&redirect_uri={self.redirect_uri}&response_type=code&scope=identify%20guilds"
-        )
-
-    async def exchange_code_for_token(self, code: str) -> Optional[str]:
-        data = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": self.redirect_uri,
-        }
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        async with httpx.AsyncClient() as client:
-            response = await client.post(TOKEN_URL, data=data, headers=headers)
-            response_data = response.json()
-            return response_data.get("access_token")
-
-    async def get_user_info(self, access_token: str) -> dict:
-        headers = {"Authorization": f"Bearer {access_token}"}
-        async with httpx.AsyncClient() as client:
-            user_response = await client.get(USER_URL, headers=headers)
-            return user_response.json()
 
 class DiscordApp:
     r"""A class representing a Discord app that uses the `discord.py` library
@@ -85,7 +47,7 @@ class DiscordApp:
         token: Optional[str] = None,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
-        redirect_uri: str = "http://localhost:8000/callback",
+        redirect_uri: Optional[str] = None,
     ) -> None:
         r"""Initialize the DiscordApp instance by setting up the Discord client
         and event handlers.
@@ -125,18 +87,15 @@ class DiscordApp:
         self._client.event(self.on_message)
 
         # OAuth flow
-        client_id = client_id or CLIENT_ID
-        client_secret = client_secret or CLIENT_SECRET
+        self.client_id = client_id or CLIENT_ID
+        self.client_secret = client_secret or CLIENT_SECRET
         if not all([client_id, client_secret]):
             raise ValueError(
                 "DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET must be set for OAuth."
             )
-        self.oauth_client = DiscordOAuth(client_id, client_secret, redirect_uri)
+        self.redirect_uri = redirect_uri or REDIRECT_URI
 
         self.app = FastAPI()
-        self.app.get("/")(self.home)
-        self.app.get("/callback")(self.callback)
-        self.server = None
 
     async def start(self):
         r"""Asynchronously start the Discord bot using its token.
@@ -154,6 +113,23 @@ class DiscordApp:
         the provided token. It blocks execution and keeps the bot running.
         """
         self._client.run(self.token)  # type: ignore[arg-type]
+
+    def get_oauth_url(
+        self,
+        session_id: Optional[str] = None,
+        permissions: Optional[int] = 8
+    ) -> str:
+        r"""Generate an OAuth URL to invite the bot to a Discord server.
+
+        This method returns a link that allows users to invite the bot to
+        their Discord server with specific permissions.
+        """
+        invite_url = (f"https://discord.com/oauth2/authorize?client_id"
+                      f"={self.client_id}&"
+                     f"permissions={permissions}&scope=bot&response_type=code")
+        if session_id is not None:
+            invite_url += f"state={session_id}"
+        return invite_url
 
     async def on_ready(self) -> None:
         r"""Event handler that is called when the bot has successfully
@@ -194,83 +170,6 @@ class DiscordApp:
 
         logger.info(f"Received message: {message.content}")
 
-    def initiate_oauth_flow(self) -> str:
-        r"""Start the OAuth Server and initiate the OAuth flow by generating
-            the authorization URL.
-
-        Returns:
-            str: The URL that users should visit to authorize the application.
-        """
-        asyncio.create_task(self.run_oauth_server())
-        return self.oauth_client.get_oauth_url()
-
     @property
     def client(self):
         return self._client
-
-    async def home(self):
-        r"""Redirect the user to the Discord OAuth URL.
-
-        Returns:
-            RedirectResponse: A response that redirects the user to the Discord OAuth authorization page.
-        """
-        oauth_url = self.oauth_client.get_oauth_url()
-        return RedirectResponse(oauth_url)
-
-    async def callback(self, code: str, state: Optional[str] = None):
-        r"""Endpoint to handle the OAuth callback from Discord.
-
-        Args:
-            code (str): The authorization code from Discord.
-            state (Optional[str]): Optional state parameter for custom business data.
-
-        Returns:
-            dict: The user information if successful, otherwise an error message.
-        """
-        if not code:
-            raise HTTPException(status_code=400, detail="No code returned")
-        if state:
-            logger.info(f"Received state: {state}")
-
-        access_token = await self.oauth_client.exchange_code_for_token(code)
-        if not access_token:
-            raise HTTPException(status_code=400, detail="Failed to obtain access token")
-
-        user_data = await self.oauth_client.get_user_info(access_token)
-        logger.info(f"User data: {user_data}")
-        await self.shutdown_oauth_server()
-        return user_data
-
-    async def run_oauth_server(self, host="127.0.0.1", port=8000):
-        r"""Starts the OAuth server for handling the Discord OAuth flow.
-
-        This method initializes and runs a FastAPI server configured with the provided host and port.
-        It listens for incoming OAuth callbacks from Discord, allowing users to complete the OAuth authorization.
-
-        Args:
-            host (str): The hostname on which the OAuth server should run. Defaults to "127.0.0.1".
-            port (int): The port on which the OAuth server should run. Defaults to 8000.
-
-        Raises:
-            Exception: If the server fails to start due to configuration issues or binding conflicts.
-        """
-        try:
-            config = uvicorn.Config(self.app, host=host, port=port, log_level="info")
-            self.server = uvicorn.Server(config)
-            await self.server.serve()
-        except Exception as e:
-            logger.error(f"Failed to start OAuth server: {e}")
-
-    async def shutdown_oauth_server(self):
-        r"""Gracefully shuts down the OAuth server after the authorization flow is complete.
-
-        This method checks if the server is running and sets the `should_exit` flag to True,
-        allowing the Uvicorn server to shut down gracefully. It is typically called after
-        handling the OAuth callback to release resources and prevent the server from continuing to listen.
-
-        Returns:
-            None
-        """
-        if self.server and self.server.should_exit is False:
-            self.server.should_exit = True
-            logger.info("Shutting down the OAuth server.")
