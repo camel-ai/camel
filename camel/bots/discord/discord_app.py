@@ -132,7 +132,7 @@ class DiscordApp:
             f"permissions={permissions}&scope=bot&response_type=code"
         )
         if session_id is not None:
-            invite_url += f"state={session_id}"
+            invite_url += f"&state={session_id}"
         return invite_url
 
     async def on_ready(self) -> None:
