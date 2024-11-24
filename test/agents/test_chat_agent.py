@@ -187,7 +187,7 @@ def test_chat_agent_step_with_structure_response():
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools():
-    internal_tools = SearchToolkit().get_tools()
+    internal_tools = [FunctionTool(SearchToolkit().search_duckduckgo)]
     external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
@@ -414,14 +414,13 @@ def test_set_output_language():
     assert agent.output_language == output_language
 
     # Verify that the system message is updated with the new output language
-    updated_system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in Arabic.",
-    )
-    assert agent.system_message.content == updated_system_message.content
+    updated_system_message = {
+        'role': 'system',
+        'content': 'You are a help assistant.\nRegardless of the '
+        'input language, you must output text in Arabic.',
+    }
+    memory_content = agent.memory.get_context()
+    assert memory_content[0][0] == updated_system_message
 
 
 @pytest.mark.model_backend
@@ -444,28 +443,27 @@ def test_set_multiple_output_language():
     agent_without_sys_msg.set_output_language("English")
     agent_without_sys_msg.set_output_language("French")
 
-    updated_system_message_with_content = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in French.",
-    )
-    updated_system_message_without_content = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="\nRegardless of the input language, you must output text "
-        "in French.",
-    )
+    updated_system_message_with_sys_msg = {
+        'role': 'system',
+        'content': 'You are a help assistant.\nRegardless of the '
+        'input language, you must output text in French.',
+    }
+    updated_system_message_without_sys_msg = {
+        'role': 'system',
+        'content': '\nRegardless of the input language, you must output '
+        'text in French.',
+    }
+
+    memory_content_with_sys_msg = agent_with_sys_msg.memory.get_context()
+    memory_content_without_sys_msg = agent_without_sys_msg.memory.get_context()
 
     assert (
-        agent_with_sys_msg.system_message.content
-        == updated_system_message_with_content.content
+        memory_content_with_sys_msg[0][0]
+        == updated_system_message_with_sys_msg
     )
     assert (
-        agent_without_sys_msg.system_message.content
-        == updated_system_message_without_content.content
+        memory_content_without_sys_msg[0][0]
+        == updated_system_message_without_sys_msg
     )
 
 

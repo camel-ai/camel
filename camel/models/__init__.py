@@ -14,6 +14,7 @@
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
+from .cohere_model import CohereModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
@@ -24,11 +25,13 @@ from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
 from .openai_model import OpenAIModel
+from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
+from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
@@ -40,6 +43,7 @@ __all__ = [
     'GroqModel',
     'StubModel',
     'ZhipuAIModel',
+    'CohereModel',
     'ModelFactory',
     'LiteLLMModel',
     'OpenAIAudioModels',
@@ -51,4 +55,6 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'YiModel',
+    'QwenModel',
 ]

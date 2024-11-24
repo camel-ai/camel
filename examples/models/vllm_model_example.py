@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
@@ -24,16 +23,12 @@ vllm_model = ModelFactory.create(
     api_key="vllm",
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
+assistant_sys_msg = "You are a helpful assistant."
+
 agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="Say hi to CAMEL AI",
-)
+user_msg = "Say hi to CAMEL AI"
+
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 

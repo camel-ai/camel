@@ -125,7 +125,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -421,3 +420,7 @@ logs/
 datasets_test/
 evaluation_data/
 camel_data/
+
+#Benchmark
+benchmark/gaia/Dataset
+benchmark/gaia/results.jsonl

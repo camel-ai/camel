@@ -99,6 +99,21 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether the model is a Cohere model."""
+        return True
+
+    @property
+    def is_yi(self) -> bool:
+        r"""Returns whether the model is a Yi model."""
+        return True
+
+    @property
+    def is_qwen(self) -> bool:
+        r"""Returns whether the model is a Qwen model."""
+        return True
+
+    @property
     def support_native_tool_calling(self) -> bool:
         r"""Returns whether the model supports native tool calling."""
         return False
