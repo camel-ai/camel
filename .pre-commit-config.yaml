@@ -1,25 +1,25 @@
 repos:
-    - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: 'v0.3.5'
-      hooks:
-          - id: ruff
-            args: [--fix, --exit-non-zero-on-fix, --show-fixes]
-          - id: ruff-format
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.3.5'
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix, --show-fixes]
+      - id: ruff-format
+  
+  - repo: local
+    hooks:
+      - id: mypy
+        name: Check mypy
+        entry: mypy --namespace-packages -p camel -p test -p apps
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
 
-    - repo: local
-      hooks:
-          - id: mypy
-            name: Check mypy
-            entry: mypy --namespace-packages -p camel -p tests -p apps
-            language: system
-            types: [python]
-            pass_filenames: false
-            require_serial: true
-
-    - repo: local
-      hooks:
-          - id: check-license
-            name: Check License
-            entry: python licenses/update_license.py . licenses/license_template.txt
-            language: system
-            types: [python]
+  - repo: local
+    hooks:
+    - id: check-license
+      name: Check License
+      entry: python licenses/update_license.py . licenses/license_template.txt 
+      language: system
+      types: [python]
