@@ -121,7 +121,7 @@ class DiscordApp:
     def get_oauth_url(
         self,
         session_id: str,
-        permissions: Optional[int] = 8,
+        permissions: Optional[str] = '8',
         redirect: Optional[bool] = True
     ) -> str:
         r"""Generate an OAuth URL to invite the bot to a Discord server.
