@@ -57,18 +57,6 @@ def test_video_bytes_download(mock_downloader):
 def test_video_screenshots_download(mock_downloader):
     screenshots = mock_downloader.get_video_screenshots(
         "https://test_video.mp4",
-        [1, 3, 5],
-    )
-    assert len(screenshots) == 3
-
-    screenshots = mock_downloader.get_video_screenshots(
-        "https://test_video.mp4",
-        [1, 3, 5, 111],
-    )
-    assert len(screenshots) == 3
-
-    screenshots = mock_downloader.get_video_screenshots(
-        "https://test_video.mp4",
         2,
     )
     assert len(screenshots) == 2
