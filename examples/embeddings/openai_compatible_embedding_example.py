@@ -11,18 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseEmbedding
-from .mistral_embedding import MistralEmbedding
-from .openai_compatible_embedding import OpenAICompatibleEmbedding
-from .openai_embedding import OpenAIEmbedding
-from .sentence_transformers_embeddings import SentenceTransformerEncoder
-from .vlm_embedding import VisionLanguageEmbedding
 
-__all__ = [
-    "BaseEmbedding",
-    "OpenAIEmbedding",
-    "SentenceTransformerEncoder",
-    "VisionLanguageEmbedding",
-    "MistralEmbedding",
-    "OpenAICompatibleEmbedding",
-]
+from camel.embeddings import OpenAICompatibleEmbedding
+
+# Set the embedding instance
+nv_embed = OpenAICompatibleEmbedding(
+    model_type="nvidia/nv-embed-v1",
+    api_key="nvapi-xxx",
+    url="https://integrate.api.nvidia.com/v1",
+)
+
+# Embed the text
+text_embeddings = nv_embed.embed_list(["What is the capital of France?"])
+
+print(len(text_embeddings[0]))
+'''
+===============================================================================
+4096
+===============================================================================
+'''
