@@ -14,11 +14,7 @@
 """
 please set the below os environment:
 export DEEPSEEK_BASE_URL=""
-
-# if `DEEPSEEK_API_VERSION` is not set, `DEEPSEEK_API_VERSION` will be used as api version
-export DEEPSEEK_API_VERSION=""
 export DEEPSEEK_API_KEY=""
-export DEEPSEEK_DEPLOYMENT_NAME=""
 """
 
 import re
@@ -59,7 +55,7 @@ def test_deepseek_model_create(model_type: ModelType):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEEPSEEK,
         model_type=model_type,
-        model_config_dict=DeepSeekConfig(temperature=1.3, n=3).as_dict(),
+        model_config_dict=DeepSeekConfig(temperature=1.3).as_dict(),
     )
     assert model.model_type == model_type
 
