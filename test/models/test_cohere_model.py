@@ -45,7 +45,7 @@ def test_cohere_model(model_type):
 @pytest.mark.model_backend
 def test_cohere_model_unexpected_argument():
     model_type = ModelType.COHERE_COMMAND_R
-    model_config_dict = {"model_path", "vicuna-7b-v1.5"}
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,
