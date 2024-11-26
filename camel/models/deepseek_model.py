@@ -23,7 +23,6 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
-    UnifiedModelType,
 )
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
@@ -99,10 +98,9 @@ class DeepSeekModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        model_type_str = UnifiedModelType.__str__(self.model_type)
         response = self._client.chat.completions.create(
             messages=messages,
-            model=model_type_str,
+            model=self.model_type,
             **self.model_config_dict,
         )
         return response
