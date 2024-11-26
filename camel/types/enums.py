@@ -65,6 +65,9 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
 
     # Nvidia models
+    NVIDIA_LLAMA3_CHATQA_70B = "nvidia/llama3-chatqa-1.5-70b"
+    NVIDIA_LLAMA3_CHATQA_8B = "nvidia/llama3-chatqa-1.5-8b"
+    NVIDIA_NEMOTRON_340B = "nvidia/nemotron-4-340b-instruct"
     NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
 
     # Gemini models
@@ -221,12 +224,11 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_nvidia(self) -> bool:
-        r"""Returns whether this type of models is Nvidia-released model.
-
-        Returns:
-            bool: Whether this type of models is nvidia.
-        """
+        r"""Returns whether this type of models is a NVIDIA model."""
         return self in {
+            ModelType.NVIDIA_LLAMA3_CHATQA_70B,
+            ModelType.NVIDIA_LLAMA3_CHATQA_8B,
+            ModelType.NVIDIA_NEMOTRON_340B,
             ModelType.NEMOTRON_4_REWARD,
         }
 
@@ -338,6 +340,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
+            ModelType.NVIDIA_LLAMA3_CHATQA_70B,
+            ModelType.NVIDIA_LLAMA3_CHATQA_8B,
+            ModelType.NVIDIA_NEMOTRON_340B,
         }:
             return 8_192
         elif self in {
@@ -567,6 +572,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    NVIDIA = "nvidia"
 
     @property
     def is_openai(self) -> bool:
@@ -653,6 +659,11 @@ class ModelPlatformType(Enum):
     def is_qwen(self) -> bool:
         r"""Returns whether this platform is Qwen."""
         return self is ModelPlatformType.QWEN
+
+    @property
+    def is_nvidia(self) -> bool:
+        r"""Returns whether this platform is Nvidia."""
+        return self is ModelPlatformType.NVIDIA
 
 
 class AudioModelType(Enum):
