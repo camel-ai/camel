@@ -38,10 +38,10 @@ class FakeFile(File):
 
 # Define paths to test resources
 UNIT_TESTS_ROOT = Path(__file__).parent.resolve()
-TESTS_ROOT = UNIT_TESTS_ROOT.parent.resolve()
-PROJECT_ROOT = TESTS_ROOT.parent.resolve()
-RESOURCE_ROOT = PROJECT_ROOT / "test"
-SAMPLE_ROOT = RESOURCE_ROOT / "data_samples"
+INT_TESTS_ROOT = UNIT_TESTS_ROOT.parent.resolve()
+TEST_ROOT = INT_TESTS_ROOT.parent.resolve()
+RESOURCE_ROOT = TEST_ROOT
+SAMPLE_ROOT = RESOURCE_ROOT / "integration" / "data_samples"
 
 
 # Test functions for each file type
