@@ -11,10 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
+
 from camel.runtime import RemoteHttpRuntime
 from camel.toolkits import MathToolkit
 
 
+@pytest.mark.skip(reason="Cannot run this test without a running server.")
 def test_remote_http_runtime():
     runtime = (
         RemoteHttpRuntime("localhost")
