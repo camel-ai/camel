@@ -16,6 +16,9 @@ from typing import TYPE_CHECKING, List
 
 import pytest
 from mock import Mock
+from openai.types.chat.chat_completion_system_message_param import (
+    ChatCompletionSystemMessageParam,
+)
 
 from camel.models import BaseModelBackend
 from camel.models.model_manager import ModelManager
@@ -47,14 +50,19 @@ def test_model_manager(
 
     if TYPE_CHECKING:
         assert type(models) == List[BaseModelBackend]
-
+    messages: List = []
+    for _ in range(calls_count):
+        msg = "message"
+        if TYPE_CHECKING:
+            assert type(msg) == ChatCompletionSystemMessageParam
+        messages.append(msg)
     model_manager = ModelManager(models, scheduling_strategy=strategy)
 
     assert isinstance(model_manager.models, list)
     assert len(model_manager.models) == models_number
     assert model_manager.current_model_index == 0
     for _ in range(calls_count):
-        model_manager.run(["message"] for _ in range(calls_count))
+        model_manager.run(messages)
 
     if strategy in ("not_existent", "round_robin"):
         assert model_manager.scheduling_strategy.__name__ == "round_robin"

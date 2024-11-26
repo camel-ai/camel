@@ -36,7 +36,27 @@ model2 = ModelFactory.create(
 
 assistant_sys_msg = "Testing two models in ModelManager"
 
-agent = ChatAgent(assistant_sys_msg, model=[model1, model2])
+agent = ChatAgent(
+    assistant_sys_msg,
+    model=[model1, model2],
+    scheduling_strategy="random_model",
+)
+
+# scheduling_strategy can be one of
+# "round_robin, "always_first", "random_model"
+
+
+# For using a custom scheduling_strategy. After ChatAgent initialization,
+# custom callable need to be provided to agent.add_strategy method
+
+
+def custom_strategy(self):
+    """Custom strategy implementation."""
+    return self.models[-1]
+
+
+agent.add_strategy("custom", custom_strategy)
+
 
 user_msg = """What is the meaning of life, the universe, and everything?"""
 

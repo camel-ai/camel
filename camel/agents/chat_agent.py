@@ -21,6 +21,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -80,7 +81,7 @@ except (ImportError, AttributeError):
 
 
 class ModelProcessingError(Exception):
-    """Raised when an error occurs during model processing."""
+    r"""Raised when an error occurs during model processing."""
 
 
 class FunctionCallingRecord(BaseModel):
@@ -149,6 +150,8 @@ class ChatAgent(BaseAgent):
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
+        scheduling_strategy (str): name of function that defines how to select
+            the next model in ModelManager.
     """
 
     def __init__(
@@ -164,6 +167,7 @@ class ChatAgent(BaseAgent):
         tools: Optional[List[FunctionTool]] = None,
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
+        scheduling_strategy: Optional[str] = None,
     ) -> None:
         if isinstance(system_message, str):
             system_message = BaseMessage.make_assistant_message(
@@ -184,7 +188,8 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.DEFAULT,
                 model_type=ModelType.DEFAULT,
-            )
+            ),
+            scheduling_strategy=scheduling_strategy,
         )
 
         self.model_type = self.model_backend.model_type
@@ -955,6 +960,7 @@ class ChatAgent(BaseAgent):
         for _ in range(len(self.model_backend.models)):
             try:
                 response = self.model_backend.run(openai_messages)
+                break
             except Exception as exc:
                 logger.error(
                     f"An error occurred while running model "
@@ -1324,6 +1330,15 @@ class ChatAgent(BaseAgent):
             total_tokens=completion_tokens + prompt_tokens,
         )
         return usage_dict
+
+    def add_strategy(self, name: str, strategy_fn: Callable):
+        r"""Add a scheduling strategy method  provided by user to ModelManger.
+
+        Args:
+            name (str): The name of the strategy.
+            strategy_fn (Callable): The scheduling strategy function.
+        """
+        self.model_backend.add_strategy(name, strategy_fn)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
