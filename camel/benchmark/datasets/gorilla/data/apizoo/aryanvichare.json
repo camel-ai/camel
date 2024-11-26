@@ -1,0 +1,47 @@
+[
+  {
+    "user_name": "aryanvichare",
+    "api_name": "OpenWeatherMap API - Current and Forcast Weather Data",
+    "api_call": "openweathermap.one_call(lat={lat}, lon={lon}, exclude={exclude}, appid={API key})",
+    "api_version": "3.0",
+    "api_arguments": {
+      "lat": "Latitude, decimal (-90; 90)",
+      "lon": "Longitude, decimal (-180; 180)",
+      "exclude": "Comma-delimited list of parts to exclude (e.g., 'hourly,daily')",
+      "units": "Units of measurement. standard, metric and imperial units",
+      "appid": "Your unique API key"
+    },
+    "functionality": "Retrieve current and forecast weather data",
+    "env_requirements": ["requests"],
+    "example_code": "import requests \nresponse = requests.get('https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude={exclude}&appid={appid}') \n weather_data = response.json() \n print(weather_data)",
+    "meta_data": {
+      "description": "The OpenWeatherMap API provides access to current and forecast weather data, including minute-by-minute, hourly, and daily forecasts, as well as government weather alerts.",
+      "documentation_link": "https://openweathermap.org/api/one-call-3"
+    },
+    "questions": [
+      "What is the weather today in Berkeley, CA?",
+      "How does the weather compare between Berkeley, CA and San Francisco, CA?"
+    ]
+  },
+  {
+    "user_name": "aryanvichare",
+    "api_name": "OpenWeatherMap API - Time Machine",
+    "api_call": "openweathermap.time_machine(lat={lat}, lon={lon}, dt={timestamp}, appid={API key})",
+    "api_version": "3.0",
+    "api_arguments": {
+      "lat": "Latitude, decimal (-90; 90)",
+      "lon": "Longitude, decimal (-180; 180)",
+      "dt": "Timestamp (Unix time, UTC time zone)",
+      "units": "Units of measurement. standard, metric and imperial units",
+      "appid": "Your unique API key"
+    },
+    "functionality": "Retrieve historical weather data for a specific timestamp",
+    "env_requirements": ["requests"],
+    "example_code": "import requests \n\nresponse = requests.get('https://api.openweathermap.org/data/3.0/onecall/timemachine?lat={lat}&lon={lon}&dt={dt}&appid={appid}') \n\nhistorical_data = response.json() \n print(historical_data)",
+    "meta_data": {
+      "description": "The OpenWeatherMap Time Machine API allows users to access historical weather data for a specific timestamp for a given location.",
+      "documentation_link": "https://openweathermap.org/api/one-call-api#time_machine"
+    },
+    "questions": ["What was the weather yesterday in Berkeley, CA at 3pm PST?"]
+  }
+]

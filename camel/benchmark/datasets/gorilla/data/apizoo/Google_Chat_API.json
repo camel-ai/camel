@@ -1,0 +1,481 @@
+[
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - media.download",
+        "api_call": "service.media().download(resourceName: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "resourceName": "[REQUIRED] string: Name of the media that is being downloaded. See ReadRequest.resource_name."
+        },
+        "functionality": "Downloads media. Download is supported on the URI `/v1/media/{+name}?alt=media`.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - media.upload",
+        "api_call": "service.media().upload(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "parent": "[REQUIRED] string: Required. Resource name of the Chat space in which the attachment is uploaded. Format \"spaces/{space}\"."
+        },
+        "functionality": "Uploads an attachment. For an example, see [Upload media as a file attachment](https://developers.google.com/chat/api/guides/v1/media-and-attachments/upload). Requires user [authentication](https://developers.google.com/chat/api/guides/auth/users). You can upload attachments up to 200 MB. Certain file types aren't supported. For details, see [File types blocked by Google Chat](https://support.google.com/chat/answer/7651457?&co=GENIE.Platform%3DDesktop#File%20types%20blocked%20in%20Google%20Chat).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.completeImport",
+        "api_call": "service.spaces().completeImport(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the import mode space. Format: `spaces/{space}`"
+        },
+        "functionality": "Completes the [import process](https://developers.google.com/chat/api/guides/import-data) for the specified space and makes it visible to users. Requires app authentication and domain-wide delegation. For more information, see [Authorize Google Chat apps to import data](https://developers.google.com/chat/api/guides/authorize-import).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.create",
+        "api_call": "service.spaces().create().execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "requestId": "string: Optional. A unique identifier for this request. A random UUID is recommended. Specifying an existing request ID returns the space created with that ID instead of creating a new space. Specifying an existing request ID from the same Chat app with a different authenticated user returns an error."
+        },
+        "functionality": "Creates a named space. Spaces grouped by topics aren't supported. For an example, see [Create a space](https://developers.google.com/chat/api/guides/v1/spaces/create). If you receive the error message `ALREADY_EXISTS` when creating a space, try a different `displayName`. An existing space within the Google Workspace organization might already use this display name. Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.delete",
+        "api_call": "service.spaces().delete(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the space to delete. Format: `spaces/{space}`"
+        },
+        "functionality": "Deletes a named space. Always performs a cascading delete, which means that the space's child resources\u2014like messages posted in the space and memberships in the space\u2014are also deleted. For an example, see [Delete a space](https://developers.google.com/chat/api/guides/v1/spaces/delete). Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users) from a user who has permission to delete the space.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.findDirectMessage",
+        "api_call": "service.spaces().findDirectMessage().execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "string: Required. Resource name of the user to find direct message with. Format: `users/{user}`, where `{user}` is either the `id` for the [person](https://developers.google.com/people/api/rest/v1/people) from the People API, or the `id` for the [user](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users) in the Directory API. For example, if the People API profile ID is `123456789`, you can find a direct message with that person by using `users/123456789` as the `name`. When [authenticated as a user](https://developers.google.com/chat/api/guides/auth/users), you can use the email as an alias for `{user}`. For example, `users/example@gmail.com` where `example@gmail.com` is the email of the Google Chat user."
+        },
+        "functionality": "Returns the existing direct message with the specified user. If no direct message space is found, returns a `404 NOT_FOUND` error. For an example, see [Find a direct message](/chat/api/guides/v1/spaces/find-direct-message). With [user authentication](https://developers.google.com/chat/api/guides/auth/users), returns the direct message space between the specified user and the authenticated user. With [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts), returns the direct message space between the specified user and the calling Chat app. Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users) or [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.get",
+        "api_call": "service.spaces().get(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the space, in the form \"spaces/*\". Format: `spaces/{space}`"
+        },
+        "functionality": "Returns details about a space. For an example, see [Get a space](https://developers.google.com/chat/api/guides/v1/spaces/get). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.list",
+        "api_call": "service.spaces().list().execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "filter": "string: Optional. A query filter. You can filter spaces by the space type ([`space_type`](https://developers.google.com/chat/api/reference/rest/v1/spaces#spacetype)). To filter by space type, you must specify valid enum value, such as `SPACE` or `GROUP_CHAT` (the `space_type` can't be `SPACE_TYPE_UNSPECIFIED`). To query for multiple space types, use the `OR` operator. For example, the following queries are valid: ``` space_type = \"SPACE\" spaceType = \"GROUP_CHAT\" OR spaceType = \"DIRECT_MESSAGE\" ``` Invalid queries are rejected by the server with an `INVALID_ARGUMENT` error.",
+            "pageSize": "integer: Optional. The maximum number of spaces to return. The service might return fewer than this value. If unspecified, at most 100 spaces are returned. The maximum value is 1,000. If you use a value more than 1,000, it's automatically changed to 1,000. Negative values return an `INVALID_ARGUMENT` error.",
+            "pageToken": "string: Optional. A page token, received from a previous list spaces call. Provide this parameter to retrieve the subsequent page. When paginating, the filter value should match the call that provided the page token. Passing a different value may lead to unexpected results."
+        },
+        "functionality": "Lists spaces the caller is a member of. Group chats and DMs aren't listed until the first message is sent. For an example, see [List spaces](https://developers.google.com/chat/api/guides/v1/spaces/list). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users). Lists spaces visible to the caller or authenticated user. Group chats and DMs aren't listed until the first message is sent.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.patch",
+        "api_call": "service.spaces().patch(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Resource name of the space. Format: `spaces/{space}`",
+            "updateMask": "string: Required. The updated field paths, comma separated if there are multiple. Currently supported field paths: - `display_name` (Only supports changing the display name of a space with the `SPACE` type, or when also including the `space_type` mask to change a `GROUP_CHAT` space type to `SPACE`. Trying to update the display name of a `GROUP_CHAT` or a `DIRECT_MESSAGE` space results in an invalid argument error. If you receive the error message `ALREADY_EXISTS` when updating the `displayName`, try a different `displayName`. An existing space within the Google Workspace organization might already use this display name.) - `space_type` (Only supports changing a `GROUP_CHAT` space type to `SPACE`. Include `display_name` together with `space_type` in the update mask and ensure that the specified space has a non-empty display name and the `SPACE` space type. Including the `space_type` mask and the `SPACE` type in the specified space when updating the display name is optional if the existing space already has the `SPACE` type. Trying to update the space type in other ways results in an invalid argument error). - `space_details` - `space_history_state` (Supports [turning history on or off for the space](https://support.google.com/chat/answer/7664687) if [the organization allows users to change their history setting](https://support.google.com/a/answer/7664184). Warning: mutually exclusive with all other field paths.) - Developer Preview: `access_settings.audience` (Supports changing the [access setting](https://support.google.com/chat/answer/11971020) of a space. If no audience is specified in the access setting, the space's access setting is updated to restricted. Warning: mutually exclusive with all other field paths.)"
+        },
+        "functionality": "Updates a space. For an example, see [Update a space](https://developers.google.com/chat/api/guides/v1/spaces/update). If you're updating the `displayName` field and receive the error message `ALREADY_EXISTS`, try a different display name.. An existing space within the Google Workspace organization might already use this display name. Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.setup",
+        "api_call": "service.spaces().setup().execute()",
+        "api_version": "v1",
+        "api_arguments": {},
+        "functionality": "Creates a space and adds specified users to it. The calling user is automatically added to the space, and shouldn't be specified as a membership in the request. For an example, see [Set up a space](https://developers.google.com/chat/api/guides/v1/spaces/set-up). To specify the human members to add, add memberships with the appropriate `member.name` in the `SetUpSpaceRequest`. To add a human user, use `users/{user}`, where `{user}` can be the email address for the user. For users in the same Workspace organization `{user}` can also be the `id` for the person from the People API, or the `id` for the user in the Directory API. For example, if the People API Person profile ID for `user@example.com` is `123456789`, you can add the user to the space by setting the `membership.member.name` to `users/user@example.com` or `users/123456789`. For a space or group chat, if the caller blocks or is blocked by some members, then those members aren't added to the created space. To create a direct message (DM) between the calling user and another human user, specify exactly one membership to represent the human user. If one user blocks the other, the request fails and the DM isn't created. To create a DM between the calling user and the calling app, set `Space.singleUserBotDm` to `true` and don't specify any memberships. You can only use this method to set up a DM with the calling app. To add the calling app as a member of a space or an existing DM between two human users, see [create a membership](https://developers.google.com/chat/api/guides/v1/members/create). If a DM already exists between two users, even when one user blocks the other at the time a request is made, then the existing DM is returned. Spaces with threaded replies aren't supported. If you receive the error message `ALREADY_EXISTS` when setting up a space, try a different `displayName`. An existing space within the Google Workspace organization might already use this display name. Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.members.create",
+        "api_call": "service.spaces().members().create(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "parent": "[REQUIRED] string: Required. The resource name of the space for which to create the membership. Format: spaces/{space}"
+        },
+        "functionality": "Creates a human membership or app membership for the calling app. Creating memberships for other apps isn't supported. For an example, see [ Create a membership](https://developers.google.com/chat/api/guides/v1/members/create). When creating a membership, if the specified member has their auto-accept policy turned off, then they're invited, and must accept the space invitation before joining. Otherwise, creating a membership adds the member directly to the specified space. Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users). To specify the member to add, set the `membership.member.name` in the `CreateMembershipRequest`: - To add the calling app to a space or a direct message between two human users, use `users/app`. Unable to add other apps to the space. - To add a human user, use `users/{user}`, where `{user}` can be the email address for the user. For users in the same Workspace organization `{user}` can also be the `id` for the person from the People API, or the `id` for the user in the Directory API. For example, if the People API Person profile ID for `user@example.com` is `123456789`, you can add the user to the space by setting the `membership.member.name` to `users/user@example.com` or `users/123456789`.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.members.delete",
+        "api_call": "service.spaces().members().delete(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the membership to delete. Chat apps can delete human users' or their own memberships. Chat apps can't delete other apps' memberships. When deleting a human membership, requires the `chat.memberships` scope and `spaces/{space}/members/{member}` format. You can use the email as an alias for `{member}`. For example, `spaces/{space}/members/example@gmail.com` where `example@gmail.com` is the email of the Google Chat user. When deleting an app membership, requires the `chat.memberships.app` scope and `spaces/{space}/members/app` format. Format: `spaces/{space}/members/{member}` or `spaces/{space}/members/app`."
+        },
+        "functionality": "Deletes a membership. For an example, see [Delete a membership](https://developers.google.com/chat/api/guides/v1/members/delete). Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.members.get",
+        "api_call": "service.spaces().members().get(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the membership to retrieve. To get the app's own membership, you can optionally use `spaces/{space}/members/app`. Format: `spaces/{space}/members/{member}` or `spaces/{space}/members/app` When [authenticated as a user](https://developers.google.com/chat/api/guides/auth/users), you can use the user's email as an alias for `{member}`. For example, `spaces/{space}/members/example@gmail.com` where `example@gmail.com` is the email of the Google Chat user."
+        },
+        "functionality": "Returns details about a membership. For an example, see [Get a membership](https://developers.google.com/chat/api/guides/v1/members/get). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.members.list",
+        "api_call": "service.spaces().members().list(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "filter": "string: Optional. A query filter. You can filter memberships by a member's role ([`role`](https://developers.google.com/chat/api/reference/rest/v1/spaces.members#membershiprole)) and type ([`member.type`](https://developers.google.com/chat/api/reference/rest/v1/User#type)). To filter by role, set `role` to `ROLE_MEMBER` or `ROLE_MANAGER`. To filter by type, set `member.type` to `HUMAN` or `BOT`. To filter by both role and type, use the `AND` operator. To filter by either role or type, use the `OR` operator. For example, the following queries are valid: ``` role = \"ROLE_MANAGER\" OR role = \"ROLE_MEMBER\" member.type = \"HUMAN\" AND role = \"ROLE_MANAGER\" ``` The following queries are invalid: ``` member.type = \"HUMAN\" AND member.type = \"BOT\" role = \"ROLE_MANAGER\" AND role = \"ROLE_MEMBER\" ``` Invalid queries are rejected by the server with an `INVALID_ARGUMENT` error.",
+            "pageSize": "integer: Optional. The maximum number of memberships to return. The service might return fewer than this value. If unspecified, at most 100 memberships are returned. The maximum value is 1,000. If you use a value more than 1,000, it's automatically changed to 1,000. Negative values return an `INVALID_ARGUMENT` error.",
+            "pageToken": "string: Optional. A page token, received from a previous call to list memberships. Provide this parameter to retrieve the subsequent page. When paginating, all other parameters provided should match the call that provided the page token. Passing different values to the other parameters might lead to unexpected results.",
+            "parent": "[REQUIRED] string: Required. The resource name of the space for which to fetch a membership list. Format: spaces/{space}",
+            "showGroups": "boolean: Optional. When `true`, also returns memberships associated with a Google Group, in addition to other types of memberships. If a filter is set, Google Group memberships that don't match the filter criteria aren't returned.",
+            "showInvited": "boolean: Optional. When `true`, also returns memberships associated with invited members, in addition to other types of memberships. If a filter is set, invited memberships that don't match the filter criteria aren't returned. Currently requires [user authentication](https://developers.google.com/chat/api/guides/auth/users)."
+        },
+        "functionality": "Lists memberships in a space. For an example, see [List memberships](https://developers.google.com/chat/api/guides/v1/members/list). Listing memberships with [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) lists memberships in spaces that the Chat app has access to, but excludes Chat app memberships, including its own. Listing memberships with [User authentication](https://developers.google.com/chat/api/guides/auth/users) lists memberships in spaces that the authenticated user has access to. Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.create",
+        "api_call": "service.spaces().messages().create(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "messageId": "string: Optional. A custom ID for a message. Lets Chat apps get, update, or delete a message without needing to store the system-assigned ID in the message's resource name (represented in the message `name` field). The value for this field must meet the following requirements: * Begins with `client-`. For example, `client-custom-name` is a valid custom ID, but `custom-name` is not. * Contains up to 63 characters and only lowercase letters, numbers, and hyphens. * Is unique within a space. A Chat app can't use the same custom ID for different messages. For details, see [Name a message](https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message).",
+            "messageReplyOption": "string: Optional. Specifies whether a message starts a thread or replies to one. Only supported in named spaces.",
+            "parent": "[REQUIRED] string: Required. The resource name of the space in which to create a message. Format: `spaces/{space}`",
+            "requestId": "string: Optional. A unique request ID for this message. Specifying an existing request ID returns the message created with that ID instead of creating a new message.",
+            "threadKey": "string: Optional. Deprecated: Use thread.thread_key instead. ID for the thread. Supports up to 4000 characters. To start or add to a thread, create a message and specify a `threadKey` or the thread.name. For example usage, see [Start or reply to a message thread](https://developers.google.com/chat/api/guides/v1/messages/create#create-message-thread)."
+        },
+        "functionality": "Creates a message in a Google Chat space. For an example, see [Create a message](https://developers.google.com/chat/api/guides/v1/messages/create). Calling this method requires [authentication](https://developers.google.com/chat/api/guides/auth) and supports the following authentication types: - For text messages, user authentication or app authentication are supported. - For card messages, only app authentication is supported. (Only Chat apps can create card messages.)",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.delete",
+        "api_call": "service.spaces().messages().delete(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "force": "boolean: When `true`, deleting a message also deletes its threaded replies. When `false`, if a message has threaded replies, deletion fails. Only applies when [authenticating as a user](https://developers.google.com/chat/api/guides/auth/users). Has no effect when [authenticating as a Chat app] (https://developers.google.com/chat/api/guides/auth/service-accounts).",
+            "name": "[REQUIRED] string: Required. Resource name of the message. Format: `spaces/{space}/messages/{message}` If you've set a custom ID for your message, you can use the value from the `clientAssignedMessageId` field for `{message}`. For details, see [Name a message] (https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message)."
+        },
+        "functionality": "Deletes a message. For an example, see [Delete a message](https://developers.google.com/chat/api/guides/v1/messages/delete). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users). When using app authentication, requests can only delete messages created by the calling Chat app.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.get",
+        "api_call": "service.spaces().messages().get(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the message. Format: `spaces/{space}/messages/{message}` If you've set a custom ID for your message, you can use the value from the `clientAssignedMessageId` field for `{message}`. For details, see [Name a message] (https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message)."
+        },
+        "functionality": "Returns details about a message. For an example, see [Read a message](https://developers.google.com/chat/api/guides/v1/messages/get). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users). Note: Might return a message from a blocked member or space.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.list",
+        "api_call": "service.spaces().messages().list(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "filter": "string: A query filter. You can filter messages by date (`create_time`) and thread (`thread.name`). To filter messages by the date they were created, specify the `create_time` with a timestamp in [RFC-3339](https://www.rfc-editor.org/rfc/rfc3339) format and double quotation marks. For example, `\"2023-04-21T11:30:00-04:00\"`. You can use the greater than operator `>` to list messages that were created after a timestamp, or the less than operator `<` to list messages that were created before a timestamp. To filter messages within a time interval, use the `AND` operator between two timestamps. To filter by thread, specify the `thread.name`, formatted as `spaces/{space}/threads/{thread}`. You can only specify one `thread.name` per query. To filter by both thread and date, use the `AND` operator in your query. For example, the following queries are valid: ``` create_time > \"2012-04-21T11:30:00-04:00\" create_time > \"2012-04-21T11:30:00-04:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123 create_time > \"2012-04-21T11:30:00+00:00\" AND create_time < \"2013-01-01T00:00:00+00:00\" AND thread.name = spaces/AAAAAAAAAAA/threads/123 thread.name = spaces/AAAAAAAAAAA/threads/123 ``` Invalid queries are rejected by the server with an `INVALID_ARGUMENT` error.",
+            "orderBy": "string: Optional, if resuming from a previous query. How the list of messages is ordered. Specify a value to order by an ordering operation. Valid ordering operation values are as follows: - `ASC` for ascending. - `DESC` for descending. The default ordering is `create_time ASC`.",
+            "pageSize": "integer: The maximum number of messages returned. The service might return fewer messages than this value. If unspecified, at most 25 are returned. The maximum value is 1,000. If you use a value more than 1,000, it's automatically changed to 1,000. Negative values return an `INVALID_ARGUMENT` error.",
+            "pageToken": "string: Optional, if resuming from a previous query. A page token received from a previous list messages call. Provide this parameter to retrieve the subsequent page. When paginating, all other parameters provided should match the call that provided the page token. Passing different values to the other parameters might lead to unexpected results.",
+            "parent": "[REQUIRED] string: Required. The resource name of the space to list messages from. Format: `spaces/{space}`",
+            "showDeleted": "boolean: Whether to include deleted messages. Deleted messages include deleted time and metadata about their deletion, but message content is unavailable."
+        },
+        "functionality": "Lists messages in a space that the caller is a member of, including messages from blocked members and spaces. For an example, see [List messages](/chat/api/guides/v1/messages/list). Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.patch",
+        "api_call": "service.spaces().messages().patch(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "allowMissing": "boolean: Optional. If `true` and the message isn't found, a new message is created and `updateMask` is ignored. The specified message ID must be [client-assigned](https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message) or the request fails.",
+            "name": "[REQUIRED] string: Resource name of the message. Format: `spaces/{space}/messages/{message}` Where `{space}` is the ID of the space where the message is posted and `{message}` is a system-assigned ID for the message. For example, `spaces/AAAAAAAAAAA/messages/BBBBBBBBBBB.BBBBBBBBBBB`. If you set a custom ID when you create a message, you can use this ID to specify the message in a request by replacing `{message}` with the value from the `clientAssignedMessageId` field. For example, `spaces/AAAAAAAAAAA/messages/client-custom-name`. For details, see [Name a message](https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message).",
+            "updateMask": "string: Required. The field paths to update. Separate multiple values with commas or use `*` to update all field paths. Currently supported field paths: - `text` - `attachment` - `cards` (Requires [app authentication](/chat/api/guides/auth/service-accounts).) - `cards_v2` (Requires [app authentication](/chat/api/guides/auth/service-accounts).) - Developer Preview: `accessory_widgets` (Requires [app authentication](/chat/api/guides/auth/service-accounts).)"
+        },
+        "functionality": "Updates a message. There's a difference between the `patch` and `update` methods. The `patch` method uses a `patch` request while the `update` method uses a `put` request. We recommend using the `patch` method. For an example, see [Update a message](https://developers.google.com/chat/api/guides/v1/messages/update). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users). When using app authentication, requests can only update messages created by the calling Chat app.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.update",
+        "api_call": "service.spaces().messages().update(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "allowMissing": "boolean: Optional. If `true` and the message isn't found, a new message is created and `updateMask` is ignored. The specified message ID must be [client-assigned](https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message) or the request fails.",
+            "name": "[REQUIRED] string: Resource name of the message. Format: `spaces/{space}/messages/{message}` Where `{space}` is the ID of the space where the message is posted and `{message}` is a system-assigned ID for the message. For example, `spaces/AAAAAAAAAAA/messages/BBBBBBBBBBB.BBBBBBBBBBB`. If you set a custom ID when you create a message, you can use this ID to specify the message in a request by replacing `{message}` with the value from the `clientAssignedMessageId` field. For example, `spaces/AAAAAAAAAAA/messages/client-custom-name`. For details, see [Name a message](https://developers.google.com/chat/api/guides/v1/messages/create#name_a_created_message).",
+            "updateMask": "string: Required. The field paths to update. Separate multiple values with commas or use `*` to update all field paths. Currently supported field paths: - `text` - `attachment` - `cards` (Requires [app authentication](/chat/api/guides/auth/service-accounts).) - `cards_v2` (Requires [app authentication](/chat/api/guides/auth/service-accounts).) - Developer Preview: `accessory_widgets` (Requires [app authentication](/chat/api/guides/auth/service-accounts).)"
+        },
+        "functionality": "Updates a message. There's a difference between the `patch` and `update` methods. The `patch` method uses a `patch` request while the `update` method uses a `put` request. We recommend using the `patch` method. For an example, see [Update a message](https://developers.google.com/chat/api/guides/v1/messages/update). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Supports [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts) and [user authentication](https://developers.google.com/chat/api/guides/auth/users). When using app authentication, requests can only update messages created by the calling Chat app.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.attachments.get",
+        "api_call": "service.spaces().messages().attachments().get(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Resource name of the attachment, in the form `spaces/*/messages/*/attachments/*`."
+        },
+        "functionality": "Gets the metadata of a message attachment. The attachment data is fetched using the [media API](https://developers.google.com/chat/api/reference/rest/v1/media/download). For an example, see [Get a message attachment](https://developers.google.com/chat/api/guides/v1/media-and-attachments/get). Requires [app authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.reactions.create",
+        "api_call": "service.spaces().messages().reactions().create(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "parent": "[REQUIRED] string: Required. The message where the reaction is created. Format: `spaces/{space}/messages/{message}`"
+        },
+        "functionality": "Creates a reaction and adds it to a message. For an example, see [Create a reaction](https://developers.google.com/chat/api/guides/v1/reactions/create). Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users). Only unicode emoji are supported.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.reactions.delete",
+        "api_call": "service.spaces().messages().reactions().delete(name: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Required. Name of the reaction to delete. Format: `spaces/{space}/messages/{message}/reactions/{reaction}`"
+        },
+        "functionality": "Deletes a reaction to a message. For an example, see [Delete a reaction](https://developers.google.com/chat/api/guides/v1/reactions/delete). Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Chat API - spaces.messages.reactions.list",
+        "api_call": "service.spaces().messages().reactions().list(parent: str).execute()",
+        "api_version": "v1",
+        "api_arguments": {
+            "filter": "string: Optional. A query filter. You can filter reactions by [emoji](https://developers.google.com/chat/api/reference/rest/v1/Emoji) (either `emoji.unicode` or `emoji.custom_emoji.uid`) and [user](https://developers.google.com/chat/api/reference/rest/v1/User) (`user.name`). To filter reactions for multiple emojis or users, join similar fields with the `OR` operator, such as `emoji.unicode = \"\ud83d\ude42\" OR emoji.unicode = \"\ud83d\udc4d\"` and `user.name = \"users/AAAAAA\" OR user.name = \"users/BBBBBB\"`. To filter reactions by emoji and user, use the `AND` operator, such as `emoji.unicode = \"\ud83d\ude42\" AND user.name = \"users/AAAAAA\"`. If your query uses both `AND` and `OR`, group them with parentheses. For example, the following queries are valid: ``` user.name = \"users/{user}\" emoji.unicode = \"\ud83d\ude42\" emoji.custom_emoji.uid = \"{uid}\" emoji.unicode = \"\ud83d\ude42\" OR emoji.unicode = \"\ud83d\udc4d\" emoji.unicode = \"\ud83d\ude42\" OR emoji.custom_emoji.uid = \"{uid}\" emoji.unicode = \"\ud83d\ude42\" AND user.name = \"users/{user}\" (emoji.unicode = \"\ud83d\ude42\" OR emoji.custom_emoji.uid = \"{uid}\") AND user.name = \"users/{user}\" ``` The following queries are invalid: ``` emoji.unicode = \"\ud83d\ude42\" AND emoji.unicode = \"\ud83d\udc4d\" emoji.unicode = \"\ud83d\ude42\" AND emoji.custom_emoji.uid = \"{uid}\" emoji.unicode = \"\ud83d\ude42\" OR user.name = \"users/{user}\" emoji.unicode = \"\ud83d\ude42\" OR emoji.custom_emoji.uid = \"{uid}\" OR user.name = \"users/{user}\" emoji.unicode = \"\ud83d\ude42\" OR emoji.custom_emoji.uid = \"{uid}\" AND user.name = \"users/{user}\" ``` Invalid queries are rejected by the server with an `INVALID_ARGUMENT` error.",
+            "pageSize": "integer: Optional. The maximum number of reactions returned. The service can return fewer reactions than this value. If unspecified, the default value is 25. The maximum value is 200; values above 200 are changed to 200.",
+            "pageToken": "string: Optional. (If resuming from a previous query.) A page token received from a previous list reactions call. Provide this to retrieve the subsequent page. When paginating, the filter value should match the call that provided the page token. Passing a different value might lead to unexpected results.",
+            "parent": "[REQUIRED] string: Required. The message users reacted to. Format: `spaces/{space}/messages/{message}`"
+        },
+        "functionality": "Lists reactions to a message. For an example, see [List reactions](https://developers.google.com/chat/api/guides/v1/reactions/list). Requires [user authentication](https://developers.google.com/chat/api/guides/auth/users).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/chat/api/reference/rest"
+        }
+    }
+]

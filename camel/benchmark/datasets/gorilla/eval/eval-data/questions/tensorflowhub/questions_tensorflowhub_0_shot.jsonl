@@ -1,0 +1,685 @@
+{"question_id": 1, "text": " I am working on a project where I need to cluster similar images of street art. How can I get the relevant feature vectors from these images for clustering?\\n", "category": "generic"}
+{"question_id": 2, "text": " We want to develop a simple application where users can take a photo of any object and find the description of it. Help us with creating a model that extracts features from the object's image.\\n", "category": "generic"}
+{"question_id": 3, "text": " I have a set of food images and I want to create a model that differentiates between different types of cuisine.\\n", "category": "generic"}
+{"question_id": 4, "text": " Show me the right API call to generate image feature vectors using MobileNet V2 architecture so that I can perform a classification task.\\n", "category": "generic"}
+{"question_id": 5, "text": " My dog is always getting into things that can be dangerous. Can you help me identify the object my dog is about to eat?\\n", "category": "generic"}
+{"question_id": 6, "text": " A photo is sent to me, and I would like to know what objects are in the photo.\\n", "category": "generic"}
+{"question_id": 7, "text": " Analyze customer reviews and identify positive and negative sentiments, so please convert the text reviews into vectors.\\n", "category": "generic"}
+{"question_id": 8, "text": " Recommend a method to extract image feature vectors with MobileNetV2. \\n", "category": "generic"}
+{"question_id": 9, "text": " Write an example code to use a pre-trained model to convert a sentence \\\"My cat is sitting on the porch\\\" into high-dimensional vectors.\\n###Input: My cat is sitting on the porch\\n", "category": "generic"}
+{"question_id": 10, "text": " Analyze a collection of images of pets to obtain meaningful features and club them into categories based on their appearance and other characteristics.\\n", "category": "generic"}
+{"question_id": 11, "text": " We are building a model for car brand recognition. Before training, we need to extract features from car images.\\n", "category": "generic"}
+{"question_id": 12, "text": " I have a list of sentences and I want to find which ones are most similar. How can I do that efficiently?\\n", "category": "generic"}
+{"question_id": 13, "text": " I have a customer service chatbot, and I would like to analyze the similarity between customer queries using NLP.\\n", "category": "generic"}
+{"question_id": 14, "text": " I have hundreds of images and I want to group them in categories, but first I need to extract features from those images.\\n", "category": "generic"}
+{"question_id": 15, "text": " Analyze the given image dataset containing healthy and unhealthy plants by extracting features using pre-trained MobileNetV2 model.\\n", "category": "generic"}
+{"question_id": 16, "text": " Find out what's in the image taken by a wildlife photographer, so we can determine the main subject of the picture.\\n###Input: An image taken by a wildlife photographer.\\n", "category": "generic"}
+{"question_id": 17, "text": " Can you tell me the type of food in this image?\\n", "category": "generic"}
+{"question_id": 18, "text": " Identify the semantic theme of the given list of customer support tickets.\\n###Input: ['The payment did not go through.', 'Issues with the payment method.', 'I need help with my payment.', 'Unable to complete payment.', 'Payment error encountered.']\\n", "category": "generic"}
+{"question_id": 19, "text": " I want a system that will read the image of my room and identify all the objects present in the room along with their confidence score.\\n", "category": "generic"}
+{"question_id": 20, "text": " My company has a database of product descriptions and I want to convert them into vectors for better search functionality.\\n", "category": "generic"}
+{"question_id": 21, "text": " I have a project which I need to quickly recognize animals, and I want to use the pre-trained model as a starting point.\\n", "category": "generic"}
+{"question_id": 22, "text": " I need an easy way to sort out thousands of travel photos by recognizing landmarks and other objects.\\n", "category": "generic"}
+{"question_id": 23, "text": " Develop a mobile application to identify the objects in real-world images and display its category.\\n", "category": "generic"}
+{"question_id": 24, "text": " I need to analyze user feedback and compare it to a list of predefined topics.\\n", "category": "generic"}
+{"question_id": 25, "text": " We need to recognize the flowers in the pictures from our botanical garden.\\n", "category": "generic"}
+{"question_id": 26, "text": " I want a solid text preprocessing method to make my model more efficient in dealing with different texts.\\n", "category": "generic"}
+{"question_id": 27, "text": " A fashion store wants to categorize newly arrived clothes into different classes. Please make sure the right category is assigned to each clothing item.\\n", "category": "generic"}
+{"question_id": 28, "text": " To match clothes in my wardrobe, I need to extract features from images and organize them based on similarity.\\n", "category": "generic"}
+{"question_id": 29, "text": " We will launch a new product that relies on user reviews, analyze reviews, and generate insights based on their sentiments.\\n", "category": "generic"}
+{"question_id": 30, "text": " Find me an API that will help me extract features of my images for building a recommendation system.\\n", "category": "generic"}
+{"question_id": 31, "text": " I want to extract important features from car images of different angles to predict the brand of the car.\\n", "category": "generic"}
+{"question_id": 32, "text": " I want to create a phone cover design recommendation system. For that, I need to get some features of cover images.\\n", "category": "generic"}
+{"question_id": 33, "text": " We are trying to group tweets with similar emotions. How can we represent the text in the tweet so we can quantify the similarity among tweets?\\n", "category": "generic"}
+{"question_id": 34, "text": " We are planning a security system for a warehouse, and we need to know the objects in our surveillance feed.\\n", "category": "generic"}
+{"question_id": 35, "text": " For arranging my documents, I want to compute the semantic similarity between a set of sentences.\\n", "category": "generic"}
+{"question_id": 36, "text": " I would like to group similar user reviews together. To do this, I need to transform the text reviews into high dimensional vectors.\\n", "category": "generic"}
+{"question_id": 37, "text": " I need to find if a word is a positive or negative sentiment. I need to process my text before feeding it to my sentiment analysis model.\\n", "category": "generic"}
+{"question_id": 38, "text": " I have a collection of photos I took while on vacation, and I want to know what objects are in each photo.\\n", "category": "generic"}
+{"question_id": 39, "text": " Create a list of similar art pictures by comparing the feature vectors of the existing art images.\\n", "category": "generic"}
+{"question_id": 40, "text": " Discover a person's sentiment after reading their review\\n", "category": "generic"}
+{"question_id": 41, "text": " We have several images of clothing items and want to differentiate them by their features. Generate a model that will create a feature vector for each item.\\n", "category": "generic"}
+{"question_id": 42, "text": " Create a mobile app that takes a photo of a plant and identifies its species. To do this, use an image classifier to process the photo.\\n", "category": "generic"}
+{"question_id": 43, "text": " I want to use an API to find the degree of similarity between sentences. Firstly, I need to obtain their high-dimensional vector representations.\\n", "category": "generic"}
+{"question_id": 44, "text": " Let's observe a random street to identify various elements like cars, people and street signs in a photo.\\n", "category": "generic"}
+{"question_id": 45, "text": " Organize my photos taken during the vacation by identifying what the photo is showing.\\n", "category": "generic"}
+{"question_id": 46, "text": " Create a document classifier, and identify the genre of a movie poster by classifying the image content.\\n", "category": "generic"}
+{"question_id": 47, "text": " Develop a model that will extract feature vectors from images, which we will use later to classify the images.\\n", "category": "generic"}
+{"question_id": 48, "text": " I want to build a mobile image recognition app to identify the species of birds in images. Suggest a suitable pre-trained model.\\n", "category": "generic"}
+{"question_id": 49, "text": " Explain how to create a image classification model using a pre-trained MobileNetV2 model as a feature extractor.\\n", "category": "generic"}
+{"question_id": 50, "text": " There are comments written by users in different languages, and we want to calculate the similarity between pairs of comments.\\n", "category": "generic"}
+{"question_id": 51, "text": " Analyze large data sets containing various customer reviews. Transform the text from these reviews into vectors for further analysis like sentiment, similar phrases, and other natural language processing tasks.\\n", "category": "generic"}
+{"question_id": 52, "text": " I am visiting the Metropolitan Museum of Art and want to quickly identify the category or genre of the artwork by taking a picture of it.\\n", "category": "generic"}
+{"question_id": 53, "text": " Could you provide an embedding for my sentence to be used in semantic similarity analysis?\\n###Input: Someone is learning how to use a Python library.\\n", "category": "generic"}
+{"question_id": 54, "text": " Identify the objects in the image for an image indexing system.\\n", "category": "generic"}
+{"question_id": 55, "text": " We want to create an app that can recognize furniture in images. Find an API that can help us.\\n", "category": "generic"}
+{"question_id": 56, "text": " Transform a list of product titles into numerical vectors to perform sentiment analysis.\\n", "category": "generic"}
+{"question_id": 57, "text": " Create a model that can extract features of an image to use in a fashion-based recommendation system.\\n", "category": "generic"}
+{"question_id": 58, "text": " We are building an app to help people categorize their personal photos into categories. We need to extract features from the images.\\n", "category": "generic"}
+{"question_id": 59, "text": " Design a machine learning model to recognize dog breeds. We need a feature extractor from MobileNet V2 trained on ImageNet dataset.\\n", "category": "generic"}
+{"question_id": 60, "text": " I want to find the similarity between user-generated restaurant reviews, so I need to transform these reviews into an appropriate format.\\n", "category": "generic"}
+{"question_id": 61, "text": " Compile a report on ongoing political conflicts in the Middle East, using an embedding to identify the key topics.\\n", "category": "generic"}
+{"question_id": 62, "text": " Our school wants to analyse students' Reddit comments to find relevant topics. We need vectors to represent their comments for further processing.\\n", "category": "generic"}
+{"question_id": 63, "text": " Recommend me what type of plants are suitable for my garden based on the image input from the garden.\\n", "category": "generic"}
+{"question_id": 64, "text": " I am building a chatbot for a cosmetics store and want to understand the semantic similarity between different customer queries.\\n", "category": "generic"}
+{"question_id": 65, "text": " From a collection of images, we want to extract a feature vector for each image using MobileNetV2.\\n", "category": "generic"}
+{"question_id": 66, "text": " Find and display Cosine Similarity between two different sentences.\\n", "category": "generic"}
+{"question_id": 67, "text": " Help me measure the semantic similarity between two sentences, so I can find how closely related they are in meaning.\\n", "category": "generic"}
+{"question_id": 68, "text": " Transform the following text into its corresponding high-dimensional vector: \\\"I love exploring new places and trying different cuisines.\\\"\\n###Input: I love exploring new places and trying different cuisines.\\n", "category": "generic"}
+{"question_id": 69, "text": " To build an image recognition system, we need a pre-trained model to extract features from images. Provide the API call for this.\\n", "category": "generic"}
+{"question_id": 70, "text": " I have a list of sentences that I want to preprocess and make ready to be fed to a machine learning model. Can you do that?\\n", "category": "generic"}
+{"question_id": 71, "text": " We are developing a chatbot, and we need to find the semantically similar sentences from a dataset.\\n", "category": "generic"}
+{"question_id": 72, "text": " I am inspecting images of license plates and need to check which ones have plates on them\\n", "category": "generic"}
+{"question_id": 73, "text": " As a programmer, I want to analyze images and determine what objects are in them.\\n", "category": "generic"}
+{"question_id": 74, "text": " I have a few news articles and I want to see if they're similar. I need a tool to determine the similarity between them.\\n", "category": "generic"}
+{"question_id": 75, "text": " I need to find similar listings for an Airbnb property, can you find its vector representation for further comparison?\\n", "category": "generic"}
+{"question_id": 76, "text": " Extract useful information from an image for further processing by minimizing the input.\\n", "category": "generic"}
+{"question_id": 77, "text": " We need to incorporate an API to differentiate between species of flowers.\\n", "category": "generic"}
+{"question_id": 78, "text": " We have customer reviews and need to categorize them. Convert the text into a compatible form for machine learning analysis.\\n", "category": "generic"}
+{"question_id": 79, "text": " Can you tell me the breed of my dog if I send you a picture of it? \\n", "category": "generic"}
+{"question_id": 80, "text": " I need to sort my photos into different folders, based on what the main object is in each photo.\\n", "category": "generic"}
+{"question_id": 81, "text": " I want to make a recommendation system for similar images, can you recommend an API for image feature extraction?\\n", "category": "generic"}
+{"question_id": 82, "text": " Analyze the following list of tweets and create a vector to find if two of them have similar meaning.\\n###Input: [\\\"I love going to the beach\\\", \\\"The beach is my favorite place to visit\\\", \\\"What a good day for ice cream\\\"]\\n", "category": "generic"}
+{"question_id": 83, "text": " I need to analyze numerous article headlines and sort them based on their similarity.\\n", "category": "generic"}
+{"question_id": 84, "text": " We want to know which animal we will find in the picture taken during our vacation.\\n", "category": "generic"}
+{"question_id": 85, "text": " Summarize an article by representing its content in a high-dimensional vector format.\\n", "category": "generic"}
+{"question_id": 86, "text": " Show me how I can convert this sentence \\\"I enjoy machine learning and natural language processing\\\" into a high-dimensional vector.\\n", "category": "generic"}
+{"question_id": 87, "text": " Provide a solution to recognize different types of fruits through image processing.\\n", "category": "generic"}
+{"question_id": 88, "text": " I have recorded some animal sounds and I want to analyze them to identify the animal species.\\n", "category": "generic"}
+{"question_id": 89, "text": " Can you provide me with the semantic similarity of two sentences \\\"I love pizza\\\" and \\\"Pizza is my favorite food\\\"?\\n###Input: \\\"I love pizza\\\", \\\"Pizza is my favorite food\\\"\\n", "category": "generic"}
+{"question_id": 90, "text": " My friend sent me a picture of an animal and I want to find out the type of animal in the picture.\\n", "category": "generic"}
+{"question_id": 91, "text": " Summarize the article and identify the key topics discussed.\\n", "category": "generic"}
+{"question_id": 92, "text": " Help me identify what's in a photo using a model that is pre-trained on the ImageNet dataset.\\n", "category": "generic"}
+{"question_id": 93, "text": " Translate the following sentence into every possible language and create a high-dimensional vector representation for each translated sentence.\\n###Input: \\\"The current world population is 7.9 billion.\\\"\\n", "category": "generic"}
+{"question_id": 94, "text": " I am trying to find objects in an image with high accuracy. Help me use a pre-trained model to detect objects.\\n", "category": "generic"}
+{"question_id": 95, "text": " I have a fashion catalog and I want to find visually similar clothes from the catalog using the images.\\n", "category": "generic"}
+{"question_id": 96, "text": " I want to identify what objects are in the image I took on my vacation. I want a lightweight and fast model for this task.\\n", "category": "generic"}
+{"question_id": 97, "text": " Could you identify the object in an image? Which pre-trained model can I use?\\n", "category": "generic"}
+{"question_id": 98, "text": " Find out what an image is about by using a pre-trained image classification model, considering its contents.\\n", "category": "generic"}
+{"question_id": 99, "text": " Develop a model for product categories from images I provide.\\n", "category": "generic"}
+{"question_id": 100, "text": " Can you please provide an API that will help us find semantic similarity between multiple sentences?\\n", "category": "generic"}
+{"question_id": 101, "text": " Describe an object in an image.\\n", "category": "generic"}
+{"question_id": 102, "text": " I have a collection of paintings and I'm looking for a way to generate a list of their most common features.\\n", "category": "generic"}
+{"question_id": 103, "text": " We have new images containing scenes from different locations. Let's classify these locations by implementing a pre-trained image classification model based on MobileNet V2.\\n", "category": "generic"}
+{"question_id": 104, "text": " Can you help extract meaning from a list of sentences by converting them into high-dimensional vectors?\\n", "category": "generic"}
+{"question_id": 105, "text": " We have a list of YouTube video descriptions, and we want to find similar videos based on the descriptions, so start with getting the embeddings of each description.\\n", "category": "generic"}
+{"question_id": 106, "text": " I want a tool to help me count how many cars are parked in our parking lot.\\n", "category": "generic"}
+{"question_id": 107, "text": " Can you help me classify the species of a bird that I have in my photo? \\n", "category": "generic"}
+{"question_id": 108, "text": " Can you help me analyze the contents of a photograph?\\n", "category": "generic"}
+{"question_id": 109, "text": " I have some random objects lying around my home office desk. Could you please create a model that can classify these objects for me?\\n", "category": "generic"}
+{"question_id": 110, "text": " Analyze various photograps and determine what objects each one contains.\\n", "category": "generic"}
+{"question_id": 111, "text": " Determine the type of animal we found during the hike. It's important to know if it could be dangerous.\\n", "category": "generic"}
+{"question_id": 112, "text": " Expedia wants to recommend hotels based on the image of their rooms. They need a way to extract features from these images.\\n", "category": "generic"}
+{"question_id": 113, "text": " Automate the process of training a deep learning model to distinguish between images of cats and dogs.\\n", "category": "generic"}
+{"question_id": 114, "text": " We need to detect broken objects in an assembly line from images. Suggest an appropriate API call that can help us generate feature vectors for this purpose.\\n", "category": "generic"}
+{"question_id": 115, "text": " I need a model that can classify different architectural styles in images.\\n", "category": "generic"}
+{"question_id": 116, "text": " Provide me a pre-trained model to classify imported images.\\n", "category": "generic"}
+{"question_id": 117, "text": " I'd like to automatically classify food images at a grocery store to add labels to the products.\\n", "category": "generic"}
+{"question_id": 118, "text": " Analyze a collection of images to help me recognize my dog's breed.\\n", "category": "generic"}
+{"question_id": 119, "text": " Create a feature vector from an image using a pre-trained model for use in an image similarity search.\\n", "category": "generic"}
+{"question_id": 120, "text": " I have an app that allows users to take pictures of objects with their phones, and I want to know what those objects are.\\n", "category": "generic"}
+{"question_id": 121, "text": " What is the similarity between two sentences? First encode them as vectors, and then calculate the cosine similarity.\\n###Input: {\\\"sentence1\\\": \\\"The quick brown fox jumps over the lazy dog.\\\", \\\"sentence2\\\": \\\"A sly red vixen quickly leaps above the dozing hound.\\\"}\\n", "category": "generic"}
+{"question_id": 122, "text": " My CEO sent me an email, and he is asking me to analyze the emails' tone to see whether it is positive or negative. We need to get an embedding for this email before classifying the sentiment.\\n", "category": "generic"}
+{"question_id": 123, "text": " We need recommendations for similar restaurants. Calculate the embedding of restaurant descriptions to create a list of the most similar establishments.\\n", "category": "generic"}
+{"question_id": 124, "text": " Convert a book summary into a high-dimensional vector for determining similarity to another book's summary.\\n", "category": "generic"}
+{"question_id": 125, "text": " Tell me how to convert post titles into numerical vectors so that I can find similar titles later on.\\n", "category": "generic"}
+{"question_id": 126, "text": " We want to analyze security camera footage and determine if there are any people in the frame.\\n", "category": "generic"}
+{"question_id": 127, "text": " I took a picture of my park today. I want to know what kinds of objects I captured in the picture.\\n", "category": "generic"}
+{"question_id": 128, "text": " Our application needs to identify objects in an image. Extract them using pre-trained model.\\n", "category": "generic"}
+{"question_id": 129, "text": " Compare the similarity of two customer reviews for a product and see if they are positive or negative.\\n", "category": "generic"}
+{"question_id": 130, "text": " I took a photo of my backyard and want to find similar images online. Please extract features from the photo so I can search for similar photos.\\n", "category": "generic"}
+{"question_id": 131, "text": " I want to compare the meaning similarity of two sentences. Find a way to encode the sentences and calculate their similarity.\\n", "category": "generic"}
+{"question_id": 132, "text": " My retail client wishes to recognize when a doorbell is rang in audio files of their store.\\n", "category": "generic"}
+{"question_id": 133, "text": " For a building project, we need to analyze pictures of different rocks and determine their structures. Obtain the feature vector of a rock image first.\\n", "category": "generic"}
+{"question_id": 134, "text": " I need to know what is in this photo I took. Can you tell me?\\n###Input: {\\\"image\\\": \\\"path/to/image.jpg\\\"}\\n", "category": "generic"}
+{"question_id": 135, "text": " Identify objects in an image to let me know what objects are in the image.\\n", "category": "generic"}
+{"question_id": 136, "text": " My friend sent me an image of an animal, and I am not sure what kind of animal it is. Can you tell me what animal is in the image?\\n###Input: \\\"<path_to_image>\\\"\\n", "category": "generic"}
+{"question_id": 137, "text": " For an image classification task, we need a model capable of recognizing and differentiating between various object types. Please load a pre-trained model for this purpose.\\n", "category": "generic"}
+{"question_id": 138, "text": " In order to analyze customer feedback from my online store, I need a way to convert their feedback into a numeric format that can be processed by my algorithms.\\n", "category": "generic"}
+{"question_id": 139, "text": " I'm working on an app for smart parking stations, and I would like to detect and recognize the car plates from our CCTV footages.\\n", "category": "generic"}
+{"question_id": 140, "text": " We need to build a car and bike image classifier. First, we need to extract features from the images to use for training the model.\\n", "category": "generic"}
+{"question_id": 141, "text": " I want to compare the semantic similarity between two sentences. Give me the embeddings using pre-trained models.\\n", "category": "generic"}
+{"question_id": 142, "text": " Sniff out the odd one among the following sentences: \\\"The party was amazing.\\\", \\\"Call a doctor.\\\", \\\"The conference was well organized.\\\"\\n###Input: ['The party was amazing.', 'Call a doctor.', 'The conference was well organized.']\\n", "category": "generic"}
+{"question_id": 143, "text": " We want to recommend similar fashion items based on a user's uploaded image. Extract image features and compare them with our fashion database.\\n", "category": "generic"}
+{"question_id": 144, "text": " When creating a mobile application that uses image recognition, it should be able to determine what items are in the photo.\\n", "category": "generic"}
+{"question_id": 145, "text": " I have some images and I want to compare them efficiently. Extract the features of the images so I can perform similarity analysis.\\n", "category": "generic"}
+{"question_id": 146, "text": " Manage the camera in the smartphone to recognize multiple objects during a forest walk.\\n", "category": "generic"}
+{"question_id": 147, "text": " A tourist application wants to give real-time object recognition to help tourists when they take a picture of an object in the city.\\n", "category": "generic"}
+{"question_id": 148, "text": " We want to help users identify the species of a bird in a given picture.\\n", "category": "generic"}
+{"question_id": 149, "text": " I want to analyze a list of customer reviews to gain insight into their sentiment.\\n", "category": "generic"}
+{"question_id": 150, "text": " Gather high-dimensional embeddings of some scientific abstracts to make a similarity-based network analysis.\\n", "category": "generic"}
+{"question_id": 151, "text": " Use a pre-trained model to find out traits that are similar to buildings in images.\\n", "category": "generic"}
+{"question_id": 152, "text": " I need to measure the semantic similarity between pairs of sentences. Help me to get the embeddings of the sentences.\\n", "category": "generic"}
+{"question_id": 153, "text": " I work in a post office, and need to classify bills and documents from a mixed package. Please extract image features so that we can use these features for classification.\\n", "category": "generic"}
+{"question_id": 154, "text": " We are building an AI app that can help us determine what kind of food is in a picture.\\n", "category": "generic"}
+{"question_id": 155, "text": " Categorize images captured from a drone in different landscapes like forests, rivers, and mountains.\\n", "category": "generic"}
+{"question_id": 156, "text": " I am planning to sort and label my photo collection. Help me identify different objects in my master album.\\n", "category": "generic"}
+{"question_id": 157, "text": " Determine the dominant object in an image by extracting features from the image.\\n", "category": "generic"}
+{"question_id": 158, "text": " Estimate the similarity between two news headlines using pre-trained text embedding.\\n", "category": "generic"}
+{"question_id": 159, "text": " I want to build a simple mobile app that identifies plants by analyzing photos of their leaves.\\n", "category": "generic"}
+{"question_id": 160, "text": " I want to make a food identification app that can help me classify different dishes at a restaurant.\\n", "category": "generic"}
+{"question_id": 161, "text": " I want to know what is in this image I just took.\\n", "category": "generic"}
+{"question_id": 162, "text": " We need to classify images taken by our surveillance camera to detect unwanted activity.\\n", "category": "generic"}
+{"question_id": 163, "text": " We are working with an autonomous vehicle company, and they want to detect and classify objects in the environment while the vehicle is on the road.\\n", "category": "generic"}
+{"question_id": 164, "text": " How do I know the breed of a random dog in a picture?\\n", "category": "generic"}
+{"question_id": 165, "text": " I have a picture of my room and I want to identify all the objects present in it.\\n", "category": "generic"}
+{"question_id": 166, "text": " I have a collection of movie descriptions and I want to find the resemblance between them.\\n", "category": "generic"}
+{"question_id": 167, "text": " To find similar images in a database, we need to extract useful features to compare images.\\n", "category": "generic"}
+{"question_id": 168, "text": " Which API could be used to compare the semantic similarity between two given pieces of text?\\n", "category": "generic"}
+{"question_id": 169, "text": " We have some cars pictures and want to classify them, give us the API call to get a pre-trained model.\\n", "category": "generic"}
+{"question_id": 170, "text": " We have received customer complaints about our products and want to group them into different categories to address them more effectively. Help us get embeddings for the complaint text data to enable clustering.\\n", "category": "generic"}
+{"question_id": 171, "text": " Help me convert Reddit post comments into numerical vector format that can be easily understood by machine algorithms.\\n", "category": "generic"}
+{"question_id": 172, "text": " Organize a digital library of photos and identify the ones with similar content by comparing their image features.\\n", "category": "generic"}
+{"question_id": 173, "text": " Given a collection of images, find the most likely object depicted in each image.\\n", "category": "generic"}
+{"question_id": 174, "text": " I am making an image recognition app, and I want to extract features from each image.\\n", "category": "generic"}
+{"question_id": 175, "text": " Analyze whether the descriptions of two movies are similar by generating dense vector representations of the text and comparing them.\\n", "category": "generic"}
+{"question_id": 176, "text": " We have a set of images that we want to classify into different categories. We need a pre-trained image classification model for this.\\n", "category": "generic"}
+{"question_id": 177, "text": " Our team has an image classification project. First, we need to extract features from our images.\\n", "category": "generic"}
+{"question_id": 178, "text": " I want to cluster customer chat messages so that their related concerns are addressed in a more meaningful way.\\n", "category": "generic"}
+{"question_id": 179, "text": " I want to build a text classifier for articles that could also find articles with similar content. Can you suggest a way to encode the text of the articles?\\n", "category": "generic"}
+{"question_id": 180, "text": " There is a need to segment images of a park area with trees and people, and distinguish the trees from people.\\n", "category": "generic"}
+{"question_id": 181, "text": " Our security firm needs an image analysis solution to detect cars and pedestrians from CCTV images.\\n", "category": "generic"}
+{"question_id": 182, "text": " Can you recommend an API that helps to convert a research article abstract into a high-dimensional vector which we can then use to find similar articles?\\n", "category": "generic"}
+{"question_id": 183, "text": " I need to monitor a warehouse's inventory and identify objects kept in the storage area.\\n", "category": "generic"}
+{"question_id": 184, "text": " Create a feature extraction model to recognize 10 different types of images from a given dataset with sizes 224x224x3.\\n", "category": "generic"}
+{"question_id": 185, "text": " I need a quick way to classify images on my phone. Can you use a computationally efficient model to do this?\\n", "category": "generic"}
+{"question_id": 186, "text": " Provide me with the facility to determine the similarity between two sentences using encoded text.\\n", "category": "generic"}
+{"question_id": 187, "text": " We want to recognize different types of dogs in images for an upcoming app. Help us with a model to get the image features.\\n", "category": "generic"}
+{"question_id": 188, "text": " I am planning my garden, please help me segment plants in an image for better landscape planning.\\n", "category": "generic"}
+{"question_id": 189, "text": " Find out the type of birds in my backyard based on smartphone photos I took.\\n", "category": "generic"}
+{"question_id": 190, "text": " I'm working on a project that requires text clustering, and I need to convert a list of product reviews into vector representations in order to analyze the semantic similarities between them.\\n", "category": "generic"}
+{"question_id": 191, "text": " I found a bird on my trip outside, and I took a photo. Can you identify it?\\n", "category": "generic"}
+{"question_id": 192, "text": " Figure out the category of my image by using a pre-trained Inception model.\\n", "category": "generic"}
+{"question_id": 193, "text": " Images have come from users, and we need to recognize their categories for better curation.\\n", "category": "generic"}
+{"question_id": 194, "text": " We have several support tickets in our system, find a way to cluster them to find the most occurring topics.\\n", "category": "generic"}
+{"question_id": 195, "text": " We need to create an image classifier using transfer learning. I want to get feature vectors from pre-trained models.\\n", "category": "generic"}
+{"question_id": 196, "text": " Can you help me to create fixed-sized vector representation for every input phrases in a dataframe?\\n", "category": "generic"}
+{"question_id": 197, "text": " I need an API to help me classify pet images. I'd like to use the extracted features from these images to make better predictions.\\n", "category": "generic"}
+{"question_id": 198, "text": " Help me with identifying the object present in my new picture, using a ready-to-use model.\\n", "category": "generic"}
+{"question_id": 199, "text": " I want to analyze images of my coin collection and build a classifier to identify coins. Provide me with a method to extract image features.\\n", "category": "generic"}
+{"question_id": 200, "text": " We are doing data pre-processing for a project and our aim is to understand if the given two product titles are semantically similar or not. We first need to convert these product titles into high-dimensional vectors.\\n", "category": "generic"}
+{"question_id": 201, "text": " I'm working on a plant recognition app, and I want to classify a plant's image taken by users.\\n", "category": "generic"}
+{"question_id": 202, "text": " How can I calculate the similarity between two sentences based on their embeddings?\\n", "category": "generic"}
+{"question_id": 203, "text": " I have an image of my backyard. Identify if the BBQ grill is active.\\n", "category": "generic"}
+{"question_id": 204, "text": " I am building a phone app that recognizes food. We need a lightweight model to identify different types of food.\\n", "category": "generic"}
+{"question_id": 205, "text": " We are interesting in analyzing text messages to recommend interesting articles to our users. For this, we need to create an embedding for each message.\\n", "category": "generic"}
+{"question_id": 206, "text": " Could you help me to find a quick way to rate similarities between my blog posts?\\n", "category": "generic"}
+{"question_id": 207, "text": " I have a lot of vacation pictures and want to find those with similar content. Can you help me?\\n", "category": "generic"}
+{"question_id": 208, "text": " I am doing holiday gift shopping online, and I want to know what category a picture of a gift item belongs to.\\n", "category": "generic"}
+{"question_id": 209, "text": " Can you find an efficient image classification model to use on my smartphone for recognizing food items in my fridge?\\n", "category": "generic"}
+{"question_id": 210, "text": " Our art gallery is conducting an exhibition and we want to classify the images of paintings into different genres.\\n", "category": "generic"}
+{"question_id": 211, "text": " We are setting up an AI system to help classify images from outdoor events into different categories based on their content.\\n", "category": "generic"}
+{"question_id": 212, "text": " I am creating a shopping app and I want to suggest similar looking items from our database using item's image.\\n", "category": "generic"}
+{"question_id": 213, "text": " I have an image and I want to recognize the object in this image, so I need to access a pre-trained image classification model.\\n", "category": "generic"}
+{"question_id": 214, "text": " I have taken some pictures of my dog, and I want to organize them in a way that those which are similar to each other are together.\\n", "category": "generic"}
+{"question_id": 215, "text": " We want to find the most similar questions from user inputs to give them the best answer.\\n", "category": "generic"}
+{"question_id": 216, "text": " I am working on a product recommendation system for a flower shop. Extract feature vectors from flower images to be used in the system.\\n", "category": "generic"}
+{"question_id": 217, "text": " Recommend a playlist to me based on the audio characteristics of this song clip I'm sending you.\\n", "category": "generic"}
+{"question_id": 218, "text": " We are building a car recognition system. We need to extract features from car images to feed them into the classifier.\\n", "category": "generic"}
+{"question_id": 219, "text": " Please help me with a system that studies product descriptions so that we can group products with similar features.\\n", "category": "generic"}
+{"question_id": 220, "text": " I need to find features in the images to perform image classification.\\n", "category": "generic"}
+{"question_id": 221, "text": " We need to find similar news articles from a large corpus. Please embed them into high-dimensional vectors.\\n", "category": "generic"}
+{"question_id": 222, "text": " Discover all the elements present within a photograph of a street scene.\\n", "category": "generic"}
+{"question_id": 223, "text": " We own a car dealer business and want to develop an app that categorizes different car categories based on uploaded images.\\n", "category": "generic"}
+{"question_id": 224, "text": " Given images of painted landscapes, we want to find similar images based on their visual features. Which API can we use for extracting the feature vector?\\n", "category": "generic"}
+{"question_id": 225, "text": " We need to know what is in these photos so we can report to our officials.\\n", "category": "generic"}
+{"question_id": 226, "text": " We have a collection of animal photos, and we want to obtain a feature vector from each photo in order to properly organize them.\\n", "category": "generic"}
+{"question_id": 227, "text": " I took a picture of a street and want to separate the vehicles, people, and buildings in the scene.\\n", "category": "generic"}
+{"question_id": 228, "text": " I need to quickly classify images of various objects on my phone. Which pre-trained model should I use for efficient processing in a mobile environment?\\n", "category": "generic"}
+{"question_id": 229, "text": " I want to enhance my wildlife images and need to extract an image feature vector to use in advanced image processing tasks.\\n", "category": "generic"}
+{"question_id": 230, "text": " My computer has folders with many images, and I want to classify these images into categories, such as animals, buildings, and so on.\\n", "category": "generic"}
+{"question_id": 231, "text": " Show me how to classify an image of a dog using a pre-trained model with TensorFlow Hub and Inception V3 architecture.\\n", "category": "generic"}
+{"question_id": 232, "text": " Recommend a suitable movie based on a given movie's plot. For better recommendations, obtain the plot's embedding.\\n", "category": "generic"}
+{"question_id": 233, "text": " Obtain image features from an image dataset to use in a product recommendation system\\n", "category": "generic"}
+{"question_id": 234, "text": " I took a photo of a car and I want to extract its features in a vector form to use it for classification tasks later.\\n", "category": "generic"}
+{"question_id": 235, "text": " Calculate the similarity between two sentences and determine if they have the same meaning.\\n", "category": "generic"}
+{"question_id": 236, "text": " We have an image dataset and want a pre-trained model as a feature extractor.\\n", "category": "generic"}
+{"question_id": 237, "text": " We are creating a custom image search engine that can give similar image results. Extract features from images.\\n", "category": "generic"}
+{"question_id": 238, "text": " Can you compare two sentences similarly using the embedding generation?\\n", "category": "generic"}
+{"question_id": 239, "text": " Provide me with an encoded version of the following review, so I can later use it for sentiment analysis: \\\"What an amazing product! I've been using it for a few weeks now and couldn't be happier.\\\"\\n###Input: \\\"What an amazing product! I've been using it for a few weeks now and couldn't be happier.\\\"\\n", "category": "generic"}
+{"question_id": 240, "text": " I have several images of various objects; can you check if there are any boats in them?\\n", "category": "generic"}
+{"question_id": 241, "text": " We are building a software that can recognize similar objects in a series of images. We need feature vectors for each image.\\n", "category": "generic"}
+{"question_id": 242, "text": " Can you help me obtain the embeddings of a list of sentences for a research on similarity between news headlines?\\n", "category": "generic"}
+{"question_id": 243, "text": " I have an image dataset and I want to compute feature vectors to perform similarity computation using nearest neighbor searching.\\n", "category": "generic"}
+{"question_id": 244, "text": " A dating website wants to auto-match users based on the similarity of their profiles. How can we do that using text embeddings?\\n", "category": "generic"}
+{"question_id": 245, "text": " We are creating a mobile app where users can take photos of objects, and our app should identify what the object is.\\n", "category": "generic"}
+{"question_id": 246, "text": " We are building a Tinder-clone app for pets adoption. When user swipes, we want to show them the most similar pets based on images. Therefore, in order to find similar pets, we need to get the feature vector of each pet photo.\\n", "category": "generic"}
+{"question_id": 247, "text": " I have pictures on my phone and want to organize them into categories. Help me identify what each picture represents.\\n", "category": "generic"}
+{"question_id": 248, "text": " Identify the category for these images to decide which category I should tag them on my blog.\\n", "category": "generic"}
+{"question_id": 249, "text": " Provide an API call that can detect any landmark in a given photo.\\n", "category": "generic"}
+{"question_id": 250, "text": " We have a car selling website and want to identify the model of the car based on the images uploaded by the seller.\\n", "category": "generic"}
+{"question_id": 251, "text": " I'd like to look into a list of articles and rank them by their similarity to the provided statement. \\n###Input: <noinput>\\n", "category": "generic"}
+{"question_id": 252, "text": " Can you suggest how to extract features from animal images and classify them into their respective species?\\n", "category": "generic"}
+{"question_id": 253, "text": " Create an image-based recommendation system to identify visually similar products.\\n", "category": "generic"}
+{"question_id": 254, "text": " Our company wants to create a product recommender that sorts products based on visual similarity, help us identify the products in images.\\n", "category": "generic"}
+{"question_id": 255, "text": " I have a list of short movie descriptions and want to get an embedding of each description.\\n", "category": "generic"}
+{"question_id": 256, "text": " Develop an application that can recognize the names of items on a store shelf based on their images.\\n", "category": "generic"}
+{"question_id": 257, "text": " Determine which politicians are similar to each other based on their quotes by obtaining an embedding for each quote.\\n", "category": "generic"}
+{"question_id": 258, "text": " I have a list of movie reviews and I want to find the semantic similarity between them. How can I convert theses reviews into numerical data?\\n", "category": "generic"}
+{"question_id": 259, "text": " There are some insects in the park, I want to recognize them using an app.\\n", "category": "generic"}
+{"question_id": 260, "text": " I want to inspect my living room and detect all the objects in a photo I have taken.\\n", "category": "generic"}
+{"question_id": 261, "text": " A retail store needs a tool that will be able to detect misplaced items on their shelves.\\n", "category": "generic"}
+{"question_id": 262, "text": " I need to build a pet breed classifier from images. I want to use a pre-trained model to extract feature vectors of a pet image.\\n", "category": "generic"}
+{"question_id": 263, "text": " We have set of images and want classify them into meaningful categories.\\n", "category": "generic"}
+{"question_id": 264, "text": " Show me how to get the semantic similarity between two sentences.\\n###Input: \\\"I am going to the store to buy groceries.\\\", \\\"I will visit the market to purchase food items.\\\" \\n", "category": "generic"}
+{"question_id": 265, "text": " I took a photo of my friends playing soccer. I am making a collage and we need to remove the background from the photo, segmenting the players in the image.\\n", "category": "generic"}
+{"question_id": 266, "text": " Investigate art works in a museum by creating a feature vector database for all paintings on display.\\n", "category": "generic"}
+{"question_id": 267, "text": " Once a day, I take a photo of my backyard to observe how the plants change over time. Detect what is present in the image.\\n", "category": "generic"}
+{"question_id": 268, "text": " I would like to be able to identify an animal in a photo I took while traveling.\\n", "category": "generic"}
+{"question_id": 269, "text": " In order to classify animals, I need to extract image features to train my own classification model.\\n", "category": "generic"}
+{"question_id": 270, "text": " What kind of furniture is in my room? I want to take a photo and recognize which type of furniture it is.\\n", "category": "generic"}
+{"question_id": 271, "text": " Create a mobile application that recognizes dogs and cats. I need features from photos of dogs and cats.\\n", "category": "generic"}
+{"question_id": 272, "text": " Could you calculate the similarity between the sentences \\\"I have a cat\\\" and \\\"My pet is a kitten\\\"?\\n###Input: [\\\"I have a cat\\\", \\\"My pet is a kitten\\\"]\\n", "category": "generic"}
+{"question_id": 273, "text": " How can I get a descriptive vector from an image to use for a custom classification task?\\n", "category": "generic"}
+{"question_id": 274, "text": " Tell me which kind of animal is in this image.\\n", "category": "generic"}
+{"question_id": 275, "text": " Calculate the similarity between two sentences provided by users.\\n", "category": "generic"}
+{"question_id": 276, "text": " I need a recommendation for similar items given a product description. First, get the embeddings of product descriptions.\\n", "category": "generic"}
+{"question_id": 277, "text": " Provide me with a method to convert sentences into numerical vectors for text analysis.\\n", "category": "generic"}
+{"question_id": 278, "text": " For our e-commerce product recommendation system, we need to find similar products based on a given image.\\n", "category": "generic"}
+{"question_id": 279, "text": " I have a dataset of user reviews written in English, and I'd like to prepare it for a sentiment analysis task. Could you help me preprocess the texts for this purpose?\\n", "category": "generic"}
+{"question_id": 280, "text": " Create a recommender system that recommends related products based on their descriptions.\\n", "category": "generic"}
+{"question_id": 281, "text": " Analyze a photo from a running marathon to identify the objects in the scene.\\n", "category": "generic"}
+{"question_id": 282, "text": " We need to analyze security camera footage and identify any intruding person or object in the frames.\\n", "category": "generic"}
+{"question_id": 283, "text": " Need a code snippet to compute similar texts among thousands of sentences based on a similarity score.\\n", "category": "generic"}
+{"question_id": 284, "text": " My niece wants to learn the names of different birds so we can play a game where she sees a bird picture and the app provides a guess about the bird's species.\\n", "category": "generic"}
+{"question_id": 285, "text": " Can you help me recognize a flower from a picture of it?\\n", "category": "generic"}
+{"question_id": 286, "text": " I want to search through our art collection and find similar artworks. Create a model to extract features from the artwork images that can be used for comparison and clustering.\\n", "category": "generic"}
+{"question_id": 287, "text": " I want to build a relationship between different sentences. Can you suggest a method to get a fixed-length vector representation of each sentence?\\n", "category": "generic"}
+{"question_id": 288, "text": " I just took a picture of my room, but I want to understand what objects are in it. Help me to analyze the content of the image.\\n", "category": "generic"}
+{"question_id": 289, "text": " I have tons of TikTok videos on my phone and want an AI to categorize them based on actions happening in them.\\n", "category": "generic"}
+{"question_id": 290, "text": " I would like to use the features extracted from pictures of different outfits for clustering. \\n", "category": "generic"}
+{"question_id": 291, "text": " Analyze the background noise of an audio file and provide the corresponding embeddings to help classify the type of environment it was recorded in.\\n", "category": "generic"}
+{"question_id": 292, "text": " We built a mobile app for people to identify dogs' breeds. Let's build a model to extract features from dog images and classify them.\\n", "category": "generic"}
+{"question_id": 293, "text": " We have a group of 10 people discussing different topics. Analyze their texts and find the most similar pair of text.\\n", "category": "generic"}
+{"question_id": 294, "text": " Can you help me classify the contents of an image I took during my vacation?\\n", "category": "generic"}
+{"question_id": 295, "text": " I have a list of headlines and would like to find which ones are semantically similar. Can you help me get the high-dimensional vectors for my headlines?\\n", "category": "generic"}
+{"question_id": 296, "text": " Suggest a way to compute the similarity between two sentences using embeddings to help us identify which sentences are discussing the same topic.\\n", "category": "generic"}
+{"question_id": 297, "text": " Can you help me inidentifying content of some photos from recent vacation?\\n", "category": "generic"}
+{"question_id": 298, "text": " My cousin has created an album of zoo animals he captured, and I want to classify the animals using a pre-trained TensorFlow model.\\n", "category": "generic"}
+{"question_id": 299, "text": " We want to create a Q&A system, so we need to be able to find the similarity between the questions that website visitors have asked.\\n", "category": "generic"}
+{"question_id": 300, "text": " I have a couple of videos in my library, can you suggest a model to classify them based on their content?\\n", "category": "generic"}
+{"question_id": 301, "text": " A political analyst is preparing a report and needs to identify different political ideologies present in the statements made by politicians. Can you provide the embeddings of those statements to create a clustering algorithm?\\n", "category": "generic"}
+{"question_id": 302, "text": " My company is developing a furniture recommendation system, and we need to extract features from furniture images to find similar items.\\n", "category": "generic"}
+{"question_id": 303, "text": " I am creating a search engine that checks for similar images for a given image. I want to extract the features from images for creating an image search algorithm.\\n", "category": "generic"}
+{"question_id": 304, "text": " I have a folder with a lot of images, and I want to cluster them by similarity but I do not know how to represent an image in a consistent way.\\n", "category": "generic"}
+{"question_id": 305, "text": " I want to recommend similar movies to a user. Therefore, turn movie synopses into vectors with their distances representing similarities.\\n", "category": "generic"}
+{"question_id": 306, "text": " I have several photos of objects, and I want to get compact feature vectors for each.\\n", "category": "generic"}
+{"question_id": 307, "text": " Can you find out the suitable API call to load pre-trained image feature vector model for classifying images?\\n", "category": "generic"}
+{"question_id": 308, "text": " I have a collection of vehicle images, and I want to extract features from the images to help with clustering different types of vehicles based on their appearance.\\n", "category": "generic"}
+{"question_id": 309, "text": " I want to know how to get a compact representation of images using MobileNetV1.\\n", "category": "generic"}
+{"question_id": 310, "text": " Please help me find Latent Semantic Analysis for sentences, and it should convert text into meaningful vectors.\\n", "category": "generic"}
+{"question_id": 311, "text": " I am working on a project and need to classify images of objects, such as cars or animals, quickly and efficiently.\\n", "category": "generic"}
+{"question_id": 312, "text": " Analyze a photo of a car taken during a trip to identify the make and model of the car.\\n", "category": "generic"}
+{"question_id": 313, "text": " In a wildlife app, I want to recognize animals from users' images. Fetch the model that can help to classify those images.\\n", "category": "generic"}
+{"question_id": 314, "text": " Suggest me a method to find semantic similarity between different user queries.\\n", "category": "generic"}
+{"question_id": 315, "text": " Calculate the similarity score between two sentences, \\\"I like pizza\\\" and \\\"Pizza is my favorite food.\\\"\\n###Input: {\\\"source_sentence\\\": \\\"I like pizza\\\", \\\"target_sentence\\\": \\\"Pizza is my favorite food\\\"}\\n", "category": "generic"}
+{"question_id": 316, "text": " I want to identify the contents of various images, can you recommend a pre-trained model for this task?\\n", "category": "generic"}
+{"question_id": 317, "text": " When eating out or ordering takeout, I would like to know the type of food within 2 seconds by capturing the food image.\\n", "category": "generic"}
+{"question_id": 318, "text": " Compute the similarity of the two given paragraphs using high-dimensional vectors.\\n###Input: \\\"The quick brown fox jumped over the lazy dog. This sentence contains every letter of the alphabet.\\\", \\\"Pack my box with five dozen liquor jugs. This pangram contains each letter of the English language.\\\"\\n", "category": "generic"}
+{"question_id": 319, "text": " Tell me which car it is based on its picture.\\n", "category": "generic"}
+{"question_id": 320, "text": " For a list of sentences, find the sentence closest in meaning to a given phrase.\\n", "category": "generic"}
+{"question_id": 321, "text": " Create a simple image classifier that can predict if an object is a cat or a dog.\\n", "category": "generic"}
+{"question_id": 322, "text": " I am working on a project about recognizing landmarks and I need to extract image features for comparison purposes.\\n", "category": "generic"}
+{"question_id": 323, "text": " We want to build a tool to recommend similar art pictures. Please extract features from the image provided.\\n###Input: Example image of an art picture (with RGB values and size 224x224 pixels)\\n", "category": "generic"}
+{"question_id": 324, "text": " What do I need to do if I want to use your image classification model to label categories of animal faces?\\n", "category": "generic"}
+{"question_id": 325, "text": " I want to calculate the semantic similarity between job descriptions so I can quickly identify related jobs. Generate embeddings for these texts.\\n", "category": "generic"}
+{"question_id": 326, "text": " Recognize and classify objects in an image using a pre-trained model from TensorFlow Hub.\\n", "category": "generic"}
+{"question_id": 327, "text": " I am interested in identifying the number of people in a given photograph. Show the best way to detect multiple objects in an image.\\n", "category": "generic"}
+{"question_id": 328, "text": " We have got a CCTV footage of a bird feeding station outside our house. Now we want to count different birds coming at different times during the day.\\n", "category": "generic"}
+{"question_id": 329, "text": " My daughter wants to identify butterflies in her butterfly book. I want to use my phone camera to identify them.\\n", "category": "generic"}
+{"question_id": 330, "text": " I need to analyze customer reviews for various products. Can you provide me with a representation of each review in a high-dimensional vector?\\n", "category": "generic"}
+{"question_id": 331, "text": " Suggest a way to compare two images based on their features vectors extracted from a pre-trained model.\\n", "category": "generic"}
+{"question_id": 332, "text": " My clients are dog breeders and they requested a tool that can identify different breeds of dogs automatically.\\n", "category": "generic"}
+{"question_id": 333, "text": " Estimate the similarity between two given sentences by embedding them using Universal Sentence Encoder.\\n", "category": "generic"}
+{"question_id": 334, "text": " Suppose we have two movie reviews. We would like to know how semantically similar these two movie reviews are.\\n", "category": "generic"}
+{"question_id": 335, "text": " How can I compare the similarity between two sentences? I need a numerical representation.\\n", "category": "generic"}
+{"question_id": 336, "text": " We need to find the semantic similarity between different product reviews.\\n", "category": "generic"}
+{"question_id": 337, "text": " Find the similarities between my favorite quotes from different books so I can group them together.\\n", "category": "generic"}
+{"question_id": 338, "text": " I want to provide a semantic search on my website, and I need to compare the similarity between the user query and my database of questions to find the top relevant matches.\\n", "category": "generic"}
+{"question_id": 339, "text": " We need to find similarity between different reviews. First, could you create a vector representation for each review?\\n", "category": "generic"}
+{"question_id": 340, "text": " Create a customer support ticket classifier to automatically determine the issue category based on the ticket description.\\n", "category": "generic"}
+{"question_id": 341, "text": " I have taken images of different items I want to sell on eBay, and I need to extract feature vectors from the images to use in a recommendation system.\\n", "category": "generic"}
+{"question_id": 342, "text": " Extract a feature vector from an image to perform image classification.\\n", "category": "generic"}
+{"question_id": 343, "text": " I have a list of product reviews and I need a program to find the reviews which are most similar to each other.\\n", "category": "generic"}
+{"question_id": 344, "text": " After finishing a hike, I want to know which environment I have been to during the hike. My friends provided some pictures of the scenery during the hike.\\n", "category": "generic"}
+{"question_id": 345, "text": " I want to construct an automatic tagging system that assigns meaningful tags to content pieces based on the text.\\n", "category": "generic"}
+{"question_id": 346, "text": " I want to develop an app to identify specific breeds of dogs from the user's photos of their pets. What kind of model should I use for this task?\\n", "category": "generic"}
+{"question_id": 347, "text": " I have an app that needs to recognize objects in images. We need an image classification model to do that.\\n", "category": "generic"}
+{"question_id": 348, "text": " I am working on a movie recommendation system and need a sentence embedding for each movie description.\\n", "category": "generic"}
+{"question_id": 349, "text": " Identify the primary object in this image and classify it.\\n###Input: Load an image from a given path, `path/to/image.jpg`, with a target size of (224, 224).\\n", "category": "generic"}
+{"question_id": 350, "text": " Analyze an image for any instances of litter to help clean up public spaces.\\n", "category": "generic"}
+{"question_id": 351, "text": " Among a list of sentences, find the most semantically similar pairs by converting them into dense vector representations.\\n", "category": "generic"}
+{"question_id": 352, "text": " I have some images of my last trip, and I want to identify the objects in the pictures.\\n", "category": "generic"}
+{"question_id": 353, "text": " When I go shopping, I stumble upon an item I can't identify. I want to take a picture and let my phone classify it for me.\\n", "category": "generic"}
+{"question_id": 354, "text": " We have an app that allows users to sort their photos by features. Extract features from images for this app.\\n", "category": "generic"}
+{"question_id": 355, "text": " My kids found some rare insects, and I need some help identifying them. They took some photos with a smartphone. Can you help classify them?\\n", "category": "generic"}
+{"question_id": 356, "text": " We need a way to detect phishing email domains. I want to find similarities in domain addresses to do so. Please provide embeddings of email domains.\\n", "category": "generic"}
+{"question_id": 357, "text": " I have a review about a new sci-fi book, and I want to generate high-dimensional vectors that are useful for classification tasks.\\n", "category": "generic"}
+{"question_id": 358, "text": " I have a picture of a beach party, and I want to know how many people are there in the image.\\n", "category": "generic"}
+{"question_id": 359, "text": " For document similarity, I want to convert the following sentence into its vector representation: \\\"Artificial Intelligence is transforming the world in ways we couldn't have imagined a decade ago.\\\"\\n###Input: Artificial Intelligence is transforming the world in ways we couldn't have imagined a decade ago.\\n", "category": "generic"}
+{"question_id": 360, "text": " Our team needs to keep track of various laptops and their usage in the workplace. Detect the laptops in the given images and provide their locations.\\n", "category": "generic"}
+{"question_id": 361, "text": " Classify a short clip of people playing football to understand the actions and behaviors of the players.\\n", "category": "generic"}
+{"question_id": 362, "text": " We have several articles to analyze. We need to find a way to compare their similarity.\\n", "category": "generic"}
+{"question_id": 363, "text": " I have a collection of customer reviews about various products, and I want to find out which reviews are the most similar.\\n", "category": "generic"}
+{"question_id": 364, "text": " I have some animal photos, I want to train a tool will tell me what animal it is.\\n", "category": "generic"}
+{"question_id": 365, "text": " Show me an example where I can cluster similar movie plots.\\n", "category": "generic"}
+{"question_id": 366, "text": " Assist me in identifying food entities in grocery store images.\\n", "category": "generic"}
+{"question_id": 367, "text": " Based on the text that my customers give me in different languages, create a vector so I can do customer sentiment analysis.\\n", "category": "generic"}
+{"question_id": 368, "text": " I am building a mobile app that can identify different breeds of dogs, and I need fast feature extraction from images to recognize the breeds.\\n", "category": "generic"}
+{"question_id": 369, "text": " Compare the similarity between two sentences and provide a numerical score.\\n", "category": "generic"}
+{"question_id": 370, "text": " I want to analyze customer reviews for sentiment analysis. Provide a method to transform the reviews into fixed-size vectors.\\n", "category": "generic"}
+{"question_id": 371, "text": " I need to analyze a group of images and find out which ones are similar. First, I require extracting features of each image for comparison.\\n", "category": "generic"}
+{"question_id": 372, "text": " In the city, there are many parking lots. We want to count the number of cars parked in a parking lot using a security camera. Can an API help us to do this?\\n", "category": "generic"}
+{"question_id": 373, "text": " I am going in the forest to observe wildlife, and I want to take a photo of an animal and recognize its species.\\n", "category": "generic"}
+{"question_id": 374, "text": " I am trying to build a recommendation system that can match similar customer reviews. Convert the given text into a high-dimensional vector that I can use.\\n###Input: \\\"This product is absolutely amazing! I am extremely happy with my purchase and would highly recommend it to others.\\\"\\n", "category": "generic"}
+{"question_id": 375, "text": " I would like to analyze the sentiments of some sentences by creating an embedding representation of each sentence.\\n", "category": "generic"}
+{"question_id": 376, "text": " Our customer support chat service needs to rank responses by their relevance to solve users' issues. So, we need to get embeddings for a list of response options.\\n", "category": "generic"}
+{"question_id": 377, "text": " Let's say my client wants to use an app to identify different dog breeds by uploading a picture. The app should inform them which breed they just uploaded.\\n", "category": "generic"}
+{"question_id": 378, "text": " Take a sample sentence and encode it into high-dimensional vector using available API.\\n", "category": "generic"}
+{"question_id": 379, "text": " Analyze the news and figure out the topics of the articles.\\n", "category": "generic"}
+{"question_id": 380, "text": " I want to build an application that can distinguish different dog breeds from photos. Help me extract features from a set of dog images.\\n", "category": "generic"}
+{"question_id": 381, "text": " Please create a database of images and their corresponding features using a pre-trained model.\\n", "category": "generic"}
+{"question_id": 382, "text": " Implement an image classifier to categorize the type of clothing items in a fashion eCommerce dataset.\\n", "category": "generic"}
+{"question_id": 383, "text": " Please suggest an API to quickly and easily classify animals in wildlife pictures using a pre-trained model.\\n", "category": "generic"}
+{"question_id": 384, "text": " Calculate the feature vector of some images of different fruits.\\n", "category": "generic"}
+{"question_id": 385, "text": " I need to classify common items found in a household. How do I do this using a pre-trained model?\\n", "category": "generic"}
+{"question_id": 386, "text": " I'm organizing an animal-based flashcard game for kids, sort these images by animal content using a pre-trained model.\\n", "category": "generic"}
+{"question_id": 387, "text": " We need to develop an app to quickly identify plants. Can you provide a pre-trained model to classify plant images?\\n", "category": "generic"}
+{"question_id": 388, "text": " Design a mobile application which requires a custom model to classify 10 different dog breeds based on their photos.\\n", "category": "generic"}
+{"question_id": 389, "text": " We need to identify bird species from some bird images we collected.\\n", "category": "generic"}
+{"question_id": 390, "text": " Recommend a neural network layer to obtain a feature vector from a 224x224x3 image for the purpose of similarity search.\\n", "category": "generic"}
+{"question_id": 391, "text": " We want to find semantically similar sentences in our customer reviews. Obtain a high-dimensional vector of each review sentence.\\n", "category": "generic"}
+{"question_id": 392, "text": " Let's say we have a dataset of images and we want to compress and store them. Design a method for feature extraction and compression.\\n", "category": "generic"}
+{"question_id": 393, "text": " I took a picture of a plant in my garden, and I want to identify it using an image classification model.\\n", "category": "generic"}
+{"question_id": 394, "text": " I'm building a mobile app that classifies images taken by users. The model should be lightweight and fast.\\n", "category": "generic"}
+{"question_id": 395, "text": " I have a collection of images from an automobile trade show and I want to identify the different vehicle models present in those images.\\n", "category": "generic"}
+{"question_id": 396, "text": " Recommend a solution to classify diseases from the images of plant leaves.\\n", "category": "generic"}
+{"question_id": 397, "text": " We need to extract features from a large set of images to use as input for an image classifier.\\n", "category": "generic"}
+{"question_id": 398, "text": " In music recommendation systems, we need to represent the songs as feature vectors. How can we do this?\\n", "category": "generic"}
+{"question_id": 399, "text": " I have a list of user reviews on my shopping website, and I want to cluster them into different categories.\\n", "category": "generic"}
+{"question_id": 400, "text": " Somebody sent me a photo of a car brand's logo, and I need to identify the brand.\\n", "category": "generic"}
+{"question_id": 401, "text": " I want to build an image-based recommendation system. Please suggest a way to classify images more efficiently.\\n", "category": "generic"}
+{"question_id": 402, "text": " Create a recommendation system that recommends similar products using product descriptions.\\n", "category": "generic"}
+{"question_id": 403, "text": " Analyze public opinions on a new coffee flavor and find out if they are related to each other.\\n", "category": "generic"}
+{"question_id": 404, "text": " I am an app developer and I need a lightweight image classification model to classify images into different categories. How can I do that?\\n", "category": "generic"}
+{"question_id": 405, "text": " I am not good at recognizing sports, sometimes I make mistakes. Therefore, I need a tool to check the answer for me.\\n", "category": "generic"}
+{"question_id": 406, "text": " Can you please make model to classify type of car\\\\vehicle from an image?\\n", "category": "generic"}
+{"question_id": 407, "text": " Analyze online customer reviews and their sentiment by getting an embedding of each review.\\n", "category": "generic"}
+{"question_id": 408, "text": " I want a system that can find the similarity between different movie reviews.\\n", "category": "generic"}
+{"question_id": 409, "text": " My company wants to build a recyclable materials recognition system. We plan to reuse some pre-trained models for transfer learning.\\n", "category": "generic"}
+{"question_id": 410, "text": " We want to help our users analyze their posture while performing exercises. Help us detect human poses in images to do that.\\n", "category": "generic"}
+{"question_id": 411, "text": " We need a way to classify and identify various objects in images, suggest a pre-trained model for that.\\n", "category": "generic"}
+{"question_id": 412, "text": " Let's take a picture from our hike yesterday, classify the primary plants or flowers in it.\\n", "category": "generic"}
+{"question_id": 413, "text": " We are going to develop security cameras to monitor our client's warehouse for unauthorized access.\\n", "category": "generic"}
+{"question_id": 414, "text": " I have a large collection of restaurant reviews in English, and I want to cluster them based on their content.\\n", "category": "generic"}
+{"question_id": 415, "text": " Detect the fashion items in given images and create a model for fashion item feature extraction using pretrained image Feature Vector.\\n", "category": "generic"}
+{"question_id": 416, "text": " Determine which type of fruit is in the photograph by analyzing and classifying the image.\\n", "category": "generic"}
+{"question_id": 417, "text": " We want to build an image recognition system to classify paintings by artists. Please show us how to use a pretrained model for feature extraction from the paintings.\\n", "category": "generic"}
+{"question_id": 418, "text": " We want to generate embeddings for a list of movie descriptions so we can later measure the similarity between these movies.\\n", "category": "generic"}
+{"question_id": 419, "text": " Tell me what animal I have in my picture. How can I achieve this using a pre-trained TensorFlow model?\\n", "category": "generic"}
+{"question_id": 420, "text": " We have a long list of customer reviews for our products. We need to determine which ones are similar so we can improve specific products.\\n", "category": "generic"}
+{"question_id": 421, "text": " I have a folder containing images of animals, and I would like to automatically label these images with the name of the animal they contain.\\n", "category": "generic"}
+{"question_id": 422, "text": " I have an online marketplace where people sell secondhand items. I would like to categorize the photos of the products people upload.\\n", "category": "generic"}
+{"question_id": 423, "text": " Provide me with the ability to identify objects present in a given image, for improving the accessibility of our application.\\n", "category": "generic"}
+{"question_id": 424, "text": " I have a collection of paintings and I want to extract their main features to use for indexing among different categories.\\n", "category": "generic"}
+{"question_id": 425, "text": " Calculate the similarity between two paragraphs of text using embeddings.\\n", "category": "generic"}
+{"question_id": 426, "text": " I'd like to analyze bird songs to identify their species. I need an audio model that can help me extract features from the recordings.\\n", "category": "generic"}
+{"question_id": 427, "text": " Let's create a dog breed classifier and use the pretrained ImageNet MobileNet V2 model to extract dog breed features.\\n", "category": "generic"}
+{"question_id": 428, "text": " Recommend products similar to the given product description. Use a pre-built model to find the semantic similarity with other product descriptions.\\n", "category": "generic"}
+{"question_id": 430, "text": " I need to identify the type of food in each picture I have in my album, so I need tensor values of the pretrained model \\\"imagenet-inception_v3-feature_vector\\\".\\n###Input: {\\\"url\\\": \\\"https://tfhub.dev/google/imagenet/inception_v3/feature_vector/5\\\"}\\n", "category": "generic"}
+{"question_id": 431, "text": " I'm building a chatbot and I need to analyze the similarity between pairs of sentences.\\n", "category": "generic"}
+{"question_id": 432, "text": " I captured a photo of an unknown animal, and I want to know the animal's classification.\\n", "category": "generic"}
+{"question_id": 433, "text": " We need a way to detect objects on the road like stop signs, other vehicles, and pedestrians in our autonomous vehicle project. Suggest an API that can help us do that.\\n", "category": "generic"}
+{"question_id": 434, "text": " Provide a way to set up an image classification system that automates identification of photographs.\\n", "category": "generic"}
+{"question_id": 435, "text": " I am making an AI chatbot that responds to user messages. I need to create sentence embeddings efficiently.\\n", "category": "generic"}
+{"question_id": 436, "text": " Find a way to showcase the usage of a model to detect objects in a picture taken in a factory to count how many different pieces of equipment are there.\\n", "category": "generic"}
+{"question_id": 437, "text": " Convert an image to a feature vector that can be used in content-based image retrieval system.\\n", "category": "generic"}
+{"question_id": 438, "text": " We're working on a travel blogging platform, and we need a way to extract the features of images that users upload.\\n", "category": "generic"}
+{"question_id": 439, "text": " Use the embeddings to find cluster seeds for a given set of job descriptions.\\n", "category": "generic"}
+{"question_id": 440, "text": " The manager wants to build a product recommender system based on the types of items in customers\\u2019 photos. Determine what each item is in the image.\\n", "category": "generic"}
+{"question_id": 441, "text": " Help me find the best matching property images from an image database for a real estate application.\\n", "category": "generic"}
+{"question_id": 442, "text": " I have a dataset of photos, and I need to classify all of those photos into different categories, so I'm thinking of using a pre-trained model.\\n", "category": "generic"}
+{"question_id": 443, "text": " Find objects in city surveillance camera images and get the objects with their corresponding detection scores.\\n", "category": "generic"}
+{"question_id": 444, "text": " Compare news articles for similarity and rank them.\\n", "category": "generic"}
+{"question_id": 445, "text": " We have some random images and we would like to classify them into different categories based on their context.\\n", "category": "generic"}
+{"question_id": 446, "text": " I own a collection of paintings and I need to categorize them based on their depicted object.\\n", "category": "generic"}
+{"question_id": 447, "text": " I want to create an app that suggests dog breeds based on the images uploaded by users. Recommend an API for me to use.\\n", "category": "generic"}
+{"question_id": 448, "text": " Can you help me classify hotel reviews as positive or negative?\\n", "category": "generic"}
+{"question_id": 449, "text": " My kid took a photo of an animal. Please tell me its species.\\n", "category": "generic"}
+{"question_id": 450, "text": " I have images of food items and I need help categorizing them as per the ImageNet categories.\\n", "category": "generic"}
+{"question_id": 451, "text": " Recommend the most relevant workout exercises based on a given image.\\n", "category": "generic"}
+{"question_id": 452, "text": " Let's find the semantic similarity between two sentences for our recommendation system.\\n", "category": "generic"}
+{"question_id": 453, "text": " I need to separate different objects in an image, like differentiate the road, house and tree.\\n", "category": "generic"}
+{"question_id": 454, "text": " We want to analyze paintings based on their visual characteristics and need a way to represent them numerically.\\n", "category": "generic"}
+{"question_id": 455, "text": " Our company has a lot of images that we need to categorize into one of 1000 classes. We're looking for a pretrained model that could help.\\n", "category": "generic"}
+{"question_id": 457, "text": " I have a collection of images and I need to categorize them. Please generate predictions using a pre-trained model.\\n", "category": "generic"}
+{"question_id": 458, "text": " A user wants to know how many objects are in an image they have taken with their phone. Calculate the count by processing the image.\\n", "category": "generic"}
+{"question_id": 459, "text": " Create a program that alerts the user when a dog is at the door, by identifying the dogs in the pictures from a live webcam feed.\\n", "category": "generic"}
+{"question_id": 460, "text": " I want to analyze a group of sentences, find if there are similar ones so that I can group them together. Help me get embeddings for these sentences.\\n", "category": "generic"}
+{"question_id": 461, "text": " Are there any good pretrained image classifiers? I want to try one on this image and get top 5 predictions.\\n", "category": "generic"}
+{"question_id": 462, "text": " We are creating an app to recognize different dog breeds. I need to find a pre-trained model capable of helping me with this task.\\n", "category": "generic"}
+{"question_id": 463, "text": " I am starting an e-commerce platform, and I want to build a feature vector database of different products to identify and categorize them.\\n", "category": "generic"}
+{"question_id": 464, "text": " I have pictures of animals and I want to identify them by their species.\\n", "category": "generic"}
+{"question_id": 465, "text": " We're creating a database of different foods, and I want to generate feature vectors for each food item from their images.\\n", "category": "generic"}
+{"question_id": 466, "text": " I need to build a customer support chatbot that automatically replies to user queries. How can I represent sentences as numerical vectors for semantic similarity comparison?\\n", "category": "generic"}
+{"question_id": 467, "text": " In order to build a dogs versus cats classifier, I need a good feature extractor for images. Can you provide me with one?\\n", "category": "generic"}
+{"question_id": 468, "text": " Analyze an image we have taken and categorize the primary subject of that image.\\n", "category": "generic"}
+{"question_id": 469, "text": " For analyzing customer reviews, I want to convert them into high-dimensional embeddings that we will use for sentiment analysis.\\n", "category": "generic"}
+{"question_id": 470, "text": " Please determine which two sentences from a group are semantically similar based on their embeddings.\\n", "category": "generic"}
+{"question_id": 471, "text": " Given a dataset of images, we need to extract their feature vectors for use in an image search engine application.\\n", "category": "generic"}
+{"question_id": 472, "text": " I want an AI to classify what's inside a photo by loading a pre-trained model from TensorFlow Hub.\\n", "category": "generic"}
+{"question_id": 473, "text": " Preserve this art piece in a digital archive. Extract its features for future analysis.\\n", "category": "generic"}
+{"question_id": 474, "text": " How can we extract image features to compare the similarity between two interior designs?\\n", "category": "generic"}
+{"question_id": 475, "text": " We have a survey containing phrases on the job market. We want to get a visualization of the job market. Can you provide an embedding of the survey phrases?\\n", "category": "generic"}
+{"question_id": 476, "text": " Try to identify the object in the image using a pre-trained model built on the TensorFlow Hub platform.\\n", "category": "generic"}
+{"question_id": 477, "text": " In a warehouse, we would like to use a model to identify items stocked on the shelves by detecting objects in images.\\n", "category": "generic"}
+{"question_id": 478, "text": " I have a collection of butterfly images, so please find the image feature vectors for me.\\n", "category": "generic"}
+{"question_id": 479, "text": " I need to create a program that finds how similar two given sentences are. To do this, I first want to encode the sentences into high-dimensional vectors.\\n", "category": "generic"}
+{"question_id": 480, "text": " We need to find similar phrases within a set of sentences. To do this, first, we will encode these sentences into vectors.\\n", "category": "generic"}
+{"question_id": 481, "text": " Translate the following English text into a semantic embedding: \\\"The quick brown fox jumps over the lazy dog.\\\"\\n", "category": "generic"}
+{"question_id": 482, "text": " Compare the similarity of the following two sentences: \\\"The quick brown fox jumps over the lazy dog,\\\" and \\\"A speedy reddish-orange mammal leaps over a resting canine.\\\"\\n###Input: \\\"The quick brown fox jumps over the lazy dog\\\", \\\"A speedy reddish-orange mammal leaps over a resting canine.\\\"\\n", "category": "generic"}
+{"question_id": 483, "text": " We would like to use transfer learning for an image classification problem. Extract features from images using a pre-trained feature vector model.\\n", "category": "generic"}
+{"question_id": 484, "text": " Calculate the similarity between two sentences for a recommendation system based on the content.\\n", "category": "generic"}
+{"question_id": 485, "text": " Calculate the semantic similarities between the product descriptions of two items I found on an e-commerce site.\\n", "category": "generic"}
+{"question_id": 486, "text": " As we need to find the similarity among the users' reviews, we should preprocess the raw text to remove unwanted characters and get the corresponding text embedding.\\n", "category": "generic"}
+{"question_id": 487, "text": " A real-estate company wants to use computer vision to classify images of homes into multiple categories like 'modern', 'rustic', etc. Provide a suitable API to extract image feature vectors for building the classifier.\\n", "category": "generic"}
+{"question_id": 488, "text": " I have a list of customer reviews and want to group them based on their similarity.\\n", "category": "generic"}
+{"question_id": 489, "text": " Analyze customer feedback and group them into positive and negative sentiments.\\n", "category": "generic"}
+{"question_id": 490, "text": " To classify silhouettes, extract image features with a pre-trained model then build a new classification model.\\n", "category": "generic"}
+{"question_id": 491, "text": " Measure the similarity between two strings, we want it encoded representations.\\n", "category": "generic"}
+{"question_id": 492, "text": " I am building a news article clustering application. I need to get the embeddings of each news article to compare their similarity.\\n", "category": "generic"}
+{"question_id": 493, "text": " Help me find similar images in a large database for a given image.\\n", "category": "generic"}
+{"question_id": 494, "text": " I want to recognize who is who in my photos, so create a model to turn the photos into vectors first.\\n", "category": "generic"}
+{"question_id": 495, "text": " Analyze the pictures animals have taken and sort them into different animal categories. To do this, derive the feature vectors from their images so that I can train a classifier.\\n", "category": "generic"}
+{"question_id": 496, "text": " I am creating a question-answering system and need to find the closest matching question in my database to a new user's question. Please provide the embeddings for the questions.\\n", "category": "generic"}
+{"question_id": 497, "text": " I took some pictures during my vacation and now I want to create a collection of images and organize them based on image features.\\n", "category": "generic"}
+{"question_id": 498, "text": " I need to classify plant species using a machine learning model to know which type they are. Can I use this model to classify images of plants?\\n", "category": "generic"}
+{"question_id": 499, "text": " We want to cluster similar product reviews to understand the customer experience better.\\n", "category": "generic"}
+{"question_id": 500, "text": " Write a code for embedding the given sentences into high-dimensional vectors to find similarity in their meanings.\\n###Input: [\\\"I have a cat.\\\", \\\"My pet is a feline.\\\"]\\n", "category": "generic"}
+{"question_id": 501, "text": " Assist me in creating a model for image classification by extracting features from images.\\n", "category": "generic"}
+{"question_id": 502, "text": " We are facing an issue while categorizing different plants species in our garden. Could you please assist and identify them for us?\\n", "category": "generic"}
+{"question_id": 503, "text": " I want to create a custom image classifier for a project but don't want to train a model from scratch. What technology can I leverage to achieve this?\\n", "category": "generic"}
+{"question_id": 504, "text": " We're organizing a car show, and we want to classify the different car models automatically using an application.\\n", "category": "generic"}
+{"question_id": 505, "text": " I want to create an AI-driven customer service chatbot. How can I create a similarity measure for the customer queries and the possible answers?\\n", "category": "generic"}
+{"question_id": 506, "text": " For understanding the contents of user reviews, I would like to transform comments into numerical representations to be utilized in a machine learning model.\\n", "category": "generic"}
+{"question_id": 507, "text": " I need to create chatbot responses for similar questions. Convert these sentences into vectors that can be clustered.\\n", "category": "generic"}
+{"question_id": 508, "text": " I want to compare a large image dataset of different car models to suggest visually related recommendations to our users.\\n", "category": "generic"}
+{"question_id": 509, "text": " I am working on a project and I need to find similar images in my dataset. Extract feature vectors of images for comparison.\\n", "category": "generic"}
+{"question_id": 510, "text": " We need to generate embeddings for product descriptions to cluster similar products together. Get an embedding for each product description.\\n", "category": "generic"}
+{"question_id": 511, "text": " Capture the most populated areas of a city from aerial images taken from drones.\\n", "category": "generic"}
+{"question_id": 512, "text": " Determine what objects are visible in a given image.\\n", "category": "generic"}
+{"question_id": 513, "text": " We need to build a content-based image search feature on our website.\\n", "category": "generic"}
+{"question_id": 514, "text": " Find out what's in the picture and recommend related products to customers.\\n", "category": "generic"}
+{"question_id": 515, "text": " Calculate the similarity between two sentences using their embeddings. \\n###Input: \\\"The cat is a domestic animal.\\\", \\\"The cat is a household pet.\\\"\\n", "category": "generic"}
+{"question_id": 517, "text": " How can we transform sentences into semantic vectors for a similarity search engine?\\n", "category": "generic"}
+{"question_id": 518, "text": " Generate a detailed map caption of images captured by a drone over a natural disaster-affected area.\\n", "category": "generic"}
+{"question_id": 519, "text": " I took a photo of my dog at the park, and I want to know its breed.\\n", "category": "generic"}
+{"question_id": 520, "text": " Find out what kind of trees are in our park using a pre-trained deep learning model.\\n", "category": "generic"}
+{"question_id": 521, "text": " In order to analyze art pieces, extract and save feature vectors of famous paintings.\\n", "category": "generic"}
+{"question_id": 522, "text": " I would like to create a mobile app to quickly identify the type of tree based on a photo of its leaves.\\n", "category": "generic"}
+{"question_id": 523, "text": " A farmer wants to analyze the images of soil to classify the type and quality of soil.\\n", "category": "generic"}
+{"question_id": 524, "text": " Identify the contents of an image by loading a pretrained model and classify it.\\n", "category": "generic"}
+{"question_id": 525, "text": " While traveling, I want to use the API to detect various landmarks and monuments by snapping photos of them with my smartphone.\\n", "category": "generic"}
+{"question_id": 526, "text": " Design a system for customer reviews classification based on the level of satisfaction.\\n", "category": "generic"}
+{"question_id": 527, "text": " Provide me with a way to measure semantic similarity between two input sentences.\\n", "category": "generic"}
+{"question_id": 528, "text": " In the pet store, we discovered an unknown animal. Help us identify the animal.\\n", "category": "generic"}
+{"question_id": 529, "text": " We have a set of movie reviews and need to generate embeddings for each review to perform sentiment analysis.\\n", "category": "generic"}
+{"question_id": 530, "text": " Help me load a pre-trained image classification model to categorize fruits for my new dietary app project.\\n", "category": "generic"}
+{"question_id": 531, "text": " I have a collection of images from a fashion show, and I want to extract the features of each image to use in a recommendation engine.\\n", "category": "generic"}
+{"question_id": 532, "text": " I am working on analyzing customer reviews of a product, and I want to represent the text data in a way that is easy to work with. What is an API to efficiently convert textual data into numerical representations?\\n", "category": "generic"}
+{"question_id": 533, "text": " We are developing an article recommendation system. Preprocess the following article title: \\\"Latest Advances in Artificial Intelligence and Machine Learning\\\".\\n###Input: Latest Advances in Artificial Intelligence and Machine Learning\\n", "category": "generic"}
+{"question_id": 534, "text": " Imagine you are building a recommendation system that suggests articles to users on a website. To accomplish that, you need an embedding for each article title in order to compare their similarity.\\n", "category": "generic"}
+{"question_id": 535, "text": " Tell me what kind of flower is in this image by classifying it.\\n", "category": "generic"}
+{"question_id": 536, "text": " Verify if the following two sentences are related by measuring the semantic similarity: Sentence 1: \\\"The sky is blue today.\\\" Sentence 2: \\\"Today the atmosphere appears azure.\\\"\\n###Input: The sky is blue today. Today the atmosphere appears azure.\\n", "category": "generic"}
+{"question_id": 537, "text": " Can you help me find a location of certain objects after providing some images?\\n", "category": "generic"}
+{"question_id": 538, "text": " We need to get image feature vectors and build a simple image classifier for our image dataset.\\n", "category": "generic"}
+{"question_id": 539, "text": " My friend sent me a picture of his new dog breed, but I can't recognize it. Can you classify this image for me?\\n", "category": "generic"}
+{"question_id": 540, "text": " We have to recognize a variety of animals and classify them in a zoo, using a lightweight model that can work on mobile phones.\\n", "category": "generic"}
+{"question_id": 541, "text": " I've got an article in English, and I'd like to analyze it by clustering similar paragraphs together. How would I go about turning each paragraph of text into a high-dimensional vector?\\n", "category": "generic"}
+{"question_id": 542, "text": " Tell me how to build a model using feature extraction from images, for use in a binary classification task.\\n", "category": "generic"}
+{"question_id": 543, "text": " I work for an art gallery looking for a solution to classify images of our collection by art style.\\n", "category": "generic"}
+{"question_id": 544, "text": " I just bought a new drone and I want to capture a street video where I can recognize the types of vehicles approaching.\\n", "category": "generic"}
+{"question_id": 545, "text": " I want to measure the similarity between two images.\\n", "category": "generic"}
+{"question_id": 546, "text": " Provide me with a tool to create an image classifier by extracting features from images in a dataset.\\n", "category": "generic"}
+{"question_id": 547, "text": " Figure out a way to extract valuable features from images of potential clients' products to compare their similarity.\\n", "category": "generic"}
+{"question_id": 548, "text": " My personal trainer wants me to analyze my workout form. Can you help me detect my body position in a photo?\\n", "category": "generic"}
+{"question_id": 549, "text": " Can you help me highlight animals in my vacation photographs?\\n", "category": "generic"}
+{"question_id": 550, "text": " Detect objects and their locations on this image I just took of my room.\\n", "category": "generic"}
+{"question_id": 551, "text": " Create a flower classification model using feature vectors pre-extracted from images.\\n", "category": "generic"}
+{"question_id": 552, "text": " I am running a wildlife conservation project, and I need help to identify different species of animals and their locations in the images taken by camera traps.\\n", "category": "generic"}
+{"question_id": 553, "text": " We need to detect spam emails based on their subjects. Retrieve a high-dimensional vector from each email subject to be used for classification.\\n", "category": "generic"}
+{"question_id": 554, "text": " There are a bunch of user reviews about our new product, and we need assistance categorizing them into different sentiments.\\n", "category": "generic"}
+{"question_id": 555, "text": " We have images that we want to analyze, and I hope I can find a way to extract features from these images for further analysis.\\n", "category": "generic"}
+{"question_id": 556, "text": " What is a good way to find the similarity between two sentences?\\n", "category": "generic"}
+{"question_id": 557, "text": " I'm a clothing store owner, and I want to create a recommendation system that suggests similar clothes by comparing their features.\\n", "category": "generic"}
+{"question_id": 558, "text": " I want to build a plant identifier app, and I need to determine the type of plant in a picture taken from the app.\\n", "category": "generic"}
+{"question_id": 559, "text": " Can you please identify whether these two sentenes share a similar meaning or not?\\n###Input: \\\"The quick brown fox jumps over the lazy dog.\\\", \\\"A speedy, sly fox leaps over a lounging canine.\\\"\\n", "category": "generic"}
+{"question_id": 560, "text": " I want to create a custom image classifier, but first I need to use a pre-trained model to extract features from my dataset images.\\n", "category": "generic"}
+{"question_id": 561, "text": " Recommend a mobile app for automatically classifying images taken by the user.\\n", "category": "generic"}
+{"question_id": 562, "text": " We want to find semantic similarity.\\n", "category": "generic"}
+{"question_id": 563, "text": " We want to develop a smart surveillance system to monitor intruders. Please help us identify humans present in the images.\\n", "category": "generic"}
+{"question_id": 564, "text": " My friends uploaded a collection of photos from our trip, and I want to organize them by identifying what is in each photo.\\n###Input: <noinput>\\n", "category": "generic"}
+{"question_id": 565, "text": " Identify which model is used to encode text for natural language processing tasks like text classification and semantic similarity.\\n", "category": "generic"}
+{"question_id": 566, "text": " Calculate the similarity between the following two sentences: \\\"The quick brown fox jumps over the lazy dog\\\" and \\\"The fast auburn fox leapt over the idle canine.\\\"\\n###Input: \\\"The quick brown fox jumps over the lazy dog\\\", \\\"The fast auburn fox leapt over the idle canine.\\\"\\n", "category": "generic"}
+{"question_id": 567, "text": " Construct a recommendation engine for a forum that finds similar threads based on the text content.\\n", "category": "generic"}
+{"question_id": 568, "text": " They have a dataset of stained glass images and want to organize them into categories or classes. They need a pre-trained model.\\n", "category": "generic"}
+{"question_id": 569, "text": " Provide me with a method to understand the semantic similarity between movie reviews.\\n", "category": "generic"}
+{"question_id": 570, "text": " We have a large photo archive, and we need a model to recognize and categorize pictures based on their content.\\n", "category": "generic"}
+{"question_id": 571, "text": " After a dinner party, I want to save the pictures taken during the party and find similar images for decoration purposes by extracting an image feature vector.\\n", "category": "generic"}
+{"question_id": 572, "text": " I am trying to create clusters of similar customer feedback for a product.\\n", "category": "generic"}
+{"question_id": 573, "text": " I have pictures of animals, and I need to find out what type of animals they are by leveraging pre-trained models.\\n", "category": "generic"}
+{"question_id": 574, "text": " We are working on an app that can identify plants. We have the images of the leaves, so all we need is a pre-trained model to classify the images.\\n", "category": "generic"}
+{"question_id": 575, "text": " Analyze the sentiments of these customer reviews before processing their feedback.\\n###Input: [\\\"I loved the service and the food!\\\", \\\"The staff was rude, and I had a terrible experience.\\\", \\\"Not too bad, could be better.\\\"]\\n", "category": "generic"}
+{"question_id": 576, "text": " We want to obtain the location of a boat in an image. Detect objects in the given image and provide the location of the boat if found.\\n", "category": "generic"}
+{"question_id": 577, "text": " Create a system to find the similarity between two sentences.\\n", "category": "generic"}
+{"question_id": 578, "text": " I'm building a recommendation system for similar pictures. Provide me with a vector representation of a picture to measure image similarity.\\n", "category": "generic"}
+{"question_id": 579, "text": " Recommend to me some suitable products based on the textual similarity of their descriptions from a database.\\n", "category": "generic"}
+{"question_id": 580, "text": " Extract audio features to classify sounds in the environment.\\n", "category": "generic"}
+{"question_id": 581, "text": " Write an AI-powered program to summarize movie plots while retaining maximum details from the given plot.\\n", "category": "generic"}
+{"question_id": 582, "text": " Help me compare similarities between user reviews about two different products.\\n", "category": "generic"}
+{"question_id": 583, "text": " Provided with images of paintings, I want to determine which art era they belong to.\\n", "category": "generic"}
+{"question_id": 584, "text": " Understand the relationship between two movie synopses and determine whether they seem similar or not.\\n", "category": "generic"}
+{"question_id": 585, "text": " Suggest personalized ads to users by creating a semantic similarity model that recommends advertisements based on textual similarity to user preferences stored in the description field. \\n", "category": "generic"}
+{"question_id": 586, "text": " There is a list of customer reviews and your task is to calculate the semantic similarity between each pair of reviews.\\n", "category": "generic"}
+{"question_id": 587, "text": " Expose a method to compute the semantic similarity of pairs of sentences by comparing the high-dimensional vectors.\\n", "category": "generic"}
+{"question_id": 588, "text": " I am analyzing tweets, and I want to know the sentiment of each tweet. Please help me convert tweets into meaningful representations.\\n", "category": "generic"}
+{"question_id": 589, "text": " I need to build a machine learning model that can automatically detect and classify different food items from images.\\n", "category": "generic"}
+{"question_id": 590, "text": " Identify the animal in the photo I have taken.\\n", "category": "generic"}
+{"question_id": 591, "text": " Generate an appropriate label for instance of image.\\n", "category": "generic"}
+{"question_id": 592, "text": " I'm traveling to a new city and I want to use my phone to identify different objects in my surroundings.\\n", "category": "generic"}
+{"question_id": 593, "text": " Analyze a list of movie reviews and group them based on semantic similarity by first converting the reviews into embeddings.\\n", "category": "generic"}
+{"question_id": 594, "text": " I am working on a car accident detection system. Show me how to detect object and classify them in images\\n", "category": "generic"}
+{"question_id": 595, "text": " Identify the objects present in the picture I took from my last hiking trip.\\n", "category": "generic"}
+{"question_id": 596, "text": " We are creating a visual recommender system based on images. We need to extract features from them.\\n", "category": "generic"}
+{"question_id": 597, "text": " In order to analyze the sentiment of tweets on Twitter, I need the Universal Sentence Encoder model to convert tweets into embeddings for analysis.\\n", "category": "generic"}
+{"question_id": 598, "text": " Detect and count the number of different objects in a picture I took at a beach.\\n", "category": "generic"}
+{"question_id": 599, "text": " I am visiting different places and I want to know which landmark I am visiting.\\n", "category": "generic"}
+{"question_id": 600, "text": " Identify different types of birds when hikers send the images to our system.\\n", "category": "generic"}
+{"question_id": 601, "text": " How can I compare the similarity between multiple sentences?\\n", "category": "generic"}
+{"question_id": 602, "text": " Tell me what kind of animal/bird is in this photo I just took.\\n", "category": "generic"}
+{"question_id": 603, "text": " Determine the top 3 closest category matches for a given image using the Inception V3 pre-trained model.\\n", "category": "generic"}
+{"question_id": 604, "text": " I need a simple way to encode text into vectors for my clustering algorithm.\\n", "category": "generic"}
+{"question_id": 605, "text": " Find a tool to extract features from images and create a model to identify different types of plants.\\n", "category": "generic"}
+{"question_id": 606, "text": " How do I create image-feature-vector for the last travel destination photo album to organize similar pictures together?\\n", "category": "generic"}
+{"question_id": 607, "text": " Identify the make and model of a car using an image posted on an online car marketplace.\\n###Input: \\\"https://url-to-image-of-car-from-marketplace\\\"\\n", "category": "generic"}
+{"question_id": 608, "text": " Assist me in identifying animal species present in a collection of images for an ecological study.\\n", "category": "generic"}
+{"question_id": 609, "text": " I am building a tool to measure the similarity between different product descriptions. To do this, I need to first get embeddings for each description.\\n", "category": "generic"}
+{"question_id": 610, "text": " Show me how to classify an image of a car into one of the 1000 categories.\\n", "category": "generic"}
+{"question_id": 611, "text": " We need to create an image classifier for recognizing dog breeds. Before creating the classifier, we should extract a fixed-length feature vector from each image.\\n", "category": "generic"}
+{"question_id": 612, "text": " Help me create a machine learning model to identify whether a solar panel is damaged or not using images.\\n", "category": "generic"}
+{"question_id": 613, "text": " Suppose you want to build a search engine that can find the most visually similar products in your online shop. You need to extract feature vectors from product images.\\n", "category": "generic"}
+{"question_id": 614, "text": " I am a teacher and want to classify images related to educational material. Find out the category of educational images by providing the image's URL.\\n", "category": "generic"}
+{"question_id": 615, "text": " Can you find the semantic similarity between a list of sentences given their embeddings obtained from a pre-trained model?\\n", "category": "generic"}
+{"question_id": 616, "text": " An airport authority wants to detect the presence of drones close to the airport runway.\\n", "category": "generic"}
+{"question_id": 617, "text": " I have a lot of images and I want to categorize them based on the objects present in the images.\\n", "category": "generic"}
+{"question_id": 618, "text": " I'm planning to do sentiment analysis on a bunch of news articles. Help me convert the article content to 20-dimensional vectors.\\n", "category": "generic"}
+{"question_id": 619, "text": " In order to perform image classification using a machine learning model, I need to generate feature vectors for the given images.\\n", "category": "generic"}
+{"question_id": 620, "text": " Generate embeddings for movie descriptions to create a recommendation system based on semantic similarity.\\n", "category": "generic"}
+{"question_id": 621, "text": " Match products descriptions to our customer search query in our e-commerce store. First, encode them into vectors.\\n", "category": "generic"}
+{"question_id": 622, "text": " For a fashion e-commerce website, I want to build a recommendation system on clothing items based on their similarity. How do I extract feature vectors from clothing images for comparison?\\n", "category": "generic"}
+{"question_id": 623, "text": " For my language model, I require preprocessed text. Use an appropriate method to assist me in preparing the input text for further processing.\\n", "category": "generic"}
+{"question_id": 624, "text": " We are trying to cluster movie reviews from the Internet. First, we want to transform the reviews into fixed dimension vectors.\\n", "category": "generic"}
+{"question_id": 625, "text": " Calculate semantic similarity between input sentences using a pre-trained sentence embedding model.\\n###Input: \\\"The cat is on the roof.\\\", \\\"A feline is atop the building.\\\", \\\"We're attending a business conference.\\\"\\n", "category": "generic"}
+{"question_id": 626, "text": " I want to recommend restaurants based on their reviews. Cluster similar reviews together.\\n", "category": "generic"}
+{"question_id": 627, "text": " Help me to identify different handbags from pictures by extracting features.\\n", "category": "generic"}
+{"question_id": 628, "text": " Can you help me create a new image classification model by using a pre-trained model to extract image features and then build my custom classifier on top?\\n", "category": "generic"}
+{"question_id": 629, "text": " I want to analyze product reviews and create a classifier to automatically sort them based on their positive or negative sentiment.\\n", "category": "generic"}
+{"question_id": 630, "text": " I need a way to identify celebrities in pictures I take on my phone. Can you use image classification to do this?\\n", "category": "generic"}
+{"question_id": 631, "text": " Identify the primary sound category in an audio clip.\\n", "category": "generic"}
+{"question_id": 632, "text": " Create a model for bird species identification that extracts features considering memory constraints when deploying on an IoT device.\\n", "category": "generic"}
+{"question_id": 633, "text": " Analyze the similarity between movie reviews, obtain the embeddings for a given list of sentences so we can compare them.\\n", "category": "generic"}
+{"question_id": 634, "text": " Develop a mobile app to differentitate various car models from their photographs.\\n", "category": "generic"}
+{"question_id": 635, "text": " In order to recommend news articles to users based on their interests, I need to identify similar articles to their preferences. Can you help me obtain the text embeddings for comparison?\\n", "category": "generic"}
+{"question_id": 636, "text": " Create a program that can load an image from a web store and recognize the type of product it is.\\n", "category": "generic"}
+{"question_id": 637, "text": " Identify a suitable vector representation for the given sentence to be used later for semantic textual similarity tasks.\\n###Input: \\\"I am at the airport waiting for my flight.\\\"\\n", "category": "generic"}
+{"question_id": 638, "text": " I need to match new customers' feedbacks to the closest existing feedbacks to avoid duplicating work. Help me obtain an embedding for each customer feedback.\\n", "category": "generic"}
+{"question_id": 639, "text": " We have images of cars, and we want to extract their features and then create a classifier to classify them based on their make and model.\\n", "category": "generic"}
+{"question_id": 640, "text": " I am trying to build a mobile app to identify different food items. Can you suggest an effective pre-trained model for that purpose?\\n", "category": "generic"}
+{"question_id": 641, "text": " Classify images of different dog breeds to find the most suitable breed for our pet store.\\n", "category": "generic"}
+{"question_id": 642, "text": " We are organizing an event in a park and we want to monitor the crowd by detecting the number of people in the area.\\n", "category": "generic"}
+{"question_id": 643, "text": " Analyze a video for content and classify it into an appropriate category.\\n", "category": "generic"}
+{"question_id": 644, "text": " Estimate semantic similarity of two movie descriptions for a recommendation system.\\n", "category": "generic"}
+{"question_id": 645, "text": " I want to predict breed of dogs among 10 different breeds using images.\\n", "category": "generic"}
+{"question_id": 646, "text": " Imagine you are developing an app integrated with augmented reality that develops a customized filter based on what the user points their camera to. You need to extract features from images to create this filter.\\n", "category": "generic"}
+{"question_id": 647, "text": " Analyze an image of a cat and extract useful information that can help classify it with other animals.\\n", "category": "generic"}
+{"question_id": 648, "text": " Analyze customer support email messages and get an idea about their satisfaction by generating embeddings for each email message.\\n", "category": "generic"}
+{"question_id": 649, "text": " Can you help me convert the following sentence into a numerical representation? \\\"The quick brown fox jumps over the lazy dog.\\\"\\n###Input: \\\"The quick brown fox jumps over the lazy dog.\\\"\\n", "category": "generic"}
+{"question_id": 650, "text": " We want to recognize the objects present in an image. Automate the process using a suitable model.\\n", "category": "generic"}
+{"question_id": 651, "text": " Create a system to verify if different product images in our ecommerce store belong to the same category.\\n", "category": "generic"}
+{"question_id": 652, "text": " I have an image of a cake and want to know if the model can correctly identify it.\\n", "category": "generic"}
+{"question_id": 653, "text": " I need to automatically organize a collection of product descriptions by similarity. Can you please generate embeddings for these descriptions?\\n", "category": "generic"}
+{"question_id": 654, "text": " I need to implement a classifier using MobileNetV2 to label the content of an image.\\n", "category": "generic"}
+{"question_id": 655, "text": " I am trying to develop an app to classify various breeds of cats and dogs. Can you suggest me any pre-trained model that I can use for this purpose?\\n", "category": "generic"}
+{"question_id": 656, "text": " I have a set of images from a recent trip, and I'd like to automatically classify the most prominent subject in each photo.\\n", "category": "generic"}
+{"question_id": 657, "text": " A sports broadcaster wants to automatically detect different players on the field during a soccer match.\\n", "category": "generic"}
+{"question_id": 658, "text": " Develop a text classifier system that can categorize sentences into multiple categories, such as sentiment analysis, topic categorization, etc.\\n", "category": "generic"}
+{"question_id": 659, "text": " I am comparing sneakers in a catalog, and I want to extract the image features from the sneakers' images to cluster them.\\n", "category": "generic"}
+{"question_id": 660, "text": " I have an application that recognizes objects in images, and I need a pre-trained model to perform the classification task.\\n", "category": "generic"}
+{"question_id": 661, "text": " Recommend me an API that could classify thousands of emails into categories: office, financial, social, commercial, travel.\\n", "category": "generic"}
+{"question_id": 662, "text": " Let's build an image classifier for recognizing dog breeds using the pre-trained MobileNet V2 model.\\n", "category": "generic"}
+{"question_id": 663, "text": " My son has taken several pictures of his toys and he wants to know what are those toys by using a model that classifies images.\\n", "category": "generic"}
+{"question_id": 664, "text": " My client wants to build an application for identifying flower species using machine learning. How can we achieve that?\\n", "category": "generic"}
+{"question_id": 665, "text": " Help me find the level of similarity between this song lyric and a list of other song lyrics by generating embeddings.\\n", "category": "generic"}
+{"question_id": 666, "text": " Recommend a model to me that easily detects the type of plant in a given image.\\n", "category": "generic"}
+{"question_id": 667, "text": " Help me identify objects in an image that I load from my computer.\\n", "category": "generic"}
+{"question_id": 668, "text": " I need to perform object detection to identify contents in some paintings for a museum project.\\n", "category": "generic"}
+{"question_id": 669, "text": " Can you use the image classification model to get adequate feature for specific images on a smaller resolution mobile device?\\n", "category": "generic"}
+{"question_id": 670, "text": " I found some random birds image on the internet and now I want to classify it.\\n", "category": "generic"}
+{"question_id": 671, "text": " I need a mechanism to detect and group photos of cars on my computer based on their make and model. Can you suggest an approach for this?\\n", "category": "generic"}
+{"question_id": 672, "text": " Retrieve features from images of site inspections which will further be used for inspection report categorization.\\n", "category": "generic"}
+{"question_id": 673, "text": " I'm interested in clustering similar images from my trip to Paris, could you please recommend a way to transform images before applying a clustering algorithm?\\n", "category": "generic"}
+{"question_id": 674, "text": " Help me identify the type of food in a given image.\\n", "category": "generic"}
+{"question_id": 675, "text": " I am trying to determine the sentiment of customer reviews to improve our product, help me convert these reviews into high-dimensional vectors.\\n", "category": "generic"}
+{"question_id": 676, "text": " Generate a customer service bot and find the most suitable response for a user query from a list of responses.\\n", "category": "generic"}
+{"question_id": 677, "text": " How would you analyze the similarity of two job descriptions to check whether the positions are similar?\\n###Input: {\\\"text1\\\": \\\"We are looking for a highly skilled software engineer to join our team. The successful candidate will work on the development and implementation of a wide range of software solutions for our clients. Strong programming skills and excellent communication abilities are essential for this role.\\\", \\\"text2\\\": \\\"We are in search of a talented programmer to contribute to the design and creation of various software products for our customer base. The ideal candidate will possess outstanding coding skills along with solid communication skills to collaborate effectively with team members and clients.\\\"}\\n", "category": "generic"}
+{"question_id": 678, "text": " My friends and I are outdoor enthusiasts and we would like an app that can identify the plants we encounter.\\n", "category": "generic"}
+{"question_id": 679, "text": " I want to analyze the sentiment of tweets about a company's product. To do that, generate embeddings for the input tweets.\\n", "category": "generic"}
+{"question_id": 680, "text": " We want to analyze a collection of images for their features and create a summary of their distinct characteristics.\\n", "category": "generic"}
+{"question_id": 681, "text": " We just took many different images of the front of a house and want to isolate the windows part from the whole image.\\n", "category": "generic"}
+{"question_id": 682, "text": " We have been receiving user-generated content that is sometimes not safe for work. We would like to develop a system to classify such images.\\n", "category": "generic"}
+{"question_id": 683, "text": " My nephew is passionate about animals, and I want to create an app that tells him the type of animal in a picture.\\n", "category": "generic"}
+{"question_id": 684, "text": " I have an image of a dog breed, and I want to know the breed.\\n", "category": "generic"}
+{"question_id": 685, "text": " How to identify dog breed through a mobile app by taking a dog picture as they walk?\\n", "category": "generic"}
+{"question_id": 686, "text": " My friend has taken a photo of a plant, and I want to know what species it is.\\n", "category": "generic"}
+{"question_id": 687, "text": " Can you help me to find similarity between movie plot descriptions, so that I can recommend similar movies?\\n", "category": "generic"}
+{"question_id": 688, "text": " Design a natural language processing model using text tokenization and vectorization. I need some preprocessing before dealing with classifiers.\\n", "category": "generic"}
