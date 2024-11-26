@@ -79,7 +79,9 @@ class DeepSeekModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(
+                model=ModelType.GPT_4O_MINI
+            )
         return self._token_counter
 
     @api_keys_required("DEEPSEEK_API_KEY")
