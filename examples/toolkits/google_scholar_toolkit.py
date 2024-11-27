@@ -1,12 +1,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -142,7 +142,7 @@ However, their success heavily relies on human input to guide the
 conversation, which can be challenging and time-consuming. This paper explores 
 the potential of building scalable techniques to facilitate autonomous 
 cooperation among communicative agents, and provides insight into their 
-“cognitive” processes. To address the challenges of achieving autonomous 
+"cognitive" processes. To address the challenges of achieving autonomous 
 cooperation, we propose a novel communicative agent framework named 
 role-playing. Our approach involves using inception prompting to guide chat 
 agents toward task completion while maintaining consistency with human 
