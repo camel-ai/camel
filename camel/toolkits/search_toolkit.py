@@ -548,26 +548,6 @@ class SearchToolkit(BaseToolkit):
         else:
             return f"Search string '{search_string}' not found in the content."
 
-    # TODO: Move elsewhere
-    def planning(self, plan: str) -> str:
-        """A function for planning
-
-        This function takes a thought as a string parameter and
-        returns the thought.
-        Use this to think out loud before using any tools, and for
-        planning. Call as many times, and with as many lines of thought,
-            as needed.
-
-        Args:
-            plan (str): The thought
-            explanation (str): An optional explanation
-
-        Returns:
-            str: An empty string.
-        """
-        print(f"Planning: {plan}")
-        return "Planned"
-
     # Make a function for getting content from a URL, that skips the first
     # n characters and gives the next m characters, up to a maximum
     # of 1000 characters.
@@ -602,7 +582,7 @@ class SearchToolkit(BaseToolkit):
         return content[offset : offset + length]
 
     def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of OpenAIFunction objects representing the
+        r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
 
         Returns:
@@ -617,5 +597,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.get_url_content),
             FunctionTool(self.get_url_content_with_context),
             FunctionTool(self.get_url_content_with_offset_updated),
-            FunctionTool(self.planning),
+            FunctionTool(self.tavily_search)
         ]
