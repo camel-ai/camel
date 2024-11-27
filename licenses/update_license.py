@@ -122,8 +122,8 @@ if __name__ == '__main__':
         directory_path = sys.argv[1]
         license_template_path = sys.argv[2]
 
-    start_line_start_with = "# =========== Copyright"
-    end_line_start_with = "# =========== Copyright"
+    start_line_start_with = "# ========= Copyright"
+    end_line_start_with = "# ========= Copyright"
     update_license_in_directory(
         directory_path,
         license_template_path,
