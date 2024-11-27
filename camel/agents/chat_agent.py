@@ -1052,6 +1052,7 @@ class ChatAgent(BaseAgent):
                 role_type=self.role_type,
                 meta_dict=dict(),
                 content=choice.message.content or "",
+                parsed=getattr(choice.message, 'parsed', None),
             )
             output_messages.append(chat_message)
         finish_reasons = [

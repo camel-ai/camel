@@ -25,7 +25,7 @@ class Student(BaseModel):
 
 
 class StudentList(BaseModel):
-    studentLlst: list[Student]
+    studentList: list[Student]
 
 
 openai_model = ModelFactory.create(
@@ -45,10 +45,15 @@ user_msg = """give me some student infos."""
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
+print(response.msgs[0].parsed)
 '''
 ===============================================================================
 {"studentLlst":[{"name":"Alice Johnson","age":"20"},{"name":"Brian Smith",
 "age":"22"},{"name":"Catherine Lee","age":"19"},{"name":"David Brown",
 "age":"21"},{"name":"Eva White","age":"20"}]}
+
+studentList=[Student(name='Alice Johnson', age='20'), Student(name=
+'Brian Smith', age='22'), Student(name='Catherine Lee', age='19'),
+Student(name='David Brown', age='21'), Student(name='Eva White', age='23')]
 ===============================================================================
 '''

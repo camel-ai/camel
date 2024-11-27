@@ -15,10 +15,11 @@ import base64
 import io
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import numpy as np
 from PIL import Image
+from pydantic import BaseModel
 
 from camel.messages import (
     FunctionCallFormatter,
@@ -58,6 +59,8 @@ class BaseMessage:
             images associated with the message. Default is "auto".
         video_detail (Literal["auto", "low", "high"]): Detail level of the
             videos associated with the message. Default is "low".
+        parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
+            is parsed from the content. Default is None.
     """
 
     role_name: str
@@ -69,6 +72,7 @@ class BaseMessage:
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
+    parsed: Optional[Union[Type[BaseModel], dict]] = None
 
     @classmethod
     def make_user_message(
@@ -419,7 +423,6 @@ class BaseMessage:
                 "text": self.content,
             }
         )
-
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
                 if image.format is None:
