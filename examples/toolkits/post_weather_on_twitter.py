@@ -15,7 +15,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.toolkits import SEARCH_FUNCS, TWITTER_FUNCS, WEATHER_FUNCS
+from camel.toolkits import SearchToolkit, TwitterToolkit, WeatherToolkit
 from camel.utils import print_text_animated
 
 
@@ -38,7 +38,11 @@ def main():
 
     agent = ChatAgent(
         system_message=sys_msg,
-        tools=[*TWITTER_FUNCS, *WEATHER_FUNCS, *SEARCH_FUNCS],
+        tools=[
+            *TwitterToolkit().get_tools(),
+            *WeatherToolkit().get_tools(),
+            *SearchToolkit().get_tools(),
+        ],
     )
 
     usr_msg = BaseMessage.make_user_message(

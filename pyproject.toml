@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.6"
+version = "0.2.9"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -36,7 +36,7 @@ jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
 docstring-parser = "^0.15"
-pydantic = ">=1.9,<3"
+pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
@@ -48,6 +48,8 @@ google-generativeai = { version = "^0.6.0", optional = true }
 mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.29.0", optional = true }
+cohere = { version = "^5.11.0", optional = true }
+
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -79,7 +81,7 @@ openapi-spec-validator = { version = "^0.7.1", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.14", optional = true }
 firecrawl-py = { version = "^1.0.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
-slack-bolt = {version = "^1.20.1", optional = true}
+slack-bolt = { version = "^1.20.1", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
 imageio = { extras = ["pyav"], version = "^2.34.2" }
@@ -105,6 +107,8 @@ ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
 apify_client = { version = "^1.8.1", optional = true }
 notion-client = { version = "^2.2.1", optional = true }
+yt-dlp = { version = "^2024.11.4", optional = true }
+ffmpeg-python = { version = "^0.2.0", optional = true }
 
 
 # encoders
@@ -123,12 +127,11 @@ redis = { version = "^5.0.6", optional = true }
 
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
-cohere = { version = "^4.56", optional = true }
 
 # test
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
-mock = { version = "^5", optional = true }
+mock = { version = "^5", optional = true}
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -157,6 +160,7 @@ model-platforms = [
     "mistralai",
     "reka-api",
     "anthropic",
+    "cohere",
 ]
 
 huggingface-agent = [
@@ -177,6 +181,7 @@ encoders = [
 tools = [
     "beautifulsoup4",
     "docx2txt",
+    "functools",
     "PyMuPDF",
     "wikipedia",
     "duckduckgo-search",
@@ -213,6 +218,8 @@ tools = [
     "pdfplumber",
     "apify_client",
     "notion-client",
+    "yt-dlp",
+    "ffmpeg-python",
 ]
 
 vector-databases = [
@@ -238,6 +245,12 @@ object-storages = [
 retrievers = [
     "rank-bm25",
     "cohere",
+]
+
+runtime = [
+    "docker",
+    "fastapi",
+    "uvicorn",
 ]
 
 all = [
@@ -286,6 +299,8 @@ all = [
     "scholarly",
     "pdfplumber",
     "notion-client",
+    "yt-dlp",
+    "ffmpeg-python",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -301,6 +316,7 @@ all = [
     # model platforms
     "litellm",
     "mistralai",
+    "cohere",
     "google-generativeai",
     "anthropic",
     "reka-api",
@@ -314,6 +330,8 @@ all = [
     "datacommons_pandas",
     "tavily-python",
     "apify_client",
+    "fastapi",
+    "uvicorn",
 ]
 
 [tool.poetry.group.dev]
@@ -447,6 +465,7 @@ module = [
     "google.*",
     "google_generativeai",
     "mistralai",
+    "cohere",
     "reka-api",
     "agentops",
     "botocore.*",
@@ -460,5 +479,7 @@ module = [
     "tavily-python",
     "scholarly",
     "notion-client",
+    "ffmpeg",
+    "yt_dlp",
 ]
 ignore_missing_imports = true

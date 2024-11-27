@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from enum import Enum, EnumMeta
 from typing import cast
 
@@ -26,7 +27,7 @@ class RoleType(Enum):
 
 
 class ModelType(UnifiedModelType, Enum):
-    DEFAULT = "gpt-4o-mini"
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
 
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
@@ -69,6 +70,7 @@ class ModelType(UnifiedModelType, Enum):
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
+    GEMINI_EXP_1114 = "gemini-exp-1114"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -87,6 +89,13 @@ class ModelType(UnifiedModelType, Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # Cohere models
+    COHERE_COMMAND_R_PLUS = "command-r-plus"
+    COHERE_COMMAND_R = "command-r"
+    COHERE_COMMAND_LIGHT = "command-light"
+    COHERE_COMMAND = "command"
+    COHERE_COMMAND_NIGHTLY = "command-nightly"
+
     # Qwen models (Aliyun)
     QWEN_MAX = "qwen-max"
     QWEN_PLUS = "qwen-plus"
@@ -97,6 +106,10 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MATH_PLUS = "qwen-math-plus"
     QWEN_MATH_TURBO = "qwen-math-turbo"
     QWEN_CODER_TURBO = "qwen-coder-turbo"
+    QWEN_2_5_CODER_32B = "qwen2.5-coder-32b-instruct"
+    QWEN_2_5_72B = "qwen2.5-72b-instruct"
+    QWEN_2_5_32B = "qwen2.5-32b-instruct"
+    QWEN_2_5_14B = "qwen2.5-14b-instruct"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -227,6 +240,7 @@ class ModelType(UnifiedModelType, Enum):
         return self in {
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_EXP_1114,
         }
 
     @property
@@ -240,6 +254,21 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
             ModelType.REKA_FLASH,
+        }
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this type of models is a Cohere model.
+
+        Returns:
+            bool: Whether this type of models is Cohere.
+        """
+        return self in {
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
         }
 
     @property
@@ -273,6 +302,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_PLUS,
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_72B,
+            ModelType.QWEN_2_5_32B,
+            ModelType.QWEN_2_5_14B,
         }
 
     @property
@@ -292,6 +325,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_FLASH,
             ModelType.QWEN_MATH_PLUS,
             ModelType.QWEN_MATH_TURBO,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_LIGHT,
         }:
             return 4_096
         elif self in {
@@ -344,6 +379,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_PIXTRAL_12B,
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
+            ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_72B,
+            ModelType.QWEN_2_5_32B,
+            ModelType.QWEN_2_5_14B,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_NIGHTLY,
         }:
             return 128_000
         elif self in {
@@ -371,6 +413,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
         }:
             return 1_048_576
         elif self in {
@@ -505,7 +548,7 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
-    DEFAULT = "openai"
+    DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
 
     OPENAI = "openai"
     AZURE = "azure"
@@ -521,6 +564,7 @@ class ModelPlatformType(Enum):
     TOGETHER = "together"
     OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
     SAMBA = "samba-nova"
+    COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
 
@@ -594,6 +638,11 @@ class ModelPlatformType(Enum):
     def is_samba(self) -> bool:
         r"""Returns whether this platform is Samba Nova."""
         return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this platform is Cohere."""
+        return self is ModelPlatformType.COHERE
 
     @property
     def is_yi(self) -> bool:
