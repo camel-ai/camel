@@ -279,7 +279,7 @@ class SearchToolkit(BaseToolkit):
         """
         import wolframalpha
 
-        WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
+        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
         if not WOLFRAMALPHA_APP_ID:
             raise ValueError(
                 "`WOLFRAMALPHA_APP_ID` not found in environment "
@@ -320,20 +320,20 @@ class SearchToolkit(BaseToolkit):
         """
 
         # Extract the original query
-        query = result.get('@inputstring', '')
+        query = result.get("@inputstring", "")
 
         # Initialize a dictionary to hold structured output
         output = {"query": query, "pod_info": [], "final_answer": None}
 
         # Loop through each pod to extract the details
-        for pod in result.get('pod', []):
+        for pod in result.get("pod", []):
             # Handle the case where subpod might be a list
-            subpod_data = pod.get('subpod', {})
+            subpod_data = pod.get("subpod", {})
             if isinstance(subpod_data, list):
                 # If it's a list, get the first item for 'plaintext' and 'img'
                 description, image_url = next(
                     (
-                        (data['plaintext'], data['img'])
+                        (data["plaintext"], data["img"])
                         for data in subpod_data
                         if "plaintext" in data and "img" in data
                     ),
@@ -341,11 +341,11 @@ class SearchToolkit(BaseToolkit):
                 )
             else:
                 # Otherwise, handle it as a dictionary
-                description = subpod_data.get('plaintext', '')
-                image_url = subpod_data.get('img', {}).get('@src', '')
+                description = subpod_data.get("plaintext", "")
+                image_url = subpod_data.get("img", {}).get("@src", "")
 
             pod_info = {
-                "title": pod.get('@title', ''),
+                "title": pod.get("@title", ""),
                 "description": description,
                 "image_url": image_url,
             }
@@ -354,7 +354,7 @@ class SearchToolkit(BaseToolkit):
             output["pod_info"].append(pod_info)
 
             # Get final answer
-            if pod.get('@primary', False):
+            if pod.get("@primary", False):
                 output["final_answer"] = description
 
         return output
@@ -378,10 +378,10 @@ class SearchToolkit(BaseToolkit):
 
         # Set up the query parameters
         params = {
-            'appid': app_id,
-            'input': query,
-            'podstate': ['Result__Step-by-step solution', 'Show all steps'],
-            'format': 'plaintext',
+            "appid": app_id,
+            "input": query,
+            "podstate": ["Result__Step-by-step solution", "Show all steps"],
+            "format": "plaintext",
         }
 
         # Send the request
@@ -393,16 +393,16 @@ class SearchToolkit(BaseToolkit):
         # Find all subpods within the 'Results' pod
         for subpod in root.findall(".//pod[@title='Results']//subpod"):
             # Check if the subpod has the desired stepbystepcontenttype
-            content_type = subpod.find('stepbystepcontenttype')
+            content_type = subpod.find("stepbystepcontenttype")
             if content_type is not None and content_type.text in [
-                'SBSStep',
-                'SBSHintStep',
+                "SBSStep",
+                "SBSHintStep",
             ]:
-                plaintext = subpod.find('plaintext')
+                plaintext = subpod.find("plaintext")
                 if plaintext is not None and plaintext.text:
                     step_text = plaintext.text.strip()
                     cleaned_step = step_text.replace(
-                        'Hint: |', ''
+                        "Hint: |", ""
                     ).strip()  # Remove 'Hint: |' if present
                     steps.append(cleaned_step)
 
@@ -619,6 +619,3 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.get_url_content_with_offset_updated),
             FunctionTool(self.planning),
         ]
-
-
-SEARCH_FUNCS: List[FunctionTool] = SearchToolkit().get_tools()

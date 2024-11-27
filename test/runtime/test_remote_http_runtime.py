@@ -11,10 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
+
 from camel.runtime import RemoteHttpRuntime
 from camel.toolkits import MathToolkit
 
-if __name__ == "__main__":
+
+@pytest.mark.skip(reason="Cannot run this test without a running server.")
+def test_remote_http_runtime():
     runtime = (
         RemoteHttpRuntime("localhost")
         .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
@@ -24,24 +28,9 @@ if __name__ == "__main__":
     runtime.wait()
     print("Runtime is ready.")
     add, sub, mul = runtime.get_tools()
-    print(f"Add 1 + 2: {add.func(1, 2)}")
-    print(f"Subtract 5 - 3: {sub.func(5, 3)}")
-    print(f"Multiply 2 * 3: {mul.func(2, 3)}")
 
-    print("Documents: ", runtime.docs)
-    # you can open this url in browser to see the API Endpoints
-    # before the runtime is stopped.
-    # time.sleep(60)
+    assert add.func(1, 2) == 3
+    assert sub.func(5, 3) == 2
+    assert mul.func(2, 3) == 6
 
-    # call runtime.stop() if you want to stop the runtime manually
-    # atherwise it will be stopped automatically when the program ends
-
-
-"""
-Waiting for runtime to be ready...
-Runtime is ready.
-Add 1 + 2: 3
-Subtract 5 - 3: 2
-Multiply 2 * 3: 6
-Documents:  http://localhost:8000/docs
-"""
+    assert runtime.docs == "http://localhost:8000/docs"

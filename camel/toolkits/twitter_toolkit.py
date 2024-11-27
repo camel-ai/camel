@@ -407,14 +407,6 @@ def _handle_http_error(response: requests.Response) -> str:
         return "Unexpected Exception"
 
 
-TWITTER_FUNCS = [
-    FunctionTool(create_tweet),
-    FunctionTool(delete_tweet),
-    FunctionTool(get_my_user_profile),
-    FunctionTool(get_user_by_username),
-]
-
-
 class TwitterToolkit(BaseToolkit):
     r"""A class representing a toolkit for Twitter operations.
 
@@ -442,4 +434,9 @@ class TwitterToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return TWITTER_FUNCS
+        return [
+            FunctionTool(create_tweet),
+            FunctionTool(delete_tweet),
+            FunctionTool(get_my_user_profile),
+            FunctionTool(get_user_by_username),
+        ]

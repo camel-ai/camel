@@ -11,10 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
+
 from camel.runtime import DockerRuntime
 from camel.toolkits import CodeExecutionToolkit, MathToolkit
 
-if __name__ == "__main__":
+
+@pytest.mark.skip(reason="Need Docker environment to run this test.")
+def test_docker_runtime():
     runtime = (
         DockerRuntime("xukunliu/camel")  # change to your own docker image
         .add(MathToolkit().get_tools(), "camel.toolkits.MathToolkit")
@@ -34,38 +38,16 @@ if __name__ == "__main__":
 
         tools = r.get_tools()
 
+        assert len(tools) == 4
+
         add, sub, mul = tools[:3]
-        code_exec = tools[3]
 
-        # without kwargs
-        print(f"Add 1 + 2: {add.func(1, 2)}")
-        print(f"Subtract 5 - 3: {sub.func(5, 3)}")
-        print(f"Multiply 2 * 3: {mul.func(2, 3)}")
-        print(f"Execute code: {code_exec.func('1 + 2')}")
+        assert add.func(1, 2) == 3
+        assert sub.func(5, 3) == 2
+        assert mul.func(2, 3) == 6
 
-        # with kwargs
-        print(f"Add 1 + 2: {add.func(a=1, b=2)}")
-        print(f"Subtract 5 - 3: {sub.func(a=5, b=3)}")
-        print(f"Multiply 2 * 3: {mul.func(a=2, b=3)}")
-        print(f"Execute code: {code_exec.func(code='1 + 2')}")
+        assert add.func(a=1, b=2) == 3
+        assert sub.func(a=5, b=3) == 2
+        assert mul.func(a=2, b=3) == 6
 
-        print("Documents: ", r.docs)
-        # you can open this url in browser to see the API Endpoints
-        # before the runtime is stopped.
-
-    # you can also use the runtime without the with statement
-    # runtime.build()
-    # runtime.stop()
-
-"""
-Add 1 + 2: 3
-Subtract 5 - 3: 2
-Multiply 2 * 3: 6
-Execute code: Executed the code below:
-```py
-1 + 2
-```
-> Executed Results:
-3
-Documents:  http://localhost:8000/docs
-"""
+        assert r.docs == "http://localhost:8000/docs"

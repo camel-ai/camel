@@ -20,7 +20,7 @@ import time
 from functools import wraps
 from pathlib import Path
 from random import randint
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import requests
 from pydantic import BaseModel
@@ -40,10 +40,12 @@ class DockerRuntime(BaseRuntime):
     This class automatically wraps functions to be executed
     in a Docker container.
 
-    Attributes:
+    Args:
         image (str): The name of the Docker image to use for the runtime.
-        port (int): The port number to use for the runtime API.
-        remove (bool): Whether to remove the container after stopping it.
+        port (int): The port number to use for the runtime API. (default::obj:
+            `8000`)
+        remove (bool): Whether to remove the container after stopping it. '
+            (default::obj: `True`)
         kwargs (dict): Additional keyword arguments to pass to the
             Docker client.
     """
@@ -80,8 +82,8 @@ class DockerRuntime(BaseRuntime):
 
         Args:
             path (str): The local path to mount.
-            mount_path (str): The path to mount the local
-                directory to in the container.
+            mount_path (str): The path to mount the local directory to in the
+                container.
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -137,8 +139,7 @@ class DockerRuntime(BaseRuntime):
         self,
         task: TaskConfig,
     ) -> Any:
-        r"""Run a command inside this container. Similar to
-        ``docker exec``.
+        r"""Run a command inside this container. Similar to `docker exec`.
 
         Args:
             task (TaskConfig): The configuration for the task.
@@ -155,8 +156,7 @@ class DockerRuntime(BaseRuntime):
                     A bytestring containing response data otherwise.
 
         Raises:
-            :py:class:`docker.errors.APIError`
-                If the server returns an error.
+            RuntimeError: If the container does not exist.
         """
         if not self.container:
             raise RuntimeError(
@@ -170,7 +170,7 @@ class DockerRuntime(BaseRuntime):
 
         Args:
             time_out (int): The number of seconds to wait for the container to
-                start.
+                start. (default::obj: `15`)
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -179,8 +179,8 @@ class DockerRuntime(BaseRuntime):
             logger.warning("Container already exists. Nothing to build.")
             return self
 
-        import docker  # type: ignore[import]
-        from docker.types import Mount  # type: ignore[import]
+        import docker
+        from docker.types import Mount
 
         mounts = []
         for local_path, mount_path in self.mounts.items():
@@ -247,19 +247,21 @@ class DockerRuntime(BaseRuntime):
 
     def add(  # type: ignore[override]
         self,
-        funcs: FunctionTool | List[FunctionTool],
+        funcs: Union[FunctionTool, List[FunctionTool]],
         entrypoint: str,
-        arguments: Optional[Dict[str, Any]] = None,
         redirect_stdout: bool = False,
+        arguments: Optional[Dict[str, Any]] = None,
     ) -> "DockerRuntime":
         r"""Add a function or list of functions to the runtime.
 
         Args:
-            funcs (FunctionTool or List[FunctionTool]): The function or
+            funcs (Union[FunctionTool, List[FunctionTool]]): The function or
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
             redirect_stdout (bool): Whether to return the stdout of
-                the function.
+                the function. (default::obj: `False`)
+            arguments (Optional[Dict[str, Any]]): The arguments for the
+                function. (default::obj: `None`)
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -323,11 +325,12 @@ class DockerRuntime(BaseRuntime):
 
         return self.stop().build()
 
-    def stop(self, remove: bool | None = None) -> "DockerRuntime":
+    def stop(self, remove: Optional[bool] = None) -> "DockerRuntime":
         r"""stop the Docker container.
 
         Args:
-            remove (bool): Whether to remove the container after stopping it.
+            remove (Optional[bool]): Whether to remove the container
+                after stopping it. (default::obj: `None`)
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -363,7 +366,7 @@ class DockerRuntime(BaseRuntime):
         r"""Wait for the API Server to be ready.
 
         Args:
-            timeout (int): The number of seconds to wait.
+            timeout (int): The number of seconds to wait. (default::obj: `10`)
 
         Returns:
             bool: Whether the API Server is ready.
