@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from camel.interpreters import InternalPythonInterpreter
 from camel.toolkits import FunctionTool
@@ -22,7 +22,13 @@ class CodeExecutionToolkit(BaseToolkit):
     r"""A tookit for code execution.
 
     Args:
-        sandbox (str): the environment type used to execute code.
+        sandbox (str): The environment type used to execute code.
+        verbose (bool): Whether to print the output of the code execution.
+            (default: :obj:`False`)
+        unsafe_mode (bool):  If `True`, the interpreter runs the code
+            by `eval()` without any security check. (default: :obj:`False`)
+        import_white_list ( Optional[List[str]]): A list of allowed imports.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -31,11 +37,18 @@ class CodeExecutionToolkit(BaseToolkit):
             "internal_python", "jupyter", "docker"
         ] = "internal_python",
         verbose: bool = False,
+        unsafe_mode: bool = False,
+        import_white_list: Optional[List[str]] = None,
     ) -> None:
         # TODO: Add support for docker and jupyter.
         self.verbose = verbose
+        self.unsafe_mode = unsafe_mode
+        self.import_white_list = import_white_list or list()
         if sandbox == "internal_python":
-            self.interpreter = InternalPythonInterpreter()
+            self.interpreter = InternalPythonInterpreter(
+                unsafe_mode=self.unsafe_mode,
+                import_white_list=self.import_white_list,
+            )
         else:
             raise RuntimeError(
                 f"The sandbox type `{sandbox}` is not supported."
