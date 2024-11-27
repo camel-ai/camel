@@ -11,48 +11,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import uuid
 from abc import ABC, abstractmethod
-from collections import defaultdict
-from typing import Any, Dict, List, Self, Tuple, Union
+from typing import Any, Dict, List, Optional, Self, Tuple, Union
+from uuid import UUID
 
 from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
-from camel.responses.agent_responses import ChatAgentResponse
 from camel.types.enums import OpenAIBackendRole
+
+
+class CollectorData:
+    def __init__(
+        self,
+        id: UUID,
+        name: str,
+        role: OpenAIBackendRole,
+        message: BaseMessage,
+    ) -> None:
+        self.id = id
+        self.name = name
+        self.role = role
+        self.message = message
 
 
 class BaseDataCollector(ABC):
     r"""Base class for data collectors."""
 
-    def __init__(self):
-        self.history: Dict[
-            str, List[Tuple[int, OpenAIBackendRole, BaseMessage]]
-        ] = defaultdict(list)
+    def __init__(self) -> None:
+        self.history: List[CollectorData] = []
         self._recording = False
-        self.agents: List[ChatAgent] = []
-        self._id = 0
+        self.agents: List[Tuple[str, ChatAgent]] = []
         self.data: List[Dict[str, Any]] = []
 
     def step(
         self,
-        message: Union[BaseMessage, ChatAgentResponse],
+        message: BaseMessage,
+        role: OpenAIBackendRole,
+        role_name: Optional[str] = None,
     ) -> Self:
         r"""Record a message.
 
         Args:
             message (Union[BaseMessage, ChatAgentResponse]):
                 The message to record.
+            role (OpenAIBackendRole): The role of the message.
+            role_name (Optional[str], optional):
+                The name of the role. Defaults to None.
+                Used when message if from user.
         """
 
-        name = BaseMessage.role_name
-        role = BaseMessage.role_type.value
-        if isinstance(message, ChatAgentResponse):
-            for msg in message.msgs:
-                self.history[name].append((self._id, role, msg))
-                self._id += 1
-        else:
-            self.history[name].append((self._id, role, message))
-            self._id += 1
+        name = role_name or message.role_name
+
+        self.history.append(
+            CollectorData(
+                id=uuid.uuid1(), name=name, role=role, message=message
+            )
+        )
         return self
 
     def _inject(self, agent: ChatAgent) -> Self:
@@ -75,8 +90,11 @@ class BaseDataCollector(ABC):
             message: BaseMessage, role: OpenAIBackendRole
         ) -> None:
             if self._recording:
-                self.history[name].append((self._id, role, message))
-                self._id += 1
+                self.history.append(
+                    CollectorData(
+                        id=uuid.uuid1(), name=name, role=role, message=message
+                    )
+                )
             return ori_update_memory(message, role)
 
         agent.update_memory = update_memory  # type: ignore[method-assign]
@@ -95,8 +113,8 @@ class BaseDataCollector(ABC):
         """
         if not isinstance(agent, list):
             agent = [agent]
-        for a, n in zip(agent, agent.role_name):
-            self._inject(a, n)
+        for a in agent:
+            self._inject(a)
         return self
 
     def start(self) -> Self:
@@ -121,14 +139,18 @@ class BaseDataCollector(ABC):
             reset_agents (bool, optional):
                 Whether to reset the agents. Defaults to True.
         """
-        self.history = defaultdict(list)
-        self._id = 0
+        self.history = []
         if reset_agents:
             for _, agent in self.agents:
                 agent.reset()
 
     @abstractmethod
     def convert(self) -> Any:
+        r"""Convert the collected data."""
+        pass
+
+    @abstractmethod
+    def llm_convert(self, converter: Any, prompt: Optional[str] = None) -> Any:
         r"""Convert the collected data."""
         pass
 
@@ -139,3 +161,6 @@ class BaseDataCollector(ABC):
             path (str): The path to save the data.
         """
         raise NotImplementedError
+
+    def get_agent_history(self, name: str) -> List[CollectorData]:
+        return [msg for msg in self.history if msg.name == name]

@@ -52,13 +52,13 @@ print(collector.convert())
 collector.reset()
 
 # Manually record the message
-collector.step(usr_msg, OpenAIBackendRole.USER)
-collector.step(resp, OpenAIBackendRole.ASSISTANT)
+collector.step(usr_msg, OpenAIBackendRole.USER, "Tools calling operator")
+collector.step(resp.msgs[0], OpenAIBackendRole.ASSISTANT)
 
 print(collector.convert())
 
 # ruff: noqa: E501
 """
-{'instructions': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game Portal was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included Half-Life 2 and its episodes.'}
-{'instructions': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game Portal was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included Half-Life 2 and its episodes.'}
+{'instructions': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game Portal was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included Half-Life 2 and its episodes. It was later released as a standalone game on April 9, 2008.'}
+{'instructions': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game Portal was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included Half-Life 2 and its episodes. It was later released as a standalone game on April 9, 2008.'}
 """

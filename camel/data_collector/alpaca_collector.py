@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Optional, Self, Union
+from typing import Any, Dict, List, Optional, Self, Union
 
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector
@@ -19,7 +19,7 @@ from camel.messages.base import BaseMessage
 
 
 class AlpacaDataCollector(BaseDataCollector):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.system_message: Optional[BaseMessage] = None
         self.agent_name: Optional[str] = None
@@ -27,7 +27,6 @@ class AlpacaDataCollector(BaseDataCollector):
     def inject(
         self,
         agent: Union[List[ChatAgent], ChatAgent],
-        name: Optional[Union[str, List[Optional[str]]]] = None,
     ) -> Self:
         r"""Inject an agent into the data collector.
 
@@ -37,35 +36,35 @@ class AlpacaDataCollector(BaseDataCollector):
             name (Optional[Union[str, List[Optional[str]]]], optional):
                 The name of the agent. Defaults to None.
         """
-        if len(self.agents) > 1:
-            raise ValueError("AlpacaDataCollector only supports one agent")
-        if isinstance(agent, list):
-            if len(agent) != 1:
-                raise ValueError("AlpacaDataCollector only supports one agent")
-            agent = agent[0]
-        if isinstance(name, list):
-            name = name[0]
-        self.agent_name = name or agent.role_name
-        self.system_message = agent._system_message
-        self._inject(agent, name)
+        if not self.agent_name:
+            _agent = agent if isinstance(agent, ChatAgent) else agent[0]
+            self.agent_name = _agent.role_name
+            self.system_message = _agent._system_message
+        super().inject(agent)
         return self
 
     def convert(self) -> Dict[str, str]:
         r"""Convert the collected data into a dictionary."""
         if self.agent_name is None:
             raise ValueError("No agent injected")
-        if history := self.history.get(self.agent_name):
+        if history := self.get_agent_history(self.agent_name):
             if len(history) != 2:
                 raise ValueError(
-                    "AlpacaDataCollector only supports one message"
+                    "AlpacaDataCollector only supports one message,",
+                    f" but got {len(history)}",
                 )
             data = dict(
                 instructions=self.system_message.content
                 if self.system_message
                 else "",
-                input=history[0][2].content,
-                output=history[1][2].content,
+                input=history[0].message.content,
+                output=history[1].message.content,
             )
             self.data.append(data)
             return data
         raise ValueError("No data collected")
+
+    def llm_convert(self, converter: Any, prompt: Optional[str] = None) -> Any:
+        raise NotImplementedError(
+            "LLM conversion is not supported, waiting for another PR merged."
+        )

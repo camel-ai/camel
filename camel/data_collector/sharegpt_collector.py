@@ -23,7 +23,7 @@ from camel.types.enums import OpenAIBackendRole
 
 
 class ShareGPTDataCollector(BaseDataCollector):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.system_message: Optional[BaseMessage] = None
         self.agent_name: Optional[str] = None
@@ -32,32 +32,22 @@ class ShareGPTDataCollector(BaseDataCollector):
     def inject(
         self,
         agent: Union[List[ChatAgent], ChatAgent],
-        name: Optional[Union[str, List[Optional[str]]]] = None,
     ) -> Self:
         r"""Inject an agent into the data collector."""
-        if len(self.agents) > 1:
-            raise ValueError("ShareGPTDataCollector only supports one agent")
-        if isinstance(agent, list):
-            if len(agent) != 1:
-                raise ValueError(
-                    "ShareGPTDataCollector only supports one agent"
-                )
-            agent = agent[0]
-        if isinstance(name, list):
-            name = name[0]
+        if not self.agent_name:
+            _agent = agent if isinstance(agent, ChatAgent) else agent[0]
+            self.agent_name = _agent.role_name
+            self.system_message = _agent._system_message
+            self.tools += list(_agent.tool_dict.values())
 
-        self.agent_name = name or agent.role_name
-        self.system_message = agent._system_message
-        self.tools = list(agent.tool_dict.values())
-
-        self._inject(agent, name)
+        super().inject(agent)
         return self
 
     def convert(self) -> Dict[str, Any]:
         r"""Convert the collected data into a dictionary."""
         if self.agent_name is None:
             raise ValueError("No agent injected")
-        if history := self.history.get(self.agent_name):
+        if history := self.get_agent_history(self.agent_name):
             data = dict(
                 system=self.system_message.content
                 if self.system_message
@@ -71,7 +61,8 @@ class ShareGPTDataCollector(BaseDataCollector):
                 conversations=[],
             )
             conversations: List[Any] = []
-            for _, role, message in history:
+            for _data in history:
+                role, message = _data.role, _data.message
                 if role == OpenAIBackendRole.USER:
                     conversations.append(
                         {"from": "human", "value": message.content}
@@ -101,3 +92,8 @@ class ShareGPTDataCollector(BaseDataCollector):
             self.data.append(data)
             return data
         raise ValueError("No data collected")
+
+    def llm_convert(self, converter: Any, prompt: Optional[str] = None) -> Any:
+        raise NotImplementedError(
+            "LLM conversion is not supported, waiting for another PR merged."
+        )
