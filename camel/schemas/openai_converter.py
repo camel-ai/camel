@@ -86,6 +86,7 @@ class OpenAISchemaConverter(BaseConverter):
         Returns:
             BaseModel: The formatted response.
         """
+        prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         if output_schema is None:
             raise ValueError("Expected an output schema, got None.")
         if not isinstance(output_schema, type):
