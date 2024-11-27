@@ -1,75 +1,62 @@
-# =========== Copyright 2024 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the "License");
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an “AS IS” BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2024 @ CAMEL-AI.org. All Rights Reserved. ===========
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import os
 import re
 
 import pytest
 
 from camel.configs import NvidiaConfig
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-from camel.utils import BaseTokenCounter
+from camel.models import NvidiaModel
+from camel.types import ModelType
 
-# Test configurations
-TEST_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImlzcyI6InVzZXJfaXNzdWVyIn0.eyJzdWIiOiJ0ZXN0IiwiaXNzIjoidXNlcl9pc3N1ZXIifQ.YZnNXUz9rzqRYg4jgzl4qjBRPtbGwVxuL"
 
 @pytest.mark.model_backend
-def test_nvidia_model():
-    """Test basic NVIDIA model initialization and configuration.
-    
-    This test verifies:
-    1. Model creation with default configuration
-    2. Model type assignment
-    3. Configuration dictionary validation
-    4. Token counter initialization
-    5. Token limit validation
-    """
-    model_type = ModelType.NVIDIA_LLAMA3_CHATQA_70B
-    model_config_dict = NvidiaConfig().as_dict()
-    
-    # Set test API key
-    os.environ["OPENAI_API_KEY"] = TEST_JWT
-    
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.NVIDIA,
-        model_type=model_type,
-        model_config_dict=model_config_dict
-    )
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        ModelType.NVIDIA_LLAMA3_CHATQA_70B,
+        ModelType.NVIDIA_LLAMA3_CHATQA_8B,
+        ModelType.NVIDIA_NEMOTRON_340B,
+        ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+        ModelType.NVIDIA_YI_LARGE,
+        ModelType.NVIDIA_MISTRAL_LARGE,
+        ModelType.NVIDIA_LLAMA3_70B,
+        ModelType.NVIDIA_LLAMA2_70B,
+        ModelType.NVIDIA_MIXTRAL_8X7B,
+        ModelType.NVIDIA_DRACARYS_LLAMA31_70B,
+    ],
+)
+def test_nvidia_model(model_type: ModelType):
+    model = NvidiaModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
-    assert isinstance(model._token_counter, BaseTokenCounter)
+    assert model.model_config_dict == NvidiaConfig().as_dict()
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
 def test_nvidia_model_unexpected_argument():
-    """Test error handling for unexpected model configuration arguments.
-    
-    This test verifies that the model properly handles and raises errors
-    when given unexpected configuration parameters.
-    """
     model_type = ModelType.NVIDIA_LLAMA3_CHATQA_70B
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+    model_config_dict = {"model_path": "nvidia-llama3"}
 
     with pytest.raises(
         ValueError,
-        match=re.escape("Unexpected parameter 'model_path' for NVIDIA API."),
+        match=re.escape(
+            (
+                "Unexpected argument `model_path` is "
+                "input into NVIDIA model backend."
+            )
+        ),
     ):
-        _ = ModelFactory.create(
-            model_platform=ModelPlatformType.NVIDIA,
-            model_type=model_type,
-            model_config_dict=model_config_dict
-        )
+        _ = NvidiaModel(model_type, model_config_dict)

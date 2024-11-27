@@ -1,55 +1,51 @@
-# =========== Copyright 2024 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the "License");
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an “AS IS” BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2024 @ CAMEL-AI.org. All Rights Reserved. ===========
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 import os
-from typing import Any, Dict, List, Optional, Union, Generator
+from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
-from openai.types.chat import ChatCompletion
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessageParam,
+)
 
 from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import (
-    ChatCompletionChunk,
-    ModelType,
-)
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-    api_keys_required,
-)
+from camel.types import ModelType
+from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 
 class NvidiaModel(BaseModelBackend):
-    r"""NVIDIA API model backend implementation.
-
-    This class provides an implementation of the NVIDIA API model backend,
-    supporting various NVIDIA language models through their API.
+    r"""NVIDIA API in a unified BaseModelBackend interface.
 
     Args:
-        model_type (Union[ModelType, str]): The type of NVIDIA model to use.
-        model_config_dict (Optional[Dict[str, Any]], optional): Configuration
-            dictionary for the model. If None, default NvidiaConfig will be used.
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of NVIDIA series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`NvidiaConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        api_key (Optional[str], optional): API key for NVIDIA API.
-            If not provided, will look for NVIDIA_API_KEY environment variable.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the NVIDIA service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the NVIDIA service.
             (default: :obj:`None`)
-        url (Optional[str], optional): URL for the NVIDIA API.
-            If not provided, will use default NVIDIA API URL.
-            (default: :obj:`None`)
-        token_counter (Optional[BaseTokenCounter], optional): Token counter for
-            the model. If not provided, will use OpenAITokenCounter.
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4)` will be used.
             (default: :obj:`None`)
     """
 
@@ -67,122 +63,93 @@ class NvidiaModel(BaseModelBackend):
         url = url or os.environ.get(
             "NVIDIA_API_BASE_URL", "https://integrate.api.nvidia.com/v1"
         )
-        if token_counter is None:
-            # Use gpt-4 for token counting as it's compatible with most models
-            token_counter = OpenAITokenCounter(ModelType.GPT_4)
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = OpenAI(
-            api_key=api_key,
-            base_url=url,
             timeout=60,
             max_retries=3,
-            default_headers={
-                "accept": "application/json",
-                "content-type": "application/json",
-            },
+            api_key=self._api_key,
+            base_url=self._url,
         )
-
-    def check_model_config(self) -> None:
-        r"""Check if the model configuration contains any unexpected parameters.
-
-        Raises:
-            ValueError: If there are unexpected parameters in the configuration.
-        """
-        for param in self.model_config_dict:
-            if param not in NVIDIA_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected parameter '{param}' for NVIDIA API."
-                )
-
-    def token_counter(self, text: str) -> int:
-        r"""Count the number of tokens in the given text.
-
-        Args:
-            text (str): The text to count tokens for.
-
-        Returns:
-            int: The number of tokens in the text.
-        """
-        return self._token_counter.count_tokens(text)
 
     @api_keys_required("NVIDIA_API_KEY")
     def run(
         self,
-        messages: List[Dict[str, str]],
-        stream: bool = False,
+        messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Run the model with the given messages.
+        r"""Runs inference of NVIDIA chat completion.
 
         Args:
-            messages (List[Dict[str, str]]): List of messages for the conversation.
-            stream (bool, optional): Whether to stream the response.
-                (default: :obj:`False`)
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]: The model's response,
-            either as a complete message or a stream of chunks.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Override stream parameter if specified in config
-        if 'stream' in self.model_config_dict:
-            stream = self.model_config_dict['stream']
+        # Define role mapping
+        ROLE_MAP = {"system": "context"}
 
-        # Prepare API parameters
-        api_params = {
-            "model": str(self.model_type),
-            "messages": messages,
-            "stream": stream,
-            "max_tokens": self.model_config_dict.get('max_tokens', 1024),
-            "temperature": self.model_config_dict.get('temperature', 0.5),
-            "top_p": self.model_config_dict.get('top_p', 1.0),
-            "frequency_penalty": self.model_config_dict.get('frequency_penalty', 0.0),
-            "presence_penalty": self.model_config_dict.get('presence_penalty', 0.0),
-            "seed": self.model_config_dict.get('seed', 0),
+        # Convert messages in one comprehension with proper typing
+
+        def convert_message(msg: Dict[str, Any]) -> ChatCompletionMessageParam:
+            role = ROLE_MAP.get(msg["role"], msg["role"])
+            content = msg["content"]
+            # type: ignore[typeddict-item]
+            return {"role": role, "content": content}
+
+        typed_messages = [convert_message(dict(msg)) for msg in messages]
+
+        # Filter out unsupported config parameters
+        config_dict = {
+            k: v
+            for k, v in self.model_config_dict.items()
+            if k not in ["tools", "response_format"]
         }
 
-        # Add optional parameters if specified
-        if 'stop' in self.model_config_dict:
-            api_params['stop'] = self.model_config_dict['stop']
-
-        # Call the API
-        response = self._client.chat.completions.create(**api_params)
+        response = self._client.chat.completions.create(
+            messages=typed_messages,
+            model=self.model_type,
+            **config_dict,
+        )
         return response
 
-    def _stream_response(self, response: Stream[ChatCompletion]) -> Generator[str, None, None]:
-        """Process streaming response.
-
-        Args:
-            response: The streaming response from the model.
-
-        Yields:
-            The content of each chunk in the stream.
-        """
-        for chunk in response:
-            if chunk.choices[0].delta.content is not None:
-                yield chunk.choices[0].delta.content
-
-    def chat(
-        self,
-        messages: List[Dict[str, str]],
-        stream: Optional[bool] = None,
-    ) -> Union[str, Generator[str, None, None]]:
-        """Chat with the model.
-
-        Args:
-            messages: A list of messages in the conversation.
-            stream: Whether to stream the response.
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
 
         Returns:
-            The model's response, either as a string or a generator of strings.
+            OpenAITokenCounter: The token counter following the model's
+                tokenization style.
         """
-        openai_messages = messages
-        if stream is not None:
-            self.model_config_dict['stream'] = stream
-        
-        response = self.run(openai_messages, stream=self.model_config_dict.get('stream', False))
-        
-        if not self.model_config_dict.get('stream', False):
-            return response.choices[0].message.content
-            
-        return self._stream_response(response)
+
+        if not self._token_counter:
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+        return self._token_counter
+
+    def check_model_config(self):
+        r"""Check whether the model configuration contains any
+        unexpected arguments to NVIDIA API.
+
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to NVIDIA API.
+        """
+        for param in self.model_config_dict:
+            if param not in NVIDIA_API_PARAMS:
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into NVIDIA model backend."
+                )
+
+    @property
+    def stream(self) -> bool:
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
+        Returns:
+            bool: Whether the model is in stream mode.
+        """
+        return self.model_config_dict.get('stream', False)

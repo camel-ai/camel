@@ -1,30 +1,32 @@
-# =========== Copyright 2024 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the "License");
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an “AS IS” BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2024 @ CAMEL-AI.org. All Rights Reserved. ===========
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import ClassVar, Optional, Union
+from typing import Optional, Union
+
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
-from pydantic import Field
 
 
 class NvidiaConfig(BaseConfig):
     r"""Configuration class for NVIDIA API models.
 
-    This class defines the configuration parameters for NVIDIA's language models,
-    including temperature, sampling parameters, and response format settings.
+    This class defines the configuration parameters for NVIDIA's language
+    models, including temperature, sampling parameters, and response format
+    settings.
 
     Args:
         stream (bool, optional): Whether to stream the response.
@@ -43,22 +45,16 @@ class NvidiaConfig(BaseConfig):
         max_tokens (Union[int, NotGiven], optional): Maximum number of tokens
             to generate. If not provided, model will use its default maximum.
             (default: :obj:`NOT_GIVEN`)
-        top_k (Optional[int], optional): Controls diversity by limiting the
-            cumulative probability of tokens to sample from. Range: [0, 100].
-            (default: :obj:`None`)
-        response_format (Optional[dict], optional): Format to return the response in.
-            (default: :obj:`None`)
         seed (Optional[int], optional): Random seed for deterministic sampling.
             (default: :obj:`None`)
     """
+
     temperature: float = Field(default=0.7)
     top_p: float = Field(default=0.95)
     presence_penalty: float = Field(default=0.0)
     frequency_penalty: float = Field(default=0.0)
     max_tokens: Union[int, NotGiven] = Field(default=NOT_GIVEN)
     stream: bool = Field(default=False)
-    top_k: Optional[int] = Field(default=None)
-    response_format: Optional[dict] = Field(default=None)
     seed: Optional[int] = Field(default=None)
 
 

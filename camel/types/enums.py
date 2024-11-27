@@ -68,7 +68,13 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_CHATQA_70B = "nvidia/llama3-chatqa-1.5-70b"
     NVIDIA_LLAMA3_CHATQA_8B = "nvidia/llama3-chatqa-1.5-8b"
     NVIDIA_NEMOTRON_340B = "nvidia/nemotron-4-340b-instruct"
-    NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
+    NVIDIA_NEMOTRON_340B_REWARD = "nvidia/nemotron-4-340b-reward"
+    NVIDIA_YI_LARGE = "01-ai/yi-large"
+    NVIDIA_MISTRAL_LARGE = "mistralai/mistral-large"
+    NVIDIA_LLAMA3_70B = "meta/llama3-70b"
+    NVIDIA_LLAMA2_70B = "meta/llama2-70b"
+    NVIDIA_MIXTRAL_8X7B = "mistralai/mixtral-8x7b-instruct"
+    NVIDIA_DRACARYS_LLAMA31_70B = "abacusai/dracarys-llama-3.1-70b-instruct"
 
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
@@ -229,7 +235,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_CHATQA_70B,
             ModelType.NVIDIA_LLAMA3_CHATQA_8B,
             ModelType.NVIDIA_NEMOTRON_340B,
-            ModelType.NEMOTRON_4_REWARD,
+            ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+            ModelType.NVIDIA_YI_LARGE,
+            ModelType.NVIDIA_MISTRAL_LARGE,
+            ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.NVIDIA_LLAMA2_70B,
+            ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.NVIDIA_DRACARYS_LLAMA31_70B,
         }
 
     @property
@@ -320,7 +332,7 @@ class ModelType(UnifiedModelType, Enum):
         if self is ModelType.GLM_4V:
             return 1024
         elif self in {
-            ModelType.NEMOTRON_4_REWARD,
+            ModelType.NVIDIA_NEMOTRON_340B_REWARD,
             ModelType.STUB,
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
@@ -343,6 +355,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_CHATQA_70B,
             ModelType.NVIDIA_LLAMA3_CHATQA_8B,
             ModelType.NVIDIA_NEMOTRON_340B,
+            ModelType.NVIDIA_YI_LARGE,
+            ModelType.NVIDIA_MISTRAL_LARGE,
+            ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.NVIDIA_LLAMA2_70B,
+            ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.NVIDIA_DRACARYS_LLAMA31_70B,
         }:
             return 8_192
         elif self in {

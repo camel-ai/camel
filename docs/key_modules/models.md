@@ -70,14 +70,20 @@ The following table lists currently supported model platforms by CAMEL.
 | Reka | reka-core | Y |
 | Reka | reka-flash | Y |
 | Reka | reka-edge | Y |
-| Nividia | nemotron-4-340b-reward | N |
+| NVIDIA | nvidia-llama3-chatqa-70b | Y |
+| NVIDIA | nvidia-llama3-chatqa-8b | Y |
+| NVIDIA | nvidia-llama3-70b | Y |
+| NVIDIA | nvidia-mistral-large | N |
+| NVIDIA | nvidia-yi-large | N |
+| NVIDIA | nvidia-mixtral-8x7b | N |
+| NVIDIA | nvidia-dracarys-llama31-70b | N |
+| NVIDIA | nvidia-nemotron-340b-reward | N |
 | SambaNova| https://community.sambanova.ai/t/supported-models/193 | ----- |
 | Groq | https://console.groq.com/docs/models | ----- |
 | Ollama | https://ollama.com/library | ----- |
 | vLLM | https://docs.vllm.ai/en/latest/models/supported_models.html | ----- |
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
-| NVIDIA | NVIDIA_LLAMA3_CHATQA_70B, NVIDIA_LLAMA3_CHATQA_8B | Y |
 
 ## 3. Using Models by API calling
 
@@ -218,63 +224,6 @@ user_msg = "Say hi to CAMEL AI"
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
-
-### 4.3 Using NVIDIA Models
-
-NVIDIA provides powerful language models through their API. Here's how to use NVIDIA models with CAMEL:
-
-1. First, obtain your API key from [NVIDIA AI Playground](https://build.nvidia.com/explore/discover).
-
-2. Set up your environment variables in a `.env` file:
-```
-NVIDIA_API_BASE_URL="https://integrate.api.nvidia.com/v1"
-NVIDIA_API_KEY="your-api-key-here"
-```
-
-3. Create a script to use NVIDIA models (see the complete example [here](https://github.com/camel-ai/camel/blob/master/examples/models/nvidia_model_example.py)):
-
-```python
-from dotenv import load_dotenv
-from camel.configs import NvidiaConfig
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-
-# Load environment variables
-load_dotenv()
-
-# Create a NVIDIA model instance
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.NVIDIA,
-    model_type=ModelType.NVIDIA_LLAMA3_CHATQA_70B,
-    model_config_dict=NvidiaConfig(
-        temperature=0.7,
-        top_p=0.9,
-        max_tokens=500,
-        stream=True
-    ).as_dict(),
-)
-
-# Use the model
-messages = [
-    {"role": "user", "content": "Your question here"}
-]
-
-for response in model.chat(messages=messages):
-    print(response, end="", flush=True)
-```
-
-NVIDIA models supported by CAMEL include:
-- NVIDIA_LLAMA3_CHATQA_70B
-- NVIDIA_LLAMA3_CHATQA_8B
-
-These models offer different capabilities and performance characteristics:
-- The 70B model provides more precise and concise responses
-- The 8B model offers a good balance between performance and resource usage
-
-Key features of NVIDIA models:
-- Streaming support for real-time responses
-- Configurable parameters like temperature and top_p
-- Support for both chat and completion tasks
 
 ## 5. About Model Speed
 Model speed is a crucial factor in AI application performance. It affects both user experience and system efficiency, especially in real-time or interactive tasks. In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
