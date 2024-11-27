@@ -26,11 +26,10 @@ class DeepSeekConfig(BaseConfig):
     DeepSeek API.
 
     Args:
-        temperature (float, optional): The sampling temperature to use,
-            between 0 and 2. Higher values like 0.8 will make the output
-            more random, while lower values like 0.2 will make it more
-            focused and deterministic. We generally recommend altering
-            this or top_p but not both. Defaults to 1.
+        temperature (float, optional): Sampling temperature to use, between
+            :obj:`0` and :obj:`2`. Higher values make the output more random,
+            while lower values make it more focused and deterministic.
+            (default: :obj:`0.2`)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results
             of the tokens with top_p probability mass. So 0.1 means only
@@ -110,6 +109,9 @@ class DeepSeekConfig(BaseConfig):
     response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     tool_choice: Optional[Union[dict[str, str], str]] = None
+    stream_options: bool = False
+    logprobs: bool = False
+    top_logprobs: Optional[int] = None
 
     def as_dict(self) -> dict[str, Any]:
         r"""Convert the current configuration to a dictionary.
