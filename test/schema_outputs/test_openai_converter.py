@@ -15,7 +15,6 @@
 from pydantic import BaseModel
 
 from camel.schemas import OpenAISchemaConverter
-from camel.utils import get_pydantic_model
 
 
 class Temperature(BaseModel):
@@ -48,7 +47,6 @@ def test_openai_converter_with_str_template():
 
 
 def test_openai_converter_with_function():
-
     model = OpenAISchemaConverter()
 
     structured_output = model.convert(
@@ -67,7 +65,8 @@ def test_openai_converter_with_model():
     model = OpenAISchemaConverter()
 
     structured_output = model.convert(
-        "Today is 2023-09-01, the temperature in Beijing is 30 degrees.", Temperature
+        "Today is 2023-09-01, the temperature in Beijing is 30 degrees.",
+        Temperature,
     )
 
     assert structured_output.model_dump() == {
