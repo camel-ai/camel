@@ -56,4 +56,6 @@ print(
 )
 """
 location='Beijing' date='2023-09-01' temperature=30.0
+location='Beijing' date='2023-09-01' temperature=30.0
+location='Beijing' date='2023-09-01' temperature=30.0
 """

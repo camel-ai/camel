@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Optional, Type
+from typing import Any, Dict
 
 from pydantic import BaseModel
 
@@ -26,15 +26,9 @@ class BaseConverter(ABC):
             format of the response. (default: :obj:`None`)
     """
 
-    def __init__(self):
-        pass
-
     @abstractmethod
     def convert(
-        self,
-        text: str,
-        output_schema: Optional[Type[BaseModel]] = None,
-        prompt: Optional[str] = None,
+        self, content: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> BaseModel:
         r"""Structures the input text into the expected response format.
 

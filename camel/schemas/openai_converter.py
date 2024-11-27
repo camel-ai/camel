@@ -13,18 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from typing import Any, Callable, Dict, Optional, Type, cast
+from typing import Any, Callable, Dict, Optional, Type, Union
 
-from openai import OpenAI
 from pydantic import BaseModel
 
+from camel.models import ModelFactory
 from camel.types import ModelType
 from camel.types.enums import ModelPlatformType
 from camel.utils import (
     api_keys_required,
+    get_pydantic_model,
 )
-from camel.utils import get_format
-from camel.models import ModelFactory
 
 from .base import BaseConverter
 
@@ -59,38 +58,38 @@ class OpenAISchemaConverter(BaseConverter):
         model_type: ModelType = ModelType.GPT_4O_MINI,
         model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
-        prompt: Optional[str] = DEFAULT_CONVERTER_PROMPTS,
     ):
         self.model_type = model_type
-        self.prompt = prompt
         self.model_config_dict = model_config_dict or {}
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self._client = ModelFactory.create(
+        self._client = ModelFactory.create(  # type: ignore[attr-defined]
             ModelPlatformType.OPENAI,
             model_type,
             api_key=api_key,
-        )
+        )._client
         super().__init__()
 
     @api_keys_required("OPENAI_API_KEY")
-    def convert(
+    def convert(  # type: ignore[override]
         self,
         content: str,
-        output_schema: Type[BaseModel] | str | Callable,
+        output_schema: Union[Type[BaseModel], str, Callable],
+        prompt: Optional[str] = DEFAULT_CONVERTER_PROMPTS,
     ) -> BaseModel:
         r"""Formats the input content into the expected BaseModel
 
         Args:
             content (str): The content to be formatted.
-            output_schema (Optional[Type[BaseModel]], optional):
-                The expected format of the response. Defaults to None.
-            prompt (Optional[str], optional): The prompt to be used.
+            output_schema (Union[Type[BaseModel], str, Callable]): The expected
+                format of the response.
 
         Returns:
             BaseModel: The formatted response.
         """
+        if output_schema is None:
+            raise ValueError("Expected an output schema, got None.")
         if not isinstance(output_schema, type):
-            output_schema = get_format(output_schema)
+            output_schema = get_pydantic_model(output_schema)
         elif not issubclass(output_schema, BaseModel):
             raise ValueError(
                 f"Expected a BaseModel, got {type(output_schema)}"
@@ -99,7 +98,7 @@ class OpenAISchemaConverter(BaseConverter):
         self.model_config_dict["response_format"] = output_schema
         response = self._client.beta.chat.completions.parse(
             messages=[
-                {'role': 'system', 'content': self.prompt},
+                {'role': 'system', 'content': prompt},
                 {'role': 'user', 'content': content},
             ],
             model=self.model_type,
@@ -108,9 +107,9 @@ class OpenAISchemaConverter(BaseConverter):
 
         message = response.choices[0].message
 
-        if not isinstance(message.parsed, BaseModel):
+        if not isinstance(message.parsed, output_schema):
             raise ValueError(
-                f"Expected a BaseModel, got {type(message.parsed)}"
+                f"Expected a {output_schema}, got {type(message.parsed)}."
             )
 
         return message.parsed

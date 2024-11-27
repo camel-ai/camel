@@ -36,7 +36,7 @@ from .commons import (
     track_agent,
 )
 from .constants import Constants
-from .response_format import get_format
+from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -77,5 +77,5 @@ __all__ = [
     "AgentOpsMeta",
     "track_agent",
     "handle_http_error",
-    "get_format",
+    "get_pydantic_model",
 ]

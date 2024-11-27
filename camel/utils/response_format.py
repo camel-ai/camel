@@ -16,24 +16,24 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Type, Union
 
 from pydantic import BaseModel, create_model
-from pydantic.dataclasses import dataclass
 
 
-def get_format(
-    input_data: Optional[Union[str, type, Callable]] = None
+def get_pydantic_model(
+    input_data: Union[str, Type[BaseModel], Callable],
 ) -> Type[BaseModel]:
     r"""A multi-purpose function that can be used as a normal function,
         a class decorator, or a function decorator.
 
     Args:
-    input_data (Optional[Union[str, type, Callable]]):
+    input_data (Union[str, type, Callable]):
         - If a string is provided, it should be a JSON-encoded string
             that will be converted into a BaseModel.
         - If a function is provided, it will be decorated such that
             its arguments are converted into a BaseModel.
+        - If a BaseModel class is provided, it will be returned directly.
 
     Returns:
         Type[BaseModel]: The BaseModel class that will be used to
@@ -58,13 +58,6 @@ def get_format(
             },
         )
         return WrapperClass
-
-    else:
-
-        def decorator(target):
-            if inspect.isclass(target):
-                return dataclass(target)
-            elif callable(target):
-                return get_format(target)
-
-        return decorator
+    if issubclass(input_data, BaseModel):
+        return input_data
+    raise ValueError("Invalid input data provided.")
