@@ -597,5 +597,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.get_url_content),
             FunctionTool(self.get_url_content_with_context),
             FunctionTool(self.get_url_content_with_offset_updated),
-            FunctionTool(self.tavily_search)
+            FunctionTool(self.tavily_search),
         ]
