@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
