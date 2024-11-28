@@ -183,7 +183,7 @@ class ChatAgent(BaseAgent):
 
         self.model_type = self.model_backend.model_type
 
-        # tool registration
+        # Tool registration
         external_tools = external_tools or []
         tools = tools or []
         all_tools = tools + external_tools
@@ -195,16 +195,18 @@ class ChatAgent(BaseAgent):
         }
         self.tool_dict = {tool.get_function_name(): tool for tool in all_tools}
 
-        # If the user hasn't configured tools in `BaseModelBackend`,
-        # the tools set from `ChatAgent` will be used.
-        # This design simplifies the interface while retaining tool-running
-        # capabilities for `BaseModelBackend`.
-        if all_tools and not self.model_backend.model_config_dict.get("tools"):
+        # If the user set tools from `ChatAgent`, it will override the
+        # configured tools in `BaseModelBackend`.
+        if all_tools:
+            logger.warning(
+                "Overriding the configured tools in `BaseModelBackend` with the tools from `ChatAgent`."
+            )
             tool_schema_list = [
                 tool.get_openai_tool_schema() for tool in all_tools
             ]
             self.model_backend.model_config_dict['tools'] = tool_schema_list
             self.tool_schema_list = tool_schema_list
+
         self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit
