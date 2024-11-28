@@ -30,37 +30,18 @@ class DeepSeekConfig(BaseConfig):
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
             (default: :obj:`0.2`)
-        top_p (float, optional): An alternative to sampling with temperature,
-            called nucleus sampling, where the model considers the results
-            of the tokens with top_p probability mass. So 0.1 means only
-            the tokens comprising the top 10% probability mass are
-            considered. We generally recommend altering this or temperature
-            but not both. (default: :obj:`1`)
-        response_format (Union[Dict[str, str], ResponseFormat], optional):
-            The format that the model must output. Setting to
-            {"type": "json_object"} enables JSON Output, which guarantees
-            the message the model generates is valid JSON. Important: When
-            using JSON Output, you must also instruct the model to produce
-            JSON yourself via a system or user message. Without this, the
-            model may generate an unending stream of whitespace until the
-            generation reaches the token limit, resulting in a long-running
-            and seemingly "stuck" request. Also note that the message
-            content may be partially cut off if finish_reason="length",
-            which indicates the generation exceeded max_tokens or the
-            conversation exceeded the max context length. Possible values:
-            ["text", "json_object"]. (default: :obj:`"text"`)
+        top_p (float, optional): Controls the diversity and focus of the
+            generated results. Higher values make the output more diverse,
+            while lower values make it more focused. (default: :obj:`1.0`)
+        response_format (object, optional): Specifies the format of the
+            returned content. The available values are `{"type": "text"}` or
+            `{"type": "json_object"}`. Setting it to `{"type": "json_object"}`
+            will output a standard JSON string.
+            (default: :obj:`{"type": "text"}`)
         stream (bool, optional): If set, partial message deltas will be sent.
             Tokens will be sent as data-only server-sent events (SSE) as
             they become available, with the stream terminated by a
             data: [DONE] message. (default: :obj:`False`)
-        stream_options (bool, optional): Options for streaming response.
-            Only set this when you set stream: true. include_usage
-            (boolean) If set, an additional chunk will be streamed before
-            the data: [DONE] message. The usage field on this chunk shows
-            the token usage statistics for the entire request, and the
-            choices field will always be an empty array. All other chunks
-            will also include a usage field, but with a null value.
-            (default: :obj:`False`)
         stop (Union[str, list[str]], optional): Up to 16 sequences where
             the API will stop generating further tokens. (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens that can
@@ -70,7 +51,7 @@ class DeepSeekConfig(BaseConfig):
         presence_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on whether they
             appear in the text so far, increasing the model's likelihood
-            to talk about new topics. (default: :obj:`0`)
+            to talk about new topics. (default: :obj:`0.0`)
         frequency_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on their existing
             frequency in the text so far, decreasing the model's likelihood
@@ -99,6 +80,9 @@ class DeepSeekConfig(BaseConfig):
             position, each with an associated log probability. logprobs
             must be set to true if this parameter is used.
             (default: :obj:`None`)
+        include_usage (bool, optional): When streaming, specifies whether to
+            include usage information in `stream_options`. (default:
+            :obj:`True`)
     """
 
     temperature: float = 0.2  # deepseek default: 1.0
@@ -110,9 +94,15 @@ class DeepSeekConfig(BaseConfig):
     response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     tool_choice: Optional[Union[dict[str, str], str]] = None
-    stream_options: bool = False
     logprobs: bool = False
     top_logprobs: Optional[int] = None
+
+    def __init__(self, include_usage: bool = True, **kwargs):
+        super().__init__(**kwargs)
+        # Only set stream_options when stream is True
+        # Otherwise, it will raise error when calling the API
+        if self.stream:
+            self.stream_options = {"include_usage": include_usage}
 
     def as_dict(self) -> dict[str, Any]:
         r"""Convert the current configuration to a dictionary.
