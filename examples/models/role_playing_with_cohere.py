@@ -30,7 +30,7 @@ from camel.utils import print_text_animated
 
 def main(
     model_platform=ModelPlatformType.COHERE,
-    model_type=ModelType.COHERE_COMMAND_R,
+    model_type=ModelType.COHERE_COMMAND_R_PLUS,
     chat_turn_limit=3,
 ) -> None:
     task_prompt = (

@@ -27,7 +27,7 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    GeminiTokenCounter,
+    OpenAITokenCounter,
     api_keys_required,
 )
 
@@ -48,8 +48,9 @@ class GeminiModel(BaseModelBackend):
             (default: :obj:`https://generativelanguage.googleapis.com/v1beta/
             openai/`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
-            use for the model. If not provided, :obj:`GeminiTokenCounter()`
-            will be used. (default: :obj:`None`)
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -109,7 +110,7 @@ class GeminiModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = GeminiTokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):
