@@ -103,8 +103,8 @@ class VLLMConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    logprobs: Optional[bool] | NotGiven = NOT_GIVEN,
-    top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
+    logprobs: Optional[bool] | NotGiven = NotGiven,
+    top_logprobs: Optional[int] | NotGiven = NotGiven,
 
 
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}
