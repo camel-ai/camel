@@ -11,72 +11,96 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import logging
-
 from camel.datahubs.clients.huggingface import HuggingFaceDatasetManager
 from camel.datahubs.models import Record
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+HUGGINGFACE_TOKEN = "your_huggingface_token"
 
+manager = HuggingFaceDatasetManager(token=HUGGINGFACE_TOKEN)
 
-TOKEN = "your_huggingface_token"
-DATASET_NAME = "username/example-dataset"
+USERNAME = "username"
+REPO_ID = f"{USERNAME}/test-dataset-example"
 
-manager = HuggingFaceDatasetManager(token=TOKEN)
-
-try:
-    dataset_url = manager.create_dataset(
-        name=DATASET_NAME, description="Example dataset for testing"
-    )
-    logger.info(f"Dataset created at: {dataset_url}")
-except Exception as e:
-    logger.error(f"Error creating dataset: {e}")
-
-records_to_add = [
+records = [
     Record(
         id="record-1",
         content={"input": "What is AI?", "output": "Artificial Intelligence"},
-        metadata={"method": "SFT", "model_name": "gpt-4"},
+        metadata={"method": "SFT"},
     ),
     Record(
         id="record-2",
-        content={"input": "Translate 'hello' to French", "output": "Bonjour"},
-        metadata={"method": "GPT", "model_name": "gpt-3.5-turbo"},
+        content={"input": "Translate 'hello'", "output": "Bonjour"},
+        metadata={"method": "GPT"},
     ),
 ]
 
-try:
-    manager.add_records(dataset_name=DATASET_NAME, records=records_to_add)
-    logger.info("Records added successfully!")
-except ValueError as e:
-    logger.error(f"Error adding records: {e}")
+# 1. create a dataset
+print("Creating dataset...")
+dataset_url = manager.create_dataset(name=REPO_ID)
+print(f"Dataset created: {dataset_url}")
 
-records_to_update = [
-    Record(
-        id="record-2",
-        content={"input": "Translate 'hello' to French", "output": "Salut"},
-        metadata={"method": "Updated GPT", "model_name": "gpt-3.5-turbo"},
-    ),
+# 2. add records to the dataset
+print("Adding records to the dataset...")
+manager.add_records(
+    dataset_name=REPO_ID, records=records
+)
+print("Records added successfully.")
+
+# 3. list all records
+print("Listing all records...")
+all_records = manager.list_records(dataset_name=REPO_ID)
+print("Records in the dataset:")
+for record in all_records:
+    print(
+        f"- ID: {record.id}, Input: {record.content['input']}, "
+        f"Output: {record.content['output']}"
+    )
+
+# 4. update a record
+new_records = [
     Record(
         id="record-3",
         content={"input": "What is ML?", "output": "Machine Learning"},
-        metadata={"method": "SFT", "model_name": "gpt-4"},
-    ),
-]
-
-try:
-    manager.update_records(
-        dataset_name=DATASET_NAME, records=records_to_update
+        metadata={"method": "Updated GPT"},
     )
-    logger.info("Records updated successfully!")
-except ValueError as e:
-    logger.error(f"Error updating records: {e}")
+]
+print("Updating records...")
+manager.update_records(dataset_name=REPO_ID, records=new_records)
+print("Records updated successfully.")
 
-try:
-    records = manager.list_records(dataset_name=DATASET_NAME)
-    logger.info("Current records in dataset:")
-    for record in records:
-        logger.info(record.model_dump())
-except Exception as e:
-    logger.error(f"Error listing records: {e}")
+# 5. list updated records
+print("Listing updated records...")
+updated_records = manager.list_records(dataset_name=REPO_ID)
+print("Updated records in the dataset:")
+for record in updated_records:
+    print(
+        f"- ID: {record.id}, Input: {record.content['input']}, "
+        f"Output: {record.content['output']}"
+    )
+
+# 6. delete a record
+print("Deleting record with ID 'record-1'...")
+manager.delete_record(dataset_name=REPO_ID, record_id="record-1")
+print("Record deleted successfully.")
+
+# 7. list records after deletion
+print("Listing records after deletion...")
+final_records = manager.list_records(dataset_name=REPO_ID)
+print("Final records in the dataset:")
+for record in final_records:
+    print(
+        f"- ID: {record.id}, Input: {record.content['input']}, "
+        f"Output: {record.content['output']}"
+    )
+
+# 8. list all datasets
+print("Listing all datasets...")
+datasets = manager.list_datasets(USERNAME)
+print("Datasets:")
+for dataset in datasets:
+    print(f"- {dataset}")
+
+# 9. delete a dataset
+print(f"Deleting dataset: {REPO_ID}...")
+manager.delete_dataset(dataset_name=REPO_ID)
+print("Dataset deleted successfully.")

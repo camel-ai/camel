@@ -16,7 +16,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from huggingface_hub import RepositoryNotFoundError
+from huggingface_hub.errors import EntryNotFoundError
 
 from camel.datahubs.clients.huggingface import HuggingFaceDatasetManager
 from camel.datahubs.models import Record
@@ -25,6 +25,7 @@ TOKEN = "your_huggingface_token"
 DATASET_NAME = (
     f"test-dataset-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
 )
+REPO_ID = f"username/{DATASET_NAME}"
 
 
 @pytest.fixture
@@ -34,15 +35,13 @@ def manager():
 
 def test_create_dataset(manager):
     with patch("huggingface_hub.HfApi.create_repo") as mock_create_repo:
-        mock_create_repo.return_value = {"repo_id": f"username/{DATASET_NAME}"}
+        mock_create_repo.return_value = {"repo_id": REPO_ID}
 
-        dataset_url = manager.create_dataset(
-            name=DATASET_NAME, description="Test dataset"
-        )
-        assert dataset_url == f"https://huggingface.co/datasets/{DATASET_NAME}"
+        dataset_url = manager.create_dataset(name=REPO_ID)
+        assert dataset_url == f"https://huggingface.co/datasets/{REPO_ID}"
 
         mock_create_repo.assert_called_once_with(
-            name=DATASET_NAME, repo_type="dataset", private=True, token=TOKEN
+            repo_id=REPO_ID, repo_type="dataset", private=True
         )
 
 
@@ -64,19 +63,21 @@ def test_add_records(manager):
     ]
 
     with (
-        patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
         patch(
-            "huggingface_hub.hf_hub_download",
-            side_effect=RepositoryNotFoundError,
-        ),
+            "camel.datahubs.clients.huggingface.hf_hub_download",
+            side_effect=EntryNotFoundError("404 Client Error."),
+        ) as mock_download,
+        patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
     ):
-        manager.add_records(dataset_name=DATASET_NAME, records=records)
+        manager.add_records(dataset_name=REPO_ID, records=records)
 
+        mock_download.assert_called_once()
         mock_upload_file.assert_called_once()
         call_args = mock_upload_file.call_args[1]
-        assert call_args["repo_id"] == DATASET_NAME
+        assert call_args["repo_id"] == REPO_ID
         assert call_args["path_in_repo"] == "records/records.json"
         assert call_args["repo_type"] == "dataset"
+
 
 
 def test_update_records(manager):
@@ -90,6 +91,7 @@ def test_update_records(manager):
             "metadata": {"method": "SFT"},
         }
     ]
+
     new_records = [
         Record(
             id="record-2",
@@ -103,25 +105,39 @@ def test_update_records(manager):
         ),
     ]
 
+    expected_count = 3
+
     with (
-        patch("huggingface_hub.hf_hub_download") as mock_download,
+        patch(
+            "camel.datahubs.clients.huggingface.hf_hub_download"
+        ) as mock_download,
         patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
+        patch("builtins.open", new_callable=MagicMock) as mock_open,
     ):
         mock_download.return_value = "/mock/path/records.json"
-        with patch("builtins.open", new_callable=MagicMock) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = (
-                json.dumps(existing_records)
-            )
 
-            manager.update_records(
-                dataset_name=DATASET_NAME, records=new_records
-            )
+        mock_open.return_value.__enter__.return_value.read.return_value = (
+            json.dumps(existing_records)
+        )
 
-            mock_upload_file.assert_called_once()
-            call_args = mock_upload_file.call_args[1]
-            assert call_args["repo_id"] == DATASET_NAME
-            assert call_args["path_in_repo"] == "records/records.json"
-            assert call_args["repo_type"] == "dataset"
+        manager.update_records(dataset_name=REPO_ID, records=new_records)
+
+        mock_upload_file.assert_called_once()
+        call_args = mock_upload_file.call_args[1]
+        assert call_args["repo_id"] == REPO_ID
+        assert call_args["path_in_repo"] == "records/records.json"
+        assert call_args["repo_type"] == "dataset"
+
+        write_calls = (
+            mock_open.return_value.__enter__.return_value.write.call_args_list
+        )
+        written_data = "".join(call.args[0] for call in write_calls)
+
+        updated_records = json.loads(written_data)
+        assert len(updated_records) == expected_count
+        assert any(rec["id"] == "record-1" for rec in updated_records)
+        assert any(rec["id"] == "record-2" for rec in updated_records)
+        assert any(rec["id"] == "record-3" for rec in updated_records)
 
 
 def test_list_records(manager):
@@ -142,7 +158,9 @@ def test_list_records(manager):
     ]
 
     with (
-        patch("huggingface_hub.hf_hub_download") as mock_download,
+        patch(
+            "camel.datahubs.clients.huggingface.hf_hub_download"
+        ) as mock_download,
         patch("builtins.open", new_callable=MagicMock) as mock_open,
     ):
         mock_download.return_value = "/mock/path/records.json"
@@ -150,7 +168,7 @@ def test_list_records(manager):
             json.dumps(mock_records)
         )
 
-        records = manager.list_records(dataset_name=DATASET_NAME)
+        records = manager.list_records(dataset_name=REPO_ID)
         assert len(records) == len(mock_records)
 
         for original, loaded in zip(mock_records, records):
@@ -171,10 +189,90 @@ def test_add_records_error_on_existing_file(manager):
         )
     ]
 
-    with patch("huggingface_hub.hf_hub_download") as mock_download:
+    with (
+        patch(
+            "camel.datahubs.clients.huggingface.hf_hub_download",
+            side_effect=ValueError(
+                "Dataset 'records/records.json' already exists. "
+                "Use `update_records` to modify."
+            )
+        ) as mock_download,
+        patch("huggingface_hub.HfApi.upload_file") as mock_upload_file
+    ):
         mock_download.return_value = "/mock/path/records.json"
 
         with pytest.raises(
-            ValueError, match="Dataset 'records/records.json' already exists"
+            ValueError,
+            match="Dataset 'records/records.json' already exists. "
+                  "Use `update_records` to modify."
         ):
-            manager.add_records(dataset_name=DATASET_NAME, records=records)
+            manager.add_records(dataset_name=REPO_ID, records=records)
+
+        mock_upload_file.assert_not_called()
+
+
+def test_list_datasets(manager):
+    with patch("huggingface_hub.HfApi.list_datasets") as mock_list_datasets:
+        mock_dataset = MagicMock()
+        mock_dataset.id = REPO_ID
+        mock_list_datasets.return_value = [mock_dataset]
+
+        datasets = manager.list_datasets(username="username")
+        assert datasets == [REPO_ID]
+
+        mock_list_datasets.assert_called_once()
+
+
+def test_delete_dataset(manager):
+    with patch("huggingface_hub.HfApi.delete_repo") as mock_delete_repo:
+        manager.delete_dataset(dataset_name=REPO_ID)
+        mock_delete_repo.assert_called_once_with(
+            repo_id=REPO_ID, repo_type="dataset"
+        )
+
+
+def test_delete_record(manager):
+    with (
+        patch(
+            "camel.datahubs.clients.huggingface.hf_hub_download"
+        ) as mock_download,
+        patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
+        patch("builtins.open", new_callable=MagicMock) as mock_open,
+    ):
+        mock_download.return_value = "/mock/path/records.json"
+
+        existing_records = [
+            Record(
+                id="record-1",
+                content={
+                    "input": "What is AI?",
+                    "output": "Artificial Intelligence",
+                },
+                metadata={"method": "SFT"},
+            ),
+            Record(
+                id="record-2",
+                content={"input": "Translate 'hello'", "output": "Bonjour"},
+                metadata={"method": "GPT"},
+            ),
+        ]
+        mock_open.return_value.__enter__.return_value.read.return_value = (
+            json.dumps([record.model_dump() for record in existing_records])
+        )
+
+        manager.delete_record(dataset_name=REPO_ID, record_id="record-1")
+
+        mock_upload_file.assert_called_once()
+        call_args = mock_upload_file.call_args[1]
+        assert call_args["repo_id"] == REPO_ID
+        assert call_args["path_in_repo"] == "records/records.json"
+        assert call_args["repo_type"] == "dataset"
+
+        write_calls = (
+            mock_open.return_value.__enter__.return_value.write.call_args_list
+        )
+        written_data = "".join(call.args[0] for call in write_calls)
+
+        updated_records = json.loads("".join(written_data))
+        assert len(updated_records) == 1
+        assert updated_records[0]["id"] == "record-2"
