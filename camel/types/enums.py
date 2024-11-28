@@ -122,6 +122,9 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
 
+    # Phi models
+    PHI_3_5_VISION = "microsoft/Phi-3.5-vision-instruct"
+
     def __str__(self):
         return self.value
 
@@ -308,6 +311,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_14B,
         }
 
+    def is_phi(self) -> bool:  # type: ignore[override]
+        r"""Returns whether this type of models is served by Phi."""
+        return self in {ModelType.PHI_3_5_VISION}
+
     @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
@@ -389,6 +396,10 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 128_000
         elif self in {
+            ModelType.PHI_3_5_VISION,
+        }:
+            return 131_072
+        elif self in {
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
@@ -396,7 +407,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
         }:
-            return 131_072
+            return 128_000
         elif self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
@@ -559,6 +570,7 @@ class ModelPlatformType(Enum):
     ZHIPU = "zhipuai"
     GEMINI = "gemini"
     VLLM = "vllm"
+    PHI = "phi"
     MISTRAL = "mistral"
     REKA = "reka"
     TOGETHER = "together"
@@ -597,6 +609,16 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_phi(self) -> bool:
+        r"""Returns whether this type of models is a Phi model.
+        Returns:
+            bool: Whether this type of models is Phi model.
+        """
+        return self in {
+            ModelPlatformType.PHI,
+        }
 
     @property
     def is_together(self) -> bool:

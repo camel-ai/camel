@@ -24,6 +24,7 @@ from camel.models.mistral_model import MistralModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.phi_model import PHIModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
@@ -115,6 +116,8 @@ class ModelFactory:
             model_class = YiModel
         elif model_platform.is_qwen and model_type.is_qwen:
             model_class = QwenModel
+        elif model_platform.is_phi and model_type.is_phi:
+            model_class = PHIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 
