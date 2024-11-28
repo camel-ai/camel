@@ -73,7 +73,6 @@ class ModelManager:
         self,
         models: Union[BaseModelBackend, List[BaseModelBackend]],
         scheduling_strategy: Optional[str] = "round_robin",
-        custom_strategy: Optional[Callable] = None,
     ):
         scheduling_strategy = scheduling_strategy or "round_robin"
         if TYPE_CHECKING:
