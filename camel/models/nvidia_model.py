@@ -102,17 +102,10 @@ class NvidiaModel(BaseModelBackend):
 
         typed_messages = [convert_message(dict(msg)) for msg in messages]
 
-        # Filter out unsupported config parameters
-        config_dict = {
-            k: v
-            for k, v in self.model_config_dict.items()
-            if k not in ["tools", "response_format"]
-        }
-
         response = self._client.chat.completions.create(
             messages=typed_messages,
             model=self.model_type,
-            **config_dict,
+            **self.model_config_dict,
         )
         return response
 

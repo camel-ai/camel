@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import Field
 
@@ -47,6 +47,13 @@ class NvidiaConfig(BaseConfig):
             (default: :obj:`NOT_GIVEN`)
         seed (Optional[int], optional): Random seed for deterministic sampling.
             (default: :obj:`None`)
+        tools (Optional[List[Dict]], optional): List of tools available to the
+            model. This includes tools such as a text editor, a calculator, or
+            a search engine. (default: :obj:`None`)
+        tool_choice (Optional[Dict], optional): Tool choice configuration.
+            (default: :obj:`None`)
+        stop (Optional[List[str]], optional): List of stop sequences.
+            (default: :obj:`None`)
     """
 
     temperature: float = Field(default=0.7)
@@ -56,6 +63,9 @@ class NvidiaConfig(BaseConfig):
     max_tokens: Union[int, NotGiven] = Field(default=NOT_GIVEN)
     stream: bool = Field(default=False)
     seed: Optional[int] = Field(default=None)
+    tools: Optional[List[Dict]] = Field(default=None)
+    tool_choice: Optional[Dict] = Field(default=None)
+    stop: Optional[List[str]] = Field(default=None)
 
 
 NVIDIA_API_PARAMS = {param for param in NvidiaConfig.model_fields.keys()}

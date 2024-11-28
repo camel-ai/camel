@@ -25,16 +25,17 @@ from camel.types import ModelType
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.NVIDIA_LLAMA3_CHATQA_70B,
-        ModelType.NVIDIA_LLAMA3_CHATQA_8B,
         ModelType.NVIDIA_NEMOTRON_340B,
         ModelType.NVIDIA_NEMOTRON_340B_REWARD,
         ModelType.NVIDIA_YI_LARGE,
         ModelType.NVIDIA_MISTRAL_LARGE,
         ModelType.NVIDIA_LLAMA3_70B,
-        ModelType.NVIDIA_LLAMA2_70B,
         ModelType.NVIDIA_MIXTRAL_8X7B,
-        ModelType.NVIDIA_DRACARYS_LLAMA31_70B,
+        ModelType.NVIDIA_LLAMA31_8B_INSTRUCT,
+        ModelType.NVIDIA_LLAMA31_70B_INSTRUCT,
+        ModelType.NVIDIA_LLAMA31_405B_INSTRUCT,
+        ModelType.NVIDIA_LLAMA32_1B_INSTRUCT,
+        ModelType.NVIDIA_LLAMA32_3B_INSTRUCT,
     ],
 )
 def test_nvidia_model(model_type: ModelType):
@@ -47,7 +48,7 @@ def test_nvidia_model(model_type: ModelType):
 
 @pytest.mark.model_backend
 def test_nvidia_model_unexpected_argument():
-    model_type = ModelType.NVIDIA_LLAMA3_CHATQA_70B
+    model_type = ModelType.NVIDIA_LLAMA3_70B
     model_config_dict = {"model_path": "nvidia-llama3"}
 
     with pytest.raises(
