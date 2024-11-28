@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, List,Optional
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, ConfigDict
 
@@ -50,14 +50,16 @@ class ChatAgentResponse(BaseModel):
         """Return the logits associated with the first message in msgs.
 
         This property retrieves the `meta_dict` of the first message in `msgs`,
-        which contains information such as token log probabilities and top log probabilities
-        that were computed during message generation.
+        which contains information such as token log probabilities and top log
+        probabilities that were computed during message generation.
 
         Returns:
-            dict: A dictionary containing the logits or log probability information of the tokens.
+            dict: A dictionary containing the logits or log probability
+            information of the tokens.
 
         Raises:
-            RuntimeError: If the list of messages (`msgs`) does not contain exactly one message.
+            RuntimeError: If the list of messages (`msgs`) does not contain
+            exactly one message.
         """
         if len(self.msgs) != 1:
             raise RuntimeError(

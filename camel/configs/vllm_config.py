@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Union, Optional
+from typing import Optional, Sequence, Union
 
 from pydantic import Field
 
@@ -103,8 +103,8 @@ class VLLMConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    logprobs: Optional[bool] | NotGiven = NotGiven,
-    top_logprobs: Optional[int] | NotGiven = NotGiven,
+    logprobs: Optional[bool] = None
+    top_logprobs: Optional[int] = None
 
 
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}
