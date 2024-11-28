@@ -1053,7 +1053,7 @@ class ChatAgent(BaseAgent):
                 meta_dict=dict(),
                 content=choice.message.content or "",
             )
-            if choice.logprobs!=None:
+            if choice.logprobs:
                 tokens_logprobs=choice.logprobs.content
                 # out_logits = [token_logprob.logprob for token_logprob in tokens_logprobs]
                 
