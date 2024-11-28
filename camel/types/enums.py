@@ -123,7 +123,7 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_FC = "yi-large-fc"
 
     # DeepSeek models
-    DeekSeek_CHAT = "deepseek-chat"
+    DEEPSEEK_CHAT = "deepseek-chat"
 
     def __str__(self):
         return self.value
@@ -314,7 +314,7 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def is_deepseek(self) -> bool:
         return self in {
-            ModelType.DeekSeek_CHAT,
+            ModelType.DEEPSEEK_CHAT,
         }
 
     @property
@@ -372,7 +372,7 @@ class ModelType(UnifiedModelType, Enum):
             return 32_768
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
-            ModelType.DeekSeek_CHAT,
+            ModelType.DEEPSEEK_CHAT,
         }:
             return 64_000
         elif self in {
