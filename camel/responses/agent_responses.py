@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, List
+from typing import Any, Dict, List,Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -44,3 +44,13 @@ class ChatAgentResponse(BaseModel):
                 "for a single message in msgs."
             )
         return self.msgs[0]
+
+    @property
+    def logits(self):
+        if len(self.msgs) != 1:
+            raise RuntimeError(
+                "Property msg is only available "
+                "for a single message in msgs."
+            )
+        print("bd")
+        return self.msgs[0].meta_dict

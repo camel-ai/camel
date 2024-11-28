@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Union
+from typing import Sequence, Union, Optional
 
 from pydantic import Field
 
@@ -84,6 +84,12 @@ class VLLMConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
+        logprobs: Whether to return log probabilities of the output tokens or not. If true,
+            returns the log probabilities of each output token returned in the `logits` of
+            `message`.
+        top_logprobs: An integer between 0 and 20 specifying the number of most likely tokens to
+            return at each token position, each with an associated log probability.
+            `logprobs` must be set to `true` if this parameter is used.
     """
 
     temperature: float = 0.2  # openai default: 1.0
@@ -97,6 +103,8 @@ class VLLMConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
+    logprobs: Optional[bool] | NotGiven = NOT_GIVEN,
+    top_logprobs: Optional[int] | NotGiven = NOT_GIVEN,
 
 
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}

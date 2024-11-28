@@ -1053,6 +1053,19 @@ class ChatAgent(BaseAgent):
                 meta_dict=dict(),
                 content=choice.message.content or "",
             )
+            if choice.logprobs!=None:
+                tokens_logprobs=choice.logprobs.content
+                # out_logits = [token_logprob.logprob for token_logprob in tokens_logprobs]
+                
+                logprobs_info = [
+                    {
+                        "token": token_logprob.token,
+                        "logprob": token_logprob.logprob,
+                        "top_logprobs": [(top_logprob.token, top_logprob.logprob) for top_logprob in token_logprob.top_logprobs]
+                    }
+                    for token_logprob in tokens_logprobs
+                ]
+                chat_message.meta_dict = logprobs_info
             output_messages.append(chat_message)
         finish_reasons = [
             str(choice.finish_reason) for choice in response.choices
