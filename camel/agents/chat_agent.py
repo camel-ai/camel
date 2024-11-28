@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
 import json
@@ -183,7 +183,7 @@ class ChatAgent(BaseAgent):
 
         self.model_type = self.model_backend.model_type
 
-        # tool registration
+        # Tool registration
         external_tools = external_tools or []
         tools = tools or []
         all_tools = tools + external_tools
@@ -195,16 +195,18 @@ class ChatAgent(BaseAgent):
         }
         self.tool_dict = {tool.get_function_name(): tool for tool in all_tools}
 
-        # If the user hasn't configured tools in `BaseModelBackend`,
-        # the tools set from `ChatAgent` will be used.
-        # This design simplifies the interface while retaining tool-running
-        # capabilities for `BaseModelBackend`.
-        if all_tools and not self.model_backend.model_config_dict.get("tools"):
+        # If the user set tools from `ChatAgent`, it will override the
+        # configured tools in `BaseModelBackend`.
+        if all_tools:
+            logger.warning(
+                "Overriding the configured tools in `BaseModelBackend` with the tools from `ChatAgent`."
+            )
             tool_schema_list = [
                 tool.get_openai_tool_schema() for tool in all_tools
             ]
             self.model_backend.model_config_dict['tools'] = tool_schema_list
             self.tool_schema_list = tool_schema_list
+
         self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit
@@ -634,7 +636,7 @@ class ChatAgent(BaseAgent):
                 if (
                     not self.is_tools_added()
                     or not isinstance(response, ChatCompletion)
-                    or response.choices[0].message.tool_calls is None
+                    or not response.choices[0].message.tool_calls
                 ):
                     break
 
