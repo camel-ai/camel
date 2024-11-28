@@ -607,4 +607,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_duckduckgo),
             FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
+            FunctionTool(self.search_brave),
         ]
