@@ -35,7 +35,7 @@ class DeepSeekConfig(BaseConfig):
             of the tokens with top_p probability mass. So 0.1 means only
             the tokens comprising the top 10% probability mass are
             considered. We generally recommend altering this or temperature
-            but not both. Defaults to 1.
+            but not both. (default: :obj:`1`)
         response_format (Union[Dict[str, str], ResponseFormat], optional):
             The format that the model must output. Setting to
             {"type": "json_object"} enables JSON Output, which guarantees
@@ -48,11 +48,11 @@ class DeepSeekConfig(BaseConfig):
             content may be partially cut off if finish_reason="length",
             which indicates the generation exceeded max_tokens or the
             conversation exceeded the max context length. Possible values:
-            ["text", "json_object"]. Defaults to "text".
+            ["text", "json_object"]. (default: :obj:`"text"`)
         stream (bool, optional): If set, partial message deltas will be sent.
             Tokens will be sent as data-only server-sent events (SSE) as
             they become available, with the stream terminated by a
-            data: [DONE] message. Defaults to False.
+            data: [DONE] message. (default: :obj:`False`)
         stream_options (bool, optional): Options for streaming response.
             Only set this when you set stream: true. include_usage
             (boolean) If set, an additional chunk will be streamed before
@@ -60,26 +60,26 @@ class DeepSeekConfig(BaseConfig):
             the token usage statistics for the entire request, and the
             choices field will always be an empty array. All other chunks
             will also include a usage field, but with a null value.
-            Defaults to False.
+            (default: :obj:`False`)
         stop (Union[str, list[str]], optional): Up to 16 sequences where
-            the API will stop generating further tokens. Defaults to None.
+            the API will stop generating further tokens. (default: :obj:`None`)
         max_tokens (int, optional): The maximum number of tokens that can
             be generated in the chat completion. The total length of input
             tokens and generated tokens is limited by the model's context
-            length. Defaults to None.
+            length. (default: :obj:`None`)
         presence_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on whether they
             appear in the text so far, increasing the model's likelihood
-            to talk about new topics. Defaults to 0.
+            to talk about new topics. (default: :obj:`0`)
         frequency_penalty (float, optional): Number between -2.0 and 2.0.
             Positive values penalize new tokens based on their existing
             frequency in the text so far, decreasing the model's likelihood
-            to repeat the same line verbatim. Defaults to 0.
+            to repeat the same line verbatim. (default: :obj:`0`)
         tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use
             this to provide a list of functions the model may generate JSON
-            inputs for. A max of 128 functions are supported. Defaults to
-            None.
+            inputs for. A max of 128 functions are supported.
+            (default: :obj:`None`)
         tool_choice (Union[dict[str, str], str], optional): Controls which
             (if any) tool is called by the model. "none" means the model
             will not call any tool and instead generates a message. "auto"
@@ -89,15 +89,16 @@ class DeepSeekConfig(BaseConfig):
             {"type": "function", "function": {"name": "my_function"}} forces
             the model to call that tool. "none" is the default when no tools
             are present. "auto" is the default if tools are present.
-            Defaults to "auto".
+            (default: :obj:`"auto"`)
         logprobs (bool, optional): Whether to return log probabilities of
             the output tokens or not. If true, returns the log probabilities
             of each output token returned in the content of message.
-            Defaults to False.
+            (default: :obj:`False`)
         top_logprobs (int, optional): An integer between 0 and 20 specifying
             the number of most likely tokens to return at each token
             position, each with an associated log probability. logprobs
-            must be set to true if this parameter is used. Defaults to None.
+            must be set to true if this parameter is used.
+            (default: :obj:`None`)
     """
 
     temperature: float = 0.2  # deepseek default: 1.0
