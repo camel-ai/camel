@@ -11,23 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 # Use two different models for ModelManager
 
@@ -40,10 +27,8 @@ model1 = ModelFactory.create(
 )
 
 model2 = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    model_type="nvidia/llama-3.1-nemotron-70b-instruct",
-    api_key="nvapi-xx",
-    url="https://integrate.api.nvidia.com/v1",
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
     model_config_dict={"temperature": 0.4},
 )
 
@@ -64,11 +49,11 @@ agent = ChatAgent(
 
 
 def custom_strategy(self):
-    """Custom strategy implementation."""
+    r"""Custom strategy implementation."""
     return self.models[-1]
 
 
-agent.add_strategy("custom", custom_strategy)
+agent.add_model_scheduling_strategy("custom", custom_strategy)
 
 
 user_msg = """What is the meaning of life, the universe, and everything?"""
@@ -78,11 +63,17 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Ah, the ultimate question! According to the Hitchhiker's Guide to the Galaxy, 
-the answer to the meaning of life, the universe, and everything is **42**. 
-However, the trick lies in figuring out the actual question to which 42 is the 
-answer. Isn't that just like life, full of mysteries and unanswered questions? 
-Keep pondering, for the journey of discovery is as important as the answer 
-itself!
+The phrase "the meaning of life, the universe, and everything" is famously 
+associated with Douglas Adams' science fiction series "The Hitchhiker's Guide 
+to the Galaxy." In the story, a group of hyper-intelligent beings builds a 
+supercomputer named Deep Thought to calculate the answer to the ultimate 
+question of life, the universe, and everything. After much contemplation, the 
+computer reveals that the answer is simply the number 42, though the actual 
+question remains unknown. 
+
+This has led to various interpretations and discussions about the nature of 
+existence, purpose, and the search for meaning in life. Ultimately, the 
+meaning of life can vary greatly from person to person, shaped by individual 
+beliefs, experiences, and values.
 ===============================================================================
 """

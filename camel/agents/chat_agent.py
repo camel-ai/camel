@@ -42,7 +42,12 @@ from camel.memories import (
     ScoreBasedContextCreator,
 )
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.models import BaseModelBackend, ModelFactory, ModelManager
+from camel.models import (
+    BaseModelBackend,
+    ModelFactory,
+    ModelManager,
+    ModelProcessingError,
+)
 from camel.responses import ChatAgentResponse
 from camel.types import (
     ChatCompletion,
@@ -78,10 +83,6 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
-
-
-class ModelProcessingError(Exception):
-    r"""Raised when an error occurs during model processing."""
 
 
 class FunctionCallingRecord(BaseModel):
@@ -151,7 +152,7 @@ class ChatAgent(BaseAgent):
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
-            the next model in ModelManager.
+            the next model in ModelManager. (default: :str:`round_robin`)
     """
 
     def __init__(
@@ -167,7 +168,7 @@ class ChatAgent(BaseAgent):
         tools: Optional[List[FunctionTool]] = None,
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
-        scheduling_strategy: Optional[str] = None,
+        scheduling_strategy: str = "round_robin",
     ) -> None:
         if isinstance(system_message, str):
             system_message = BaseMessage.make_assistant_message(
@@ -1331,8 +1332,8 @@ class ChatAgent(BaseAgent):
         )
         return usage_dict
 
-    def add_strategy(self, name: str, strategy_fn: Callable):
-        r"""Add a scheduling strategy method  provided by user to ModelManger.
+    def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
+        r"""Add a scheduling strategy method provided by user to ModelManger.
 
         Args:
             name (str): The name of the strategy.
