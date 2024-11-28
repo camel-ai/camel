@@ -12,10 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import logging
 from typing import List
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+
+logger = logging.getLogger(__name__)
 
 
 class HumanToolkit(BaseToolkit):
@@ -24,7 +27,7 @@ class HumanToolkit(BaseToolkit):
     def __init__(self):
         pass
 
-    def ask_human(self, question: str) -> str:
+    def ask_human_via_console(self, question: str) -> str:
         r"""Ask a question to the human via the console.
 
         Args:
@@ -33,9 +36,10 @@ class HumanToolkit(BaseToolkit):
         Returns:
             str: The answer from the human.
         """
-        print(f"\n{question}")
-        print("Your reply: ", end="")
-        return input()
+        logger.info(f"Question: {question}")
+        reply = input("Your reply: ")
+        logger.info(f"User reply: {reply}")
+        return reply
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -45,4 +49,4 @@ class HumanToolkit(BaseToolkit):
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.ask_human)]
+        return [FunctionTool(self.ask_human_via_console)]

@@ -130,8 +130,10 @@ Args:
         `GPT_4O_MINI`. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
 ```
 
-### Naming Principle 🛡️
-#### Avoid Abbreviations in Naming
+### Principles 🛡️
+
+#### Naming Principle: Avoid Abbreviations in Naming
+
 - Abbreviations can lead to ambiguity, especially since variable names and code in CAMEL are directly used by agents.
 - Use clear, descriptive names that convey meaning without requiring additional explanation. This improves both human readability and the agent's ability to interpret the code.
 
@@ -141,6 +143,24 @@ Examples:
 - Good: message_window_size
 
 By adhering to this principle, we ensure that CAMEL remains accessible and unambiguous for both developers and AI agents.
+
+#### Logging Principle: Use `logger` Instead of `print`
+
+Avoid using `print` for output. Use Python's `logging` module (`logger`) to ensure consistent, configurable, and professional logging.
+
+Examples:
+
+- Bad: 
+  ```python
+  print("Process started")
+  print(f"User input: {user_input}")
+  ```
+- Good: 
+  ```python
+  Args:
+  logger.info("Process started")
+  logger.debug(f"User input: {user_input}")
+  ```
 
 
 ### Board Item Create Workflow 🛠️

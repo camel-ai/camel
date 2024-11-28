@@ -122,6 +122,9 @@ class ModelType(UnifiedModelType, Enum):
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
 
+    # DeepSeek models
+    DEEPSEEK_CHAT = "deepseek-chat"
+
     def __str__(self):
         return self.value
 
@@ -309,6 +312,12 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_deepseek(self) -> bool:
+        return self in {
+            ModelType.DEEPSEEK_CHAT,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -361,7 +370,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_VL_MAX,
         }:
             return 32_768
-        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+        elif self in {
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.DEEPSEEK_CHAT,
+        }:
             return 64_000
         elif self in {
             ModelType.CLAUDE_2_0,
@@ -567,6 +579,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    DEEPSEEK = "deepseek"
 
     @property
     def is_openai(self) -> bool:
@@ -653,6 +666,11 @@ class ModelPlatformType(Enum):
     def is_qwen(self) -> bool:
         r"""Returns whether this platform is Qwen."""
         return self is ModelPlatformType.QWEN
+
+    @property
+    def is_deepseek(self) -> bool:
+        r"""Returns whether this platform is DeepSeek."""
+        return self is ModelPlatformType.DEEPSEEK
 
 
 class AudioModelType(Enum):
