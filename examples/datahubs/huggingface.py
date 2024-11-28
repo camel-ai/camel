@@ -41,9 +41,7 @@ print(f"Dataset created: {dataset_url}")
 
 # 2. add records to the dataset
 print("Adding records to the dataset...")
-manager.add_records(
-    dataset_name=REPO_ID, records=records
-)
+manager.add_records(dataset_name=REPO_ID, records=records)
 print("Records added successfully.")
 
 # 3. list all records

@@ -97,7 +97,7 @@ class HuggingFaceDatasetManager(DatasetManager):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> None:
         r"""Adds records to a dataset on the Hugging Face Hub.
 
@@ -146,7 +146,7 @@ class HuggingFaceDatasetManager(DatasetManager):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> None:
         temp_file = f"{dataset_name.replace('/', '_')}_records.json"
         existing_records = []
@@ -190,7 +190,7 @@ class HuggingFaceDatasetManager(DatasetManager):
         self,
         dataset_name: str,
         record_id: str,
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> None:
         r"""Deletes a record from the dataset.
 
@@ -236,9 +236,9 @@ class HuggingFaceDatasetManager(DatasetManager):
                 os.remove(temp_file)
 
     def list_records(
-            self,
-            dataset_name: str,
-            filepath: Optional[str] = "records/records.json"
+        self,
+        dataset_name: str,
+        filepath: Optional[str] = "records/records.json",
     ) -> List[Record]:
         try:
             downloaded_file_path = hf_hub_download(

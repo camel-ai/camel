@@ -79,7 +79,6 @@ def test_add_records(manager):
         assert call_args["repo_type"] == "dataset"
 
 
-
 def test_update_records(manager):
     existing_records = [
         {
@@ -195,16 +194,16 @@ def test_add_records_error_on_existing_file(manager):
             side_effect=ValueError(
                 "Dataset 'records/records.json' already exists. "
                 "Use `update_records` to modify."
-            )
+            ),
         ) as mock_download,
-        patch("huggingface_hub.HfApi.upload_file") as mock_upload_file
+        patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
     ):
         mock_download.return_value = "/mock/path/records.json"
 
         with pytest.raises(
             ValueError,
             match="Dataset 'records/records.json' already exists. "
-                  "Use `update_records` to modify."
+            "Use `update_records` to modify.",
         ):
             manager.add_records(dataset_name=REPO_ID, records=records)
 

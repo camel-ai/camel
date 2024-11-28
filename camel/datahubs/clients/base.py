@@ -57,7 +57,7 @@ class DatasetManager(ABC):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> None:
         r"""Adds records to a dataset.
 
@@ -73,7 +73,7 @@ class DatasetManager(ABC):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> None:
         r"""Updates records in a dataset.
 
@@ -88,7 +88,7 @@ class DatasetManager(ABC):
     def list_records(
         self,
         dataset_name: str,
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> List[Record]:
         r"""Lists records in a dataset.
 
@@ -104,7 +104,7 @@ class DatasetManager(ABC):
         self,
         dataset_name: str,
         record_id: str,
-        filepath: Optional[str] = "records/records.json"
+        filepath: Optional[str] = "records/records.json",
     ) -> None:
         r"""Deletes a record from the dataset.
 
