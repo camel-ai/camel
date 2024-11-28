@@ -12,9 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-__version__ = '0.2.10'
+from camel.embeddings import OpenAICompatibleEmbedding
 
-__all__ = [
-    '__version__',
-    'camel',
-]
+# Set the embedding instance
+nv_embed = OpenAICompatibleEmbedding(
+    model_type="nvidia/nv-embed-v1",
+    api_key="nvapi-xxx",
+    url="https://integrate.api.nvidia.com/v1",
+)
+
+# Embed the text
+text_embeddings = nv_embed.embed_list(["What is the capital of France?"])
+
+print(len(text_embeddings[0]))
+'''
+===============================================================================
+4096
+===============================================================================
+'''
