@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.toolkits import SearchToolkit
+from camel.agents import ChatAgent
+from camel.toolkits import FunctionTool, SearchToolkit
 
 res_simple = SearchToolkit().query_wolfram_alpha(
     query="solve 3x-7=11", is_detailed=False
@@ -55,3 +56,25 @@ factor out 3 from both the numerator and denominator: 18/3 = (3x6)/(3x1) = 3/3
 x 6 = 6\nAnswer: | \n | x = 6'}}
 ===============================================================================
 '''
+
+res_brave = SearchToolkit().search_brave(
+    q="What is the weather in Tokyo?",
+    search_lang="en",
+)
+
+print(res_brave)
+
+# Example with ChatAgent using the Brave search engine
+
+agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use brave search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_brave)],
+)
+
+usr_msg = "What is the temperature in Tokyo?"
+
+response = agent.step(input_message=usr_msg, response_format=None)
+
+print(response.msgs[0].content)
+print(response.info["tool_calls"])
