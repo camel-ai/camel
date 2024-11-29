@@ -11,9 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
-from camel.interpreters import InternalPythonInterpreter
+from camel.interpreters import (
+    DockerInterpreter,
+    InternalPythonInterpreter,
+    JupyterKernelInterpreter,
+    SubprocessInterpreter,
+)
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
@@ -29,25 +34,54 @@ class CodeExecutionToolkit(BaseToolkit):
             by `eval()` without any security check. (default: :obj:`False`)
         import_white_list ( Optional[List[str]]): A list of allowed imports.
             (default: :obj:`None`)
+        require_confirm (bool): Whether to require confirmation before executing code.
+            (default: :obj:`False`)
     """
 
     def __init__(
         self,
         sandbox: Literal[
-            "internal_python", "jupyter", "docker"
+            "internal_python", "jupyter", "docker", "subprocess"
         ] = "internal_python",
         verbose: bool = False,
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,
+        require_confirm: bool = False,
     ) -> None:
-        # TODO: Add support for docker and jupyter.
         self.verbose = verbose
         self.unsafe_mode = unsafe_mode
         self.import_white_list = import_white_list or list()
+
+        # Type annotation for interpreter to allow all possible types
+        self.interpreter: Union[
+            InternalPythonInterpreter,
+            JupyterKernelInterpreter,
+            DockerInterpreter,
+            SubprocessInterpreter,
+        ]
+
         if sandbox == "internal_python":
             self.interpreter = InternalPythonInterpreter(
                 unsafe_mode=self.unsafe_mode,
                 import_white_list=self.import_white_list,
+            )
+        elif sandbox == "jupyter":
+            self.interpreter = JupyterKernelInterpreter(
+                require_confirm=require_confirm,
+                print_stdout=self.verbose,
+                print_stderr=self.verbose,
+            )
+        elif sandbox == "docker":
+            self.interpreter = DockerInterpreter(
+                require_confirm=require_confirm,
+                print_stdout=self.verbose,
+                print_stderr=self.verbose,
+            )
+        elif sandbox == "subprocess":
+            self.interpreter = SubprocessInterpreter(
+                require_confirm=require_confirm,
+                print_stdout=self.verbose,
+                print_stderr=self.verbose,
             )
         else:
             raise RuntimeError(
