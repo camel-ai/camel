@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, List, Optional, Self, Union
+from typing import Dict, List, Optional, Union
+from typing_extensions import Self
 
 from pydantic import BaseModel
 
@@ -97,7 +98,8 @@ class AlpacaDataCollector(BaseDataCollector):
     ) -> Dict[str, str]:
         prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         converter = converter or OpenAISchemaConverter()
-        context = [f"Instructions: {self.system_message.content}\n"]
+        system = self.system_message.content if self.system_message else ""
+        context = [f"Instructions: {system}\n"]
         for message in self.history:
             if message.role == OpenAIBackendRole.USER:
                 context.append(f"User: {message.message.content}\n")

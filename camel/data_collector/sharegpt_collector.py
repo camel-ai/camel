@@ -13,7 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-from typing import Any, ClassVar, Dict, List, Literal, Optional, Self, Union
+from typing import Any, ClassVar, Dict, List, Literal, Optional, Union
+from typing_extensions import Self
 
 from pydantic import BaseModel
 
@@ -91,14 +92,9 @@ class ShareGPTDataCollector(BaseDataCollector):
             raise ValueError("No agent injected")
         if history := self.get_agent_history(self.agent_name):
             data = dict(
-                system=self.system_message.content
-                if self.system_message
-                else "",
+                system=self.system_message.content if self.system_message else "",
                 tools=json.dumps(
-                    [
-                        t.get_openai_tool_schema()["function"]
-                        for t in self.tools
-                    ]
+                    [t.get_openai_tool_schema()["function"] for t in self.tools]
                 ),
                 conversations=[],
             )
@@ -106,9 +102,7 @@ class ShareGPTDataCollector(BaseDataCollector):
             for _data in history:
                 role, message = _data.role, _data.message
                 if role == OpenAIBackendRole.USER:
-                    conversations.append(
-                        {"from": "human", "value": message.content}
-                    )
+                    conversations.append({"from": "human", "value": message.content})
                 elif role == OpenAIBackendRole.ASSISTANT:
                     if isinstance(message, FunctionCallingMessage):
                         tmp = dict(
@@ -119,9 +113,7 @@ class ShareGPTDataCollector(BaseDataCollector):
                             {"from": "function_call", "value": json.dumps(tmp)}
                         )
                     else:
-                        conversations.append(
-                            {"from": "gpt", "value": message.content}
-                        )
+                        conversations.append({"from": "gpt", "value": message.content})
                 elif role == OpenAIBackendRole.FUNCTION:
                     conversations.append(
                         {
@@ -142,12 +134,11 @@ class ShareGPTDataCollector(BaseDataCollector):
     ) -> Dict[str, Any]:
         prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         converter = converter or OpenAISchemaConverter()
-        context = [f"System: {self.system_message.content}\n"]
+        system = self.system_message.content if self.system_message else ""
+        context = [f"System: {system}\n"]
         context.append(
             "Tools: "
-            + json.dumps(
-                [t.get_openai_tool_schema()["function"] for t in self.tools]
-            )
+            + json.dumps([t.get_openai_tool_schema()["function"] for t in self.tools])
         )
         for _data in self.history:
             role, message = _data.role, _data.message
@@ -163,9 +154,7 @@ class ShareGPTDataCollector(BaseDataCollector):
                 )
                 context.append(prefix + json.dumps(tmp))
             elif role == OpenAIBackendRole.FUNCTION:
-                context.append(prefix + json.dumps(message.result))
+                context.append(prefix + json.dumps(message.result)) # type: ignore[attr-defined]
             else:
                 context.append(prefix + message.content)
-        return converter.convert(
-            "\n".join(context), ShareGPTData, prompt
-        ).model_dump()
+        return converter.convert("\n".join(context), ShareGPTData, prompt).model_dump()
