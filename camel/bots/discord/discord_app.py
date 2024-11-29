@@ -20,7 +20,7 @@ import discord
 
 from camel.bots.discord.discord_installation import DiscordInstallation
 from camel.utils import dependencies_required
-from discord_store import DiscordAsyncInstallationStore
+from .discord_store import DiscordAsyncInstallationStore
 from datetime import datetime, timedelta
 
 if TYPE_CHECKING:
@@ -49,7 +49,6 @@ class DiscordApp:
     @dependencies_required('discord')
     def __init__(
         self,
-        installation_store: DiscordAsyncInstallationStore,
         channel_ids: Optional[List[int]] = None,
         token: Optional[str] = None,
         client_id: Optional[str] = None,
@@ -76,7 +75,7 @@ class DiscordApp:
         """
         self.token = token or os.getenv("DISCORD_BOT_TOKEN")
         self.channel_ids = channel_ids
-        self.installation_store = installation_store
+        self.installation_store = DiscordAsyncInstallationStore()
 
         if not self.token:
             raise ValueError(
