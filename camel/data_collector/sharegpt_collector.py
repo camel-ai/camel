@@ -12,14 +12,54 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
-from typing import Any, Dict, List, Optional, Self, Union
+from typing import Any, Dict, List, Literal, Optional, Self, Union
+
+from anthropic import BaseModel
 
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector
 from camel.messages.base import BaseMessage
 from camel.messages.func_message import FunctionCallingMessage
+from camel.schemas.openai_converter import OpenAISchemaConverter
 from camel.toolkits.function_tool import FunctionTool
 from camel.types.enums import OpenAIBackendRole
+
+DEFAULT_CONVERTER_PROMPTS = """
+    Extract key entities and attributes from the conversations
+    and convert them into a structured JSON format.
+    For example:
+    System: You are a helpful assistant
+    Tools: [{"name": "get_release_date", "arguments": ["Portal"]}]
+    User: When is the release date of the video game Portal?
+    Assistant: The release date of the video game Portal is October 9, 2007.
+    Your output should be:
+    {
+        "system": "You are a helpful assistant",
+        "tools": "[{"name": "get_release_date", "arguments": ["Portal"]}]",
+        "conversations": [
+            {"from": "human", "value": "When is the release date of the video game Portal?"},
+            {"from": "gpt", "value": "The release date of the video game Portal is October 9, 2007."}
+        ]
+    }
+"""
+
+
+class ConversationItem(BaseModel):
+    from_: Literal["human", "gpt", "function_call", "observation"]
+    value: str
+
+    class Config:
+        fields = {"from_": "from"}
+        extra = "forbid"
+
+
+class ShareGPTData(BaseModel):
+    system: str
+    tools: str
+    conversations: List[ConversationItem]
+
+    class Config:
+        extra = "forbid"
 
 
 class ShareGPTDataCollector(BaseDataCollector):
@@ -49,14 +89,9 @@ class ShareGPTDataCollector(BaseDataCollector):
             raise ValueError("No agent injected")
         if history := self.get_agent_history(self.agent_name):
             data = dict(
-                system=self.system_message.content
-                if self.system_message
-                else "",
+                system=self.system_message.content if self.system_message else "",
                 tools=json.dumps(
-                    [
-                        t.get_openai_tool_schema()["function"]
-                        for t in self.tools
-                    ]
+                    [t.get_openai_tool_schema()["function"] for t in self.tools]
                 ),
                 conversations=[],
             )
@@ -64,9 +99,7 @@ class ShareGPTDataCollector(BaseDataCollector):
             for _data in history:
                 role, message = _data.role, _data.message
                 if role == OpenAIBackendRole.USER:
-                    conversations.append(
-                        {"from": "human", "value": message.content}
-                    )
+                    conversations.append({"from": "human", "value": message.content})
                 elif role == OpenAIBackendRole.ASSISTANT:
                     if isinstance(message, FunctionCallingMessage):
                         tmp = dict(
@@ -77,9 +110,7 @@ class ShareGPTDataCollector(BaseDataCollector):
                             {"from": "function_call", "value": json.dumps(tmp)}
                         )
                     else:
-                        conversations.append(
-                            {"from": "gpt", "value": message.content}
-                        )
+                        conversations.append({"from": "gpt", "value": message.content})
                 elif role == OpenAIBackendRole.FUNCTION:
                     conversations.append(
                         {
@@ -93,7 +124,31 @@ class ShareGPTDataCollector(BaseDataCollector):
             return data
         raise ValueError("No data collected")
 
-    def llm_convert(self, converter: Any, prompt: Optional[str] = None) -> Any:
-        raise NotImplementedError(
-            "LLM conversion is not supported, waiting for another PR merged."
+    def llm_convert(
+        self, converter: Optional[OpenAISchemaConverter] = None, prompt: Optional[str] = None
+    ) -> Dict[str, Any]:
+        prompt = prompt or DEFAULT_CONVERTER_PROMPTS
+        converter = converter or OpenAISchemaConverter()
+        context = [f"System: {self.system_message.content}\n"]
+        context.append(
+            "Tools: "
+            + json.dumps([t.get_openai_tool_schema()["function"] for t in self.tools])
         )
+        for _data in self.history:
+            role, message = _data.role, _data.message
+            prefix = (
+                f"{role.value}: "
+                if role != OpenAIBackendRole.USER
+                else "User: " + f"{_data.name}: "
+            )
+            if isinstance(message, FunctionCallingMessage):
+                tmp = dict(
+                    name=message.func_name,
+                    arguments=message.args,
+                )
+                context.append(prefix + json.dumps(tmp))
+            elif role == OpenAIBackendRole.FUNCTION:
+                context.append(prefix + json.dumps(message.result))
+            else:
+                context.append(prefix + message.content)
+        return converter.convert("\n".join(context), ShareGPTData, prompt).model_dump()

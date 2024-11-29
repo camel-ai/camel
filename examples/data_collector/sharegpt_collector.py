@@ -55,6 +55,7 @@ usr_msg = BaseMessage.make_user_message(
 response = agent.step(usr_msg)
 
 print(json.dumps(collector.convert(), indent=4))
+print(json.dumps(collector.llm_convert(), indent=4))
 
 # ruff: noqa: E501
 """
@@ -76,6 +77,24 @@ print(json.dumps(collector.convert(), indent=4))
         },
         {
             "from": "gpt",
+            "value": "The result of \\( 17 \\times 19 \\) is \\( 323 \\)."
+        }
+    ]
+}
+{
+    "system": "You are a helpful assistant",
+    "tools": "[{\"name\": \"add\", \"description\": \"Adds two numbers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The first number to be added.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The second number to be added.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}, {\"name\": \"sub\", \"description\": \"Do subtraction between two numbers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The minuend in subtraction.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The subtrahend in subtraction.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}, {\"name\": \"mul\", \"description\": \"Multiplies two integers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The multiplier in the multiplication.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The multiplicand in the multiplication.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}]",
+    "conversations": [
+        {
+            "from_": "human",
+            "value": "Tools calling operator: Call tools to calculate 17 * 19 = ?"
+        },
+        {
+            "from_": "function_call",
+            "value": "{\"name\": \"mul\", \"arguments\": {\"a\": 17, \"b\": 19}}"
+        },
+        {
+            "from_": "gpt",
             "value": "The result of \\( 17 \\times 19 \\) is \\( 323 \\)."
         }
     ]

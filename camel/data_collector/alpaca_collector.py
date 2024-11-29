@@ -16,7 +16,29 @@ from typing import Any, Dict, List, Optional, Self, Union
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector
 from camel.messages.base import BaseMessage
+from pydantic import BaseModel
+from camel.schemas import OpenAISchemaConverter
+from camel.types.enums import OpenAIBackendRole
 
+DEFAULT_CONVERTER_PROMPTS = """
+    Extract key entities and attributes from the conversations
+    and convert them into a structured JSON format.
+    For example:
+    Instructions: You are a helpful assistant
+    User: When is the release date of the video game Portal?
+    Assistant: The release date of the video game Portal is October 9, 2007.
+    Your output should be:
+    {
+        "instructions": "You are a helpful assistant",
+        "input": "When is the release date of the video game Portal?",
+        "output": "The release date of the video game Portal is October 9, 2007."
+    }
+"""
+
+class AlpacaData(BaseModel):
+    instructions: str
+    input: str
+    output: str
 
 class AlpacaDataCollector(BaseDataCollector):
     def __init__(self) -> None:
@@ -64,7 +86,16 @@ class AlpacaDataCollector(BaseDataCollector):
             return data
         raise ValueError("No data collected")
 
-    def llm_convert(self, converter: Any, prompt: Optional[str] = None) -> Any:
-        raise NotImplementedError(
-            "LLM conversion is not supported, waiting for another PR merged."
-        )
+    def llm_convert(
+        self, converter: Optional[OpenAISchemaConverter] = None, prompt: Optional[str] = None
+    ) -> Dict[str, str]:
+        prompt = prompt or DEFAULT_CONVERTER_PROMPTS
+        converter = converter or OpenAISchemaConverter()
+        context = [f"Instructions: {self.system_message.content}\n"]
+        for message in self.history:
+            if message.role == OpenAIBackendRole.USER:
+                context.append(f"User: {message.message.content}\n")
+            else:
+                context.append(f"{message.name}: {message.message.content}\n")
+        return converter.convert("\n".join(context), AlpacaData, prompt=prompt).model_dump()
+            
