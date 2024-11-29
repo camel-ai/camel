@@ -1,22 +1,24 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Self, Union
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+from typing import Dict, List, Optional, Self, Union
+
+from pydantic import BaseModel
 
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector
 from camel.messages.base import BaseMessage
-from pydantic import BaseModel
 from camel.schemas import OpenAISchemaConverter
 from camel.types.enums import OpenAIBackendRole
 
@@ -26,19 +28,21 @@ DEFAULT_CONVERTER_PROMPTS = """
     For example:
     Instructions: You are a helpful assistant
     User: When is the release date of the video game Portal?
-    Assistant: The release date of the video game Portal is October 9, 2007.
+    Assistant: The release date of the video game Portal is October 9.
     Your output should be:
     {
         "instructions": "You are a helpful assistant",
         "input": "When is the release date of the video game Portal?",
-        "output": "The release date of the video game Portal is October 9, 2007."
+        "output": "The release date of the video game Portal is October 9."
     }
 """
+
 
 class AlpacaData(BaseModel):
     instructions: str
     input: str
     output: str
+
 
 class AlpacaDataCollector(BaseDataCollector):
     def __init__(self) -> None:
@@ -87,7 +91,9 @@ class AlpacaDataCollector(BaseDataCollector):
         raise ValueError("No data collected")
 
     def llm_convert(
-        self, converter: Optional[OpenAISchemaConverter] = None, prompt: Optional[str] = None
+        self,
+        converter: Optional[OpenAISchemaConverter] = None,
+        prompt: Optional[str] = None,
     ) -> Dict[str, str]:
         prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         converter = converter or OpenAISchemaConverter()
@@ -97,5 +103,6 @@ class AlpacaDataCollector(BaseDataCollector):
                 context.append(f"User: {message.message.content}\n")
             else:
                 context.append(f"{message.name}: {message.message.content}\n")
-        return converter.convert("\n".join(context), AlpacaData, prompt=prompt).model_dump()
-            
+        return converter.convert(
+            "\n".join(context), AlpacaData, prompt=prompt
+        ).model_dump()
