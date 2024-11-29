@@ -1,16 +1,32 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
-import aiosqlite
 from logging import Logger
-from typing import Optional, List
+from typing import List, Optional
+
+import aiosqlite
+
 from .discord_installation import DiscordInstallation
+
 
 class DiscordAsyncInstallationStore:
     """Manages all installation associated with a DiscordApp"""
 
-    def __init__(self, *, database: str, logger: Logger = logging.getLogger(__name__)):
+    def __init__(self, *, database: str, logger: Optional[Logger] = None):
         self.database = database
         self.init_called = False
-        self._logger = logger
+        self._logger = logger or logging.getLogger(__name__)
 
     @property
     def logger(self) -> Logger:
@@ -21,7 +37,9 @@ class DiscordAsyncInstallationStore:
     async def init(self):
         try:
             async with aiosqlite.connect(self.database) as conn:
-                await conn.execute("SELECT count(1) FROM discord_installations;")
+                await conn.execute(
+                    "SELECT count(1) FROM discord_installations;"
+                )
                 self.logger.debug(f"Database {self.database} is initialized")
         except Exception:
             await self.create_tables()
@@ -48,13 +66,16 @@ class DiscordAsyncInstallationStore:
             )
             await conn.execute(
                 """
-                CREATE INDEX IF NOT EXISTS discord_installations_idx ON discord_installations (
+                CREATE INDEX IF NOT EXISTS discord_installations_idx 
+                ON discord_installations (
                     guild_id,
                     installed_at
                 );
                 """
             )
-            self.logger.debug(f"Tables have been created (database: {self.database})")
+            self.logger.debug(
+                f"Tables have been created (database: {self.database})"
+            )
             await conn.commit()
 
     async def async_save(self, installation: DiscordInstallation):
@@ -75,13 +96,18 @@ class DiscordAsyncInstallationStore:
                     installation.access_token,
                     installation.refresh_token,
                     installation.installed_at,
-                    installation.token_expires_at
+                    installation.token_expires_at,
                 ],
             )
-            self.logger.debug(f"New row in discord_installations has been created (database: {self.database})")
+            self.logger.debug(
+                f"New row in discord_installations has been "
+                f"created (database: {self.database})"
+            )
             await conn.commit()
 
-    async def async_find_installations_by_guild(self, guild_id: str) -> Optional[DiscordInstallation]:
+    async def async_find_installations_by_guild(
+        self, guild_id: str
+    ) -> Optional[DiscordInstallation]:
         try:
             async with await self.connect() as conn:
                 async with conn.execute(
@@ -112,11 +138,15 @@ class DiscordAsyncInstallationStore:
                         )
                     return None
         except Exception as e:
-            message = f"Failed to find installation data for guild: {guild_id}: {e}"
+            message = (
+                f"Failed to find installation data for guild: {guild_id}: {e}"
+            )
             self.logger.exception(message)
             return None
 
-    async def async_find_installation_by_token(self, bot_token: str) -> Optional[DiscordInstallation]:
+    async def async_find_installation_by_token(
+        self, bot_token: str
+    ) -> Optional[DiscordInstallation]:
         try:
             async with await self.connect() as conn:
                 async with conn.execute(
@@ -147,7 +177,9 @@ class DiscordAsyncInstallationStore:
                         )
                     return None
         except Exception as e:
-            message = f"Failed to find installation data by token: {bot_token}: {e}"
+            message = (
+                f"Failed to find installation data by token: {bot_token}: {e}"
+            )
             self.logger.exception(message)
             return None
 
@@ -163,7 +195,10 @@ class DiscordAsyncInstallationStore:
                 )
                 await conn.commit()
         except Exception as e:
-            message = f"Failed to delete installation data for guild: {guild_id}: {e}"
+            message = (
+                f"Failed to delete installation data "
+                f"for guild: {guild_id}: {e}"
+            )
             self.logger.exception(message)
 
     async def async_list_all_installations(self) -> List[DiscordInstallation]:

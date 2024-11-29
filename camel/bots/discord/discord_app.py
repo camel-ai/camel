@@ -13,15 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 import os
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional
+
+import discord
 import httpx
 from fastapi import FastAPI
-import discord
 
 from camel.bots.discord.discord_installation import DiscordInstallation
 from camel.utils import dependencies_required
+
 from .discord_store import DiscordAsyncInstallationStore
-from datetime import datetime, timedelta
 
 if TYPE_CHECKING:
     from discord import Message
@@ -53,7 +55,7 @@ class DiscordApp:
         token: Optional[str] = None,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
-        redirect_uri: Optional[str] = None
+        redirect_uri: Optional[str] = None,
     ) -> None:
         r"""Initialize the DiscordApp instance by setting up the Discord client
         and event handlers.
@@ -94,11 +96,13 @@ class DiscordApp:
         # OAuth flow
         self.client_id = client_id or os.getenv("DISCORD_CLIENT_ID")
         self.client_secret = client_secret or os.getenv(
-            "DISCORD_CLIENT_SECRET")
+            "DISCORD_CLIENT_SECRET"
+        )
         self.redirect_uri = redirect_uri
 
-        self.oauth_flow = bool(self.client_id and self.client_secret and
-                   self.redirect_uri)
+        self.oauth_flow = bool(
+            self.client_id and self.client_secret and self.redirect_uri
+        )
 
         self.app = FastAPI()
 
@@ -125,23 +129,31 @@ class DiscordApp:
             str: The URL that users should visit to authorize the application.
         """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
         return (
             f"https://discord.com/api/oauth2/authorize?client_id={self.client_id}"
             f"&redirect_uri={self.redirect_uri}&response_type=code&scope=identify%20guilds"
         )
 
-    async def exchange_code_for_token_response(self, code: str) -> Optional[
-        str]:
+    async def exchange_code_for_token_response(
+        self, code: str
+    ) -> Optional[str]:
         r"""Exchange the authorization code for an access token.
         Args:
-            code (str): The authorization code received from Discord after user authorization.
+            code (str): The authorization code received from Discord after
+            user authorization.
         Returns:
             Optional[str]: The access token if successful, otherwise None.
         """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
         data = {
             "client_id": self.client_id,
@@ -150,9 +162,7 @@ class DiscordApp:
             "code": code,
             "redirect_uri": self.redirect_uri,
         }
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
         async with httpx.AsyncClient() as client:
             response = await client.post(TOKEN_URL, data=data, headers=headers)
             if response.status_code != 200:
@@ -170,18 +180,31 @@ class DiscordApp:
             dict: The user information retrieved from Discord.
         """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
-        headers = {
-            "Authorization": f"Bearer {access_token}"
-        }
+        headers = {"Authorization": f"Bearer {access_token}"}
         async with httpx.AsyncClient() as client:
             user_response = await client.get(USER_URL, headers=headers)
             return user_response.json()
 
     async def refresh_access_token(self, refresh_token: str) -> Optional[str]:
+        r"""Refresh the access token using a refresh token.
+
+        Args:
+            refresh_token (str): The refresh token issued by Discord that
+            can be used to obtain a new access token.
+
+        Returns:
+            Optional[str]: The new access token if successful, otherwise None.
+        """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
         data = {
             "client_id": self.client_id,
@@ -190,9 +213,7 @@ class DiscordApp:
             "refresh_token": refresh_token,
             "redirect_uri": self.redirect_uri,
         }
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
         async with httpx.AsyncClient() as client:
             response = await client.post(TOKEN_URL, data=data, headers=headers)
             if response.status_code != 200:
@@ -200,50 +221,118 @@ class DiscordApp:
                 return None
             response_data = response.json()
             return response_data.get("access_token")
+
     async def get_valid_access_token(self, guild_id: str) -> Optional[str]:
+        r"""Retrieve a valid access token for the specified guild.
+
+        This method attempts to retrieve an access token for a specific guild.
+        If the current access token is expired, it will refresh the token using
+        the refresh token.
+
+        Args:
+            guild_id (str): The ID of the guild to retrieve the access
+                token for.
+
+        Returns:
+            Optional[str]: The valid access token if successful,
+                otherwise None.
+        """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
 
-        installation = await self.installation_store.async_find_installations_by_guild(guild_id=guild_id)
+        installation = (
+            await self.installation_store.async_find_installations_by_guild(
+                guild_id=guild_id
+            )
+        )
         if not installation:
             logger.error(f"No installation found for guild: {guild_id}")
             return None
 
-        if installation.token_expires_at and datetime.now() >= installation.token_expires_at:
-            logger.info(f"Access token expired for guild: {guild_id}, refreshing token...")
-            new_access_token = await self.refresh_access_token(installation.refresh_token)
+        if (
+            installation.token_expires_at
+            and datetime.now() >= installation.token_expires_at
+        ):
+            logger.info(
+                f"Access token expired for guild: {guild_id}, "
+                f"refreshing token..."
+            )
+            new_access_token = await self.refresh_access_token(
+                installation.refresh_token
+            )
             if new_access_token:
                 installation.bot_token = new_access_token
-                installation.token_expires_at = datetime.now() + timedelta(seconds=3600)
+                installation.token_expires_at = datetime.now() + timedelta(
+                    seconds=3600
+                )
                 await self.installation_store.async_save(installation)
                 return new_access_token
             else:
-                logger.error(f"Failed to refresh access token for guild: {guild_id}")
+                logger.error(
+                    f"Failed to refresh access token for guild: {guild_id}"
+                )
                 return None
 
         return installation.access_token
 
-    async def save_installation(self, guild_id: str, access_token: str, refresh_token: str, token_expires_at: datetime):
+    async def save_installation(
+        self,
+        guild_id: str,
+        access_token: str,
+        refresh_token: str,
+        token_expires_at: datetime,
+    ):
+        r"""Save the installation information for a given guild.
+
+        Args:
+            guild_id (str): The ID of the guild where the bot is installed.
+            access_token (str): The access token for the guild.
+            refresh_token (str): The refresh token for the guild.
+            token_expires_at (datetime): The expiration time of the
+                access token.
+
+        Returns:
+            None
+        """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
         new_installation = DiscordInstallation(
             guild_id=guild_id,
             access_token=access_token,
             refresh_token=refresh_token,
             installed_at=datetime.now(),
-            token_expires_at=token_expires_at
+            token_expires_at=token_expires_at,
         )
         await self.installation_store.async_save(new_installation)
         logger.info(f"Installation saved for guild: {guild_id}")
 
     async def remove_installation(self, guild: discord.Guild):
+        r"""Remove the installation for a given guild.
+
+        Args:
+            guild (discord.Guild): The guild from which the bot is
+                being removed.
+
+        Returns:
+            None
+        """
         if not self.oauth_flow:
-            logger.warning("OAuth is not enabled. Missing client_id, client_secret, or redirect_uri.")
+            logger.warning(
+                "OAuth is not enabled. Missing client_id, "
+                "client_secret, or redirect_uri."
+            )
             return None
         await self.installation_store.async_delete_installation(
-            guild_id=str(guild.id))
+            guild_id=str(guild.id)
+        )
         print(f"Bot removed from guild: {guild.id}")
 
     async def on_ready(self) -> None:
@@ -254,7 +343,6 @@ class DiscordApp:
         displaying the bot's username.
         """
         logger.info(f'We have logged in as {self._client.user}')
-
 
     async def on_message(self, message: 'Message') -> None:
         r"""Event handler for processing incoming messages.
