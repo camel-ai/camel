@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
-import os
 import random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -24,7 +23,7 @@ from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables
 load_dotenv()
@@ -62,10 +61,8 @@ class AIModelHandler:
         """Initialize AI model"""
         try:
             return ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-                model_type="deepseek-chat",
-                api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-                url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_4O_MINI,
                 model_config_dict={
                     "temperature": self.config.model_temperature,
                     "max_tokens": self.config.max_tokens,
@@ -563,9 +560,11 @@ def main():
     # Create processor
     config = ProcessorConfig(
         seed=42,
-        dataset_size=100,
+        min_length=50,
+        max_length=1000,
         quality_threshold=0.7,
         complexity_threshold=0.5,
+        dataset_size=1000,
         use_ai_model=True,
         model_temperature=0.4,
         max_tokens=4096,
@@ -582,30 +581,28 @@ def main():
     without human intervention or assistance and adjust actions accordingly.
     """
 
-    result = processor.process_text(text, "example_source")
-    logger.info(f"Processing complete! Generated {len(result)} QA pairs")
+    result = processor.process_text(text, source="technology_article")
 
-    # Example: Process multiple texts in batch
-    texts = [
-        "Text processing is the manipulation of text data. It involves various techniques like tokenization and normalization.",
-        "Deep learning is a type of machine learning. It uses artificial neural networks with multiple layers.",
-        "Natural language processing combines linguistics and computer science. It helps computers understand human language.",
-    ]
+    print(result)
+    # Process multiple texts
+    # texts = [
+    #     "Text about technology...",
+    #     "Text about environment...",
+    #     "Text about medicine..."
+    # ]
+    #
+    # results = processor.process_batch(texts, sources=["tech", "env", "med"])
+    # logger.info(f"Processing complete! Generated {len(results)} QA pairs")
 
-    results = processor.process_batch(texts)
-    logger.info(
-        f"Batch processing complete! Total QA pairs generated: {len(results)}"
-    )
-
-    # Print example results
-    if results:
-        print("\nExample QA pairs:")
-        for i, result in enumerate(results[:2], 1):
-            print(f"\nExample {i}:")
-            for qa in result['qa_pairs'][:2]:
-                print(f"Type: {qa['type']}")
-                print(f"Question: {qa['question']}")
-                print(f"Answer: {qa['answer']}\n")
+    # # Print example results
+    # if results:
+    #     print("\nExample QA pairs:")
+    #     for i, result in enumerate(results[:2], 1):
+    #         print(f"\nExample {i}:")
+    #         for qa in result['qa_pairs'][:2]:
+    #             print(f"Type: {qa['type']}")
+    #             print(f"Question: {qa['question']}")
+    #             print(f"Answer: {qa['answer']}\n")
 
 
 if __name__ == "__main__":
