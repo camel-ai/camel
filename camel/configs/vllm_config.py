@@ -84,12 +84,13 @@ class VLLMConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
-        logprobs: Whether to return log probabilities of the output tokens or not. If true,
-            returns the log probabilities of each output token returned in the `logits` of
-            `message`.
-        top_logprobs: An integer between 0 and 20 specifying the number of most likely tokens to
-            return at each token position, each with an associated log probability.
-            `logprobs` must be set to `true` if this parameter is used.
+        logprobs: Whether to return log probabilities of the output tokens or
+            not. If true, returns the log probabilities of each output token
+            returned in the `logits` of `message`. (default: :obj:`None`)
+        top_logprobs: An integer between 0 and 20 specifying the number of
+            most likely tokens to return at each token position, each with an
+            associated log probability. `logprobs` must be set to `true` if
+            this parameter is used. (default: :obj:`None`)
     """
 
     temperature: float = 0.2  # openai default: 1.0
