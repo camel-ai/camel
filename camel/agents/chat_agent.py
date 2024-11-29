@@ -1091,7 +1091,25 @@ class ChatAgent(BaseAgent):
                 meta_dict=dict(),
                 content=choice.message.content or "",
             )
+            if choice.logprobs is not None:
+                tokens_logprobs = choice.logprobs.content
+                if tokens_logprobs is not None:
+                    logprobs_info = [
+                        {
+                            "token": token_logprob.token,
+                            "logprob": token_logprob.logprob,
+                            "top_logprobs": [
+                                (top_logprob.token, top_logprob.logprob)
+                                for top_logprob in token_logprob.top_logprobs
+                            ],
+                        }
+                        for token_logprob in tokens_logprobs
+                    ]
+                if chat_message.meta_dict is None:
+                    chat_message.meta_dict = {}
+                chat_message.meta_dict["logprobs_info"] = logprobs_info
             output_messages.append(chat_message)
+
         finish_reasons = [
             str(choice.finish_reason) for choice in response.choices
         ]
