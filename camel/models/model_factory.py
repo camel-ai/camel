@@ -17,6 +17,7 @@ from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.cohere_model import CohereModel
+from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
@@ -115,6 +116,8 @@ class ModelFactory:
             model_class = YiModel
         elif model_platform.is_qwen and model_type.is_qwen:
             model_class = QwenModel
+        elif model_platform.is_deepseek:
+            model_class = DeepSeekModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 

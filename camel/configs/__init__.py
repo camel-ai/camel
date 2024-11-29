@@ -14,6 +14,7 @@
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
+from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
@@ -67,4 +68,6 @@ __all__ = [
     'YI_API_PARAMS',
     'QwenConfig',
     'QWEN_API_PARAMS',
+    'DeepSeekConfig',
+    'DEEPSEEK_API_PARAMS',
 ]

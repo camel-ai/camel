@@ -21,6 +21,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -41,7 +42,12 @@ from camel.memories import (
     ScoreBasedContextCreator,
 )
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.models import BaseModelBackend, ModelFactory
+from camel.models import (
+    BaseModelBackend,
+    ModelFactory,
+    ModelManager,
+    ModelProcessingError,
+)
 from camel.responses import ChatAgentResponse
 from camel.types import (
     ChatCompletion,
@@ -145,12 +151,16 @@ class ChatAgent(BaseAgent):
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
+        scheduling_strategy (str): name of function that defines how to select
+            the next model in ModelManager. (default: :str:`round_robin`)
     """
 
     def __init__(
         self,
         system_message: Optional[Union[BaseMessage, str]] = None,
-        model: Optional[BaseModelBackend] = None,
+        model: Optional[
+            Union[BaseModelBackend, List[BaseModelBackend]]
+        ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -158,6 +168,7 @@ class ChatAgent(BaseAgent):
         tools: Optional[List[FunctionTool]] = None,
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
+        scheduling_strategy: str = "round_robin",
     ) -> None:
         if isinstance(system_message, str):
             system_message = BaseMessage.make_assistant_message(
@@ -172,18 +183,19 @@ class ChatAgent(BaseAgent):
         self.role_type: RoleType = (
             getattr(system_message, 'role_type', None) or RoleType.ASSISTANT
         )
-        self.model_backend: BaseModelBackend = (
+        self.model_backend = ModelManager(
             model
             if model is not None
             else ModelFactory.create(
                 model_platform=ModelPlatformType.DEFAULT,
                 model_type=ModelType.DEFAULT,
-            )
+            ),
+            scheduling_strategy=scheduling_strategy,
         )
 
         self.model_type = self.model_backend.model_type
 
-        # tool registration
+        # Tool registration
         external_tools = external_tools or []
         tools = tools or []
         all_tools = tools + external_tools
@@ -195,16 +207,18 @@ class ChatAgent(BaseAgent):
         }
         self.tool_dict = {tool.get_function_name(): tool for tool in all_tools}
 
-        # If the user hasn't configured tools in `BaseModelBackend`,
-        # the tools set from `ChatAgent` will be used.
-        # This design simplifies the interface while retaining tool-running
-        # capabilities for `BaseModelBackend`.
-        if all_tools and not self.model_backend.model_config_dict.get("tools"):
+        # If the user set tools from `ChatAgent`, it will override the
+        # configured tools in `BaseModelBackend`.
+        if all_tools:
+            logger.warning(
+                "Overriding the configured tools in `BaseModelBackend` with the tools from `ChatAgent`."
+            )
             tool_schema_list = [
                 tool.get_openai_tool_schema() for tool in all_tools
             ]
             self.model_backend.model_config_dict['tools'] = tool_schema_list
             self.tool_schema_list = tool_schema_list
+
         self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit
@@ -634,7 +648,7 @@ class ChatAgent(BaseAgent):
                 if (
                     not self.is_tools_added()
                     or not isinstance(response, ChatCompletion)
-                    or response.choices[0].message.tool_calls is None
+                    or not response.choices[0].message.tool_calls
                 ):
                     break
 
@@ -943,8 +957,32 @@ class ChatAgent(BaseAgent):
         str,
     ]:
         r"""Internal function for agent step model response."""
+
+        response = None
         # Obtain the model's response
-        response = self.model_backend.run(openai_messages)
+        for _ in range(len(self.model_backend.models)):
+            try:
+                response = self.model_backend.run(openai_messages)
+                break
+            except Exception as exc:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                continue
+        if not response:
+            raise ModelProcessingError(
+                "Unable to process messages: none of the provided models "
+                "run succesfully."
+            )
+
+        logger.info(
+            f"Model {self.model_backend.model_type}, "
+            f"index {self.model_backend.current_model_index}, "
+            f"processed these messages: {openai_messages}"
+        )
 
         if isinstance(response, ChatCompletion):
             output_messages, finish_reasons, usage_dict, response_id = (
@@ -1313,6 +1351,15 @@ class ChatAgent(BaseAgent):
             total_tokens=completion_tokens + prompt_tokens,
         )
         return usage_dict
+
+    def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
+        r"""Add a scheduling strategy method provided by user to ModelManger.
+
+        Args:
+            name (str): The name of the strategy.
+            strategy_fn (Callable): The scheduling strategy function.
+        """
+        self.model_backend.add_strategy(name, strategy_fn)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
