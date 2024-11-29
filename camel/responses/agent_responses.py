@@ -44,26 +44,3 @@ class ChatAgentResponse(BaseModel):
                 "for a single message in msgs."
             )
         return self.msgs[0]
-
-    @property
-    def logits(self):
-        """Return the logits associated with the first message in msgs.
-
-        This property retrieves the `meta_dict` of the first message in `msgs`,
-        which contains information such as token log probabilities and top log
-        probabilities that were computed during message generation.
-
-        Returns:
-            dict: A dictionary containing the logits or log probability
-            information of the tokens.
-
-        Raises:
-            RuntimeError: If the list of messages (`msgs`) does not contain
-            exactly one message.
-        """
-        if len(self.msgs) != 1:
-            raise RuntimeError(
-                "Property msg is only available "
-                "for a single message in msgs."
-            )
-        return self.msgs[0].meta_dict

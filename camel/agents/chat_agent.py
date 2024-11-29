@@ -1091,9 +1091,12 @@ class ChatAgent(BaseAgent):
                 meta_dict=dict(),
                 content=choice.message.content or "",
             )
+            # Process log probabilities and append to the message meta information
             if choice.logprobs is not None:
                 tokens_logprobs = choice.logprobs.content
+
                 if tokens_logprobs is not None:
+                    # Extract and structure logprob information
                     logprobs_info = [
                         {
                             "token": token_logprob.token,
@@ -1105,9 +1108,11 @@ class ChatAgent(BaseAgent):
                         }
                         for token_logprob in tokens_logprobs
                     ]
+                # Ensure meta_dict exists before adding logprobs info
                 if chat_message.meta_dict is None:
                     chat_message.meta_dict = {}
                 chat_message.meta_dict["logprobs_info"] = logprobs_info
+            # Append the processed chat message to output
             output_messages.append(chat_message)
 
         finish_reasons = [
