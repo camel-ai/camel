@@ -62,7 +62,7 @@ class BaseMessage:
 
     role_name: str
     role_type: RoleType
-    meta_dict: Optional[Dict[str, str]]
+    meta_dict: Optional[Dict[str, Any]]
     content: str
 
     video_bytes: Optional[bytes] = None
