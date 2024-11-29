@@ -688,7 +688,7 @@ def test_chat_agent_vision():
         image_detail="low",
     )
     # Mock the OpenAI model return value:
-    agent.model_backend = Mock()
+    agent.model_backend.run = Mock()
     agent.model_backend.run.return_value = ChatCompletion(
         id="mock_vision_id",
         choices=[

@@ -21,6 +21,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -41,7 +42,12 @@ from camel.memories import (
     ScoreBasedContextCreator,
 )
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.models import BaseModelBackend, ModelFactory
+from camel.models import (
+    BaseModelBackend,
+    ModelFactory,
+    ModelManager,
+    ModelProcessingError,
+)
 from camel.responses import ChatAgentResponse
 from camel.types import (
     ChatCompletion,
@@ -145,12 +151,16 @@ class ChatAgent(BaseAgent):
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
+        scheduling_strategy (str): name of function that defines how to select
+            the next model in ModelManager. (default: :str:`round_robin`)
     """
 
     def __init__(
         self,
         system_message: Optional[Union[BaseMessage, str]] = None,
-        model: Optional[BaseModelBackend] = None,
+        model: Optional[
+            Union[BaseModelBackend, List[BaseModelBackend]]
+        ] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -158,6 +168,7 @@ class ChatAgent(BaseAgent):
         tools: Optional[List[FunctionTool]] = None,
         external_tools: Optional[List[FunctionTool]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
+        scheduling_strategy: str = "round_robin",
     ) -> None:
         if isinstance(system_message, str):
             system_message = BaseMessage.make_assistant_message(
@@ -172,13 +183,14 @@ class ChatAgent(BaseAgent):
         self.role_type: RoleType = (
             getattr(system_message, 'role_type', None) or RoleType.ASSISTANT
         )
-        self.model_backend: BaseModelBackend = (
+        self.model_backend = ModelManager(
             model
             if model is not None
             else ModelFactory.create(
                 model_platform=ModelPlatformType.DEFAULT,
                 model_type=ModelType.DEFAULT,
-            )
+            ),
+            scheduling_strategy=scheduling_strategy,
         )
 
         self.model_type = self.model_backend.model_type
@@ -945,8 +957,32 @@ class ChatAgent(BaseAgent):
         str,
     ]:
         r"""Internal function for agent step model response."""
+
+        response = None
         # Obtain the model's response
-        response = self.model_backend.run(openai_messages)
+        for _ in range(len(self.model_backend.models)):
+            try:
+                response = self.model_backend.run(openai_messages)
+                break
+            except Exception as exc:
+                logger.error(
+                    f"An error occurred while running model "
+                    f"{self.model_backend.model_type}, "
+                    f"index: {self.model_backend.current_model_index}",
+                    exc_info=exc,
+                )
+                continue
+        if not response:
+            raise ModelProcessingError(
+                "Unable to process messages: none of the provided models "
+                "run succesfully."
+            )
+
+        logger.info(
+            f"Model {self.model_backend.model_type}, "
+            f"index {self.model_backend.current_model_index}, "
+            f"processed these messages: {openai_messages}"
+        )
 
         if isinstance(response, ChatCompletion):
             output_messages, finish_reasons, usage_dict, response_id = (
@@ -1055,7 +1091,30 @@ class ChatAgent(BaseAgent):
                 meta_dict=dict(),
                 content=choice.message.content or "",
             )
+            # Process log probabilities and append to the message meta information
+            if choice.logprobs is not None:
+                tokens_logprobs = choice.logprobs.content
+
+                if tokens_logprobs is not None:
+                    # Extract and structure logprob information
+                    logprobs_info = [
+                        {
+                            "token": token_logprob.token,
+                            "logprob": token_logprob.logprob,
+                            "top_logprobs": [
+                                (top_logprob.token, top_logprob.logprob)
+                                for top_logprob in token_logprob.top_logprobs
+                            ],
+                        }
+                        for token_logprob in tokens_logprobs
+                    ]
+                # Ensure meta_dict exists before adding logprobs info
+                if chat_message.meta_dict is None:
+                    chat_message.meta_dict = {}
+                chat_message.meta_dict["logprobs_info"] = logprobs_info
+            # Append the processed chat message to output
             output_messages.append(chat_message)
+
         finish_reasons = [
             str(choice.finish_reason) for choice in response.choices
         ]
@@ -1297,6 +1356,15 @@ class ChatAgent(BaseAgent):
             total_tokens=completion_tokens + prompt_tokens,
         )
         return usage_dict
+
+    def add_model_scheduling_strategy(self, name: str, strategy_fn: Callable):
+        r"""Add a scheduling strategy method provided by user to ModelManger.
+
+        Args:
+            name (str): The name of the strategy.
+            strategy_fn (Callable): The scheduling strategy function.
+        """
+        self.model_backend.add_strategy(name, strategy_fn)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
