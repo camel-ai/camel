@@ -13,13 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from openai import OpenAI, Stream
 from openai.types.chat import (
     ChatCompletion,
+    ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
-    ChatCompletionMessageParam,
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionToolMessageParam,
+    ChatCompletionUserMessageParam,
 )
 
 from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
@@ -89,23 +93,29 @@ class NvidiaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Define role mapping
-        ROLE_MAP = {"system": "context"}
+        typed_messages = cast(
+            List[
+                Union[
+                    ChatCompletionSystemMessageParam,
+                    ChatCompletionUserMessageParam,
+                    ChatCompletionAssistantMessageParam,
+                    ChatCompletionToolMessageParam,
+                    ChatCompletionFunctionMessageParam,
+                ]
+            ],
+            [dict(msg) for msg in messages],
+        )
 
-        # Convert messages in one comprehension with proper typing
-
-        def convert_message(msg: Dict[str, Any]) -> ChatCompletionMessageParam:
-            role = ROLE_MAP.get(msg["role"], msg["role"])
-            content = msg["content"]
-            # type: ignore[typeddict-item]
-            return {"role": role, "content": content}
-
-        typed_messages = [convert_message(dict(msg)) for msg in messages]
+        # Remove tool-related parameters if no tools are specified
+        config = dict(self.model_config_dict)
+        if not config.get('tools'):  # None or empty list
+            config.pop('tools', None)
+            config.pop('tool_choice', None)
 
         response = self._client.chat.completions.create(
             messages=typed_messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **config,
         )
         return response
 

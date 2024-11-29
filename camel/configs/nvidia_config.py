@@ -50,21 +50,21 @@ class NvidiaConfig(BaseConfig):
         tools (Optional[List[Dict]], optional): List of tools available to the
             model. This includes tools such as a text editor, a calculator, or
             a search engine. (default: :obj:`None`)
-        tool_choice (Optional[Dict], optional): Tool choice configuration.
+        tool_choice (Optional[str], optional): Tool choice configuration.
             (default: :obj:`None`)
         stop (Optional[List[str]], optional): List of stop sequences.
             (default: :obj:`None`)
     """
 
+    stream: bool = Field(default=False)
     temperature: float = Field(default=0.7)
     top_p: float = Field(default=0.95)
     presence_penalty: float = Field(default=0.0)
     frequency_penalty: float = Field(default=0.0)
     max_tokens: Union[int, NotGiven] = Field(default=NOT_GIVEN)
-    stream: bool = Field(default=False)
     seed: Optional[int] = Field(default=None)
     tools: Optional[List[Dict]] = Field(default=None)
-    tool_choice: Optional[Dict] = Field(default=None)
+    tool_choice: Optional[str] = Field(default=None)
     stop: Optional[List[str]] = Field(default=None)
 
 
