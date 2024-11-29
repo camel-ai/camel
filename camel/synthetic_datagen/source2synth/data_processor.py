@@ -1,40 +1,56 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import logging
+import os
+import random
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
-import logging
-import random
-from tqdm import tqdm
-import os
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-from camel.agents import ChatAgent
 from dotenv import load_dotenv
+from tqdm import tqdm
 
-# 加载环境变量
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
+
+# Load environment variables
 load_dotenv()
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ProcessorConfig:
-    """数据处理配置类"""
-    seed: int = 42  # 随机种子
-    min_length: int = 50  # 最小文本长度
-    max_length: int = 512  # 最大文本长度
-    quality_threshold: float = 0.7  # 质量阈值
-    complexity_threshold: float = 0.5  # 复杂度阈值
-    dataset_size: int = 1000  # 目标数据集大小
-    use_ai_model: bool = True  # 是否使用AI模型
-    model_temperature: float = 0.4  # AI模型温度
-    max_tokens: int = 4096  # AI模型最大token数
+    """Data processing configuration class"""
+
+    seed: int = 42  # Random seed
+    min_length: int = 50  # Minimum text length
+    max_length: int = 512  # Maximum text length
+    quality_threshold: float = 0.7  # Quality threshold
+    complexity_threshold: float = 0.5  # Complexity threshold
+    dataset_size: int = 1000  # Target dataset size
+    use_ai_model: bool = True  # Use AI model or not
+    model_temperature: float = 0.4  # AI model temperature
+    max_tokens: int = 4096  # Maximum tokens for AI model
 
 
 class AIModelHandler:
-    """AI模型处理器"""
+    """AI Model Processor"""
 
     def __init__(self, config: ProcessorConfig):
         self.config = config
@@ -43,7 +59,7 @@ class AIModelHandler:
             self.agent = self._init_agent()
 
     def _init_model(self):
-        """初始化AI模型"""
+        """Initialize AI model"""
         try:
             return ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
@@ -52,15 +68,15 @@ class AIModelHandler:
                 url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
                 model_config_dict={
                     "temperature": self.config.model_temperature,
-                    "max_tokens": self.config.max_tokens
+                    "max_tokens": self.config.max_tokens,
                 },
             )
         except Exception as e:
-            logger.warning(f"AI模型初始化失败: {str(e)}")
+            logger.warning(f"Failed to initialize AI model: {e!s}")
             return None
 
     def _init_agent(self):
-        """初始化AI代理"""
+        """Initialize AI agent"""
         if not self.model:
             return None
 
@@ -85,18 +101,18 @@ class AIModelHandler:
         return ChatAgent(
             system_message=system_message,
             model=self.model,
-            message_window_size=10
+            message_window_size=10,
         )
 
-    def generate_qa_pair(self, context: str,
-                         related_contexts: List[str] = None) -> Optional[
-        Dict[str, Any]]:
-        """使用AI生成多跳问答对"""
+    def generate_qa_pair(
+        self, context: str, related_contexts: List[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Generate multi-hop question-answer pair using AI"""
         if not self.agent:
             return None
 
         try:
-            # 构造包含多个相关上下文的提示
+            # Construct a prompt containing multiple related contexts
             context_prompt = f"Main Context: {context}\n"
             if related_contexts:
                 context_prompt += "\nRelated Contexts:\n"
@@ -118,11 +134,11 @@ class AIModelHandler:
             Supporting Facts: [relevant text segments]
             """
 
-            # 获取AI响应
+            # Get AI response
             response = self.agent.step(prompt)
             content = response.msgs[0].content
 
-            # 解析响应
+            # Parse response
             lines = content.strip().split('\n')
             question = None
             reasoning_steps = []
@@ -142,8 +158,11 @@ class AIModelHandler:
                     current_section = 'answer'
                 elif line.startswith('Supporting Facts:'):
                     current_section = 'facts'
-                elif line and current_section == 'reasoning' and line[
-                    0].isdigit():
+                elif (
+                    line
+                    and current_section == 'reasoning'
+                    and line[0].isdigit()
+                ):
                     reasoning_steps.append(line[2:].strip())
                 elif line and current_section == 'facts':
                     supporting_facts.append(line)
@@ -154,67 +173,74 @@ class AIModelHandler:
                     'reasoning_steps': reasoning_steps,
                     'answer': answer,
                     'supporting_facts': supporting_facts,
-                    'type': 'multi_hop_qa'
+                    'type': 'multi_hop_qa',
                 }
 
         except Exception as e:
-            logger.warning(f"AI生成多跳问答对时出错: {str(e)}")
+            logger.warning(
+                f"Error generating multi-hop question-answer pair: {e!s}"
+            )
 
         return None
 
 
 class UserDataProcessor:
-    """用户数据处理器"""
+    """User Data Processor"""
 
     def __init__(self, config: ProcessorConfig = None):
         self.config = config or ProcessorConfig()
         random.seed(self.config.seed)
         np.random.seed(self.config.seed)
-        self.ai_handler = AIModelHandler(
-            self.config) if self.config.use_ai_model else None
+        self.ai_handler = (
+            AIModelHandler(self.config) if self.config.use_ai_model else None
+        )
 
-    def process_text(self, text: str, source: str = "user_input") -> List[
-        Dict[str, Any]]:
-        """处理单个文本"""
-        # 将文本转换为标准格式
-        raw_data = [{
-            'text': text,
-            'source': source,
-            'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-        }]
+    def process_text(
+        self, text: str, source: str = "user_input"
+    ) -> List[Dict[str, Any]]:
+        """Process a single text"""
+        # Convert text to standard format
+        raw_data = [
+            {
+                'text': text,
+                'source': source,
+                'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
+        ]
 
-        # 构造示例
+        # Construct examples
         constructor = ExampleConstructor(self.config, self.ai_handler)
         examples = constructor.construct_examples(raw_data)
 
-        # 数据管理
+        # Manage data
         curator = DataCurator(self.config)
         final_dataset = curator.curate_dataset(examples)
 
         return final_dataset
 
-    def process_batch(self, texts: List[str], sources: List[str] = None) -> \
-    List[Dict[str, Any]]:
-        """批量处理多个文本"""
+    def process_batch(
+        self, texts: List[str], sources: List[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Process multiple texts in batch"""
         if sources is None:
             sources = ["user_input"] * len(texts)
         elif len(sources) != len(texts):
-            raise ValueError("sources列表长度必须与texts列表长度相同")
+            raise ValueError("Length of sources must match length of texts")
 
         raw_data = [
             {
                 'text': text,
                 'source': source,
-                'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+                'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
             for text, source in zip(texts, sources)
         ]
 
-        # 构造示例
+        # Construct examples
         constructor = ExampleConstructor(self.config, self.ai_handler)
         examples = constructor.construct_examples(raw_data)
 
-        # 数据管理
+        # Manage data
         curator = DataCurator(self.config)
         final_dataset = curator.curate_dataset(examples)
 
@@ -222,176 +248,193 @@ class UserDataProcessor:
 
 
 class ExampleConstructor:
-    """示例构造器"""
+    """Example Constructor"""
 
-    def __init__(self, config: ProcessorConfig,
-                 ai_handler: Optional[AIModelHandler] = None):
+    def __init__(
+        self,
+        config: ProcessorConfig,
+        ai_handler: Optional[AIModelHandler] = None,
+    ):
         self.config = config
         self.ai_handler = ai_handler
 
-    def construct_examples(self, raw_data: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
-        """构造训练示例"""
-        logger.info("开始构造训练示例...")
+    def construct_examples(
+        self, raw_data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Construct training examples"""
+        logger.info("Starting to construct training examples...")
         examples = []
 
-        for data in tqdm(raw_data, desc="构造示例"):
+        for data in tqdm(raw_data, desc="Constructing examples"):
             try:
-                # 1. 文本预处理
+                # 1. Text preprocessing
                 processed_text = self._preprocess_text(data.get('text', ''))
                 if not processed_text:
                     continue
 
-                # 2. 生成关键信息对
+                # 2. Generate key information pairs
                 info_pairs = self._extract_info_pairs(processed_text)
 
-                # 3. 构造问答对
+                # 3. Construct question-answer pairs
                 qa_pairs = self._generate_qa_pairs(info_pairs)
 
-                # 4. 添加元数据
+                # 4. Add metadata
                 example = {
                     'text': processed_text,
                     'qa_pairs': qa_pairs,
                     'metadata': {
                         'source': data.get('source', 'unknown'),
                         'timestamp': data.get('timestamp', ''),
-                        'complexity': self._calculate_complexity(qa_pairs)
-                    }
+                        'complexity': self._calculate_complexity(qa_pairs),
+                    },
                 }
 
                 examples.append(example)
 
             except Exception as e:
-                logger.warning(f"构造示例时出错: {str(e)}")
+                logger.warning(f"Error constructing example: {e!s}")
                 continue
 
-        logger.info(f"成功构造 {len(examples)} 个示例")
+        logger.info(f"Successfully constructed {len(examples)} examples")
         return examples
 
     def _preprocess_text(self, text: str) -> str:
-        """文本预处理"""
+        """Text preprocessing"""
         if not isinstance(text, str):
             return ''
 
-        # 1. 基础清理
+        # 1. Basic cleaning
         text = text.strip()
 
-        # 2. 长度检查
-        if len(text) < self.config.min_length or len(
-                text) > self.config.max_length:
+        # 2. Length check
+        if (
+            len(text) < self.config.min_length
+            or len(text) > self.config.max_length
+        ):
             return ''
 
-        # 3. 质量检查
+        # 3. Quality check
         if not self._check_text_quality(text):
             return ''
 
         return text
 
     def _check_text_quality(self, text: str) -> bool:
-        """检查文本质量"""
-        # 1. 基本质量检查
-        if text.count('.') < 2:  # 至少包含2个句子
+        """Check text quality"""
+        # 1. Basic quality check
+        if text.count('.') < 2:  # Must have at least 2 sentences
             return False
 
-        # 2. 特殊字符比例检查
+        # 2. Special character ratio check
         special_char_ratio = len(
-            [c for c in text if not c.isalnum() and not c.isspace()]) / len(
-            text)
-        if special_char_ratio > 0.3:  # 特殊字符比例不超过30%
+            [c for c in text if not c.isalnum() and not c.isspace()]
+        ) / len(text)
+        if special_char_ratio > 0.3:  # No more than 30% special characters
             return False
 
         return True
 
     def _extract_info_pairs(self, text: str) -> List[Dict[str, str]]:
-        """提取信息对和关系"""
-        # 分割成句子
+        """Extract information pairs and relationships"""
+        # Split into sentences
         sentences = [s.strip() for s in text.split('.') if s.strip()]
         info_pairs = []
 
-        # 提取多个相关句子组合
+        # Extract combinations of multiple related sentences
         for i in range(len(sentences) - 2):
             if len(sentences[i]) > 10 and len(sentences[i + 1]) > 10:
-                info_pairs.append({
-                    'premise': sentences[i],
-                    'intermediate': sentences[i + 1],
-                    'conclusion': sentences[i + 2] if i + 2 < len(
-                        sentences) else '',
-                    'related_contexts': [
-                                            s for j, s in enumerate(sentences)
-                                            if j != i and j != i + 1 and len(
-                            s) > 10
-                                        ][:2]  # 最多取2个额外相关上下文
-                })
+                info_pairs.append(
+                    {
+                        'premise': sentences[i],
+                        'intermediate': sentences[i + 1],
+                        'conclusion': sentences[i + 2]
+                        if i + 2 < len(sentences)
+                        else '',
+                        'related_contexts': [
+                            s
+                            for j, s in enumerate(sentences)
+                            if j != i and j != i + 1 and len(s) > 10
+                        ][:2],
+                        # Limit to 2 additional related contexts
+                    }
+                )
 
         return info_pairs
 
-    def _generate_qa_pairs(self, info_pairs: List[Dict[str, str]]) -> List[
-        Dict[str, str]]:
-        """生成多跳问答对"""
+    def _generate_qa_pairs(
+        self, info_pairs: List[Dict[str, str]]
+    ) -> List[Dict[str, str]]:
+        """Generate multi-hop question-answer pairs"""
         qa_pairs = []
 
         for pair in info_pairs:
-            # 1. 使用AI生成多跳问答对
+            # 1. Generate multi-hop question-answer pair using AI
             if self.ai_handler:
-                # 构建完整上下文
+                # Construct full context
                 context = f"{pair['premise']}. {pair['intermediate']}. {pair['conclusion']}"
                 ai_qa = self.ai_handler.generate_qa_pair(
                     context=context,
-                    related_contexts=pair.get('related_contexts', [])
+                    related_contexts=pair.get('related_contexts', []),
                 )
                 if ai_qa:
                     qa_pairs.append(ai_qa)
                     continue
 
-            # 2. 如果AI生成失败，使用简单的模板生成
-            # 注意：这只是后备方案，不能真正体现多跳问答的特点
+            # 2. If AI generation fails, use a simple template
+            # Note: This is a fallback and does not represent true multi-hop QA
             question = f"Based on the following information: {pair['premise']}, what can we conclude about {pair['conclusion']}?"
             answer = f"First, {pair['premise']}. Then, considering that {pair['intermediate']}, we can conclude that {pair['conclusion']}"
 
-            qa_pairs.append({
-                'question': question,
-                'answer': answer,
-                'reasoning_steps': [
-                    f"Consider: {pair['premise']}",
-                    f"Next, note that: {pair['intermediate']}",
-                    f"Finally: {pair['conclusion']}"
-                ],
-                'supporting_facts': [
-                    pair['premise'],
-                    pair['intermediate'],
-                    pair['conclusion']
-                ],
-                'type': 'template_generated_multi_hop'
-            })
+            qa_pairs.append(
+                {
+                    'question': question,
+                    'answer': answer,
+                    'reasoning_steps': [
+                        f"Consider: {pair['premise']}",
+                        f"Next, note that: {pair['intermediate']}",
+                        f"Finally: {pair['conclusion']}",
+                    ],
+                    'supporting_facts': [
+                        pair['premise'],
+                        pair['intermediate'],
+                        pair['conclusion'],
+                    ],
+                    'type': 'template_generated_multi_hop',
+                }
+            )
 
         return qa_pairs
 
     def _calculate_complexity(self, qa_pairs: List[Dict[str, Any]]) -> float:
-        """计算问答对的复杂度"""
+        """Calculate complexity of QA pairs"""
         if not qa_pairs:
             return 0.0
 
-        # 基于多个因素计算复杂度
+        # Calculate complexity based on multiple factors
         complexities = []
         for qa in qa_pairs:
-            # 1. 推理步骤数量
+            # 1. Number of reasoning steps
             reasoning_steps_count = len(qa.get('reasoning_steps', []))
 
-            # 2. 支持事实数量
+            # 2. Number of supporting facts
             supporting_facts_count = len(qa.get('supporting_facts', []))
 
-            # 3. 问题长度
+            # 3. Question length
             question_length = len(qa['question'].split())
 
-            # 4. 答案长度
+            # 4. Answer length
             answer_length = len(qa['answer'].split())
 
-            # 计算单个问答对的复杂度
+            # Calculate complexity of a single QA pair
             qa_complexity = (
-                    min(reasoning_steps_count / 3, 1.0) * 0.4 +  # 推理步骤权重
-                    min(supporting_facts_count / 3, 1.0) * 0.3 +  # 支持事实权重
-                    min(question_length / 20, 1.0) * 0.15 +  # 问题长度权重
-                    min(answer_length / 50, 1.0) * 0.15  # 答案长度权重
+                min(reasoning_steps_count / 3, 1.0)
+                * 0.4  # Weight for reasoning steps
+                + min(supporting_facts_count / 3, 1.0)
+                * 0.3  # Weight for supporting facts
+                + min(question_length / 20, 1.0)
+                * 0.15  # Weight for question length
+                + min(answer_length / 50, 1.0) * 0.15
+                # Weight for answer length
             )
 
             complexities.append(qa_complexity)
@@ -400,45 +443,55 @@ class ExampleConstructor:
 
 
 class DataCurator:
-    """数据管理器"""
+    """Data Manager"""
 
     def __init__(self, config: ProcessorConfig):
         self.config = config
 
-    def curate_dataset(self, examples: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
-        """数据集管理"""
-        logger.info("开始数据集管理...")
+    def curate_dataset(
+        self, examples: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Dataset management"""
+        logger.info("Starting dataset management...")
 
-        # 1. 质量过滤
+        # 1. Quality filtering
         quality_filtered = self._quality_filter(examples)
-        logger.info(f"质量过滤后剩余 {len(quality_filtered)} 个示例")
+        logger.info(
+            f"Remaining examples after quality filtering: {len(quality_filtered)}"
+        )
 
-        # 2. 复杂度过滤
+        # 2. Complexity filtering
         complexity_filtered = self._complexity_filter(quality_filtered)
-        logger.info(f"复杂度过滤后剩余 {len(complexity_filtered)} 个示例")
+        logger.info(
+            f"Remaining examples after complexity filtering: {len(complexity_filtered)}"
+        )
 
-        # 3. 去重
+        # 3. Deduplication
         deduplicated = self._remove_duplicates(complexity_filtered)
-        logger.info(f"去重后剩余 {len(deduplicated)} 个示例")
+        logger.info(
+            f"Remaining examples after deduplication: {len(deduplicated)}"
+        )
 
-        # 4. 采样到目标大小
+        # 4. Sample to target size
         final_dataset = self._sample_dataset(deduplicated)
-        logger.info(f"最终数据集大小: {len(final_dataset)}")
+        logger.info(f"Final dataset size: {len(final_dataset)}")
 
         return final_dataset
 
-    def _quality_filter(self, examples: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
-        """质量过滤"""
+    def _quality_filter(
+        self, examples: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Quality filtering"""
         filtered = []
 
         for example in examples:
-            # 1. 检查问答对的质量
+            # 1. Check QA pair quality
             qa_quality = self._check_qa_quality(example.get('qa_pairs', []))
 
-            # 2. 检查文本质量
-            text_quality = len(example.get('text', '').split()) >= 20  # 至少20个词
+            # 2. Check text quality
+            text_quality = (
+                len(example.get('text', '').split()) >= 20
+            )  # At least 20 words
 
             if qa_quality and text_quality:
                 filtered.append(example)
@@ -446,39 +499,44 @@ class DataCurator:
         return filtered
 
     def _check_qa_quality(self, qa_pairs: List[Dict[str, str]]) -> bool:
-        """检查问答对的质量"""
+        """Check quality of QA pairs"""
         if not qa_pairs:
             return False
 
         for qa in qa_pairs:
-            # 1. 长度检查
-            if len(qa.get('question', '')) < 10 or len(
-                    qa.get('answer', '')) < 5:
+            # 1. Length check
+            if (
+                len(qa.get('question', '')) < 10
+                or len(qa.get('answer', '')) < 5
+            ):
                 return False
 
-            # 2. 问答重复检查
+            # 2. QA pair duplication check
             if qa.get('question', '') == qa.get('answer', ''):
                 return False
 
         return True
 
-    def _complexity_filter(self, examples: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
-        """复杂度过滤"""
+    def _complexity_filter(
+        self, examples: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Complexity filtering"""
         return [
-            example for example in examples
-            if example.get('metadata', {}).get('complexity',
-                                               0) >= self.config.complexity_threshold
+            example
+            for example in examples
+            if example.get('metadata', {}).get('complexity', 0)
+            >= self.config.complexity_threshold
         ]
 
-    def _remove_duplicates(self, examples: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
-        """去重"""
+    def _remove_duplicates(
+        self, examples: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Remove duplicates"""
         seen = set()
         unique_examples = []
 
         for example in examples:
-            # 使用文本和问答对的组合作为唯一标识
+            # Use text and QA pair combination as unique identifier
             text = example.get('text', '')
             qa_str = str(example.get('qa_pairs', []))
 
@@ -490,9 +548,10 @@ class DataCurator:
 
         return unique_examples
 
-    def _sample_dataset(self, examples: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
-        """采样到目标数据集大小"""
+    def _sample_dataset(
+        self, examples: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Sample to target dataset size"""
         if len(examples) <= self.config.dataset_size:
             return examples
 
@@ -500,8 +559,8 @@ class DataCurator:
 
 
 def main():
-    """示例用法"""
-    # 创建处理器
+    """Example usage"""
+    # Create processor
     config = ProcessorConfig(
         seed=42,
         dataset_size=100,
@@ -509,12 +568,12 @@ def main():
         complexity_threshold=0.5,
         use_ai_model=True,
         model_temperature=0.4,
-        max_tokens=4096
+        max_tokens=4096,
     )
 
     processor = UserDataProcessor(config)
 
-    # 示例：处理单个文本
+    # Example: Process a single text
     text = """
     Machine learning is a subset of artificial intelligence. It focuses on the development 
     of computer programs that can access data and use it to learn for themselves. 
@@ -524,27 +583,29 @@ def main():
     """
 
     result = processor.process_text(text, "example_source")
-    logger.info(f"处理完成! 生成了 {len(result)} 个问答对")
+    logger.info(f"Processing complete! Generated {len(result)} QA pairs")
 
-    # 示例：批量处理多个文本
+    # Example: Process multiple texts in batch
     texts = [
         "Text processing is the manipulation of text data. It involves various techniques like tokenization and normalization.",
         "Deep learning is a type of machine learning. It uses artificial neural networks with multiple layers.",
-        "Natural language processing combines linguistics and computer science. It helps computers understand human language."
+        "Natural language processing combines linguistics and computer science. It helps computers understand human language.",
     ]
 
     results = processor.process_batch(texts)
-    logger.info(f"批处理完成! 总共生成了 {len(results)} 个问答对")
+    logger.info(
+        f"Batch processing complete! Total QA pairs generated: {len(results)}"
+    )
 
-    # 打印示例结果
+    # Print example results
     if results:
-        print("\n示例问答对:")
+        print("\nExample QA pairs:")
         for i, result in enumerate(results[:2], 1):
-            print(f"\n示例 {i}:")
+            print(f"\nExample {i}:")
             for qa in result['qa_pairs'][:2]:
-                print(f"类型: {qa['type']}")
-                print(f"问题: {qa['question']}")
-                print(f"答案: {qa['answer']}\n")
+                print(f"Type: {qa['type']}")
+                print(f"Question: {qa['question']}")
+                print(f"Answer: {qa['answer']}\n")
 
 
 if __name__ == "__main__":
