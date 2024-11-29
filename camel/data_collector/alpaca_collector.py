@@ -13,9 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Dict, List, Optional, Union
-from typing_extensions import Self
 
 from pydantic import BaseModel
+from typing_extensions import Self
 
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector

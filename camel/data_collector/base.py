@@ -14,9 +14,10 @@
 
 import uuid
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Tuple, Union
-from typing_extensions import Self
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID
+
+from typing_extensions import Self
 
 from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
