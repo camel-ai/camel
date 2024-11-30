@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import re
 from enum import Enum
@@ -130,6 +130,11 @@ class Task(BaseModel):
         self.set_state(TaskState.DONE)
 
     def set_id(self, id: str):
+        r"""Set the id of the task.
+
+        Args:
+            id (str): The id of the task.
+        """
         self.id = id
 
     def set_state(self, state: TaskState):
@@ -147,10 +152,20 @@ class Task(BaseModel):
             self.parent.set_state(state)
 
     def add_subtask(self, task: "Task"):
+        r"""Add a subtask to the current task.
+
+        Args:
+            task (Task): The subtask to be added.
+        """
         task.parent = self
         self.subtasks.append(task)
 
     def remove_subtask(self, id: str):
+        r"""Remove a subtask from the current task.
+
+        Args:
+            id (str): The id of the subtask to be removed.
+        """
         self.subtasks = [task for task in self.subtasks if task.id != id]
 
     def get_running_task(self) -> Optional["Task"]:

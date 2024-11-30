@@ -5,7 +5,7 @@
 
 Welcome to CAMEL's documentation!
 =================================
-| We design **practical** artificial general intelligence.
+| **Finding the Scaling Law of Agents: The First and the Best Multi-Agent Framework.**
 
 | **CAMEL** emerges as the earliest `LLM-based multi-agent framework <https://arxiv.org/pdf/2303.17760.pdf>`_, and is now a generic framework to build and use LLM-based agents for real-world task solving. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
@@ -55,6 +55,7 @@ Main Documentation
    cookbooks/create_your_first_agent.ipynb
    cookbooks/create_your_first_agents_society.ipynb
    cookbooks/agents_society.ipynb
+   cookbooks/model_speed_comparison.ipynb
    cookbooks/agents_message.ipynb
    cookbooks/agents_with_tools.ipynb
    cookbooks/agents_with_tools_from_Composio.ipynb
@@ -67,6 +68,7 @@ Main Documentation
    cookbooks/video_analysis.ipynb
    cookbooks/agents_tracking.ipynb
    cookbooks/workforce_judge_committee.ipynb
+   cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
 
 .. toctree::
    :maxdepth: 1
@@ -93,4 +95,4 @@ We are always happy to work with friends to continuously move forward with our o
 
 **For Coding Enthusiasts**:  Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate each and every commit. Get started by checking out the `Contributing Guidelines <https://github.com/camel-ai/camel/wiki/Contributing-Guidlines>`_ on GitHub.
 
-**For Interested Humans**: Connect with us on `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_ or `Discord <https://discord.gg/CNcNpquyDc>`_.
+**For Interested Humans**: Connect with us on `Discord <https://discord.camel-ai.org>`_, `WeChat <https://ghli.org/camel/wechat.png>`_, or `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_.

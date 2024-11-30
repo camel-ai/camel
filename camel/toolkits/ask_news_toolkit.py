@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from datetime import datetime
 from typing import List, Literal, Optional, Tuple, Union
@@ -66,15 +66,12 @@ class AskNewsToolkit(BaseToolkit):
         r"""Initialize the AskNewsToolkit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """
-        from asknews_sdk import AskNewsSDK  # type: ignore[import]
+        from asknews_sdk import AskNewsSDK
 
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
 
-        if client_id and client_secret:
-            self.asknews_client = AskNewsSDK(client_id, client_secret)
-        else:
-            self.asknews_client = None
+        self.asknews_client = AskNewsSDK(client_id, client_secret)
 
     def get_news(
         self,
@@ -182,7 +179,6 @@ class AskNewsToolkit(BaseToolkit):
                     for story in response.stories
                 ]
             }
-
             return stories_data
 
         except Exception as e:
@@ -368,10 +364,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")
 
-        if client_id and client_secret:
-            self.asknews_client = AsyncAskNewsSDK(client_id, client_secret)
-        else:
-            self.asknews_client = None
+        self.asknews_client = AsyncAskNewsSDK(client_id, client_secret)
 
     async def get_news(
         self,
@@ -647,7 +640,3 @@ class AsyncAskNewsToolkit(BaseToolkit):
             FunctionTool(self.search_reddit),
             FunctionTool(self.query_finance),
         ]
-
-
-ASKNEWS_FUNCS: List[FunctionTool] = AskNewsToolkit().get_tools()
-ASYNC_ASKNEWS_FUNCS: List[FunctionTool] = AsyncAskNewsToolkit().get_tools()

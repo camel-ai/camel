@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 
@@ -88,23 +88,27 @@ def test_extract_data_example(sample_email_text):
 def test_stage_data_example(sample_url):
     staged_data = stage_data_example(sample_url)
     assert isinstance(staged_data, dict)
-    assert staged_data['rows'][0] == {
-        'data': {
-            'type': 'UncategorizedText',
-            'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5',
-            'text': 'CNN\n        \xa0—',
-        },
-        'metadata': {
-            'filetype': 'text/html',
-            'languages': ['eng'],
-            'page_number': 1,
-            'url': 'https://www.cnn.com/2023/01/30/sport/'
-            'empire-state-building-green-philadelphia-eagles-spt-'
-            'intl/index.html',
-            'emphasized_text_contents': ['CNN'],
-            'emphasized_text_tags': ['span'],
-        },
-    }
+    assert (
+        staged_data['rows'][0]
+        == {
+            'data': {
+                'type': 'NarrativeText',
+                'element_id': '0aafb4e862cf2f95e55f76b641766e39',
+                'text': 'Miles Sanders scores a touchdown against the San Francisco 49ers during the NFC Championship game at Lincoln Financial Field.',  # noqa: E501
+            },
+            'metadata': {
+                'emphasized_text_contents': [
+                    'Miles Sanders scores a touchdown against the San Francisco 49ers during the NFC Championship game at Lincoln Financial Field.'  # noqa: E501
+                ],
+                'emphasized_text_tags': ['span'],
+                'languages': ['eng'],
+                'filetype': 'text/html',
+                'url': 'https://www.cnn.com/2023/01/30/sport/'
+                'empire-state-building-green-philadelphia-eagles-spt-'
+                'intl/index.html',
+            },
+        }
+    )
 
 
 def test_chunk_url_content_example(sample_url):

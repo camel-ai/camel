@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 import time
@@ -38,6 +38,14 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
 )
+
+try:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import LLMEvent, record
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    LLMEvent = None
 
 
 class SambaModel(BaseModelBackend):
@@ -139,7 +147,7 @@ class SambaModel(BaseModelBackend):
     def run(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs SambaNova's FastAPI service.
+        r"""Runs SambaNova's service.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -150,7 +158,8 @@ class SambaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-
+        if "tools" in self.model_config_dict:
+            del self.model_config_dict["tools"]
         if self.model_config_dict.get("stream") is True:
             return self._run_streaming(messages)
         else:
@@ -181,6 +190,21 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
+
+            # Add AgentOps LLM Event tracking
+            if LLMEvent:
+                llm_event = LLMEvent(
+                    thread_id=response.id,
+                    prompt=" ".join(
+                        [message.get("content") for message in messages]  # type: ignore[misc]
+                    ),
+                    prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
+                    completion=response.choices[0].message.content,
+                    completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
+                    model=self.model_type,
+                )
+                record(llm_event)
+
             return response
 
         elif self._url == "https://sambaverse.sambanova.ai/api/predict":
@@ -215,6 +239,21 @@ class SambaModel(BaseModelBackend):
                 model=self.model_type,
                 **self.model_config_dict,
             )
+
+            # Add AgentOps LLM Event tracking
+            if LLMEvent:
+                llm_event = LLMEvent(
+                    thread_id=response.id,
+                    prompt=" ".join(
+                        [message.get("content") for message in messages]  # type: ignore[misc]
+                    ),
+                    prompt_tokens=response.usage.prompt_tokens,  # type: ignore[union-attr]
+                    completion=response.choices[0].message.content,
+                    completion_tokens=response.usage.completion_tokens,  # type: ignore[union-attr]
+                    model=self.model_type,
+                )
+                record(llm_event)
+
             return response
 
         # Handle SambaNova's Sambaverse API

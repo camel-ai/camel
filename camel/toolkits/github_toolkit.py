@@ -1,99 +1,26 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import logging
 import os
-from datetime import datetime, timedelta
-from typing import List, Optional
-
-from pydantic import BaseModel
+from typing import Dict, List, Literal, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 from camel.utils import dependencies_required
 
-
-class GithubIssue(BaseModel):
-    r"""Represents a GitHub issue.
-
-    Attributes:
-        title (str): The title of the issue.
-        body (str): The body/content of the issue.
-        number (int): The issue number.
-        file_path (str): The path of the file associated with the issue.
-        file_content (str): The content of the file associated with the issue.
-    """
-
-    title: str
-    body: str
-    number: int
-    file_path: str
-    file_content: str
-
-    def __str__(self) -> str:
-        r"""Returns a string representation of the issue.
-
-        Returns:
-            str: A string containing the title, body, number, file path, and
-                file content of the issue.
-        """
-        return (
-            f"Title: {self.title}\n"
-            f"Body: {self.body}\n"
-            f"Number: {self.number}\n"
-            f"File Path: {self.file_path}\n"
-            f"File Content: {self.file_content}"
-        )
-
-
-class GithubPullRequestDiff(BaseModel):
-    r"""Represents a single diff of a pull request on Github.
-
-    Attributes:
-        filename (str): The name of the file that was changed.
-        patch (str): The diff patch for the file.
-    """
-
-    filename: str
-    patch: str
-
-    def __str__(self) -> str:
-        r"""Returns a string representation of this diff."""
-        return f"Filename: {self.filename}\nPatch: {self.patch}"
-
-
-class GithubPullRequest(BaseModel):
-    r"""Represents a pull request on Github.
-
-    Attributes:
-        title (str): The title of the GitHub pull request.
-        body (str): The body/content of the GitHub pull request.
-        diffs (List[GithubPullRequestDiff]): A list of diffs for the pull
-            request.
-    """
-
-    title: str
-    body: str
-    diffs: List[GithubPullRequestDiff]
-
-    def __str__(self) -> str:
-        r"""Returns a string representation of the pull request."""
-        diff_summaries = '\n'.join(str(diff) for diff in self.diffs)
-        return (
-            f"Title: {self.title}\n"
-            f"Body: {self.body}\n"
-            f"Diffs: {diff_summaries}\n"
-        )
+logger = logging.getLogger(__name__)
 
 
 class GithubToolkit(BaseToolkit):
@@ -122,28 +49,13 @@ class GithubToolkit(BaseToolkit):
                 with GitHub. If not provided, it will be obtained using the
                 `get_github_access_token` method.
         """
+        from github import Auth, Github
+
         if access_token is None:
             access_token = self.get_github_access_token()
 
-        from github import Auth, Github
-
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
-
-    def get_tools(self) -> List[FunctionTool]:
-        r"""Returns a list of FunctionTool objects representing the
-        functions in the toolkit.
-
-        Returns:
-            List[FunctionTool]: A list of FunctionTool objects
-                representing the functions in the toolkit.
-        """
-        return [
-            FunctionTool(self.retrieve_issue_list),
-            FunctionTool(self.retrieve_issue),
-            FunctionTool(self.create_pull_request),
-            FunctionTool(self.retrieve_pull_requests),
-        ]
 
     def get_github_access_token(self) -> str:
         r"""Retrieve the GitHub access token from environment variables.
@@ -164,87 +76,6 @@ class GithubToolkit(BaseToolkit):
                 " it here: `https://github.com/settings/tokens`."
             )
         return GITHUB_ACCESS_TOKEN
-
-    def retrieve_issue_list(self) -> List[GithubIssue]:
-        r"""Retrieve a list of open issues from the repository.
-
-        Returns:
-            A list of GithubIssue objects representing the open issues.
-        """
-        issues = self.repo.get_issues(state='open')
-        return [
-            GithubIssue(
-                title=issue.title,
-                body=issue.body,
-                number=issue.number,
-                file_path=issue.labels[
-                    0
-                ].name,  # we require file path to be the first label in the PR
-                file_content=self.retrieve_file_content(issue.labels[0].name),
-            )
-            for issue in issues
-            if not issue.pull_request
-        ]
-
-    def retrieve_issue(self, issue_number: int) -> Optional[str]:
-        r"""Retrieves an issue from a GitHub repository.
-
-        This function retrieves an issue from a specified repository using the
-        issue number.
-
-        Args:
-            issue_number (int): The number of the issue to retrieve.
-
-        Returns:
-            str: A formatted report of the retrieved issue.
-        """
-        issues = self.retrieve_issue_list()
-        for issue in issues:
-            if issue.number == issue_number:
-                return str(issue)
-        return None
-
-    def retrieve_pull_requests(
-        self, days: int, state: str, max_prs: int
-    ) -> List[str]:
-        r"""Retrieves a summary of merged pull requests from the repository.
-        The summary will be provided for the last specified number of days.
-
-        Args:
-            days (int): The number of days to retrieve merged pull requests
-                for.
-            state (str): A specific state of PRs to retrieve. Can be open or
-                closed.
-            max_prs (int): The maximum number of PRs to retrieve.
-
-        Returns:
-             List[str]: A list of merged pull request summaries.
-        """
-        pull_requests = self.repo.get_pulls(state=state)
-        merged_prs = []
-        earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
-
-        for pr in pull_requests[:max_prs]:
-            if (
-                pr.merged
-                and pr.merged_at is not None
-                and pr.merged_at.timestamp() > earliest_date.timestamp()
-            ):
-                pr_details = GithubPullRequest(
-                    title=pr.title, body=pr.body, diffs=[]
-                )
-
-                # Get files changed in the PR
-                files = pr.get_files()
-
-                for file in files:
-                    diff = GithubPullRequestDiff(
-                        filename=file.filename, patch=file.patch
-                    )
-                    pr_details.diffs.append(diff)
-
-                merged_prs.append(str(pr_details))
-        return merged_prs
 
     def create_pull_request(
         self,
@@ -280,6 +111,7 @@ class GithubToolkit(BaseToolkit):
         )
 
         file = self.repo.get_contents(file_path)
+
         from github.ContentFile import ContentFile
 
         if isinstance(file, ContentFile):
@@ -300,6 +132,155 @@ class GithubToolkit(BaseToolkit):
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
 
+    def get_issue_list(
+        self, state: Literal["open", "closed", "all"] = "all"
+    ) -> List[Dict[str, object]]:
+        r"""Retrieves all issues from the GitHub repository.
+
+        Args:
+            state (Literal["open", "closed", "all"]): The state of pull
+                requests to retrieve. (default::obj: `all`)
+                Options are:
+                - "open": Retrieve only open pull requests.
+                - "closed": Retrieve only closed pull requests.
+                - "all": Retrieve all pull requests, regardless of state.
+
+        Returns:
+            List[Dict[str, object]]: A list of dictionaries where each
+                dictionary contains the issue number and title.
+        """
+        issues_info = []
+        issues = self.repo.get_issues(state=state)
+
+        for issue in issues:
+            issues_info.append({"number": issue.number, "title": issue.title})
+
+        return issues_info
+
+    def get_issue_content(self, issue_number: int) -> str:
+        r"""Retrieves the content of a specific issue by its number.
+
+        Args:
+            issue_number (int): The number of the issue to retrieve.
+
+        Returns:
+            str: issues content details.
+        """
+        try:
+            issue = self.repo.get_issue(number=issue_number)
+            return issue.body
+        except Exception as e:
+            return f"can't get Issue number {issue_number}: {e!s}"
+
+    def get_pull_request_list(
+        self, state: Literal["open", "closed", "all"] = "all"
+    ) -> List[Dict[str, object]]:
+        r"""Retrieves all pull requests from the GitHub repository.
+
+        Args:
+            state (Literal["open", "closed", "all"]): The state of pull
+                requests to retrieve. (default::obj: `all`)
+                Options are:
+                - "open": Retrieve only open pull requests.
+                - "closed": Retrieve only closed pull requests.
+                - "all": Retrieve all pull requests, regardless of state.
+
+        Returns:
+            list: A list of dictionaries where each dictionary contains the
+                pull request number and title.
+        """
+        pull_requests_info = []
+        pull_requests = self.repo.get_pulls(state=state)
+
+        for pr in pull_requests:
+            pull_requests_info.append({"number": pr.number, "title": pr.title})
+
+        return pull_requests_info
+
+    def get_pull_request_code(self, pr_number: int) -> List[Dict[str, str]]:
+        r"""Retrieves the code changes of a specific pull request.
+
+        Args:
+            pr_number (int): The number of the pull request to retrieve.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries where each dictionary
+                contains the file name and the corresponding code changes
+                (patch).
+        """
+        # Retrieve the specific pull request
+        pr = self.repo.get_pull(number=pr_number)
+
+        # Collect the file changes from the pull request
+        files_changed = []
+        # Returns the files and their changes in the pull request
+        files = pr.get_files()
+        for file in files:
+            files_changed.append(
+                {
+                    "filename": file.filename,
+                    "patch": file.patch,  # The code diff or changes
+                }
+            )
+
+        return files_changed
+
+    def get_pull_request_comments(
+        self, pr_number: int
+    ) -> List[Dict[str, str]]:
+        r"""Retrieves the comments from a specific pull request.
+
+        Args:
+            pr_number (int): The number of the pull request to retrieve.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries where each dictionary
+                contains the user ID and the comment body.
+        """
+        # Retrieve the specific pull request
+        pr = self.repo.get_pull(number=pr_number)
+
+        # Collect the comments from the pull request
+        comments = []
+        # Returns all the comments in the pull request
+        for comment in pr.get_comments():
+            comments.append({"user": comment.user.login, "body": comment.body})
+
+        return comments
+
+    def get_all_file_paths(self, path: str = "") -> List[str]:
+        r"""Recursively retrieves all file paths in the GitHub repository.
+
+        Args:
+            path (str): The repository path to start the traversal from.
+                empty string means starts from the root directory.
+                (default::obj: `""`)
+
+        Returns:
+            List[str]: A list of file paths within the specified directory
+                structure.
+        """
+        from github.ContentFile import ContentFile
+
+        files: List[str] = []
+
+        # Retrieves all contents of the current directory
+        contents: Union[List[ContentFile], ContentFile] = (
+            self.repo.get_contents(path)
+        )
+
+        if isinstance(contents, ContentFile):
+            files.append(contents.path)
+        else:
+            for content in contents:
+                if content.type == "dir":
+                    # If it's a directory, recursively retrieve its file paths
+                    files.extend(self.get_all_file_paths(content.path))
+                else:
+                    # If it's a file, add its path to the list
+                    files.append(content.path)
+        return files
+
     def retrieve_file_content(self, file_path: str) -> str:
         r"""Retrieves the content of a file from the GitHub repository.
 
@@ -309,11 +290,29 @@ class GithubToolkit(BaseToolkit):
         Returns:
             str: The decoded content of the file.
         """
-        file_content = self.repo.get_contents(file_path)
-
         from github.ContentFile import ContentFile
 
+        file_content = self.repo.get_contents(file_path)
         if isinstance(file_content, ContentFile):
             return file_content.decoded_content.decode()
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
+        in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects representing
+                the functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.create_pull_request),
+            FunctionTool(self.get_issue_list),
+            FunctionTool(self.get_issue_content),
+            FunctionTool(self.get_pull_request_list),
+            FunctionTool(self.get_pull_request_code),
+            FunctionTool(self.get_pull_request_comments),
+            FunctionTool(self.get_all_file_paths),
+            FunctionTool(self.retrieve_file_content),
+        ]

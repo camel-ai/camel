@@ -1,20 +1,18 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import shutil
-from datetime import datetime
-from unittest.mock import patch
 
 import pytest
 
@@ -48,23 +46,6 @@ def test__initialize_vector_storage(auto_retriever):
     # with tempfile.TemporaryDirectory() as tmpdir:
     storage_custom = auto_retriever._initialize_vector_storage("collection")
     assert isinstance(storage_custom, QdrantStorage)
-
-
-def test_get_file_modified_date_from_file(auto_retriever):
-    with patch('os.path.getmtime') as mocked_getmtime:
-        mocked_getmtime.return_value = 1234567890
-        mod_date = auto_retriever._get_file_modified_date_from_file(
-            "/path/to/file"
-        )
-        expected_date = datetime.fromtimestamp(1234567890).strftime(
-            '%Y-%m-%dT%H:%M:%S'
-        )
-        assert mod_date == expected_date
-
-    with pytest.raises(FileNotFoundError):
-        auto_retriever._get_file_modified_date_from_file(
-            "/path/to/nonexistent/file"
-        )
 
 
 def test_run_vector_retriever(auto_retriever):

@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import asyncio
 from io import BytesIO
@@ -83,21 +83,24 @@ def test_chat_agent(model):
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
         assistant.reset()
 
-    user_msg = BaseMessage(
+    user_msg_bm = BaseMessage(
         role_name="Patient",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="Hello!",
     )
 
+    user_msg_str = "Hello!"
+
     for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
-        response = assistant.step(user_msg)
-        assert isinstance(response.msgs, list)
-        assert len(response.msgs) > 0
-        assert isinstance(response.terminated, bool)
-        assert response.terminated is False
-        assert isinstance(response.info, dict)
-        assert response.info['id'] is not None
+        for user_msg in [user_msg_bm, user_msg_str]:
+            response = assistant.step(user_msg)
+            assert isinstance(response.msgs, list)
+            assert len(response.msgs) > 0
+            assert isinstance(response.terminated, bool)
+            assert response.terminated is False
+            assert isinstance(response.info, dict)
+            assert response.info['id'] is not None
 
 
 @pytest.mark.model_backend
@@ -184,7 +187,7 @@ def test_chat_agent_step_with_structure_response():
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools():
-    internal_tools = SearchToolkit().get_tools()
+    internal_tools = [FunctionTool(SearchToolkit().search_duckduckgo)]
     external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
@@ -411,14 +414,13 @@ def test_set_output_language():
     assert agent.output_language == output_language
 
     # Verify that the system message is updated with the new output language
-    updated_system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in Arabic.",
-    )
-    assert agent.system_message.content == updated_system_message.content
+    updated_system_message = {
+        'role': 'system',
+        'content': 'You are a help assistant.\nRegardless of the '
+        'input language, you must output text in Arabic.',
+    }
+    memory_content = agent.memory.get_context()
+    assert memory_content[0][0] == updated_system_message
 
 
 @pytest.mark.model_backend
@@ -441,28 +443,27 @@ def test_set_multiple_output_language():
     agent_without_sys_msg.set_output_language("English")
     agent_without_sys_msg.set_output_language("French")
 
-    updated_system_message_with_content = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in French.",
-    )
-    updated_system_message_without_content = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="\nRegardless of the input language, you must output text "
-        "in French.",
-    )
+    updated_system_message_with_sys_msg = {
+        'role': 'system',
+        'content': 'You are a help assistant.\nRegardless of the '
+        'input language, you must output text in French.',
+    }
+    updated_system_message_without_sys_msg = {
+        'role': 'system',
+        'content': '\nRegardless of the input language, you must output '
+        'text in French.',
+    }
+
+    memory_content_with_sys_msg = agent_with_sys_msg.memory.get_context()
+    memory_content_without_sys_msg = agent_without_sys_msg.memory.get_context()
 
     assert (
-        agent_with_sys_msg.system_message.content
-        == updated_system_message_with_content.content
+        memory_content_with_sys_msg[0][0]
+        == updated_system_message_with_sys_msg
     )
     assert (
-        agent_without_sys_msg.system_message.content
-        == updated_system_message_without_content.content
+        memory_content_without_sys_msg[0][0]
+        == updated_system_message_without_sys_msg
     )
 
 
@@ -687,7 +688,7 @@ def test_chat_agent_vision():
         image_detail="low",
     )
     # Mock the OpenAI model return value:
-    agent.model_backend = Mock()
+    agent.model_backend.run = Mock()
     agent.model_backend.run.return_value = ChatCompletion(
         id="mock_vision_id",
         choices=[

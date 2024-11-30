@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import importlib
 import os
 import platform
@@ -257,18 +257,18 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             missing_environment_keys = [
                 k for k in required_keys if k not in os.environ
             ]
             if (
-                not getattr(self, '_api_key', None)
+                not (args and getattr(args[0], '_api_key', None))
                 and missing_environment_keys
             ):
                 raise ValueError(
                     f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
 
         return cast(F, wrapper)
 
@@ -550,8 +550,9 @@ class AgentOpsMeta(type):
         return super().__new__(cls, name, bases, dct)
 
 
-# Mock trak agent decorator for AgentOps
 def track_agent(*args, **kwargs):
+    r"""Mock track agent decorator for AgentOps."""
+
     def noop(f):
         return f
 

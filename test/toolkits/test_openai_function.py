@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import copy
 import json
 from datetime import datetime
@@ -329,9 +329,54 @@ function_schema = {
     },
 }
 
+function_schema_without_docs = {
+    "description": '',
+    "name": "add",
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+            },
+            'b': {
+                'type': 'integer',
+            },
+        },
+        'required': ['a', 'b'],
+    },
+}
+
+function_schema_with_wrong_docs = {
+    "name": "add",
+    "description": "Adds two numbers.",
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+                'description': 'The first number to be added.',
+            },
+            'b': {
+                'type': 'integer',
+            },
+        },
+        'required': ['a', 'b'],
+    },
+}
+
 tool_schema = {
     "type": "function",
     "function": function_schema,
+}
+
+tool_schema_without_docs = {
+    "type": "function",
+    "function": function_schema_without_docs,
+}
+
+tool_schema_with_wrong_docs = {
+    "type": "function",
+    "function": function_schema_with_wrong_docs,
 }
 
 
@@ -344,19 +389,17 @@ def test_correct_function():
 def test_function_without_doc():
     add = FunctionTool(add_without_doc)
     add.set_function_name("add")
-    with pytest.raises(Exception, match="miss function description"):
-        _ = add.get_openai_function_schema()
-    add.set_openai_function_schema(function_schema)
-    assert add.get_openai_function_schema() == function_schema
+    with pytest.warns(UserWarning, match="Function description is missing"):
+        _ = FunctionTool(add_without_doc).get_openai_function_schema()
+    with pytest.warns(UserWarning, match="Parameter description is missing"):
+        _ = FunctionTool(add_without_doc).get_openai_function_schema()
+    assert add.get_openai_tool_schema() == tool_schema_without_docs
 
 
 def test_function_with_wrong_doc():
     add = FunctionTool(add_with_wrong_doc)
     add.set_function_name("add")
-    with pytest.raises(Exception, match="miss description of parameter \"b\""):
-        _ = add.get_openai_function_schema()
-    add.set_parameter("b", function_schema["parameters"]["properties"]["b"])
-    assert add.get_openai_function_schema() == function_schema
+    assert add.get_openai_tool_schema() == tool_schema_with_wrong_docs
 
 
 def test_validate_openai_tool_schema_valid():

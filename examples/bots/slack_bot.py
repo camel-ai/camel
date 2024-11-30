@@ -1,18 +1,18 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from slack_bolt.context.async_context import AsyncBoltContext
 from slack_bolt.context.say.async_say import AsyncSay
@@ -24,10 +24,8 @@ from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,7 +34,7 @@ logger = logging.getLogger(__name__)
 class BotAgent:
     def __init__(
         self,
-        contents: Union[str, List[str], Element, List[Element]] = None,
+        contents: Union[str, List[str], "Element", List["Element"]] = None,
         auto_retriever: Optional[AutoRetriever] = None,
         similarity_threshold: float = 0.5,
         vector_storage_local_path: str = "local_data/",
