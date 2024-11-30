@@ -115,7 +115,7 @@ class GAIABenchmark(BaseBenchmark):
         self,
         agent: ChatAgent,
         on: Literal["train", "valid", "test"],
-        level: Union[List[int], Literal["all"]],
+        level: Union[int, List[int], Literal["all"]],
         randomize: bool = False,
         subset: Optional[int] = None,
     ) -> Dict[str, Any]:
@@ -124,7 +124,7 @@ class GAIABenchmark(BaseBenchmark):
         Args:
             agent (ChatAgent): The agent to run the benchmark.
             on (Literal["valid", "test"]): The set to run the benchmark.
-            level (Union[List[int], Literal["all"]]): The level to run
+            level (Union[int, List[int], Literal["all"]]): The level to run
                 the benchmark.
             randomize (bool, optional): Whether to randomize the data.
                 Defaults to False.
@@ -174,7 +174,13 @@ class GAIABenchmark(BaseBenchmark):
                             retriever_dir
                         )
                         if not retriever_dir.exists():
-                            retriever_dir.mkdir(parents=True)
+                            try:
+                                retriever_dir.mkdir(parents=True)
+                            except Exception as e:
+                                logger.error(
+                                    f"Error in creating directory: {retriever_dir}: {e!s}"
+                                )
+                                continue
                         retrieved_info = self._retriever.run_vector_retriever(
                             query=task["Question"],
                             contents=[task['file_name']],
@@ -188,8 +194,8 @@ class GAIABenchmark(BaseBenchmark):
                             task["Question"] += "\n".join(retrieved_content)
                     else:
                         logger.info(
-                            f"Skipping task because {tmp.suffix} ",
-                            "format not supported.",
+                            f"Skipping task because {tmp.suffix} "
+                            + "format not supported.",
                         )
                         continue
 

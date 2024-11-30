@@ -25,6 +25,19 @@ logger = logging.getLogger(__name__)
 
 
 class BaseBenchmark(ABC):
+    r"""Base class for benchmarks.
+
+    Attributes:
+
+    - name: str - Name of the benchmark.
+    - data_dir: str - Path to the data directory.
+    - processes: int - Number of processes to use.
+    - save_to: str - Path to save the results.
+    - _data: Dict[str, List[Dict[str, Any]]] - Data for the benchmark.
+    - _results: List[Dict[str, Any]] - Results of the benchmark.
+    - _current_history: List[Dict[str, Any]] - Current history of the benchmark.
+    """
+
     def __init__(
         self, name: str, data_dir: str, save_to: str, processes: int = 1
     ):
