@@ -77,6 +77,7 @@ class VectorRetriever(BaseRetriever):
         embed_batch: int = 50,
         should_chunk: bool = True,
         extra_info: Optional[dict] = None,
+        metadata_filename: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from local file path, remote URL, string
@@ -96,6 +97,8 @@ class VectorRetriever(BaseRetriever):
                 otherwise skip chunking. Defaults to True.
             extra_info (Optional[dict]): Extra information to be added
                 to the payload. Defaults to None.
+            metadata_filename (Optional[str]): The metadata filename to be
+                used for storing metadata. Defaults to None.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         from unstructured.documents.elements import Element
@@ -103,18 +106,32 @@ class VectorRetriever(BaseRetriever):
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IOBase):
-            elements = self.uio.parse_bytes(file=content, **kwargs) or []
+            elements = (
+                self.uio.parse_bytes(
+                    file=content, metadata_filename=metadata_filename, **kwargs
+                )
+                or []
+            )
         elif isinstance(content, str):
             # Check if the content is URL
             parsed_url = urlparse(content)
             is_url = all([parsed_url.scheme, parsed_url.netloc])
             if is_url or os.path.exists(content):
                 elements = (
-                    self.uio.parse_file_or_url(input_path=content, **kwargs)
+                    self.uio.parse_file_or_url(
+                        input_path=content,
+                        metadata_filename=metadata_filename,
+                        **kwargs,
+                    )
                     or []
                 )
             else:
-                elements = [self.uio.create_element_from_text(text=content)]
+                elements = [
+                    self.uio.create_element_from_text(
+                        text=content,
+                        filename=metadata_filename,
+                    )
+                ]
 
         if not elements:
             warnings.warn(
@@ -156,13 +173,12 @@ class VectorRetriever(BaseRetriever):
                     chunk_metadata = {"metadata": chunk.metadata.to_dict()}
                     # Remove the 'orig_elements' key if it exists
                     chunk_metadata["metadata"].pop("orig_elements", "")
-                    extra_info = extra_info or {}
+                    chunk_metadata["extra_info"] = extra_info or {}
                     chunk_text = {"text": str(chunk)}
                     combined_dict = {
                         **content_path_info,
                         **chunk_metadata,
                         **chunk_text,
-                        **extra_info,
                     }
 
                     records.append(
@@ -233,6 +249,7 @@ class VectorRetriever(BaseRetriever):
                         'content path', ''
                     ),
                     'metadata': result.record.payload.get('metadata', {}),
+                    'extra_info': result.record.payload.get('extra_info', {}),
                     'text': result.record.payload.get('text', ''),
                 }
                 formatted_results.append(result_dict)
