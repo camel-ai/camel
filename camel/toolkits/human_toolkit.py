@@ -18,6 +18,18 @@ from typing import List
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 
+# Add a new logging level called NOTICE, which is the same as WARNING
+# Used for logging questions, and it will be shown in the console
+NOTICE_LEVEL = 30  # same as WARNING
+logging.addLevelName(NOTICE_LEVEL, "NOTICE")
+
+
+def notice(self, message, *args, **kwargs):
+    if self.isEnabledFor(NOTICE_LEVEL):
+        self._log(NOTICE_LEVEL, message, args, **kwargs)
+
+
+logging.Logger.notice = notice  # type: ignore[attr-defined]
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +48,7 @@ class HumanToolkit(BaseToolkit):
         Returns:
             str: The answer from the human.
         """
-        logger.info(f"Question: {question}")
+        logger.notice(f"Question: {question}")  # type: ignore[attr-defined]
         reply = input("Your reply: ")
         logger.info(f"User reply: {reply}")
         return reply
