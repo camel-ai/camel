@@ -178,7 +178,8 @@ class GAIABenchmark(BaseBenchmark):
                                 retriever_dir.mkdir(parents=True)
                             except Exception as e:
                                 logger.error(
-                                    f"Error in creating directory: {retriever_dir}: {e!s}"
+                                    "Error in creating directory: "
+                                    + f"{retriever_dir}: {e!s}"
                                 )
                                 continue
                         retrieved_info = self._retriever.run_vector_retriever(

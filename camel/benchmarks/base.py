@@ -35,7 +35,8 @@ class BaseBenchmark(ABC):
     - save_to: str - Path to save the results.
     - _data: Dict[str, List[Dict[str, Any]]] - Data for the benchmark.
     - _results: List[Dict[str, Any]] - Results of the benchmark.
-    - _current_history: List[Dict[str, Any]] - Current history of the benchmark.
+    - _current_history: List[Dict[str, Any]] - Current history of
+        the benchmark.
     """
 
     def __init__(
