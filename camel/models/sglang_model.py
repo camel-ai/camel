@@ -116,7 +116,7 @@ class SGLANGModel(BaseModelBackend):
             if param not in SGLANG_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into SGLNAG model backend."
+                    "input into SGLANG model backend."
                 )
 
     def run(
