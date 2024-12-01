@@ -30,6 +30,7 @@ from .slack_toolkit import SlackToolkit
 from .dalle_toolkit import DalleToolkit, DALLE_FUNCS
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
+from .meshy_toolkit import MeshyToolkit
 
 from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
@@ -56,4 +57,5 @@ __all__ = [
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',
     'DALLE_FUNCS',
+    'MeshyToolkit',
 ]

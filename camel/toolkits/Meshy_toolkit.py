@@ -19,10 +19,6 @@ import requests
 
 from camel.toolkits.base import BaseToolkit
 
-"""
-How do you store the task ids?
-"""
-
 
 class MeshyToolkit(BaseToolkit):
     r"""A class representing a toolkit for 3D model generation using Meshy.
@@ -30,7 +26,10 @@ class MeshyToolkit(BaseToolkit):
     This class provides methods that handle text/image to 3D model
     generation using Meshy.
 
-    Ref: https://docs.meshy.ai/api-text-to-3d-beta#create-a-text-to-3d-preview-task
+    Call the generate_3d_model_complete method to generate a refined 3D model.
+
+    Ref: https://docs.meshy.ai/api-text-to-3d-beta
+         #create-a-text-to-3d-preview-task
     """
 
     def __init__(self):
@@ -115,8 +114,87 @@ class MeshyToolkit(BaseToolkit):
         response.raise_for_status()
         return response.json()
 
+    def wait_for_task_completion(
+        self, task_id: str, polling_interval: int = 10, timeout: int = 3600
+    ) -> Dict[str, Any]:
+        """
+        Waits for a task to complete by polling its status.
 
-def main():
+        Args:
+            task_id (str): The ID of the task to monitor.
+            polling_interval (int): Seconds to wait between status checks.
+            timeout (int): Maximum seconds to wait before timing out.
+
+        Returns:
+            Dict[str, Any]: Final response from the API when task completes.
+
+        Raises:
+            TimeoutError: If task doesn't complete within timeout period.
+            RuntimeError: If task fails or is canceled.
+        """
+        import time
+
+        start_time = time.time()
+
+        while True:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(
+                    f"Task {task_id} timed out after {timeout} seconds"
+                )
+
+            response = self.get_task_status(task_id)
+            status = response.get("status")  # Direct access to status field
+            elapsed = int(time.time() - start_time)
+
+            print(f"Status after {elapsed}s: {status}")
+
+            if status == "SUCCEEDED":
+                return response
+            elif status in [
+                "FAILED",
+                "CANCELED",
+            ]:  # Also updating these status values
+                raise RuntimeError(f"Task {task_id} {status}")
+
+            time.sleep(polling_interval)
+
+    def generate_3d_model_complete(
+        self, prompt: str, art_style: str, negative_prompt: str
+    ) -> Dict[str, Any]:
+        """
+        Generates a complete 3D model by handling preview and refinement stages
+
+        Args:
+            prompt (str): Description of the object.
+            art_style (str): Art style for the 3D model.
+            negative_prompt (str): What the model should not look like.
+
+        Example:
+            prompt = "A figuring of Tin tin the cartoon character"
+            art_style = "realistic"
+            negative_prompt = "low quality, low resolution, low poly, ugly"
+
+        Returns:
+            Dict[str, Any]: The final refined 3D model response.
+        """
+        # Generate preview
+        preview_response = self.generate_3d_preview(
+            prompt, art_style, negative_prompt
+        )
+        preview_task_id = str(preview_response.get("result"))
+
+        # Wait for preview completion
+        self.wait_for_task_completion(preview_task_id)
+
+        # Start refinement
+        refine_response = self.refine_3d_model(preview_task_id)
+        refine_task_id = str(refine_response.get("result"))
+
+        # Wait for refinement completion and return final result
+        return self.wait_for_task_completion(refine_task_id)
+
+
+"""def main():
     # Create an instance of MeshyToolkit
     toolkit = MeshyToolkit()
 
@@ -126,30 +204,22 @@ def main():
     negative_prompt = "low quality, low resolution, low poly, ugly"
 
     try:
-        # Test generate_3d_preview
-        preview_response = toolkit.generate_3d_preview(
-            prompt, art_style, negative_prompt
+        # Test the complete pipeline with automatic waiting
+        print("Starting 3D model generation...")
+        final_response = toolkit.generate_3d_model_complete(
+            prompt=prompt,
+            art_style=art_style,
+            negative_prompt=negative_prompt
         )
-        print("3D Preview Response:", preview_response)
+        print("\nFinal Response:", final_response)
 
-        # Assuming the preview_response contains a task ID for refinement
-        preview_task_id = str(preview_response.get("result"))
-        print("Preview Task ID:", preview_task_id, type(preview_task_id))
-        if preview_task_id:
-            get_task_status = toolkit.get_task_status(preview_task_id)
-            print("Get Task Status Response:", get_task_status)
-            # Test refine_3d_model
-            refine_response = toolkit.refine_3d_model(preview_task_id)
-            print("Refine Model Response:", refine_response)
-
-            # Test get_task_status
-            status_response = toolkit.get_task_status(preview_task_id)
-            print("Task Status Response:", status_response)
-        else:
-            print("No task ID found in preview response.")
+    except TimeoutError as e:
+        print(f"Timeout error: {e}")
+    except RuntimeError as e:
+        print(f"Task error: {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An unexpected error occurred: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    main()"""
