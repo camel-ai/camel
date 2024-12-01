@@ -11,13 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import re
 
 import pytest
 
-from camel.configs import GeminiConfig
-from camel.models import GeminiModel
-from camel.types import ModelType
+from camel.configs import DeepSeekConfig
+from camel.models import DeepSeekModel, ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -25,14 +26,12 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GEMINI_1_5_FLASH,
-        ModelType.GEMINI_1_5_PRO,
-        ModelType.GEMINI_EXP_1114,
+        ModelType.DEEPSEEK_CHAT,
     ],
 )
-def test_gemini_model(model_type: ModelType):
-    model_config_dict = GeminiConfig().as_dict()
-    model = GeminiModel(model_type, model_config_dict)
+def test_deepseek_model(model_type):
+    model_config_dict = DeepSeekConfig().as_dict()
+    model = DeepSeekModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -41,17 +40,33 @@ def test_gemini_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_gemini_model_unexpected_argument():
-    model_type = ModelType.GEMINI_1_5_FLASH
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        ModelType.DEEPSEEK_CHAT,
+    ],
+)
+def test_deepseek_model_create(model_type: ModelType):
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.DEEPSEEK,
+        model_type=model_type,
+        model_config_dict=DeepSeekConfig(temperature=1.3).as_dict(),
+    )
+    assert model.model_type == model_type
+
+
+@pytest.mark.model_backend
+def test_deepseek_model_unexpected_argument():
+    model_type = ModelType.DEEPSEEK_CHAT
     model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,
+        # ruff: noqa: E501
         match=re.escape(
             (
-                "Unexpected argument `model_path` is "
-                "input into Gemini model backend."
+                "Unexpected argument `model_path` is input into DeepSeek model backend."
             )
         ),
     ):
-        _ = GeminiModel(model_type, model_config_dict)
+        _ = DeepSeekModel(model_type, model_config_dict)
