@@ -121,6 +121,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
+    QWEN_QWQ_32B = "qwen-qwq-32b-instruct"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -324,6 +325,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
+            ModelType.QWEN_QWQ_32B,
         }
 
     @property
@@ -383,6 +385,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_YI_LARGE,
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.QWEN_QWQ_32B,
         }:
             return 32_768
         elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
@@ -597,6 +600,7 @@ class ModelPlatformType(Enum):
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
     NVIDIA = "nvidia"
+    DEEPSEEK = "deepseek"
 
     @property
     def is_openai(self) -> bool:
@@ -688,6 +692,11 @@ class ModelPlatformType(Enum):
     def is_nvidia(self) -> bool:
         r"""Returns whether this platform is Nvidia."""
         return self is ModelPlatformType.NVIDIA
+
+    @property
+    def is_deepseek(self) -> bool:
+        r"""Returns whether this platform is Deepseek."""
+        return self is ModelPlatformType.DEEPSEEK
 
 
 class AudioModelType(Enum):
