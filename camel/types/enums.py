@@ -65,6 +65,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
 
     # Nvidia models
+    NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
     NVIDIA_NEMOTRON_340B = "nvidia/nemotron-4-340b-instruct"
     NVIDIA_NEMOTRON_340B_REWARD = "nvidia/nemotron-4-340b-reward"
     NVIDIA_YI_LARGE = "01-ai/yi-large"
@@ -233,6 +234,7 @@ class ModelType(UnifiedModelType, Enum):
     def is_nvidia(self) -> bool:
         r"""Returns whether this type of models is a NVIDIA model."""
         return self in {
+            ModelType.NEMOTRON_4_REWARD,
             ModelType.NVIDIA_NEMOTRON_340B,
             ModelType.NVIDIA_NEMOTRON_340B_REWARD,
             ModelType.NVIDIA_YI_LARGE,
@@ -342,6 +344,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.COHERE_COMMAND,
             ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.NEMOTRON_4_REWARD,
             ModelType.NVIDIA_NEMOTRON_340B,
             ModelType.NVIDIA_NEMOTRON_340B_REWARD,
         }:
