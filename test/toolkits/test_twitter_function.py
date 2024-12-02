@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import textwrap
 from unittest.mock import MagicMock, patch
+import textwrap
 
 import pytest
 
@@ -43,7 +43,7 @@ def test_create_tweet(monkeypatch):
     mock_response.status_code = 201
 
     with patch(
-        "camel.toolkits.twitter_toolkit.requests.post"
+            "camel.toolkits.twitter_toolkit.requests.post"
     ) as mock_requests_post:
         mock_requests_post.return_value = mock_response
 
@@ -62,7 +62,7 @@ def test_delete_tweet(monkeypatch):
     mock_response.status_code = 200
 
     with patch(
-        "camel.toolkits.twitter_toolkit.requests.delete"
+            "camel.toolkits.twitter_toolkit.requests.delete"
     ) as mock_requests_delete:
         mock_requests_delete.return_value = mock_response
 
@@ -108,7 +108,7 @@ def test_get_user_me(monkeypatch):
     mock_response.status_code = 200
 
     with patch(
-        "camel.toolkits.twitter_toolkit.requests.get"
+            "camel.toolkits.twitter_toolkit.requests.get"
     ) as mock_requests_get:
         mock_requests_get.return_value = mock_response
         response = get_my_user_profile()
@@ -126,9 +126,12 @@ def test_get_user_me(monkeypatch):
             Account created at: March 16, 2024 at 06:31:14
             Protected: This user's Tweets are public
             Verified type: The user is not verified
-            Public metrics: The user has 10 followers, is following 20 users, has made 30 tweets, is listed in 40 lists, and has received 50 likes
+            Public metrics: The user has 10 followers, is following 20 
+            users, has made 30 tweets, is listed in 40 lists, and has 
+            received 50 likes
             Pinned tweet ID: 9876543210987654321
-            Pinned tweet information: Pinned tweet created at April 17, 2024 at 12:40:01 with text: 'A tweet content.'
+            Pinned tweet information: Pinned tweet created at April 17, 
+            2024 at 12:40:01 with text: 'A tweet content.'
             """  # noqa: E501
         )
 
@@ -172,7 +175,7 @@ def test_get_user_by_username(monkeypatch):
     mock_response.status_code = 200
 
     with patch(
-        "camel.toolkits.twitter_toolkit.requests.get"
+            "camel.toolkits.twitter_toolkit.requests.get"
     ) as mock_requests_get:
         mock_requests_get.return_value = mock_response
         response = get_user_by_username("anotherusername")
@@ -190,9 +193,12 @@ def test_get_user_by_username(monkeypatch):
             Account created at: March 16, 2024 at 06:31:14
             Protected: This user's Tweets are public
             Verified type: The user is not verified
-            Public metrics: The user has 10 followers, is following 20 users, has made 30 tweets, is listed in 40 lists, and has received 50 likes
+            Public metrics: The user has 10 followers, is following 20 
+            users, has made 30 tweets, is listed in 40 lists, and has 
+            received 50 likes
             Pinned tweet ID: 9876543210987654321
-            Pinned tweet information: Pinned tweet created at April 17, 2024 at 12:40:01 with text: 'A tweet content.'
+            Pinned tweet information: Pinned tweet created at April 17, 
+            2024 at 12:40:01 with text: 'A tweet content.'
             """  # noqa: E501
         )
 

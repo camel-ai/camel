@@ -20,11 +20,6 @@ import sys
 _logger = logging.getLogger('camel')
 
 
-class PrintLogger(logging.Logger):
-    def _log(self, level, msg, args, **kwargs):
-        if args:
-            msg = msg + ' ' + ' '.join(str(arg) for arg in args)
-        super()._log(level, msg, (), **kwargs)
 
 
 def _configure_library_logging():
@@ -37,9 +32,7 @@ def _configure_library_logging():
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             stream=sys.stdout,
         )
-
-        logging.setLoggerClass(PrintLogger)
-
+        logging.setLoggerClass(logging.Logger)
         _logger.info("Camel library logging has been configured.")
     else:
         _logger.debug("Existing logger configuration found, using that.")
