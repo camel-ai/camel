@@ -69,7 +69,8 @@ def set_log_level(level):
     Args:
         level (Union[str, int]): The logging level to set. This can be a string
             (e.g., 'INFO') or a logging level constant (e.g., logging.INFO,
-            logging.DEBUG). See https://docs.python.org/3/library/logging.html#levels
+            logging.DEBUG).
+            See https://docs.python.org/3/library/logging.html#levels
 
     Raises:
         ValueError: If the provided level is not a valid logging level.
