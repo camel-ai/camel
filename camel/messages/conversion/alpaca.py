@@ -19,12 +19,12 @@ from pydantic import BaseModel, Field, field_validator
 class AlpacaItem(BaseModel):
     r"""Represents an instruction-response item in the Alpaca format.
 
-    Handles both cases where input field is empty or populated.
+    Appropripate for both cases where input field is empty, or populated.
     Provides parsing from string format using the class method from_string().
 
-    Attributes:
+    Args:
         instruction (str): The instruction/question/prompt
-        input (str): Input context or examples (empty string if none)
+        input (str): Input context or examples (put empty string if none)
         output (str): The response/answer to the instruction
     """
 
@@ -37,15 +37,15 @@ class AlpacaItem(BaseModel):
     output: str = Field(description="The response/answer to the instruction")
 
     @field_validator('instruction', 'output')
-    def no_section_markers(cls, v: str) -> str:
-        """Ensures fields don't contain section markers like '### Response:'"""
-        if '### Response' in v or '### Instruction' in v or '### Input' in v:
+    def no_section_markers(cls, value: str) -> str:
+        r"""Ensures fields don't contain section markers like '### Response:'"""
+        if '### Response' in value or '### Instruction' in value or '### Input' in value:
             raise ValueError("Field cannot contain section markers")
         return v.strip()
 
     @classmethod
     def from_string(cls, text: str) -> "AlpacaItem":
-        """Creates an AlpacaItem from a formatted string.
+        r"""Creates an AlpacaItem from a formatted string.
 
         Args:
             text: String in either of these formats:
@@ -96,7 +96,7 @@ class AlpacaItem(BaseModel):
         )
 
     def to_string(self) -> str:
-        """Converts the AlpacaItem to its string representation.
+        r"""Converts the AlpacaItem to its string representation.
 
         Returns:
             str: Formatted string representation with sections markers
