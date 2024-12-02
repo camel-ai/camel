@@ -41,7 +41,7 @@ class AlpacaItem(BaseModel):
         r"""Ensures fields don't contain section markers like '### Response:'"""
         if '### Response' in value or '### Instruction' in value or '### Input' in value:
             raise ValueError("Field cannot contain section markers")
-        return v.strip()
+        return value.strip()
 
     @classmethod
     def from_string(cls, text: str) -> "AlpacaItem":
