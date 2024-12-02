@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
 from typing import cast
@@ -110,6 +110,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
+    QWEN_QWQ_32B = "qwq-32b-preview"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -121,6 +122,9 @@ class ModelType(UnifiedModelType, Enum):
     YI_SPARK = "yi-spark"
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
+
+    # DeepSeek models
+    DEEPSEEK_CHAT = "deepseek-chat"
 
     def __str__(self):
         return self.value
@@ -161,6 +165,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
         }
 
     @property
@@ -306,6 +311,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
+            ModelType.QWEN_QWQ_32B,
+        }
+
+    @property
+    def is_deepseek(self) -> bool:
+        return self in {
+            ModelType.DEEPSEEK_CHAT,
         }
 
     @property
@@ -359,9 +371,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE_FC,
             ModelType.QWEN_MAX,
             ModelType.QWEN_VL_MAX,
+            ModelType.QWEN_QWQ_32B,
         }:
             return 32_768
-        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+        elif self in {
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.DEEPSEEK_CHAT,
+        }:
             return 64_000
         elif self in {
             ModelType.CLAUDE_2_0,
@@ -567,6 +583,7 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    DEEPSEEK = "deepseek"
 
     @property
     def is_openai(self) -> bool:
@@ -653,6 +670,11 @@ class ModelPlatformType(Enum):
     def is_qwen(self) -> bool:
         r"""Returns whether this platform is Qwen."""
         return self is ModelPlatformType.QWEN
+
+    @property
+    def is_deepseek(self) -> bool:
+        r"""Returns whether this platform is DeepSeek."""
+        return self is ModelPlatformType.DEEPSEEK
 
 
 class AudioModelType(Enum):
