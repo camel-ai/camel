@@ -165,6 +165,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
         }
 
     @property
