@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
 import textwrap
 from unittest.mock import MagicMock, patch
 
@@ -21,19 +20,19 @@ from camel.toolkits.twitter_toolkit import (
     create_tweet,
     delete_tweet,
     get_my_user_profile,
-    get_user_by_username,
+    get_user_by_username, TwitterToolkit,
 )
 
 
-@pytest.fixture(autouse=True)
-def set_env_vars(monkeypatch):
-    monkeypatch.setenv("TWITTER_CONSUMER_KEY", "12345")
-    monkeypatch.setenv("TWITTER_CONSUMER_SECRET", "12345")
-    monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "12345")
-    monkeypatch.setenv("TWITTER_ACCESS_TOKEN_SECRET", "12345")
+@pytest.fixture
+def twitter_toolkit():
+    return TwitterToolkit()
 
 
-def test_create_tweet(monkeypatch):
+def test_create_tweet(
+    monkeypatch, twitter_toolkit, user_input, expected_output
+):
+    # Create a mock response object
     mock_response = MagicMock()
     mock_response.json.return_value = {
         'data': {

@@ -12,11 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .logger import (
-    _configure_library_logging,
-)
-
-_configure_library_logging()
+from camel.logger import disable_logging, enable_logging, set_log_level
 
 __version__ = '0.2.10'
 

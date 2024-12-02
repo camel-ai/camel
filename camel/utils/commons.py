@@ -61,7 +61,8 @@ def print_text_animated(
             (default: :obj:`0.02`)
         end (str, optional): The end character to print after each
             character of text. (default: :obj:`""`)
-        log_level (int, optional): The log level to use
+        log_level (int, optional): The log level to use.
+            See https://docs.python.org/3/library/logging.html#levels
             (default: :obj:`logging.INFO`)
     """
     if logger.isEnabledFor(log_level):
