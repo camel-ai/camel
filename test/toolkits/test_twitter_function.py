@@ -20,19 +20,18 @@ from camel.toolkits.twitter_toolkit import (
     create_tweet,
     delete_tweet,
     get_my_user_profile,
-    get_user_by_username, TwitterToolkit,
+    get_user_by_username,
 )
 
+@pytest.fixture(autouse=True)
+def set_env_vars(monkeypatch):
+    monkeypatch.setenv("TWITTER_CONSUMER_KEY", "12345")
+    monkeypatch.setenv("TWITTER_CONSUMER_SECRET", "12345")
+    monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "12345")
+    monkeypatch.setenv("TWITTER_ACCESS_TOKEN_SECRET", "12345")
 
-@pytest.fixture
-def twitter_toolkit():
-    return TwitterToolkit()
 
-
-def test_create_tweet(
-    monkeypatch, twitter_toolkit, user_input, expected_output
-):
-    # Create a mock response object
+def test_create_tweet(monkeypatch):
     mock_response = MagicMock()
     mock_response.json.return_value = {
         'data': {
