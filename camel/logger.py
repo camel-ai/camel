@@ -18,7 +18,6 @@ import sys
 
 # Create a private logger
 _logger = logging.getLogger('camel')
-_logging_disabled = False
 
 
 class PrintLogger(logging.Logger):
@@ -29,8 +28,7 @@ class PrintLogger(logging.Logger):
 
 
 def _configure_library_logging():
-    global _logging_disabled
-    if _logging_disabled:
+    if os.environ.get('CAMEL_LOGGING_DISABLED', 'False').lower() == 'true':
         return
 
     if not logging.root.handlers and not _logger.handlers:
@@ -55,8 +53,7 @@ def disable_logging():
     effectively disabling all log messages, and adds a NullHandler to
     suppress any potential warnings about no handlers being found.
     """
-    global _logging_disabled
-    _logging_disabled = True
+    os.environ['CAMEL_LOGGING_DISABLED'] = 'true'
     _logger.setLevel(logging.CRITICAL + 1)
     _logger.addHandler(logging.NullHandler())
 
@@ -70,8 +67,7 @@ def enable_logging():
     If the logging is already configured,
         this function does not change its configuration.
     """
-    global _logging_disabled
-    _logging_disabled = False
+    os.environ['CAMEL_LOGGING_DISABLED'] = 'false'
     _configure_library_logging()
 
 
