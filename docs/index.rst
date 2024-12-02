@@ -5,7 +5,7 @@
 
 Welcome to CAMEL's documentation!
 =================================
-| We design **practical** artificial general intelligence.
+| **Finding the Scaling Law of Agents: The First and the Best Multi-Agent Framework.**
 
 | **CAMEL** emerges as the earliest `LLM-based multi-agent framework <https://arxiv.org/pdf/2303.17760.pdf>`_, and is now a generic framework to build and use LLM-based agents for real-world task solving. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
@@ -68,6 +68,7 @@ Main Documentation
    cookbooks/video_analysis.ipynb
    cookbooks/agents_tracking.ipynb
    cookbooks/workforce_judge_committee.ipynb
+   cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
 
 .. toctree::
    :maxdepth: 1
