@@ -37,7 +37,7 @@ def _configure_library_logging():
 
 
 def disable_logging():
-    """
+    r"""
     Disable all logging for the Camel library.
 
     This function sets the log level to a value higher than CRITICAL,
@@ -50,7 +50,7 @@ def disable_logging():
 
 
 def enable_logging():
-    """
+    r"""
     Enable logging for the Camel library.
 
     This function re-enables logging if it was previously disabled,
@@ -63,13 +63,13 @@ def enable_logging():
 
 
 def set_log_level(level):
-    """
+    r"""
     Set the logging level for the Camel library.
 
     Args:
-        level: The logging level to set. This can be a string (e.g., 'INFO')
-               or a logging level constant (e.g., logging.INFO, logging.DEBUG).
-               See https://docs.python.org/3/library/logging.html#levels
+        level (Union[str, int]): The logging level to set. This can be a string
+            (e.g., 'INFO') or a logging level constant (e.g., logging.INFO,
+            logging.DEBUG). See https://docs.python.org/3/library/logging.html#levels
 
     Raises:
         ValueError: If the provided level is not a valid logging level.
@@ -91,7 +91,7 @@ def set_log_level(level):
 
 
 def get_logger(name):
-    """
+    r"""
     Get a logger with the specified name, prefixed with 'camel.'.
 
     Args:
