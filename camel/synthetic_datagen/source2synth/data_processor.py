@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import logging
 import random
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -23,6 +23,9 @@ from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
+from camel.synthetic_datagen.source2synth.user_data_processor_config import (
+    ProcessorConfig,
+)
 from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables
@@ -31,21 +34,6 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ProcessorConfig:
-    """Data processing configuration class"""
-
-    seed: int = 42  # Random seed
-    min_length: int = 50  # Minimum text length
-    max_length: int = 512  # Maximum text length
-    quality_threshold: float = 0.7  # Quality threshold
-    complexity_threshold: float = 0.5  # Complexity threshold
-    dataset_size: int = 1000  # Target dataset size
-    use_ai_model: bool = True  # Use AI model or not
-    model_temperature: float = 0.4  # AI model temperature
-    max_tokens: int = 4096  # Maximum tokens for AI model
 
 
 class AIModelHandler:
@@ -553,57 +541,3 @@ class DataCurator:
             return examples
 
         return random.sample(examples, self.config.dataset_size)
-
-
-def main():
-    """Example usage"""
-    # Create processor
-    config = ProcessorConfig(
-        seed=42,
-        min_length=50,
-        max_length=1000,
-        quality_threshold=0.7,
-        complexity_threshold=0.5,
-        dataset_size=1000,
-        use_ai_model=True,
-        model_temperature=0.4,
-        max_tokens=4096,
-    )
-
-    processor = UserDataProcessor(config)
-
-    # Example: Process a single text
-    text = """
-    Machine learning is a subset of artificial intelligence. It focuses on the development 
-    of computer programs that can access data and use it to learn for themselves. 
-    The process of learning begins with observations or data, such as examples, direct 
-    experience, or instruction. The main aim is to allow the computers learn automatically 
-    without human intervention or assistance and adjust actions accordingly.
-    """
-
-    result = processor.process_text(text, source="technology_article")
-
-    print(result)
-    # Process multiple texts
-    # texts = [
-    #     "Text about technology...",
-    #     "Text about environment...",
-    #     "Text about medicine..."
-    # ]
-    #
-    # results = processor.process_batch(texts, sources=["tech", "env", "med"])
-    # logger.info(f"Processing complete! Generated {len(results)} QA pairs")
-
-    # # Print example results
-    # if results:
-    #     print("\nExample QA pairs:")
-    #     for i, result in enumerate(results[:2], 1):
-    #         print(f"\nExample {i}:")
-    #         for qa in result['qa_pairs'][:2]:
-    #             print(f"Type: {qa['type']}")
-    #             print(f"Question: {qa['question']}")
-    #             print(f"Answer: {qa['answer']}\n")
-
-
-if __name__ == "__main__":
-    main()
