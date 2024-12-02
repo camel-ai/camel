@@ -20,8 +20,6 @@ import sys
 _logger = logging.getLogger('camel')
 
 
-
-
 def _configure_library_logging():
     if os.environ.get('CAMEL_LOGGING_DISABLED', 'False').lower() == 'true':
         return
