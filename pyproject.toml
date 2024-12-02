@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -75,7 +75,7 @@ openapi-spec-validator = { version = "^0.7.1", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.14", optional = true }
 firecrawl-py = { version = "^1.0.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
-slack-bolt = {version = "^1.20.1", optional = true}
+slack-bolt = { version = "^1.20.1", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
 imageio = { extras = ["pyav"], version = "^2.34.2" }
@@ -102,6 +102,8 @@ pdfplumber = { version = "^0.11.0", optional = true }
 apify_client = { version = "^1.8.1", optional = true }
 notion-client = { version = "^2.2.1", optional = true }
 stripe = { version = "^11.3.0", optional = true }
+yt-dlp = { version = "^2024.11.4", optional = true }
+ffmpeg-python = { version = "^0.2.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -213,6 +215,8 @@ tools = [
     "apify_client",
     "notion-client",
     "stripe",
+    "yt-dlp",
+    "ffmpeg-python",
 ]
 
 vector-databases = [
@@ -292,6 +296,8 @@ all = [
     "scholarly",
     "pdfplumber",
     "notion-client",
+    "yt-dlp",
+    "ffmpeg-python",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -472,5 +478,7 @@ module = [
     "tavily-python",
     "scholarly",
     "notion-client",
+    "ffmpeg",
+    "yt_dlp",
 ]
 ignore_missing_imports = true

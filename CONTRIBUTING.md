@@ -93,6 +93,76 @@ This part outlines the guidelines and best practices for conducting code reviews
 
 Code reviews are an essential part of maintaining the quality and integrity of our open source project. By following these guidelines, we can ensure that CAMEL remains robust, secure, and easy to maintain, while also fostering a collaborative and welcoming community.
 
+### Guideline for Writing Docstrings
+
+This guideline will help you write clear, concise, and structured docstrings for contributing to `CAMEL`.
+
+#### 1. Use the Triple-Quoted String with `r"""` (Raw String)
+Begin the docstring with `r"""` to indicate a raw docstring. This prevents any issues with special characters and ensures consistent formatting, especially in documentation tools like Sphinx.
+
+#### 2. Provide a Brief Class or Method Description
+- Start with a concise summary of the purpose and functionality.
+- Keep each line under `79` characters.
+- The summary should start on the first line without a linebreak.
+
+Example:
+```python
+r"""Class for managing conversations of CAMEL Chat Agents.
+"""
+```
+
+#### 3. Document Parameters in the Args Section
+- Use an `Args`: section for documenting constructor or function parameters.
+- Maintain the `79`-character limit for each line, and indent continuation lines by 4 spaces.
+- Follow this structure:
+  - Parameter Name: Match the function signature.
+  - Type: Include the type (e.g., `int`, `str`, custom types like `BaseModelBackend`).
+  - Description: Provide a brief explanation of the parameter's role.
+  - Default Value: Use (`default: :obj:<default_value>`) to indicate default values.
+
+Example:
+```markdown
+Args:
+    system_message (BaseMessage): The system message for initializing 
+        the agent's conversation context.
+    model (BaseModelBackend, optional): The model backend to use for 
+        response generation. Defaults to :obj:`OpenAIModel` with 
+        `GPT_4O_MINI`. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
+```
+
+### Principles 🛡️
+
+#### Naming Principle: Avoid Abbreviations in Naming
+
+- Abbreviations can lead to ambiguity, especially since variable names and code in CAMEL are directly used by agents.
+- Use clear, descriptive names that convey meaning without requiring additional explanation. This improves both human readability and the agent's ability to interpret the code.
+
+Examples:
+
+- Bad: msg_win_sz
+- Good: message_window_size
+
+By adhering to this principle, we ensure that CAMEL remains accessible and unambiguous for both developers and AI agents.
+
+#### Logging Principle: Use `logger` Instead of `print`
+
+Avoid using `print` for output. Use Python's `logging` module (`logger`) to ensure consistent, configurable, and professional logging.
+
+Examples:
+
+- Bad: 
+  ```python
+  print("Process started")
+  print(f"User input: {user_input}")
+  ```
+- Good: 
+  ```python
+  Args:
+  logger.info("Process started")
+  logger.debug(f"User input: {user_input}")
+  ```
+
+
 ### Board Item Create Workflow 🛠️
 At CAMEL, we manage our project through a structured workflow that ensures efficiency and clarity in our development process. Our workflow includes stages for issue creation and pull requests (PRs), sprint planning, and reviews.
 
