@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from PIL import Image
 
+from camel.logger import get_logger
 from camel.types import (
     ModelType,
     OpenAIImageType,
@@ -44,6 +45,7 @@ SQUARE_PIXELS = 512
 SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
 
+logger = get_logger(__name__)
 
 def get_model_encoding(value_for_tiktoken: str):
     r"""Get model encoding from tiktoken.
@@ -65,7 +67,7 @@ def get_model_encoding(value_for_tiktoken: str):
         ]:
             encoding = tiktoken.get_encoding("o200k_base")
         else:
-            print("Model not found. Using cl100k_base encoding.")
+            logger.info("Model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
     return encoding
 

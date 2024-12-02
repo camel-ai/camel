@@ -22,6 +22,9 @@ from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class SubprocessInterpreter(BaseInterpreter):
@@ -105,13 +108,13 @@ class SubprocessInterpreter(BaseInterpreter):
         )
         stdout, stderr = proc.communicate()
         if self.print_stdout and stdout:
-            print("======stdout======")
-            print(Fore.GREEN + stdout + Fore.RESET)
-            print("==================")
+            logger.info("======stdout======")
+            logger.info(Fore.GREEN + stdout + Fore.RESET)
+            logger.info("==================")
         if self.print_stderr and stderr:
-            print("======stderr======")
-            print(Fore.RED + stderr + Fore.RESET)
-            print("==================")
+            logger.error("======stderr======")
+            logger.error(Fore.RED + stderr + Fore.RESET)
+            logger.error("==================")
         exec_result = f"{stdout}"
         exec_result += f"(stderr: {stderr})" if stderr else ""
         return exec_result
@@ -141,8 +144,10 @@ class SubprocessInterpreter(BaseInterpreter):
 
         # Print code for security checking
         if self.require_confirm:
-            print(f"The following {code_type} code will run on your computer:")
-            print(Fore.CYAN + code + Fore.RESET)
+            logger.info(
+                f"The following {code_type} code will run on your computer:"
+            )
+            logger.info(Fore.CYAN + code + Fore.RESET)
             while True:
                 choice = input("Running code? [Y/n]:").lower()
                 if choice in ["y", "yes", "ye", ""]:

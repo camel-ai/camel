@@ -16,6 +16,9 @@ from typing import Any, List, Optional, Union
 from PIL import Image
 
 from camel.embeddings import BaseEmbedding
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
@@ -60,7 +63,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                 "interpolate_pos_encoding",
             ]
         except Exception:
-            print("Warning: not typically processor and model structure")
+            logger.warning("not typically processor and model structure")
             pass
         self.dim: Optional[int] = None
 
