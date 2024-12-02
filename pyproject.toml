@@ -35,7 +35,6 @@ colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
-docstring-parser = "^0.15"
 pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
@@ -56,11 +55,6 @@ transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
 datasets = { version = "^2", optional = true }
-torch = [
-    { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
-    # Torch 2.1.0 is used on non-arm64 macOS systems.
-    { version = "2.1.0", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
-]
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
@@ -107,7 +101,7 @@ ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
 apify_client = { version = "^1.8.1", optional = true }
 notion-client = { version = "^2.2.1", optional = true }
-
+stripe = { version = "^11.3.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -130,6 +124,8 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
+torch = "2.2.1"
+docstring-parser = "^0.16"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -216,6 +212,7 @@ tools = [
     "pdfplumber",
     "apify_client",
     "notion-client",
+    "stripe",
 ]
 
 vector-databases = [
@@ -326,6 +323,7 @@ all = [
     "apify_client",
     "fastapi",
     "uvicorn",
+    "stripe",
 ]
 
 [tool.poetry.group.dev]
@@ -340,6 +338,7 @@ pytest-cov = "^4"
 pytest-asyncio = "^0.23.0"
 gradio = "^3"
 mock = "^5"
+stripe = "^11.3.0"
 
 # types
 types-Pillow = "*"
