@@ -1,18 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from unittest.mock import Mock
-
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import KnowledgeGraphAgent
 from camel.storages.graph_storages.graph_element import Node, Relationship
 
@@ -31,10 +29,10 @@ def test_validate_node_invalid():
 
 def test_validate_relationship_valid():
     valid_relationship = Relationship(
-        Node(id='subj_id', type='subj_type', properties={}),
-        Node(id='obj_id', type='obj_type', properties={}),
-        'test_type',
-        {},
+        subj=Node(id='subj_id', type='subj_type', properties={}),
+        obj=Node(id='obj_id', type='obj_type', properties={}),
+        type='test_type',
+        properties={},
     )
     assert agent._validate_relationship(valid_relationship)
 
@@ -45,7 +43,9 @@ def test_validate_relationship_invalid():
 
 
 def test_parse_graph_elements():
-    agent.element = Mock()
+    from unstructured.documents.elements import Element
+
+    agent.element = Element()
     input_string = """
     Node(id='node_id', type='node_type')
     Relationship(subj=Node(id='subj_id', type='subj_type'), 

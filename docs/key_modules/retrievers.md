@@ -1,4 +1,7 @@
 # Retrievers
+
+For more detailed usage information, please refer to our cookbook: [RAG Cookbook](../cookbooks/agents_with_rag.ipynb)
+
 ## 1. Concept
 The Retrievers module is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
 
@@ -10,11 +13,11 @@ Vector Retriever typically refers to a method or system used in information retr
 
 Here's a brief overview of how it works:
 
-- Embedding Model: First, it uses an [embedding model](https://github.com/camel-ai/camel/wiki/Embeddings). This model turns text into a mathematical form (vectors).
+- Embedding Model: First, it uses an embedding model. This model turns text into a mathematical form (vectors).
 
-- Storing Information: The module takes large documents, breaks them down into smaller chunks, and then uses the embedding model to turn these chunks into vectors. These vectors are stored in a [vector storage](https://github.com/camel-ai/camel/wiki/Storages).
+- Storing Information: The module takes large documents, breaks them down into smaller chunks, and then uses the embedding model to turn these chunks into vectors. These vectors are stored in a vector storage.
 
-- Retrieving Information: When we ask a question or make a query, the [embedding model](https://github.com/camel-ai/camel/wiki/Embeddings) translates our question into vector and then searches in this [vector storage](https://github.com/camel-ai/camel/wiki/Storages) for the closest matching vector. The closest matches are likely the most relevant pieces of information we are looking for.
+- Retrieving Information: When we ask a question or make a query, the embedding model translates our question into vector and then searches in this vector storage for the closest matching vector. The closest matches are likely the most relevant pieces of information we are looking for.
 
 
 ### 2.2. Keyword Retriever
@@ -74,7 +77,7 @@ results = vr.query(query, vector_storage)
 print(results)
 ```
 ```markdown
->>>  [{'similarity score': '0.812884257383057', 'content path': 'https://www.camel-ai.org/', 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.camel-ai.org/', 'link_urls': ['/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', 'https://github.com/camel-ai/camel'], 'link_texts': [None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None], 'emphasized_text_contents': ['Skip to main content', 'Skip to navigation', 'CAMEL-AI', 'CAMEL-AI', 'CAMEL:\xa0 Communicative Agents for “Mind” Exploration of Large Language Model Society', 'https://github.com/camel-ai/camel'], 'emphasized_text_tags': ['span', 'span', 'span', 'span', 'span', 'span']}, 'text': 'Search this site\n\nSkip to main content\n\nSkip to navigation\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nMoreHomeResearchAgentTrustAgent AppData Explorer AppChatBotDocsGithub RepoTeamSponsors\n\nCAMEL:\xa0 Communicative Agents for “Mind” Exploration of Large Language Model Society\n\nhttps://github.com/camel-ai/camel'}]
+>>>  [{'similarity score': '0.812884257383057', 'content path': 'https://www.camel-ai.org/', 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.camel-ai.org/', 'link_urls': ['/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', 'https://github.com/camel-ai/camel'], 'link_texts': [None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None], 'emphasized_text_contents': ['Skip to main content', 'Skip to navigation', 'CAMEL-AI', 'CAMEL-AI', 'CAMEL:\xa0 Communicative Agents for "Mind" Exploration of Large Language Model Society', 'https://github.com/camel-ai/camel'], 'emphasized_text_tags': ['span', 'span', 'span', 'span', 'span', 'span']}, 'text': 'Search this site\n\nSkip to main content\n\nSkip to navigation\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nMoreHomeResearchAgentTrustAgent AppData Explorer AppChatBotDocsGithub RepoTeamSponsors\n\nCAMEL:\xa0 Communicative Agents for "Mind" Exploration of Large Language Model Society\n\nhttps://github.com/camel-ai/camel'}]
 ```
 
 ### 3.2. Using Auto Retriever
@@ -89,7 +92,7 @@ ar = AutoRetriever(vector_storage_local_path="camel/retrievers",storage_type=Sto
 
 # Run the auto vector retriever
 retrieved_info = ar.run_vector_retriever(
-    content_input_paths=[
+    contents=[
         "https://www.camel-ai.org/",  # Example remote url
     ],
     query="What is CAMEL-AI",

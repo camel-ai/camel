@@ -5,7 +5,7 @@
 
 Welcome to CAMEL's documentation!
 =================================
-| We design **practical** artificial general intelligence.
+| **Finding the Scaling Law of Agents: The First and the Best Multi-Agent Framework.**
 
 | **CAMEL** emerges as the earliest `LLM-based multi-agent framework <https://arxiv.org/pdf/2303.17760.pdf>`_, and is now a generic framework to build and use LLM-based agents for real-world task solving. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
@@ -16,6 +16,7 @@ Main Documentation
    :caption: Get Started
    :name: getting_started
 
+   get_started/installation.md
    get_started/setup.md
 
 .. toctree::
@@ -23,27 +24,51 @@ Main Documentation
    :caption: Agents
    :name: agents
 
-   agents/single_agent.md
-   agents/role_playing.md
-   agents/embodied_agents.md
-   agents/critic_agents_and_tree_search.md
+   cookbooks/create_your_first_agent.ipynb
+   cookbooks/create_your_first_agents_society.ipynb
+   cookbooks/embodied_agents.ipynb
+   cookbooks/critic_agents_and_tree_search.ipynb
 
 .. toctree::
    :maxdepth: 1
    :caption: Key Modules
    :name: key_modules
 
+   key_modules/models.md
+   key_modules/messages.md
+   key_modules/memory.md
+   key_modules/tools.md
+   key_modules/prompts.md
+   key_modules/tasks.md
    key_modules/loaders.md
    key_modules/storages.md
+   key_modules/society.md
    key_modules/embeddings.md
    key_modules/retrievers.md
+   key_modules/workforce.md
 
 .. toctree::
    :maxdepth: 1
-   :caption: Tutorial and Cookbooks
-   :name: tutorials_and_cookbooks
+   :caption: Cookbooks
+   :name: cookbooks
 
-   tutorials_and_cookbooks/agents_with_rag.md
+   cookbooks/create_your_first_agent.ipynb
+   cookbooks/create_your_first_agents_society.ipynb
+   cookbooks/agents_society.ipynb
+   cookbooks/model_speed_comparison.ipynb
+   cookbooks/agents_message.ipynb
+   cookbooks/agents_with_tools.ipynb
+   cookbooks/agents_with_tools_from_Composio.ipynb
+   cookbooks/agents_with_memory.ipynb
+   cookbooks/agents_with_rag.ipynb
+   cookbooks/agents_prompting.ipynb
+   cookbooks/task_generation.ipynb
+   cookbooks/knowledge_graph.ipynb
+   cookbooks/roleplaying_scraper.ipynb
+   cookbooks/video_analysis.ipynb
+   cookbooks/agents_tracking.ipynb
+   cookbooks/workforce_judge_committee.ipynb
+   cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
 
 .. toctree::
    :maxdepth: 1
@@ -70,4 +95,4 @@ We are always happy to work with friends to continuously move forward with our o
 
 **For Coding Enthusiasts**:  Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate each and every commit. Get started by checking out the `Contributing Guidelines <https://github.com/camel-ai/camel/wiki/Contributing-Guidlines>`_ on GitHub.
 
-**For Interested Humans**: Connect with us on `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_ or `Discord <https://discord.gg/CNcNpquyDc>`_.
+**For Interested Humans**: Connect with us on `Discord <https://discord.camel-ai.org>`_, `WeChat <https://ghli.org/camel/wechat.png>`_, or `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_.

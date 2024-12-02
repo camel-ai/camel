@@ -1,26 +1,24 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-
-from anthropic import NOT_GIVEN, NotGiven
+from typing import List, Union
 
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
-@dataclass(frozen=True)
 class AnthropicConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     Anthropic API.
@@ -56,18 +54,16 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`5`)
         metadata: An object describing metadata about the request.
         stream (bool, optional): Whether to incrementally stream the response
-          using server-sent events.
-            (default: :obj:`False`)
-
+            using server-sent events. (default: :obj:`False`)
     """
 
     max_tokens: int = 256
-    stop_sequences: list[str] | NotGiven = NOT_GIVEN
+    stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1
-    top_p: float | NotGiven = NOT_GIVEN
-    top_k: int | NotGiven = NOT_GIVEN
+    top_p: Union[float, NotGiven] = NOT_GIVEN
+    top_k: Union[int, NotGiven] = NOT_GIVEN
     metadata: NotGiven = NOT_GIVEN
     stream: bool = False
 
 
-ANTHROPIC_API_PARAMS = {param for param in asdict(AnthropicConfig()).keys()}
+ANTHROPIC_API_PARAMS = {param for param in AnthropicConfig.model_fields.keys()}

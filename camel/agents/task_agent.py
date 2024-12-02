@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
@@ -20,7 +20,19 @@ from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.types import RoleType, TaskType
 from camel.utils import get_task_list
 
+# AgentOps decorator setting
+try:
+    import os
 
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
+@track_agent(name="TaskSpecifyAgent")
 class TaskSpecifyAgent(ChatAgent):
     r"""An agent that specifies a given task prompt by prompting the user to
     provide more details.
@@ -32,7 +44,7 @@ class TaskSpecifyAgent(ChatAgent):
     Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
         task_specify_prompt (Union[str, TextPrompt], optional): The prompt for
@@ -115,6 +127,7 @@ class TaskSpecifyAgent(ChatAgent):
         return TextPrompt(specified_task_msg.content)
 
 
+@track_agent(name="TaskPlannerAgent")
 class TaskPlannerAgent(ChatAgent):
     r"""An agent that helps divide a task into subtasks based on the input
     task prompt.
@@ -126,7 +139,7 @@ class TaskPlannerAgent(ChatAgent):
     Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
     """
@@ -184,6 +197,7 @@ class TaskPlannerAgent(ChatAgent):
         return TextPrompt(sub_tasks_msg.content)
 
 
+@track_agent(name="TaskCreationAgent")
 class TaskCreationAgent(ChatAgent):
     r"""An agent that helps create new tasks based on the objective
     and last completed task. Compared to :obj:`TaskPlannerAgent`,
@@ -201,7 +215,7 @@ class TaskCreationAgent(ChatAgent):
             perform the task.
         model (BaseModelBackend, optional): The LLM backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -233,7 +247,7 @@ The result must be a numbered list in the format:
     #. Third Task
 
 You can only give me up to {max_task_num} tasks at a time. \
-Each task shoud be concise, concrete and doable for a {role_name}.
+Each task should be concise, concrete and doable for a {role_name}.
 You should make task plan and not ask me questions.
 If you think no new tasks are needed right now, write "No tasks to add."
 Now start to give me new tasks one by one. No more than three tasks.
@@ -298,6 +312,7 @@ Be concrete.
         return get_task_list(sub_tasks_msg.content)
 
 
+@track_agent(name="TaskPrioritizationAgent")
 class TaskPrioritizationAgent(ChatAgent):
     r"""An agent that helps re-prioritize the task list and
     returns numbered prioritized list. Modified from
@@ -312,7 +327,7 @@ class TaskPrioritizationAgent(ChatAgent):
             perform the task.
         model (BaseModelBackend, optional): The LLM backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous

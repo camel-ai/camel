@@ -1,22 +1,20 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Optional, Union
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from typing import TYPE_CHECKING, Optional, Union
 
-try:
+if TYPE_CHECKING:
     from unstructured.documents.elements import Element
-except ImportError:
-    Element = None
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
@@ -28,6 +26,18 @@ from camel.storages.graph_storages.graph_element import (
     Relationship,
 )
 from camel.types import RoleType
+
+# AgentOps decorator setting
+try:
+    import os
+
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
 
 text_prompt = """
 You are tasked with extracting nodes and relationships from given content and 
@@ -97,6 +107,7 @@ into Node and Relationship objects.
 """
 
 
+@track_agent(name="KnowledgeGraphAgent")
 class KnowledgeGraphAgent(ChatAgent):
     r"""An agent that can extract node and relationship information for
     different entities from given `Element` content.
@@ -115,14 +126,14 @@ class KnowledgeGraphAgent(ChatAgent):
         Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         """
         system_message = BaseMessage(
             role_name="Graphify",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="Your mission is to transform unstructured content "
-            "intostructured graph data. Extract nodes and relationships with "
+            "into structured graph data. Extract nodes and relationships with "
             "precision, and let the connections unfold. Your graphs will "
             "illuminate the hidden connections within the chaos of "
             "information.",
@@ -131,13 +142,13 @@ class KnowledgeGraphAgent(ChatAgent):
 
     def run(
         self,
-        element: Union[str, Element],
+        element: "Element",
         parse_graph_elements: bool = False,
     ) -> Union[str, GraphElement]:
         r"""Run the agent to extract node and relationship information.
 
         Args:
-            element (Union[str, Element]): The input element or string.
+            element (Element): The input element.
             parse_graph_elements (bool, optional): Whether to parse into
                 `GraphElement`. Defaults to `False`.
 
@@ -224,7 +235,7 @@ class KnowledgeGraphAgent(ChatAgent):
             id, type = match.groups()
             properties = {'source': 'agent_created'}
             if id not in nodes:
-                node = Node(id, type, properties)
+                node = Node(id=id, type=type, properties=properties)
                 if self._validate_node(node):
                     nodes[id] = node
 
@@ -235,8 +246,14 @@ class KnowledgeGraphAgent(ChatAgent):
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
-                relationship = Relationship(subj, obj, rel_type, properties)
+                relationship = Relationship(
+                    subj=subj, obj=obj, type=rel_type, properties=properties
+                )
                 if self._validate_relationship(relationship):
                     relationships.append(relationship)
 
-        return GraphElement(list(nodes.values()), relationships, self.element)
+        return GraphElement(
+            nodes=list(nodes.values()),
+            relationships=relationships,
+            source=self.element,
+        )

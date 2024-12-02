@@ -1,29 +1,40 @@
 name: Build and deploy camel documents
+
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
   workflow_dispatch:
+
 permissions:
-    contents: write
+  contents: write
+
 jobs:
   docs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python environment and install dependencies
-      uses: ./.github/actions/camel_install
-      with:
-        python-version: "3.9"
-    - name: Sphinx build
-      run: |
-        cd docs
-        poetry run make html
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master'}}
-      with:
-        publish_branch: gh-pages
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/_build/html/
-        force_orphan: true
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python environment and install dependencies
+        uses: ./.github/actions/camel_install
+        with:
+          python-version: "3.10"
+
+      - name: Install Pandoc
+        run: sudo apt-get install -y pandoc
+
+      - name: Sphinx build
+        run: |
+          cd docs
+          poetry run make html
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        with:
+          publish_branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html/
+          force_orphan: true
+          cname: docs.camel-ai.org

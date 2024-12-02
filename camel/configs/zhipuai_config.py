@@ -1,30 +1,24 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Optional, Sequence
-
-from openai._types import NOT_GIVEN, NotGiven
+from typing import Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
-
-if TYPE_CHECKING:
-    from camel.toolkits import OpenAIFunction
+from camel.types import NOT_GIVEN, NotGiven
 
 
-@dataclass(frozen=True)
 class ZhipuAIConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility
@@ -50,7 +44,7 @@ class ZhipuAIConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-        tools (list[OpenAIFunction], optional): A list of tools the model may
+        tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.
@@ -69,10 +63,9 @@ class ZhipuAIConfig(BaseConfig):
     temperature: float = 0.2
     top_p: float = 0.6
     stream: bool = False
-    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
-    max_tokens: int | NotGiven = NOT_GIVEN
-    tools: Optional[list[OpenAIFunction]] = None
-    tool_choice: Optional[dict[str, str] | str] = None
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    tool_choice: Optional[Union[dict[str, str], str]] = None
 
 
-ZHIPUAI_API_PARAMS = {param for param in asdict(ZhipuAIConfig()).keys()}
+ZHIPUAI_API_PARAMS = {param for param in ZhipuAIConfig.model_fields.keys()}

@@ -1,31 +1,34 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
 from camel.agents import ChatAgent, CriticAgent
-from camel.configs import ChatGPTConfig
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.toolkits import MATH_FUNCS
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.toolkits import MathToolkit
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().__dict__,
 )
 
 
@@ -69,9 +72,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(user_agent, ChatAgent)
     if model is None:
         assert (
-            assistant_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
+            assistant_agent.model_backend.model_type == ModelType.GPT_4O_MINI
         )
-        assert user_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
+        assert user_agent.model_backend.model_type == ModelType.GPT_4O_MINI
     else:
         assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
         assert user_agent.model_backend.model_type == ModelType.GPT_4O
@@ -86,9 +89,7 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert (
-                    critic.model_backend.model_type == ModelType.GPT_3_5_TURBO
-                )
+                assert critic.model_backend.model_type == ModelType.GPT_4O_MINI
             else:
                 assert critic.model_backend.model_type == ModelType.GPT_4O
 
@@ -139,12 +140,10 @@ def test_role_playing_step(
 
 @pytest.mark.model_backend
 def test_role_playing_with_function():
-    tools = [*MATH_FUNCS]
-    assistant_model_config = ChatGPTConfig(tools=tools)
+    tools = MathToolkit().get_tools()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=assistant_model_config.__dict__,
+        model_type=ModelType.GPT_4O_MINI,
     )
 
     role_playing = RolePlaying(
@@ -186,9 +185,9 @@ def test_role_playing_role_sequence(model=None):
     user_role_sequence = []
 
     input_msg = role_playing.init_chat()
-    assistant_response, user_response = role_playing.step(input_msg)
+    assistant_response, _ = role_playing.step(input_msg)
     input_msg = assistant_response.msg
-    assistant_response, user_response = role_playing.step(input_msg)
+    assistant_response, _ = role_playing.step(input_msg)
 
     for record in role_playing.user_agent.memory.get_context()[0]:
         user_role_sequence.append(record["role"])

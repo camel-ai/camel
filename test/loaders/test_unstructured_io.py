@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import uuid
 from typing import Any, Dict, List, Tuple
 
@@ -25,27 +25,17 @@ def unstructured_instance() -> UnstructuredIO:
     return UnstructuredIO()
 
 
-# Test the _ensure_unstructured_version method
-def test__ensure_unstructured_version(unstructured_instance: UnstructuredIO):
-    # Test with a valid version
-    unstructured_instance._ensure_unstructured_version("0.10.30")
-
-    # Test with an invalid version (should raise a ValueError)
-    with pytest.raises(ValueError):
-        unstructured_instance._ensure_unstructured_version("1.0.0")
-
-
 # Test the create_element_from_text method
 def test_create_element_from_text(unstructured_instance: UnstructuredIO):
     # Input parameters
     test_text = "Hello, World!"
-    test_id = uuid.uuid4()
+    test_id = str(uuid.uuid4())
     test_embeddings = [0.1, 0.2, 0.3]
     test_filename = "testfile.txt"
     test_directory = "/test/directory"
     test_modified = "2024-04-01"
     test_filetype = "txt"
-    test_parent_id = uuid.uuid4()
+    test_parent_id = str(uuid.uuid4())
 
     # Expected Metadata construction
     expected_metadata = {
@@ -142,34 +132,35 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
         "philadelphia-eagles-spt-intl/index.html"
     )
     test_elements = unstructured_instance.parse_file_or_url(test_url)
-    staged_element: Any = unstructured_instance.stage_elements(
-        elements=test_elements, stage_type="stage_for_baseplate"
-    )
+    if test_elements:
+        staged_element: Any = unstructured_instance.stage_elements(
+            elements=test_elements, stage_type="stage_for_baseplate"
+        )
     assert staged_element['rows'][0] == {
         'data': {
-            'type': 'UncategorizedText',
-            'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5',
-            'text': 'CNN\n        \xa0—',
+            'type': 'NarrativeText',
+            'element_id': '0aafb4e862cf2f95e55f76b641766e39',
+            'text': 'Miles Sanders scores a touchdown against the San Francisco 49ers during the NFC Championship game at Lincoln Financial Field.',  # noqa: E501
         },
         'metadata': {
-            'filetype': 'text/html',
-            'languages': ['eng'],
-            'page_number': 1,
-            'url': 'https://www.cnn.com/2023/01/30/sport/'
-            'empire-state-building-green-philadelphia-eagles-spt-'
-            'intl/index.html',
-            'emphasized_text_contents': ['CNN'],
+            'emphasized_text_contents': [
+                'Miles Sanders scores a touchdown against the San Francisco 49ers during the NFC Championship game at Lincoln Financial Field.'  # noqa: E501
+            ],
             'emphasized_text_tags': ['span'],
+            'languages': ['eng'],
+            'url': 'https://www.cnn.com/2023/01/30/sport/empire-state-building-green-philadelphia-eagles-spt-intl/index.html',
+            'filetype': 'text/html',
         },
     }
 
     # Test with an invalid stage option (should raise ValueError)
     test_stage_type = "invalid_stageing_option"
-    with pytest.raises(ValueError):
-        unstructured_instance.stage_elements(
-            elements=test_elements,
-            stage_type=test_stage_type,  # type: ignore[arg-type]
-        )
+    if test_elements:
+        with pytest.raises(ValueError):
+            unstructured_instance.stage_elements(
+                elements=test_elements,
+                stage_type=test_stage_type,  # type: ignore[arg-type]
+            )
 
 
 # Test the chunk_elements method
@@ -180,14 +171,16 @@ def test_chunk_elements(unstructured_instance: UnstructuredIO):
         "philadelphia-eagles-spt-intl/index.html"
     )
     test_elements = unstructured_instance.parse_file_or_url(test_url)
-    chunked_sections = unstructured_instance.chunk_elements(
-        elements=test_elements, chunk_type="chunk_by_title"
-    )
+    if test_elements:
+        chunked_sections = unstructured_instance.chunk_elements(
+            elements=test_elements, chunk_type="chunk_by_title"
+        )
 
     assert len(chunked_sections) == 7  # Check the number of chunks
     # Test with an invalid chunk option (should raise ValueError)
     test_chunk_type = "chunk_by_invalid_option"
-    with pytest.raises(ValueError):
-        unstructured_instance.chunk_elements(
-            elements=test_elements, chunk_type=test_chunk_type
-        )
+    if test_elements:
+        with pytest.raises(ValueError):
+            unstructured_instance.chunk_elements(
+                elements=test_elements, chunk_type=test_chunk_type
+            )

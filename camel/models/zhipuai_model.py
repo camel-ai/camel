@@ -1,26 +1,30 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import ZHIPUAI_API_PARAMS
+from camel.configs import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -29,41 +33,48 @@ from camel.utils import (
 
 
 class ZhipuAIModel(BaseModelBackend):
-    r"""ZhipuAI API in a unified BaseModelBackend interface."""
+    r"""ZhipuAI API in a unified BaseModelBackend interface.
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of GLM_* series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`ZhipuAIConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the ZhipuAI service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the ZhipuAI service.
+            (default: :obj:`https://open.bigmodel.cn/api/paas/v4/`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter(
+            ModelType.GPT_4O_MINI)` will be used.
+            (default: :obj:`None`)
+    """
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for ZhipuAI backend.
-
-        Args:
-            model_type (ModelType): Model for which a backend is created,
-                such as GLM_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                ZhipuAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the ZhipuAI service. (default:
-                :obj:`None`)
-        """
-        super().__init__(model_type, model_config_dict)
-        self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
-        if not self._url or not self._api_key:
-            raise ValueError(
-                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
-            )
+        if model_config_dict is None:
+            model_config_dict = ZhipuAIConfig().as_dict()
+        api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
+        url = url or os.environ.get(
+            "ZHIPUAI_API_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/"
+        )
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     @api_keys_required("ZHIPUAI_API_KEY")
     def run(
@@ -85,7 +96,7 @@ class ZhipuAIModel(BaseModelBackend):
         # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
         return response
@@ -100,8 +111,7 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            # It's a temporary setting for token counter.
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):

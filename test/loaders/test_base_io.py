@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from io import BytesIO
 from pathlib import Path
 
@@ -23,7 +23,6 @@ from camel.loaders.base_io import (
     JsonFile,
     PdfFile,
     TxtFile,
-    read_file,
     strip_consecutive_newlines,
 )
 
@@ -33,7 +32,7 @@ class FakeFile(File):
     """A fake file for testing purposes"""
 
     @classmethod
-    def from_bytes(cls, file: BytesIO) -> "FakeFile":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "FakeFile":
         return NotImplemented
 
 
@@ -47,24 +46,26 @@ SAMPLE_ROOT = RESOURCE_ROOT / "data_samples"
 
 # Test functions for each file type
 def test_docx_file():
-    with open(SAMPLE_ROOT / "test_hello.docx", "rb") as f:
+    filename = "test_hello.docx"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test.docx"
-        docx_file = DocxFile.from_bytes(file)
+        docx_file = DocxFile.from_bytes(file, filename)
 
-    assert docx_file.name == "test.docx"
+    assert docx_file.name == filename
+    assert isinstance(docx_file, DocxFile)
     assert len(docx_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
     assert docx_file.docs[0]["page_content"] == "Hello World"
 
 
 def test_docx_file_with_multiple_pages():
-    with open(SAMPLE_ROOT / "test_hello_multi.docx", "rb") as f:
+    filename = "test_hello_multi.docx"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test.docx"
-        docx_file = DocxFile.from_bytes(file)
+        docx_file = DocxFile.from_bytes(file, filename)
 
-    assert docx_file.name == "test.docx"
+    assert docx_file.name == filename
+    assert isinstance(docx_file, DocxFile)
     assert len(docx_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
     assert (
@@ -74,24 +75,26 @@ def test_docx_file_with_multiple_pages():
 
 
 def test_pdf_file_with_single_page():
-    with open(SAMPLE_ROOT / "test_hello.pdf", "rb") as f:
+    filename = "test_hello.pdf"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test_hello.pdf"
-        pdf_file = PdfFile.from_bytes(file)
+        pdf_file = PdfFile.from_bytes(file, filename)
 
-    assert pdf_file.name == "test_hello.pdf"
+    assert pdf_file.name == filename
+    assert isinstance(pdf_file, PdfFile)
     assert len(pdf_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
     assert pdf_file.docs[0]["page_content"] == "Hello World"
 
 
 def test_pdf_file_with_multiple_pages():
-    with open(SAMPLE_ROOT / "test_hello_multi.pdf", "rb") as f:
+    filename = "test_hello_multi.pdf"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test_hello_multiple.pdf"
-        pdf_file = PdfFile.from_bytes(file)
+        pdf_file = PdfFile.from_bytes(file, filename)
 
-    assert pdf_file.name == "test_hello_multiple.pdf"
+    assert pdf_file.name == filename
+    assert isinstance(pdf_file, PdfFile)
     assert len(pdf_file.docs) == 3
     assert pdf_file.docs[0]["page_content"] == "Hello World 1"
     assert pdf_file.docs[1]["page_content"] == "Hello World 2"
@@ -99,36 +102,39 @@ def test_pdf_file_with_multiple_pages():
 
 
 def test_txt_file():
-    with open(SAMPLE_ROOT / "test_hello.txt", "rb") as f:
+    filename = "test_hello.txt"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test.txt"
-        txt_file = TxtFile.from_bytes(file)
+        txt_file = TxtFile.from_bytes(file, filename)
 
-    assert txt_file.name == "test.txt"
+    assert txt_file.name == filename
+    assert isinstance(txt_file, TxtFile)
     assert len(txt_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
     assert txt_file.docs[0]["page_content"] == "Hello World"
 
 
 def test_json_file():
-    with open(SAMPLE_ROOT / "test_hello.json", "rb") as f:
+    filename = "test_hello.json"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test.json"
-        json_file = JsonFile.from_bytes(file)
+        json_file = JsonFile.from_bytes(file, filename)
 
-    assert json_file.name == "test.json"
+    assert json_file.name == filename
+    assert isinstance(json_file, JsonFile)
     assert len(json_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
     assert json_file.docs[0]["page_content"] == '{"message": "Hello World"}'
 
 
 def test_html_file():
-    with open(SAMPLE_ROOT / "test_hello.html", "rb") as f:
+    filename = "test_hello.html"
+    with open(SAMPLE_ROOT / filename, "rb") as f:
         file = BytesIO(f.read())
-        file.name = "test.html"
-        html_file = HtmlFile.from_bytes(file)
+        html_file = HtmlFile.from_bytes(file, filename)
 
-    assert html_file.name == "test.html"
+    assert html_file.name == filename
+    assert isinstance(html_file, HtmlFile)
     assert len(html_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
     assert html_file.docs[0]["page_content"] == "Hello World"
@@ -136,20 +142,20 @@ def test_html_file():
 
 # Test the `read_file` function with each file type
 def test_read_file():
-    for ext, FileClass in [
-        (".docx", DocxFile),
-        (".pdf", PdfFile),
-        (".txt", TxtFile),
-        (".json", JsonFile),
-        (".html", HtmlFile),
+    for ext, file_class in [
+        ("docx", DocxFile),
+        ("pdf", PdfFile),
+        ("txt", TxtFile),
+        ("json", JsonFile),
+        ("html", HtmlFile),
     ]:
-        with open(SAMPLE_ROOT / f"test_hello{ext}", "rb") as f:
+        filename = f"test_hello.{ext}"
+        with open(SAMPLE_ROOT / filename, "rb") as f:
             file = BytesIO(f.read())
-            file.name = f"test_hello{ext}"
-            file_obj = read_file(file)
+            file_obj = File.create_file(file, filename)
 
-        assert isinstance(file_obj, FileClass)
-        assert file_obj.name == f"test_hello{ext}"
+        assert isinstance(file_obj, file_class)
+        assert file_obj.name == filename
         assert len(file_obj.docs) == 1
         # Access 'page_content' from the dictionary in the docs list
         assert (
@@ -161,9 +167,9 @@ def test_read_file():
 # Test that read_file raises a NotImplementedError for unsupported file types
 def test_read_file_not_implemented():
     file = BytesIO(b"Hello World")
-    file.name = "test.unknown"
+    filename = "test.unknown"
     with pytest.raises(NotImplementedError):
-        read_file(file)
+        File.create_file(file, filename)
 
 
 # Test the File.copy() method
@@ -180,7 +186,7 @@ def test_file_copy():
 
     # Check that the copy has the same attributes as the original
     assert file.name == file_copy.name
-    assert file.id == file_copy.id
+    assert file.file_id == file_copy.file_id
 
     # Check that the mutable attributes were deeply copied
     assert file.metadata == file_copy.metadata

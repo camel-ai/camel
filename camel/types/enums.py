@@ -1,18 +1,21 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from enum import Enum, EnumMeta
+from typing import cast
+
+from camel.types.unified_model_type import UnifiedModelType
 
 
 class RoleType(Enum):
@@ -23,28 +26,34 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
-class ModelType(Enum):
+class ModelType(UnifiedModelType, Enum):
+    DEFAULT = os.getenv("DEFAULT_MODEL_TYPE", "gpt-4o-mini")
+
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
-    GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GPT_4O_MINI = "gpt-4o-mini"
+    O1_PREVIEW = "o1-preview"
+    O1_MINI = "o1-mini"
+
     GLM_4 = "glm-4"
-    GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
+    GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
+    GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
+    GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_8B = "llama3-8b-8192"
+    GROQ_LLAMA_3_70B = "llama3-70b-8192"
+    GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
+    GROQ_GEMMA_7B_IT = "gemma-7b-it"
+    GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
+
     STUB = "stub"
 
-    LLAMA_2 = "llama-2"
-    LLAMA_3 = "llama-3"
-    VICUNA = "vicuna"
-    VICUNA_16K = "vicuna-16k"
-
-    QWEN_2 = "qwen-2"
-
     # Legacy anthropic models
-    # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
+    # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
     CLAUDE_2_1 = "claude-2.1"
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
@@ -61,14 +70,77 @@ class ModelType(Enum):
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
+    GEMINI_EXP_1114 = "gemini-exp-1114"
+
+    # Mistral AI models
+    MISTRAL_3B = "ministral-3b-latest"
+    MISTRAL_7B = "open-mistral-7b"
+    MISTRAL_8B = "ministral-8b-latest"
+    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+    MISTRAL_LARGE = "mistral-large-latest"
+    MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
+    MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
+    MISTRAL_NEMO = "open-mistral-nemo"
+    MISTRAL_PIXTRAL_12B = "pixtral-12b-2409"
+
+    # Reka models
+    REKA_CORE = "reka-core"
+    REKA_FLASH = "reka-flash"
+    REKA_EDGE = "reka-edge"
+
+    # Cohere models
+    COHERE_COMMAND_R_PLUS = "command-r-plus"
+    COHERE_COMMAND_R = "command-r"
+    COHERE_COMMAND_LIGHT = "command-light"
+    COHERE_COMMAND = "command"
+    COHERE_COMMAND_NIGHTLY = "command-nightly"
+
+    # Qwen models (Aliyun)
+    QWEN_MAX = "qwen-max"
+    QWEN_PLUS = "qwen-plus"
+    QWEN_TURBO = "qwen-turbo"
+    QWEN_LONG = "qwen-long"
+    QWEN_VL_MAX = "qwen-vl-max"
+    QWEN_VL_PLUS = "qwen-vl-plus"
+    QWEN_MATH_PLUS = "qwen-math-plus"
+    QWEN_MATH_TURBO = "qwen-math-turbo"
+    QWEN_CODER_TURBO = "qwen-coder-turbo"
+    QWEN_2_5_CODER_32B = "qwen2.5-coder-32b-instruct"
+    QWEN_2_5_72B = "qwen2.5-72b-instruct"
+    QWEN_2_5_32B = "qwen2.5-32b-instruct"
+    QWEN_2_5_14B = "qwen2.5-14b-instruct"
+    QWEN_QWQ_32B = "qwq-32b-preview"
+
+    # Yi models (01-ai)
+    YI_LIGHTNING = "yi-lightning"
+    YI_LARGE = "yi-large"
+    YI_MEDIUM = "yi-medium"
+    YI_LARGE_TURBO = "yi-large-turbo"
+    YI_VISION = "yi-vision"
+    YI_MEDIUM_200K = "yi-medium-200k"
+    YI_SPARK = "yi-spark"
+    YI_LARGE_RAG = "yi-large-rag"
+    YI_LARGE_FC = "yi-large-fc"
+
+    # DeepSeek models
+    DEEPSEEK_CHAT = "deepseek-chat"
+
+    def __str__(self):
+        return self.value
+
+    def __new__(cls, value) -> "ModelType":
+        return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @property
     def value_for_tiktoken(self) -> str:
-        return (
-            self.value
-            if self is not ModelType.STUB and not isinstance(self, str)
-            else "gpt-3.5-turbo"
-        )
+        if self.is_openai:
+            return self.value
+        return "gpt-4o-mini"
+
+    @property
+    def support_native_tool_calling(self) -> bool:
+        return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
     def is_openai(self) -> bool:
@@ -76,7 +148,21 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
+        }
+
+    @property
+    def is_azure_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model
+        from Azure.
+        """
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_4,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
         }
@@ -88,18 +174,6 @@ class ModelType(Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.GLM_4V,
-        }
-
-    @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source."""
-        return self in {
-            ModelType.LLAMA_2,
-            ModelType.LLAMA_3,
-            ModelType.QWEN_2,
-            ModelType.GLM_4_OPEN_SOURCE,
-            ModelType.VICUNA,
-            ModelType.VICUNA_16K,
         }
 
     @property
@@ -120,6 +194,36 @@ class ModelType(Enum):
         }
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this type of models is served by Groq."""
+        return self in {
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is served by Mistral."""
+        return self in {
+            ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_NEMO,
+            ModelType.MISTRAL_CODESTRAL,
+            ModelType.MISTRAL_7B,
+            ModelType.MISTRAL_MIXTRAL_8x7B,
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.MISTRAL_CODESTRAL_MAMBA,
+            ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
+        }
+
+    @property
     def is_nvidia(self) -> bool:
         r"""Returns whether this type of models is Nvidia-released model.
 
@@ -132,105 +236,215 @@ class ModelType(Enum):
 
     @property
     def is_gemini(self) -> bool:
-        return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+        r"""Returns whether this type of models is Gemini model.
+
+        Returns:
+            bool: Whether this type of models is gemini.
+        """
+        return self in {
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_EXP_1114,
+        }
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this type of models is Reka model.
+
+        Returns:
+            bool: Whether this type of models is Reka.
+        """
+        return self in {
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
+        }
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this type of models is a Cohere model.
+
+        Returns:
+            bool: Whether this type of models is Cohere.
+        """
+        return self in {
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }
+
+    @property
+    def is_yi(self) -> bool:
+        r"""Returns whether this type of models is Yi model.
+
+        Returns:
+            bool: Whether this type of models is Yi.
+        """
+        return self in {
+            ModelType.YI_LIGHTNING,
+            ModelType.YI_LARGE,
+            ModelType.YI_MEDIUM,
+            ModelType.YI_LARGE_TURBO,
+            ModelType.YI_VISION,
+            ModelType.YI_MEDIUM_200K,
+            ModelType.YI_SPARK,
+            ModelType.YI_LARGE_RAG,
+            ModelType.YI_LARGE_FC,
+        }
+
+    @property
+    def is_qwen(self) -> bool:
+        return self in {
+            ModelType.QWEN_MAX,
+            ModelType.QWEN_PLUS,
+            ModelType.QWEN_TURBO,
+            ModelType.QWEN_LONG,
+            ModelType.QWEN_VL_MAX,
+            ModelType.QWEN_VL_PLUS,
+            ModelType.QWEN_MATH_PLUS,
+            ModelType.QWEN_MATH_TURBO,
+            ModelType.QWEN_CODER_TURBO,
+            ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_72B,
+            ModelType.QWEN_2_5_32B,
+            ModelType.QWEN_2_5_14B,
+            ModelType.QWEN_QWQ_32B,
+        }
+
+    @property
+    def is_deepseek(self) -> bool:
+        return self in {
+            ModelType.DEEPSEEK_CHAT,
+        }
 
     @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
+
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GPT_3_5_TURBO:
-            return 16385
-        elif self is ModelType.GPT_4:
-            return 8192
-        elif self is ModelType.GPT_4_32K:
-            return 32768
-        elif self is ModelType.GPT_4_TURBO:
-            return 128000
-        elif self is ModelType.GPT_4O:
-            return 128000
-        elif self == ModelType.GEMINI_1_5_FLASH:
-            return 1048576
-        elif self == ModelType.GEMINI_1_5_PRO:
-            return 1048576
-        elif self == ModelType.GLM_4_OPEN_SOURCE:
-            return 8192
-        elif self == ModelType.GLM_3_TURBO:
-            return 8192
-        elif self == ModelType.GLM_4V:
+        if self is ModelType.GLM_4V:
             return 1024
-        elif self is ModelType.STUB:
-            return 4096
-        elif self is ModelType.LLAMA_2:
-            return 4096
-        elif self is ModelType.LLAMA_3:
-            return 8192
-        elif self is ModelType.QWEN_2:
-            return 128000
-        elif self is ModelType.GLM_4:
-            return 8192
-        elif self is ModelType.VICUNA:
-            # reference: https://lmsys.org/blog/2023-03-30-vicuna/
-            return 2048
-        elif self is ModelType.VICUNA_16K:
-            return 16384
-        elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+        elif self in {
+            ModelType.NEMOTRON_4_REWARD,
+            ModelType.STUB,
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
+            ModelType.QWEN_MATH_PLUS,
+            ModelType.QWEN_MATH_TURBO,
+            ModelType.COHERE_COMMAND,
+            ModelType.COHERE_COMMAND_LIGHT,
+        }:
+            return 4_096
+        elif self in {
+            ModelType.GPT_4,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
+            ModelType.QWEN_VL_PLUS,
+        }:
+            return 8_192
+        elif self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.YI_LIGHTNING,
+            ModelType.YI_MEDIUM,
+            ModelType.YI_LARGE_TURBO,
+            ModelType.YI_VISION,
+            ModelType.YI_SPARK,
+            ModelType.YI_LARGE_RAG,
+        }:
+            return 16_384
+        elif self in {
+            ModelType.MISTRAL_CODESTRAL,
+            ModelType.MISTRAL_7B,
+            ModelType.MISTRAL_MIXTRAL_8x7B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.YI_LARGE,
+            ModelType.YI_LARGE_FC,
+            ModelType.QWEN_MAX,
+            ModelType.QWEN_VL_MAX,
+            ModelType.QWEN_QWQ_32B,
+        }:
+            return 32_768
+        elif self in {
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.DEEPSEEK_CHAT,
+        }:
+            return 64_000
+        elif self in {
+            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_INSTANT_1_2,
+        }:
             return 100_000
+        elif self in {
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+            ModelType.GPT_4_TURBO,
+            ModelType.O1_PREVIEW,
+            ModelType.O1_MINI,
+            ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_NEMO,
+            ModelType.MISTRAL_PIXTRAL_12B,
+            ModelType.MISTRAL_8B,
+            ModelType.MISTRAL_3B,
+            ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_72B,
+            ModelType.QWEN_2_5_32B,
+            ModelType.QWEN_2_5_14B,
+            ModelType.COHERE_COMMAND_R,
+            ModelType.COHERE_COMMAND_R_PLUS,
+            ModelType.COHERE_COMMAND_NIGHTLY,
+        }:
+            return 128_000
+        elif self in {
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.QWEN_PLUS,
+            ModelType.QWEN_TURBO,
+            ModelType.QWEN_CODER_TURBO,
+        }:
+            return 131_072
         elif self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
-        elif self is ModelType.NEMOTRON_4_REWARD:
-            return 4096
+        elif self in {
+            ModelType.MISTRAL_CODESTRAL_MAMBA,
+        }:
+            return 256_000
+        elif self in {
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO,
+            ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
+        }:
+            return 1_048_576
+        elif self in {
+            ModelType.QWEN_LONG,
+        }:
+            return 10_000_000
         else:
             raise ValueError("Unknown model type")
-
-    def validate_model_name(self, model_name: str) -> bool:
-        r"""Checks whether the model type and the model name matches.
-
-        Args:
-            model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
-        Returns:
-            bool: Whether the model type mathches the model name.
-        """
-        if self is ModelType.VICUNA:
-            pattern = r'^vicuna-\d+b-v\d+\.\d+$'
-            return bool(re.match(pattern, model_name))
-        elif self is ModelType.VICUNA_16K:
-            pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
-            return bool(re.match(pattern, model_name))
-        elif self is ModelType.LLAMA_2:
-            return (
-                self.value in model_name.lower()
-                or "llama2" in model_name.lower()
-            )
-        elif self is ModelType.LLAMA_3:
-            return (
-                self.value in model_name.lower()
-                or "llama3" in model_name.lower()
-            )
-        elif self is ModelType.QWEN_2:
-            return (
-                self.value in model_name.lower()
-                or "qwen2" in model_name.lower()
-            )
-        elif self is ModelType.GLM_4_OPEN_SOURCE:
-            return (
-                'glm-4' in model_name.lower() or "glm4" in model_name.lower()
-            )
-        else:
-            return self.value in model_name.lower()
 
 
 class EmbeddingModelType(Enum):
     TEXT_EMBEDDING_ADA_2 = "text-embedding-ada-002"
     TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
     TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
+
+    MISTRAL_EMBED = "mistral-embed"
 
     @property
     def is_openai(self) -> bool:
@@ -242,6 +456,15 @@ class EmbeddingModelType(Enum):
         }
 
     @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is an Mistral-released
+        model.
+        """
+        return self in {
+            EmbeddingModelType.MISTRAL_EMBED,
+        }
+
+    @property
     def output_dim(self) -> int:
         if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
@@ -249,6 +472,8 @@ class EmbeddingModelType(Enum):
             return 1536
         elif self is EmbeddingModelType.TEXT_EMBEDDING_3_LARGE:
             return 3072
+        elif self is EmbeddingModelType.MISTRAL_EMBED:
+            return 1024
         else:
             raise ValueError(f"Unknown model type {self}.")
 
@@ -263,6 +488,8 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
+    IMAGE_CRAFT = "image_craft"
+    MULTI_CONDITION_IMAGE_CRAFT = "multi_condition_image_craft"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"
 
@@ -285,6 +512,7 @@ class OpenAIBackendRole(Enum):
     SYSTEM = "system"
     USER = "user"
     FUNCTION = "function"
+    TOOL = "tool"
 
 
 class TerminationMode(Enum):
@@ -335,15 +563,26 @@ class OpenAPIName(Enum):
 
 
 class ModelPlatformType(Enum):
+    DEFAULT = os.getenv("DEFAULT_MODEL_PLATFORM_TYPE", "openai")
+
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
-    OPENSOURCE = "opensource"
+    GROQ = "groq"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
-    DEFAULT = "default"
     GEMINI = "gemini"
+    VLLM = "vllm"
+    MISTRAL = "mistral"
+    REKA = "reka"
+    TOGETHER = "together"
+    OPENAI_COMPATIBLE_MODEL = "openai-compatible-model"
+    SAMBA = "samba-nova"
+    COHERE = "cohere"
+    YI = "lingyiwanwu"
+    QWEN = "tongyi-qianwen"
+    DEEPSEEK = "deepseek"
 
     @property
     def is_openai(self) -> bool:
@@ -361,9 +600,24 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ANTHROPIC
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this platform is groq."""
+        return self is ModelPlatformType.GROQ
+
+    @property
     def is_ollama(self) -> bool:
         r"""Returns whether this platform is ollama."""
         return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_vllm(self) -> bool:
+        r"""Returns whether this platform is vllm."""
+        return self is ModelPlatformType.VLLM
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this platform is together."""
+        return self is ModelPlatformType.TOGETHER
 
     @property
     def is_litellm(self) -> bool:
@@ -376,14 +630,50 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ZHIPU
 
     @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this platform is opensource."""
-        return self is ModelPlatformType.OPENSOURCE
+    def is_mistral(self) -> bool:
+        r"""Returns whether this platform is mistral."""
+        return self is ModelPlatformType.MISTRAL
+
+    @property
+    def is_openai_compatible_model(self) -> bool:
+        r"""Returns whether this is a platform supporting openai
+        compatibility"""
+        return self is ModelPlatformType.OPENAI_COMPATIBLE_MODEL
 
     @property
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this platform is Reka."""
+        return self is ModelPlatformType.REKA
+
+    @property
+    def is_samba(self) -> bool:
+        r"""Returns whether this platform is Samba Nova."""
+        return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_cohere(self) -> bool:
+        r"""Returns whether this platform is Cohere."""
+        return self is ModelPlatformType.COHERE
+
+    @property
+    def is_yi(self) -> bool:
+        r"""Returns whether this platform is Yi."""
+        return self is ModelPlatformType.YI
+
+    @property
+    def is_qwen(self) -> bool:
+        r"""Returns whether this platform is Qwen."""
+        return self is ModelPlatformType.QWEN
+
+    @property
+    def is_deepseek(self) -> bool:
+        r"""Returns whether this platform is DeepSeek."""
+        return self is ModelPlatformType.DEEPSEEK
 
 
 class AudioModelType(Enum):

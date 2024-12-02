@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from __future__ import annotations
 
@@ -20,13 +20,22 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from anthropic import Anthropic
 from PIL import Image
 
 from camel.logger import get_logger
-from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
+from camel.types import (
+    ModelType,
+    OpenAIImageType,
+    OpenAIVisionDetailType,
+    UnifiedModelType,
+)
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
+    from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
+        ChatCompletionRequest,
+    )
+
     from camel.messages import OpenAIMessage
 
 LOW_DETAIL_TOKENS = 85
@@ -154,8 +163,14 @@ def get_model_encoding(value_for_tiktoken: str):
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
-        logger.info("Model not found. Using cl100k_base encoding.")
-        encoding = tiktoken.get_encoding("cl100k_base")
+        if value_for_tiktoken in [
+            ModelType.O1_MINI.value,
+            ModelType.O1_PREVIEW.value,
+        ]:
+            encoding = tiktoken.get_encoding("o200k_base")
+        else:
+            logger.info("Model not found. Using cl100k_base encoding.")
+            encoding = tiktoken.get_encoding("cl100k_base")
     return encoding
 
 
@@ -176,64 +191,13 @@ class BaseTokenCounter(ABC):
         pass
 
 
-class OpenSourceTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType, model_path: str):
-        r"""Constructor for the token counter for open-source models.
-
-        Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
-            model_path (str): The path to the model files, where the tokenizer
-                model should be located.
-        """
-
-        # Use a fast Rust-based tokenizer if it is supported for a given model.
-        # If a fast tokenizer is not available for a given model,
-        # a normal Python-based tokenizer is returned instead.
-        from transformers import AutoTokenizer
-
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=True,
-            )
-        except TypeError:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=False,
-            )
-        except Exception:
-            raise ValueError(
-                f"Invalid `model_path` ({model_path}) is provided. "
-                "Tokenizer loading failed."
-            )
-
-        self.tokenizer = tokenizer
-        self.model_type = model_type
-
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count number of tokens in the provided message list using
-        loaded tokenizer specific for this type of model.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: Number of tokens in the messages.
-        """
-        prompt = messages_to_prompt(messages, self.model_type)
-        input_ids = self.tokenizer(prompt).input_ids
-
-        return len(input_ids)
-
-
 class OpenAITokenCounter(BaseTokenCounter):
-    def __init__(self, model: ModelType):
+    def __init__(self, model: UnifiedModelType):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model (ModelType): Model type for which tokens will be counted.
+            model (UnifiedModelType): Model type for which tokens will be
+                counted.
         """
         self.model: str = model.value_for_tiktoken
 
@@ -247,6 +211,9 @@ class OpenAITokenCounter(BaseTokenCounter):
             self.tokens_per_name = -1
         elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
             self.tokens_per_message = 3
+            self.tokens_per_name = 1
+        elif "o1" in self.model:
+            self.tokens_per_message = 2
             self.tokens_per_name = 1
         else:
             # flake8: noqa :E501
@@ -304,7 +271,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                                 base64.b64decode(encoded_image)
                             )
                             image = Image.open(image_bytes)
-                            num_tokens += count_tokens_from_image(
+                            num_tokens += self._count_tokens_from_image(
                                 image, OpenAIVisionDetailType(detail)
                             )
                 if key == "name":
@@ -314,17 +281,52 @@ class OpenAITokenCounter(BaseTokenCounter):
         num_tokens += 3
         return num_tokens
 
-
-class AnthropicTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Anthropic models.
+    def _count_tokens_from_image(
+        self, image: Image.Image, detail: OpenAIVisionDetailType
+    ) -> int:
+        r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
+        resolution model will be treated as :obj:`"high"`. All images with
+        :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
+        are first scaled to fit within a 2048 x 2048 square, maintaining their
+        aspect ratio. Then, they are scaled such that the shortest side of the
+        image is 768px long. Finally, we count how many 512px squares the image
+        consists of. Each of those squares costs 170 tokens. Another 85 tokens are
+        always added to the final total. For more details please refer to `OpenAI
+        vision docs <https://platform.openai.com/docs/guides/vision>`_
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
-        """
+            image (PIL.Image.Image): Image to count number of tokens.
+            detail (OpenAIVisionDetailType): Image detail type to count
+                number of tokens.
 
-        self.model_type = model_type
+        Returns:
+            int: Number of tokens for the image given a detail type.
+        """
+        if detail == OpenAIVisionDetailType.LOW:
+            return LOW_DETAIL_TOKENS
+
+        width, height = image.size
+        if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
+            scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
+            width = int(width / scaling_factor)
+            height = int(height / scaling_factor)
+
+        scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
+        scaled_width = int(width / scaling_factor)
+        scaled_height = int(height / scaling_factor)
+
+        h = ceil(scaled_height / SQUARE_PIXELS)
+        w = ceil(scaled_width / SQUARE_PIXELS)
+        total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
+        return total
+
+
+class AnthropicTokenCounter(BaseTokenCounter):
+    @dependencies_required('anthropic')
+    def __init__(self):
+        r"""Constructor for the token counter for Anthropic models."""
+        from anthropic import Anthropic
+
         self.client = Anthropic()
         self.tokenizer = self.client.get_tokenizer()
 
@@ -347,12 +349,16 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Gemini models."""
+    def __init__(self, model_type: UnifiedModelType):
+        r"""Constructor for the token counter for Gemini models.
+
+        Args:
+            model_type (UnifiedModelType): Model type for which tokens will be
+                counted.
+        """
         import google.generativeai as genai
 
-        self.model_type = model_type
-        self._client = genai.GenerativeModel(self.model_type.value)
+        self._client = genai.GenerativeModel(model_type)
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -380,12 +386,13 @@ class GeminiTokenCounter(BaseTokenCounter):
         return self._client.count_tokens(converted_messages).total_tokens
 
 
-class LiteLLMTokenCounter:
-    def __init__(self, model_type: str):
+class LiteLLMTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: UnifiedModelType):
         r"""Constructor for the token counter for LiteLLM models.
 
         Args:
-            model_type (str): Model type for which tokens will be counted.
+            model_type (UnifiedModelType): Model type for which tokens will be
+                counted.
         """
         self.model_type = model_type
         self._token_counter = None
@@ -432,41 +439,73 @@ class LiteLLMTokenCounter:
         return self.completion_cost(completion_response=response)
 
 
-def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIVisionDetailType
-) -> int:
-    r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
-    resolution model will be treated as :obj:`"high"`. All images with
-    :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
-    are first scaled to fit within a 2048 x 2048 square, maintaining their
-    aspect ratio. Then, they are scaled such that the shortest side of the
-    image is 768px long. Finally, we count how many 512px squares the image
-    consists of. Each of those squares costs 170 tokens. Another 85 tokens are
-    always added to the final total. For more details please refer to `OpenAI
-    vision docs <https://platform.openai.com/docs/guides/vision>`_
+class MistralTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Mistral models.
 
-    Args:
-        image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIVisionDetailType): Image detail type to count
-            number of tokens.
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+        """
+        from mistral_common.tokens.tokenizers.mistral import (  # type:ignore[import-not-found]
+            MistralTokenizer,
+        )
 
-    Returns:
-        int: Number of tokens for the image given a detail type.
-    """
-    if detail == OpenAIVisionDetailType.LOW:
-        return LOW_DETAIL_TOKENS
+        self.model_type = model_type
 
-    width, height = image.size
-    if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
-        scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
-        width = int(width / scaling_factor)
-        height = int(height / scaling_factor)
+        # Determine the model type and set the tokenizer accordingly
+        model_name = (
+            "codestral-22b"
+            if self.model_type
+            in {
+                ModelType.MISTRAL_CODESTRAL,
+                ModelType.MISTRAL_CODESTRAL_MAMBA,
+            }
+            else self.model_type.value
+        )
 
-    scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
-    scaled_width = int(width / scaling_factor)
-    scaled_height = int(height / scaling_factor)
+        self.tokenizer = MistralTokenizer.from_model(model_name)
 
-    h = ceil(scaled_height / SQUARE_PIXELS)
-    w = ceil(scaled_width / SQUARE_PIXELS)
-    total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
-    return total
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Total number of tokens in the messages.
+        """
+        total_tokens = 0
+        for msg in messages:
+            tokens = self.tokenizer.encode_chat_completion(
+                self._convert_response_from_openai_to_mistral(msg)
+            ).tokens
+            total_tokens += len(tokens)
+        return total_tokens
+
+    def _convert_response_from_openai_to_mistral(
+        self, openai_msg: OpenAIMessage
+    ) -> ChatCompletionRequest:
+        r"""Convert an OpenAI message to a Mistral ChatCompletionRequest.
+
+        Args:
+            openai_msg (OpenAIMessage): An individual message with OpenAI
+                format.
+
+        Returns:
+            ChatCompletionRequest: The converted message in Mistral's request
+                format.
+        """
+
+        from mistral_common.protocol.instruct.request import (
+            ChatCompletionRequest,  # type:ignore[import-not-found]
+        )
+
+        mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
+            model=self.model_type.value,
+            messages=[openai_msg],
+        )
+
+        return mistral_request

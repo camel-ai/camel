@@ -1,25 +1,22 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
-from camel.memories.records import (
-    ContextRecord,
-    MemoryRecord,
-)
+from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages import BaseKeyValueStorage, BaseVectorStorage
 from camel.types import OpenAIBackendRole
 
@@ -109,7 +106,18 @@ class VectorDBMemory(AgentMemory):
 
 class LongtermAgentMemory(AgentMemory):
     r"""An implementation of the :obj:`AgentMemory` abstract base class for
-    augumenting ChatHistoryMemory with VectorDBMemory.
+    augmenting ChatHistoryMemory with VectorDBMemory.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        chat_history_block (Optional[ChatHistoryBlock], optional): A chat
+            history block. If `None`, a :obj:`ChatHistoryBlock` will be used.
+            (default: :obj:`None`)
+        vector_db_block (Optional[VectorDBBlock], optional): A vector database
+            block. If `None`, a :obj:`VectorDBBlock` will be used.
+            (default: :obj:`None`)
+        retrieve_limit (int, optional): The maximum number of messages
+            to be added into the context.  (default: :obj:`3`)
     """
 
     def __init__(
@@ -126,9 +134,21 @@ class LongtermAgentMemory(AgentMemory):
         self._current_topic: str = ""
 
     def get_context_creator(self) -> BaseContextCreator:
+        r"""Returns the context creator used by the memory.
+
+        Returns:
+            BaseContextCreator: The context creator used by the memory.
+        """
         return self._context_creator
 
     def retrieve(self) -> List[ContextRecord]:
+        r"""Retrieves context records from both the chat history and the vector
+        database.
+
+        Returns:
+            List[ContextRecord]: A list of context records retrieved from both
+                the chat history and the vector database.
+        """
         chat_history = self.chat_history_block.retrieve()
         vector_db_retrieve = self.vector_db_block.retrieve(
             self._current_topic, self.retrieve_limit

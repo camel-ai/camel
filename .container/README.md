@@ -9,7 +9,7 @@ develop on it, with Docker.
 - Docker：https://docs.docker.com/engine/install/
 - Docker Compose：https://docs.docker.com/compose/install/
 
-## Cnfigure Environment
+## Configure Environment
 Before starting the container, you need to navigate into the
 [.container](../.container) folder and create a `.env` file **with your own 
 API 
@@ -33,8 +33,8 @@ dependencies for CAMEL. It may take some time, please be patient.
 docker compose up -d
 ```
 
-After the build is completed, you can see the image `camel:latest` in the list
-of images, along with a started container, `camel`.
+After the build is completed, you can see the image `camel:localdev` in the 
+list of images, along with a started container, `camel-localdev`.
 
 ```bash
 # check the list of images
@@ -66,12 +66,10 @@ If you see the agents interacting with each other, this means you are all set.
 Have fun with CAMEL in Docker!
 
 ## Save Your Progress
-We don't support volume mounting in the Docker container currently (you are 
-welcomed to do this though), which means that **if you delete the 
-container, all the local changes you made will be LOST**. To save your
-progress, committing and pushing your changes to a remote repository is a 
-must before deleting the container, and this is also recommended each time 
-before you exit the container.
+We support volume mounting in the started container, which means that all 
+of your changes in the CAMEL directory inside the container will be synced 
+into the CAMEL repo on your host system. Therefore, you don't need to worry
+about losing your progress when you exit the container.
 
 ## Exit, Stop and Delete the Container
 You can simply press `Ctrl + D` or use the `exit` command to exit the
@@ -85,5 +83,44 @@ stop and delete the container with the following command.
 docker compose down
 ```
 
-As mentioned in the previous section, all the local changes you made will be
-lost after deleting the container. So remember to save your progress!
+## Online Images
+For users who only want to have a quick tryout on CAMEL, we also provide the 
+pre-built images on
+[our GitHub Container Registry](https://github.com/camel-ai/camel/pkgs/container/camel).
+Considering the size of the image, we only offer the image with the basic 
+dependencies.
+
+Note that there are some key differences between the local development 
+image and the pre-built image that you should be aware of.
+1. The pre-built image is built upon the source code of each release of CAMEL. 
+   This means that they are not suitable for development, as they don't 
+   contain the git support. If you want to develop on CAMEL, please build 
+   the image by yourself according to the instructions above.
+2. The pre-built image only contains the basic dependencies for running the 
+   examples. If you want to run the examples that require additional 
+   dependencies, you need to install them according to the 
+   installation guide in CAMEL's [README](../README.md).
+3. The pre-built image doesn't contain the API keys. You need to set up the 
+   API keys by yourself in the container environment.
+4. The pre-built image does not support volume mounting. This means that all 
+   of your changes in the container will be lost when you delete the container.
+
+To quickly start a container with the pre-built image, you can use the
+following command.
+
+```bash
+docker run -it -d --name camel ghcr.io/camel-ai/camel:latest
+```
+
+Attach to the container with the following command.
+
+```bash
+docker exec -it camel bash
+```
+
+After setting the environment, you can run the example with the following
+command.
+
+```bash
+python examples/ai_society/role_playing.py
+```

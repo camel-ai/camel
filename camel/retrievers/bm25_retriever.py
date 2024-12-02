@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List
 
 import numpy as np
@@ -74,13 +74,16 @@ class BM25Retriever(BaseRetriever):
         elements = self.unstructured_modules.parse_file_or_url(
             content_input_path, **kwargs
         )
-        self.chunks = self.unstructured_modules.chunk_elements(
-            chunk_type=chunk_type, elements=elements
-        )
+        if elements:
+            self.chunks = self.unstructured_modules.chunk_elements(
+                chunk_type=chunk_type, elements=elements
+            )
 
-        # Convert chunks to a list of strings for tokenization
-        tokenized_corpus = [str(chunk).split(" ") for chunk in self.chunks]
-        self.bm25 = BM25Okapi(tokenized_corpus)
+            # Convert chunks to a list of strings for tokenization
+            tokenized_corpus = [str(chunk).split(" ") for chunk in self.chunks]
+            self.bm25 = BM25Okapi(tokenized_corpus)
+        else:
+            self.bm25 = None
 
     def query(
         self,

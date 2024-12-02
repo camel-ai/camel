@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 Gradio-based web app Agents that uses OpenAI API to generate
 a chat between collaborative agents.
@@ -19,11 +19,11 @@ a chat between collaborative agents.
 import argparse
 import os
 import re
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gradio as gr
 import openai
+from pydantic import BaseModel, ConfigDict
 
 from apps.agents.text_utils import split_markdown_code
 from camel.agents import TaskSpecifyAgent
@@ -42,8 +42,12 @@ ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 logger = get_logger(__name__)
 
 
-@dataclass
-class State:
+class State(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
+
     session: Optional[RolePlaying]
     max_messages: int
     chat: ChatBotHistory
@@ -51,7 +55,12 @@ class State:
 
     @classmethod
     def empty(cls) -> 'State':
-        return cls(None, 0, [], None)
+        return cls(
+            session=None,
+            max_messages=0,
+            chat=[],
+            saved_assistant_msg=None,
+        )
 
     @staticmethod
     def construct_inplace(
@@ -61,10 +70,17 @@ class State:
         chat: ChatBotHistory,
         saved_assistant_msg: Optional[BaseMessage],
     ) -> None:
-        state.session = session
-        state.max_messages = max_messages
-        state.chat = chat
-        state.saved_assistant_msg = saved_assistant_msg
+        validated_data = State(
+            session=session,
+            max_messages=max_messages,
+            chat=chat,
+            saved_assistant_msg=saved_assistant_msg,
+        )
+
+        state.session = validated_data.session
+        state.max_messages = validated_data.max_messages
+        state.chat = validated_data.chat
+        state.saved_assistant_msg = validated_data.saved_assistant_msg
 
 
 def parse_arguments():
@@ -126,7 +142,7 @@ def load_roles(path: str) -> List[str]:
     return roles
 
 
-def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory, Dict]:
+def cleanup_on_launch(state: State) -> Tuple[State, ChatBotHistory, Dict]:
     """Prepare the UI for a new session.
 
     Args:
@@ -147,7 +163,7 @@ def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory, Dict]:
 
 
 def role_playing_start(
-    state,
+    state: State,
     society_name: str,
     assistant: str,
     user: str,
@@ -258,7 +274,7 @@ def role_playing_start(
 
 
 def role_playing_chat_init(
-    state,
+    state: State,
 ) -> Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
     """Initialize role playing.
 
@@ -296,7 +312,9 @@ def role_playing_chat_init(
 
 
 # WORKAROUND: do not add type hints for session and chatbot_history
-def role_playing_chat_cont(state) -> Tuple[State, ChatBotHistory, Dict, Dict]:
+def role_playing_chat_cont(
+    state: State,
+) -> Tuple[State, ChatBotHistory, Dict, Dict]:
     """Produce a pair of messages by an assistant and a user.
         To be run multiple times.
 
@@ -359,7 +377,7 @@ def role_playing_chat_cont(state) -> Tuple[State, ChatBotHistory, Dict, Dict]:
     return state, state.chat, progress_update, start_bn_update
 
 
-def stop_session(state) -> Tuple[State, Dict, Dict]:
+def stop_session(state: State) -> Tuple[State, Dict, Dict]:
     """Finish the session and leave chat contents as an artefact.
 
     Args:
@@ -466,7 +484,7 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
                 "(https://github.com/lightaime/camel)"
                 '<div style="display:flex; justify-content:center;">'
                 '<img src="https://raw.githubusercontent.com/camel-ai/camel/'
-                'master/misc/primary_logo.png" alt="Logo" style='
+                'master/misc/logo_light.png" alt="Logo" style='
                 '"max-width:50%;"> </div>'
             )
     with gr.Row():
