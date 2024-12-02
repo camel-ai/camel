@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class AlpacaItem(BaseModel):
-    """Represents an instruction-response item in the Alpaca format.
+    r"""Represents an instruction-response item in the Alpaca format.
 
     Handles both cases where input field is empty or populated.
     Provides parsing from string format using the class method from_string().
