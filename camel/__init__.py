@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-__version__ = '0.2.10'
+__version__ = '0.2.11'
 
 __all__ = [
     '__version__',
