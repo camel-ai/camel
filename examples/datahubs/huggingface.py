@@ -1,4 +1,4 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,13 +10,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.datahubs.clients.huggingface import HuggingFaceDatasetManager
 from camel.datahubs.models import Record
 
-HUGGINGFACE_TOKEN = "your_huggingface_token"
-
-manager = HuggingFaceDatasetManager(token=HUGGINGFACE_TOKEN)
+manager = HuggingFaceDatasetManager()
 
 USERNAME = "username"
 REPO_ID = f"{USERNAME}/test-dataset-example"
@@ -39,12 +37,27 @@ print("Creating dataset...")
 dataset_url = manager.create_dataset(name=REPO_ID)
 print(f"Dataset created: {dataset_url}")
 
-# 2. add records to the dataset
+# 2. create a dataset card
+print("Creating dataset card...")
+manager.create_dataset_card(
+    dataset_name=REPO_ID,
+    description="Test dataset",
+    license="mit",
+    language=["en"],
+    size_category="<1MB",
+    version="0.1.0",
+    tags=["test", "example"],
+    task_categories=["other"],
+    authors=["camel-ai"],
+)
+print("Dataset card created successfully.")
+
+# 3. add records to the dataset
 print("Adding records to the dataset...")
 manager.add_records(dataset_name=REPO_ID, records=records)
 print("Records added successfully.")
 
-# 3. list all records
+# 4. list all records
 print("Listing all records...")
 all_records = manager.list_records(dataset_name=REPO_ID)
 print("Records in the dataset:")
@@ -54,7 +67,7 @@ for record in all_records:
         f"Output: {record.content['output']}"
     )
 
-# 4. update a record
+# 5. update a record
 new_records = [
     Record(
         id="record-3",
@@ -66,7 +79,7 @@ print("Updating records...")
 manager.update_records(dataset_name=REPO_ID, records=new_records)
 print("Records updated successfully.")
 
-# 5. list updated records
+# 6. list updated records
 print("Listing updated records...")
 updated_records = manager.list_records(dataset_name=REPO_ID)
 print("Updated records in the dataset:")
@@ -76,12 +89,12 @@ for record in updated_records:
         f"Output: {record.content['output']}"
     )
 
-# 6. delete a record
+# 7. delete a record
 print("Deleting record with ID 'record-1'...")
 manager.delete_record(dataset_name=REPO_ID, record_id="record-1")
 print("Record deleted successfully.")
 
-# 7. list records after deletion
+# 8. list records after deletion
 print("Listing records after deletion...")
 final_records = manager.list_records(dataset_name=REPO_ID)
 print("Final records in the dataset:")
@@ -91,14 +104,14 @@ for record in final_records:
         f"Output: {record.content['output']}"
     )
 
-# 8. list all datasets
+# 9. list all datasets
 print("Listing all datasets...")
 datasets = manager.list_datasets(USERNAME)
 print("Datasets:")
 for dataset in datasets:
     print(f"- {dataset}")
 
-# 9. delete a dataset
+# 10. delete a dataset
 print(f"Deleting dataset: {REPO_ID}...")
 manager.delete_dataset(dataset_name=REPO_ID)
 print("Dataset deleted successfully.")

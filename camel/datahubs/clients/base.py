@@ -1,4 +1,4 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,9 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, List
 
 from camel.datahubs.models import Record
 
@@ -21,34 +21,42 @@ class DatasetManager(ABC):
     r"""Abstract base class for dataset managers."""
 
     @abstractmethod
-    def create_dataset(self, name: str) -> str:
+    def create_dataset(self, name: str, **kwargs: Any) -> str:
         r"""Creates a new dataset.
 
         Args:
-            name: The name of the dataset.
-        """
-        pass
-
-    # New methods for dataset CRUD operations
-    @abstractmethod
-    def list_datasets(self, username: str, limit: int = 100) -> List[str]:
-        r"""Lists all datasets.
-
-        Args:
-            username: The username of the user whose datasets to list.
-            limit: The maximum number of datasets to return.
+            name (str): The name of the dataset.
+            kwargs (Any): Additional keyword arguments.
 
         Returns:
-            List of dataset names.
+            str: The URL of the created dataset.
         """
         pass
 
     @abstractmethod
-    def delete_dataset(self, dataset_name: str) -> None:
+    def list_datasets(
+        self, username: str, limit: int = 100, **kwargs: Any
+    ) -> List[str]:
+        r"""Lists all datasets for the current user.
+
+        Args:
+            username (str): The username of the user whose datasets to list.
+            limit (int): The maximum number of datasets to list. defaults to
+                100.
+            kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            List[str]: A list of dataset ids.
+        """
+        pass
+
+    @abstractmethod
+    def delete_dataset(self, dataset_name: str, **kwargs: Any) -> None:
         r"""Deletes a dataset.
 
         Args:
-            dataset_name: The name of the dataset to delete.
+            dataset_name (str): The name of the dataset to delete.
+            kwargs (Any): Additional keyword arguments.
         """
         pass
 
@@ -57,14 +65,16 @@ class DatasetManager(ABC):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> None:
         r"""Adds records to a dataset.
 
         Args:
-            dataset_name: The name of the dataset.
-            records: A list of records to add to the dataset.
-            filepath: The path to the file containing the records.
+            dataset_name (str): The name of the dataset.
+            records (List[Record]): A list of records to add to the dataset.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
         """
         pass
 
@@ -73,14 +83,16 @@ class DatasetManager(ABC):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> None:
         r"""Updates records in a dataset.
 
         Args:
-            dataset_name: The name of the dataset.
-            records: A list of records to update in the dataset.
-            filepath: The path to the file containing the records.
+            dataset_name (str): The name of the dataset.
+            records (List[Record]): A list of records to update in the dataset.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
         """
         pass
 
@@ -88,13 +100,15 @@ class DatasetManager(ABC):
     def list_records(
         self,
         dataset_name: str,
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> List[Record]:
         r"""Lists records in a dataset.
 
         Args:
-            dataset_name: The name of the dataset.
-            filepath: The path to the file containing the records.
+            dataset_name (str): The name of the dataset.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
         """
         pass
 
@@ -104,13 +118,15 @@ class DatasetManager(ABC):
         self,
         dataset_name: str,
         record_id: str,
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> None:
         r"""Deletes a record from the dataset.
 
         Args:
-            dataset_name: The name of the dataset.
-            record_id: The ID of the record to delete.
-            filepath: The path to the file containing the records.
+            dataset_name (str): The name of the dataset.
+            record_id (str): The ID of the record to delete.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
         """
         pass

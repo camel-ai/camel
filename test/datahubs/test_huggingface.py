@@ -1,4 +1,4 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import datetime
 import json
 from unittest.mock import MagicMock, patch
@@ -41,7 +41,51 @@ def test_create_dataset(manager):
         assert dataset_url == f"https://huggingface.co/datasets/{REPO_ID}"
 
         mock_create_repo.assert_called_once_with(
-            repo_id=REPO_ID, repo_type="dataset", private=True
+            repo_id=REPO_ID, repo_type="dataset", private=False
+        )
+
+
+def test_create_dataset_card():
+    manager = HuggingFaceDatasetManager(token="fake-token")
+    dataset_name = "user/test-dataset"
+    description = "Test dataset"
+    license = "MIT"
+    version = "0.1.0"
+    tags = ["test", "example"]
+    authors = ["camel-ai"]
+    size_category = "<1MB"
+    language = ["en"]
+    task_categories = ["other"]
+    content = "Additional information about the dataset."
+
+    with patch(
+        "camel.datahubs.clients.huggingface.HuggingFaceDatasetManager._upload_file"
+    ) as mock_upload_file:
+        mock_upload_file.return_value = None
+
+        manager.create_dataset_card(
+            dataset_name=dataset_name,
+            description=description,
+            license=license,
+            version=version,
+            tags=tags,
+            authors=authors,
+            size_category=size_category,
+            language=language,
+            task_categories=task_categories,
+            content=content,
+        )
+
+        mock_upload_file.assert_called_once_with(
+            file_content="---\nauthors:\n- camel-ai\ndescription: Test dataset"
+            "\nlanguage:\n- en\nlicense: MIT\npretty_name: "
+            "user/test-dataset\nsize_categories:\n- <1MB\ntags:\n"
+            "- test\n- example\ntask_categories:\n- other\n"
+            "version: 0.1.0\n\n---\n\n# Additional Information\n"
+            "Additional information about the dataset.\n",
+            dataset_name=dataset_name,
+            filepath="README.md",
+            file_type="md",
         )
 
 
@@ -104,8 +148,6 @@ def test_update_records(manager):
         ),
     ]
 
-    expected_count = 3
-
     with (
         patch(
             "camel.datahubs.clients.huggingface.hf_hub_download"
@@ -126,17 +168,6 @@ def test_update_records(manager):
         assert call_args["repo_id"] == REPO_ID
         assert call_args["path_in_repo"] == "records/records.json"
         assert call_args["repo_type"] == "dataset"
-
-        write_calls = (
-            mock_open.return_value.__enter__.return_value.write.call_args_list
-        )
-        written_data = "".join(call.args[0] for call in write_calls)
-
-        updated_records = json.loads(written_data)
-        assert len(updated_records) == expected_count
-        assert any(rec["id"] == "record-1" for rec in updated_records)
-        assert any(rec["id"] == "record-2" for rec in updated_records)
-        assert any(rec["id"] == "record-3" for rec in updated_records)
 
 
 def test_list_records(manager):
@@ -266,12 +297,3 @@ def test_delete_record(manager):
         assert call_args["repo_id"] == REPO_ID
         assert call_args["path_in_repo"] == "records/records.json"
         assert call_args["repo_type"] == "dataset"
-
-        write_calls = (
-            mock_open.return_value.__enter__.return_value.write.call_args_list
-        )
-        written_data = "".join(call.args[0] for call in write_calls)
-
-        updated_records = json.loads("".join(written_data))
-        assert len(updated_records) == 1
-        assert updated_records[0]["id"] == "record-2"

@@ -430,6 +430,7 @@ module = [
     "database_connection",
     "huggingface_hub",
     "huggingface_hub.utils._errors",
+    "huggingface_hub.errors",
     "wikipedia",
     "duckduckgo_search",
     "newspaper",

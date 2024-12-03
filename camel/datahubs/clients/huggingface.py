@@ -1,4 +1,4 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,84 +10,189 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import logging
 import os
-from typing import List, Optional
+import tempfile
+from enum import Enum
+from typing import Any, List, Optional
 
+import yaml
 from huggingface_hub import HfApi, hf_hub_download
-from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+from huggingface_hub.errors import (
+    EntryNotFoundError,
+    RepositoryNotFoundError,
+)
 
 from camel.datahubs.clients.base import DatasetManager
 from camel.datahubs.models import Record
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class RepoType(str, Enum):
+    DATASET = "dataset"
+    MODEL = "model"
+    SPACE = "space"
 
 
 class HuggingFaceDatasetManager(DatasetManager):
     r"""A dataset manager for Hugging Face datasets. This class provides
     methods to create, add, update, delete, and list records in a dataset on
     the Hugging Face Hub.
+
+    Args:
+        token (str): The Hugging Face API token. If not provided, the token
+            will be read from the environment variable `HUGGING_FACE_TOKEN`.
     """
 
+    @api_keys_required("HUGGING_FACE_TOKEN")
     @dependencies_required('huggingface_hub')
-    def __init__(self, token: Optional[str]):
-        self.token = token or os.getenv("HUGGING_FACE_TOKEN")
-        self.api = HfApi(token=self.token)
+    def __init__(self, token: Optional[str] = None):
+        self._api_key = token or os.getenv("HUGGING_FACE_TOKEN")
+        self.api = HfApi(token=self._api_key)
 
-    def create_dataset(self, name: str, private: bool = True) -> str:
+    def create_dataset_card(
+        self,
+        dataset_name: str,
+        description: str,
+        license: Optional[str] = None,
+        version: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        authors: Optional[List[str]] = None,
+        size_category: Optional[str] = None,
+        language: Optional[List[str]] = None,
+        task_categories: Optional[List[str]] = None,
+        content: Optional[str] = None,
+    ) -> None:
+        r"""Creates and uploads a dataset card to the Hugging Face Hub in YAML
+            format.
+
+        Args:
+            dataset_name (str): The name of the dataset.
+            description (str): A description of the dataset.
+            license (str): The license of the dataset. Defaults to None.
+            version (str): The version of the dataset. Defaults to None.
+            tags (list): A list of tags for the dataset. Defaults to None.
+            authors (list): A list of authors of the dataset. Defaults to None.
+            size_category (str): A size category for the dataset. Defaults to
+                None.
+            language (list): A list of languages the dataset is in. Defaults to
+                None.
+            task_categories (list): A list of task categories. Defaults to
+                None.
+            content (str): Custom markdown content that the user wants to add
+                to the dataset card. Defaults to None.
+        """
+
+        if not authors:
+            authors = []
+
+        if not tags:
+            tags = []
+
+        metadata = {
+            "license": license,
+            "task_categories": task_categories if task_categories else [],
+            "language": language if language else [],
+            "tags": tags,
+            "pretty_name": dataset_name,
+            "size_categories": [size_category] if size_category else [],
+        }
+
+        if version:
+            metadata["version"] = version
+
+        if authors:
+            metadata["authors"] = authors
+
+        if description:
+            metadata["description"] = description
+
+        card_content = (
+            "---\n"
+            + yaml.dump(metadata, default_flow_style=False, allow_unicode=True)
+            + "\n---"
+        )
+
+        if content:
+            card_content += f"\n\n# Additional Information\n{content}\n"
+
+        self._upload_file(
+            file_content=card_content,
+            dataset_name=dataset_name,
+            filepath="README.md",
+            file_type="md",
+        )
+
+    def create_dataset(
+        self, name: str, private: bool = False, **kwargs: Any
+    ) -> str:
         r"""Creates a new dataset on the Hugging Face Hub.
 
         Args:
             name (str): The name of the dataset.
-            private (bool): Whether the dataset should be private.
+            private (bool): Whether the dataset should be private. defaults to
+                False.
+            kwargs (Any): Additional keyword arguments.
 
         Returns:
             str: The URL of the created dataset.
         """
         try:
-            self.api.repo_info(repo_id=name, repo_type="dataset")
+            self.api.repo_info(
+                repo_id=name, repo_type=RepoType.DATASET.value, **kwargs
+            )
         except RepositoryNotFoundError:
             self.api.create_repo(
                 repo_id=name,
-                repo_type="dataset",
-                private=True,
+                repo_type=RepoType.DATASET.value,
+                private=private,
             )
 
         return f"https://huggingface.co/datasets/{name}"
 
-    def list_datasets(self, username: str, limit: int = 100) -> List[str]:
+    def list_datasets(
+        self, username: str, limit: int = 100, **kwargs: Any
+    ) -> List[str]:
         r"""Lists all datasets for the current user.
 
         Args:
-            username: The username of the user whose datasets to list.
-            limit: The maximum number of datasets to list.
+            username (str): The username of the user whose datasets to list.
+            limit (int): The maximum number of datasets to list. defaults to
+                100.
+            kwargs (Any): Additional keyword arguments.
 
         Returns:
-            List[str]: A list of dataset names.
+            List[str]: A list of dataset ids.
         """
         try:
             return [
                 dataset.id
                 for dataset in self.api.list_datasets(
-                    author=username, limit=limit
+                    author=username, limit=limit, **kwargs
                 )
             ]
         except Exception as e:
             logger.error(f"Error listing datasets: {e}")
             return []
 
-    def delete_dataset(self, dataset_name: str) -> None:
+    def delete_dataset(self, dataset_name: str, **kwargs: Any) -> None:
         r"""Deletes a dataset from the Hugging Face Hub.
 
         Args:
             dataset_name (str): The name of the dataset to delete.
+            kwargs (Any): Additional keyword arguments.
         """
         try:
-            self.api.delete_repo(repo_id=dataset_name, repo_type="dataset")
+            self.api.delete_repo(
+                repo_id=dataset_name,
+                repo_type=RepoType.DATASET.value,
+                **kwargs,
+            )
             logger.info(f"Dataset '{dataset_name}' deleted successfully.")
         except Exception as e:
             logger.error(f"Error deleting dataset '{dataset_name}': {e}")
@@ -97,164 +202,221 @@ class HuggingFaceDatasetManager(DatasetManager):
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> None:
         r"""Adds records to a dataset on the Hugging Face Hub.
 
         Args:
             dataset_name (str): The name of the dataset.
-            filepath: The path to the file containing the records.
             records (List[Record]): A list of records to add to the dataset.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
 
         Raises:
             ValueError: If the dataset already has a records file.
         """
-        temp_file = f"{dataset_name.replace('/', '_')}_records.json"
+        existing_records = self._download_records(
+            dataset_name=dataset_name, filepath=filepath, **kwargs
+        )
 
-        try:
-            hf_hub_download(
-                repo_id=dataset_name,
-                filename=filepath,
-                repo_type="dataset",
-                token=self.token,
-            )
+        if existing_records:
             raise ValueError(
                 f"Dataset '{filepath}' already exists. "
                 f"Use `update_records` to modify."
             )
-        except EntryNotFoundError:
-            logger.info(f"Creating new records for dataset '{dataset_name}'.")
-        except Exception as e:
-            logger.error(e)
-            raise
 
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump([record.model_dump() for record in records], f)
-
-        try:
-            self.api.upload_file(
-                path_or_fileobj=temp_file,
-                path_in_repo=filepath,
-                repo_id=dataset_name,
-                repo_type="dataset",
-            )
-        finally:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
+        self._upload_records(
+            records=records,
+            dataset_name=dataset_name,
+            filepath=filepath,
+            **kwargs,
+        )
 
     def update_records(
         self,
         dataset_name: str,
         records: List[Record],
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> None:
-        temp_file = f"{dataset_name.replace('/', '_')}_records.json"
-        existing_records = []
+        r"""Updates records in a dataset on the Hugging Face Hub.
 
-        try:
-            downloaded_file_path = hf_hub_download(
-                repo_id=dataset_name,
-                filename=filepath,
-                repo_type="dataset",
-                token=self.token,
-            )
-            with open(downloaded_file_path, "r") as f:
-                existing_records = json.load(f)
-        except Exception as e:
-            logger.error(e)
+        Args:
+            dataset_name (str): The name of the dataset.
+            records (List[Record]): A list of records to update in the dataset.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
+
+        Raises:
+            ValueError: If the dataset does not have an existing file to update
+                records in.
+        """
+        existing_records = self._download_records(
+            dataset_name=dataset_name, filepath=filepath, **kwargs
+        )
+
+        if not existing_records:
             raise ValueError(
                 f"Dataset '{dataset_name}' does not have an existing file to "
                 f"update. Use `add_records` first."
             )
 
-        new_records = [record.model_dump() for record in records]
-        combined_records = {
-            rec["id"]: rec for rec in (existing_records + new_records)
-        }.values()
+        old_dict = {record.id: record for record in existing_records}
+        new_dict = {record.id: record for record in records}
+        merged_dict = old_dict.copy()
+        merged_dict.update(new_dict)
 
-        with open(temp_file, "w") as f:
-            json.dump(list(combined_records), f)
-
-        try:
-            self.api.upload_file(
-                path_or_fileobj=temp_file,
-                path_in_repo=filepath,
-                repo_id=dataset_name,
-                repo_type="dataset",
-            )
-        finally:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
+        self._upload_records(
+            records=list(merged_dict.values()),
+            dataset_name=dataset_name,
+            filepath=filepath,
+            **kwargs,
+        )
 
     def delete_record(
         self,
         dataset_name: str,
         record_id: str,
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
     ) -> None:
         r"""Deletes a record from the dataset.
 
         Args:
             dataset_name (str): The name of the dataset.
             record_id (str): The ID of the record to delete.
-            filepath: The path to the file containing the records.
-        """
-        temp_file = f"{dataset_name.replace('/', '_')}_records.json"
-        existing_records = []
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
 
-        try:
-            downloaded_file_path = hf_hub_download(
-                repo_id=dataset_name,
-                filename=filepath,
-                repo_type="dataset",
-                token=self.token,
-            )
-            with open(downloaded_file_path, "r") as f:
-                existing_records = json.load(f)
-        except Exception:
+        Raises:
+            ValueError: If the dataset does not have an existing file to delete
+                records from.
+        """
+        existing_records = self._download_records(
+            dataset_name=dataset_name, filepath=filepath, **kwargs
+        )
+
+        if not existing_records:
             raise ValueError(
                 f"Dataset '{dataset_name}' does not have an existing file to "
                 f"delete records from."
             )
 
         filtered_records = [
-            record for record in existing_records if record["id"] != record_id
+            record for record in existing_records if record.id != record_id
         ]
 
-        with open(temp_file, "w") as f:
-            json.dump(filtered_records, f)
-
-        try:
-            self.api.upload_file(
-                path_or_fileobj=temp_file,
-                path_in_repo=filepath,
-                repo_id=dataset_name,
-                repo_type="dataset",
-            )
-        finally:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
+        self._upload_records(
+            records=filtered_records,
+            dataset_name=dataset_name,
+            filepath=filepath,
+            **kwargs,
+        )
 
     def list_records(
         self,
         dataset_name: str,
-        filepath: Optional[str] = "records/records.json",
+        filepath: str = "records/records.json",
+        **kwargs: Any,
+    ) -> List[Record]:
+        r"""Lists all records in a dataset.
+
+        Args:
+            dataset_name (str): The name of the dataset.
+            filepath (str): The path to the file containing the records.
+            kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            List[Record]: A list of records in the dataset.
+        """
+        return self._download_records(
+            dataset_name=dataset_name, filepath=filepath, **kwargs
+        )
+
+    def _download_records(
+        self, dataset_name: str, filepath: str, **kwargs: Any
     ) -> List[Record]:
         try:
             downloaded_file_path = hf_hub_download(
                 repo_id=dataset_name,
                 filename=filepath,
-                repo_type="dataset",
-                token=self.token,
+                repo_type=RepoType.DATASET.value,
+                token=self._api_key,
+                **kwargs,
             )
-
-            print(f"{downloaded_file_path=}")
 
             with open(downloaded_file_path, "r") as f:
                 records_data = json.load(f)
 
             return [Record(**record) for record in records_data]
-
+        except EntryNotFoundError:
+            logger.info(f"No records found for dataset '{dataset_name}'.")
+            return []
         except Exception as e:
             logger.error(f"Error downloading or processing records: {e}")
-            return []
+            raise e
+
+    def _upload_records(
+        self,
+        records: List[Record],
+        dataset_name: str,
+        filepath: str,
+        **kwargs: Any,
+    ):
+        with tempfile.NamedTemporaryFile(
+            delete=False, mode="w", newline="", encoding="utf-8"
+        ) as f:
+            json.dump([record.model_dump() for record in records], f)
+            temp_file_path = f.name
+
+        try:
+            self.api.upload_file(
+                path_or_fileobj=temp_file_path,
+                path_in_repo=filepath,
+                repo_id=dataset_name,
+                repo_type=RepoType.DATASET.value,
+                **kwargs,
+            )
+        except Exception as e:
+            logger.error(f"Error uploading records file: {e}")
+            raise
+        finally:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+
+    def _upload_file(
+        self,
+        file_content: str,
+        dataset_name: str,
+        filepath: str,
+        file_type: str = "json",
+        **kwargs: Any,
+    ):
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=f".{file_type}"
+        ) as f:
+            if file_type == "json":
+                json.dump(file_content, f)
+            elif file_type == "md" or file_type == "txt":
+                f.write(file_content)
+            else:
+                raise ValueError(f"Unsupported file type: {file_type}")
+
+            temp_file_path = f.name
+
+        try:
+            self.api.upload_file(
+                path_or_fileobj=temp_file_path,
+                path_in_repo=filepath,
+                repo_id=dataset_name,
+                repo_type=RepoType.DATASET.value,
+                **kwargs,
+            )
+            logger.info(f"File uploaded successfully: {filepath}")
+        except Exception as e:
+            logger.error(f"Error uploading file: {e}")
+            raise
+
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
