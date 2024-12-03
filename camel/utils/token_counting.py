@@ -47,6 +47,7 @@ EXTRA_TOKENS = 85
 
 logger = get_logger(__name__)
 
+
 def get_model_encoding(value_for_tiktoken: str):
     r"""Get model encoding from tiktoken.
 
