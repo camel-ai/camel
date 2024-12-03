@@ -52,15 +52,15 @@ class BaseMessage:
             for the message.
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
-            with the message. Default is None.
+            with the message. (default::obj:`None`)
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the message. Default is None.
+            objects associated with the message. (default::obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
-            images associated with the message. Default is "auto".
+            images associated with the message. (default::obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
-            videos associated with the message. Default is "low".
+            videos associated with the message. (default::obj:`low`)
         parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
-            is parsed from the content. Default is None.
+            is parsed from the content. (default::obj:`None`)
     """
 
     role_name: str
