@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import Field
 
@@ -63,7 +63,6 @@ class NvidiaConfig(BaseConfig):
     frequency_penalty: float = Field(default=0.0)
     max_tokens: Union[int, NotGiven] = Field(default=NOT_GIVEN)
     seed: Optional[int] = Field(default=None)
-    tools: Optional[List[Dict]] = Field(default=None)
     tool_choice: Optional[str] = Field(default=None)
     stop: Optional[List[str]] = Field(default=None)
 
