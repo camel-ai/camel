@@ -51,6 +51,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Lingyiwanwu | yi-spark | N |
 | Lingyiwanwu | yi-large-rag | N |
 | Lingyiwanwu | yi-large-fc | N |
+| Qwen | qwq-32b-preview | N |
 | Qwen | qwen-max | N |
 | Qwen | qwen-plus | N |
 | Qwen | qwen-turbo | N |
@@ -64,13 +65,14 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen2.5-72b-instruct | N |
 | Qwen | qwen2.5-32b-instruct | N |
 | Qwen | qwen2.5-14b-instruct | N |
+| DeepSeek | deepseek-chat | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
 | Reka | reka-core | Y |
 | Reka | reka-flash | Y |
 | Reka | reka-edge | Y |
-| Nividia | nemotron-4-340b-reward | N |
+| Nvidia | https://docs.api.nvidia.com/nim/reference/llm-apis | ----- |
 | SambaNova| https://community.sambanova.ai/t/supported-models/193 | ----- |
 | Groq | https://console.groq.com/docs/models | ----- |
 | Ollama | https://ollama.com/library | ----- |
