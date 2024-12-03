@@ -65,17 +65,17 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
 
     # Nvidia models
-    NVIDIA_NEMOTRON_340B = "nvidia/nemotron-4-340b-instruct"
+    NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
     NVIDIA_NEMOTRON_340B_REWARD = "nvidia/nemotron-4-340b-reward"
     NVIDIA_YI_LARGE = "01-ai/yi-large"
     NVIDIA_MISTRAL_LARGE = "mistralai/mistral-large"
-    NVIDIA_LLAMA3_70B = "meta/llama3-70b"
     NVIDIA_MIXTRAL_8X7B = "mistralai/mixtral-8x7b-instruct"
-    NVIDIA_LLAMA31_8B_INSTRUCT = "meta/llama-3.1-8b-instruct"
-    NVIDIA_LLAMA31_70B_INSTRUCT = "meta/llama-3.1-70b-instruct"
-    NVIDIA_LLAMA31_405B_INSTRUCT = "meta/llama-3.1-405b-instruct"
-    NVIDIA_LLAMA32_1B_INSTRUCT = "meta/llama-3.2-1b-instruct"
-    NVIDIA_LLAMA32_3B_INSTRUCT = "meta/llama-3.2-3b-instruct"
+    NVIDIA_LLAMA3_70B = "meta/llama3-70b"
+    NVIDIA_LLAMA3_1_8B_INSTRUCT = "meta/llama-3.1-8b-instruct"
+    NVIDIA_LLAMA3_1_70B_INSTRUCT = "meta/llama-3.1-70b-instruct"
+    NVIDIA_LLAMA3_1_405B_INSTRUCT = "meta/llama-3.1-405b-instruct"
+    NVIDIA_LLAMA3_2_1B_INSTRUCT = "meta/llama-3.2-1b-instruct"
+    NVIDIA_LLAMA3_2_3B_INSTRUCT = "meta/llama-3.2-3b-instruct"
 
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
@@ -237,17 +237,17 @@ class ModelType(UnifiedModelType, Enum):
     def is_nvidia(self) -> bool:
         r"""Returns whether this type of models is a NVIDIA model."""
         return self in {
-            ModelType.NVIDIA_NEMOTRON_340B,
+            ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
             ModelType.NVIDIA_NEMOTRON_340B_REWARD,
             ModelType.NVIDIA_YI_LARGE,
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.NVIDIA_MIXTRAL_8X7B,
-            ModelType.NVIDIA_LLAMA31_8B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA31_70B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA31_405B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA32_1B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA32_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_8B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_70B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
         }
 
     @property
@@ -353,7 +353,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.COHERE_COMMAND,
             ModelType.COHERE_COMMAND_LIGHT,
-            ModelType.NVIDIA_NEMOTRON_340B,
+            ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
             ModelType.NVIDIA_NEMOTRON_340B_REWARD,
         }:
             return 4_096
@@ -422,11 +422,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COHERE_COMMAND_R,
             ModelType.COHERE_COMMAND_R_PLUS,
             ModelType.COHERE_COMMAND_NIGHTLY,
-            ModelType.NVIDIA_LLAMA31_8B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA31_70B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA31_405B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA32_1B_INSTRUCT,
-            ModelType.NVIDIA_LLAMA32_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_8B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_70B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
         }:
             return 128_000
         elif self in {

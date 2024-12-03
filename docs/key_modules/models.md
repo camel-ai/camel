@@ -72,14 +72,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Reka | reka-core | Y |
 | Reka | reka-flash | Y |
 | Reka | reka-edge | Y |
-| NVIDIA | nvidia-llama3-chatqa-70b | Y |
-| NVIDIA | nvidia-llama3-chatqa-8b | Y |
-| NVIDIA | nvidia-llama3-70b | Y |
-| NVIDIA | nvidia-mistral-large | N |
-| NVIDIA | nvidia-yi-large | N |
-| NVIDIA | nvidia-mixtral-8x7b | N |
-| NVIDIA | nvidia-dracarys-llama31-70b | N |
-| NVIDIA | nvidia-nemotron-340b-reward | N |
+| Nvidia | https://docs.api.nvidia.com/nim/reference/llm-apis | ----- |
 | SambaNova| https://community.sambanova.ai/t/supported-models/193 | ----- |
 | Groq | https://console.groq.com/docs/models | ----- |
 | Ollama | https://ollama.com/library | ----- |
