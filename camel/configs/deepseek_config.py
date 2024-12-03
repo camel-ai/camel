@@ -31,6 +31,8 @@ class DeepSeekConfig(BaseConfig):
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
             (default: :obj:`0.2`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         top_p (float, optional): Controls the diversity and focus of the
             generated results. Higher values make the output more diverse,
             while lower values make it more focused. (default: :obj:`1.0`)

@@ -209,7 +209,7 @@ class DataCommonsToolkit(BaseToolkit):
             dcids (list): A list of Data Commons IDs (DCIDs) to analyze.
             prop (str): The property to analyze.
             value_type (str, optional): The type of the property value to
-                filter by. Defaults to NONE. Only applicable if the value
+                filter by. (default: :obj:`None`) Only applicable if the value
                 refers to a node.
             out (bool, optional): The label's direction. (default: :obj:`True`)
                 (only returning response nodes directed towards the requested

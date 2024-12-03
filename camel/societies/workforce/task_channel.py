@@ -52,7 +52,7 @@ class Packet:
         publisher_id (str): The ID of the workforce that published the task.
         assignee_id (Optional[str], optional): The ID of the workforce that is
             assigned to the task. Would be None if the task is a dependency.
-            Defaults to None.
+            (default: :obj:`None`)
         status (PacketStatus): The status of the task.
     """
 
