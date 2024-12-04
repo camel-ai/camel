@@ -18,7 +18,6 @@ import logging
 import re
 import uuid
 from collections import defaultdict
-from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -214,7 +213,9 @@ class ChatAgent(BaseAgent):
         self.func_dict = {
             tool.get_function_name(): tool.func for tool in self.all_tools
         }
-        self.tool_dict = {tool.get_function_name(): tool for tool in self.all_tools}
+        self.tool_dict = {
+            tool.get_function_name(): tool for tool in self.all_tools
+        }
 
         # If the user set tools from `ChatAgent`, it will override the
         # configured tools in `BaseModelBackend`.
@@ -226,7 +227,6 @@ class ChatAgent(BaseAgent):
                 tool.get_openai_tool_schema() for tool in self.all_tools
             ]
             self.model_backend.model_config_dict['tools'] = tool_schema_list
-            self.tool_schema_list = tool_schema_list
 
         self.model_config_dict = self.model_backend.model_config_dict
 
