@@ -22,6 +22,9 @@ from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class SubprocessInterpreter(BaseInterpreter):
@@ -141,8 +144,10 @@ class SubprocessInterpreter(BaseInterpreter):
 
         # Print code for security checking
         if self.require_confirm:
-            print(f"The following {code_type} code will run on your computer:")
-            print(Fore.CYAN + code + Fore.RESET)
+            logger.info(
+                f"The following {code_type} code will run on your "
+                "computer: {code}"
+            )
             while True:
                 choice = input("Running code? [Y/n]:").lower()
                 if choice in ["y", "yes", "ye", ""]:
