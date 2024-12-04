@@ -1,24 +1,25 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import base64
 import io
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import numpy as np
 from PIL import Image
+from pydantic import BaseModel
 
 from camel.messages import (
     FunctionCallFormatter,
@@ -51,24 +52,27 @@ class BaseMessage:
             for the message.
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
-            with the message. Default is None.
+            with the message. (default::obj:`None`)
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the message. Default is None.
+            objects associated with the message. (default::obj:`None`)
         image_detail (Literal["auto", "low", "high"]): Detail level of the
-            images associated with the message. Default is "auto".
+            images associated with the message. (default::obj:`auto`)
         video_detail (Literal["auto", "low", "high"]): Detail level of the
-            videos associated with the message. Default is "low".
+            videos associated with the message. (default::obj:`low`)
+        parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
+            is parsed from the content. (default::obj:`None`)
     """
 
     role_name: str
     role_type: RoleType
-    meta_dict: Optional[Dict[str, str]]
+    meta_dict: Optional[Dict[str, Any]]
     content: str
 
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
+    parsed: Optional[Union[Type[BaseModel], dict]] = None
 
     @classmethod
     def make_user_message(
@@ -419,7 +423,6 @@ class BaseMessage:
                 "text": self.content,
             }
         )
-
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
                 if image.format is None:

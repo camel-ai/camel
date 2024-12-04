@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
 from typing import cast
@@ -65,7 +65,17 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
 
     # Nvidia models
-    NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
+    NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
+    NVIDIA_NEMOTRON_340B_REWARD = "nvidia/nemotron-4-340b-reward"
+    NVIDIA_YI_LARGE = "01-ai/yi-large"
+    NVIDIA_MISTRAL_LARGE = "mistralai/mistral-large"
+    NVIDIA_MIXTRAL_8X7B = "mistralai/mixtral-8x7b-instruct"
+    NVIDIA_LLAMA3_70B = "meta/llama3-70b"
+    NVIDIA_LLAMA3_1_8B_INSTRUCT = "meta/llama-3.1-8b-instruct"
+    NVIDIA_LLAMA3_1_70B_INSTRUCT = "meta/llama-3.1-70b-instruct"
+    NVIDIA_LLAMA3_1_405B_INSTRUCT = "meta/llama-3.1-405b-instruct"
+    NVIDIA_LLAMA3_2_1B_INSTRUCT = "meta/llama-3.2-1b-instruct"
+    NVIDIA_LLAMA3_2_3B_INSTRUCT = "meta/llama-3.2-3b-instruct"
 
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
@@ -110,6 +120,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
+    QWEN_QWQ_32B = "qwq-32b-preview"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -121,6 +132,9 @@ class ModelType(UnifiedModelType, Enum):
     YI_SPARK = "yi-spark"
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
+
+    # DeepSeek models
+    DEEPSEEK_CHAT = "deepseek-chat"
 
     def __str__(self):
         return self.value
@@ -161,6 +175,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
         }
 
     @property
@@ -221,13 +236,19 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_nvidia(self) -> bool:
-        r"""Returns whether this type of models is Nvidia-released model.
-
-        Returns:
-            bool: Whether this type of models is nvidia.
-        """
+        r"""Returns whether this type of models is a NVIDIA model."""
         return self in {
-            ModelType.NEMOTRON_4_REWARD,
+            ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
+            ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+            ModelType.NVIDIA_YI_LARGE,
+            ModelType.NVIDIA_MISTRAL_LARGE,
+            ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.NVIDIA_LLAMA3_1_8B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_70B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
         }
 
     @property
@@ -306,6 +327,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
+            ModelType.QWEN_QWQ_32B,
+        }
+
+    @property
+    def is_deepseek(self) -> bool:
+        return self in {
+            ModelType.DEEPSEEK_CHAT,
         }
 
     @property
@@ -318,7 +346,6 @@ class ModelType(UnifiedModelType, Enum):
         if self is ModelType.GLM_4V:
             return 1024
         elif self in {
-            ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
@@ -327,6 +354,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.COHERE_COMMAND,
             ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
+            ModelType.NVIDIA_NEMOTRON_340B_REWARD,
         }:
             return 4_096
         elif self in {
@@ -338,6 +367,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
+            ModelType.NVIDIA_LLAMA3_70B,
         }:
             return 8_192
         elif self in {
@@ -359,9 +389,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE_FC,
             ModelType.QWEN_MAX,
             ModelType.QWEN_VL_MAX,
+            ModelType.NVIDIA_YI_LARGE,
+            ModelType.NVIDIA_MISTRAL_LARGE,
+            ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.QWEN_QWQ_32B,
         }:
             return 32_768
-        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+        elif self in {
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.DEEPSEEK_CHAT,
+        }:
             return 64_000
         elif self in {
             ModelType.CLAUDE_2_0,
@@ -386,6 +423,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COHERE_COMMAND_R,
             ModelType.COHERE_COMMAND_R_PLUS,
             ModelType.COHERE_COMMAND_NIGHTLY,
+            ModelType.NVIDIA_LLAMA3_1_8B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_70B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
         }:
             return 128_000
         elif self in {
@@ -567,6 +609,8 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    NVIDIA = "nvidia"
+    DEEPSEEK = "deepseek"
 
     @property
     def is_openai(self) -> bool:
@@ -653,6 +697,16 @@ class ModelPlatformType(Enum):
     def is_qwen(self) -> bool:
         r"""Returns whether this platform is Qwen."""
         return self is ModelPlatformType.QWEN
+
+    @property
+    def is_nvidia(self) -> bool:
+        r"""Returns whether this platform is Nvidia."""
+        return self is ModelPlatformType.NVIDIA
+
+    @property
+    def is_deepseek(self) -> bool:
+        r"""Returns whether this platform is DeepSeek."""
+        return self is ModelPlatformType.DEEPSEEK
 
 
 class AudioModelType(Enum):

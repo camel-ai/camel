@@ -147,7 +147,7 @@ Here is a list of the available CAMEL tools and their descriptions:
 
 | Toolkit | Description |
 | ----- | ----- |
-| CodeExecutionToolkit | A toolkit for code execution which can run code by "internal_python", "jupyter" or "docker”. | 
+| CodeExecutionToolkit | A toolkit for code execution which can run code by "internal_python", "jupyter" or "docker". | 
 | GithubToolkit | A gitHub toolkit for interacting with GitHub repositories: retrieving open issues, retrieving specific issues, and creating pull requests. | 
 | GoogleMapsToolkit  | A GoogleMaps toolkit for validating addresses, retrieving elevation, and fetching timezone information using the Google Maps API. | 
 | MathToolkit | A simple math toolkit for basic mathematical operations such as addition, subtraction, and multiplication. |
