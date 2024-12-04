@@ -1,0 +1,13 @@
+{
+  "solutions": {
+    "A board game spinner is divided into three parts labeled $A$, $B$  and $C$. The probability of the spinner landing on $A$ is $\\frac{1}{3}$ and the probability of the spinner landing on $B$ is $\\frac{5}{12}$.  What is the probability of the spinner landing on $C$? Express your answer as a common fraction.": {
+      "solution": "### 1. 分析问题要求\n\n问题要求我们找出转盘停在区域 $C$ 的概率。已知转盘被分为三个部分 $A$、$B$ 和 $C$，并且给出了转盘停在 $A$ 和 $B$ 的概率。我们需要利用这些信息来计算转盘停在 $C$ 的概率。\n\n### 2. 列出解题步骤\n\n1. **确定总概率**：转盘停在任意一个区域的总的概率是 $1$。\n2. **计算已知概率的和**：将转盘停在 $A$ 和 $B$ 的概率相加。\n3. **求出转盘停在 $C$ 的概率**：用总概率减去转盘停在 $A$ 和 $B$ 的概率之和。\n\n### 3. 执行解题过程\n\n1. **确定总概率**：\n   \\[\n   \\text{总概率} = 1\n   \\]\n\n2. **计算已知概率的和**：\n   \\[\n   \\text{转盘停在 } A \\text{ 的概率} = \\frac{1}{3}\n   \\]\n   \\[\n   \\text{转盘停在 } B \\text{ 的概率} = \\frac{5}{12}\n   \\]\n   \\[\n   \\text{转盘停在 } A \\text{ 和 } B \\text{ 的概率之和} = \\frac{1}{3} + \\frac{5}{12}\n   \\]\n\n   为了相加这两个分数，我们需要找到它们的公分母。$3$ 和 $12$ 的最小公倍数是 $12$，所以我们将 $\\frac{1}{3}$ 转换为以 $12$ 为分母的分数：\n   \\[\n   \\frac{1}{3} = \\frac{4}{12}\n   \\]\n   现在我们可以相加这两个分数：\n   \\[\n   \\frac{4}{12} + \\frac{5}{12} = \\frac{9}{12}\n   \\]\n\n3. **求出转盘停在 $C$ 的概率**：\n   \\[\n   \\text{转盘停在 } C \\text{ 的概率} = 1 - \\frac{9}{12}\n   \\]\n   将 $1$ 转换为以 $12$ 为分母的分数：\n   \\[\n   1 = \\frac{12}{12}\n   \\]\n   现在我们可以进行减法：\n   \\[\n   \\frac{12}{12} - \\frac{9}{12} = \\frac{3}{12}\n   \\]\n   将 $\\frac{3}{12}$ 化简为最简分数：\n   \\[\n   \\frac{3}{12} = \\frac{1}{4}\n   \\]\n\n### 4. 给出最终答案\n\n\\[\n\\boxed{\\frac{1}{4}}\n\\]",
+      "is_correct": true,
+      "timestamp": "2024-12-04T20:43:25.541281"
+    }
+  },
+  "golden_answers": {
+    "A board game spinner is divided into three parts labeled $A$, $B$  and $C$. The probability of the spinner landing on $A$ is $\\frac{1}{3}$ and the probability of the spinner landing on $B$ is $\\frac{5}{12}$.  What is the probability of the spinner landing on $C$? Express your answer as a common fraction.": "\\frac{1}{4}"
+  },
+  "export_time": "2024-12-04T20:43:25.543310"
+}
