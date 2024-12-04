@@ -37,7 +37,7 @@ load_dotenv()
 logger.info("Environment variables loaded")
 
 # 初始化 AI 模型
-sys_msg = 'You are a curious stone wondering about the universe.'
+sys_msg = 'You are a genius at slow-thinking data and code'
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
@@ -54,9 +54,9 @@ chat_agent = ChatAgent(
 )
 
 class OmegaPRM:
-    def __init__(self, chat_agent, golden_answers, search_limit=100):
+    def __init__(self, chat_agent, golden_answers=None, search_limit=100):
         self.chat_agent = chat_agent
-        self.golden_answers = golden_answers
+        self.golden_answers = golden_answers if golden_answers else {}
         self.search_limit = search_limit
         self.solution_tree = defaultdict(dict)  # 存储正确的解决步骤
         logger.info("OmegaPRM initialized with search_limit=%d", search_limit)
@@ -193,6 +193,23 @@ class OmegaPRM:
         
         logger.info("最终答案:\n%s", final_solution)
         return final_solution
+
+    def import_qa_from_json(self, json_file_path):
+        """
+        从JSON文件导入问题和答案数据
+        JSON格式应为: {"question1": "answer1", "question2": "answer2", ...}
+        """
+        try:
+            with open(json_file_path, 'r', encoding='utf-8') as f:
+                qa_data = json.load(f)
+            
+            # 更新golden_answers
+            self.golden_answers.update(qa_data)
+            logger.info(f"Successfully imported {len(qa_data)} QA pairs from {json_file_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Error importing JSON data: {str(e)}")
+            return False
 
     def export_solutions(self, filepath='solutions.json'):
         """
