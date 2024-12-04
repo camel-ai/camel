@@ -848,7 +848,7 @@ class ChatAgent(BaseAgent):
             if (
                 not self.is_tools_added()
                 or not isinstance(response, ChatCompletion)
-                or response.choices[0].message.tool_calls is None
+                or not response.choices[0].message.tool_calls
             ):
                 break
 
