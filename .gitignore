@@ -125,7 +125,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -417,7 +416,15 @@ tags
 # Camel
 logs/
 
+# Download Configuration
+cookies.txt
+
 # Data
 datasets_test/
 evaluation_data/
 camel_data/
+temp_files/
+
+#Benchmark
+benchmark/gaia/Dataset
+benchmark/gaia/results.jsonl

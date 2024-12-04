@@ -1,5 +1,7 @@
 # Task
 
+For more detailed usage information, please refer to our cookbook: [Task Generation Cookbook](../cookbooks/task_generation.ipynb)
+
 ## 1. Concept
 > In the CAMEL framework, a task is a specific assignment that can be delegated to an agent and resolved by that agent. Tasks represent a higher-level concept than prompts and should be managed by other modules such as the Planner and Workforce. There are two key characteristics of a task: 
 > 1. A task can be collaborative, requiring multiple agents to work together. 
@@ -151,11 +153,9 @@ from camel.tasks import (
     Task,
     TaskManager,
 )
-from camel.messages import BaseMessage
 
-sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant", content="You're a helpful assistant"
-)
+sys_msg = "You're a helpful assistant"
+
 # Set up an agent
 agent = ChatAgent(system_message=sys_msg)
 

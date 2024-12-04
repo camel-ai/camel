@@ -5,9 +5,9 @@ name: Pytest Camel package
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "qa" ]
 
 permissions:
   contents: read
@@ -38,13 +38,16 @@ jobs:
         AZURE_OPENAI_API_KEY: "to-be-filled"
         AZURE_API_VERSION: "to-be-filled"
         AZURE_DEPLOYMENT_NAME: "to-be-filled"
-        AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
+        AZURE_OPENAI_BASE_URL: "https://camel.openai.azure.com/"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+        ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+        ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
+        CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -72,13 +75,16 @@ jobs:
         AZURE_OPENAI_API_KEY: "to-be-filled"
         AZURE_API_VERSION: "to-be-filled"
         AZURE_DEPLOYMENT_NAME: "to-be-filled"
-        AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
+        AZURE_OPENAI_BASE_URL: "https://camel.openai.azure.com/"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+        ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+        ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
+        CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -106,11 +112,14 @@ jobs:
         AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}"
         AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
         AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}"
-        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}"
+        AZURE_OPENAI_BASE_URL: ${{ secrets.AZURE_OPENAI_BASE_URL }}"
         MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
         REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
+        ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
+        ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
+        CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/

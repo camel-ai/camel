@@ -1,5 +1,7 @@
 # Tools
 
+For more detailed usage information, please refer to our cookbook: [Tools Cookbook](../cookbooks/agents_with_tools.ipynb)
+
 ## 1. Concept
 Tools serve as interfaces that allow LLMs and Agents to interact with the world. A tool is essentially a function that has a name, a description, input parameters, and an output type. In this section, we will introduce the tools currently supported by CAMEL and explain how to define your own tools and Toolkits.
 
@@ -14,15 +16,19 @@ To enhance your agents' capabilities with CAMEL tools, start by installing our a
 pip install 'camel-ai[tools]'
 ```
 
-In CAMEL, a tool is an `OpenAIFunction` that LLMs can call.
+In CAMEL, a tool is an `FunctionTool` that LLMs can call.
 
 
 ### 2.1 How to Define Your Own Tool?
 
-Developers can create custom tools tailored to their agent’s specific needs:
+Developers can create custom tools tailored to their agent’s specific needs with ease. Here's how you can define and use a custom tool:
+
+**Example: Adding Two Numbers**
+
+First, define your function and wrap it using the `FunctionTool`
 
 ```python
-from camel.toolkits import OpenAIFunction
+from camel.toolkits import FunctionTool
 
 def add(a: int, b: int) -> int:
     r"""Adds two numbers.
@@ -35,9 +41,16 @@ def add(a: int, b: int) -> int:
         integer: The sum of the two numbers.
     """
     return a + b
-    
-add_tool = OpenAIFunction(add)
+
+# Wrap the function with FunctionTool
+add_tool = FunctionTool(add)
 ```
+
+**Accessing Tool Properties**
+
+Once your tool is defined, you can inspect its properties using built-in methods:
+
+Retrieve the function's name:
 
 ```python
 print(add_tool.get_function_name())
@@ -47,6 +60,8 @@ print(add_tool.get_function_name())
 >>> add
 ```
 
+Get the description of what the function does:
+
 ```python
 print(add_tool.get_function_description())
 ```
@@ -54,6 +69,8 @@ print(add_tool.get_function_description())
 ```markdown
 >>> Adds two numbers.
 ```
+
+Fetch the schema representation for OpenAI functions:
 
 ```python
 print(add_tool.get_openai_function_schema())
@@ -69,6 +86,8 @@ print(add_tool.get_openai_function_schema())
   'required': ['a', 'b'],
   'type': 'object'}}
 ```
+
+Retrieve the tool schema, compatible with OpenAI's structure:
 
 ```python
 print(add_tool.get_openai_tool_schema())
@@ -105,15 +124,30 @@ To utilize specific tools from the toolkits, you can implement code like the fol
 ```python
 from camel.toolkits import SearchToolkit
 
-google_tool = OpenAIFunction(SearchToolkit().search_google)
-wiki_tool = OpenAIFunction(SearchToolkit().search_wiki)
+google_tool = FunctionTool(SearchToolkit().search_google)
+wiki_tool = FunctionTool(SearchToolkit().search_wiki)
+```
+
+### 2.3 Passing Tools to `ChatAgent`
+Enhance the functionality of a ChatAgent by passing custom tools during initialization. Here's how you can do it:
+
+```python
+from camel.agents import ChatAgent
+
+# Initialize a ChatAgent with your custom tools
+tool_agent = ChatAgent(
+    tools=tools,
+)
+
+# Interact with the agent
+response = tool_agent.step("A query related to the tool you added")
 ```
 
 Here is a list of the available CAMEL tools and their descriptions:
 
 | Toolkit | Description |
 | ----- | ----- |
-| CodeExecutionToolkit | A toolkit for code execution which can run code by "internal_python", "jupyter" or "docker”. | 
+| CodeExecutionToolkit | A toolkit for code execution which can run code by "internal_python", "jupyter" or "docker". | 
 | GithubToolkit | A gitHub toolkit for interacting with GitHub repositories: retrieving open issues, retrieving specific issues, and creating pull requests. | 
 | GoogleMapsToolkit  | A GoogleMaps toolkit for validating addresses, retrieving elevation, and fetching timezone information using the Google Maps API. | 
 | MathToolkit | A simple math toolkit for basic mathematical operations such as addition, subtraction, and multiplication. |
@@ -122,6 +156,13 @@ Here is a list of the available CAMEL tools and their descriptions:
 | TwitterToolkit | A Twitter operation toolkit for creating a tweet, deleting a tweet, and getting the authenticated user's profile information. | 
 | WeatherToolkit | A weather data toolkit which provides methods for fetching weather data for a given city using the OpenWeatherMap API. | 
 | RetrievalToolkit | A information retrieval toolkit for retrieving information from a local vector storage system based on a specified query. | 
+| ArxivToolkit | A toolkit for interacting with the arXiv API to search and download academic papers. | 
+| AskNewsToolkit | A class representing a toolkit for interacting with the AskNews API. | 
+| DalleToolkit | A class representing a toolkit for image generation using OpenAI's DALL-E model. | 
+| GoogleScholarToolkit | A toolkit for retrieving information about authors and their publications from Google Scholar. | 
+| LinkedInToolkit | A class representing a toolkit for LinkedIn operations. | 
+| RedditToolkit | A class representing a toolkit for Reddit operations. | 
+| WhatsAppToolkit | A class representing a toolkit for WhatsApp operations. | 
 
 
 ## 3. Conclusion

@@ -6,15 +6,18 @@
 > brief view on the architecture of workforce, and how you can configure
 > and utilize it to solve tasks.
 
+For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](../cookbooks/workforce_judge_committee.ipynb)
+
 ## System Design
 
 ### Architecture
 
-Workforce follows a hierarchical architecture. A workforce can consist of
-multiple worker nodes, and each of the worker nodes will contain an agent
-as the worker. The worker nodes are managed by a coordinator agent inside the
-workforce, and the coordinator agent will assign tasks to the worker nodes
-according to the description of the worker nodes, along with their tool sets.
+Workforce follows a hierarchical architecture. A workforce can consist of 
+multiple worker nodes, and each of the worker nodes will contain 
+one agent or multiple agents as the worker. The worker nodes are managed by 
+a coordinator agent inside the workforce, and the coordinator agent will assign 
+tasks to the worker nodes according to the description of the worker nodes, 
+along with their tool sets.
 
 Alongside the coordinator agent, there is also a task planner agent inside the
 workforce. The task planner agent will take the responsibility of decomposing
@@ -57,7 +60,7 @@ has been failed for a certain number of times (3 by default).
 
 Here is a diagram illustrating the workflow with a simple example.
 
-![Workforce Example](https://lh3.googleusercontent.com/pw/AP1GczMFbGi7pInBgiXoPbS8lOfIuGijWoo3EeRlz0OWPe7im1FWYXnD1xnbQpEbD_p4DVHtpWhQQHicGaEc1RaoyaEqg9396oGNPQYi4XQ8U3SBRxQV53KSrqzcE9RBMkGv7PgMMxXWVEiWA5rVe6oE9C8=w1315-h1324-s-no?authuser=0)
+![Workforce Example](https://i.postimg.cc/261dDM9W/work-force.png)
 
 ## Get Started
 
@@ -72,7 +75,7 @@ then add worker nodes to the workforce. Here is an example of how you can do
 this:
 
 ```python
-from camel.workforce import Workforce
+from camel.societies.workforce import Workforce
 
 # Create a workforce instance
 workforce = Workforce("A Simple Workforce")

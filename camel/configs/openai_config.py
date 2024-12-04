@@ -1,24 +1,24 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Type, Union
 
-from openai._types import NOT_GIVEN, NotGiven
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from camel.configs.base_config import BaseConfig
+from camel.types import NOT_GIVEN, NotGiven
 
 
 class ChatGPTConfig(BaseConfig):
@@ -81,7 +81,7 @@ class ChatGPTConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
-        tools (list[OpenAIFunction], optional): A list of tools the model may
+        tools (list[FunctionTool], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.
@@ -104,32 +104,36 @@ class ChatGPTConfig(BaseConfig):
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: Union[dict, NotGiven] = NOT_GIVEN
+    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
     tool_choice: Optional[Union[dict[str, str], str]] = None
 
+    def as_dict(self) -> dict[str, Any]:
+        r"""Convert the current configuration to a dictionary.
+
+        This method converts the current configuration object to a dictionary
+        representation, which can be used for serialization or other purposes.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the current
+                configuration.
+        """
+        config_dict = self.model_dump()
+        if self.tools:
+            from camel.toolkits import FunctionTool
+
+            tools_schema = []
+            for tool in self.tools:
+                if not isinstance(tool, FunctionTool):
+                    raise ValueError(
+                        f"The tool {tool} should "
+                        "be an instance of `FunctionTool`."
+                    )
+                tools_schema.append(tool.get_openai_tool_schema())
+        config_dict["tools"] = NOT_GIVEN
+        return config_dict
+
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}
-
-
-class OpenSourceConfig(BaseConfig):
-    r"""Defines parameters for setting up open-source models and includes
-    parameters to be passed to chat completion function of OpenAI API.
-
-    Args:
-        model_path (str): The path to a local folder containing the model
-            files or the model card in HuggingFace hub.
-        server_url (str): The URL to the server running the model inference
-            which will be used as the API base of OpenAI API.
-        api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
-            contain the arguments to be passed to OpenAI API.
-    """
-
-    # Maybe the param needs to be renamed.
-    # Warning: Field "model_path" has conflict with protected namespace
-    # "model_".
-    model_path: str
-    server_url: str
-    api_params: ChatGPTConfig = Field(default_factory=ChatGPTConfig)

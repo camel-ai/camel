@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import asyncio
 from io import BytesIO
@@ -33,8 +33,8 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
+    FunctionTool,
     MathToolkit,
-    OpenAIFunction,
     SearchToolkit,
 )
 from camel.types import (
@@ -44,6 +44,7 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
     TaskType,
+    UnifiedModelType,
 )
 from camel.utils.async_func import sync_funcs_to_async
 
@@ -53,7 +54,6 @@ parametrize = pytest.mark.parametrize(
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig().as_dict(),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -69,29 +69,41 @@ def test_chat_agent(model):
         dict(assistant_role="doctor"),
         role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant = ChatAgent(system_msg, model=model)
+    assistant_with_sys_msg = ChatAgent(system_msg, model=model)
+    assistant_without_sys_msg = ChatAgent(model=model)
 
-    assert str(assistant) == (
+    assert str(assistant_with_sys_msg) == (
         "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
     )
+    assert str(assistant_without_sys_msg) == (
+        "ChatAgent(assistant, "
+        f"RoleType.ASSISTANT, {UnifiedModelType(ModelType.GPT_4O_MINI)})"
+    )
 
-    assistant.reset()
-    user_msg = BaseMessage(
+    for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
+        assistant.reset()
+
+    user_msg_bm = BaseMessage(
         role_name="Patient",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="Hello!",
     )
-    assistant_response = assistant.step(user_msg)
 
-    assert isinstance(assistant_response.msgs, list)
-    assert len(assistant_response.msgs) > 0
-    assert isinstance(assistant_response.terminated, bool)
-    assert assistant_response.terminated is False
-    assert isinstance(assistant_response.info, dict)
-    assert assistant_response.info['id'] is not None
+    user_msg_str = "Hello!"
+
+    for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
+        for user_msg in [user_msg_bm, user_msg_str]:
+            response = assistant.step(user_msg)
+            assert isinstance(response.msgs, list)
+            assert len(response.msgs) > 0
+            assert isinstance(response.terminated, bool)
+            assert response.terminated is False
+            assert isinstance(response.info, dict)
+            assert response.info['id'] is not None
 
 
+@pytest.mark.model_backend
 def test_chat_agent_stored_messages():
     system_msg = BaseMessage(
         role_name="assistant",
@@ -99,11 +111,16 @@ def test_chat_agent_stored_messages():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    assistant = ChatAgent(system_msg)
+
+    assistant_with_sys_msg = ChatAgent(system_msg)
+    assistant_without_sys_msg = ChatAgent()
 
     expected_context = [system_msg.to_openai_system_message()]
-    context, _ = assistant.memory.get_context()
-    assert context == expected_context
+
+    context_with_sys_msg, _ = assistant_with_sys_msg.memory.get_context()
+    assert context_with_sys_msg == expected_context
+    context_without_sys_msg, _ = assistant_without_sys_msg.memory.get_context()
+    assert context_without_sys_msg == []
 
     user_msg = BaseMessage(
         role_name="User",
@@ -111,13 +128,22 @@ def test_chat_agent_stored_messages():
         meta_dict=dict(),
         content="Tell me a joke.",
     )
-    assistant.update_memory(user_msg, OpenAIBackendRole.USER)
-    expected_context = [
+
+    for assistant in [assistant_with_sys_msg, assistant_without_sys_msg]:
+        assistant.update_memory(user_msg, OpenAIBackendRole.USER)
+
+    expected_context_with_sys_msg = [
         system_msg.to_openai_system_message(),
         user_msg.to_openai_user_message(),
     ]
-    context, _ = assistant.memory.get_context()
-    assert context == expected_context
+    expected_context_without_sys_msg = [
+        user_msg.to_openai_user_message(),
+    ]
+
+    context_with_sys_msg, _ = assistant_with_sys_msg.memory.get_context()
+    assert context_with_sys_msg == expected_context_with_sys_msg
+    context_without_sys_msg, _ = assistant_without_sys_msg.memory.get_context()
+    assert context_without_sys_msg == expected_context_without_sys_msg
 
 
 @pytest.mark.model_backend
@@ -141,7 +167,7 @@ def test_chat_agent_step_with_structure_response():
         content="Tell a jokes.",
     )
 
-    response = assistant.step(user_msg, output_schema=JokeResponse)
+    response = assistant.step(user_msg, response_format=JokeResponse)
     response_content_json = ast.literal_eval(response.msgs[0].content)
     joke_response_keys = set(
         JokeResponse.model_json_schema()["properties"].keys()
@@ -161,7 +187,7 @@ def test_chat_agent_step_with_structure_response():
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools():
-    internal_tools = SearchToolkit().get_tools()
+    internal_tools = [FunctionTool(SearchToolkit().search_duckduckgo)]
     external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
@@ -273,17 +299,27 @@ def test_chat_agent_multiple_return_messages(n):
         meta_dict=None,
         content="You are a helpful assistant.",
     )
-    assistant = ChatAgent(system_msg, model=model)
-    assistant.reset()
+    assistant_with_sys_msg = ChatAgent(system_msg, model=model)
+    assistant_without_sys_msg = ChatAgent(model=model)
+
+    assistant_with_sys_msg.reset()
+    assistant_without_sys_msg.reset()
+
     user_msg = BaseMessage(
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="Tell me a joke.",
     )
-    assistant_response = assistant.step(user_msg)
-    assert assistant_response.msgs is not None
-    assert len(assistant_response.msgs) == n
+    assistant_with_sys_msg_response = assistant_with_sys_msg.step(user_msg)
+    assistant_without_sys_msg_response = assistant_without_sys_msg.step(
+        user_msg
+    )
+
+    assert assistant_with_sys_msg_response.msgs is not None
+    assert len(assistant_with_sys_msg_response.msgs) == n
+    assert assistant_without_sys_msg_response.msgs is not None
+    assert len(assistant_without_sys_msg_response.msgs) == n
 
 
 @pytest.mark.model_backend
@@ -378,14 +414,13 @@ def test_set_output_language():
     assert agent.output_language == output_language
 
     # Verify that the system message is updated with the new output language
-    updated_system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in Arabic.",
-    )
-    assert agent.system_message.content == updated_system_message.content
+    updated_system_message = {
+        'role': 'system',
+        'content': 'You are a help assistant.\nRegardless of the '
+        'input language, you must output text in Arabic.',
+    }
+    memory_content = agent.memory.get_context()
+    assert memory_content[0][0] == updated_system_message
 
 
 @pytest.mark.model_backend
@@ -396,21 +431,40 @@ def test_set_multiple_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(system_message=system_message)
+    agent_with_sys_msg = ChatAgent(system_message=system_message)
+    agent_without_sys_msg = ChatAgent()
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
-    agent.set_output_language("Chinese")
-    agent.set_output_language("English")
-    agent.set_output_language("French")
-    updated_system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in French.",
+    agent_with_sys_msg.set_output_language("Chinese")
+    agent_with_sys_msg.set_output_language("English")
+    agent_with_sys_msg.set_output_language("French")
+    agent_without_sys_msg.set_output_language("Chinese")
+    agent_without_sys_msg.set_output_language("English")
+    agent_without_sys_msg.set_output_language("French")
+
+    updated_system_message_with_sys_msg = {
+        'role': 'system',
+        'content': 'You are a help assistant.\nRegardless of the '
+        'input language, you must output text in French.',
+    }
+    updated_system_message_without_sys_msg = {
+        'role': 'system',
+        'content': '\nRegardless of the input language, you must output '
+        'text in French.',
+    }
+
+    memory_content_with_sys_msg = agent_with_sys_msg.memory.get_context()
+    memory_content_without_sys_msg = agent_without_sys_msg.memory.get_context()
+
+    assert (
+        memory_content_with_sys_msg[0][0]
+        == updated_system_message_with_sys_msg
     )
-    assert agent.system_message.content == updated_system_message.content
+    assert (
+        memory_content_without_sys_msg[0][0]
+        == updated_system_message_without_sys_msg
+    )
 
 
 @pytest.mark.model_backend
@@ -424,7 +478,6 @@ def test_function_enabled():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
@@ -448,7 +501,6 @@ def test_tool_calling_sync():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -493,7 +545,6 @@ async def test_tool_calling_math_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -548,13 +599,12 @@ async def test_tool_calling_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().as_dict(),
     )
 
     agent = ChatAgent(
         system_message=system_message,
         model=model,
-        tools=[OpenAIFunction(async_sleep)],
+        tools=[FunctionTool(async_sleep)],
     )
 
     assert len(agent.func_dict) == 1
@@ -638,7 +688,7 @@ def test_chat_agent_vision():
         image_detail="low",
     )
     # Mock the OpenAI model return value:
-    agent.model_backend = Mock()
+    agent.model_backend.run = Mock()
     agent.model_backend.run.return_value = ChatCompletion(
         id="mock_vision_id",
         choices=[

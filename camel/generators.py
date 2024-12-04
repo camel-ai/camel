@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages import BaseMessage
@@ -154,6 +154,21 @@ class SystemMessageGenerator:
 
 
 class RoleNameGenerator:
+    r"""Role name generator for role-playing workers.
+
+    Args:
+        assistant_role_names_path (str, optional): The path to the file
+            containing the assistant role names.
+            (default: :obj:`"data/ai_society/assistant_roles.txt"`)
+        user_role_names_path (str, optional): The path to the file
+            containing the user role names.
+            (default: :obj:`"data/ai_society/user_roles.txt"`)
+        assistant_role_names (Optional[List[str]], optional): The list of
+            assistant role names. (default: :obj:`None`)
+        user_role_names (Optional[List[str]], optional): The list of user role
+            names. (default: :obj:`None`)
+    """
+
     def __init__(
         self,
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
@@ -181,12 +196,25 @@ class RoleNameGenerator:
             self.user_role_names = user_role_names
 
     def from_role_files(self) -> Generator[Tuple, None, None]:
+        r"""Generate role names from the file.
+
+        Returns:
+            Generator[Tuple, None, None]: A generator that yields tuples of
+                assistant role names and user role names.
+        """
         for assistant_role_name in self.assistant_role_names:
             for user_role_name in self.user_role_names:
                 yield (assistant_role_name, user_role_name)
 
 
 class AISocietyTaskPromptGenerator:
+    r"""Task prompt generator for AI society tasks.
+
+    Args:
+        num_tasks (int, optional): The number of tasks to generate.
+            (default: :obj:`10`)
+    """
+
     def __init__(
         self,
         num_tasks: int = 10,
@@ -205,6 +233,20 @@ class AISocietyTaskPromptGenerator:
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
         user_role_names_path: str = "data/ai_society/user_roles.txt",
     ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
+        r"""Generate tasks from role files.
+
+        Args:
+            assistant_role_names_path (str, optional): The path to the file
+                containing the assistant role names.
+                (default: :obj:`"data/ai_society/assistant_roles.txt"`)
+            user_role_names_path (str, optional): The path to the file
+                containing the user role names.
+                (default: :obj:`"data/ai_society/user_roles.txt"`)
+
+        Returns:
+            Generator[Tuple[str, Tuple[str, str]], None, None]: A generator
+                that yields tuples of task prompts and role names.
+        """
         roles_generator = RoleNameGenerator(
             assistant_role_names_path, user_role_names_path
         ).from_role_files()
@@ -220,6 +262,16 @@ class AISocietyTaskPromptGenerator:
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]
     ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
+        r"""Generate tasks from a role generator.
+
+        Args:
+            role_generator (Generator[Tuple, None, None]): A generator that
+                yields tuples of role names.
+
+        Returns:
+            Generator[Tuple[str, Tuple[str, str]], None, None]: A generator
+                that yields tuples of task prompts and role names.
+        """
         for role_1, role_2 in role_generator:
             generate_tasks_prompt = self.generate_tasks_prompt.format(
                 assistant_role=role_1,
@@ -231,6 +283,12 @@ class AISocietyTaskPromptGenerator:
 
 
 class SingleTxtGenerator:
+    r"""Single text generator for role-playing workers.
+
+    Args:
+        text_file_path (str): The path to the file containing the text data.
+    """
+
     def __init__(
         self,
         text_file_path: str,
@@ -242,11 +300,23 @@ class SingleTxtGenerator:
             ]
 
     def from_role_files(self) -> Generator[str, None, None]:
+        r"""Generate text from the file.
+
+        Returns:
+            Generator[str, None, None]: A generator that yields the text data.
+        """
         for data in self.data_list:
             yield data
 
 
 class CodeTaskPromptGenerator:
+    r"""Code task prompt generator for code tasks.
+
+    Args:
+        num_tasks (int, optional): The number of tasks to generate.
+            (default: :obj:`50`)
+    """
+
     def __init__(
         self,
         num_tasks: int = 50,
@@ -262,6 +332,19 @@ class CodeTaskPromptGenerator:
         languages_path: str = "data/code/languages.txt",
         domains_path: str = "data/code/domains.txt",
     ) -> Generator[Tuple[TextPrompt, str, str], None, None]:
+        r"""Generate tasks from role files.
+
+        Args:
+            languages_path (str, optional): The path to the file containing
+                the language names. (default: :obj:`"data/code/languages.txt"`)
+            domains_path (str, optional): The path to the file containing
+                the domain names. (default: :obj:`"data/code/domains.txt"`)
+
+        Returns:
+            Generator[Tuple[TextPrompt, str, str], None, None]: A generator
+                that yields tuples of task prompts, language names, and domain
+                names.
+        """
         language_generator = SingleTxtGenerator(
             languages_path
         ).from_role_files()
@@ -279,4 +362,14 @@ class CodeTaskPromptGenerator:
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]
     ) -> Generator[str, None, None]:
+        r"""Generate tasks from a role generator.
+
+        Args:
+            role_generator (Generator[Tuple, None, None]): A generator that
+                yields tuples of role names.
+
+        Returns:
+            Generator[str, None, None]: A generator that yields the task
+                prompts.
+        """
         raise NotImplementedError

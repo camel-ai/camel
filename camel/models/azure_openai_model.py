@@ -1,75 +1,80 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import AzureOpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 
 class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface.
-    Doc: https://learn.microsoft.com/en-us/azure/ai-services/openai/
+
+    Args:
+        model_type (Union[ModelType, str]): Model for which a backend is
+            created, one of GPT_* series.
+        model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
+            that will be fed into:obj:`openai.ChatCompletion.create()`. If
+            :obj:`None`, :obj:`ChatGPTConfig().as_dict()` will be used.
+            (default: :obj:`None`)
+        api_key (Optional[str], optional): The API key for authenticating with
+            the OpenAI service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the OpenAI service.
+            (default: :obj:`None`)
+        api_version (Optional[str], optional): The api version for the model.
+            (default: :obj:`None`)
+        azure_deployment_name (Optional[str], optional): The deployment name
+            you chose when you deployed an azure model. (default: :obj:`None`)
+        token_counter (Optional[BaseTokenCounter], optional): Token counter to
+            use for the model. If not provided, :obj:`OpenAITokenCounter`
+            will be used. (default: :obj:`None`)
+
+    References:
+        https://learn.microsoft.com/en-us/azure/ai-services/openai/
     """
 
     def __init__(
         self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+        model_type: Union[ModelType, str],
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
         api_version: Optional[str] = None,
         azure_deployment_name: Optional[str] = None,
     ) -> None:
-        r"""Constructor for OpenAI backend.
+        if model_config_dict is None:
+            model_config_dict = ChatGPTConfig().as_dict()
+        api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        url = url or os.environ.get("AZURE_OPENAI_BASE_URL")
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
 
-        Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of GPT_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                OpenAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the OpenAI service. (default:
-                :obj:`None`)
-            api_version (Optional[str]): The api version for the model.
-            azure_deployment_name (Optional[str]): The deployment name you
-                chose when you deployed an azure model. (default: :obj:`None`)
-        """
-        super().__init__(model_type, model_config_dict, api_key, url)
-        self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
-        self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
         self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
         self.azure_deployment_name = azure_deployment_name or os.environ.get(
             "AZURE_DEPLOYMENT_NAME"
         )
-
-        if self._url is None:
-            raise ValueError(
-                "Must provide either the `url` argument "
-                "or `AZURE_OPENAI_ENDPOINT` environment variable."
-            )
-        if self._api_key is None:
-            raise ValueError(
-                "Must provide either the `api_key` argument "
-                "or `AZURE_OPENAI_API_KEY` environment variable."
-            )
         if self.api_version is None:
             raise ValueError(
                 "Must provide either the `api_version` argument "
@@ -80,7 +85,6 @@ class AzureOpenAIModel(BaseModelBackend):
                 "Must provide either the `azure_deployment_name` argument "
                 "or `AZURE_DEPLOYMENT_NAME` environment variable."
             )
-        self.model = str(self.azure_deployment_name)
 
         self._client = AzureOpenAI(
             azure_endpoint=str(self._url),
@@ -90,7 +94,6 @@ class AzureOpenAIModel(BaseModelBackend):
             timeout=60,
             max_retries=3,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -122,7 +125,7 @@ class AzureOpenAIModel(BaseModelBackend):
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model,
+            model=self.azure_deployment_name,  # type:ignore[arg-type]
             **self.model_config_dict,
         )
         return response

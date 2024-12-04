@@ -28,13 +28,12 @@ class MeshyToolkit(BaseToolkit):
 
     Call the generate_3d_model_complete method to generate a refined 3D model.
 
-    Ref: https://docs.meshy.ai/api-text-to-3d-beta
-         #create-a-text-to-3d-preview-task
+    Ref: 
+    https://docs.meshy.ai/api-text-to-3d-beta#create-a-text-to-3d-preview-task
     """
 
     def __init__(self):
-        """
-        Initializes the MeshyToolkit with the API key from the environment.
+        r"""Initializes the MeshyToolkit with the API key from the environment.
         """
         self.api_key = os.getenv('MESHY_API_KEY')
         if not self.api_key:
