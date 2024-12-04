@@ -11,68 +11,166 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
-import time
-
-import pytest
+import unittest
+from unittest.mock import MagicMock, patch
 
 from camel.toolkits import MeshyToolkit
 
 
-@pytest.fixture
-def meshy_toolkit():
-    api_key = os.getenv('MESHY_API_KEY')
-    if not api_key:
-        pytest.skip("MESHY_API_KEY not found in environment variables")
-    return MeshyToolkit()
+class TestMeshyToolkit(unittest.TestCase):
+    @patch("requests.post")
+    def test_generate_3d_preview(self, mock_post):
+        # Arrange
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"result": "task_id_123"}
+        mock_post.return_value = mock_response
 
+        toolkit = MeshyToolkit()
+        prompt = "A 3D model of a cat"
+        art_style = "cartoon"
+        negative_prompt = "No dogs"
 
-def test_generate_3d_preview_live(meshy_toolkit):
-    response = meshy_toolkit.generate_3d_preview(
-        prompt="A simple cube",
-        art_style="realistic",
-        negative_prompt="low quality",
-    )
-    assert 'result' in response
-    assert isinstance(response['result'], str)
-    return response['result']
+        # Act
+        result = toolkit.generate_3d_preview(
+            prompt, art_style, negative_prompt
+        )
 
+        # Assert
+        mock_post.assert_called_once_with(
+            "https://api.meshy.ai/v2/text-to-3d",
+            headers={"Authorization": f"Bearer {toolkit.api_key}"},
+            json={
+                "mode": "preview",
+                "prompt": prompt,
+                "art_style": art_style,
+                "negative_prompt": negative_prompt,
+            },
+        )
+        self.assertEqual(result, {"result": "task_id_123"})
 
-def test_get_task_status_live(meshy_toolkit):
-    preview_id = test_generate_3d_preview_live(meshy_toolkit)
-    max_attempts = 10
-    attempts = 0
+    @patch("requests.post")
+    def test_refine_3d_model(self, mock_post):
+        # Arrange
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"result": "task_id_456"}
+        mock_post.return_value = mock_response
 
-    while attempts < max_attempts:
-        status_response = meshy_toolkit.get_task_status(preview_id)
-        assert 'status' in status_response
+        toolkit = MeshyToolkit()
+        preview_task_id = "task_id_123"
 
-        if status_response['status'] == 'SUCCEEDED':
-            break
+        # Act
+        result = toolkit.refine_3d_model(preview_task_id)
 
-        time.sleep(10)  # Wait 10 seconds between checks
-        attempts += 1
+        # Assert
+        mock_post.assert_called_once_with(
+            "https://api.meshy.ai/v2/text-to-3d",
+            headers={"Authorization": f"Bearer {toolkit.api_key}"},
+            json={"mode": "refine", "preview_task_id": preview_task_id},
+        )
+        self.assertEqual(result, {"result": "task_id_456"})
 
-    assert attempts < max_attempts, "Preview generation timed out"
-    assert status_response['status'] == 'SUCCEEDED'
+    @patch("requests.get")
+    def test_get_task_status(self, mock_get):
+        # Arrange
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "status": "SUCCEEDED",
+            "result": "final_task_id",
+        }
+        mock_get.return_value = mock_response
 
+        toolkit = MeshyToolkit()
+        task_id = "task_id_123"
 
-def test_refine_3d_model_live(meshy_toolkit):
-    preview_id = test_generate_3d_preview_live(meshy_toolkit)
+        # Act
+        result = toolkit.get_task_status(task_id)
 
-    # Wait for preview to complete
-    max_attempts = 10
-    attempts = 0
-    while attempts < max_attempts:
-        status = meshy_toolkit.get_task_status(preview_id)
-        if status['status'] == 'SUCCEEDED':
-            break
-        time.sleep(10)
-        attempts += 1
+        # Assert
+        mock_get.assert_called_once_with(
+            f"https://api.meshy.ai/v2/text-to-3d/{task_id}",
+            headers={"Authorization": f"Bearer {toolkit.api_key}"},
+        )
+        self.assertEqual(
+            result, {"status": "SUCCEEDED", "result": "final_task_id"}
+        )
 
-    assert attempts < max_attempts, "Preview generation timed out"
+    @patch("requests.get")
+    @patch("time.sleep", return_value=None)
+    def test_wait_for_task_completion_success(self, mock_sleep, mock_get):
+        # Arrange
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "status": "SUCCEEDED",
+            "result": "final_task_id",
+        }
+        mock_get.return_value = mock_response
 
-    # Test refine
-    refine_response = meshy_toolkit.refine_3d_model(preview_id)
-    assert 'result' in refine_response
-    assert isinstance(refine_response['result'], str)
+        toolkit = MeshyToolkit()
+        task_id = "task_id_123"
+
+        # Act
+        result = toolkit.wait_for_task_completion(task_id)
+
+        # Assert
+        mock_get.assert_called()
+        self.assertEqual(
+            result, {"status": "SUCCEEDED", "result": "final_task_id"}
+        )
+
+    @patch("requests.get")
+    @patch("time.sleep", return_value=None)
+    def test_wait_for_task_completion_timeout(self, mock_sleep, mock_get):
+        # Arrange
+        toolkit = MeshyToolkit()
+        task_id = "task_id_123"
+        mock_get.return_value.json.return_value = {
+            "status": "PENDING"
+        }  # Simulate pending status
+
+        # Act & Assert
+        with self.assertRaises(TimeoutError):
+            toolkit.wait_for_task_completion(
+                task_id, timeout=1
+            )  # Timeout after 1 second
+
+    @patch("requests.post")
+    @patch("requests.get")
+    @patch("time.sleep", return_value=None)
+    def test_generate_3d_model_complete(self, mock_sleep, mock_get, mock_post):
+        # Arrange
+        mock_preview_response = MagicMock()
+        mock_preview_response.raise_for_status = MagicMock()
+        mock_preview_response.json.return_value = {"result": "preview_task_id"}
+        mock_post.return_value = mock_preview_response
+
+        mock_refine_response = MagicMock()
+        mock_refine_response.raise_for_status = MagicMock()
+        mock_refine_response.json.return_value = {"result": "refine_task_id"}
+        mock_post.return_value = mock_refine_response
+
+        mock_status_response = MagicMock()
+        mock_status_response.raise_for_status = MagicMock()
+        mock_status_response.json.return_value = {
+            "status": "SUCCEEDED",
+            "result": "final_task_id",
+        }
+        mock_get.return_value = mock_status_response
+
+        toolkit = MeshyToolkit()
+        prompt = "A 3D model of a cat"
+        art_style = "cartoon"
+        negative_prompt = "No dogs"
+
+        # Act
+        result = toolkit.generate_3d_model_complete(
+            prompt, art_style, negative_prompt
+        )
+
+        # Assert
+        self.assertEqual(
+            result, {"status": "SUCCEEDED", "result": "final_task_id"}
+        )
