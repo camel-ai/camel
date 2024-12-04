@@ -52,17 +52,19 @@ def run_task(
 
 
 class GAIABenchmark(BaseBenchmark):
-    r"""GAIA Benchmark
+    r"""GAIA Benchmark adapted from `"GAIA: a benchmark for General AI
+    Assistants"
+    <https://huggingface.co/datasets/gaia-benchmark/GAIA>`_.
 
     Args:
         data_dir (str): The directory to save the data.
         save_to (str): The file to save the results.
-        retriever (AutoRetriever): The retriever to use
-            for retrieving the content.
-        retrieve_kwargs (Dict[str, Any], optional): The kwargs
-            to pass to the retriever. Defaults to None.
-        processes (int, optional): The number of processes
-            to use. Defaults to 1.
+        retriever (AutoRetriever): The retriever to use for retrieving the
+            content.
+        retrieve_kwargs (Dict[str, Any], optional): The kwargs to pass to the
+            retriever. (default: :obj:`None`)
+        processes (int, optional): The number of processes to use.
+            (default: :obj:`1`)
     """
 
     def __init__(
@@ -140,9 +142,9 @@ class GAIABenchmark(BaseBenchmark):
             level (Union[int, List[int], Literal["all"]]): The level to run
                 the benchmark.
             randomize (bool, optional): Whether to randomize the data.
-                Defaults to False.
+                (default: :obj:`False`)
             subset (Optional[int], optional): The subset of data to run.
-                Defaults to None.
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: The results of the benchmark.
@@ -338,7 +340,7 @@ class GAIABenchmark(BaseBenchmark):
             s (str): The string to split.
             char_list (Optional[List[str]], optional): T
                 he list of characters to split on.
-                Defaults to None.
+                (default: :obj:`None`)
         """
         if char_list is None:
             char_list = [",", ";"]

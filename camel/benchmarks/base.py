@@ -26,11 +26,10 @@ class BaseBenchmark(ABC):
     r"""Base class for benchmarks.
 
     Attributes:
-
-    name (str): Name of the benchmark.
-    data_dir (str): Path to the data directory.
-    processes (int): Number of processes to use for parallel processing.
-    save_to (str): Path to save the results.
+        name (str): Name of the benchmark.
+        data_dir (str): Path to the data directory.
+        processes (int): Number of processes to use for parallel processing.
+        save_to (str): Path to save the results.
     """
 
     def __init__(
