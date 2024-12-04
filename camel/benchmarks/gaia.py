@@ -19,7 +19,7 @@ import random
 import re
 import string
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from tqdm import tqdm
 
@@ -32,7 +32,19 @@ from camel.retrievers.auto_retriever import AutoRetriever
 logger = logging.getLogger(__name__)
 
 
-def run_task(model_config, agent_config, msg):
+def run_task(
+    model_config, agent_config, msg
+) -> Tuple[str, List[Dict[str, Any]]]:
+    r"""Helper function to run a task.
+
+    Args:
+        model_config (Dict[str, Any]): The model configuration.
+        agent_config (Dict[str, Any]): The agent configuration.
+        msg (str): The message to run the task.
+
+    Returns:
+        Tuple[str, List[Dict[str, Any]]]: The response and the tool calls.
+    """
     model = ModelFactory.create(**model_config)
     agent = ChatAgent(**agent_config, model=model)
     result = agent.step(msg)
@@ -109,6 +121,7 @@ class GAIABenchmark(BaseBenchmark):
 
     @property
     def train(self):
+        r"""Get the training set."""
         raise NotImplementedError("GAIA does not have a training set.")
 
     def run(  # type: ignore[override]
@@ -158,7 +171,6 @@ class GAIABenchmark(BaseBenchmark):
             datas = datas[:subset]
         logger.info(f"Number of tasks: {len(datas)}")
         self._results = []
-        agent = self._inject(agent)
         with open(self.save_to, "w") as f:
             for task in tqdm(datas, desc="Running"):
                 if task["file_name"] != "":
@@ -240,8 +252,8 @@ class GAIABenchmark(BaseBenchmark):
                     )
                 agent.reset()
 
-                self._results[-1]["history"] = self._current_history
-                self._current_history = []
+                self._results[-1]["history"] = agent.memory.get_context()
+
                 f.write(json.dumps(self._results[-1], indent=2) + "\n")
                 f.flush()
 

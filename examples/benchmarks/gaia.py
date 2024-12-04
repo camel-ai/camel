@@ -41,7 +41,7 @@ toolkit = CodeExecutionToolkit(verbose=True)
 runtime = DockerRuntime("xukunliu/camel").add(
     toolkit.get_tools(),
     "camel.toolkits.CodeExecutionToolkit",
-    dict(verbose=True),
+    arguments=dict(verbose=True),
     redirect_stdout=False,
 )
 

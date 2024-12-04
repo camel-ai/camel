@@ -12,14 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import dataclasses
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from camel.agents import ChatAgent
-from camel.messages.base import BaseMessage
 
 logger = logging.getLogger(__name__)
 
@@ -29,19 +27,25 @@ class BaseBenchmark(ABC):
 
     Attributes:
 
-    - name: str - Name of the benchmark.
-    - data_dir: str - Path to the data directory.
-    - processes: int - Number of processes to use.
-    - save_to: str - Path to save the results.
-    - _data: Dict[str, List[Dict[str, Any]]] - Data for the benchmark.
-    - _results: List[Dict[str, Any]] - Results of the benchmark.
-    - _current_history: List[Dict[str, Any]] - Current history of
-        the benchmark.
+    name (str): Name of the benchmark.
+    data_dir (str): Path to the data directory.
+    processes (int): Number of processes to use for parallel processing.
+    save_to (str): Path to save the results.
     """
 
     def __init__(
         self, name: str, data_dir: str, save_to: str, processes: int = 1
     ):
+        r"""Initialize the benchmark.
+
+        Args:
+            name (str): Name of the benchmark.
+            data_dir (str): Path to the data directory.
+            save_to (str): Path to save the results.
+            processes (int): Number of processes to use for parallel
+                processing.
+
+        """
         self.name = name
         self.data_dir = Path(data_dir)
         self.processes = processes
@@ -57,18 +61,35 @@ class BaseBenchmark(ABC):
             )
         self._data: Dict[str, List[Dict[str, Any]]] = dict()
         self._results: List[Dict[str, Any]] = []
-        self._current_history: List[Dict[str, Any]] = []
 
     @abstractmethod
     def download(self) -> "BaseBenchmark":
+        r"""Download the benchmark data.
+
+        Returns:
+            BaseBenchmark: The benchmark instance.
+        """
         pass
 
     @abstractmethod
     def load(self, force_download: bool = False) -> "BaseBenchmark":
+        r"""Load the benchmark data.
+
+        Args:
+            force_download (bool): Whether to force download the data.
+
+        Returns:
+            BaseBenchmark: The benchmark instance.
+        """
         pass
 
     @property
     def train(self) -> List[Dict[str, Any]]:
+        r"""Get the training data.
+
+        Returns:
+            List[Dict[str, Any]]: The training data.
+        """
         if not self._data:
             logger.info("Data not loaded. Loading data.")
             self.load()
@@ -76,6 +97,11 @@ class BaseBenchmark(ABC):
 
     @property
     def valid(self) -> List[Dict[str, Any]]:
+        r"""Get the validation data.
+
+        Returns:
+            List[Dict[str, Any]]: The validation data.
+        """
         if not self._data:
             logger.info("Data not loaded. Loading data.")
             self.load()
@@ -83,6 +109,11 @@ class BaseBenchmark(ABC):
 
     @property
     def test(self) -> List[Dict[str, Any]]:
+        r"""Get the test data.
+
+        Returns:
+            List[Dict[str, Any]]: The test data.
+        """
         if not self._data:
             logger.info("Data not loaded. Loading data.")
             self.load()
@@ -98,20 +129,24 @@ class BaseBenchmark(ABC):
         *args,
         **kwargs,
     ) -> "BaseBenchmark":
+        r"""Run the benchmark.
+
+        Args:
+            agent (ChatAgent): The chat agent.
+            on (str): The data split to run the benchmark on.
+            randomize (bool): Whether to randomize the data.
+            subset (int): The subset of the data to run the benchmark on.
+
+        Returns:
+            BaseBenchmark: The benchmark instance.
+        """
         pass
 
     @property
     def results(self) -> List[Dict[str, Any]]:
+        r"""Get the results.
+
+        Returns:
+            List[Dict[str, Any]]: The results.
+        """
         return self._results
-
-    def _inject(self, agent: ChatAgent) -> ChatAgent:
-        ori = agent.record_message
-
-        def record_message(message: BaseMessage) -> None:
-            tmp = dataclasses.asdict(message)
-            tmp.pop("role_type")
-            self._current_history.append(tmp)
-            return ori(message)
-
-        agent.record_message = record_message  # type: ignore[method-assign]
-        return agent
