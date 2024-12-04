@@ -406,7 +406,6 @@ markers = [
     "asyncio: mark a test as asyncio-based.",
     "very_slow: mark a very slow test to run only in full test mode",
     "model_backend: for tests that require OpenAI API key or a local LLM",
-    "live: marks tests that make real API calls"
 ]
 
 [tool.coverage.report]
