@@ -17,14 +17,13 @@ from typing import Dict, List, Optional, Union
 from openai import OpenAI
 
 from camel.messages import OpenAIMessage
-from camel.reward.base_reward_model import BaseRewardModel
+from camel.models.reward import BaseRewardModel
 from camel.types import ChatCompletion, ModelType
 from camel.utils import api_keys_required
 
 
-class NemotroModel(BaseRewardModel):
-    r"""
-    Reward model based on the Nemetro model with OpenAI compatibility.
+class NemotroRewardModel(BaseRewardModel):
+    r"""Reward model based on the Nemetro model with OpenAI compatibility.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -57,8 +56,7 @@ class NemotroModel(BaseRewardModel):
 
     @api_keys_required("NVIDIA_API_KEY")
     def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
-        r"""
-        Evaluate the messages using the Nemetro model.
+        r"""Evaluate the messages using the Nemetro model.
 
         Args:
             messages (List[OpenAIMessage]): A list of messages where each
@@ -75,8 +73,7 @@ class NemotroModel(BaseRewardModel):
         return scores
 
     def get_scores_types(self) -> List[str]:
-        r"""
-        Get the list of score types that the reward model can return.
+        r"""Get the list of score types that the reward model can return.
 
         Returns:
             List[str]: A list of score types that the reward model can return.
@@ -90,8 +87,7 @@ class NemotroModel(BaseRewardModel):
         ]
 
     def _parse_scores(self, response: ChatCompletion) -> Dict[str, float]:
-        r"""
-        Parse the scores from the response.
+        r"""Parse the scores from the response.
 
         Args:
             response (ChatCompletion): A ChatCompletion object with the scores.

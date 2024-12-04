@@ -11,3 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .base_reward_model import BaseRewardModel
+from .nemetro_model import NemotroRewardModel
+
+__all__ = [
+    'BaseRewardModel',
+    'NemotroRewardModel',
+]

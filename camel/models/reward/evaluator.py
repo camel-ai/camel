@@ -14,13 +14,12 @@
 from typing import Dict, List
 
 from camel.messages import OpenAIMessage
-from camel.reward.base_reward_model import BaseRewardModel
+from camel.models.reward import BaseRewardModel
 
 
 class Evaluator:
-    r"""
-    Evaluator class to evaluate messages using a reward model and filter data
-    based on the scores.
+    r"""Evaluator class to evaluate messages using a reward model and filter
+    data based on the scores.
 
     Args:
         reward_model (BaseRewardModel): A reward model to evaluate messages.
@@ -30,8 +29,7 @@ class Evaluator:
         self.reward_model = reward_model
 
     def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
-        r"""
-        Evaluate the messages using the reward model.
+        r"""Evaluate the messages using the reward model.
 
         Args:
             messages (List[Dict[str, str]]): A list of messages where each
@@ -46,8 +44,7 @@ class Evaluator:
     def filter_data(
         self, messages: List[OpenAIMessage], thresholds: Dict[str, float]
     ) -> bool:
-        r"""
-        Filter messages based on the scores.
+        r"""Filter messages based on the scores.
 
         Args:
             messages (List[Dict[str, str]]): A list of messages where each

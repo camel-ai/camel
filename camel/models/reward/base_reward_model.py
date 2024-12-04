@@ -19,11 +19,10 @@ from camel.types import ModelType
 
 
 class BaseRewardModel(ABC):
-    r"""
-    Abstract base class for reward models. Reward models are used to evaluate
-    messages and return scores based on different criteria.
+    r"""Abstract base class for reward models. Reward models are used to
+    evaluate messages and return scores based on different criteria.
 
-    subclasses should implement the 'evaluate' and 'get_scores_types' methods.
+    Subclasses should implement the 'evaluate' and 'get_scores_types' methods.
     """
 
     def __init__(
@@ -38,8 +37,8 @@ class BaseRewardModel(ABC):
 
     @abstractmethod
     def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
-        r"""
-        Evaluate the messages and return scores based on different criteria.
+        r"""Evaluate the messages and return scores based on different
+        criteria.
 
         Args:
             messages (List[Dict[str, str]]): A list of messages where each
@@ -52,8 +51,7 @@ class BaseRewardModel(ABC):
 
     @abstractmethod
     def get_scores_types(self) -> List[str]:
-        r"""
-        Get the list of score types that the reward model can return.
+        r"""Get the list of score types that the reward model can return.
 
         Returns:
             List[str]: A list of score types that the reward model can return.
