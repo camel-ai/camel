@@ -108,13 +108,13 @@ class SubprocessInterpreter(BaseInterpreter):
         )
         stdout, stderr = proc.communicate()
         if self.print_stdout and stdout:
-            logger.info("======stdout======")
-            logger.info(Fore.GREEN + stdout + Fore.RESET)
-            logger.info("==================")
+            print("======stdout======")
+            print(Fore.GREEN + stdout + Fore.RESET)
+            print("==================")
         if self.print_stderr and stderr:
-            logger.error("======stderr======")
-            logger.error(Fore.RED + stderr + Fore.RESET)
-            logger.error("==================")
+            print("======stderr======")
+            print(Fore.RED + stderr + Fore.RESET)
+            print("==================")
         exec_result = f"{stdout}"
         exec_result += f"(stderr: {stderr})" if stderr else ""
         return exec_result
@@ -145,9 +145,9 @@ class SubprocessInterpreter(BaseInterpreter):
         # Print code for security checking
         if self.require_confirm:
             logger.info(
-                f"The following {code_type} code will run on your computer:"
+                f"The following {code_type} code will run on your "
+                "computer: {code}"
             )
-            logger.info(Fore.CYAN + code + Fore.RESET)
             while True:
                 choice = input("Running code? [Y/n]:").lower()
                 if choice in ["y", "yes", "ye", ""]:
