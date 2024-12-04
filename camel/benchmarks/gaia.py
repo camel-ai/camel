@@ -230,6 +230,7 @@ class GAIABenchmark(BaseBenchmark):
                         {
                             "task_id": task["task_id"],
                             "question": task["Question"],
+                            "level": task["Level"],
                             "model_answer": model_answer,
                             "ground_truth": final_answer,
                             "tool_calls": [
@@ -246,6 +247,8 @@ class GAIABenchmark(BaseBenchmark):
                     self._results.append(
                         {
                             "task_id": task["task_id"],
+                            "question": task["Question"],
+                            "level": task["Level"],
                             "model_answer": "ERROR",
                             "ground_truth": final_answer,
                             "tool_calls": [],
