@@ -1,12 +1,26 @@
-
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import List, Optional, Union, Dict
-from camel.types import ChatCompletion, ModelType
-from camel.reward.base_reward_model import BaseRewardModel
-from camel.utils import api_keys_required
-from camel.messages import OpenAIMessage
+from typing import Dict, List, Optional, Union
 
 from openai import OpenAI
+
+from camel.messages import OpenAIMessage
+from camel.reward.base_reward_model import BaseRewardModel
+from camel.types import ChatCompletion, ModelType
+from camel.utils import api_keys_required
+
 
 class NemotroModel(BaseRewardModel):
     r"""
@@ -18,7 +32,7 @@ class NemotroModel(BaseRewardModel):
         api_key (Optional[str], optional): The API key for authenticating
             with the model service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service.
-    
+
     Note:
         The Nemetro model does not support model config.
     """
@@ -29,8 +43,9 @@ class NemotroModel(BaseRewardModel):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        url = url or os.environ.get("NVIDIA_API_BASE_URL", 
-                                    "https://integrate.api.nvidia.com/v1")
+        url = url or os.environ.get(
+            "NVIDIA_API_BASE_URL", "https://integrate.api.nvidia.com/v1"
+        )
         api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         super().__init__(model_type, api_key, url)
         self._client = OpenAI(
@@ -38,8 +53,8 @@ class NemotroModel(BaseRewardModel):
             max_retries=3,
             base_url=self.url,
             api_key=self.api_key,
-            )
-    
+        )
+
     @api_keys_required("NVIDIA_API_KEY")
     def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
         r"""
@@ -52,13 +67,13 @@ class NemotroModel(BaseRewardModel):
         Returns:
             ChatCompletion: A ChatCompletion object with the scores.
         """
-        response = self._client.chat_completion.create(
+        response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
         )
         scores = self._parse_scores(response)
         return scores
-    
+
     def get_scores_types(self) -> List[str]:
         r"""
         Get the list of score types that the reward model can return.
@@ -66,12 +81,14 @@ class NemotroModel(BaseRewardModel):
         Returns:
             List[str]: A list of score types that the reward model can return.
         """
-        return ["helpfulness",
-                "correctness",
-                "coherence",
-                "complexity",
-                "verbosity",]
-    
+        return [
+            "helpfulness",
+            "correctness",
+            "coherence",
+            "complexity",
+            "verbosity",
+        ]
+
     def _parse_scores(self, response: ChatCompletion) -> Dict[str, float]:
         r"""
         Parse the scores from the response.
@@ -83,8 +100,18 @@ class NemotroModel(BaseRewardModel):
             Dict[str, float]: A dictionary mapping score types to their values.
         """
         try:
-            logprobs = response["choices"][0]["logprobs"]["content"]
-            scores = {entry["token"]: entry["logprob"] for entry in logprobs}
-            return scores
-        except (KeyError, IndexError) as e:
-            return {"error": 0.0}
+            choices = response.choices
+            logprobs = (
+                choices[0].logprobs.content
+                if choices and choices[0].logprobs
+                else None
+            )
+            scores = (
+                {entry.token: entry.logprob for entry in logprobs if entry}
+                if logprobs
+                else {}
+            )
+        except (KeyError, IndexError):
+            scores = {"error": 0.0}
+
+        return scores
