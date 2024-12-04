@@ -275,15 +275,34 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            missing_environment_keys = [
-                k for k in required_keys if k not in os.environ
-            ]
+            if func.__name__ == "__init__":
+                # Initialize instance first
+                result = func(*args, **kwargs)
+
+                # Check required API keys after initialization
+                instance = args[0]  # The first argument should be the instance
+                missing_keys = [
+                    k
+                    for k in required_keys
+                    if not (
+                        os.environ.get(k)
+                        or getattr(instance, '_api_key', None)
+                    )
+                ]
+                if missing_keys:
+                    raise ValueError(
+                        f"Missing API keys: {', '.join(missing_keys)}"
+                    )
+                return result
+
+            # For non-__init__ methods, check API keys directly
+            missing_keys = [k for k in required_keys if k not in os.environ]
             if (
                 not (args and getattr(args[0], '_api_key', None))
-                and missing_environment_keys
+                and missing_keys
             ):
                 raise ValueError(
-                    f"Missing API keys: {', '.join(missing_environment_keys)}"
+                    f"Missing API keys: {', '.join(missing_keys)}"
                 )
             return func(*args, **kwargs)
 
