@@ -229,6 +229,7 @@ class GAIABenchmark(BaseBenchmark):
                     self._results.append(
                         {
                             "task_id": task["task_id"],
+                            "question": task["Question"],
                             "model_answer": model_answer,
                             "ground_truth": final_answer,
                             "tool_calls": [
