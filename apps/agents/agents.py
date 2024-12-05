@@ -27,6 +27,7 @@ from pydantic import BaseModel, ConfigDict
 
 from apps.agents.text_utils import split_markdown_code
 from camel.agents import TaskSpecifyAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.societies import RolePlaying
 from camel.types import TaskType
@@ -36,6 +37,9 @@ REPO_ROOT = os.path.realpath(
 )
 
 ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
+
+
+logger = get_logger(__name__)
 
 
 class State(BaseModel):
@@ -110,7 +114,7 @@ def parse_arguments():
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
-        print("Unknown args: ", unknown)
+        logger.warning("Unknown args: %s", unknown)
     return args
 
 
@@ -134,7 +138,7 @@ def load_roles(path: str) -> List[str]:
                 role = match.group(1)
                 roles.append(role)
             else:
-                print("Warning: no match")
+                logger.warn("No match")
     return roles
 
 
@@ -190,11 +194,11 @@ def role_playing_start(
     """
 
     if state.session is not None:
-        print("Double click")
+        logger.info("Double click")
         return {}  # may fail
 
     if society_name not in {"AI Society", "Code"}:
-        print(f"Error: unrecognezed society {society_name}")
+        logger.error(f"Unrecognezed society {society_name}")
         return {}
 
     meta_dict: Optional[Dict[str, str]]
@@ -230,7 +234,7 @@ def role_playing_start(
             output_language=language,
         )
     except (openai.RateLimitError, RuntimeError) as ex:
-        print("OpenAI API exception 0 " + str(ex))
+        logger.info("OpenAI API exception 0 " + str(ex))
         return (state, str(ex), "", [], gr.update())
 
     # Can't re-create a state like below since it
@@ -285,7 +289,7 @@ def role_playing_chat_init(
     """
 
     if state.session is None:
-        print("Error: session is none on role_playing_chat_init call")
+        logger.error("Session is none on role_playing_chat_init call")
         return state, state.chat, gr.update()
 
     session: RolePlaying = state.session
@@ -294,7 +298,7 @@ def role_playing_chat_init(
         input_msg: BaseMessage
         input_msg = session.init_chat()
     except (openai.RateLimitError, RuntimeError) as ex:
-        print("OpenAI API exception 1 " + str(ex))
+        logger.error("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
 
@@ -338,7 +342,7 @@ def role_playing_chat_cont(
             state.saved_assistant_msg
         )
     except (openai.RateLimitError, RuntimeError) as ex:
-        print("OpenAI API exception 2 " + str(ex))
+        logger.error("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
 
@@ -639,7 +643,7 @@ def main():
 
     args = parse_arguments()
 
-    print("Getting Agents web server online...")
+    logger.info("Getting Agents web server online...")
 
     blocks = construct_blocks(args.api_key)
 
@@ -651,7 +655,7 @@ def main():
         debug=True,
     )
 
-    print("Exiting.")
+    logger.info("Exiting.")
 
 
 if __name__ == "__main__":

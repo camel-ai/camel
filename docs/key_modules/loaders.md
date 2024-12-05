@@ -336,14 +336,14 @@ response = jina_reader.read_content("https://docs.camel-ai.org/")
 print(response)
 ```
 ```markdown
->>>Welcome to CAMEL’s documentation! — CAMEL 0.2.10 documentation
+>>>Welcome to CAMEL’s documentation! — CAMEL 0.2.11 documentation
 ===============
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 
 Back to top Ctrl+K
 
- [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.10](https://docs.camel-ai.org/#)
+ [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.11](https://docs.camel-ai.org/#)
 
 Search Ctrl+K
 

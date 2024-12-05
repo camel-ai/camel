@@ -69,6 +69,7 @@ Main Documentation
    cookbooks/agents_tracking.ipynb
    cookbooks/workforce_judge_committee.ipynb
    cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
+   cookbooks/sft_data_generation_and_unsloth_finetuning.ipynb
 
 .. toctree::
    :maxdepth: 1
