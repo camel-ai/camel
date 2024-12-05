@@ -181,7 +181,7 @@ class SearchToolkit(BaseToolkit):
             country (str): The search query country where results come from.
                 The country string is limited to 2 character country codes of
                 supported countries. For a list of supported values, see
-                Country Codes.
+                Country Codes. (default::obj:`US `)
             search_lang (str): The search language preference. The 2 or more
                 character language code for which search results are provided.
                 For a list of possible values, see Language Codes.
@@ -208,7 +208,7 @@ class SearchToolkit(BaseToolkit):
                 - 'moderate': Filters explicit content, like images and videos,
                     but allows adult domains in the search results.
                 - 'strict': Drops all adult content from search results.
-            freshness (str): Filters search results by when they were
+            freshness (Optional[str]): Filters search results by when they were
                 discovered:
                 - 'pd': Discovered within the last 24 hours.
                 - 'pw': Discovered within the last 7 Days.
@@ -223,30 +223,40 @@ class SearchToolkit(BaseToolkit):
                 spellchecker is enabled, the modified query is always used for
                 search. The modified query can be found in altered key from the
                 query response model.
-            result_filter (str): A comma delimited string of result types to
-                include in the search response. Not specifying this parameter
-                will return back all result types in search response where data
-                is available and a plan with the corresponding option is
-                subscribed. The response always includes query and type to
-                identify any query modifications and response type
-                respectively.
-                Available result filter values are: 'discussions', 'faq',
-                'infobox', 'news', 'query', 'summarizer', 'videos', 'web',
-                'locations'.
-            goggles_id (str): Goggles act as a custom re-ranking on top of
-                Brave's search index. For more details, refer to the Goggles
-                repository.
-            units (str): The measurement units. If not provided, units are
-                derived from search country. Possible values are:
+            result_filter (Optional[str]): A comma delimited string of result
+                types to include in the search response. Not specifying this
+                parameter will return back all result types in search response
+                where data is available and a plan with the corresponding
+                option is subscribed. The response always includes query and
+                type to identify any query modifications and response type
+                respectively. Available result filter values are:
+                - 'discussions'
+                - 'faq'
+                - 'infobox'
+                - 'news'
+                - 'query'
+                - 'summarizer'
+                - 'videos'
+                - 'web'
+                - 'locations'
+            goggles_id (Optional[str]): Goggles act as a custom re-ranking on
+                top of Brave's search index. For more details, refer to the
+                Goggles repository.
+            units (Optional[str]): The measurement units. If not provided,
+                units are derived from search country. Possible values are:
                 - 'metric': The standardized measurement system
                 - 'imperial': The British Imperial system of units.
-            extra_snippets (bool): A snippet is an excerpt from a page you get
-                as a result of the query, and extra_snippets allow you to get
-                up to 5 additional, alternative excerpts. Only available under
-                Free AI, Base AI, Pro AI, Base Data, Pro Data and Custom plans.
-            summary (bool): This parameter enables summary key generation in
-                web search results. This is required for summarizer to be
-                enabled.
+            extra_snippets (Optional[bool]): A snippet is an excerpt from a
+                page you get as a result of the query, and extra_snippets
+                allow you to get up to 5 additional, alternative excerpts. Only
+                available under Free AI, Base AI, Pro AI, Base Data, Pro Data
+                and Custom plans.
+            summary (Optional[bool]): This parameter enables summary key
+                generation in web search results. This is required for
+                summarizer to be enabled.
+
+        Returns:
+            Dict[str, Any]: A dictionary representing a search result.
         """
 
         import requests

@@ -61,7 +61,6 @@ res_brave = SearchToolkit().search_brave(
     q="What is the weather in Tokyo?",
     search_lang="en",
 )
-
 print(res_brave)
 
 # Example with ChatAgent using the Brave search engine
@@ -77,4 +76,14 @@ usr_msg = "What is the temperature in Tokyo?"
 response = agent.step(input_message=usr_msg, response_format=None)
 
 print(response.msgs[0].content)
-print(response.info["tool_calls"])
+'''
+The current temperature in Tokyo can be found on various weather websites. 
+Here are a couple of reliable sources where you can check the latest weather 
+conditions:
+
+1. [AccuWeather - Tokyo Current Weather](https://www.accuweather.com/en/jp/tokyo/226396/current-weather/226396)
+2. [Time and Date - Tokyo Weather](https://www.timeanddate.com/weather/japan/tokyo)
+
+You can visit these links to get the most up-to-date temperature and weather 
+conditions in Tokyo.
+'''
