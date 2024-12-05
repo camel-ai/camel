@@ -19,6 +19,7 @@ from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 import stripe
 import logging
+import json
 
 class StripeBaseAdapter:
     def __init__(self, toolkit: 'StripeToolkit'):
@@ -112,7 +113,8 @@ class StripeToolkit(BaseToolkit):
                 self.logger.info(f"Retrieving customer with ID: {customer_id}")
                 customer = stripe.Customer.retrieve(customer_id)
                 self.logger.info(f"Retrieved customer: {customer.id}")
-                return customer.json()
+                json_string = json.dumps(customer)
+                return json_string
             except Exception as e:
                 return self.handle_exception("get_customer", e)
         
@@ -132,7 +134,7 @@ class StripeToolkit(BaseToolkit):
                 customers = stripe.Customer.list(limit=limit).data
                 self.logger.info(
                     f"Successfully retrieved {len(customers)} customers.")
-                return [customer.to_dict() for customer in customers]
+                return json.dumps( [customer for customer in customers])
             except Exception as e:
                 return self.handle_exception("list_customers", e)
     # ------------------------
@@ -153,8 +155,8 @@ class StripeToolkit(BaseToolkit):
             try:
                 self.logger.info("Retrieving account balance.")
                 balance = stripe.Balance.retrieve()
-                self.logger.info(f"Successfully retrieved account balance: {response}.")
-                return balance.to_dict()
+                self.logger.info(f"Successfully retrieved account balance: {balance}.")
+                return json.dumps( balance)
             except Exception as e:
                 return self.handle_exception("get_balance", e)
 
@@ -174,7 +176,7 @@ class StripeToolkit(BaseToolkit):
                 transactions = stripe.BalanceTransaction.list(limit=limit).data
                 self.logger.info(
                     f"Successfully retrieved {len(transactions)} balance transactions.")
-                return [transaction.to_dict() for transaction in transactions]
+                return json.dumps([transaction for transaction in transactions])
             except Exception as e:
                 return self.handle_exception("list_balance_transactions", e)
         
@@ -200,7 +202,7 @@ class StripeToolkit(BaseToolkit):
                 self.logger.info(f"Retrieving payment with ID: {payment_id}")
                 payment = stripe.PaymentIntent.retrieve(payment_id)
                 self.logger.info(f"Retrieved payment: {payment.id}")
-                return payment.to_dict()
+                return json.dumps(payment)
             except Exception as e:
                 return self.handle_exception("get_payment", e)
 
@@ -215,12 +217,13 @@ class StripeToolkit(BaseToolkit):
                 Union[List[Dict[str, Any]], str]: A list of payment data dictionaries
                 if successful, or an error message string if failed.
             """
+        
             try:
                 self.logger.info(f"Listing payments with limit={limit}")
                 payments = stripe.PaymentIntent.list(limit=limit).data
                 self.logger.info(
                     f"Successfully retrieved {len(payments)} payments.")
-                return [payment.to_dict() for payment in payments]
+                return json.dumps([payment for payment in payments])
             except Exception as e:
                 return self.handle_exception("list_payments", e)
 
@@ -246,7 +249,7 @@ class StripeToolkit(BaseToolkit):
                 self.logger.info(f"Retrieving refund with ID: {refund_id}")
                 refund = stripe.Refund.retrieve(refund_id)
                 self.logger.info(f"Retrieved refund: {refund.id}")
-                return refund.to_dict()
+                return json.dumps(refund)
             except Exception as e:
                 return self.handle_exception("get_refund", e)
 
@@ -266,7 +269,7 @@ class StripeToolkit(BaseToolkit):
                 refunds = stripe.Refund.list(limit=limit).data
                 self.logger.info(
                     f"Successfully retrieved {len(refunds)} refunds.")
-                return [refund.to_dict() for refund in refunds]
+                return json.dumps( [refund for refund in refunds])
             except Exception as e:
                 return self.handle_exception("list_refunds", e)
         
