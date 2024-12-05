@@ -23,6 +23,7 @@ from openai import OpenAI, Stream
 from camel.configs import (
     SAMBA_CLOUD_API_PARAMS,
     SAMBA_VERSE_API_PARAMS,
+    ResponseFormat,
     SambaCloudAPIConfig,
 )
 from camel.messages import OpenAIMessage
@@ -37,6 +38,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    response_format_not_supported,
 )
 
 try:
@@ -144,8 +146,11 @@ class SambaModel(BaseModelBackend):
             )
 
     @api_keys_required("SAMBA_API_KEY")
+    @response_format_not_supported
     def run(  # type: ignore[misc]
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs SambaNova's service.
 

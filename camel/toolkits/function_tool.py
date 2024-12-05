@@ -16,7 +16,7 @@ import inspect
 import logging
 import warnings
 from inspect import Parameter, getsource, signature
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
@@ -25,6 +25,7 @@ from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 
 from camel.agents import ChatAgent
+from camel.configs import ResponseFormat
 from camel.models import BaseModelBackend, ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
@@ -286,7 +287,7 @@ class FunctionTool:
         synthesize_schema_max_retries: int = 2,
         synthesize_output: Optional[bool] = False,
         synthesize_output_model: Optional[BaseModelBackend] = None,
-        synthesize_output_format: Optional[Type[BaseModel]] = None,
+        synthesize_output_format: Optional[ResponseFormat] = None,
     ) -> None:
         self.func = func
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
@@ -304,14 +305,18 @@ class FunctionTool:
                 f"Use `{self.synthesize_output_model.model_type}` to "
                 "synthesize the output."
             )
-        self.synthesize_output_format: Optional[type[BaseModel]] = None
+        self.synthesize_output_format: Optional[ResponseFormat] = None
         return_annotation = inspect.signature(self.func).return_annotation
         if synthesize_output_format is not None:
             self.synthesize_output_format = synthesize_output_format
         elif isinstance(return_annotation, type) and issubclass(
             return_annotation, BaseModel
         ):
-            self.synthesize_output_format = return_annotation
+            self.synthesize_output_format = ResponseFormat(
+                type="json",
+                method="builtins",
+                pydantic_object=return_annotation,
+            )
 
         self.synthesize_schema_model = synthesize_schema_model
         if synthesize_schema:

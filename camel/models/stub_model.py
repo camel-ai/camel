@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import Stream
 
+from camel.configs import ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -26,7 +27,7 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.utils import BaseTokenCounter
+from camel.utils import BaseTokenCounter, response_format_not_supported
 
 
 class StubTokenCounter(BaseTokenCounter):
@@ -74,8 +75,11 @@ class StubModel(BaseModelBackend):
             self._token_counter = StubTokenCounter()
         return self._token_counter
 
+    @response_format_not_supported
     def run(
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.

@@ -24,6 +24,7 @@ from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
+from .response_format_config import ResponseFormat
 from .samba_config import (
     SAMBA_CLOUD_API_PARAMS,
     SAMBA_VERSE_API_PARAMS,
@@ -36,6 +37,7 @@ from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
 __all__ = [
+    # Model configs
     'BaseConfig',
     'ChatGPTConfig',
     'OPENAI_API_PARAMS',
@@ -73,4 +75,6 @@ __all__ = [
     'QWEN_API_PARAMS',
     'DeepSeekConfig',
     'DEEPSEEK_API_PARAMS',
+    # Response format configs
+    'ResponseFormat',
 ]

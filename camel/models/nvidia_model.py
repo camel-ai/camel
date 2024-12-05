@@ -21,11 +21,16 @@ from openai.types.chat import (
     ChatCompletionChunk,
 )
 
-from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
+from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    api_keys_required,
+    response_format_not_supported,
+)
 
 
 class NvidiaModel(BaseModelBackend):
@@ -72,10 +77,12 @@ class NvidiaModel(BaseModelBackend):
             base_url=self._url,
         )
 
+    @response_format_not_supported
     @api_keys_required("NVIDIA_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of NVIDIA chat completion.
 

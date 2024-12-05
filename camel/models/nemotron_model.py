@@ -16,12 +16,14 @@ from typing import List, Optional, Union
 
 from openai import OpenAI
 
+from camel.configs import ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
+    response_format_not_supported,
 )
 
 
@@ -58,10 +60,12 @@ class NemotronModel(BaseModelBackend):
             api_key=self._api_key,
         )
 
+    @response_format_not_supported
     @api_keys_required("NVIDIA_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> ChatCompletion:
         r"""Runs inference of OpenAI chat completion.
 

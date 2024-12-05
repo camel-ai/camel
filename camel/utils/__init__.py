@@ -36,7 +36,7 @@ from .commons import (
     track_agent,
 )
 from .constants import Constants
-from .response_format import get_pydantic_model
+from .response_format import get_pydantic_model, response_format_not_supported
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -78,4 +78,5 @@ __all__ = [
     "track_agent",
     "handle_http_error",
     "get_pydantic_model",
+    "response_format_not_supported",
 ]

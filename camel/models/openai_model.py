@@ -15,12 +15,14 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, OpenAI, Stream
+from outlines.models.openai import OpenAIConfig
 
-from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
+from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
+    NOT_GIVEN,
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
@@ -31,6 +33,16 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
 )
+
+
+# Function to add `model_config` if missing
+# Required by outlines with OpenAI pydantic object
+def ensure_model_config(cls):
+    from pydantic import ConfigDict
+
+    if "extra" not in cls.model_config:
+        cls.model_config = ConfigDict(extra="forbid")
+    return cls
 
 
 class OpenAIModel(BaseModelBackend):
@@ -73,6 +85,12 @@ class OpenAIModel(BaseModelBackend):
             base_url=self._url,
             api_key=self._api_key,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=60,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -90,12 +108,15 @@ class OpenAIModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[ResponseFormat], optional): A pydantic
+                response format.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
@@ -128,24 +149,69 @@ class OpenAIModel(BaseModelBackend):
             self.model_config_dict["presence_penalty"] = 0.0
             self.model_config_dict["frequency_penalty"] = 0.0
 
-        if self.model_config_dict.get("response_format"):
-            # stream is not supported in beta.chat.completions.parse
-            if "stream" in self.model_config_dict:
-                del self.model_config_dict["stream"]
+        # Structured output
+        response_format = response_format or self.model_config_dict.get(
+            "response_format"
+        )
+        if response_format is not None and response_format != NOT_GIVEN:
+            # Original implementation without outlines
+            if response_format.method == "openai":
+                # stream is not supported in beta.chat.completions.parse
+                if "stream" in self.model_config_dict:
+                    del self.model_config_dict["stream"]
 
-            response = self._client.beta.chat.completions.parse(
-                messages=messages,
-                model=self.model_type,
-                **self.model_config_dict,
-            )
+                response = self._client.beta.chat.completions.parse(
+                    messages=messages,
+                    model=self.model_type,
+                    **self.model_config_dict,
+                )
+                return self._to_chat_completion(response)
 
-            return self._to_chat_completion(response)
+            if response_format.method == "outlines":
+                from outlines import generate, models
+
+                # copy from model_config_dict
+                config = self._from_model_config_dict(self.model_config_dict)
+                outlines_model = models.OpenAI(self._async_client, config)
+
+                match response_format.type:
+                    case "json" if response_format.pydantic_object:
+                        generator = generate.json(
+                            outlines_model,
+                            ensure_model_config(
+                                response_format.pydantic_object
+                            ),
+                        )
+                    case "choice" if response_format.choices:
+                        generator = generate.choice(
+                            outlines_model, response_format.choices
+                        )
+                    case "regex":
+                        generator = generate.regex(
+                            outlines_model, response_format.regex
+                        )
+                    case _:
+                        raise NotImplementedError(
+                            f"Unsupported response format type: "
+                            f"{response_format.type}"
+                        )
+
+                # TODO: add user message to the messages
+                usr_msg_content = str(messages[0]["content"])
+                result = generator(usr_msg_content)
 
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
         )
+
+        # TODO: currently, the outlines API doesnot return ChatCompletion
+        # object, get around this by this.
+
+        if response_format:
+            response.choices[0].message.content = str(result)
+
         return response
 
     def _to_chat_completion(
@@ -197,3 +263,15 @@ class OpenAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    def _from_model_config_dict(
+        self, model_config_dict: Dict[str, Any]
+    ) -> OpenAIConfig:
+        r"""Convert the model config dict to the Outlines OpenAIConfig."""
+        # remove tools, stream, tool_choice from the model config
+        outlines_config_dict = model_config_dict.copy()
+        outlines_config_dict.pop("tools", None)
+        outlines_config_dict.pop("stream", None)
+        outlines_config_dict.pop("tool_choice", None)
+        outlines_config_dict["model"] = self.model_type.lower()
+        return OpenAIConfig(**outlines_config_dict)

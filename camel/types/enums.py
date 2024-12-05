@@ -143,6 +143,10 @@ class ModelType(UnifiedModelType, Enum):
         return cast("ModelType", UnifiedModelType.__new__(cls, value))
 
     @property
+    def value(self):
+        return super().value
+
+    @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
             return self.value
@@ -749,3 +753,10 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class ResponseType(Enum):
+    TEXT = "text"
+    REGEX = "regex"
+    JSON = "json"
+    CHOICE = "choice"

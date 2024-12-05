@@ -28,6 +28,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    response_format_not_supported,
 )
 
 
@@ -89,6 +90,7 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
+    @response_format_not_supported
     @api_keys_required("GROQ_API_KEY")
     def run(
         self,

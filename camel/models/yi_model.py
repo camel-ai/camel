@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import YI_API_PARAMS, YiConfig
+from camel.configs import YI_API_PARAMS, ResponseFormat, YiConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -29,6 +29,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    response_format_not_supported,
 )
 
 
@@ -76,10 +77,12 @@ class YiModel(BaseModelBackend):
             base_url=self._url,
         )
 
+    @response_format_not_supported
     @api_keys_required("YI_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Yi chat completion.
 

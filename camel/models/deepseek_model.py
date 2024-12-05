@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
@@ -25,7 +25,12 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    api_keys_required,
+    response_format_not_supported,
+)
 
 
 class DeepSeekModel(BaseModelBackend):
@@ -90,10 +95,12 @@ class DeepSeekModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @response_format_not_supported
     @api_keys_required("DEEPSEEK_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of DeepSeek chat completion.
 

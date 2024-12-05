@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
+from camel.configs import OLLAMA_API_PARAMS, OllamaConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -25,7 +25,11 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    response_format_not_supported,
+)
 
 
 class OllamaModel(BaseModelBackend):
@@ -119,9 +123,11 @@ class OllamaModel(BaseModelBackend):
                     "input into Ollama model backend."
                 )
 
+    @response_format_not_supported
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 

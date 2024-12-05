@@ -19,6 +19,7 @@ from typing import Any, List
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.configs import ResponseFormat
 from camel.messages.base import BaseMessage
 from camel.societies.workforce.prompts import PROCESS_TASK_PROMPT
 from camel.societies.workforce.utils import TaskResult
@@ -77,7 +78,10 @@ class SingleAgentWorker(Worker):
             content=prompt,
         )
         try:
-            response = self.worker.step(req, response_format=TaskResult)
+            response_format = ResponseFormat(
+                type="json", method="builtins", pydantic_object=TaskResult
+            )
+            response = self.worker.step(req, response_format=response_format)
         except Exception as e:
             print(
                 f"{Fore.RED}Error occurred while processing task {task.id}:"

@@ -22,7 +22,7 @@ from typing import Deque, Dict, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
+from camel.configs import ChatGPTConfig, ResponseFormat
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.societies.workforce.base import BaseNode
@@ -286,8 +286,11 @@ class Workforce(BaseNode):
             content=prompt,
         )
 
+        response_format = ResponseFormat(
+            type="json", method="builtins", pydantic_object=TaskAssignResult
+        )
         response = self.coordinator_agent.step(
-            req, response_format=TaskAssignResult
+            req, response_format=response_format
         )
         result_dict = ast.literal_eval(response.msg.content)
         task_assign_result = TaskAssignResult(**result_dict)
@@ -319,7 +322,12 @@ class Workforce(BaseNode):
             role_name="User",
             content=prompt,
         )
-        response = self.coordinator_agent.step(req, response_format=WorkerConf)
+        response_format = ResponseFormat(
+            type="json", method="builtins", pydantic_object=WorkerConf
+        )
+        response = self.coordinator_agent.step(
+            req, response_format=response_format
+        )
         result_dict = ast.literal_eval(response.msg.content)
         new_node_conf = WorkerConf(**result_dict)
 

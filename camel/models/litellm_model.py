@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List, Optional, Union
 
-from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig
+from camel.configs import LITELLM_API_PARAMS, LiteLLMConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -21,6 +21,7 @@ from camel.utils import (
     BaseTokenCounter,
     LiteLLMTokenCounter,
     dependencies_required,
+    response_format_not_supported,
 )
 
 
@@ -106,9 +107,11 @@ class LiteLLMModel(BaseModelBackend):
             self._token_counter = LiteLLMTokenCounter(self.model_type)
         return self._token_counter
 
+    @response_format_not_supported
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> ChatCompletion:
         r"""Runs inference of LiteLLM chat completion.
 

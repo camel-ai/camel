@@ -20,7 +20,7 @@ if TYPE_CHECKING:
         Messages,
     )
 
-from camel.configs import MISTRAL_API_PARAMS, MistralConfig
+from camel.configs import MISTRAL_API_PARAMS, MistralConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -29,6 +29,7 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    response_format_not_supported,
 )
 
 try:
@@ -200,10 +201,12 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @response_format_not_supported
     @api_keys_required("MISTRAL_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 

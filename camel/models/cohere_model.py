@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 if TYPE_CHECKING:
     from cohere.types import ChatMessageV2, ChatResponse
 
-from camel.configs import COHERE_API_PARAMS, CohereConfig
+from camel.configs import COHERE_API_PARAMS, CohereConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -29,6 +29,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    response_format_not_supported,
 )
 
 try:
@@ -210,8 +211,13 @@ class CohereModel(BaseModelBackend):
             )
         return self._token_counter
 
+    @response_format_not_supported
     @api_keys_required("COHERE_API_KEY")
-    def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
+    ) -> ChatCompletion:
         r"""Runs inference of Cohere chat completion.
 
         Args:
