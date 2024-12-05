@@ -1,4 +1,4 @@
-from main import OmegaPRM, chat_agent
+from main import O1DataGene, chat_agent
 
 def main():
     # 定义你的问题和标准答案
@@ -7,8 +7,8 @@ def main():
         
     }
 
-    # 创建 OmegaPRM 实例
-    solver = OmegaPRM(chat_agent, custom_golden_answers)
+    # 创建 O1DataGene实例
+    solver = O1DataGene(chat_agent, custom_golden_answers)
 
     # 解决问题
     for question in custom_golden_answers.keys():
