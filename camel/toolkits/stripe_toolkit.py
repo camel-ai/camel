@@ -20,14 +20,14 @@ from camel.toolkits.base import BaseToolkit
 import stripe
 import logging
 import json
+from dotenv import load_dotenv
 
 class StripeBaseAdapter:
     def __init__(self, toolkit: 'StripeToolkit'):
         self.logger = toolkit.logger.getChild(self.__class__.__name__)
             
     def handle_exception(self, func_name: str, error: Exception) -> str:
-        """
-        Handle exceptions by logging and returning an error message.
+        r"""Handle exceptions by logging and returning an error message.
             
         Args:
             func_name (str): The name of the function where the exception occurred.
@@ -47,6 +47,7 @@ class StripeBaseAdapter:
             
 class StripeToolkit(BaseToolkit):
     r"""A class representing a toolkit for Stripe operations.
+    have to config "stripe.api_key" in the file .env 
 
     This toolkit provides methods to interact with the Stripe  API,
     allowing users to operate stripe core resources, including Balance,
@@ -77,7 +78,7 @@ class StripeToolkit(BaseToolkit):
         
         if not self.logger.handlers:
             self.logger.addHandler(handler)
-        
+        load_dotenv()
         stripe.api_key = os.environ.get("stripe.api_key", None)
         if not stripe.api_key:
             raise ValueError(
@@ -92,16 +93,13 @@ class StripeToolkit(BaseToolkit):
         self.balance = self.BalanceAdapter(self)
         self.payments = self.PaymentAdapter(self)
         self.refunds = self.RefundAdapter(self)
-    # ------------------------
-    # CustomerAdapter
-    # ------------------------
+    r"""CustomerAdapter
+    """
     class CustomerAdapter(StripeBaseAdapter):
-        """
-        Adapter class for handling Stripe Customer operations.
+        r"""Adapter class for handling Stripe Customer operations.
         """
         def get_customer(self, customer_id: str) ->  Union[Dict[str, Any], str]:
-            """
-            Retrieve a customer by ID.
+            r"""Retrieve a customer by ID.
 
             Args:
                 customer_id (str): The ID of the customer to retrieve.
@@ -119,8 +117,7 @@ class StripeToolkit(BaseToolkit):
                 return self.handle_exception("get_customer", e)
         
         def list_customers(self, limit: int = 100) -> Union[List[Dict[str, Any]], str]:
-            """
-            List customers.
+            r"""List customers.
 
             Args:
                 limit (int, optional): Number of customers to retrieve. Defaults to 100.
@@ -137,16 +134,13 @@ class StripeToolkit(BaseToolkit):
                 return json.dumps( [customer for customer in customers])
             except Exception as e:
                 return self.handle_exception("list_customers", e)
-    # ------------------------
-    # BalanceAdapter
-    # ------------------------
+    r"""BalanceAdapter
+    """
     class BalanceAdapter(StripeBaseAdapter):
-        """
-        Adapter class for handling Stripe Balance operations.
+        r"""Adapter class for handling Stripe Balance operations.
         """
         def get_balance(self) -> Union[Dict[str, Any], str]:
-            """
-            Retrieve the account balance.
+            r"""Retrieve the account balance.
 
             Returns:
                 Union[Dict[str, Any], str]: A dictionary containing
@@ -161,8 +155,7 @@ class StripeToolkit(BaseToolkit):
                 return self.handle_exception("get_balance", e)
 
         def list_balance_transactions(self, limit: int = 100) -> Union[List[Dict[str, Any]], str]:
-            """
-            List balance transactions.
+            r"""List balance transactions.
 
             Args:
                 limit (int, optional): Number of balance transactions to retrieve. Defaults to 100.
@@ -180,16 +173,13 @@ class StripeToolkit(BaseToolkit):
             except Exception as e:
                 return self.handle_exception("list_balance_transactions", e)
         
-    # ------------------------
-    # PaymentAdapter
-    # ------------------------
+    r"""PaymentAdapter
+    """
     class PaymentAdapter(StripeBaseAdapter):
-        """
-        Adapter class for handling Stripe PaymentIntent operations.
+        r"""Adapter class for handling Stripe PaymentIntent operations.
         """
         def get_payment(self, payment_id: str) -> Union[Dict[str, Any], str]:
-            """
-            Retrieve a payment by ID.
+            r"""Retrieve a payment by ID.
 
             Args:
                 payment_id (str): The ID of the payment to retrieve.
@@ -207,8 +197,7 @@ class StripeToolkit(BaseToolkit):
                 return self.handle_exception("get_payment", e)
 
         def list_payments(self, limit: int = 100) -> Union[List[Dict[str, Any]], str]:
-            """
-            List payments.
+            r"""List payments.
 
             Args:
                 limit (int, optional): Number of payments to retrieve. Defaults to 100.
@@ -227,16 +216,13 @@ class StripeToolkit(BaseToolkit):
             except Exception as e:
                 return self.handle_exception("list_payments", e)
 
-    # ------------------------
-    # RefundAdapter
-    # ------------------------
+    r"""RefundAdapter
+    """
     class RefundAdapter(StripeBaseAdapter):
-        """
-        Adapter class for handling Stripe Refund operations.
+        r"""Adapter class for handling Stripe Refund operations.
         """
         def get_refund(self, refund_id: str) -> Union[Dict[str, Any], str]:
-            """
-            Retrieve a refund by ID.
+            r"""Retrieve a refund by ID.
 
             Args:
                 refund_id (str): The ID of the refund to retrieve.
@@ -254,8 +240,7 @@ class StripeToolkit(BaseToolkit):
                 return self.handle_exception("get_refund", e)
 
         def list_refunds(self, limit: int = 100) -> Union[List[Dict[str, Any]], str]:
-            """
-            List refunds.
+            r"""List refunds.
 
             Args:
                 limit (int, optional): Number of refunds to retrieve. Defaults to 100.
@@ -291,3 +276,22 @@ class StripeToolkit(BaseToolkit):
             FunctionTool(self.refunds.get_refund),
             FunctionTool(self.refunds.list_refunds)
         ]
+        
+def main():
+    print("start to run...")
+    st = StripeToolkit()
+    result = st.balance.get_balance()
+    print(result)
+    result = st.balance.list_balance_transactions()
+    print(result)
+    result = st.customers.list_customers()
+    print(result)
+    result = st.customers.get_customer("cus_RH0dlL9YL1zdhb")
+    print(result)
+    result = st.payments.list_payments()
+    print(result)
+    result = st.payments.get_payment("aaa")
+    print(result)
+    
+if __name__ == "__main__":
+        main()

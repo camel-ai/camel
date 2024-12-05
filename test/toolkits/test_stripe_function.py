@@ -22,15 +22,15 @@ from stripe import Customer,Balance,BalanceTransaction,PaymentIntent,Refund
 
 @pytest.fixture(scope="function")
 def stripe_toolkit_fixture():
-    """Fixture to set up the StripeToolkit with a mock API key."""
+    r"""Fixture to set up the StripeToolkit with a mock API key.
+    """
     with patch.dict(os.environ, {"stripe.api_key": "sk_test_xxxx"}):
         stripe.api_key = os.environ.get("stripe.api_key", None)
         toolkit = StripeToolkit()
         return toolkit
             
-# ------------------------
-# CustomerAdapter Tests
-# ------------------------
+r"""CustomerAdapter Tests
+"""
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestCustomerAdapter:
     @patch('stripe.Customer.retrieve')
@@ -102,9 +102,8 @@ class TestCustomerAdapter:
         expected_error = f"Unexpected error in list_customers: {exception_message}"
         assert expected_error in result
 
-# ------------------------
-# BalanceAdapter Tests
-# ------------------------
+r"""BalanceAdapter Tests
+"""
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestBalanceAdapter:
     @patch('stripe.Balance.retrieve')
@@ -179,9 +178,8 @@ class TestBalanceAdapter:
         expected_error = f"Unexpected error in list_balance_transactions: {exception_message}"
         assert expected_error in result
 
-# ------------------------
-# PaymentAdapter Tests
-# ------------------------
+r"""PaymentAdapter Tests
+"""
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestPaymentAdapter:
     @patch('stripe.PaymentIntent.retrieve')
@@ -257,9 +255,8 @@ class TestPaymentAdapter:
         expected_error = f"Unexpected error in list_payments: {exception_message}"
         assert expected_error in result
 
-# ------------------------
-# RefundAdapter Tests
-# ------------------------
+r"""RefundAdapter Tests
+"""
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestRefundAdapter:
     @patch('stripe.Refund.retrieve')
