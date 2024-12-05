@@ -53,9 +53,7 @@ class DefaultGAIARetriever(AutoRetriever):
         Returns:
             Dict[str, Any]: The retrieved content.
         """
-        return self.run_vector_retriever(
-            query=query, contents=contents, **kwargs
-        )
+        return self.run_vector_retriever(query, contents, **kwargs)  # type: ignore[arg-type]
 
     def reset(self, **kwargs: Dict[str, Any]) -> bool:
         r"""Reset the retriever.
@@ -68,7 +66,7 @@ class DefaultGAIARetriever(AutoRetriever):
             bool: Whether the reset was successful.
         """
         path = Path(self.vector_storage_local_path or os.getcwd())
-        task_id = kwargs.get("task_id", str(uuid.uuid1()))
+        task_id = str(kwargs.get("task_id", uuid.uuid1()))
         retriever_dir = path / task_id
         if not retriever_dir.exists():
             try:
@@ -78,7 +76,7 @@ class DefaultGAIARetriever(AutoRetriever):
                     "Error in creating directory: " + f"{retriever_dir}: {e!s}"
                 )
                 return False
-        self.vector_storage_local_path = retriever_dir
+        self.vector_storage_local_path = str(retriever_dir)
         return True
 
 
