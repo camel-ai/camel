@@ -22,6 +22,7 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
@@ -96,6 +97,8 @@ class ModelFactory:
             model_class = TogetherAIModel
         elif model_platform.is_litellm:
             model_class = LiteLLMModel
+        elif model_platform.is_nvidia:
+            model_class = NvidiaModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel

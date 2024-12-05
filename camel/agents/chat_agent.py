@@ -1090,6 +1090,7 @@ class ChatAgent(BaseAgent):
                 role_type=self.role_type,
                 meta_dict=dict(),
                 content=choice.message.content or "",
+                parsed=getattr(choice.message, 'parsed', None),
             )
             # Process log probabilities and append to the message meta information
             if choice.logprobs is not None:

@@ -35,8 +35,6 @@ class MistralConfig(BaseConfig):
             tokens to generate, e.g. 0.9. Defaults to None.
         max_tokens (Optional[int], optional): the maximum number of tokens to
             generate, e.g. 100. Defaults to None.
-        min_tokens (Optional[int], optional): the minimum number of tokens to
-            generate, e.g. 100. Defaults to None.
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
             a string list.
@@ -58,7 +56,6 @@ class MistralConfig(BaseConfig):
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
-    min_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     random_seed: Optional[int] = None
     safe_prompt: bool = False
