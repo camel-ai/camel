@@ -66,7 +66,7 @@ class SGLANGModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self.chat_template = self._determine_chat_template(self.model_type)
+        self.chat_template = None or os.getenv("MODEL_CHAT_TEMPLATE")
         if not self._url:
             self._start_server()
         self._client = OpenAI(
@@ -75,24 +75,6 @@ class SGLANGModel(BaseModelBackend):
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
-
-    def _determine_chat_template(
-        self, model_type: Union[ModelType, str]
-    ) -> Optional[str]:
-        r"""
-        Determines the chat template based on the model type.
-
-        Parameters:
-            model_type (Union[ModelType, str]): The type of the model.
-
-        Returns:
-            Optional[str]: The chat template string or None if not determined.
-        """
-        # Example logic to determine chat template based on model type
-        if model_type == "meta-llama/Llama-3.2-1B":
-            return "llama-2"
-        else:
-            return None
 
     def _start_server(self) -> None:
         from sglang.utils import (  # type: ignore[import-untyped]
