@@ -18,37 +18,68 @@ import os
 import random
 import re
 import string
+import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
+from camel.benchmarks.protocols import RetrieverProtocol
 from camel.messages.base import BaseMessage
-from camel.models.model_factory import ModelFactory
 from camel.retrievers.auto_retriever import AutoRetriever
 
 logger = logging.getLogger(__name__)
 
 
-def run_task(
-    model_config, agent_config, msg
-) -> Tuple[str, List[Dict[str, Any]]]:
-    r"""Helper function to run a task.
-
-    Args:
-        model_config (Dict[str, Any]): The model configuration.
-        agent_config (Dict[str, Any]): The agent configuration.
-        msg (str): The message to run the task.
-
-    Returns:
-        Tuple[str, List[Dict[str, Any]]]: The response and the tool calls.
+class DefaultGAIARetriever(AutoRetriever):
+    r"""Default retriever for the GAIA benchmark.
+    This retriever uses AutoRetriever in camel to retrieve the content based on
+    the query.
     """
-    model = ModelFactory.create(**model_config)
-    agent = ChatAgent(**agent_config, model=model)
-    result = agent.step(msg)
-    return result.msgs[0].content, result.info.get("tool_calls", [])
+
+    def retrieve(
+        self, query: str, contents: List[str], **kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Retrieve the content based on the query.
+
+        Args:
+            query (str): The query to search for.
+            contents (List[str]): The list of contents to search from.
+            **kwargs (Dict[str, Any]): The keyword arguments to pass to the
+                retriever.
+
+        Returns:
+            Dict[str, Any]: The retrieved content.
+        """
+        return self.run_vector_retriever(
+            query=query, contents=contents, **kwargs
+        )
+
+    def reset(self, **kwargs: Dict[str, Any]) -> bool:
+        r"""Reset the retriever.
+
+        Args:
+            **kwargs (Dict[str, Any]): The keyword arguments to pass to the
+                retriever.
+
+        Returns:
+            bool: Whether the reset was successful.
+        """
+        path = Path(self.vector_storage_local_path or os.getcwd())
+        task_id = kwargs.get("task_id", str(uuid.uuid1()))
+        retriever_dir = path / task_id
+        if not retriever_dir.exists():
+            try:
+                retriever_dir.mkdir(parents=True)
+            except Exception as e:
+                logger.error(
+                    "Error in creating directory: " + f"{retriever_dir}: {e!s}"
+                )
+                return False
+        self.vector_storage_local_path = retriever_dir
+        return True
 
 
 class GAIABenchmark(BaseBenchmark):
@@ -59,10 +90,8 @@ class GAIABenchmark(BaseBenchmark):
     Args:
         data_dir (str): The directory to save the data.
         save_to (str): The file to save the results.
-        retriever (AutoRetriever): The retriever to use for retrieving the
-            content.
-        retrieve_kwargs (Dict[str, Any], optional): The kwargs to pass to the
-            retriever. (default: :obj:`None`)
+        retriever (Optional[RetrieverProtocol]): The retriever to use.
+            (default: :obj:`None`)
         processes (int, optional): The number of processes to use.
             (default: :obj:`1`)
     """
@@ -71,16 +100,21 @@ class GAIABenchmark(BaseBenchmark):
         self,
         data_dir: str,
         save_to: str,
-        retriever: AutoRetriever,
-        retrieve_kwargs: Optional[Dict[str, Any]] = None,
+        retriever: Optional[RetrieverProtocol] = None,
         processes: int = 1,
     ):
+        r"""Initialize the GAIA benchmark.
+
+        Args:
+            data_dir (str): The directory to save the data.
+            save_to (str): The file to save the results.
+            retriever (Optional[RetrieverProtocol], optional): The retriever to
+                use. (default: :obj:`None`)
+            processes (int, optional): The number of processes to use for
+                parallel processing. (default: :obj:`1`)
+        """
         super().__init__("gaia", data_dir, save_to, processes)
-        self._retriever = retriever
-        self._retriever_dir = Path(
-            self._retriever.vector_storage_local_path or os.getcwd()
-        )
-        self._retrieve_kwargs = retrieve_kwargs or dict()
+        self.retriever = retriever or DefaultGAIARetriever()
 
     def download(self):
         r"""Download the GAIA dataset."""
@@ -183,23 +217,11 @@ class GAIABenchmark(BaseBenchmark):
                         )
                         continue
                     if tmp.suffix in ['.pdf', '.docx', '.doc', '.txt']:
-                        retriever_dir = self._retriever_dir / task["task_id"]
-                        self._retriever.vector_storage_local_path = (
-                            retriever_dir
-                        )
-                        if not retriever_dir.exists():
-                            try:
-                                retriever_dir.mkdir(parents=True)
-                            except Exception as e:
-                                logger.error(
-                                    "Error in creating directory: "
-                                    + f"{retriever_dir}: {e!s}"
-                                )
-                                continue
-                        retrieved_info = self._retriever.run_vector_retriever(
+                        if not self.retriever.reset(task_id=task["task_id"]):
+                            continue
+                        retrieved_info = self.retriever.retrieve(
                             query=task["Question"],
                             contents=[task['file_name']],
-                            **self._retrieve_kwargs,
                         )
                         retrieved_content = [
                             i["text"]  # type: ignore[index]

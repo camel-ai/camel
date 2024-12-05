@@ -15,14 +15,14 @@
 
 from camel.agents.chat_agent import ChatAgent
 from camel.benchmarks import GAIABenchmark
+from camel.benchmarks.gaia import DefaultGAIARetriever
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
-from camel.retrievers.auto_retriever import AutoRetriever
 from camel.runtime.docker_runtime import DockerRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types.enums import ModelPlatformType, ModelType, StorageType
 
-retriever = AutoRetriever(
+retriever = DefaultGAIARetriever(
     vector_storage_local_path="local_data2/", storage_type=StorageType.QDRANT
 )
 

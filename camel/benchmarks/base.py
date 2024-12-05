@@ -28,8 +28,9 @@ class BaseBenchmark(ABC):
     Attributes:
         name (str): Name of the benchmark.
         data_dir (str): Path to the data directory.
-        processes (int): Number of processes to use for parallel processing.
         save_to (str): Path to save the results.
+        processes (int): Number of processes to use for parallel
+            processing. :(default: :obj:`1`)
     """
 
     def __init__(
@@ -42,7 +43,7 @@ class BaseBenchmark(ABC):
             data_dir (str): Path to the data directory.
             save_to (str): Path to save the results.
             processes (int): Number of processes to use for parallel
-                processing.
+                processing. :(default: :obj:`1`)
 
         """
         self.name = name

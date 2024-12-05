@@ -13,6 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .base import BaseBenchmark
-from .gaia import GAIABenchmark
+from .gaia import DefaultGAIARetriever, GAIABenchmark
 
-__all__ = ["BaseBenchmark", "GAIABenchmark"]
+__all__ = ["BaseBenchmark", "GAIABenchmark", "DefaultGAIARetriever"]
