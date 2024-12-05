@@ -17,37 +17,34 @@ from main import O1DataGene, chat_agent
 from datetime import datetime
 
 def load_qa_data(file_path):
-    """加载问答数据从JSON文件"""
+    """Load Q&A data from a JSON file"""
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-
-
-# 加载JSON数据
+# Load JSON data
 qa_data = load_qa_data('qa_data.json')
 
-# 创建O1DataGene实例
+# Create an instance of O1DataGene
 omega = O1DataGene(chat_agent, golden_answers=qa_data)
 
-# 记录生成的答案
+# Record generated answers
 generated_answers = {}
 
-# 测试问答
+# Test Q&A
 for question in qa_data.keys():
-    print(f"\n问题: {question}")
+    print(f"\nQuestion: {question}")
     
-    # 获取AI的思考过程和答案
+    # Get AI's thought process and answer
     answer = omega.get_answer(question)
     generated_answers[question] = answer
-    print(f"AI的思考过程和答案:\n{answer}")
+    print(f"AI's thought process and answer:\n{answer}")
     
-    # 验证答案
+    # Verify the answer
     is_correct = omega.verify_answer(question, answer)
-    print(f"答案验证结果: {'正确' if is_correct else '不正确'}")
+    print(f"Answer verification result: {'Correct' if is_correct else 'Incorrect'}")
     print("-" * 50)
 
-# 导出所有包含问题和思考过程的答案数据
-
+# Export all data containing questions and thought processes
 
 simplified_output = {
     'timestamp': datetime.now().isoformat(),
@@ -56,4 +53,4 @@ simplified_output = {
 simplified_file = f'generated_answers_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
 with open(simplified_file, 'w', encoding='utf-8') as f:
     json.dump(simplified_output, f, ensure_ascii=False, indent=2)
-print(f"生成的答案已导出到: {simplified_file}")
+print(f"The generated answers have been exported to: {simplified_file}")
