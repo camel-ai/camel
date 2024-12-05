@@ -23,7 +23,7 @@ from .conversion import (
     HermesFunctionFormatter,
     ShareGPTMessage,
 )
-from .conversion.models import (
+from .conversion.conversation_models import (
     ShareGPTConversation,
 )
 from .conversion.sharegpt.function_call_formatter import (
