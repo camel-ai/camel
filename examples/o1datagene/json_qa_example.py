@@ -1,5 +1,5 @@
 import json
-from main import OmegaPRM, chat_agent
+from main import O1DataGene, chat_agent
 from datetime import datetime
 
 def load_qa_data(file_path):
@@ -12,8 +12,8 @@ def load_qa_data(file_path):
 # 加载JSON数据
 qa_data = load_qa_data('qa_data.json')
 
-# 创建OmegaPRM实例
-omega = OmegaPRM(chat_agent, golden_answers=qa_data)
+# 创建O1DataGene实例
+omega = O1DataGene(chat_agent, golden_answers=qa_data)
 
 # 记录生成的答案
 generated_answers = {}

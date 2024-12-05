@@ -53,13 +53,13 @@ chat_agent = ChatAgent(
     message_window_size=10,
 )
 
-class OmegaPRM:
+class O1DataGene:
     def __init__(self, chat_agent, golden_answers=None, search_limit=100):
         self.chat_agent = chat_agent
         self.golden_answers = golden_answers if golden_answers else {}
         self.search_limit = search_limit
         self.solution_tree = defaultdict(dict)  # 存储正确的解决步骤
-        logger.info("OmegaPRM initialized with search_limit=%d", search_limit)
+        logger.info("O1DataGene initialized with search_limit=%d", search_limit)
 
     def get_answer(self, question, context=""):
         """
@@ -233,6 +233,6 @@ class OmegaPRM:
 #     "how many r in strawberry?": "3",
 # }
 
-# solver = OmegaPRM(chat_agent, golden_answers)
+# solver = O1DataGene(chat_agent, golden_answers)
 # question = "how many r in strawberry?"
 # solver.solve(question)
