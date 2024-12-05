@@ -12,12 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import subprocess
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import SGLANG_API_PARAMS, SGLANGConfig
+from camel.configs import SGLANG_API_PARAMS, SGLangConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -36,7 +35,7 @@ class SGLANGModel(BaseModelBackend):
             created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into:obj:`openai.ChatCompletion.create()`. If
-            :obj:`None`, :obj:`SGLANGConfig().as_dict()` will be used.
+            :obj:`None`, :obj:`SGLangConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the model service. SGLANG doesn't need API key, it would be ignored
@@ -61,14 +60,15 @@ class SGLANGModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = SGLANGConfig().as_dict()
+            model_config_dict = SGLangConfig().as_dict()
         url = url or os.environ.get("SGLANG_BASE_URL")
+        self.server_process = None
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
+        self.chat_template = self._determine_chat_template(self.model_type)
         if not self._url:
             self._start_server()
-        # Use OpenAI cilent as interface call sglang
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
@@ -76,21 +76,45 @@ class SGLANGModel(BaseModelBackend):
             base_url=self._url,
         )
 
+    def _determine_chat_template(
+        self, model_type: Union[ModelType, str]
+    ) -> Optional[str]:
+        r"""
+        Determines the chat template based on the model type.
+
+        Parameters:
+            model_type (Union[ModelType, str]): The type of the model.
+
+        Returns:
+            Optional[str]: The chat template string or None if not determined.
+        """
+        # Example logic to determine chat template based on model type
+        if model_type == "meta-llama/Llama-3.2-1B":
+            return "llama-2"
+        else:
+            return None
+
     def _start_server(self) -> None:
-        r"""Starts the sglang server in a subprocess."""
+        from sglang.utils import (  # type: ignore[import-untyped]
+            execute_shell_command,
+            wait_for_server,
+        )
+
         try:
-            subprocess.Popen(
-                ["sglang", "server", "--port", "30000"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+            cmd = (
+                f"python -m sglang.launch_server "
+                f"--model-path {self.model_type} "
+                f"--port 30000 "
+                f"--host 0.0.0.0"
             )
+            if self.chat_template is not None:
+                cmd += f" --chat-template {self.chat_template}"
+            server_process = execute_shell_command(cmd)
+            wait_for_server("http://localhost:30000")
             self._url = "http://localhost:30000/v1"
-            print(
-                f"Ollama server started on {self._url} "
-                f"for {self.model_type} model."
-            )
+            self.server_process = server_process
         except Exception as e:
-            print(f"Failed to start sglang server: {e}.")
+            print(f"Failed to start SGLang server: {e}")
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -134,12 +158,16 @@ class SGLANGModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        from sglang.utils import terminate_process
 
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
         )
+        if self.server_process:
+            terminate_process(self.server_process)
+
         return response
 
     @property

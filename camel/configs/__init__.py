@@ -29,7 +29,7 @@ from .samba_config import (
     SambaCloudAPIConfig,
     SambaVerseAPIConfig,
 )
-from .sglang_config import SGLANG_API_PARAMS, SGLANGConfig
+from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
@@ -53,7 +53,7 @@ __all__ = [
     'Gemini_API_PARAMS',
     'VLLMConfig',
     'VLLM_API_PARAMS',
-    'SGLANGConfig',
+    'SGLangConfig',
     'SGLANG_API_PARAMS',
     'MistralConfig',
     'MISTRAL_API_PARAMS',

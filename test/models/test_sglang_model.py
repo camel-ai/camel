@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import SGLANGConfig
+from camel.configs import SGLangConfig
 from camel.models import SGLANGModel
 from camel.types import ModelType, UnifiedModelType
 from camel.utils import OpenAITokenCounter
@@ -31,17 +31,17 @@ from camel.utils import OpenAITokenCounter
         ModelType.GPT_4O_MINI,
     ],
 )
-def test_vllm_model(model_type: ModelType):
+def test_sglang_model(model_type: ModelType):
     model = SGLANGModel(model_type, api_key="sglang")
     assert model.model_type == model_type
-    assert model.model_config_dict == SGLANGConfig().as_dict()
+    assert model.model_config_dict == SGLangConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type, UnifiedModelType)
     assert isinstance(model.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_vllm_model_unexpected_argument():
+def test_sglang_model_unexpected_argument():
     model_type = ModelType.GPT_4
     model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 

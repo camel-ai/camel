@@ -19,7 +19,7 @@ from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
 
 
-class SGLANGConfig(BaseConfig):
+class SGLangConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.
 
@@ -117,4 +117,4 @@ class SGLANGConfig(BaseConfig):
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
 
 
-SGLANG_API_PARAMS = {param for param in SGLANGConfig.model_fields.keys()}
+SGLANG_API_PARAMS = {param for param in SGLangConfig.model_fields.keys()}
