@@ -15,6 +15,7 @@ from typing import List, Literal, Optional, Union
 
 from camel.interpreters import (
     DockerInterpreter,
+    E2BInterpreter,
     InternalPythonInterpreter,
     JupyterKernelInterpreter,
     SubprocessInterpreter,
@@ -41,7 +42,7 @@ class CodeExecutionToolkit(BaseToolkit):
     def __init__(
         self,
         sandbox: Literal[
-            "internal_python", "jupyter", "docker", "subprocess"
+            "internal_python", "jupyter", "docker", "subprocess", "e2b"
         ] = "internal_python",
         verbose: bool = False,
         unsafe_mode: bool = False,
@@ -58,6 +59,7 @@ class CodeExecutionToolkit(BaseToolkit):
             JupyterKernelInterpreter,
             DockerInterpreter,
             SubprocessInterpreter,
+            E2BInterpreter,
         ]
 
         if sandbox == "internal_python":
@@ -83,6 +85,8 @@ class CodeExecutionToolkit(BaseToolkit):
                 print_stdout=self.verbose,
                 print_stderr=self.verbose,
             )
+        elif sandbox == "e2b":
+            self.interpreter = E2BInterpreter(require_confirm=require_confirm)
         else:
             raise RuntimeError(
                 f"The sandbox type `{sandbox}` is not supported."
