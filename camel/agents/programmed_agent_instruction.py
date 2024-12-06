@@ -172,7 +172,7 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         """
 
     @programmable_capability
-    def generate_multi_hop_qa(self, context: str):
+    def generate_multi_hop_qa(self, context: str) -> ProgrammedAgentInstructionResult[MultiHopQA]:
         context_prompt = ContextPrompt(
             main_context=context,
             related_contexts=None
@@ -184,5 +184,9 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         )
 
         if response.msgs:
-            return response.msgs[0].content
+            return ProgrammedAgentInstructionResult(
+                user_message=context_prompt,
+                agent_message=response.msgs[0],
+                value=response.msgs[0].content
+            )
         return None
