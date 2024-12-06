@@ -192,11 +192,12 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         response = self.step(
             input_message=user_message, response_format=MultiHopQA
         )
+        value = MultiHopQA.model_validate_json(response.msgs[0].content)
 
         if response.msgs:
             return ProgrammedAgentInstructionResult(
                 user_message=user_message,
                 agent_message=response.msgs[0],
-                value=response.msgs[0].content,
+                value=value,
             )
-        return None
+        raise RuntimeError("No response from agent")
