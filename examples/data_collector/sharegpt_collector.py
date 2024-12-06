@@ -44,7 +44,7 @@ agent = ChatAgent(
     model=model,
     tools=tool_list,
 )
-collector = ShareGPTDataCollector().inject(agent).start()
+collector = ShareGPTDataCollector().record(agent).start()
 
 usr_msg = BaseMessage.make_user_message(
     role_name="User",
@@ -53,6 +53,7 @@ usr_msg = BaseMessage.make_user_message(
 
 # This will directly run the internal tool
 response = agent.step(usr_msg)
+
 
 print(json.dumps(collector.convert(), indent=4))
 print(json.dumps(collector.llm_convert(), indent=4))

@@ -21,10 +21,8 @@ from typing_extensions import Self
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector
 from camel.messages.base import BaseMessage
-from camel.messages.func_message import FunctionCallingMessage
 from camel.schemas.openai_converter import OpenAISchemaConverter
 from camel.toolkits.function_tool import FunctionTool
-from camel.types.enums import OpenAIBackendRole
 
 # ruff: noqa: E501
 DEFAULT_CONVERTER_PROMPTS = """
@@ -72,7 +70,7 @@ class ShareGPTDataCollector(BaseDataCollector):
         self.agent_name: Optional[str] = None
         self.tools: List[FunctionTool] = []
 
-    def inject(
+    def record(
         self,
         agent: Union[List[ChatAgent], ChatAgent],
     ) -> Self:
@@ -83,7 +81,7 @@ class ShareGPTDataCollector(BaseDataCollector):
             self.system_message = _agent._system_message
             self.tools += list(_agent.tool_dict.values())
 
-        super().inject(agent)
+        super().record(agent)
         return self
 
     def convert(self) -> Dict[str, Any]:
@@ -105,29 +103,29 @@ class ShareGPTDataCollector(BaseDataCollector):
             )
             conversations: List[Any] = []
             for _data in history:
-                role, message = _data.role, _data.message
-                if role == OpenAIBackendRole.USER:
+                role, message = _data.role, _data
+
+                if role == "user":
                     conversations.append(
-                        {"from": "human", "value": message.content}
+                        {"from": "human", "value": message.message}
                     )
-                elif role == OpenAIBackendRole.ASSISTANT:
-                    if isinstance(message, FunctionCallingMessage):
-                        tmp = dict(
-                            name=message.func_name,
-                            arguments=message.args,
-                        )
+                elif role == "assistant":
+                    if message.function_call:
                         conversations.append(
-                            {"from": "function_call", "value": json.dumps(tmp)}
+                            {
+                                "from": "function_call",
+                                "value": json.dumps(message.function_call),
+                            }
                         )
                     else:
                         conversations.append(
-                            {"from": "gpt", "value": message.content}
+                            {"from": "gpt", "value": message.message}
                         )
-                elif role == OpenAIBackendRole.FUNCTION:
+                elif role == "function":
                     conversations.append(
                         {
                             "from": "observation",
-                            "value": json.dumps(message.result),  # type: ignore[attr-defined]
+                            "value": json.dumps(message.message),  # type: ignore[attr-defined]
                         }
                     )
             data["conversations"] = conversations
@@ -151,23 +149,18 @@ class ShareGPTDataCollector(BaseDataCollector):
                 [t.get_openai_tool_schema()["function"] for t in self.tools]
             )
         )
-        for _data in self.history:
-            role, message = _data.role, _data.message
+        for _data in self.get_agent_history(str(self.agent_name)):
+            role, message = _data.role, _data
             prefix = (
-                f"{role.value}: "
-                if role != OpenAIBackendRole.USER
-                else "User: " + f"{_data.name}: "
+                f"{role}: " if role != "user" else "User: " + f"{_data.name}: "
             )
-            if isinstance(message, FunctionCallingMessage):
-                tmp = dict(
-                    name=message.func_name,
-                    arguments=message.args,
-                )
-                context.append(prefix + json.dumps(tmp))
-            elif role == OpenAIBackendRole.FUNCTION:
-                context.append(prefix + json.dumps(message.result))  # type: ignore[attr-defined]
+            if message.function_call:
+                context.append(prefix + json.dumps(message.function_call))
+
+            elif role == "function":
+                context.append(prefix + json.dumps(message.message))  # type: ignore[attr-defined]
             else:
-                context.append(prefix + message.content)
+                context.append(prefix + str(message.message))
         return converter.convert(
             "\n".join(context), ShareGPTData, prompt
         ).model_dump()

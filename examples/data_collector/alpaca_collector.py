@@ -17,7 +17,7 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.data_collector import AlpacaDataCollector
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
-from camel.types.enums import ModelPlatformType, ModelType, OpenAIBackendRole
+from camel.types.enums import ModelPlatformType, ModelType
 
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
@@ -42,7 +42,7 @@ usr_msg = BaseMessage.make_user_message(
     content="When is the release date of the video game Portal?",
 )
 
-collector = AlpacaDataCollector().inject(agent).start()
+collector = AlpacaDataCollector().record(agent).start()
 
 # Automatically record the message
 resp = agent.step(usr_msg)
@@ -54,8 +54,9 @@ print(collector.llm_convert())
 collector.reset()
 
 # Manually record the message
-collector.step(usr_msg, OpenAIBackendRole.USER, "Tools calling operator")
-collector.step(resp.msgs[0], OpenAIBackendRole.ASSISTANT)
+collector.step("user", "Tools calling operator", usr_msg.content)
+
+collector.step("assistant", "Tools calling operator", resp.msgs[0].content)
 
 print(collector.convert())
 

@@ -14,14 +14,12 @@
 
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from uuid import UUID
 
 from typing_extensions import Self
 
 from camel.agents import ChatAgent
-from camel.messages.base import BaseMessage
-from camel.types.enums import OpenAIBackendRole
 
 
 class CollectorData:
@@ -29,19 +27,70 @@ class CollectorData:
         self,
         id: UUID,
         name: str,
-        role: OpenAIBackendRole,
-        message: BaseMessage,
+        role: Literal["user", "assistant", "system", "function"],
+        message: Optional[str] = None,
+        function_call: Optional[Dict[str, Any]] = None,
     ) -> None:
+        r"""Create a data item store information about a message.
+        Used by the data collector.
+
+        Args:
+
+            id (UUID): The id of the message.
+            name (str): The name of the agent.
+            role (Literal["user", "assistant", "system", "function"]):
+                The role of the message.
+            message (Optional[str], optional): The message.
+                (default: :obj:`None`)
+            function_call (Optional[Dict[str, Any]], optional):
+                The function call. (default: :obj:`None`)
+
+        Raises:
+
+            ValueError: If the role is not supported.
+            ValueError: If the role is system and function call is provided.
+            ValueError: If neither message nor function call is provided.
+
+        """
+        if role not in ["user", "assistant", "system", "function"]:
+            raise ValueError(f"Role {role} not supported")
+        if role == "system" and function_call:
+            raise ValueError("System role cannot have function call")
+        if not message and not function_call:
+            raise ValueError(
+                "Either message or function call must be provided"
+            )
         self.id = id
         self.name = name
         self.role = role
         self.message = message
+        self.function_call = function_call
+
+    @staticmethod
+    def from_context(name, context: Dict[str, Any]) -> "CollectorData":
+        r"""Create a data collector from a context.
+
+        Args:
+            name (str): The name of the agent.
+            context (Dict[str, Any]): The context.
+
+        Returns:
+            CollectorData: The data collector.
+        """
+        return CollectorData(
+            id=uuid.uuid4(),
+            name=name,
+            role=context["role"],
+            message=context["content"],
+            function_call=context.get("function_call", None),
+        )
 
 
 class BaseDataCollector(ABC):
     r"""Base class for data collectors."""
 
     def __init__(self) -> None:
+        r"""Create a data collector."""
         self.history: List[CollectorData] = []
         self._recording = False
         self.agents: List[Tuple[str, ChatAgent]] = []
@@ -49,66 +98,45 @@ class BaseDataCollector(ABC):
 
     def step(
         self,
-        message: BaseMessage,
-        role: OpenAIBackendRole,
-        role_name: Optional[str] = None,
+        role: str,
+        name: Optional[str] = None,
+        message: Optional[str] = None,
+        function_call: Optional[Dict[str, Any]] = None,
     ) -> Self:
         r"""Record a message.
 
         Args:
-            message (Union[BaseMessage, ChatAgentResponse]):
-                The message to record.
             role (OpenAIBackendRole): The role of the message.
-            role_name (Optional[str], optional):
-                The name of the role. Defaults to None.
-                Used when message if from user.
+            name (Optional[str], optional): The name of the agent.
+                (default: :obj:`None`)
+            message (Optional[str], optional): The message to record.
+                (default: :obj:`None`)
+            function_call (Optional[Dict[str, Any]], optional):
+                The function call to record. (default: :obj:`None`)
+
+        Returns:
+            Self: The data collector.
+
         """
 
-        name = role_name or message.role_name
+        name = name or role
 
         self.history.append(
             CollectorData(
-                id=uuid.uuid1(), name=name, role=role, message=message
+                id=uuid.uuid4(),
+                name=name,
+                role=role,
+                message=message,
+                function_call=function_call,
             )
         )
         return self
 
-    def _inject(self, agent: ChatAgent) -> Self:
-        r"""Inject an agent.
-
-        Args:
-            agent (ChatAgent): The agent to inject.
-        """
-        name = agent.role_name
-        if not name:
-            name = f"{agent.__class__.__name__}_{len(self.agents)}"
-        if name in [n for n, _ in self.agents]:
-            raise ValueError(f"Name {name} already exists")
-
-        self.agents.append((name, agent))
-
-        ori_update_memory = agent.update_memory
-
-        def update_memory(
-            message: BaseMessage, role: OpenAIBackendRole
-        ) -> None:
-            if self._recording:
-                self.history.append(
-                    CollectorData(
-                        id=uuid.uuid1(), name=name, role=role, message=message
-                    )
-                )
-            return ori_update_memory(message, role)
-
-        agent.update_memory = update_memory  # type: ignore[method-assign]
-
-        return self
-
-    def inject(
+    def record(
         self,
         agent: Union[List[ChatAgent], ChatAgent],
     ) -> Self:
-        r"""Inject agents.
+        r"""Record agents.
 
         Args:
             agent (Union[List[ChatAgent], ChatAgent]):
@@ -117,7 +145,13 @@ class BaseDataCollector(ABC):
         if not isinstance(agent, list):
             agent = [agent]
         for a in agent:
-            self._inject(a)
+            name = a.role_name
+            if not name:
+                name = f"{a.__class__.__name__}_{len(self.agents)}"
+            if name in [n for n, _ in self.agents]:
+                raise ValueError(f"Name {name} already exists")
+
+            self.agents.append((name, a))
         return self
 
     def start(self) -> Self:
@@ -157,13 +191,20 @@ class BaseDataCollector(ABC):
         r"""Convert the collected data."""
         pass
 
-    def save(self, path: str):
-        r"""Save the collected data.
+    def get_agent_history(self, name: str) -> List[CollectorData]:
+        r"""Get the history of an agent.
 
         Args:
-            path (str): The path to save the data.
-        """
-        raise NotImplementedError
+            name (str): The name of the agent.
 
-    def get_agent_history(self, name: str) -> List[CollectorData]:
+        Returns:
+            List[CollectorData]: The history of the agent
+        """
+        if not self.history:
+            for _name, agent in self.agents:
+                if _name == name:
+                    return [
+                        CollectorData.from_context(name, i)
+                        for i in agent.memory.get_context()[0]
+                    ]
         return [msg for msg in self.history if msg.name == name]

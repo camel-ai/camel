@@ -12,16 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
 from typing_extensions import Self
 
 from camel.agents.chat_agent import ChatAgent
 from camel.data_collector.base import BaseDataCollector
 from camel.messages.base import BaseMessage
+from camel.messages.conversion import AlpacaItem
 from camel.schemas import OpenAISchemaConverter
-from camel.types.enums import OpenAIBackendRole
 
 DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the conversations
@@ -39,19 +38,13 @@ DEFAULT_CONVERTER_PROMPTS = """
 """
 
 
-class AlpacaData(BaseModel):
-    instructions: str
-    input: str
-    output: str
-
-
 class AlpacaDataCollector(BaseDataCollector):
     def __init__(self) -> None:
         super().__init__()
         self.system_message: Optional[BaseMessage] = None
         self.agent_name: Optional[str] = None
 
-    def inject(
+    def record(
         self,
         agent: Union[List[ChatAgent], ChatAgent],
     ) -> Self:
@@ -67,25 +60,32 @@ class AlpacaDataCollector(BaseDataCollector):
             _agent = agent if isinstance(agent, ChatAgent) else agent[0]
             self.agent_name = _agent.role_name
             self.system_message = _agent._system_message
-        super().inject(agent)
+        super().record(agent)
         return self
 
-    def convert(self) -> Dict[str, str]:
+    def convert(self) -> Dict[str, Any]:
         r"""Convert the collected data into a dictionary."""
         if self.agent_name is None:
             raise ValueError("No agent injected")
         if history := self.get_agent_history(self.agent_name):
+            for message in history:
+                print(message.role, message.message)
+
             if len(history) != 2:
-                raise ValueError(
-                    "AlpacaDataCollector only supports one message,",
-                    f" but got {len(history)}",
-                )
+                if len(history) == 3 and history[0].role == "system":
+                    history = history[1:]
+                else:
+                    raise ValueError(
+                        "AlpacaDataCollector only supports one message,"
+                        + f" but got {len(history)}",
+                    )
             data = dict(
-                instructions=self.system_message.content
-                if self.system_message
-                else "",
-                input=history[0].message.content,
-                output=history[1].message.content,
+                instructions=(
+                    self.system_message.content if self.system_message else ""
+                )
+                + str(history[0].message),
+                input="",
+                output=history[1].message,
             )
             self.data.append(data)
             return data
@@ -100,11 +100,11 @@ class AlpacaDataCollector(BaseDataCollector):
         converter = converter or OpenAISchemaConverter()
         system = self.system_message.content if self.system_message else ""
         context = [f"Instructions: {system}\n"]
-        for message in self.history:
-            if message.role == OpenAIBackendRole.USER:
-                context.append(f"User: {message.message.content}\n")
+        for message in self.get_agent_history(str(self.agent_name)):
+            if message.role == "user":
+                context.append(f"User: {message.message}\n")
             else:
-                context.append(f"{message.name}: {message.message.content}\n")
+                context.append(f"{message.name}: {message.message}\n")
         return converter.convert(
-            "\n".join(context), AlpacaData, prompt=prompt
+            "\n".join(context), AlpacaItem, prompt=prompt
         ).model_dump()
