@@ -4,8 +4,6 @@ from typing import List, Optional
 class ReasoningStep(BaseModel):
     step: str
 
-class ReasoningStep(BaseModel):
-    step: str
 
 class MultiHopQA(BaseModel):
     question: str
