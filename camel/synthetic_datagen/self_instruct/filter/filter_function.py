@@ -1,3 +1,16 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
 from abc import ABC, abstractmethod
 from typing import List
@@ -5,15 +18,44 @@ from rouge import Rouge
 
 
 class FilterFunction(ABC):
-    """A base class for filter functions."""
+    r"""
+    A base abstract class for filter functions.
+
+    Subclasses must implement the `apply` method, which determines whether
+    a given instruction passes the filter criteria.
+
+    Methods:
+        apply(instruction: str) -> bool:
+            Evaluates whether the given instruction passes the filter.
+    """
 
     @abstractmethod
     def apply(self, instruction: str) -> bool:
-        """Return True if instruction passes this filter, False otherwise."""
+        r"""
+        Evaluate the given instruction based on the filter's criteria.
+
+        Args:
+            instruction (str): The instruction to evaluate.
+
+        Returns:
+            bool: True if the instruction passes the filter, False otherwise.
+        """
         pass
 
 
 class LengthFilter(FilterFunction):
+    """
+        Filters instructions based on their word count.
+
+        Attributes:
+            min_len (int): The minimum word count required for an instruction.
+            max_len (int): The maximum word count allowed for an instruction.
+
+        Methods:
+            apply(instruction: str) -> bool:
+                Returns True if the instruction's word count is within the
+                specified range.
+        """
     def __init__(self, min_len: int = 5, max_len: int = 200):
         self.min_len = min_len
         self.max_len = max_len
@@ -24,6 +66,17 @@ class LengthFilter(FilterFunction):
 
 
 class KeywordFilter(FilterFunction):
+    """
+    Filters instructions that contain specific undesirable keywords.
+
+    Attributes:
+        keywords (List[str]): A list of keywords to filter out.
+
+    Methods:
+        apply(instruction: str) -> bool:
+            Returns True if the instruction does not contain any of the
+            specified keywords.
+    """
     def __init__(self, keywords: List[str]):
         self.keywords = [keyword.lower() for keyword in keywords]
 
@@ -34,17 +87,45 @@ class KeywordFilter(FilterFunction):
 
 
 class PunctuationFilter(FilterFunction):
+    """
+    Filters instructions that begin with a non-alphanumeric character.
+
+    Methods:
+        apply(instruction: str) -> bool:
+            Returns True if the instruction does not start with punctuation.
+    """
     def apply(self, instruction: str) -> bool:
         return not re.match(r'^[^\w\s]', instruction)
 
 
 class NonEnglishFilter(FilterFunction):
+    """
+    Filters instructions that do not begin with English letters.
+
+    Methods:
+        apply(instruction: str) -> bool:
+            Returns True if the instruction starts with an English letter.
+    """
     def apply(self, instruction: str) -> bool:
         return bool(re.match(r'^[A-Za-z]', instruction))
 
 
 class RougeSimilarityFilter(FilterFunction):
-    def __init__(self, existing_instructions: List[str], threshold: float = 0.7):
+    """
+    Filters instructions that are too similar to existing instructions based on ROUGE scores.
+
+    Attributes:
+        existing_instructions (List[str]): A list of existing instructions to compare against.
+        threshold (float): The similarity threshold for filtering (default is 0.7).
+
+    Methods:
+        apply(instruction: str) -> bool:
+            Returns True if the instruction's similarity to any existing instruction
+            is below the threshold.
+    """
+    def __init__(
+        self, existing_instructions: List[str], threshold: float = 0.7
+    ):
         self.existing_instructions = existing_instructions
         self.threshold = threshold
         self.rouge = Rouge()
@@ -60,4 +141,3 @@ class RougeSimilarityFilter(FilterFunction):
                 return False
 
         return True
-

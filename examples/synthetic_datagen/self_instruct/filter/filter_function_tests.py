@@ -12,13 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import unittest
+
 from camel.synthetic_datagen.self_instruct import (
-    LengthFilter,
     KeywordFilter,
-    PunctuationFilter,
+    LengthFilter,
     NonEnglishFilter,
-    RougeSimilarityFilter
+    PunctuationFilter,
+    RougeSimilarityFilter,
 )
+
 
 class TestLengthFilter(unittest.TestCase):
     def test_within_range(self):
@@ -33,10 +35,13 @@ class TestLengthFilter(unittest.TestCase):
         flt = LengthFilter(min_len=2, max_len=3)
         self.assertFalse(flt.apply("This is more than three words"))
 
+
 class TestKeywordFilter(unittest.TestCase):
     def test_no_keywords(self):
         flt = KeywordFilter(keywords=["image", "video"])
-        self.assertTrue(flt.apply("This is a sample instruction without forbidden words"))
+        self.assertTrue(
+            flt.apply("This is a sample instruction without forbidden words")
+        )
 
     def test_contains_keyword(self):
         flt = KeywordFilter(keywords=["image", "video"])
@@ -45,6 +50,7 @@ class TestKeywordFilter(unittest.TestCase):
     def test_case_insensitive(self):
         flt = KeywordFilter(keywords=["IMAGE"])
         self.assertFalse(flt.apply("Here is an Image for you"))
+
 
 class TestPunctuationFilter(unittest.TestCase):
     def test_no_punctuation_start(self):
@@ -60,6 +66,7 @@ class TestPunctuationFilter(unittest.TestCase):
         self.assertTrue(flt.apply("1. Start with a number"))
         self.assertTrue(flt.apply("A start with a letter"))
 
+
 class TestNonEnglishFilter(unittest.TestCase):
     def test_english_start(self):
         flt = NonEnglishFilter()
@@ -70,6 +77,7 @@ class TestNonEnglishFilter(unittest.TestCase):
         self.assertFalse(flt.apply("¿Qué hora es?"))
         self.assertFalse(flt.apply("文字が違います"))
 
+
 class TestRougeSimilarityFilter(unittest.TestCase):
     def setUp(self):
         # Some existing instructions
@@ -78,18 +86,25 @@ class TestRougeSimilarityFilter(unittest.TestCase):
             "List the steps to bake a cake.",
             "Explain how photosynthesis works.",
         ]
-        self.flt = RougeSimilarityFilter(existing_instructions=self.existing, threshold=0.7)
+        self.flt = RougeSimilarityFilter(
+            existing_instructions=self.existing, threshold=0.7
+        )
 
     def test_unique_instruction(self):
         # A unique instruction that should have low similarity
-        self.assertTrue(self.flt.apply("Calculate the integral of x^2 from 0 to 10."))
+        self.assertTrue(
+            self.flt.apply("Calculate the integral of x^2 from 0 to 10.")
+        )
 
     def test_similar_instruction(self):
         self.assertFalse(self.flt.apply("Write a summary of this paragraph."))
 
     def test_no_existing_instructions(self):
-        flt_empty = RougeSimilarityFilter(existing_instructions=[], threshold=0.7)
+        flt_empty = RougeSimilarityFilter(
+            existing_instructions=[], threshold=0.7
+        )
         self.assertTrue(flt_empty.apply("Any instruction would do"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,16 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Callable, Dict, Any, Type
+from typing import Any, Callable, Dict
+
 from .filter_function import (
-    FilterFunction, LengthFilter, KeywordFilter, PunctuationFilter,
-    NonEnglishFilter, RougeSimilarityFilter
+    FilterFunction,
+    KeywordFilter,
+    LengthFilter,
+    NonEnglishFilter,
+    PunctuationFilter,
+    RougeSimilarityFilter,
 )
 
 FILTER_REGISTRY: Dict[str, Callable[[Dict[str, Any]], FilterFunction]] = {
     "length": lambda kwargs: LengthFilter(
-        min_len=kwargs.get("min_len", 5),
-        max_len=kwargs.get("max_len", 200)
+        min_len=kwargs.get("min_len", 5), max_len=kwargs.get("max_len", 200)
     ),
     "keyword": lambda kwargs: KeywordFilter(
         keywords=kwargs.get("keywords", ["image", "data"])
@@ -29,10 +33,13 @@ FILTER_REGISTRY: Dict[str, Callable[[Dict[str, Any]], FilterFunction]] = {
     "non_english": lambda kwargs: NonEnglishFilter(),
     "rouge_similarity": lambda kwargs: RougeSimilarityFilter(
         existing_instructions=kwargs.get("existing_instructions", []),
-        threshold=kwargs.get("threshold", 0.7)
+        threshold=kwargs.get("threshold", 0.7),
     ),
 }
 
-def register_filter(name: str, constructor: Callable[[Dict[str, Any]], FilterFunction]):
+
+def register_filter(
+    name: str, constructor: Callable[[Dict[str, Any]], FilterFunction]
+):
     """Register a new filter constructor."""
     FILTER_REGISTRY[name] = constructor

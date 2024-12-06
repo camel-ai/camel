@@ -20,17 +20,22 @@ from .filter_registry import FILTER_REGISTRY
 class InstructionFilter:
     def __init__(self, filters_config: Dict[str, Dict[str, Any]]):
         """
-        Initialize the InstructionFilter with a dictionary of filter configurations.
+        Initialize the InstructionFilter with a dictionary of filter
+            configurations.
 
         Example filters_config:
         {
             "length": {"min_len": 5, "max_len": 100},
             "keyword": {"keywords": ["image", "video"]},
             "non_english": {},
-            "rouge_similarity": {"existing_instructions": ["Some existing text"], "threshold": 0.6}
+            "rouge_similarity": {
+                "existing_instructions": ["Some existing text"],
+                "threshold": 0.6
+            }
         }
 
-        Each key in filters_config corresponds to a filter name (registered in FILTER_REGISTRY).
+        Each key in filters_config corresponds to a filter name
+            (registered in FILTER_REGISTRY).
         Each value is a dict of parameters for that filter.
         """
         self.filters: List[FilterFunction] = []

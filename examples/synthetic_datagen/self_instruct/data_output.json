@@ -1,76 +1,76 @@
 [
     {
         "id": "machine_task_1",
-        "instruction": "Create a short poem that describes the beauty of nature in springtime.",
+        "instruction": "Write a short story that incorporates a twist ending related to a common childhood fear.",
         "is_classification": false,
         "instances": [
             {
                 "input": "",
-                "output": "In springtime's gentle embrace, flowers bloom with vibrant grace,\nThe sun shines bright, the skies are clear, nature awakens, drawing near."
+                "output": "Once upon a time, a young girl named Lily was terrified of the dark. Every night, she would hide under her covers, convinced that monsters lurked in her closet. One evening, her mother gave her a special nightlight that glowed softly, assuring her that it would keep the monsters away. That night, as she drifted off to sleep, she felt safe for the first time. However, when she woke up in the middle of the night, she noticed the light flickering. As she turned to check her closet, she saw a shadowy figure emerging. Heart racing, she realized it was her own reflection in the mirror, illuminated by the nightlight. She laughed at her fear, thinking it was just her imagination. But as she turned back to her bed, she heard a whisper, \"You should have stayed under the covers.\""
             },
             {
                 "input": "",
-                "output": "Birds sing sweetly, a joyful tune, beneath the soft and warming moon,\nGreen leaves dance in the soft, warm breeze, spring's beauty brings the heart to ease."
+                "output": "Tommy was afraid of the dark, especially the basement where his parents kept old boxes and toys. One night, he was dared by his friends to go down there and retrieve a toy. Gathering his courage, he tiptoed down the creaky stairs, clutching a flashlight. As he rummaged through the boxes, he heard a noise behind him and froze. He turned to see a pair of glowing eyes staring back at him. Terrified, he screamed and ran back upstairs, convinced he had seen a ghost. The next day, his parents revealed that they had been playing a prank on him, using a glow-in-the-dark sticker on an old toy. They all laughed, but Tommy couldn't shake the feeling that something was still down there, watching him."
             }
         ]
     },
     {
         "id": "machine_task_2",
-        "instruction": "Design a fitness routine for a beginner that includes exercises for strength, flexibility, and cardiovascular health.",
+        "instruction": "Analyze the provided text and summarize its main argument in one or two sentences.",
         "is_classification": false,
         "instances": [
             {
-                "input": "",
-                "output": "**Fitness Routine for Beginners**\n- **Strength Training**:\n- Push-ups: 3 sets of 8-10 reps\n- Bodyweight Squats: 3 sets of 10-12 reps\n- **Flexibility**:\n- Standing Quad Stretch: Hold for 30 seconds each leg\n- Seated Forward Bend: Hold for 30 seconds\n- **Cardiovascular Health**:\n- Brisk Walking: 20-30 minutes\n- Jumping Jacks: 3 sets of 15-20 reps"
+                "input": "Paragraph: The rapid advancement of technology has significantly transformed the way we communicate, work, and live. With the rise of social media, people are now more connected than ever, allowing for instant communication across the globe. However, this constant connectivity also raises concerns about privacy and the impact of technology on mental health.",
+                "output": "The main argument of the text is that while technology has greatly improved communication and connectivity, it also poses challenges related to privacy and mental health."
             },
             {
-                "input": "",
-                "output": "**Beginner Fitness Routine**\n- **Strength Exercises**:\n- Dumbbell Shoulder Press: 3 sets of 8-10 reps\n- Lunges: 3 sets of 10 reps per leg\n- **Flexibility Work**:\n- Cat-Cow Stretch: 5 cycles\n- Butterfly Stretch: Hold for 30 seconds\n- **Cardio Activity**:\n- Cycling: 20 minutes at a moderate pace\n- High Knees: 3 sets of 30 seconds"
+                "input": "Paragraph: Climate change is one of the most pressing issues of our time, affecting ecosystems, weather patterns, and sea levels. Scientists warn that without immediate action to reduce greenhouse gas emissions, the consequences will be catastrophic for future generations.",
+                "output": "The text argues that urgent action is needed to combat climate change, as failure to do so will lead to severe consequences for the planet and future generations."
             }
         ]
     },
     {
         "id": "machine_task_3",
-        "instruction": "Draft a brief email to a colleague requesting their input on a project and explain why their feedback is valuable.",
+        "instruction": "Create a list of five healthy meal options for someone following a vegetarian diet.",
         "is_classification": false,
         "instances": [
             {
                 "input": "",
-                "output": "Subject: Request for Your Input on Project\nHi [Colleague's Name],\nI hope this message finds you well. I am currently working on [Project Name] and would greatly appreciate your insights on it. Your expertise in [specific area] would be invaluable in refining our approach. Thank you in advance for your time and feedback!\nBest,\n[Your Name]"
+                "output": "- Quinoa Salad with Chickpeas and Avocado\n- Vegetable Stir-Fry with Tofu\n- Lentil Soup with Spinach\n- Stuffed Bell Peppers with Brown Rice and Black Beans\n- Zucchini Noodles with Pesto and Cherry Tomatoes"
             },
             {
                 "input": "",
-                "output": "Subject: Seeking Your Feedback on Project\nDear [Colleague's Name],\nI am reaching out to request your input on the [Project Name] we are developing. Your perspective would help ensure we are on the right track and enhance the overall quality of our work. I look forward to hearing your thoughts!\nBest regards,\n[Your Name]"
+                "output": "- Grilled Vegetable and Hummus Wrap\n- Spinach and Feta Stuffed Portobello Mushrooms\n- Cauliflower Tacos with Avocado Sauce\n- Chickpea Curry with Brown Rice\n- Sweet Potato and Black Bean Chili"
             }
         ]
     },
     {
         "id": "machine_task_4",
-        "instruction": "Develop a marketing strategy for a new eco-friendly product, outlining key target audiences and promotional tactics.",
+        "instruction": "Design a marketing campaign for a new eco-friendly product, including target audience, key messages, and promotional strategies.",
         "is_classification": false,
         "instances": [
             {
                 "input": "",
-                "output": "**Marketing Strategy for Eco-Friendly Product**\n- **Target Audiences**:\n- Environmentally conscious consumers\n- Young families looking for sustainable options\n- Health-conscious individuals\n- **Promotional Tactics**:\n- Social media campaigns highlighting product benefits\n- Collaborations with eco-influencers\n- In-store demonstrations and samples"
+                "output": "- Target Audience: Environmentally conscious consumers aged 18-35.\n- Key Messages: \"Sustainable living made easy,\" \"Join the green revolution,\" \"Reduce your carbon footprint with our eco-friendly products.\"\n- Promotional Strategies: Utilize social media influencers to promote the product, create engaging content highlighting the benefits of eco-friendly living, and offer discounts for first-time buyers."
             },
             {
                 "input": "",
-                "output": "**Eco-Friendly Product Marketing Plan**\n- **Target Audiences**:\n- Millennials and Gen Z consumers\n- Businesses aiming for sustainable practices\n- Outdoor enthusiasts\n- **Promotional Tactics**:\n- Email marketing with educational content on sustainability\n- Participation in eco-friendly trade shows\n- Discounts for first-time buyers to encourage trial"
+                "output": "- Target Audience: Families looking to reduce waste and promote sustainability.\n- Key Messages: \"Eco-friendly choices for a healthier planet,\" \"Make a difference with every purchase,\" \"Quality products that care for the Earth.\"\n- Promotional Strategies: Launch a referral program encouraging customers to share with friends, host community events focused on sustainability, and collaborate with local environmental organizations for joint promotions."
             }
         ]
     },
     {
         "id": "machine_task_5",
-        "instruction": "Summarize the main themes of a given book in a concise paragraph, highlighting key characters and events.",
+        "instruction": "Create a step-by-step guide on how to prepare a healthy smoothie, including ingredient suggestions and blending tips.",
         "is_classification": false,
         "instances": [
             {
-                "input": "Book: \"To Kill a Mockingbird\"",
-                "output": "\"To Kill a Mockingbird\" explores themes of racial injustice and moral growth through the eyes of Scout Finch, a young girl in the Deep South. Key characters include Atticus Finch, her principled father and lawyer, who defends a black man accused of raping a white woman, and Boo Radley, a reclusive neighbor who ultimately plays a crucial role in Scout's understanding of empathy and humanity."
+                "input": "",
+                "output": "1. Gather your ingredients:\n- 1 banana\n- 1 cup of spinach\n- 1/2 cup of Greek yogurt\n- 1 cup of almond milk\n- 1 tablespoon of honey (optional)\n\n2. Add the ingredients to a blender in the following order:\n- Start with the almond milk to help the blades move freely.\n- Add the Greek yogurt, followed by the banana and spinach.\n- If desired, add honey for sweetness.\n\n3. Blend on high until smooth, about 30-60 seconds.\n\n4. Pour into a glass and enjoy your healthy smoothie!"
             },
             {
-                "input": "Book: \"1984\"",
-                "output": "\"1984\" delves into themes of totalitarianism, surveillance, and individuality in a dystopian society. The protagonist, Winston Smith, struggles against the oppressive regime of Big Brother, seeking truth and freedom in a world where independent thought is punished. The novel serves as a cautionary tale about the dangers of unchecked government power and the loss of personal liberties."
+                "input": "",
+                "output": "1. Ingredients needed:\n- 1 cup of frozen mixed berries\n- 1/2 cup of oats\n- 1 cup of coconut water\n- 1 tablespoon of chia seeds\n\n2. In a blender, combine the coconut water and oats first to create a smooth base.\n\n3. Add the frozen mixed berries and chia seeds to the blender.\n\n4. Blend until all ingredients are well combined and smooth, approximately 30 seconds.\n\n5. Serve immediately in a glass, and enjoy your nutritious smoothie!"
             }
         ]
     }

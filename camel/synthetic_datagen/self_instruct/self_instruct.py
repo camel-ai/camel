@@ -29,13 +29,16 @@ class SelfInstructPipeline:
     combining human and machine task samples.
 
     Attributes:
-        agent (ChatAgent): The agent used to interact and generate instructions.
-        num_machine_instructions (int): Number of machine-generated instructions to generate.
-        data_output_path (Optional[str]): Path to save the generated data.
-        human_to_machine_ratio (tuple): Ratio of human to machine tasks used for instruction generation.
-        instruction_filter (InstructionFilter): A filter to validate generated instructions.
-        human_tasks (List[dict]): A list of tasks loaded from the seed file.
-        machine_tasks (List[dict]): A list of machine-generated tasks.
+        agent (ChatAgent): The agent used to interact and generate instructions
+        num_machine_instructions (int): Number of machine-generated
+            instructions to generate
+        data_output_path (Optional[str]): Path to save the generated data
+        human_to_machine_ratio (tuple): Ratio of human to machine tasks used
+            for instruction generation
+        instruction_filter (InstructionFilter): A filter to validate
+            generated instructions
+        human_tasks (List[dict]): A list of tasks loaded from the seed file
+        machine_tasks (List[dict]): A list of machine-generated tasks
     """
 
     def __init__(
@@ -75,7 +78,8 @@ class SelfInstructPipeline:
 
     def load_seed(self, path: Optional[str]):
         """
-        Load seed tasks from a file. Defaults to a predefined seed file if no path is provided.
+        Load seed tasks from a file. Defaults to a predefined seed file if
+            no path is provided.
 
         Args:
             path (Optional[str]): Path to the seed file.
@@ -116,7 +120,8 @@ class SelfInstructPipeline:
             count (int): Number of machine tasks to sample.
 
         Returns:
-            List[dict]: A list of sampled machine tasks, with placeholders if insufficient tasks are available.
+            List[dict]: A list of sampled machine tasks, with placeholders if
+                insufficient tasks are available.
         """
         available_machine_tasks = len(self.machine_tasks)
         if available_machine_tasks < count:
@@ -133,8 +138,8 @@ class SelfInstructPipeline:
         """
         Generate a machine instruction using the agent.
 
-        Combines human and machine tasks based on the configured ratio to create a prompt
-        for instruction generation.
+        Combines human and machine tasks based on the configured ratio to
+            create a prompt for instruction generation.
 
         Returns:
             str: A machine-generated instruction.
@@ -155,10 +160,12 @@ class SelfInstructPipeline:
         for idx, task in enumerate(sampled_machine_tasks, current_task_number):
             prompt += f"Task {idx}: {task['instruction']}\n"
 
-        prompt += f"Task {len(sampled_human_tasks) + len(sampled_machine_tasks) + 1}:"
+        task_num = len(sampled_human_tasks) + len(sampled_machine_tasks) + 1
+        prompt += f"Task {task_num}:"
         prompt += (
-            "\nNow, please produce exactly one new task that fits the style of the ones above.\n"
-            "Do not include any task numbering or labels like 'Task X:'. Just write the task itself.\n"
+            "\nNow, please produce exactly one new task that fits the "
+            "style of the ones above.\n Do not include any task numbering or "
+            "labels like 'Task X:'. Just write the task itself.\n"
             "The task should be a single sentence.\n\n"
         )
 
@@ -179,7 +186,8 @@ class SelfInstructPipeline:
             instruction (str): The instruction to classify.
 
         Returns:
-            bool: True if the instruction is a classification task, otherwise False.
+            bool: True if the instruction is a classification task,
+                otherwise False.
         """
         clf_prompt = (
             SelfInstructTemplates.clf_template
@@ -193,7 +201,8 @@ class SelfInstructPipeline:
 
     def generate_machine_instances(self):
         """
-        Generate instances for each machine task based on its classification status.
+        Generate instances for each machine task based on its classification
+            status.
         """
         for instruction in self.machine_tasks:
             instance = self.generate_machine_instance(
@@ -209,7 +218,8 @@ class SelfInstructPipeline:
 
         Args:
             instruction (str): The instruction to create instances for.
-            classification (bool): Whether the instruction is a classification task.
+            classification (bool): Whether the instruction is a classification
+                task.
 
         Returns:
             List[dict]: A list of generated instances in input-output format.
@@ -237,13 +247,16 @@ class SelfInstructPipeline:
         self, generated_text: str
     ) -> List[Dict[str, str]]:
         """
-        Parse the generated text for classification tasks into input-output pairs.
+        Parse the generated text for classification tasks into input-output
+            pairs.
 
         Args:
-            generated_text (str): The raw text generated by the agent for classification tasks.
+            generated_text (str): The raw text generated by the agent for
+                classification tasks.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries with 'input' and 'output' keys.
+            List[Dict[str, str]]: A list of dictionaries with 'input' and
+                'output' keys.
         """
         instances = []
         lines = generated_text.split("\n")
@@ -290,13 +303,16 @@ class SelfInstructPipeline:
         self, generated_text: str
     ) -> List[Dict[str, str]]:
         """
-        Parse the generated text for non-classification tasks into input-output pairs.
+        Parse the generated text for non-classification tasks into
+            input-output pairs.
 
         Args:
-            generated_text (str): The raw text generated by the agent for non-classification tasks.
+            generated_text (str): The raw text generated by the agent for
+                non-classification tasks.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries with 'input' and 'output' keys.
+            List[Dict[str, str]]: A list of dictionaries with 'input' and
+                'output' keys.
         """
         instances = []
         prev = 0
@@ -342,14 +358,16 @@ class SelfInstructPipeline:
 
     def construct_data(self):
         """
-        Save the machine-generated tasks to the specified output path in JSON format.
+        Save the machine-generated tasks to the specified output path
+            in JSON format.
         """
         with open(self.data_output_path, 'w') as f:
             json.dump(self.machine_tasks, f, indent=4)
 
     def generate(self):
         """
-        Execute the entire pipeline to generate machine instructions and instances.
+        Execute the entire pipeline to generate machine instructions
+            and instances.
         """
         print("generate start")
         while len(self.machine_tasks) < self.num_machine_instructions:

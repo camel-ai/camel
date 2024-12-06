@@ -11,7 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .filter import *
+from .filter import (
+    FilterFunction,
+    InstructionFilter,
+    KeywordFilter,
+    LengthFilter,
+    NonEnglishFilter,
+    PunctuationFilter,
+    RougeSimilarityFilter,
+)
 from .self_instruct import SelfInstructPipeline
 
 __all__ = [
