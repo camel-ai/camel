@@ -1,31 +1,11 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-
-
-
-
-import os
-import logging
-from datetime import datetime
 from collections import defaultdict
+import logging
+import os
+from datetime import datetime
 from dotenv import load_dotenv
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType
-from camel.agents import ChatAgent
-import json
 
+
+# ### Configure logging,create a log file and a console handler
 # Configure logging
 def setup_logger():
     if not os.path.exists('logs'):
@@ -42,27 +22,15 @@ def setup_logger():
     logger.addHandler(console_handler)
     return logger
 
+
+
 logger = setup_logger()
+
+
 
 # Load environment variables
 load_dotenv()
 logger.info("Environment variables loaded")
-
-# Initialize AI model
-sys_msg = 'You are a genius at slow-thinking data and code'
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    model_type="deepseek-chat",
-    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
-    model_config_dict={"temperature": 0.4, "max_tokens": 4096},
-)
-chat_agent = ChatAgent(
-    system_message=sys_msg,
-    model=model,
-    message_window_size=10,
-)
-
 class O1DataGene:
     def __init__(self, chat_agent, golden_answers=None, search_limit=100):
         self.chat_agent = chat_agent
@@ -219,11 +187,3 @@ class O1DataGene:
             logger.info(f"Solutions exported successfully to {filepath}")
         except Exception as e:
             logger.error(f"Error exporting solutions: {str(e)}")
-
-# Example usage
-# golden_answers = {
-#     "how many r in strawberry?": "3",
-# }
-# solver = O1DataGene(chat_agent, golden_answers)
-# question = "how many r in strawberry?"
-# solver.solve(question)
