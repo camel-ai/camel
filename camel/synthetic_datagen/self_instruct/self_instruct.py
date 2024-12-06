@@ -264,10 +264,9 @@ class SelfInstructPipeline:
         for line in lines:
             line = line.strip()
             if not line:
-                continue  # Skip empty lines
+                continue
 
             if line.startswith("Class label:"):
-                # Save the previous instance if it's complete
                 if current_label and current_input:
                     instances.append(
                         {
@@ -276,17 +275,13 @@ class SelfInstructPipeline:
                         }
                     )
 
-                # Start a new instance
                 current_label = line[len("Class label:") :].strip()
                 current_input = None
             else:
-                # Assume this is part of the input
                 if current_input is None:
                     current_input = line
                 else:
                     current_input += f"\n{line}"
-
-        # Add the last instance if it's complete
         if current_label and current_input:
             instances.append(
                 {
@@ -330,7 +325,6 @@ class SelfInstructPipeline:
                 else:
                     instance_input = instance_input.strip()
 
-                # Capture the multi-line output
                 instance_output = line[len("Output:") :].strip()
                 i += 1
                 while i < len(lines) and not lines[i].strip().startswith(
