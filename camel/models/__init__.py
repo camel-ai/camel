@@ -16,6 +16,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
 from .deepseek_model import DeepSeekModel
+from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
@@ -64,4 +65,5 @@ __all__ = [
     'QwenModel',
     'ModelProcessingError',
     'DeepSeekModel',
+    'FishAudioModel',
 ]
