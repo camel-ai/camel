@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-import logging
 import os
 import tempfile
 from enum import Enum
@@ -27,10 +26,10 @@ from huggingface_hub.errors import (
 
 from camel.datahubs.clients.base import DatasetManager
 from camel.datahubs.models import Record
+from camel.logger import get_logger
 from camel.utils import api_keys_required, dependencies_required
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RepoType(str, Enum):
@@ -397,7 +396,23 @@ class HuggingFaceDatasetManager(DatasetManager):
             mode="w", delete=False, suffix=f".{file_type}"
         ) as f:
             if file_type == "json":
-                json.dump(file_content, f)
+                if isinstance(file_content, str):
+                    try:
+                        json_content = json.loads(file_content)
+                    except json.JSONDecodeError:
+                        raise ValueError(
+                            "Invalid JSON string provided for file_content."
+                        )
+                else:
+                    try:
+                        json.dumps(file_content)
+                        json_content = file_content
+                    except (TypeError, ValueError):
+                        raise ValueError(
+                            "file_content is not JSON serializable."
+                        )
+
+                json.dump(json_content, f)
             elif file_type == "md" or file_type == "txt":
                 f.write(file_content)
             else:

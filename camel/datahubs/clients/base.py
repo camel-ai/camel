@@ -31,7 +31,7 @@ class DatasetManager(ABC):
         Returns:
             str: The URL of the created dataset.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")
 
     @abstractmethod
     def list_datasets(
@@ -48,7 +48,7 @@ class DatasetManager(ABC):
         Returns:
             List[str]: A list of dataset ids.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")
 
     @abstractmethod
     def delete_dataset(self, dataset_name: str, **kwargs: Any) -> None:
@@ -58,7 +58,7 @@ class DatasetManager(ABC):
             dataset_name (str): The name of the dataset to delete.
             kwargs (Any): Additional keyword arguments.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")
 
     @abstractmethod
     def add_records(
@@ -76,7 +76,7 @@ class DatasetManager(ABC):
             filepath (str): The path to the file containing the records.
             kwargs (Any): Additional keyword arguments.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")
 
     @abstractmethod
     def update_records(
@@ -94,7 +94,7 @@ class DatasetManager(ABC):
             filepath (str): The path to the file containing the records.
             kwargs (Any): Additional keyword arguments.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")
 
     @abstractmethod
     def list_records(
@@ -110,7 +110,7 @@ class DatasetManager(ABC):
             filepath (str): The path to the file containing the records.
             kwargs (Any): Additional keyword arguments.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")
 
     # New method for record deletion
     @abstractmethod
@@ -129,4 +129,4 @@ class DatasetManager(ABC):
             filepath (str): The path to the file containing the records.
             kwargs (Any): Additional keyword arguments.
         """
-        pass
+        raise NotImplementedError("Method not implemented.")

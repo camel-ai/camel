@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import datetime
 import json
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,10 +28,11 @@ DATASET_NAME = (
 )
 REPO_ID = f"username/{DATASET_NAME}"
 
+os.environ["HUGGING_FACE_TOKEN"] = TOKEN
 
 @pytest.fixture
 def manager():
-    return HuggingFaceDatasetManager(token=TOKEN)
+    return HuggingFaceDatasetManager()
 
 
 def test_create_dataset(manager):
