@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Optional
+from camel.synthetic_datagen.source2synth.models import MultiHopQA, ContextPrompt, ReasoningStep
 from camel.synthetic_datagen.source2synth.models import MultiHopQA, ContextPrompt
 
 from camel import logger
@@ -53,7 +54,7 @@ class AIModelHandler:
         if not self.model:
             return None
 
-        # system_message =
+        system_message = "You are an AI model designed to generate multi-hop question-answer pairs."
 
         return ChatAgent(
             system_message=system_message,
