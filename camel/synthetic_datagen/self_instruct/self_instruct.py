@@ -1,13 +1,26 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import os
 import random
-from typing import Optional, List
-
-
-from .templates import SelfInstructTemplates
+from typing import Any, Dict, List, Optional
 
 from camel.agents import ChatAgent
-from camel.synthetic_datagen.self_instruct.filter.instruction_filter import InstructionFilter
+
+from .filter import RougeSimilarityFilter
+from .filter.instruction_filter import InstructionFilter
+from .templates import SelfInstructTemplates
 
 
 class SelfInstructPipeline:
@@ -20,27 +33,45 @@ class SelfInstructPipeline:
         num_machine_instructions (int): Number of machine-generated instructions to generate.
         data_output_path (Optional[str]): Path to save the generated data.
         human_to_machine_ratio (tuple): Ratio of human to machine tasks used for instruction generation.
-        filter (InstructionFilter): A filter to validate generated instructions.
+        instruction_filter (InstructionFilter): A filter to validate generated instructions.
         human_tasks (List[dict]): A list of tasks loaded from the seed file.
         machine_tasks (List[dict]): A list of machine-generated tasks.
     """
+
     def __init__(
-            self,
-            agent: ChatAgent,
-            seed: Optional[str] = None,
-            num_machine_instructions: int = 5,
-            data_output_path: Optional[str] = '/data_output.json',
-            human_to_machine_ratio: tuple = (6, 2),
-            filter: Optional[InstructionFilter] = InstructionFilter(),
+        self,
+        agent: ChatAgent,
+        seed: str,
+        num_machine_instructions: int = 5,
+        data_output_path: Optional[str] = './data_output.json',
+        human_to_machine_ratio: tuple = (6, 2),
+        instruction_filter: Optional[InstructionFilter] = None,
+        filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
         self.data_output_path = data_output_path
         self.human_to_machine_ratio = human_to_machine_ratio
-        self.filter = filter
         self.human_tasks = []
         self.machine_tasks = []  # stores tasks in the same format as the seed
         self.load_seed(seed)
+        default_config = {
+            "length": {},
+            "keyword": {},
+            "punctuation": {},
+            "non_english": {},
+            "rouge_similarity": {},
+        }
+
+        if instruction_filter is not None:
+            # custom
+            self.instruction_filter = instruction_filter
+        else:
+            # default
+            config_to_use = (
+                filter_config if filter_config is not None else default_config
+            )
+            self.instruction_filter = InstructionFilter(config_to_use)
 
     def load_seed(self, path: Optional[str]):
         """
@@ -52,12 +83,14 @@ class SelfInstructPipeline:
         Raises:
             FileNotFoundError: If the seed file does not exist.
         """
-        if path is None:
-            path = '/seed/default_seed.json'
 
         if os.path.exists(path):
+            self.human_tasks = []
             with open(path, 'r') as f:
-                self.human_tasks = json.load(f)
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        self.human_tasks.append(json.loads(line))
         else:
             raise FileNotFoundError(f"Seed file not found at path: {path}")
 
@@ -71,7 +104,9 @@ class SelfInstructPipeline:
         Returns:
             List[dict]: A list of sampled human tasks.
         """
-        return random.sample(self.human_tasks, min(count, len(self.human_tasks)))
+        return random.sample(
+            self.human_tasks, min(count, len(self.human_tasks))
+        )
 
     def sample_machine_tasks(self, count: int) -> List[dict]:
         """
@@ -88,7 +123,8 @@ class SelfInstructPipeline:
             sampled_tasks = self.machine_tasks.copy()
             placeholders_needed = count - available_machine_tasks
             sampled_tasks.extend(
-                [{'instruction': ""} for _ in range(placeholders_needed)])
+                [{'instruction': ""} for _ in range(placeholders_needed)]
+            )
             return sampled_tasks
 
         return random.sample(self.machine_tasks, count)
@@ -104,9 +140,13 @@ class SelfInstructPipeline:
             str: A machine-generated instruction.
         """
 
-        sampled_human_tasks = self.sample_human_tasks(self.human_to_machine_ratio[0])
-        sampled_machine_tasks = self.sample_machine_tasks(self.human_to_machine_ratio[1])
-        prompt = "Come up with a series of tasks:\n"
+        sampled_human_tasks = self.sample_human_tasks(
+            self.human_to_machine_ratio[0]
+        )
+        sampled_machine_tasks = self.sample_machine_tasks(
+            self.human_to_machine_ratio[1]
+        )
+        prompt = "Below are some tasks:\n\n"
 
         for idx, task in enumerate(sampled_human_tasks, 1):
             prompt += f"Task {idx}: {task['instruction']}\n"
@@ -116,10 +156,19 @@ class SelfInstructPipeline:
             prompt += f"Task {idx}: {task['instruction']}\n"
 
         prompt += f"Task {len(sampled_human_tasks) + len(sampled_machine_tasks) + 1}:"
-
+        prompt += (
+            "\nNow, please produce exactly one new task that fits the style of the ones above.\n"
+            "Do not include any task numbering or labels like 'Task X:'. Just write the task itself.\n"
+            "The task should be a single sentence.\n\n"
+        )
 
         response = self.agent.step(prompt)
-        generated_tasks = response.msgs[0].content.split("\n")
+        generated_tasks = [
+            line.strip()
+            for line in response.msgs[0].content.split("\n")
+            if line.strip()
+        ]
+        print("generated " + generated_tasks[0])
         return generated_tasks[0]
 
     def identify_instruction(self, instruction: str) -> bool:
@@ -132,9 +181,14 @@ class SelfInstructPipeline:
         Returns:
             bool: True if the instruction is a classification task, otherwise False.
         """
-        clf_prompt = SelfInstructTemplates.clf_template + f"Task: {instruction}\nIs it classification?"
+        clf_prompt = (
+            SelfInstructTemplates.clf_template
+            + f"Task: {instruction}\nIs it classification?"
+        )
+        clf_prompt += " Only answer yes or no"
         response = self.agent.step(clf_prompt)
         result = response.msgs[0].content.strip().lower()
+        print("is classify " + result)
         return result in ["yes", "true"]
 
     def generate_machine_instances(self):
@@ -143,14 +197,12 @@ class SelfInstructPipeline:
         """
         for instruction in self.machine_tasks:
             instance = self.generate_machine_instance(
-                instruction['instruction'],
-                instruction['is_classification']
+                instruction['instruction'], instruction['is_classification']
             )
             instruction['instances'] = instance
+
     def generate_machine_instance(
-            self,
-            instruction: str,
-            classification: bool
+        self, instruction: str, classification: bool
     ) -> list[dict]:
         """
         Generate instances for a given instruction.
@@ -163,31 +215,130 @@ class SelfInstructPipeline:
             List[dict]: A list of generated instances in input-output format.
         """
         if classification:
-            prompt = SelfInstructTemplates.input_first_template_for_gen.format(instruction=instruction)
+            prompt = (
+                SelfInstructTemplates.output_first_template_for_clf.format(
+                    instruction=instruction
+                )
+            )
         else:
-            prompt = SelfInstructTemplates.output_first_template_for_clf.format(instruction=instruction)
+            prompt = SelfInstructTemplates.input_first_template_for_gen.format(
+                instruction=instruction
+            )
 
         response = self.agent.step(prompt)
         generated_text = response.msgs[0].content.strip()
 
+        if classification:
+            return self.parse_classification_output(generated_text)
+        else:
+            return self.parse_non_classification_output(generated_text)
+
+    def parse_classification_output(
+        self, generated_text: str
+    ) -> List[Dict[str, str]]:
+        """
+        Parse the generated text for classification tasks into input-output pairs.
+
+        Args:
+            generated_text (str): The raw text generated by the agent for classification tasks.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries with 'input' and 'output' keys.
+        """
         instances = []
+        lines = generated_text.split("\n")
+        current_label = None
+        current_input = None
 
-        for line in generated_text.split("\n\n"):
-            if line.strip():
-                try:
-                    input_text = ""
-                    output_text = line.strip()
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue  # Skip empty lines
 
-                    instance = {
-                        "input": input_text,
-                        "output": output_text
-                    }
-                    instances.append(instance)
-                except Exception as e:
-                    print(f"Error parsing instance: {e}")
+            if line.startswith("Class label:"):
+                # Save the previous instance if it's complete
+                if current_label and current_input:
+                    instances.append(
+                        {
+                            "input": current_input.strip(),
+                            "output": current_label.strip(),
+                        }
+                    )
+
+                # Start a new instance
+                current_label = line[len("Class label:") :].strip()
+                current_input = None
+            else:
+                # Assume this is part of the input
+                if current_input is None:
+                    current_input = line
+                else:
+                    current_input += f"\n{line}"
+
+        # Add the last instance if it's complete
+        if current_label and current_input:
+            instances.append(
+                {
+                    "input": current_input.strip(),
+                    "output": current_label.strip(),
+                }
+            )
 
         return instances
 
+    def parse_non_classification_output(
+        self, generated_text: str
+    ) -> List[Dict[str, str]]:
+        """
+        Parse the generated text for non-classification tasks into input-output pairs.
+
+        Args:
+            generated_text (str): The raw text generated by the agent for non-classification tasks.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries with 'input' and 'output' keys.
+        """
+        instances = []
+        prev = 0
+        lines = generated_text.split("\n")
+        i = 0
+
+        while i < len(lines):
+            line = lines[i].strip()
+
+            if line.startswith("Example "):
+                prev = i + 1
+
+            elif line.startswith("Output:"):
+                instance_input = '\n'.join(lines[prev:i]).strip()
+                if instance_input.startswith("Input: "):
+                    instance_input = instance_input[len("Input: ") :].strip()
+                else:
+                    instance_input = instance_input.strip()
+
+                # Capture the multi-line output
+                instance_output = line[len("Output:") :].strip()
+                i += 1
+                while i < len(lines) and not lines[i].strip().startswith(
+                    "Example "
+                ):
+                    instance_output += '\n' + lines[i].strip()
+                    i += 1
+                i -= 1
+
+                instance_output = instance_output.strip()
+
+                instances.append(
+                    {"input": instance_input, "output": instance_output}
+                )
+
+                prev = i + 1
+            i += 1
+
+        if not instances:
+            instances.append({"input": "", "output": "No valid output found."})
+
+        return instances
 
     def construct_data(self):
         """
@@ -200,18 +351,25 @@ class SelfInstructPipeline:
         """
         Execute the entire pipeline to generate machine instructions and instances.
         """
+        print("generate start")
         while len(self.machine_tasks) < self.num_machine_instructions:
+            existing_instructions = [
+                t["instruction"] for t in self.human_tasks
+            ] + [t["instruction"] for t in self.machine_tasks]
+            for f in self.instruction_filter.filters:
+                if isinstance(f, RougeSimilarityFilter):
+                    f.existing_instructions = existing_instructions
             instruction = self.generate_machine_instruction()
-            if self.filter.filter(instruction):
+            if self.instruction_filter.filter(instruction):
                 instruction_dict = {
-                    "id" : f"machine_task_{len(self.machine_tasks) + 1}",
-                    "instruction": instruction
+                    "id": f"machine_task_{len(self.machine_tasks) + 1}",
+                    "instruction": instruction,
+                    "is_classification": self.identify_instruction(
+                        instruction
+                    ),
                 }
                 self.machine_tasks.append(instruction_dict)
+        print("done with instructions")
         self.generate_machine_instances()
+        print("done with instances")
         self.construct_data()
-
-
-
-
-

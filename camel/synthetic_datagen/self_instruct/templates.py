@@ -98,16 +98,25 @@ class SelfInstructTemplates:
     Is it classification? No
     
     """
-    output_first_template_for_clf = '''Given the classification task definition and the class labels, generate an input that corresponds to each of the class labels. If the task doesn't require input, just generate possible class labels.
+    output_first_template_for_clf = '''You are given a classification instruction. 
+    
+    Produce multiple labeled examples following the format below. For each example:
+    - Begin with a "Class label:" line identifying one possible category.
+    - Follow that with one line specifying the example input (e.g., "Sentence:", "Dialogue:", "Opinion:", or "Email:").
+    - The content after these lines should serve as an illustrative example of that label.
+    
+    Do not restate or include the "Task:" line. Do not add additional commentary. Just produce the labeled examples.
 
-    Task: Classify the sentiment of the sentence into positive, negative, or mixed.
-    Class label: mixed
-    Sentence: I enjoy the flavor of the restaurant but their service is too slow.
-    Class label: Positive
-    Sentence: I had a great day today. The weather was beautiful and I spent time with friends and family.
-    Class label: Negative
-    Sentence: I was really disappointed by the latest superhero movie. I would not recommend it to anyone.
-
+    Example format (no initial task line, task will be provided) when task is Task: Classify the sentiment of the sentence into positive, negative, or mixed.:
+        Class label: mixed
+        Sentence: I enjoy the flavor of the restaurant but their service is too slow.
+        Class label: Positive
+        Sentence: I had a great day today. The weather was beautiful and I spent time with friends and family.
+        Class label: Negative
+        Sentence: I was really disappointed by the latest superhero movie. I would not recommend it to anyone.
+    
+    Below are more examples:
+    
     Task: Given a dialogue, classify whether the user is satisfied with the service. You should respond with "Satisfied" or "Unsatisfied".
     Class label: Satisfied
     Dialogue:
@@ -238,10 +247,29 @@ class SelfInstructTemplates:
     Task: Which of the following is not an input type? (a) number (b) date (c) phone number (d) email address (e) all of these are valid inputs.
     Class label: (e)
 
+    Now, using the given instruction, produce several formatted examples accordingly:
     Task: {instruction}
     '''
 
-    input_first_template_for_gen = '''Come up with examples for the following tasks. Try to generate multiple examples when possible. If the task doesn't require additional input, you can generate the output directly.
+    input_first_template_for_gen = '''You will be given a task, 
+    Please generate at most two example instances illustrating how to 
+    perform this task. For each instance:
+    - If the task requires input (as an actual instance of the task), 
+    provide it. if the task itself can be answered without an instance, 
+    skip the input.
+    - Then provide the correct output.
+    
+    Do not provide any additional commentary, explanations, or more than two instances. Just show the instances in the following format:
+        
+        Example 1
+        [Input if necessary]
+        Output: [oldest person]
+        
+        Example 2
+        [Input if necessary]
+        Output: [oldest person]
+        
+    Below are some examples:
 
     Task: Which exercises are best for reducing belly fat at home?
     Output:
