@@ -16,8 +16,6 @@ import json
 import logging
 import os
 import random
-import re
-import string
 import pandas as pd
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -88,7 +86,7 @@ class NexusBenchmark(BaseBenchmark):
         
         # Load the dataset files
         dataset = []
-        if dataset_name == dataset_name == "NVDLibrary-NestedCalls":
+        if dataset_name == "NVDLibrary-NestedCalls":
             for file_name in os.listdir(dataset_dir):
                 file_path = dataset_dir / file_name
                 if file_name.endswith(".csv"):
@@ -144,16 +142,7 @@ class NexusBenchmark(BaseBenchmark):
         r"""Run the benchmark
         """
 
-        if dataset not in [
-            "NVDLibrary",
-            "VirusTotal",
-            "OTX",
-            "PlacesAPI",
-            "ClimateAPI",
-            "VirusTotal-ParallelCalls",
-            "VirusTotal-NestedCalls",
-            "NVDLibrary-NestedCalls"
-        ]:
+        if dataset not in dataset_mapping:
             raise ValueError(f"Invalid value for dataset: {dataset}.")
 
         logger.info(f"Running Nexus Function Calling benchmark on {dataset}.")
@@ -165,7 +154,6 @@ class NexusBenchmark(BaseBenchmark):
             datas = datas[:subset]
         logger.info(f"Number of tasks: {len(datas)}")
         self._results = []
-        agent = self._inject(agent)
 
         tools = construct_tool_descriptions(dataset_name=dataset)
         with open(self.save_to, "w") as f:
@@ -204,13 +192,12 @@ class NexusBenchmark(BaseBenchmark):
 
                 agent.reset()
 
-                self._results[-1]["history"] = self._current_history
-                self._current_history = []
                 f.write(json.dumps(self._results[-1], indent=2) + "\n")
                 f.flush()
             
         total = len(self._results)
         correct = sum(r["result"] for r in self._results)
+        
         return {
             "total": total,
             "correct": correct,

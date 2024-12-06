@@ -12,14 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import dataclasses
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from camel.agents import ChatAgent
-from camel.messages.base import BaseMessage
 
 logger = logging.getLogger(__name__)
 
@@ -103,15 +101,3 @@ class BaseBenchmark(ABC):
     @property
     def results(self) -> List[Dict[str, Any]]:
         return self._results
-
-    def _inject(self, agent: ChatAgent) -> ChatAgent:
-        ori = agent.record_message
-
-        def record_message(message: BaseMessage) -> None:
-            tmp = dataclasses.asdict(message)
-            tmp.pop("role_type")
-            self._current_history.append(tmp)
-            return ori(message)
-
-        agent.record_message = record_message  # type: ignore[method-assign]
-        return agent
