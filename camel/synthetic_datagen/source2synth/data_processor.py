@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
 import random
 from typing import Any, Dict, List, Optional
 
@@ -21,152 +20,18 @@ import pandas as pd
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from camel.agents import ChatAgent
-from camel.models import ModelFactory
+from camel.logger import get_logger
+from camel.synthetic_datagen.source2synth.ai_model_handler import (
+    AIModelHandler,
+)
 from camel.synthetic_datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
-from camel.types import ModelPlatformType, ModelType
 
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-class AIModelHandler:
-    """AI Model Processor"""
-
-    def __init__(self, config: ProcessorConfig):
-        self.config = config
-        if config.use_ai_model:
-            self.model = self._init_model()
-            self.agent = self._init_agent()
-
-    def _init_model(self):
-        """Initialize AI model"""
-        try:
-            return ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
-                model_config_dict={
-                    "temperature": self.config.model_temperature,
-                    "max_tokens": self.config.max_tokens,
-                },
-            )
-        except Exception as e:
-            logger.warning(f"Failed to initialize AI model: {e!s}")
-            return None
-
-    def _init_agent(self):
-        """Initialize AI agent"""
-        if not self.model:
-            return None
-
-        system_message = """You are an expert at generating multi-hop question-answer pairs.
-        For each context, you should:
-        1. Identify multiple related facts or pieces of information
-        2. Create questions that require reasoning across these multiple pieces
-        3. Ensure the reasoning chain is clear and logical
-        4. Generate questions that require at least 2-3 steps of reasoning
-        5. Include the reasoning steps in the answer
-
-        Format your response as:
-        Question: [Complex question requiring multiple reasoning steps]
-        Reasoning Steps:
-        1. [First reasoning step]
-        2. [Second reasoning step]
-        3. [Final reasoning step]
-        Answer: [Final answer]
-        Supporting Facts: [List of relevant text segments used]
-        """
-
-        return ChatAgent(
-            system_message=system_message,
-            model=self.model,
-            message_window_size=10,
-        )
-
-    def generate_qa_pair(
-        self, context: str, related_contexts: List[str] = None
-    ) -> Optional[Dict[str, Any]]:
-        """Generate multi-hop question-answer pair using AI"""
-        if not self.agent:
-            return None
-
-        try:
-            # Construct a prompt containing multiple related contexts
-            context_prompt = f"Main Context: {context}\n"
-            if related_contexts:
-                context_prompt += "\nRelated Contexts:\n"
-                for i, rel_ctx in enumerate(related_contexts, 1):
-                    context_prompt += f"{i}. {rel_ctx}\n"
-
-            prompt = f"""{context_prompt}
-            Generate a multi-hop question-answer pair that requires reasoning across multiple pieces of information.
-            The question should require at least 2-3 logical steps to answer.
-            Include the reasoning steps and supporting facts in your response.
-
-            Format your response as:
-            Question: [your question]
-            Reasoning Steps:
-            1. [step 1]
-            2. [step 2]
-            3. [step 3]
-            Answer: [your answer]
-            Supporting Facts: [relevant text segments]
-            """
-
-            # Get AI response
-            response = self.agent.step(prompt)
-            content = response.msgs[0].content
-
-            # Parse response
-            lines = content.strip().split('\n')
-            question = None
-            reasoning_steps = []
-            answer = None
-            supporting_facts = []
-
-            current_section = None
-            for line in lines:
-                line = line.strip()
-                if line.startswith('Question:'):
-                    question = line[9:].strip()
-                    current_section = 'question'
-                elif line.startswith('Reasoning Steps:'):
-                    current_section = 'reasoning'
-                elif line.startswith('Answer:'):
-                    answer = line[7:].strip()
-                    current_section = 'answer'
-                elif line.startswith('Supporting Facts:'):
-                    current_section = 'facts'
-                elif (
-                    line
-                    and current_section == 'reasoning'
-                    and line[0].isdigit()
-                ):
-                    reasoning_steps.append(line[2:].strip())
-                elif line and current_section == 'facts':
-                    supporting_facts.append(line)
-
-            if question and answer and reasoning_steps:
-                return {
-                    'question': question,
-                    'reasoning_steps': reasoning_steps,
-                    'answer': answer,
-                    'supporting_facts': supporting_facts,
-                    'type': 'multi_hop_qa',
-                }
-
-        except Exception as e:
-            logger.warning(
-                f"Error generating multi-hop question-answer pair: {e!s}"
-            )
-
-        return None
+logger = get_logger(__name__)
 
 
 class UserDataProcessor:

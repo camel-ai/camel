@@ -13,17 +13,17 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-from dataclasses import dataclass
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from camel.agents.MultiHopGeneratorAgent import MultiHopGeneratorAgent
 
 
 class ProcessorConfig(BaseModel):
     """Data processing configuration class"""
 
     model_config = ConfigDict(
-        validate_assignment=True,
-        frozen=False,
-        protected_namespaces=()
+        validate_assignment=True, frozen=False, protected_namespaces=()
     )
 
     seed: int = Field(  # Generate a random seed for reproducibility
@@ -61,15 +61,20 @@ class ProcessorConfig(BaseModel):
         default=True, description="Whether to use AI model in processing"
     )
 
-    model_temperature: float = Field(
-        default=0.4,
-        description="Temperature parameter for AI model generation",
-        ge=0.0,
-        le=1.0,
+    hop_generating_agent: MultiHopGeneratorAgent = Field(
+        default=MultiHopGeneratorAgent(),
+        description="Agent for generating multi-hop text",
     )
 
-    max_tokens: int = Field(
-        default=4096,
-        description="Maximum number of tokens for AI model output",
-        gt=0,
-    )
+    # model_temperature: float = Field(
+    #     default=0.4,
+    #     description="Temperature parameter for AI model generation",
+    #     ge=0.0,
+    #     le=1.0,
+    # )
+
+    # max_tokens: int = Field(
+    #     default=4096,
+    #     description="Maximum number of tokens for AI model output",
+    #     gt=0,
+    # )

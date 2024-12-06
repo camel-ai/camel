@@ -47,8 +47,6 @@ def main():
         complexity_threshold=0.5,
         dataset_size=10,
         use_ai_model=True,
-        model_temperature=0.4,
-        max_tokens=4096,
     )
 
     # 2. Create the processor
