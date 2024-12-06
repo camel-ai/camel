@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.synthetic_datagen.source2synth.models import MultiHopQA, ContextPrompt
 
 T = TypeVar('T')
 
@@ -172,17 +173,16 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
 
     @programmable_capability
     def generate_multi_hop_qa(self, context: str):
-        prompt = f"""{context_prompt}
-        Generate a multi-hop question-answer pair that requires reasoning across multiple pieces of information.
-        The question should require at least 2-3 logical steps to answer.
-        Include the reasoning steps and supporting facts in your response.
+        context_prompt = ContextPrompt(
+            main_context=context,
+            related_contexts=None
+        )
 
-        Format your response as:
-        Question: [your question]
-        Reasoning Steps:
-        1. [step 1]
-        2. [step 2]
-        3. [step 3]
-        Answer: [your answer]
-        Supporting Facts: [relevant text segments]
-        """
+        response = self.step(
+            input_message=context_prompt.json(),
+            response_format=MultiHopQA
+        )
+
+        if response.msgs:
+            return response.msgs[0].content
+        return None
