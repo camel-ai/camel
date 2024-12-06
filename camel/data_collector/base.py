@@ -98,7 +98,7 @@ class BaseDataCollector(ABC):
 
     def step(
         self,
-        role: str,
+        role: Literal["user", "assistant", "system", "function"],
         name: Optional[str] = None,
         message: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
@@ -106,7 +106,8 @@ class BaseDataCollector(ABC):
         r"""Record a message.
 
         Args:
-            role (OpenAIBackendRole): The role of the message.
+            role (Literal["user", "assistant", "system", "function"]):
+                The role of the message.
             name (Optional[str], optional): The name of the agent.
                 (default: :obj:`None`)
             message (Optional[str], optional): The message to record.
@@ -204,7 +205,7 @@ class BaseDataCollector(ABC):
             for _name, agent in self.agents:
                 if _name == name:
                     return [
-                        CollectorData.from_context(name, i)
+                        CollectorData.from_context(name, dict(i))
                         for i in agent.memory.get_context()[0]
                     ]
         return [msg for msg in self.history if msg.name == name]
