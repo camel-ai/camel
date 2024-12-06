@@ -1,0 +1,77 @@
+[
+    {
+        "id": "machine_task_1",
+        "instruction": "Create a short poem that describes the beauty of nature in springtime.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "In springtime's gentle embrace, flowers bloom with vibrant grace,\nThe sun shines bright, the skies are clear, nature awakens, drawing near."
+            },
+            {
+                "input": "",
+                "output": "Birds sing sweetly, a joyful tune, beneath the soft and warming moon,\nGreen leaves dance in the soft, warm breeze, spring's beauty brings the heart to ease."
+            }
+        ]
+    },
+    {
+        "id": "machine_task_2",
+        "instruction": "Design a fitness routine for a beginner that includes exercises for strength, flexibility, and cardiovascular health.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "**Fitness Routine for Beginners**\n- **Strength Training**:\n- Push-ups: 3 sets of 8-10 reps\n- Bodyweight Squats: 3 sets of 10-12 reps\n- **Flexibility**:\n- Standing Quad Stretch: Hold for 30 seconds each leg\n- Seated Forward Bend: Hold for 30 seconds\n- **Cardiovascular Health**:\n- Brisk Walking: 20-30 minutes\n- Jumping Jacks: 3 sets of 15-20 reps"
+            },
+            {
+                "input": "",
+                "output": "**Beginner Fitness Routine**\n- **Strength Exercises**:\n- Dumbbell Shoulder Press: 3 sets of 8-10 reps\n- Lunges: 3 sets of 10 reps per leg\n- **Flexibility Work**:\n- Cat-Cow Stretch: 5 cycles\n- Butterfly Stretch: Hold for 30 seconds\n- **Cardio Activity**:\n- Cycling: 20 minutes at a moderate pace\n- High Knees: 3 sets of 30 seconds"
+            }
+        ]
+    },
+    {
+        "id": "machine_task_3",
+        "instruction": "Draft a brief email to a colleague requesting their input on a project and explain why their feedback is valuable.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "Subject: Request for Your Input on Project\nHi [Colleague's Name],\nI hope this message finds you well. I am currently working on [Project Name] and would greatly appreciate your insights on it. Your expertise in [specific area] would be invaluable in refining our approach. Thank you in advance for your time and feedback!\nBest,\n[Your Name]"
+            },
+            {
+                "input": "",
+                "output": "Subject: Seeking Your Feedback on Project\nDear [Colleague's Name],\nI am reaching out to request your input on the [Project Name] we are developing. Your perspective would help ensure we are on the right track and enhance the overall quality of our work. I look forward to hearing your thoughts!\nBest regards,\n[Your Name]"
+            }
+        ]
+    },
+    {
+        "id": "machine_task_4",
+        "instruction": "Develop a marketing strategy for a new eco-friendly product, outlining key target audiences and promotional tactics.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "**Marketing Strategy for Eco-Friendly Product**\n- **Target Audiences**:\n- Environmentally conscious consumers\n- Young families looking for sustainable options\n- Health-conscious individuals\n- **Promotional Tactics**:\n- Social media campaigns highlighting product benefits\n- Collaborations with eco-influencers\n- In-store demonstrations and samples"
+            },
+            {
+                "input": "",
+                "output": "**Eco-Friendly Product Marketing Plan**\n- **Target Audiences**:\n- Millennials and Gen Z consumers\n- Businesses aiming for sustainable practices\n- Outdoor enthusiasts\n- **Promotional Tactics**:\n- Email marketing with educational content on sustainability\n- Participation in eco-friendly trade shows\n- Discounts for first-time buyers to encourage trial"
+            }
+        ]
+    },
+    {
+        "id": "machine_task_5",
+        "instruction": "Summarize the main themes of a given book in a concise paragraph, highlighting key characters and events.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "Book: \"To Kill a Mockingbird\"",
+                "output": "\"To Kill a Mockingbird\" explores themes of racial injustice and moral growth through the eyes of Scout Finch, a young girl in the Deep South. Key characters include Atticus Finch, her principled father and lawyer, who defends a black man accused of raping a white woman, and Boo Radley, a reclusive neighbor who ultimately plays a crucial role in Scout's understanding of empathy and humanity."
+            },
+            {
+                "input": "Book: \"1984\"",
+                "output": "\"1984\" delves into themes of totalitarianism, surveillance, and individuality in a dystopian society. The protagonist, Winston Smith, struggles against the oppressive regime of Big Brother, seeking truth and freedom in a world where independent thought is punished. The novel serves as a cautionary tale about the dangers of unchecked government power and the loss of personal liberties."
+            }
+        ]
+    }
+]
