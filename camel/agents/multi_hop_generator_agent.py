@@ -1,3 +1,4 @@
+from typing import Any
 from camel.agents import ChatAgent
 from camel.agents.programmed_agent_instruction import (
     ProgrammedAgentInstructionResult,
