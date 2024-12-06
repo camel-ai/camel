@@ -14,13 +14,17 @@
 
 import random
 from dataclasses import dataclass
+from pydantic import BaseModel, Field, ConfigDict
 
-from pydantic import BaseModel, Field
 
-
-@dataclass
 class ProcessorConfig(BaseModel):
     """Data processing configuration class"""
+
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=False,
+        protected_namespaces=()
+    )
 
     seed: int = Field(  # Generate a random seed for reproducibility
         default=random.randint(0, 1000),
@@ -69,9 +73,3 @@ class ProcessorConfig(BaseModel):
         description="Maximum number of tokens for AI model output",
         gt=0,
     )
-
-    class Config:
-        """Pydantic model configuration"""
-
-        validate_assignment = True
-        frozen = True
