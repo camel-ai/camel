@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
+from camel.synthetic_datagen.source2synth.models import MultiHopQA, ContextPrompt
 
 from camel import logger
 from camel.agents import ChatAgent
@@ -62,18 +63,17 @@ class AIModelHandler:
 
     def generate_qa_pair(
         self, context: str, related_contexts: List[str] = None
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[MultiHopQA]:
         """Generate multi-hop question-answer pair using AI"""
         if not self.agent:
             return None
 
         try:
             # Construct a prompt containing multiple related contexts
-            context_prompt = f"Main Context: {context}\n"
-            if related_contexts:
-                context_prompt += "\nRelated Contexts:\n"
-                for i, rel_ctx in enumerate(related_contexts, 1):
-                    context_prompt += f"{i}. {rel_ctx}\n"
+            context_prompt = ContextPrompt(
+                main_context=context,
+                related_contexts=related_contexts
+            )
 
             prompt = f"""{context_prompt}
             Generate a multi-hop question-answer pair that requires reasoning across multiple pieces of information.
@@ -124,13 +124,12 @@ class AIModelHandler:
                     supporting_facts.append(line)
 
             if question and answer and reasoning_steps:
-                return {
-                    'question': question,
-                    'reasoning_steps': reasoning_steps,
-                    'answer': answer,
-                    'supporting_facts': supporting_facts,
-                    'type': 'multi_hop_qa',
-                }
+                return MultiHopQA(
+                    question=question,
+                    reasoning_steps=[ReasoningStep(step=step) for step in reasoning_steps],
+                    answer=answer,
+                    supporting_facts=supporting_facts
+                )
 
         except Exception as e:
             logger.warning(
