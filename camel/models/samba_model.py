@@ -143,7 +143,11 @@ class SambaModel(BaseModelBackend):
                 " SambaNova service"
             )
 
-    @api_keys_required("SAMBA_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'SAMBA_API_KEY'),
+        ]
+    )
     def run(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:

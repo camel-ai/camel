@@ -151,7 +151,7 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
-    @api_keys_required("GOOGLE_API_KEY", "SEARCH_ENGINE_ID")
+    @api_keys_required([(None, 'GOOGLE_API_KEY'), (None, 'SEARCH_ENGINE_ID')])
     def search_google(
         self, query: str, num_result_pages: int = 5
     ) -> List[Dict[str, Any]]:

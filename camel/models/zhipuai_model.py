@@ -76,7 +76,11 @@ class ZhipuAIModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required("ZHIPUAI_API_KEY")
+    @api_keys_required(
+        [
+            (None, 'ZHIPUAI_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

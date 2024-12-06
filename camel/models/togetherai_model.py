@@ -78,7 +78,11 @@ class TogetherAIModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required("TOGETHER_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'TOGETHER_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

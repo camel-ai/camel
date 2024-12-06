@@ -108,7 +108,11 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
-    @api_keys_required("ANTHROPIC_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'ANTHROPIC_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

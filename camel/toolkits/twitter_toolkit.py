@@ -31,10 +31,12 @@ logger = get_logger(__name__)
 
 
 @api_keys_required(
-    "TWITTER_CONSUMER_KEY",
-    "TWITTER_CONSUMER_SECRET",
-    "TWITTER_ACCESS_TOKEN",
-    "TWITTER_ACCESS_TOKEN_SECRET",
+    [
+        (None, 'TWITTER_CONSUMER_KEY'),
+        (None, 'TWITTER_CONSUMER_SECRET'),
+        (None, 'TWITTER_ACCESS_TOKEN'),
+        (None, 'TWITTER_ACCESS_TOKEN_SECRET'),
+    ]
 )
 def create_tweet(
     text: str,
@@ -132,10 +134,12 @@ def create_tweet(
 
 
 @api_keys_required(
-    "TWITTER_CONSUMER_KEY",
-    "TWITTER_CONSUMER_SECRET",
-    "TWITTER_ACCESS_TOKEN",
-    "TWITTER_ACCESS_TOKEN_SECRET",
+    [
+        (None, 'TWITTER_CONSUMER_KEY'),
+        (None, 'TWITTER_CONSUMER_SECRET'),
+        (None, 'TWITTER_ACCESS_TOKEN'),
+        (None, 'TWITTER_ACCESS_TOKEN_SECRET'),
+    ]
 )
 def delete_tweet(tweet_id: str) -> str:
     r"""Deletes a tweet with the specified ID for an authorized user.
@@ -187,10 +191,12 @@ def delete_tweet(tweet_id: str) -> str:
 
 
 @api_keys_required(
-    "TWITTER_CONSUMER_KEY",
-    "TWITTER_CONSUMER_SECRET",
-    "TWITTER_ACCESS_TOKEN",
-    "TWITTER_ACCESS_TOKEN_SECRET",
+    [
+        (None, 'TWITTER_CONSUMER_KEY'),
+        (None, 'TWITTER_CONSUMER_SECRET'),
+        (None, 'TWITTER_ACCESS_TOKEN'),
+        (None, 'TWITTER_ACCESS_TOKEN_SECRET'),
+    ]
 )
 def get_my_user_profile() -> str:
     r"""Retrieves the authenticated user's Twitter profile info.
@@ -214,10 +220,12 @@ def get_my_user_profile() -> str:
 
 
 @api_keys_required(
-    "TWITTER_CONSUMER_KEY",
-    "TWITTER_CONSUMER_SECRET",
-    "TWITTER_ACCESS_TOKEN",
-    "TWITTER_ACCESS_TOKEN_SECRET",
+    [
+        (None, 'TWITTER_CONSUMER_KEY'),
+        (None, 'TWITTER_CONSUMER_SECRET'),
+        (None, 'TWITTER_ACCESS_TOKEN'),
+        (None, 'TWITTER_ACCESS_TOKEN_SECRET'),
+    ]
 )
 def get_user_by_username(username: str) -> str:
     r"""Retrieves one user's Twitter profile info by username (handle).

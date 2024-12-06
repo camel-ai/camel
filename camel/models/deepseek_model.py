@@ -90,7 +90,11 @@ class DeepSeekModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required("DEEPSEEK_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'DEEPSEEK_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

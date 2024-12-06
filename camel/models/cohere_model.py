@@ -210,7 +210,11 @@ class CohereModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required("COHERE_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'COHERE_API_KEY'),
+        ]
+    )
     def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
         r"""Runs inference of Cohere chat completion.
 

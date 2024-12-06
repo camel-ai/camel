@@ -86,7 +86,11 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_keys_required("OPENAI_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'OPENAI_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

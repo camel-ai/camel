@@ -58,7 +58,11 @@ class NemotronModel(BaseModelBackend):
             api_key=self._api_key,
         )
 
-    @api_keys_required("NVIDIA_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'NVIDIA_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

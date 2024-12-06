@@ -168,7 +168,11 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required("REKA_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'REKA_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
@@ -66,65 +67,6 @@ def test_dependencies_required(monkeypatch):
         mock_dependencies_not_present()
 
     assert "Missing required modules: some_module_not_exist" in str(exc.value)
-
-
-@pytest.fixture
-def setup_env_vars():
-    original_env = os.environ.copy()
-    os.environ['API_KEY_1'] = 'API_KEY_1_VALUE'
-    os.environ['API_KEY_2'] = 'API_KEY_2_VALUE'
-    yield
-    os.environ.clear()
-    os.environ.update(original_env)
-
-
-def test_api_keys_required(setup_env_vars):
-    class MockClass:
-        @api_keys_required('API_KEY_1', 'API_KEY_2')
-        def mock_api_keys_exist(self):
-            return True
-
-        @api_keys_required('API_KEY_1', 'API_KEY_2', 'API_KEY_3')
-        def mock_api_keys_not_exist(self):
-            return True
-
-    mock_instance = MockClass()
-
-    # Test case where all required API keys are present
-    assert mock_instance.mock_api_keys_exist() is True
-
-    # Test case where some required API keys are missing
-    with pytest.raises(ValueError) as exc:
-        mock_instance.mock_api_keys_not_exist()
-    assert "Missing API keys: API_KEY_3" in str(exc.value)
-
-    # Test case with no API keys set
-    os.environ.clear()
-    with pytest.raises(ValueError) as exc:
-        mock_instance.mock_api_keys_exist()
-    assert "Missing API keys: API_KEY_1, API_KEY_2" in str(exc.value)
-
-
-def test_api_keys_required_empty(setup_env_vars):
-    class MockClass:
-        @api_keys_required()
-        def mock_no_keys_required(self):
-            return True
-
-    mock_instance = MockClass()
-    assert mock_instance.mock_no_keys_required() is True
-
-
-def test_api_keys_required_non_existent(setup_env_vars):
-    class MockClass:
-        @api_keys_required('NON_EXISTENT_KEY')
-        def mock_non_existent_key(self):
-            return True
-
-    mock_instance = MockClass()
-    with pytest.raises(ValueError) as exc:
-        mock_instance.mock_non_existent_key()
-    assert "Missing API keys: NON_EXISTENT_KEY" in str(exc.value)
 
 
 def test_get_system_information():
@@ -201,3 +143,42 @@ def test_is_docker_running(mock_subprocess_run):
 
     mock_subprocess_run.side_effect = FileNotFoundError
     assert not is_docker_running()
+
+
+class TestApiKeysRequired(TestCase):
+    @patch.dict(os.environ, {}, clear=True)
+    def test_missing_keys(self):
+        @api_keys_required({'api_key_arg': 'API_KEY'})
+        def some_function(api_key_arg=None):
+            return "Function called"
+
+        with self.assertRaises(ValueError) as context:
+            some_function()
+
+        assert "Missing required API keys: API_KEY" in str(context.exception)
+
+    @patch.dict(os.environ, {'API_KEY': 'secret_environment_key'}, clear=True)
+    def test_keys_in_environment(self):
+        @api_keys_required({'api_key_arg': 'API_KEY'})
+        def some_function(api_key_arg=None):
+            return f"Function called with api_key_arg={api_key_arg}"
+
+        result = some_function()
+        assert result == "Function called with api_key_arg=None"
+
+    def test_keys_in_arguments(self):
+        @api_keys_required({'api_key_arg': 'API_KEY'})
+        def some_function(api_key_arg=None):
+            return f"Function called with api_key_arg={api_key_arg}"
+
+        result = some_function(api_key_arg='secret_argument_key')
+        assert result == "Function called with api_key_arg=secret_argument_key"
+
+    @patch.dict(os.environ, {'API_KEY': 'secret_environment_key'}, clear=True)
+    def test_keys_in_both(self):
+        @api_keys_required({'api_key_arg': 'API_KEY'})
+        def some_function(api_key_arg=None):
+            return f"Function called with api_key_arg={api_key_arg}"
+
+        result = some_function(api_key_arg='secret_argument_key')
+        assert result == "Function called with api_key_arg=secret_argument_key"

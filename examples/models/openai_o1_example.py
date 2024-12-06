@@ -27,9 +27,95 @@ o1_model = ModelFactory.create(
 camel_agent = ChatAgent(model=o1_model)
 
 # Set user message
-user_msg = """Write a bash script that takes a matrix represented as a string 
-    with format '[1,2],[3,4],[5,6]' and prints the transpose in the same 
-    format."""
+user_msg = """
+def api_keys_required(
+    param_env_list: List[Tuple[Optional[str], str]],
+) -> Callable[[F], F]:
+    r"A decorator to check if the required API keys are provided in the
+    environment variables or as function arguments.
+
+    Args:
+        param_env_list (List[Tuple[Optional[str], str]]): A list of tuples
+            where each tuple contains a function argument name (as the first
+            element, or None) and the corresponding environment variable name
+            (as the second element) that holds the API key.
+
+    Returns:
+        Callable[[F], F]: The original function wrapped with the added check
+            for the required API keys.
+
+    Raises:
+        ValueError: If any of the required API keys are missing, either
+            from the function arguments or environment variables.
+
+    Example:
+        ::
+
+            @api_keys_required([
+                ('api_key_arg', 'API_KEY_1'),
+                ('another_key_arg', 'API_KEY_2'),
+                (None, 'API_KEY_3'),
+            ])
+            def some_api_function(api_key_arg=None, another_key_arg=None):
+                # Function implementation that requires API keys
+    "
+    import inspect
+
+    def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            signature = inspect.signature(func)
+            bound_arguments = signature.bind(*args, **kwargs)
+            bound_arguments.apply_defaults()
+            arguments = bound_arguments.arguments
+
+            missing_keys = []
+            for param_name, env_var_name in param_env_list:
+                if param_name:
+                    # Check function argument first, then environment variable
+                    value = arguments.get(param_name)
+                    if value is None:
+                        value = os.environ.get(env_var_name)
+                else:
+                    # Only check environment variable
+                    value = os.environ.get(env_var_name)
+                if not value:
+                    missing_keys.append(env_var_name)
+            if missing_keys:
+                raise ValueError(
+                    f"Missing required API keys: {', '.join(missing_keys)}"
+                )
+            return func(*args, **kwargs)
+
+        return cast(F, wrapper)
+
+    return decorator
+
+class ExampleClass:
+    @api_keys_required(
+        [
+            ("key_1", 'API_KEY_1'),
+            ("api_key_2", 'API_KEY_2'),
+        ]
+    )
+    def __init__(self, messages: List[str], key_1: str = None, api_key_2: str = None):
+        self._key1 = key_1 or os.environ.get("API_KEY_1")
+        self._key2 = api_key_2 or os.environ.get("API_KEY_2")
+        self.messages = messages
+
+    @api_keys_required("API_KEY_3")
+    def run(self):
+        print("API keys validated!")
+
+
+camel/utils/test.py:41: error: Incompatible default for argument "key_1" (default has type "None", argument has type "str")  [assignment]
+camel/utils/test.py:41: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+camel/utils/test.py:41: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+camel/utils/test.py:41: error: Incompatible default for argument "api_key_2" (default has type "None", argument has type "str")  [assignment]
+
+update my def api_keys_required to fix this
+
+"""
 
 # Get response information
 response = camel_agent.step(user_msg)

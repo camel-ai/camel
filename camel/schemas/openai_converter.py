@@ -69,7 +69,11 @@ class OpenAISchemaConverter(BaseConverter):
         )._client
         super().__init__()
 
-    @api_keys_required("OPENAI_API_KEY")
+    @api_keys_required(
+        [
+            (None, 'OPENAI_API_KEY'),
+        ]
+    )
     def convert(  # type: ignore[override]
         self,
         content: str,

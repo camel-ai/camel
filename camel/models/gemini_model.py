@@ -77,7 +77,11 @@ class GeminiModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required("GEMINI_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'GEMINI_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],

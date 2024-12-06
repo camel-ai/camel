@@ -76,7 +76,11 @@ class YiModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required("YI_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", 'YI_API_KEY'),
+        ]
+    )
     def run(
         self,
         messages: List[OpenAIMessage],
