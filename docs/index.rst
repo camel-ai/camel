@@ -70,6 +70,7 @@ Main Documentation
    cookbooks/workforce_judge_committee.ipynb
    cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
    cookbooks/sft_data_generation_and_unsloth_finetuning.ipynb
+   cookbooks/customer_service_Discord_bot_with_agentic_RAG.ipynb
 
 .. toctree::
    :maxdepth: 1
