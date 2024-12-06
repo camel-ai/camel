@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import unittest
-from unittest.mock import MagicMock, mock_open, patch
-
 from camel.agents import ChatAgent
 from camel.synthetic_datagen.self_instruct import (
     InstructionFilter,
     SelfInstructPipeline,
 )
+import unittest
+from unittest.mock import MagicMock, mock_open, patch
 
 
 class TestSelfInstructPipeline(unittest.TestCase):
