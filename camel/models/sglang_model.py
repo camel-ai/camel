@@ -27,8 +27,8 @@ from camel.types import (
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
-class SGLANGModel(BaseModelBackend):
-    r"""SGLANG service interface.
+class SGLangModel(BaseModelBackend):
+    r"""SGLang service interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -38,7 +38,7 @@ class SGLANGModel(BaseModelBackend):
             :obj:`None`, :obj:`SGLangConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the model service. SGLANG doesn't need API key, it would be ignored
+            the model service. SGLang doesn't need API key, it would be ignored
             if set. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service. If not
             provided, :obj:`"http://localhost:8000/v1"` will be used.
@@ -93,7 +93,7 @@ class SGLANGModel(BaseModelBackend):
                 cmd += f" --chat-template {self.chat_template}"
             server_process = execute_shell_command(cmd)
             wait_for_server("http://localhost:30000")
-            self._url = "http://localhost:30000/v1"
+            self._url = "http://127.0.0.1:30000/v1"
             self.server_process = server_process
         except Exception as e:
             print(f"Failed to start SGLang server: {e}")
@@ -112,7 +112,7 @@ class SGLANGModel(BaseModelBackend):
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to SGLANG API.
+        unexpected arguments to SGLang API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
@@ -122,7 +122,7 @@ class SGLANGModel(BaseModelBackend):
             if param not in SGLANG_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into SGLANG model backend."
+                    "input into SGLang model backend."
                 )
 
     def run(

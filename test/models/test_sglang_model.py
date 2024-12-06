@@ -16,7 +16,7 @@ import re
 import pytest
 
 from camel.configs import SGLangConfig
-from camel.models import SGLANGModel
+from camel.models import SGLangModel
 from camel.types import ModelType, UnifiedModelType
 from camel.utils import OpenAITokenCounter
 
@@ -32,7 +32,7 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_sglang_model(model_type: ModelType):
-    model = SGLANGModel(model_type, api_key="sglang")
+    model = SGLangModel(model_type, api_key="sglang")
     assert model.model_type == model_type
     assert model.model_config_dict == SGLangConfig().as_dict()
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -50,8 +50,8 @@ def test_sglang_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into SGLANG model backend."
+                "input into SGLang model backend."
             )
         ),
     ):
-        _ = SGLANGModel(model_type, model_config_dict, api_key="sglang")
+        _ = SGLangModel(model_type, model_config_dict, api_key="sglang")

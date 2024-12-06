@@ -29,7 +29,7 @@ from camel.models.openai_model import OpenAIModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
-from camel.models.sglang_model import SGLANGModel
+from camel.models.sglang_model import SGLangModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
@@ -88,7 +88,7 @@ class ModelFactory:
         elif model_platform.is_vllm:
             model_class = VLLMModel
         elif model_platform.is_sglang:
-            model_class = SGLANGModel
+            model_class = SGLangModel
         elif model_platform.is_openai_compatible_model:
             model_class = OpenAICompatibleModel
         elif model_platform.is_samba:
