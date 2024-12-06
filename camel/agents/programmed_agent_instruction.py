@@ -21,7 +21,10 @@ from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.synthetic_datagen.source2synth.models import MultiHopQA, ContextPrompt
+from camel.synthetic_datagen.source2synth.models import (
+    ContextPrompt,
+    MultiHopQA,
+)
 
 T = TypeVar('T')
 
@@ -48,7 +51,8 @@ class AbstractProgrammableAgent(abc.ABC):
     Abstract class for a programmable agent.
 
     A programmable agent is an agent that can be programmed to perform a
-    specific function or task. This class defines the interface for a programmable
+    specific function or task. This class defines the interface for a
+    programmable
     agent.
 
     These methods should be implemented in order to ensure the agent supports
@@ -102,8 +106,10 @@ def programmable_capability(
     r"""
     Decorator for programmable agent capabilities.
 
-    Wraps a method to ensure it is executed atomically via the agent's run_atomic interface.
-    The decorated method must return a ProgrammedAgentInstructionResult with appropriate type parameter.
+    Wraps a method to ensure it is executed atomically via the agent's
+    run_atomic interface.
+    The decorated method must return a ProgrammedAgentInstructionResult with
+    appropriate type parameter.
     """
 
     @wraps(func)
@@ -153,7 +159,8 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        self.system_message = """You are an expert at generating multi-hop question-answer pairs.
+        self.system_message = """You are an expert at generating multi-hop 
+        question-answer pairs.
         For each context, you should:
         1. Identify multiple related facts or pieces of information
         2. Create questions that require reasoning across these multiple pieces
@@ -172,21 +179,24 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         """
 
     @programmable_capability
-    def generate_multi_hop_qa(self, context: str) -> ProgrammedAgentInstructionResult[MultiHopQA]:
+    def generate_multi_hop_qa(
+        self, context: str
+    ) -> ProgrammedAgentInstructionResult[MultiHopQA]:
         context_prompt = ContextPrompt(
-            main_context=context,
-            related_contexts=None
+            main_context=context, related_contexts=None
         )
 
+        user_message = BaseMessage.make_user_message(
+            content=context_prompt.model_dump_json(), role_name="User"
+        )
         response = self.step(
-            input_message=context_prompt.json(),
-            response_format=MultiHopQA
+            input_message=user_message, response_format=MultiHopQA
         )
 
         if response.msgs:
             return ProgrammedAgentInstructionResult(
-                user_message=context_prompt,
+                user_message=user_message,
                 agent_message=response.msgs[0],
-                value=response.msgs[0].content
+                value=response.msgs[0].content,
             )
         return None
