@@ -36,6 +36,7 @@ class HumanToolkit(BaseToolkit):
         Returns:
             str: The answer from the human.
         """
+        print(f"Question: {question}")
         logger.info(f"Question: {question}")
         reply = input("Your reply: ")
         logger.info(f"User reply: {reply}")
