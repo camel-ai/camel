@@ -175,7 +175,6 @@ class SelfInstructPipeline:
             for line in response.msgs[0].content.split("\n")
             if line.strip()
         ]
-        print("generated " + generated_tasks[0])
         return generated_tasks[0]
 
     def identify_instruction(self, instruction: str) -> bool:
@@ -196,7 +195,6 @@ class SelfInstructPipeline:
         clf_prompt += " Only answer yes or no"
         response = self.agent.step(clf_prompt)
         result = response.msgs[0].content.strip().lower()
-        print("is classify " + result)
         return result in ["yes", "true"]
 
     def generate_machine_instances(self):
@@ -369,7 +367,6 @@ class SelfInstructPipeline:
         Execute the entire pipeline to generate machine instructions
             and instances.
         """
-        print("generate start")
         while len(self.machine_tasks) < self.num_machine_instructions:
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
@@ -387,7 +384,5 @@ class SelfInstructPipeline:
                     ),
                 }
                 self.machine_tasks.append(instruction_dict)
-        print("done with instructions")
         self.generate_machine_instances()
-        print("done with instances")
         self.construct_data()
