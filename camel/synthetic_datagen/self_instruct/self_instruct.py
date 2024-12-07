@@ -59,7 +59,7 @@ class SelfInstructPipeline:
         self.human_tasks: list[dict] = []
         self.machine_tasks: list[dict] = []
         self.load_seed(seed)
-        default_config = Dict[str, Dict[str, Optional[Any]]] = {
+        default_config: Dict[str, Dict[str, Any]] = {
             "length": {},
             "keyword": {},
             "punctuation": {},
