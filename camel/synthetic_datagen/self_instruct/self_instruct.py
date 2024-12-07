@@ -56,10 +56,10 @@ class SelfInstructPipeline:
         self.num_machine_instructions = num_machine_instructions
         self.data_output_path = data_output_path
         self.human_to_machine_ratio = human_to_machine_ratio
-        self.human_tasks = []
-        self.machine_tasks = []  # stores tasks in the same format as the seed
+        self.human_tasks: list[dict] = []
+        self.machine_tasks: list[dict] = []
         self.load_seed(seed)
-        default_config = {
+        default_config = Dict[str, Dict[str, Optional[Any]]] = {
             "length": {},
             "keyword": {},
             "punctuation": {},
@@ -77,19 +77,18 @@ class SelfInstructPipeline:
             )
             self.instruction_filter = InstructionFilter(config_to_use)
 
-    def load_seed(self, path: Optional[str]):
+    def load_seed(self, path: str):
         r"""Load seed tasks from a file. Defaults to a predefined seed file if
             no path is provided.
 
         Args:
-            path (Optional[str]): Path to the seed file.
+            path (str): Path to the seed file.
 
         Raises:
             FileNotFoundError: If the seed file does not exist.
         """
 
         if os.path.exists(path):
-            self.human_tasks = []
             with open(path, 'r') as f:
                 for line in f:
                     line = line.strip()
@@ -194,8 +193,8 @@ class SelfInstructPipeline:
         return result in ["yes", "true"]
 
     def generate_machine_instances(self):
-        r"""Generate instances for each machine task based on its classification
-            status.
+        r"""Generate instances for each machine task based on its
+        classification status.
         """
         for instruction in self.machine_tasks:
             instance = self.generate_machine_instance(
@@ -342,14 +341,14 @@ class SelfInstructPipeline:
 
     def construct_data(self):
         r"""Save the machine-generated tasks to the specified output path
-                in JSON format.
+        in JSON format.
         """
         with open(self.data_output_path, 'w') as f:
             json.dump(self.machine_tasks, f, indent=4)
 
     def generate(self):
         r"""Execute the entire pipeline to generate machine instructions
-                and instances.
+        and instances.
         """
         while len(self.machine_tasks) < self.num_machine_instructions:
             existing_instructions = [

@@ -46,12 +46,13 @@ class LengthFilter(FilterFunction):
         min_len (int): The minimum word count required for an instruction.
         max_len (int): The maximum word count allowed for an instruction.
     """
+
     def __init__(self, min_len: int = 5, max_len: int = 200):
         self.min_len = min_len
         self.max_len = max_len
 
     def apply(self, instruction: str) -> bool:
-        r""" Filter the instruction
+        r"""Filter the instruction
 
         Args:
             instruction (str): the instruction to be filtered
@@ -75,7 +76,7 @@ class KeywordFilter(FilterFunction):
         self.keywords = [keyword.lower() for keyword in keywords]
 
     def apply(self, instruction: str) -> bool:
-        r""" Filter the instruction
+        r"""Filter the instruction
 
         Args:
             instruction (str): the instruction to be filtered
@@ -91,7 +92,7 @@ class PunctuationFilter(FilterFunction):
     r"""Filters instructions that begin with a non-alphanumeric character."""
 
     def apply(self, instruction: str) -> bool:
-        r""" Filter the instruction
+        r"""Filter the instruction
 
         Args:
             instruction (str): the instruction to be filtered
@@ -106,7 +107,7 @@ class NonEnglishFilter(FilterFunction):
     r"""Filters instructions that do not begin with English letters."""
 
     def apply(self, instruction: str) -> bool:
-        r""" Filter the instruction
+        r"""Filter the instruction
 
         Args:
             instruction (str): the instruction to be filtered
@@ -136,7 +137,7 @@ class RougeSimilarityFilter(FilterFunction):
         self.rouge = Rouge()
 
     def apply(self, instruction: str) -> bool:
-        r""" Filter the instruction
+        r"""Filter the instruction
 
         Args:
             instruction (str): the instruction to be filtered
