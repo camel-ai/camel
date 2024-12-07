@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import AzureOpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
+from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
@@ -111,6 +111,7 @@ class AzureOpenAIModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Azure OpenAI chat completion.
 
@@ -123,6 +124,11 @@ class AzureOpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if response_format:
+            raise NotImplementedError(
+                "Response format is not supported for Azure OpenAI model."
+            )
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.azure_deployment_name,  # type:ignore[arg-type]

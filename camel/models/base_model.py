@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import Stream
 
+from camel.configs import ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -76,6 +77,7 @@ class BaseModelBackend(ABC):
     def run(
         self,
         messages: List[OpenAIMessage],
+        output_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs the query to the backend model.
 

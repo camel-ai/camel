@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from camel.configs import REKA_API_PARAMS, RekaConfig
+from camel.configs import REKA_API_PARAMS, RekaConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -22,6 +22,7 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
     dependencies_required,
+    response_format_not_supported,
 )
 
 if TYPE_CHECKING:
@@ -169,9 +170,11 @@ class RekaModel(BaseModelBackend):
         return self._token_counter
 
     @api_keys_required("REKA_API_KEY")
+    @response_format_not_supported
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 

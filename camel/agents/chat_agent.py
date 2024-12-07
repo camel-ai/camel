@@ -35,6 +35,7 @@ from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
+from camel.configs import ResponseFormat
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -468,7 +469,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: Union[BaseMessage, str],
-        response_format: Optional[Type[BaseModel]] = None,
+        response_format: Optional[ResponseFormat] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
@@ -479,7 +480,7 @@ class ChatAgent(BaseAgent):
                 the role at backend may be either `user` or `assistant` but it
                 will be set to `user` anyway since for the self agent any
                 incoming message is external. For str input, the `role_name` would be `User`.
-            response_format (Optional[Type[BaseModel]], optional): A pydantic
+            response_format (Optional[ResponseFormat], optional): A pydantic
                 model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
@@ -537,7 +538,10 @@ class ChatAgent(BaseAgent):
                     finish_reasons,
                     usage_dict,
                     response_id,
-                ) = self._step_model_response(openai_messages, num_tokens)
+                ) = self._step_model_response(
+                    openai_messages, num_tokens, response_format
+                )
+
                 # If the model response is not a function call, meaning the
                 # model has generated a message response, break the loop
                 if (
@@ -589,7 +593,16 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-            if response_format is not None:
+            if (
+                response_format is not None
+                and response_format.method == "builtins"
+            ):
+                if response_format.pydantic_object is None:
+                    raise ValueError(
+                        "`pydantic_object` must be provided in "
+                        "`response_format` when `method` is "
+                        "'builtins'."
+                    )
                 (
                     output_messages,
                     finish_reasons,
@@ -597,7 +610,9 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_call,
                     num_tokens,
-                ) = self._structure_output_with_function(response_format)
+                ) = self._structure_output_with_function(
+                    response_format.pydantic_object
+                )
                 tool_call_records.append(tool_call)
 
             info = self._step_get_info(
@@ -642,7 +657,10 @@ class ChatAgent(BaseAgent):
                     finish_reasons,
                     usage_dict,
                     response_id,
-                ) = self._step_model_response(openai_messages, num_tokens)
+                ) = self._step_model_response(
+                    openai_messages, num_tokens, response_format
+                )
+
                 # If the model response is not a function call, meaning the
                 # model has generated a message response, break the loop
                 if (
@@ -680,8 +698,15 @@ class ChatAgent(BaseAgent):
 
             if (
                 response_format is not None
+                and response_format.method == "builtins"
                 and self.model_type.support_native_tool_calling
             ):
+                if response_format.pydantic_object is None:
+                    raise ValueError(
+                        "`pydantic_object` must be provided in "
+                        "`response_format` when `method` is "
+                        "'builtins'."
+                    )
                 (
                     output_messages,
                     finish_reasons,
@@ -689,7 +714,9 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_call,
                     num_tokens,
-                ) = self._structure_output_with_function(response_format)
+                ) = self._structure_output_with_function(
+                    response_format.pydantic_object
+                )
                 tool_call_records.append(tool_call)
 
             info = self._step_get_info(
@@ -718,7 +745,7 @@ class ChatAgent(BaseAgent):
     async def step_async(
         self,
         input_message: Union[BaseMessage, str],
-        response_format: Optional[Type[BaseModel]] = None,
+        response_format: Optional[ResponseFormat] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -729,11 +756,10 @@ class ChatAgent(BaseAgent):
                 the role at backend may be either `user` or `assistant` but it
                 will be set to `user` anyway since for the self agent any
                 incoming message is external. For str input, the `role_name` would be `User`.
-            response_format (Optional[Type[BaseModel]], optional): A pydantic
-                model class that includes value types and field descriptions
-                used to generate a structured response by LLM. This schema
-                helps in defining the expected output format. (default:
-                :obj:`None`)
+            response_format (Optional[ResponseFormat], optional): A response format
+                object that includes value types and field descriptions used to
+                generate a structured response by LLM. This schema helps in
+                defining the expected output format. (default: :obj:`None`)
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
@@ -795,8 +821,15 @@ class ChatAgent(BaseAgent):
 
         if (
             response_format is not None
+            and response_format.method == "builtins"
             and self.model_type.support_native_tool_calling
         ):
+            if response_format.pydantic_object is None:
+                raise ValueError(
+                    "`pydantic_object` must be provided in "
+                    "`response_format` when `method` is "
+                    "'builtins'."
+                )
             (
                 output_messages,
                 finish_reasons,
@@ -804,7 +837,9 @@ class ChatAgent(BaseAgent):
                 response_id,
                 tool_call_record,
                 num_tokens,
-            ) = self._structure_output_with_function(response_format)
+            ) = self._structure_output_with_function(
+                response_format.pydantic_object
+            )
             tool_call_records.append(tool_call_record)
 
         info = self._step_get_info(
@@ -949,6 +984,7 @@ class ChatAgent(BaseAgent):
         self,
         openai_messages: List[OpenAIMessage],
         num_tokens: int,
+        response_format: Optional[ResponseFormat] = None,
     ) -> tuple[
         Union[ChatCompletion, Stream],
         List[BaseMessage],
@@ -962,7 +998,9 @@ class ChatAgent(BaseAgent):
         # Obtain the model's response
         for _ in range(len(self.model_backend.models)):
             try:
-                response = self.model_backend.run(openai_messages)
+                response = self.model_backend.run(
+                    openai_messages, response_format
+                )
                 break
             except Exception as exc:
                 logger.error(
@@ -972,6 +1010,7 @@ class ChatAgent(BaseAgent):
                     exc_info=exc,
                 )
                 continue
+
         if not response:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "

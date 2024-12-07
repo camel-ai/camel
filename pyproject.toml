@@ -41,6 +41,7 @@ eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
 pillow = "^10.2.0"
+outlines = "^0.1.7"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }

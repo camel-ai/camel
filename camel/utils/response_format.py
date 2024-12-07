@@ -61,3 +61,24 @@ def get_pydantic_model(
     if issubclass(input_data, BaseModel):
         return input_data
     raise ValueError("Invalid input data provided.")
+
+
+def response_format_not_supported(func: Callable):
+    r"""Decorator to check if the response format is supported for certain
+    model backends.
+    """
+
+    def wrapper(self, *args, **kwargs):
+        # get response_format from arguments
+        response_format = kwargs.get("response_format", None)
+        if response_format is None:
+            response_format = args[1]
+
+        if response_format:
+            raise NotImplementedError(
+                f"Structured output using response format is not supported "
+                f"for {self.__class__.__name__}."
+            )
+        return func(self, *args, **kwargs)
+
+    return wrapper

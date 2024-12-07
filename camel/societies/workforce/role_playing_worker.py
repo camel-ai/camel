@@ -19,6 +19,7 @@ from typing import Dict, List, Optional
 from colorama import Fore
 
 from camel.agents.chat_agent import ChatAgent
+from camel.configs import ResponseFormat
 from camel.messages.base import BaseMessage
 from camel.societies import RolePlaying
 from camel.societies.workforce.prompts import (
@@ -172,7 +173,12 @@ class RolePlayingWorker(Worker):
             role_name="User",
             content=prompt,
         )
-        response = self.summarize_agent.step(req, response_format=TaskResult)
+        response_format = ResponseFormat(
+            type="json", method="builtins", pydantic_object=TaskResult
+        )
+        response = self.summarize_agent.step(
+            req, response_format=response_format
+        )
         result_dict = ast.literal_eval(response.msg.content)
         task_result = TaskResult(**result_dict)
         task.result = task_result.content

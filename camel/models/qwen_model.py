@@ -15,9 +15,9 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, OpenAI, Stream
 
-from camel.configs import QWEN_API_PARAMS, QwenConfig
+from camel.configs import QWEN_API_PARAMS, QwenConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -29,6 +29,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
+    response_format_not_supported,
 )
 
 
@@ -76,11 +77,19 @@ class QwenModel(BaseModelBackend):
             api_key=self._api_key,
             base_url=self._url,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=60,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
+        )
 
+    @response_format_not_supported
     @api_keys_required("QWEN_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Qwen chat completion.
 

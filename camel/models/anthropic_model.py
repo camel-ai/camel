@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
+from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig, ResponseFormat
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
@@ -23,6 +23,7 @@ from camel.utils import (
     BaseTokenCounter,
     api_keys_required,
     dependencies_required,
+    response_format_not_supported,
 )
 
 
@@ -108,10 +109,12 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
+    @response_format_not_supported
     @api_keys_required("ANTHROPIC_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[ResponseFormat] = None,
     ):
         r"""Run inference of Anthropic chat completion.
 
