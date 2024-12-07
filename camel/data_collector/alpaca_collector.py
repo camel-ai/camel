@@ -16,10 +16,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Self
 
-from camel.agents.chat_agent import ChatAgent
-from camel.data_collector.base import BaseDataCollector
-from camel.messages.base import BaseMessage
-from camel.messages.conversion import AlpacaItem
+from camel.agents import ChatAgent
+from camel.data_collector import BaseDataCollector
+from camel.messages import AlpacaItem, BaseMessage
 from camel.schemas import OpenAISchemaConverter
 
 DEFAULT_CONVERTER_PROMPTS = """
@@ -53,8 +52,6 @@ class AlpacaDataCollector(BaseDataCollector):
         Args:
             agent (Union[List[ChatAgent], ChatAgent]):
                 The agent to inject.
-            name (Optional[Union[str, List[Optional[str]]]], optional):
-                The name of the agent. Defaults to None.
         """
         if not self.agent_name:
             _agent = agent if isinstance(agent, ChatAgent) else agent[0]
@@ -67,39 +64,58 @@ class AlpacaDataCollector(BaseDataCollector):
         r"""Convert the collected data into a dictionary."""
         if self.agent_name is None:
             raise ValueError("No agent injected")
-        if history := self.get_agent_history(self.agent_name):
-            for message in history:
-                print(message.role, message.message)
 
-            if len(history) != 2:
-                if len(history) == 3 and history[0].role == "system":
-                    history = history[1:]
-                else:
-                    raise ValueError(
-                        "AlpacaDataCollector only supports one message,"
-                        + f" but got {len(history)}",
-                    )
-            data = dict(
-                instructions=(
-                    self.system_message.content if self.system_message else ""
-                )
-                + str(history[0].message),
-                input="",
-                output=history[1].message,
+        history = self.get_agent_history(self.agent_name)
+        if not history:
+            raise ValueError("No data collected.")
+
+        # Validate and process history
+        if len(history) == 3 and history[0].role == "system":
+            history = history[1:]  # Ignore the system message.
+        elif len(history) != 2:
+            raise ValueError(
+                f"AlpacaDataCollector only supports one message pair, but "
+                f"got {len(history)}"
             )
-            self.data.append(data)
-            return data
-        raise ValueError("No data collected")
+
+        input_message, output_message = history
+        instructions = (
+            self.system_message.content if self.system_message else ""
+        ) + str(input_message.message)
+
+        data = {
+            "instructions": instructions,
+            "input": "",
+            "output": output_message.message,
+        }
+        self.data.append(data)
+        return data
 
     def llm_convert(
         self,
         converter: Optional[OpenAISchemaConverter] = None,
         prompt: Optional[str] = None,
     ) -> Dict[str, str]:
+        r"""Convert collected data using an LLM schema converter.
+
+        Args:
+            converter (Optional[OpenAISchemaConverter], optional):
+                The converter to use. (default: :obj:`OpenAISchemaConverter`)
+            prompt (Optional[str], optional): Prompt to guide the conversion.
+                (default: :obj:`DEFAULT_CONVERTER_PROMPTS`)
+
+        Returns:
+            Dict[str, str]: The converted data.
+
+        Raises:
+            ValueError: If no agent is injected or data cannot be collected.
+        """
         prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         converter = converter or OpenAISchemaConverter()
+
         system = self.system_message.content if self.system_message else ""
         context = [f"Instructions: {system}\n"]
+
         for message in self.get_agent_history(str(self.agent_name)):
             if message.role == "user":
                 context.append(f"User: {message.message}\n")

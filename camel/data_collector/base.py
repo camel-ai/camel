@@ -193,13 +193,13 @@ class BaseDataCollector(ABC):
         pass
 
     def get_agent_history(self, name: str) -> List[CollectorData]:
-        r"""Get the history of an agent.
+        r"""Get the message history of an agent.
 
         Args:
             name (str): The name of the agent.
 
         Returns:
-            List[CollectorData]: The history of the agent
+            List[CollectorData]: The message history of the agent
         """
         if not self.history:
             for _name, agent in self.agents:

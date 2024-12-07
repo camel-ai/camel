@@ -18,11 +18,11 @@ from typing import Any, ClassVar, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from camel.agents.chat_agent import ChatAgent
-from camel.data_collector.base import BaseDataCollector
-from camel.messages.base import BaseMessage
-from camel.schemas.openai_converter import OpenAISchemaConverter
-from camel.toolkits.function_tool import FunctionTool
+from camel.agents import ChatAgent
+from camel.data_collector import BaseDataCollector
+from camel.messages import BaseMessage
+from camel.schemas import OpenAISchemaConverter
+from camel.toolkits import FunctionTool
 
 # ruff: noqa: E501
 DEFAULT_CONVERTER_PROMPTS = """
@@ -88,61 +88,76 @@ class ShareGPTDataCollector(BaseDataCollector):
         r"""Convert the collected data into a dictionary."""
         if self.agent_name is None:
             raise ValueError("No agent injected")
-        if history := self.get_agent_history(self.agent_name):
-            data = dict(
-                system=self.system_message.content
-                if self.system_message
-                else "",
-                tools=json.dumps(
-                    [
-                        t.get_openai_tool_schema()["function"]
-                        for t in self.tools
-                    ]
-                ),
-                conversations=[],
-            )
-            conversations: List[Any] = []
-            for _data in history:
-                role, message = _data.role, _data
 
-                if role == "user":
-                    conversations.append(
-                        {"from": "human", "value": message.message}
-                    )
-                elif role == "assistant":
-                    if message.function_call:
-                        conversations.append(
-                            {
-                                "from": "function_call",
-                                "value": json.dumps(message.function_call),
-                            }
-                        )
-                    else:
-                        conversations.append(
-                            {"from": "gpt", "value": message.message}
-                        )
-                elif role == "function":
+        history = self.get_agent_history(self.agent_name)
+        if not history:
+            raise ValueError("No data collected.")
+
+        data = dict(
+            system=self.system_message.content if self.system_message else "",
+            tools=json.dumps(
+                [t.get_openai_tool_schema()["function"] for t in self.tools]
+            ),
+            conversations=[],
+        )
+
+        conversations: List[Any] = []
+        for _data in history:
+            role, message = _data.role, _data
+
+            if role == "user":
+                conversations.append(
+                    {"from": "human", "value": message.message}
+                )
+            elif role == "assistant":
+                if message.function_call:
                     conversations.append(
                         {
-                            "from": "observation",
-                            "value": json.dumps(message.message),  # type: ignore[attr-defined]
+                            "from": "function_call",
+                            "value": json.dumps(message.function_call),
                         }
                     )
-            data["conversations"] = conversations
+                else:
+                    conversations.append(
+                        {"from": "gpt", "value": message.message}
+                    )
+            elif role == "function":
+                conversations.append(
+                    {
+                        "from": "observation",
+                        "value": json.dumps(message.message),  # type: ignore[attr-defined]
+                    }
+                )
+        data["conversations"] = conversations
 
-            self.data.append(data)
-            return data
-        raise ValueError("No data collected")
+        self.data.append(data)
+        return data
 
     def llm_convert(
         self,
         converter: Optional[OpenAISchemaConverter] = None,
         prompt: Optional[str] = None,
     ) -> Dict[str, Any]:
+        r"""Convert collected data using an LLM schema converter.
+
+        Args:
+            converter (Optional[OpenAISchemaConverter], optional):
+                The converter to use. (default: :obj:`OpenAISchemaConverter`)
+            prompt (Optional[str], optional): Prompt to guide the conversion.
+                (default: :obj:`DEFAULT_CONVERTER_PROMPTS`)
+
+        Returns:
+            Dict[str, str]: The converted data.
+
+        Raises:
+            ValueError: If no agent is injected or data cannot be collected.
+        """
         prompt = prompt or DEFAULT_CONVERTER_PROMPTS
         converter = converter or OpenAISchemaConverter()
+
         system = self.system_message.content if self.system_message else ""
         context = [f"System: {system}\n"]
+
         context.append(
             "Tools: "
             + json.dumps(
