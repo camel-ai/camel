@@ -691,6 +691,7 @@ class ChatAgent(BaseAgent):
             if (
                 response_format is not None
                 and self.model_type.support_native_tool_calling
+                and self.model_type not in {"gpt-4o", "gpt-4o-mini"}
             ):
                 (
                     output_messages,
