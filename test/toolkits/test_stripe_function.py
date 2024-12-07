@@ -1,56 +1,70 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-import pytest
-from unittest.mock import patch, MagicMock
-from stripe import ErrorObject
-from camel.toolkits.stripe_toolkit import StripeToolkit
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
+import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 import stripe
-from stripe import Customer,Balance,BalanceTransaction,PaymentIntent,Refund
+from stripe import (
+    Balance,
+    BalanceTransaction,
+    Customer,
+    PaymentIntent,
+    Refund,
+)
+
+from camel.toolkits.stripe_toolkit import StripeToolkit
+
 
 @pytest.fixture(scope="function")
 def stripe_toolkit_fixture():
-    r"""Fixture to set up the StripeToolkit with a mock API key.
-    """
+    r"""Fixture to set up the StripeToolkit with a mock API key."""
     with patch.dict(os.environ, {"stripe.api_key": "sk_test_xxxx"}):
         stripe.api_key = os.environ.get("stripe.api_key", None)
         toolkit = StripeToolkit()
         return toolkit
-            
+
+
 r"""CustomerAdapter Tests
 """
+
+
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestCustomerAdapter:
     @patch('stripe.Customer.retrieve')
-    def test_get_customer_success(self, mock_customer_retrieve,stripe_toolkit_fixture):
+    def test_get_customer_success(
+        self, mock_customer_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         customer_id = "cus_abc"
         customer_name = "Jody Telar"
-        customer_data = Customer() 
+        customer_data = Customer()
         customer_data.id = customer_id
         customer_data.name = customer_name
         mock_customer_retrieve.return_value = customer_data
 
         result = stripe_toolkit_fixture.customers.get_customer(customer_id)
         # Assert
-        mock_customer_retrieve.assert_called_once_with (customer_id)
+        mock_customer_retrieve.assert_called_once_with(customer_id)
         expected_result = json.dumps(customer_data)
         assert result == expected_result
 
     @patch('stripe.Customer.retrieve')
-    def test_get_customer_exception(self, mock_customer_retrieve, stripe_toolkit_fixture):
+    def test_get_customer_exception(
+        self, mock_customer_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         customer_id = "invalid_id"
         exception_message = "Customer not found"
@@ -58,12 +72,15 @@ class TestCustomerAdapter:
         customer_adapter = stripe_toolkit_fixture.customers
         customer_adapter.logger = MagicMock()
         result = customer_adapter.get_customer(customer_id)
-        expected_error = f"Unexpected error in get_customer: {exception_message}"
+        expected_error = (
+            f"Unexpected error in get_customer: {exception_message}"
+        )
         assert expected_error in result
 
-
     @patch('stripe.Customer.list')
-    def test_list_customers_success(self, mock_customer_list, stripe_toolkit_fixture):
+    def test_list_customers_success(
+        self, mock_customer_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         customer1 = Customer()
@@ -87,7 +104,9 @@ class TestCustomerAdapter:
         assert result == expected_result
 
     @patch('stripe.Customer.list')
-    def test_list_customers_exception(self, mock_customer_list, stripe_toolkit_fixture):
+    def test_list_customers_exception(
+        self, mock_customer_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         exception_message = "List customers failed"
@@ -99,15 +118,22 @@ class TestCustomerAdapter:
         result = customer_adapter.list_customers(limit=limit)
 
         # Assert
-        expected_error = f"Unexpected error in list_customers: {exception_message}"
+        expected_error = (
+            f"Unexpected error in list_customers: {exception_message}"
+        )
         assert expected_error in result
+
 
 r"""BalanceAdapter Tests
 """
+
+
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestBalanceAdapter:
     @patch('stripe.Balance.retrieve')
-    def test_get_balance_success(self, mock_balance_retrieve, stripe_toolkit_fixture):
+    def test_get_balance_success(
+        self, mock_balance_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         balance_data = Balance()
         balance_data.object = 'balance'
@@ -124,7 +150,9 @@ class TestBalanceAdapter:
         assert result == expected_result
 
     @patch('stripe.Balance.retrieve')
-    def test_get_balance_exception(self, mock_balance_retrieve, stripe_toolkit_fixture):
+    def test_get_balance_exception(
+        self, mock_balance_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         exception_message = "Balance retrieval failed"
         mock_balance_retrieve.side_effect = Exception(exception_message)
@@ -135,11 +163,15 @@ class TestBalanceAdapter:
         result = balance_adapter.get_balance()
 
         # Assert
-        expected_error = f"Unexpected error in get_balance: {exception_message}"
+        expected_error = (
+            f"Unexpected error in get_balance: {exception_message}"
+        )
         assert expected_error in result
 
     @patch('stripe.BalanceTransaction.list')
-    def test_list_balance_transactions_success(self, mock_balance_transaction_list, stripe_toolkit_fixture):
+    def test_list_balance_transactions_success(
+        self, mock_balance_transaction_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         transaction1 = BalanceTransaction()
@@ -155,7 +187,9 @@ class TestBalanceAdapter:
         mock_balance_transaction_list.return_value = transaction_list
 
         # Act
-        result = stripe_toolkit_fixture.balance.list_balance_transactions(limit=limit)
+        result = stripe_toolkit_fixture.balance.list_balance_transactions(
+            limit=limit
+        )
 
         # Assert
         mock_balance_transaction_list.assert_called_once_with(limit=limit)
@@ -163,11 +197,15 @@ class TestBalanceAdapter:
         assert result == expected_result
 
     @patch('stripe.BalanceTransaction.list')
-    def test_list_balance_transactions_exception(self, mock_balance_transaction_list, stripe_toolkit_fixture):
+    def test_list_balance_transactions_exception(
+        self, mock_balance_transaction_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         exception_message = "List balance transactions failed"
-        mock_balance_transaction_list.side_effect = Exception(exception_message)
+        mock_balance_transaction_list.side_effect = Exception(
+            exception_message
+        )
         balance_adapter = stripe_toolkit_fixture.balance
         balance_adapter.logger = MagicMock()
 
@@ -178,12 +216,17 @@ class TestBalanceAdapter:
         expected_error = f"Unexpected error in list_balance_transactions: {exception_message}"
         assert expected_error in result
 
+
 r"""PaymentAdapter Tests
 """
+
+
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestPaymentAdapter:
     @patch('stripe.PaymentIntent.retrieve')
-    def test_get_payment_success(self, mock_payment_retrieve, stripe_toolkit_fixture):
+    def test_get_payment_success(
+        self, mock_payment_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         payment_id = "pi_123"
         payment_data = PaymentIntent()
@@ -200,7 +243,9 @@ class TestPaymentAdapter:
         assert result == expected_result
 
     @patch('stripe.PaymentIntent.retrieve')
-    def test_get_payment_exception(self, mock_payment_retrieve, stripe_toolkit_fixture):
+    def test_get_payment_exception(
+        self, mock_payment_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         payment_id = "invalid_id"
         exception_message = "Payment not found"
@@ -212,11 +257,15 @@ class TestPaymentAdapter:
         result = payment_adapter.get_payment(payment_id)
 
         # Assert
-        expected_error = f"Unexpected error in get_payment: {exception_message}"
+        expected_error = (
+            f"Unexpected error in get_payment: {exception_message}"
+        )
         assert expected_error in result
 
     @patch('stripe.PaymentIntent.list')
-    def test_list_payments_success(self, mock_payment_list, stripe_toolkit_fixture):
+    def test_list_payments_success(
+        self, mock_payment_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         payment1 = PaymentIntent()
@@ -240,7 +289,9 @@ class TestPaymentAdapter:
         assert result == expected_result
 
     @patch('stripe.PaymentIntent.list')
-    def test_list_payments_exception(self, mock_payment_list, stripe_toolkit_fixture):
+    def test_list_payments_exception(
+        self, mock_payment_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         exception_message = "List payments failed"
@@ -252,15 +303,22 @@ class TestPaymentAdapter:
         result = payment_adapter.list_payments(limit=limit)
 
         # Assert
-        expected_error = f"Unexpected error in list_payments: {exception_message}"
+        expected_error = (
+            f"Unexpected error in list_payments: {exception_message}"
+        )
         assert expected_error in result
+
 
 r"""RefundAdapter Tests
 """
+
+
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
 class TestRefundAdapter:
     @patch('stripe.Refund.retrieve')
-    def test_get_refund_success(self, mock_refund_retrieve, stripe_toolkit_fixture):
+    def test_get_refund_success(
+        self, mock_refund_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         refund_id = "re_123"
         refund_data = Refund()
@@ -277,7 +335,9 @@ class TestRefundAdapter:
         assert result == expected_result
 
     @patch('stripe.Refund.retrieve')
-    def test_get_refund_exception(self, mock_refund_retrieve, stripe_toolkit_fixture):
+    def test_get_refund_exception(
+        self, mock_refund_retrieve, stripe_toolkit_fixture
+    ):
         # Arrange
         refund_id = "invalid_id"
         exception_message = "Refund not found"
@@ -293,7 +353,9 @@ class TestRefundAdapter:
         assert expected_error in result
 
     @patch('stripe.Refund.list')
-    def test_list_refunds_success(self, mock_refund_list, stripe_toolkit_fixture):
+    def test_list_refunds_success(
+        self, mock_refund_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         refund1 = Refund()
@@ -317,7 +379,9 @@ class TestRefundAdapter:
         assert result == expected_result
 
     @patch('stripe.Refund.list')
-    def test_list_refunds_exception(self, mock_refund_list, stripe_toolkit_fixture):
+    def test_list_refunds_exception(
+        self, mock_refund_list, stripe_toolkit_fixture
+    ):
         # Arrange
         limit = 2
         exception_message = "List refunds failed"
@@ -329,5 +393,7 @@ class TestRefundAdapter:
         result = refund_adapter.list_refunds(limit=limit)
 
         # Assert
-        expected_error = f"Unexpected error in list_refunds: {exception_message}"
+        expected_error = (
+            f"Unexpected error in list_refunds: {exception_message}"
+        )
         assert expected_error in result
