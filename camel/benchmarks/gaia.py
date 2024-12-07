@@ -73,14 +73,14 @@ class DefaultGAIARetriever(AutoRetriever):
     """
 
     def retrieve(
-        self, query: str, contents: List[str], **kwargs: Dict[str, Any]
+        self, query: str, contents: List[str], **kwargs: Any
     ) -> Dict[str, Any]:
         r"""Retrieve the content based on the query.
 
         Args:
             query (str): The query to search for.
             contents (List[str]): The list of contents to search from.
-            **kwargs (Dict[str, Any]): The keyword arguments to pass to the
+            **kwargs (Any): The keyword arguments to pass to the
                 retriever.
 
         Returns:
@@ -88,18 +88,18 @@ class DefaultGAIARetriever(AutoRetriever):
         """
         return self.run_vector_retriever(query, contents, **kwargs)  # type: ignore[arg-type]
 
-    def reset(self, **kwargs: Dict[str, Any]) -> bool:
+    def reset(self, **kwargs: Any) -> bool:
         r"""Reset the retriever.
 
         Args:
-            **kwargs (Dict[str, Any]): The keyword arguments to pass to the
+            **kwargs (Any): The keyword arguments to pass to the
                 retriever.
 
         Returns:
             bool: Whether the reset was successful.
         """
         path = Path(self.vector_storage_local_path or os.getcwd())
-        task_id = str(kwargs.get("task_id", uuid.uuid1()))
+        task_id = str(kwargs.get("task_id", uuid.uuid4()))
         retriever_dir = path / task_id
         if not retriever_dir.exists():
             try:
@@ -362,10 +362,10 @@ class GAIABenchmark(BaseBenchmark):
             "results": self._results,
         }
 
-    # scorer part
-    # https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/scorer.py
     def question_scorer(self, model_answer: str, ground_truth: str) -> bool:
         r"""Scorer for the GAIA benchmark.
+        https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/
+        scorer.py
 
         Args:
             model_answer (str): The model answer.
