@@ -34,9 +34,9 @@ class AmazonS3Storage(BaseObjectStorage):
         create_if_not_exists (bool, optional): Whether to create the bucket if
             it does not exist. Defaults to True.
         access_key_id (Optional[str], optional): The AWS access key ID.
-            Defaults to None.
+            (default: :obj:`None`)
         secret_access_key (Optional[str], optional): The AWS secret access key.
-            Defaults to None.
+            (default: :obj:`None`)
         anonymous (bool, optional): Whether to use anonymous access. Defaults
             to False.
 

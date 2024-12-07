@@ -94,12 +94,11 @@ class ChatGPTConfig(BaseConfig):
             via {"type": "function", "function": {"name": "my_function"}}
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
-            are present.
+            are present. (default: :obj:`None`)
     """
 
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
-    n: int = 1
     stream: bool = False
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
