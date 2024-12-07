@@ -1,0 +1,77 @@
+[
+    {
+        "id": "machine_task_1",
+        "instruction": "Write a short story that incorporates a twist ending related to a common childhood fear.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "Once upon a time, a young girl named Lily was terrified of the dark. Every night, she would hide under her covers, convinced that monsters lurked in her closet. One evening, her mother gave her a special nightlight that glowed softly, assuring her that it would keep the monsters away. That night, as she drifted off to sleep, she felt safe for the first time. However, when she woke up in the middle of the night, she noticed the light flickering. As she turned to check her closet, she saw a shadowy figure emerging. Heart racing, she realized it was her own reflection in the mirror, illuminated by the nightlight. She laughed at her fear, thinking it was just her imagination. But as she turned back to her bed, she heard a whisper, \"You should have stayed under the covers.\""
+            },
+            {
+                "input": "",
+                "output": "Tommy was afraid of the dark, especially the basement where his parents kept old boxes and toys. One night, he was dared by his friends to go down there and retrieve a toy. Gathering his courage, he tiptoed down the creaky stairs, clutching a flashlight. As he rummaged through the boxes, he heard a noise behind him and froze. He turned to see a pair of glowing eyes staring back at him. Terrified, he screamed and ran back upstairs, convinced he had seen a ghost. The next day, his parents revealed that they had been playing a prank on him, using a glow-in-the-dark sticker on an old toy. They all laughed, but Tommy couldn't shake the feeling that something was still down there, watching him."
+            }
+        ]
+    },
+    {
+        "id": "machine_task_2",
+        "instruction": "Analyze the provided text and summarize its main argument in one or two sentences.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "Paragraph: The rapid advancement of technology has significantly transformed the way we communicate, work, and live. With the rise of social media, people are now more connected than ever, allowing for instant communication across the globe. However, this constant connectivity also raises concerns about privacy and the impact of technology on mental health.",
+                "output": "The main argument of the text is that while technology has greatly improved communication and connectivity, it also poses challenges related to privacy and mental health."
+            },
+            {
+                "input": "Paragraph: Climate change is one of the most pressing issues of our time, affecting ecosystems, weather patterns, and sea levels. Scientists warn that without immediate action to reduce greenhouse gas emissions, the consequences will be catastrophic for future generations.",
+                "output": "The text argues that urgent action is needed to combat climate change, as failure to do so will lead to severe consequences for the planet and future generations."
+            }
+        ]
+    },
+    {
+        "id": "machine_task_3",
+        "instruction": "Create a list of five healthy meal options for someone following a vegetarian diet.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "- Quinoa Salad with Chickpeas and Avocado\n- Vegetable Stir-Fry with Tofu\n- Lentil Soup with Spinach\n- Stuffed Bell Peppers with Brown Rice and Black Beans\n- Zucchini Noodles with Pesto and Cherry Tomatoes"
+            },
+            {
+                "input": "",
+                "output": "- Grilled Vegetable and Hummus Wrap\n- Spinach and Feta Stuffed Portobello Mushrooms\n- Cauliflower Tacos with Avocado Sauce\n- Chickpea Curry with Brown Rice\n- Sweet Potato and Black Bean Chili"
+            }
+        ]
+    },
+    {
+        "id": "machine_task_4",
+        "instruction": "Design a marketing campaign for a new eco-friendly product, including target audience, key messages, and promotional strategies.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "- Target Audience: Environmentally conscious consumers aged 18-35.\n- Key Messages: \"Sustainable living made easy,\" \"Join the green revolution,\" \"Reduce your carbon footprint with our eco-friendly products.\"\n- Promotional Strategies: Utilize social media influencers to promote the product, create engaging content highlighting the benefits of eco-friendly living, and offer discounts for first-time buyers."
+            },
+            {
+                "input": "",
+                "output": "- Target Audience: Families looking to reduce waste and promote sustainability.\n- Key Messages: \"Eco-friendly choices for a healthier planet,\" \"Make a difference with every purchase,\" \"Quality products that care for the Earth.\"\n- Promotional Strategies: Launch a referral program encouraging customers to share with friends, host community events focused on sustainability, and collaborate with local environmental organizations for joint promotions."
+            }
+        ]
+    },
+    {
+        "id": "machine_task_5",
+        "instruction": "Create a step-by-step guide on how to prepare a healthy smoothie, including ingredient suggestions and blending tips.",
+        "is_classification": false,
+        "instances": [
+            {
+                "input": "",
+                "output": "1. Gather your ingredients:\n- 1 banana\n- 1 cup of spinach\n- 1/2 cup of Greek yogurt\n- 1 cup of almond milk\n- 1 tablespoon of honey (optional)\n\n2. Add the ingredients to a blender in the following order:\n- Start with the almond milk to help the blades move freely.\n- Add the Greek yogurt, followed by the banana and spinach.\n- If desired, add honey for sweetness.\n\n3. Blend on high until smooth, about 30-60 seconds.\n\n4. Pour into a glass and enjoy your healthy smoothie!"
+            },
+            {
+                "input": "",
+                "output": "1. Ingredients needed:\n- 1 cup of frozen mixed berries\n- 1/2 cup of oats\n- 1 cup of coconut water\n- 1 tablespoon of chia seeds\n\n2. In a blender, combine the coconut water and oats first to create a smooth base.\n\n3. Add the frozen mixed berries and chia seeds to the blender.\n\n4. Blend until all ingredients are well combined and smooth, approximately 30 seconds.\n\n5. Serve immediately in a glass, and enjoy your nutritious smoothie!"
+            }
+        ]
+    }
+]
