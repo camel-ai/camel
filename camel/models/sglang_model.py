@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import os
+import time
+from threading import Thread
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -61,13 +62,18 @@ class SGLangModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = SGLangConfig().as_dict()
-        url = url or os.environ.get("SGLANG_BASE_URL")
         self.server_process = None
+        self.last_run_time = time.time()
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
         if not self._url:
             self._start_server()
+
+        # Start monitoring inactivity
+        monitor_thread = Thread(target=self._monitor_inactivity, daemon=True)
+        monitor_thread.start()
+
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
@@ -95,6 +101,23 @@ class SGLangModel(BaseModelBackend):
             self.server_process = server_process
         except Exception as e:
             print(f"Failed to start SGLang server: {e}")
+
+    def _monitor_inactivity(self):
+        r"""Monitor whether the server process
+        has been inactive for over 10 minutes.
+        """
+        from sglang.utils import terminate_process
+
+        while True:
+            # Check every 10 seconds
+            time.sleep(10)
+            # Over 10 minutes
+            if time.time() - self.last_run_time > 600:
+                if self.server_process:
+                    terminate_process(self.server_process)
+                    self.server_process = None
+                    print("Server process terminated due to inactivity.")
+                break
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -138,15 +161,14 @@ class SGLangModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        from sglang.utils import terminate_process
+        # Update last run time
+        self.last_run_time = time.time()
 
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
         )
-        if self.server_process:
-            terminate_process(self.server_process)
 
         return response
 
