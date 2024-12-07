@@ -13,14 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from camel.agents.chat_agent import ChatAgent
-from camel.benchmarks import GAIABenchmark
-from camel.benchmarks.gaia import DefaultGAIARetriever
-from camel.messages.base import BaseMessage
-from camel.models.model_factory import ModelFactory
-from camel.runtime.docker_runtime import DockerRuntime
-from camel.toolkits.code_execution import CodeExecutionToolkit
-from camel.types.enums import ModelPlatformType, ModelType, StorageType
+from camel.agents import ChatAgent
+from camel.benchmarks import DefaultGAIARetriever, GAIABenchmark
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.runtime import RemoteHttpRuntime
+from camel.toolkits import CodeExecutionToolkit
+from camel.types import ModelPlatformType, ModelType, StorageType
 
 retriever = DefaultGAIARetriever(
     vector_storage_local_path="local_data2/", storage_type=StorageType.QDRANT
@@ -38,11 +37,9 @@ print(f"Number of test examples: {len(benchmark.test)}")
 
 
 toolkit = CodeExecutionToolkit(verbose=True)
-runtime = DockerRuntime("xukunliu/camel").add(
+runtime = RemoteHttpRuntime("localhost").add(
     toolkit.get_tools(),
     "camel.toolkits.CodeExecutionToolkit",
-    arguments=dict(verbose=True),
-    redirect_stdout=False,
 )
 
 task_prompt = """
@@ -80,11 +77,9 @@ agent = ChatAgent(
     tools=tools,
 )
 
-with runtime as r:
-    r.wait()
-    result = benchmark.run(agent, "valid", level="all", subset=3)
-    print("correct:", result["correct"])
-    print("total:", result["total"])
+result = benchmark.run(agent, "valid", level="all", subset=3)
+print("correct:", result["correct"])
+print("total:", result["total"])
 
 # ruff: noqa: E501
 """

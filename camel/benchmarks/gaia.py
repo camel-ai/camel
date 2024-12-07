@@ -20,17 +20,50 @@ import re
 import string
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
-from camel.benchmarks.protocols import RetrieverProtocol
 from camel.messages.base import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
 
 logger = logging.getLogger(__name__)
+
+
+class RetrieverProtocol(Protocol):
+    r"""Protocol for the retriever class. Any retriever class implementing
+    this protocol can be used in the benchmark class.
+    """
+
+    def retrieve(
+        self, query: str, contents: List[str], **kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        r"""Retrieve the relevant content for the query.
+
+        Args:
+            query (str): The query to retrieve the content for.
+            contents (List[str]): The list of contents to search in.
+            **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+        Returns:
+            Dict[str, Any]: The relevant content for the query.
+        """
+        ...
+
+    def reset(self, **kwargs) -> bool:
+        r"""Reset the retriever.
+        Some benchmarks may require resetting the retriever
+        after each query.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            bool: True if the reset was successful, False otherwise.
+        """
+        ...
 
 
 class DefaultGAIARetriever(AutoRetriever):
@@ -135,11 +168,17 @@ class GAIABenchmark(BaseBenchmark):
         if force_download:
             logger.info("Force downloading data.")
             self.download()
+
+        # Define validation and test directories
         valid_dir = self.data_dir / "2023/validation"
         test_dir = self.data_dir / "2023/test"
+
+        # Check if directories exist; if not, download the data
         if not valid_dir.is_dir() or not test_dir.is_dir():
             logger.info("Data not found. Downloading data.")
             self.download()
+
+        # Load metadata for both validation and test datasets
         for path, label in zip([valid_dir, test_dir], ["valid", "test"]):
             self._data[label] = []
             with open(path / "metadata.jsonl", "r") as f:
@@ -181,111 +220,145 @@ class GAIABenchmark(BaseBenchmark):
         Returns:
             Dict[str, Any]: The results of the benchmark.
         """
+        # Validate inputs
         if on not in ["valid", "test"]:
             raise ValueError(
                 f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
             )
-        if isinstance(level, str) and level == "all":
-            levels = [1, 2, 3]
-        elif isinstance(level, int):
-            levels = [level]
-        else:
-            levels = level
-        if any(_level not in [1, 2, 3] for _level in levels):
+
+        levels = (
+            [1, 2, 3]
+            if level == "all"
+            else [level]
+            if isinstance(level, int)
+            else level
+        )
+        if not all(
+            isinstance(level, int) and level in [1, 2, 3] for level in levels
+        ):
             raise ValueError(
-                f"Invalid value for `level`: {level},"
-                " expected 1, 2, 3 or 'all'."
+                f"Invalid value for `level`: {level}, expected 1, 2, 3 "
+                "or 'all'."
             )
 
         logger.info(f"Running benchmark on {on} set at levels {levels}.")
         datas = [data for data in self._data[on] if data["Level"] in levels]
+
+        # Shuffle and subset data if necessary
         if randomize:
             random.shuffle(datas)
         if subset:
             datas = datas[:subset]
+
         logger.info(f"Number of tasks: {len(datas)}")
+
+        # Initialize results storage
         self._results = []
+
+        # Process tasks
         with open(self.save_to, "w") as f:
             for task in tqdm(datas, desc="Running"):
-                if task["file_name"] != "":
-                    tmp = Path(task["file_name"])
-                    if not tmp.exists():
-                        logger.info(
-                            f"Skipping task because file: {tmp} not found."
-                        )
-                        continue
-                    if tmp.suffix in ['.pdf', '.docx', '.doc', '.txt']:
-                        if not self.retriever.reset(task_id=task["task_id"]):
-                            continue
-                        retrieved_info = self.retriever.retrieve(
-                            query=task["Question"],
-                            contents=[task['file_name']],
-                        )
-                        retrieved_content = [
-                            i["text"]  # type: ignore[index]
-                            for i in retrieved_info["Retrieved Context"]
-                        ]
-                        if retrieved_content:
-                            task["Question"] += "\n".join(retrieved_content)
-                    else:
-                        logger.info(
-                            f"Skipping task because {tmp.suffix} "
-                            + "format not supported.",
-                        )
-                        continue
+                if not self._prepare_task(task):
+                    continue
 
-                msg = BaseMessage.make_user_message(
-                    role_name="User",
-                    content=task["Question"],
-                )
-                final_answer = task["Final answer"]
                 try:
-                    result = agent.step(msg)
-                    model_answer = self.get_final_answer(
-                        result.msgs[0].content
-                    )
-                    tool_calls = result.info.get("tool_calls", [])
-                    score = self.question_scorer(model_answer, final_answer)
-                    self._results.append(
-                        {
-                            "task_id": task["task_id"],
-                            "question": task["Question"],
-                            "level": task["Level"],
-                            "model_answer": model_answer,
-                            "ground_truth": final_answer,
-                            "tool_calls": [
-                                tool.model_dump() for tool in tool_calls
-                            ],
-                            "error": None,
-                            "score": int(score),
-                        }
-                    )
+                    result = agent.step(self._create_user_message(task))
+                    self._process_result(agent, task, result, f)
                 except Exception as e:
-                    logger.warning(
-                        f"Error in processing task: {task['task_id']}"
-                    )
-                    self._results.append(
-                        {
-                            "task_id": task["task_id"],
-                            "question": task["Question"],
-                            "level": task["Level"],
-                            "model_answer": "ERROR",
-                            "ground_truth": final_answer,
-                            "tool_calls": [],
-                            "error": str(e),
-                            "score": 0,
-                        }
-                    )
-                agent.reset()
+                    self._handle_error(task, e, f)
+                finally:
+                    agent.reset()
 
-                self._results[-1]["history"] = agent.memory.get_context()
+        return self._generate_summary()
 
-                f.write(json.dumps(self._results[-1], indent=2) + "\n")
-                f.flush()
+    def _prepare_task(self, task: Dict[str, Any]) -> bool:
+        r"""Prepare the task by validating and enriching its data."""
+        if task["file_name"]:
+            file_path = Path(task["file_name"])
+            if not file_path.exists():
+                logger.info(
+                    f"Skipping task because file not found: {file_path}"
+                )
+                return False
+            if file_path.suffix in ['.pdf', '.docx', '.doc', '.txt']:
+                if not self.retriever.reset(task_id=task["task_id"]):
+                    return False
+                retrieved_info = self.retriever.retrieve(
+                    query=task["Question"], contents=[task['file_name']]
+                )
+                retrieved_content = [
+                    item["text"]
+                    for item in retrieved_info.get("Retrieved Context", [])
+                ]
+                if retrieved_content:
+                    task["Question"] += "\n" + "\n".join(retrieved_content)
+            else:
+                logger.info(
+                    f"Skipping task due to unsupported file "
+                    f"format: {file_path.suffix}"
+                )
+                return False
+        return True
 
+    def _create_user_message(self, task: Dict[str, Any]) -> BaseMessage:
+        r"""Create a user message from a task."""
+        return BaseMessage.make_user_message(
+            role_name="User",
+            content=task["Question"],
+        )
+
+    def _process_result(
+        self,
+        agent: ChatAgent,
+        task: Dict[str, Any],
+        result: Any,
+        file_obj: Any,
+    ) -> None:
+        r"""Process and store the result of a task."""
+        model_answer = self.get_final_answer(result.msgs[0].content)
+        final_answer = task["Final answer"]
+        score = self.question_scorer(model_answer, final_answer)
+        tool_calls = result.info.get("tool_calls", [])
+
+        result_data = {
+            "task_id": task["task_id"],
+            "question": task["Question"],
+            "level": task["Level"],
+            "model_answer": model_answer,
+            "ground_truth": final_answer,
+            "tool_calls": [tool.model_dump() for tool in tool_calls],
+            "error": None,
+            "score": int(score),
+            "history": agent.memory.get_context(),
+        }
+        self._results.append(result_data)
+        file_obj.write(json.dumps(result_data, indent=2) + "\n")
+        file_obj.flush()
+
+    def _handle_error(
+        self, task: Dict[str, Any], error: Exception, file_obj: Any
+    ) -> None:
+        r"""Handle errors encountered during task processing."""
+        logger.warning(f"Error processing task {task['task_id']}: {error}")
+        error_data = {
+            "task_id": task["task_id"],
+            "question": task["Question"],
+            "level": task["Level"],
+            "model_answer": "ERROR",
+            "ground_truth": task["Final answer"],
+            "tool_calls": [],
+            "error": str(error),
+            "score": 0,
+        }
+        self._results.append(error_data)
+        file_obj.write(json.dumps(error_data, indent=2) + "\n")
+        file_obj.flush()
+
+    def _generate_summary(self) -> Dict[str, Any]:
+        r"""Generate and return a summary of the benchmark results."""
         return {
             "total": len(self._results),
-            "correct": sum(r["score"] for r in self._results),
+            "correct": sum(result["score"] for result in self._results),
             "results": self._results,
         }
 

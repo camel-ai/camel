@@ -22,10 +22,12 @@ from camel.runtime.docker_runtime import DockerRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types.enums import ModelPlatformType, ModelType, StorageType
 
+
 @pytest.mark.skip(reason="Need Docker environment to run this test.")
 def test_gaia_benchmark():
     retriever = DefaultGAIARetriever(
-        vector_storage_local_path="local_data2/", storage_type=StorageType.QDRANT
+        vector_storage_local_path="local_data2/",
+        storage_type=StorageType.QDRANT,
     )
 
     benchmark = GAIABenchmark(
@@ -73,7 +75,6 @@ def test_gaia_benchmark():
         model_type=ModelType.DEFAULT,
     )
 
-
     agent = ChatAgent(
         sys_msg,
         model,
@@ -87,6 +88,7 @@ def test_gaia_benchmark():
         print("correct:", result["correct"])
         print("total:", result["total"])
 
+
 # ruff: noqa: E501
 """
 Number of validation examples: 165
@@ -94,4 +96,3 @@ Number of test examples: 300
 correct: 0
 total: 3
 """
-
