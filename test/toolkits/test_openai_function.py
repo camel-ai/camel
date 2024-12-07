@@ -87,7 +87,6 @@ def test_get_openai_tool_schema():
                         'description': 'datatime_para desc',
                     },
                     'default_enum_para': {
-                        'default': 'critic',
                         'allOf': [{'$ref': '#/definitions/RoleType'}],
                         'description': 'default_enum_para desc',
                     },
@@ -120,6 +119,7 @@ def test_get_openai_tool_schema():
             'name': 'test_all_parameters',
             'description': 'A function to test all parameter type.'
             '\nThe parameters will be provided by user.',
+            'strict': True,
             'parameters': {
                 '$defs': {
                     'RoleType': {
@@ -162,7 +162,6 @@ def test_get_openai_tool_schema():
                     },
                     'default_enum_para': {
                         '$ref': '#/$defs/RoleType',
-                        'default': 'critic',
                         'description': 'default_enum_para desc',
                     },
                 },
@@ -173,8 +172,10 @@ def test_get_openai_tool_schema():
                     'list_para',
                     'float_para',
                     'datatime_para',
+                    'default_enum_para',
                 ],
                 'type': 'object',
+                'additionalProperties': False,
             },
         },
     }
@@ -249,6 +250,7 @@ def test_different_docstring_style():
         "function": {
             "name": "mul",
             "description": "Multiply two integers.",
+            "strict": true,
             "parameters": {
                 "properties": {
                     "a": {
@@ -262,7 +264,8 @@ def test_different_docstring_style():
                     }
                 },
                 "required": ["a", "b"],
-                "type": "object"
+                "type": "object",
+                "additionalProperties": false
             }
         }
     }""")
@@ -313,6 +316,7 @@ def add_with_wrong_doc(a: int, b: int) -> int:
 function_schema = {
     "name": "add",
     "description": "Adds two numbers.",
+    'strict': True,
     "parameters": {
         'type': 'object',
         'properties': {
@@ -325,6 +329,7 @@ function_schema = {
                 'description': 'The second number to be added.',
             },
         },
+        'additionalProperties': False,
         'required': ['a', 'b'],
     },
 }
@@ -332,6 +337,7 @@ function_schema = {
 function_schema_without_docs = {
     "description": '',
     "name": "add",
+    "strict": True,
     "parameters": {
         'type': 'object',
         'properties': {
@@ -343,12 +349,14 @@ function_schema_without_docs = {
             },
         },
         'required': ['a', 'b'],
+        'additionalProperties': False,
     },
 }
 
 function_schema_with_wrong_docs = {
     "name": "add",
     "description": "Adds two numbers.",
+    "strict": True,
     "parameters": {
         'type': 'object',
         'properties': {
@@ -361,6 +369,7 @@ function_schema_with_wrong_docs = {
             },
         },
         'required': ['a', 'b'],
+        'additionalProperties': False,
     },
 }
 
