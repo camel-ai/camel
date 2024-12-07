@@ -31,7 +31,6 @@ https://docs.flashinfer.ai/installation.html
 
 Please load HF_token in your environment variable.
 export HF_TOKEN=""
-export MODEL_CHAT_TEMPLATE="llama-2"
 """
 load_dotenv()
 sglang_model = ModelFactory.create(

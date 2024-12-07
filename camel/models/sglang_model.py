@@ -66,7 +66,6 @@ class SGLangModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self.chat_template = None or os.getenv("MODEL_CHAT_TEMPLATE")
         if not self._url:
             self._start_server()
         self._client = OpenAI(
@@ -89,8 +88,7 @@ class SGLangModel(BaseModelBackend):
                 f"--port 30000 "
                 f"--host 0.0.0.0"
             )
-            if self.chat_template is not None:
-                cmd += f" --chat-template {self.chat_template}"
+
             server_process = execute_shell_command(cmd)
             wait_for_server("http://localhost:30000")
             self._url = "http://127.0.0.1:30000/v1"

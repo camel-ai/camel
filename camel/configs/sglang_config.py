@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -49,41 +49,6 @@ class SGLangConfig(BaseConfig):
             they appear in the text so far, increasing the model's likelihood
             to talk about new topics. See more information about frequency and
             presence penalties. (default: :obj:`0.0`)
-        stop_token_ids (list, optional): A list of token IDs where the model
-            will stop generating tokens (default: :obj:`[]`).
-        max_new_tokens (int, optional): Maximum number of new tokens to
-            generate. (default: :obj:`128`)
-        ignore_eos (bool, optional): Whether to ignore the EOS token during
-            generation. (default: :obj:`False`)
-        skip_special_tokens (bool, optional): Whether to skip special tokens
-            during detokenization. (default: :obj:`True`)
-        spaces_between_special_tokens (bool, optional):
-            Whether to add spaces between special tokens during detokenization.
-            (default: :obj:`True`)
-        regex (str, optional): A regular expression to constrain the output
-            tokens. (default: :obj:`None`)
-        json_schema (str, optional): JSON schema to constrain the output
-            structure. (default: :obj:`None`)
-        min_new_tokens (int, optional): Minimum number of new tokens to
-            generate. (default: :obj:`0`)
-        top_k (int, optional): The number of highest probability tokens to
-            consider during sampling. Setting it to a positive integer limits
-            the number of tokens to sample from. A value of `-1` means no
-            limit. (default: :obj:`-1`)
-        min_p (float, optional): Minimum probability for nucleus sampling.
-            Any token with a probability lower than `min_p` will be ignored.
-            (default: :obj:`0.0`)
-        repetition_penalty (float, optional): A penalty for repeating tokens.
-            Values greater than `1.0` discourage repetition, and values less
-            than `1.0` encourage repetition. (default: :obj:`1.0`)
-        logprob_start_len (int or list, optional): The starting token position
-            for returning logprobs. If `None`, only the logprobs for output
-            tokens will be returned. (default: :obj:`None`)
-        top_logprobs_num (int or list, optional): The number of top logprobs to
-            return at each position in the output sequence. If `None`, no
-            logprobs are returned. (default: :obj:`None`)
-        return_text_in_logprobs (bool, optional): Whether to include the
-            generated text in the logprobs output. (default: :obj:`False`)
         stream (bool, optional): Whether to stream the generated output in
             chunks. If set to `True`, the response will be streamed as it is
             generated. (default: :obj:`False`)
@@ -99,20 +64,6 @@ class SGLangConfig(BaseConfig):
     n: int = 1
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
-    stop_token_ids: Optional[Sequence[int]] = []
-    max_new_tokens: int = 128
-    ignore_eos: bool = False
-    skip_special_tokens: bool = True
-    spaces_between_special_tokens: bool = True
-    regex: Optional[str] = None
-    json_schema: Optional[str] = None
-    min_new_tokens: int = 0
-    top_k: int = -1
-    min_p: float = 0.0
-    repetition_penalty: float = 1.0
-    logprob_start_len: Optional[Union[Sequence[int], int]] = None
-    top_logprobs_num: Optional[Union[Sequence[int], int]] = None
-    return_text_in_logprobs: bool = False
     stream: bool = False
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
 
