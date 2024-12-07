@@ -15,10 +15,13 @@ import re
 from typing import Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
+
+logger = get_logger(__name__)
 
 # AgentOps decorator setting
 try:
@@ -253,7 +256,7 @@ square brackets)
                 "Deduction failed. Error:\n" + f"{response.info}"
             )
         msg: BaseMessage = response.msg
-        print(f"Message content:\n{msg.content}")
+        logger.info(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
         conditions_dict = {

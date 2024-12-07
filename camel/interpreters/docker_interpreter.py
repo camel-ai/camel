@@ -23,10 +23,13 @@ from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.logger import get_logger
 from camel.utils import is_docker_running
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
+
+logger = get_logger(__name__)
 
 
 class DockerInterpreter(BaseInterpreter):
@@ -187,8 +190,10 @@ class DockerInterpreter(BaseInterpreter):
 
         # Print code for security checking
         if self.require_confirm:
-            print(f"The following {code_type} code will run in container:")
-            print(Fore.CYAN + code + Fore.RESET)
+            logger.info(
+                f"The following {code_type} code will run on your "
+                "computer: {code}"
+            )
             while True:
                 choice = input("Running code? [Y/n]:").lower()
                 if choice in ["y", "yes", "ye", ""]:
