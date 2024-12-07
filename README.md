@@ -144,7 +144,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.9 https://github.com/camel-ai/camel.git
+git clone -b v0.2.11 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -164,9 +164,10 @@ Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/mast
 
 By default, the agent uses the `ModelType.DEFAULT` model from the `ModelPlatformType.DEFAULT`. You can configure the default model platform and model type using environment variables. If these are not set, the agent will fall back to the default settings:
 
-- `ModelPlatformType.DEFAULT = "openai"`
-
-- `ModelType.DEFAULT = "gpt-4o-mini"`
+```bash
+ModelPlatformType.DEFAULT = "openai"
+ModelType.DEFAULT = "gpt-4o-mini"
+```
 
 ### Setting Default Model Platform and Model Type (Optional)
 
@@ -319,6 +320,9 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |
 | **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
 | **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
+| **[3 Ways to Ingest Data from Websites with Firecrawl](https://docs.camel-ai.org/cookbooks/ingest_data_from_websites_with_Firecrawl.html)** | Explore three methods for extracting and processing data from websites using Firecrawl. |
+| **[Data Deneration with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/sft_data_generation_and_unsloth_finetuning.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
+| **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_with_agentic_RAG.html)** |  Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 
 ## Utilize Various LLMs as Backends
 
@@ -345,6 +349,8 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 ## Implemented Research Ideas from Other Works
 We implemented amazing research ideas from other works for you to build, compare and customize your agents. If you use any of these modules, please kindly cite the original works:
 - `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
+
+- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 
 ## Other Research Works Based on Camel
 - [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?

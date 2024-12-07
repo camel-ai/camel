@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from collections import deque
 from typing import Dict, List, Optional
 
@@ -22,9 +22,12 @@ from camel.agents import (
 )
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import RoleType, TaskType
+
+logger = get_logger(__name__)
 
 
 class BabyAGI:
@@ -261,7 +264,7 @@ class BabyAGI:
             )
             self.subtasks = deque(prioritized_subtask_list)
         else:
-            print("no new tasks")
+            logger.info("no new tasks")
         assistant_response.info['task_name'] = task_name
         assistant_response.info['subtasks'] = list(self.subtasks)
         if not self.subtasks:

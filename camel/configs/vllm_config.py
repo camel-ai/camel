@@ -1,19 +1,19 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 from pydantic import Field
 
@@ -84,6 +84,13 @@ class VLLMConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
+        logprobs: Whether to return log probabilities of the output tokens or
+            not. If true, returns the log probabilities of each output token
+            returned in the `logits` of `message`. (default: :obj:`None`)
+        top_logprobs: An integer between 0 and 20 specifying the number of
+            most likely tokens to return at each token position, each with an
+            associated log probability. `logprobs` must be set to `true` if
+            this parameter is used. (default: :obj:`None`)
     """
 
     temperature: float = 0.2  # openai default: 1.0
@@ -97,6 +104,8 @@ class VLLMConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
+    logprobs: Optional[bool] = None
+    top_logprobs: Optional[int] = None
 
 
 VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}
