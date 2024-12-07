@@ -12,15 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.agents import ChatAgent
-from .filter import RougeSimilarityFilter
-from .filter.instruction_filter import InstructionFilter
-from .templates import SelfInstructTemplates
-
-from typing import Any, Dict, List, Optional
 import json
 import os
 import random
+from typing import Any, Dict, List, Optional
+
+from camel.agents import ChatAgent
+
+from .filter import RougeSimilarityFilter
+from .filter.instruction_filter import InstructionFilter
+from .templates import SelfInstructTemplates
 
 
 class SelfInstructPipeline:
