@@ -41,5 +41,11 @@ FILTER_REGISTRY: Dict[str, Callable[[Dict[str, Any]], FilterFunction]] = {
 def register_filter(
     name: str, constructor: Callable[[Dict[str, Any]], FilterFunction]
 ):
-    """Register a new filter constructor."""
+    r"""Registers a new filter constructor in FILTER_REGISTRY.
+
+    Args:
+        name (str): Unique name of the filter.
+        constructor (Callable[[Dict[str, Any]], FilterFunction]): Function to
+            create the filter using a dictionary of parameters.
+    """
     FILTER_REGISTRY[name] = constructor

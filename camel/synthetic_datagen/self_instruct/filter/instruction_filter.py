@@ -19,24 +19,23 @@ from .filter_registry import FILTER_REGISTRY
 
 class InstructionFilter:
     def __init__(self, filters_config: Dict[str, Dict[str, Any]]):
-        """
-        Initialize the InstructionFilter with a dictionary of filter
+        r"""Initialize the InstructionFilter with a dictionary of filter
             configurations.
-
-        Example filters_config:
-        {
-            "length": {"min_len": 5, "max_len": 100},
-            "keyword": {"keywords": ["image", "video"]},
-            "non_english": {},
-            "rouge_similarity": {
-                "existing_instructions": ["Some existing text"],
-                "threshold": 0.6
-            }
-        }
-
-        Each key in filters_config corresponds to a filter name
-            (registered in FILTER_REGISTRY).
-        Each value is a dict of parameters for that filter.
+        Args:
+            filters_config(Dict[str, Dict[str, Any]]):
+                Example filters_config:
+                {
+                    "length": {"min_len": 5, "max_len": 100},
+                    "keyword": {"keywords": ["image", "video"]},
+                    "non_english": {},
+                    "rouge_similarity": {
+                        "existing_instructions": ["Some existing text"],
+                        "threshold": 0.6
+                    }
+                }
+                Each key in filters_config corresponds to a filter name
+                    (registered in FILTER_REGISTRY).
+                Each value is a dict of parameters for that filter.
         """
         self.filters: List[FilterFunction] = []
         for filter_name, params in filters_config.items():
@@ -45,15 +44,16 @@ class InstructionFilter:
             self.filters.append(FILTER_REGISTRY[filter_name](params))
 
     def add_filter(self, filter_function: FilterFunction):
-        """
-        Add a custom filter function to the InstructionFilter.
+        r"""Add a custom filter function to the InstructionFilter.
         This allows adding filters that are not in the registry.
+
+        Args:
+            filter_function (FilterFunction): The filter function to be added
         """
         self.filters.append(filter_function)
 
     def filter(self, instruction: str, return_details: bool = False):
-        """
-        Check if the given instruction passes all filter functions.
+        r"""Check if the given instruction passes all filter functions.
 
         Args:
             instruction (str): The instruction to evaluate.

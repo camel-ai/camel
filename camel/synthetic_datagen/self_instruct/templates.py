@@ -17,6 +17,8 @@ from dataclasses import dataclass
 # flake8: noqa
 @dataclass(frozen=True)
 class SelfInstructTemplates:
+    r""" Contains templates prompts for self-instruct data generation"""
+
     clf_template = """ '''Can the following task be regarded as a classification task with finite output labels?
 
     Task: Given my personality and the job, tell me if I would be suitable.
