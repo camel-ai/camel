@@ -11,3 +11,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import json
+import logging
+import os
+import random
+import pandas as pd
+from dataclasses import dataclass
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from tqdm import tqdm
+from camel.agents import ChatAgent
+from camel.benchmarks import BaseBenchmark
+from camel.messages.base import BaseMessage
+from camel.models.model_factory import ModelFactory
+
+class APIBankBenchmark(BaseBenchmark):
+    r"""
+    TODO: Write the docstring
+    """
+
+    def __init__(
+        self,
+        data_dir: str,
+        save_to: str,
+        processes: int = 1,
+    ):
+        super().__init__("apibank", data_dir, save_to, processes)
