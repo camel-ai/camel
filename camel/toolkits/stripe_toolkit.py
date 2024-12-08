@@ -93,83 +93,63 @@ class StripeToolkit(BaseToolkit):
             self.logger.info(
                 "StripeToolkit initialized with provided API key."
             )
+            
+    def get_customer(self, customer_id: str) -> str:
+        r"""Retrieve a customer by ID.
 
-        # Initialize adapter classes
-        self.customers = self.CustomerAdapter(self)
-        self.balance = self.BalanceAdapter(self)
-        self.payments = self.PaymentAdapter(self)
-        self.refunds = self.RefundAdapter(self)
+        Args:
+            customer_id (str): The ID of the customer to retrieve.
 
-    class CustomerAdapter(StripeBaseAdapter):
-        r"""Adapter class for handling Stripe Customer operations."""
+        Returns:
+            str: The customer data as a dictionary.
+        """
+        import stripe
+        try:
+            self.logger.info(f"Retrieving customer with ID: {customer_id}")
+            customer = stripe.Customer.retrieve(customer_id)
+            self.logger.info(f"Retrieved customer: {customer.id}")
+            json_string = json.dumps(customer)
+            return json_string
+        except Exception as e:
+            return self.handle_exception("get_customer", e)
+    
+    def list_customers(self, limit: int = 100) -> str:
+        r"""List customers.
 
-        def get_customer(self, customer_id: str) -> str:
-            r"""Retrieve a customer by ID.
+        Args:
+            limit (int, optional): Number of customers to retrieve. Defaults to 100.
 
-            Args:
-                customer_id (str): The ID of the customer to retrieve.
+        Returns:
+            str: An output str if successful, or an error message string if failed.
+        """
+        try:
+            self.logger.info(f"Listing customers with limit={limit}")
+            customers = stripe.Customer.list(limit=limit).data
+            self.logger.info(
+                f"Successfully retrieved {len(customers)} customers."
+            )
+            return json.dumps([customer for customer in customers])
+        except Exception as e:
+            return self.handle_exception("list_customers", e)
 
-            Returns:
-                str: The customer data as a dictionary.
-            """
-            import stripe
+    def get_balance(self) -> str:
+        r"""Retrieve the account balance.
 
-            try:
-                self.logger.info(f"Retrieving customer with ID: {customer_id}")
-                customer = stripe.Customer.retrieve(customer_id)
-                self.logger.info(f"Retrieved customer: {customer.id}")
-                json_string = json.dumps(customer)
-                return json_string
-            except Exception as e:
-                return self.handle_exception("get_customer", e)
+        Returns:
+            str: A str containing the account balance if successful, or an
+                error message string if failed.
+        """
+        try:
+            self.logger.info("Retrieving account balance.")
+            balance = stripe.Balance.retrieve()
+            self.logger.info(
+                f"Successfully retrieved account balance: {balance}."
+            )
+            return json.dumps(balance)
+        except Exception as e:
+            return self.handle_exception("get_balance", e)
 
-        def list_customers(self, limit: int = 100) -> str:
-            r"""List customers.
-
-            Args:
-                limit (int, optional): Number of customers to retrieve. Defaults to 100.
-
-            Returns:
-                str: An output str if successful, or an error message string
-                    if failed.
-            """
-            import stripe
-
-            try:
-                self.logger.info(f"Listing customers with limit={limit}")
-                customers = stripe.Customer.list(limit=limit).data
-                self.logger.info(
-                    f"Successfully retrieved {len(customers)} customers."
-                )
-                return json.dumps([customer for customer in customers])
-            except Exception as e:
-                return self.handle_exception("list_customers", e)
-
-    class BalanceAdapter(StripeBaseAdapter):
-        r"""Adapter class for handling Stripe Balance operations."""
-
-        def get_balance(self) -> str:
-            r"""Retrieve the account balance.
-
-            Returns:
-                str: A str containing the account balance if successful, or an
-                    error message string if failed.
-            """
-            import stripe
-
-            try:
-                self.logger.info("Retrieving account balance.")
-                balance = stripe.Balance.retrieve()
-                self.logger.info(
-                    f"Successfully retrieved account balance: {balance}."
-                )
-                return json.dumps(balance)
-            except Exception as e:
-                return self.handle_exception("get_balance", e)
-
-        def list_balance_transactions(
-            self, limit: int = 100
-        ) -> Union[List[Dict[str, Any]], str]:
+    def list_balance_transactions(self, limit: int = 100) ->str:
             r"""List balance transactions.
 
             Args:
@@ -194,10 +174,7 @@ class StripeToolkit(BaseToolkit):
             except Exception as e:
                 return self.handle_exception("list_balance_transactions", e)
 
-    class PaymentAdapter(StripeBaseAdapter):
-        r"""Adapter class for handling Stripe PaymentIntent operations."""
-
-        def get_payment(self, payment_id: str) -> Union[Dict[str, Any], str]:
+    def get_payment(self, payment_id: str) -> str:
             r"""Retrieve a payment by ID.
 
             Args:
@@ -216,74 +193,63 @@ class StripeToolkit(BaseToolkit):
             except Exception as e:
                 return self.handle_exception("get_payment", e)
 
-        def list_payments(
-            self, limit: int = 100
-        ) -> Union[List[Dict[str, Any]], str]:
-            r"""List payments.
+    def list_payments(self, limit: int = 100) -> str:
+        r"""List payments.
 
-            Args:
-                limit (int, optional): Number of payments to retrieve. Defaults to 100.
+        Args:
+            limit (int, optional): Number of payments to retrieve. Defaults to 100.
 
-            Returns:
-                Union[List[Dict[str, Any]], str]: A list of payment data dictionaries
-                if successful, or an error message string if failed.
-            """
-            import stripe
+        Returns:
+            Union[List[Dict[str, Any]], str]: A list of payment data dictionaries
+            if successful, or an error message string if failed.
+        """
+        try:
+            self.logger.info(f"Listing payments with limit={limit}")
+            payments = stripe.PaymentIntent.list(limit=limit).data
+            self.logger.info(
+                f"Successfully retrieved {len(payments)} payments."
+            )
+            return json.dumps([payment for payment in payments])
+        except Exception as e:
+            return self.handle_exception("list_payments", e)
 
-            try:
-                self.logger.info(f"Listing payments with limit={limit}")
-                payments = stripe.PaymentIntent.list(limit=limit).data
-                self.logger.info(
-                    f"Successfully retrieved {len(payments)} payments."
-                )
-                return json.dumps([payment for payment in payments])
-            except Exception as e:
-                return self.handle_exception("list_payments", e)
+    def get_refund(self, refund_id: str) -> str:
+        r"""Retrieve a refund by ID.
 
-    class RefundAdapter(StripeBaseAdapter):
-        r"""Adapter class for handling Stripe Refund operations."""
+        Args:
+            refund_id (str): The ID of the refund to retrieve.
 
-        def get_refund(self, refund_id: str) -> Union[Dict[str, Any], str]:
-            r"""Retrieve a refund by ID.
+        Returns:
+            Union[Dict[str, Any], str]: The refund data as a dictionary if successful,
+            or an error message string if failed.
+        """
+        try:
+            self.logger.info(f"Retrieving refund with ID: {refund_id}")
+            refund = stripe.Refund.retrieve(refund_id)
+            self.logger.info(f"Retrieved refund: {refund.id}")
+            return json.dumps(refund)
+        except Exception as e:
+            return self.handle_exception("get_refund", e)
 
-            Args:
-                refund_id (str): The ID of the refund to retrieve.
+    def list_refunds( self, limit: int = 100) -> str:
+        r"""List refunds.
 
-            Returns:
-                Union[Dict[str, Any], str]: The refund data as a dictionary if successful,
-                or an error message string if failed.
-            """
-            import stripe
-            try:
-                self.logger.info(f"Retrieving refund with ID: {refund_id}")
-                refund = stripe.Refund.retrieve(refund_id)
-                self.logger.info(f"Retrieved refund: {refund.id}")
-                return json.dumps(refund)
-            except Exception as e:
-                return self.handle_exception("get_refund", e)
+        Args:
+            limit (int, optional): Number of refunds to retrieve. Defaults to 100.
 
-        def list_refunds(
-            self, limit: int = 100
-        ) -> Union[List[Dict[str, Any]], str]:
-            r"""List refunds.
-
-            Args:
-                limit (int, optional): Number of refunds to retrieve. Defaults to 100.
-
-            Returns:
-                Union[List[Dict[str, Any]], str]: A list of refund data dictionaries
-                if successful, or an error message string if failed.
-            """
-            import stripe
-            try:
-                self.logger.info(f"Listing refunds with limit={limit}")
-                refunds = stripe.Refund.list(limit=limit).data
-                self.logger.info(
-                    f"Successfully retrieved {len(refunds)} refunds."
-                )
-                return json.dumps([refund for refund in refunds])
-            except Exception as e:
-                return self.handle_exception("list_refunds", e)
+        Returns:
+            Union[List[Dict[str, Any]], str]: A list of refund data dictionaries
+            if successful, or an error message string if failed.
+        """
+        try:
+            self.logger.info(f"Listing refunds with limit={limit}")
+            refunds = stripe.Refund.list(limit=limit).data
+            self.logger.info(
+                f"Successfully retrieved {len(refunds)} refunds."
+            )
+            return json.dumps([refund for refund in refunds])
+        except Exception as e:
+            return self.handle_exception("list_refunds", e)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
