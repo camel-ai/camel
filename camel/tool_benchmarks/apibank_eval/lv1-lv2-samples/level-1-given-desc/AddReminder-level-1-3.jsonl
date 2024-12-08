@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you add a reminder for a meeting on 2022-05-06 at 2 PM?"}
+{"role": "AI", "text": "Sure, I can do that. For which username should I add the reminder?"}
+{"role": "User", "text": "user1"}
+{"role": "AI", "text": "I also need your password to authenticate. Can you please tell me your username and password?"}
+{"role": "User", "text": "user1 user1pass"}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user1", "password": "user1pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user1", "password": "user1pass"}, "output": {"token": "n9m8k7j6h5g4f3d2s1a0"}, "exception": null}}
+{"role": "API", "api_name": "AddReminder", "param_dict": {"token": "n9m8k7j6h5g4f3d2s1a0", "content": "Meeting", "time": "2022-05-06 14:00:00"}, "result": {"api_name": "AddReminder", "input": {"token": "n9m8k7j6h5g4f3d2s1a0", "content": "Meeting", "time": "2022-05-06 14:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Reminder has been added successfully."}

@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you describe this image for me?"}
+{"role": "AI", "text": "Sure, please provide me with the URL for the image."}
+{"role": "User", "text": "Here it is: http://l7.alamy.com/zooms/278b12a987734ec285da7155397e0d0a/an-airplane-takes-off-from-terminal-1-at-manchester-international-h4b040.jpg"}
+{"role": "API", "api_name": "ImageCaption", "param_dict": {"url": "http://l7.alamy.com/zooms/278b12a987734ec285da7155397e0d0a/an-airplane-takes-off-from-terminal-1-at-manchester-international-h4b040.jpg"}, "result": {"api_name": "ImageCaption", "input": {"url": "http://l7.alamy.com/zooms/278b12a987734ec285da7155397e0d0a/an-airplane-takes-off-from-terminal-1-at-manchester-international-h4b040.jpg"}, "output": "an airplane takes off taken on a cloudy autumn evening", "exception": null}}
+{"role": "AI", "text": "I have generated a caption for your image. The caption is \"an airplane takes off taken on a cloudy autumn evening\"."}

@@ -1,0 +1,888 @@
+[ 
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.getProfile",
+    "api_call": "service.users().getProfile(userId='me').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Gets the current user's Gmail profile.",
+    "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+    "example_code": "from googleapiclient.discovery import build \n from oauth2client import file, client, tools \n store = file.Storage('token.json') \n creds = store.get() \n service = build('gmail', 'v1', credentials=creds) \n results = service.users().getProfile(userId='me').execute()",
+    "meta_data": {
+      "description": "The Users.getProfile method of Gmail API allows for retrieving basic profile information of a user, such as the email address and account ID.", 
+      "documentation_link" : "https://developers.google.com/gmail/api/reference/rest/v1/users/getProfile"
+    },
+    "questions": [
+    "How can I fetch my Gmail account's email address?",
+    "How can I obtain the total messages in my gmail inbox."
+    ]
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.stop",
+    "api_call": "service.users().stop(userId='me').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "User stops receiving push notifications for the given user mailbox.",
+    "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+    "example_code": "from googleapiclient.discovery import build \n from oauth2client import file, client, tools \n store = file.Storage('token.json') \n creds = store.get() \n service = build('gmail', 'v1', credentials=creds) \n results = service.users().getProfile(userId='me').execute()",
+    "meta_data": {
+      "description": "The Users.stop method stops any push notifications (set up via Gmail API's watch method) for the authenticated user's Gmail account.", 
+      "documentation_link" : "https://developers.google.com/gmail/api/reference/rest/v1/users/stop"
+    },
+    "questions": [
+    "How can I stop Gmail push notifications that I set up?",
+    ]
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.watch",
+    "api_call": "service.users().watch(userId='me').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Set up or update a push notification watch on the given user mailbox.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.drafts.create",
+    "api_call": "service.users().drafts().create(userId='me', body='draft_body').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": "The draft message body including the message content."
+    },
+    "functionality": "Create a new draft email in the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.drafts.delete",
+    "api_call": "service.users().drafts().delete(userId='me').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the draft to be deleted."
+    },
+    "functionality": "Delete a specific draft email in the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.drafts.get",
+    "api_call": "service.users().drafts().get(userId='me').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the draft to be deleted."
+    },
+    "functionality": "Retrieve a specific draft email in the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.drafts.list",
+    "api_call": "service.users().drafts().list(userId='me', spamTrash=True, q='is:unread').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "spamTrash": "Boolean parameter to include drafts from spam and trash.",
+      "q": "Query string to filter drafts, similar to Gmail search.",
+      "maxResults": "Maximum number of drafts to return.",
+      "pageToken": "Page token to retrieve a specific page of results."
+    },
+    "functionality": "Lists the drafts in the user's mailbox.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.drafts.send",
+    "api_call": "service.users().drafts().send(userId='me', body='draft_message').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": "The draft message body including the message content."
+    },
+    "functionality": "Send an email from a draft in the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.drafts.update",
+    "api_call": "service.users().drafts().update(userId='me', body='draft_message').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the draft to be updated.",
+      "body": "The draft message body including the message content."
+    },
+    "functionality": "Update an existing draft in the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.history.list",
+    "api_call": "service.users().history().list(userId='me', startHistoryId='your_start_history_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "startHistoryId": "History ID from which to start listing history records.",
+      "labelId": "Only return history with changes to this label.",
+      "maxResults": "Maximum number of history records to return.",
+      "pageToken": "Page token to retrieve a specific page of results.",
+      "historyTypes": "Types of history records to return (e.g., 'labelAdded', 'labelRemoved')."
+    },
+    "functionality": "Lists the history of all changes to the given mailbox. History results are returned in chronological order (increasing historyId).",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.labels.create",
+    "api_call": "service.users().labels().create(userId='me', body=label_properties).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": "The label properties, including name, visibility, etc."
+    },
+    "functionality": "Create a new label in the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.labels.delete",
+    "api_call": "service.users().labels().delete(userId='me', id='LABEL_ID').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the label to be deleted."
+    },
+    "functionality": "Delete a specific label from the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.labels.get",
+    "api_call": "service.users().labels().get(userId='me', id='LABEL_ID').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the label to be retrieved."
+    },
+    "functionality": "Retrieve a specific label from the authenticated user's Gmail account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.labels.list",
+    "api_call": "service.users().labels().list(userId='me').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the label to be retrieved."
+    },
+    "functionality": "Lists all labels in the user's mailbox.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.labels.patch",
+    "api_call": "service.users().labels().patch(userId='me', id='LABEL_ID', body=label_properties).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the label to be patched.",
+      "body": "The label properties, including name, visibility, etc."
+    },
+    "functionality": "Patch the specified label.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.labels.update",
+    "api_call": "service.users().labels().update(userId='me', id='LABEL_ID', body=label_properties).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId" : "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the label to be patched.",
+      "body": "The label properties, including name, visibility, etc."
+    },
+    "functionality": "Updates the specified label.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.batchDelete",
+    "api_call": "service.users().messages().batchDelete(userId='user_id', body={'ids': message_ids}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "ids": "A list of message IDs to delete. These should be the unique IDs of the messages."
+      }
+    },
+    "functionality": "Deletes many messages by message ID. Provides no guarantees that messages were not already deleted or even existed at all.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.batchModify",
+    "api_call": "service.users().messages().batchModify(userId='user_id', body=batch_modify_request_body).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "ids": "A list of message IDs to modify. These should be the unique IDs of the messages.",
+        "addLabelIds": "List of label IDs to add to the messages.",
+        "removeLabelIds": "List of label IDs to remove from the messages."
+      }
+    },
+    "functionality": "Modifies the labels on the specified messages.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.delete",
+    "api_call": "service.users().messages().delete(userId='user_id', id='message_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the message to delete."
+    },
+    "functionality": "Immediately and permanently deletes the specified message. This operation cannot be undone.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.get",
+    "api_call": "service.users().messages().get(userId='user_id', id='message_id', format='full').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the message to get.",
+      "format": "The format to return the message in. Options include 'minimal', 'full', 'raw', and 'metadata'."
+    },
+    "functionality": "Gets the specified message.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.import",
+    "api_call": "service.users().messages().import_(userId='user_id', body=message_body, internalDateSource='date_received').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": "The raw RFC822 formatted message to import.",
+      "internalDateSource": "Source of the internal date of the message. Options include 'date_received' and 'date_header'.",
+      "deleted": "Boolean indicating if the message should be immediately marked as permanently deleted.",
+      "processForCalendar": "Boolean indicating if the message should be processed for calendar invites.",
+      "neverMarkedAsSpam": "Boolean indicating if the message should never be marked as spam."
+    },
+    "functionality": "Imports a message into only this user's mailbox, with standard email delivery scanning and classification similar to receiving via SMTP.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.insert",
+    "api_call": "service.users().messages().insert(userId='user_id', body=message_body, internalDateSource='date_received').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": "The raw RFC822 formatted message to insert.",
+      "internalDateSource": "Source of the internal date of the message. Options include 'date_received' and 'date_header'.",
+      "deleted": "Boolean indicating if the message should be immediately marked as permanently deleted.",
+    },
+    "functionality": "Directly inserts a message into only this user's mailbox similar to IMAP APPEND, bypassing most scanning and classification. Does not send a message.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.list",
+    "api_call": "service.users().messages().list(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "labelIds": "List of labels to filter by. Optional.",
+      "q": "Query string to filter messages. Optional.",
+      "pageToken": "Token for the page of results to retrieve. Optional.",
+      "maxResults": "Maximum number of results to return. Optional."
+    },
+    "functionality": "Lists the messages in the user's mailbox.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.modify",
+    "api_call": "service.users().messages().modify(userId='user_id', id='message_id', body={'addLabelIds': [label_ids_to_add], 'removeLabelIds': [label_ids_to_remove]}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the message to be modified.",
+      "body": {
+        "addLabelIds": "List of label IDs to add to the message.",
+        "removeLabelIds": "List of label IDs to remove from the message."
+      }
+    },
+    "functionality": "Modifies the labels on the specified message.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.send",
+    "api_call": "service.users().messages().send(userId='user_id', body={'raw': raw_message}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "raw": "The entire email message in an RFC 2822 formatted and base64url encoded string."
+      }
+    },
+    "functionality": "Sends the specified message to the recipients in the To, Cc, and Bcc headers.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.trash",
+    "api_call": "service.users().messages().trash(userId='user_id', id='message_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the message to be trashed."
+    },
+    "functionality": "Moves the specified message to the trash.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.untrash",
+    "api_call": "service.users().messages().untrash(userId='user_id', id='message_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the message to be untrashed."
+    },
+    "functionality": "Removes the specified message from the trash.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.messages.attachments.get",
+    "api_call": "service.users().messages().get(userId='user_id', messageId='message_id', id='attachment_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "messageId": "The ID of the message containing the attachment.",
+      "id": "The ID of the attachment to retrieve."
+    },
+    "functionality": "Gets the specified message attachment.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.getAutoForwarding",
+    "api_call": "service.users().settings().getAutoForwarding(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Gets the auto-forwarding setting for the specified account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.getLanguage",
+    "api_call": "service.users().settings().getLanguage(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Gets language settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.getPop",
+    "api_call": "service.users().settings().getPop(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Gets POP settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.getVacation",
+    "api_call": "service.users().settings().getVacation(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Gets vacation responder settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.updateAutoForwarding",
+    "api_call": "service.users().settings().updateAutoForwarding(userId='user_id', body={'enabled': boolean, 'emailAddress': 'forwarding_email_address', 'disposition': 'disposition_setting'}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "enabled": "Boolean indicating whether auto-forwarding is enabled or disabled.",
+        "emailAddress": "The email address to which messages are forwarded.",
+        "disposition": "The disposition of the messages which are auto-forwarded. Options are 'leaveInInbox', 'archive', 'trash', 'markRead', etc."
+      }
+    },
+    "functionality": "Updates the auto-forwarding setting for the specified account. A verified forwarding address must be specified when auto-forwarding is enabled.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.updateImap",
+    "api_call": "service.users().settings().updateImap(userId='user_id', body={'enabled': boolean, 'autoExpunge': boolean, 'expungeBehavior': 'expunge_behavior', 'maxFolderSize': integer}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "enabled": "Boolean indicating whether IMAP is enabled or disabled.",
+        "autoExpunge": "Boolean indicating whether to immediately expunge messages when they are marked as deleted in IMAP.",
+        "expungeBehavior": "Indicates the behavior of expunge. Options are 'archive', 'trash', or 'deleteForever'.",
+        "maxFolderSize": "An integer indicating the maximum size of an IMAP folder."
+      }
+    },
+    "functionality": "Updates IMAP settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.updateLanguage",
+    "api_call": "service.users().settings().updateLanguage(userId='user_id', body={'languageCode': 'language_code'}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "languageCode": "The language code (as per ISO 639-1) for the new language setting."
+      }
+    },
+    "functionality": "Updates language settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.updatePop",
+    "api_call": "service.users().settings().updatePop(userId='user_id', body={'accessWindow': 'access_window', 'disposition': 'disposition_setting'}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "accessWindow": "The POP access window. Options include 'disabled', 'fromNowOn', 'allMail', etc.",
+        "disposition": "The action to be taken on the message after it is accessed via POP. Options include 'leaveInInbox', 'archive', 'trash', etc."
+      }
+    },
+    "functionality": "Updates POP settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.updateVacation",
+    "api_call": "service.users().settings().updateVacation(userId='user_id', body={'enableAutoReply': boolean, 'responseSubject': 'subject_text', 'responseBodyPlainText': 'response_text', 'restrictToContacts': boolean, 'restrictToDomain': boolean, 'startTime': 'start_time', 'endTime': 'end_time'}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "enableAutoReply": "Boolean indicating whether the auto-responder is enabled.",
+        "responseSubject": "Subject of the auto-reply message.",
+        "responseBodyPlainText": "Plain text body of the auto-reply message.",
+        "restrictToContacts": "Boolean indicating if the response is sent only to people in the user's contacts.",
+        "restrictToDomain": "Boolean indicating if the response is sent only to people in the user's domain.",
+        "startTime": "The start time for the auto-reply in milliseconds since epoch.",
+        "endTime": "The end time for the auto-reply in milliseconds since epoch."
+      }
+    },
+    "functionality": "Updates vacation responder settings.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.delegates.create",
+    "api_call": "service.users().settings().delegates().create(userId='user_id', body={'delegateEmail': 'delegate_email'}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "delegateEmail": "The email address of the delegate to be added."
+      }
+    },
+    "functionality": "Adds a delegate with its verification status set directly to accepted, without sending any verification email.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.delegates.delete",
+    "api_call": "service.users().settings().delegates().delete(userId='user_id', delegateEmail='delegate_email').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "delegateEmail": "The email address of the delegate to be removed."
+    },
+    "functionality": "Removes the specified delegate (which can be of any verification status), and revokes any verification that may have been required for using it.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.delegates.get",
+    "api_call": "service.users().settings().delegates().get(userId='user_id', delegateEmail='delegate_email').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "delegateEmail": "The email address of the delegate to be removed."
+    },
+    "functionality": "Gets the specified delegate.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.delegates.list",
+    "api_call": "service.users().settings().delegates().list(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Lists the delegates for the specified account.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.filters.create",
+    "api_call": "service.users().settings().filters().create(userId='user_id', body={'criteria': {'from': 'example@gmail.com'}, 'action': {'addLabelIds': ['label_id']}}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "criteria": {
+          "from": "Email address or criteria for the filter"
+        },
+        "action": {
+          "addLabelIds": ["Label IDs to apply"]
+        }
+      }
+    },
+    "functionality": "Creates a filter. Note: you can only create a maximum of 1,000 filters.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.filters.delete",
+    "api_call": "service.users().settings().filters().delete(userId='user_id', id='filter_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The unique identifier of the email filter to be deleted."    
+    },
+    "functionality": "mmediately and permanently deletes the specified filter.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.filters.get",
+    "api_call": "service.users().settings().filters().get(userId='user_id', id='filter_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The unique identifier of the email filter to be deleted."    
+    },
+    "functionality": "Gets a filter.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.filters.list",
+    "api_call": "service.users().settings().filters().list(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Lists the message filters of a Gmail user.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.forwardingAddresses.create",
+    "api_call": "service.users().settings().forwardingAddresses().create(userId='user_id', body={'forwardingEmail': 'forward@example.com'}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "forwardingEmail": "The email address to which emails will be forwarded."
+      }
+    },
+    "functionality": "Creates a forwarding address.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.forwardingAddresses.delete",
+    "api_call": "service.users().settings().forwardingAddresses().delete(userId='user_id', forwardingEmail='forward@example.com').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "forwardingEmail": "The email address of the forwarding address to be deleted."
+    },
+    "functionality": "Deletes the specified forwarding address and revokes any verification that may have been required.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.forwardingAddresses.get",
+    "api_call": "service.users().settings().forwardingAddresses().get(userId='user_id', forwardingEmail='forward@example.com').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "forwardingEmail": "The email address of the forwarding address to be deleted."
+    },
+    "functionality": "Gets the specified forwarding address.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.forwardingAddresses.list",
+    "api_call": "service.users().settings().forwardingAddresses().get(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Lists the forwarding addresses.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.create",
+    "api_call": "service.users().settings().sendAs().create(userId='user_id', body={'sendAsEmail': 'alias@example.com', 'displayName': 'Alias Name', 'replyToAddress': 'reply@example.com', 'isPrimary': false, 'isDefault': false, 'treatAsAlias': false, 'smtpMsa': {'host': 'smtp.example.com', 'port': 587, 'username': 'smtp_user', 'password': 'smtp_password'}}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "body": {
+        "sendAsEmail": "The email address to send messages as (alias email).",
+        "displayName": "The display name for the alias.",
+        "replyToAddress": "The email address to use as the reply-to address.",
+        "isPrimary": "Whether this alias is the primary send-as alias.",
+        "isDefault": "Whether this alias should be used as the default send-as alias.",
+        "treatAsAlias": "Whether to treat this alias as an alias for external forwarding.",
+        "smtpMsa": "SMTP configuration for the alias (host, port, username, password)."
+      }
+    },
+    "functionality": "Creates a custom 'from' send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.delete",
+    "api_call": "service.users().settings().sendAs().delete(userId='user_id', sendAsEmail='alias@example.com').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be deleted."    
+    },
+    "functionality": "Deletes the specified send-as alias. Revokes any verification that may have been required for using it.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.get",
+    "api_call": "service.users().settings().sendAs().get(userId='user_id', sendAsEmail='alias@example.com').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be deleted."    
+    },
+    "functionality": "Gets the specified send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.list",
+    "api_call": "service.users().settings().sendAs().list(userId='user_id').execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user."
+    },
+    "functionality": "Lists the send-as aliases for the specified account. The result includes the primary send-as address associated with the account as well as any custom 'from' aliases.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.patch",
+    "api_call": "service.users().settings().sendAs().patch(userId='user_id', sendAsEmail='alias@example.com', body={'displayName': 'New Alias Name', 'replyToAddress': 'new_reply@example.com', 'isDefault': true}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated.",
+      "body": {
+        "displayName": "The updated display name for the alias.",
+        "replyToAddress": "The updated email address to use as the reply-to address.",
+        "isPrimary": "Whether this alias should be set as the primary send-as alias.",
+        "isDefault": "Whether this alias should be used as the default send-as alias.",
+        "treatAsAlias": "Whether to treat this alias as an alias for external forwarding.",
+        "smtpMsa": "SMTP configuration for the alias (host, port, username, password)."
+      }    
+    },
+    "functionality": "Patch the specified send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.update",
+    "api_call": "service.users().settings().sendAs().update(userId='user_id', sendAsEmail='alias@example.com', body={'displayName': 'Updated Alias Name', 'replyToAddress': 'updated_reply@example.com', 'isPrimary': true, 'isDefault': true, 'treatAsAlias': false, 'smtpMsa': {'host': 'smtp.example.com', 'port': 587, 'username': 'smtp_user', 'password': 'smtp_password'}}).execute()", 
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated.",
+      "body": {
+        "displayName": "The updated display name for the alias.",
+        "replyToAddress": "The updated email address to use as the reply-to address.",
+        "isPrimary": "Whether this alias should be set as the primary send-as alias.",
+        "isDefault": "Whether this alias should be used as the default send-as alias.",
+        "treatAsAlias": "Whether to treat this alias as an alias for external forwarding.",
+        "smtpMsa": "SMTP configuration for the alias (host, port, username, password)."
+      }
+    },
+    "functionality": "Updates a send-as alias. If a signature is provided, Gmail will sanitize the HTML before saving it with the alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.verify",
+    "api_call": "service.users().settings().sendAs().verify(userId='user_id', sendAsEmail='alias@example.com').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated."
+    },
+    "functionality": "Sends a verification email to the specified send-as alias address. The verification status must be pending.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.smimeInfo.delete",
+    "api_call": "service.users().settings().sendAs().smimeInfo().delete(userId='user_id', sendAsEmail='alias@example.com', id='smime_info_id').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated.",
+      "id": "The ID of the S/MIME information to be deleted."
+    },
+    "functionality": "Deletes the specified S/MIME config for the specified send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.smimeInfo.get",
+    "api_call": "service.users().settings().sendAs().smimeInfo().get(userId='user_id', sendAsEmail='alias@example.com', id='smime_info_id').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated.",
+      "id": "The ID of the S/MIME information to be deleted."
+    },
+    "functionality": "Gets the specified S/MIME config for the specified send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.smimeInfo.list",
+    "api_call": "service.users().settings().sendAs().smimeInfo().list(userId='user_id', sendAsEmail='alias@example.com').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated."
+    },
+    "functionality": "Lists S/MIME configs for the specified send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.smimeInfo.insert",
+    "api_call": "service.users().settings().sendAs().smimeInfo().insert(userId='user_id', sendAsEmail='alias@example.com', body={'defaultKeyId': 'key_id', 'issuerCn': 'issuer_common_name', 'isDefault': true, 'expiration': 'expiration_timestamp', 'encryptedKeyPassword': 'encrypted_key_password', 'key': {'pem': 'pem_certificate', 'pkcs12': 'pkcs12_data'}}).execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias for which S/MIME info will be inserted.",
+      "body": {
+        "defaultKeyId": "The ID of the S/MIME key to use as the default.",
+        "issuerCn": "The S/MIME certificate issuer's common name.",
+        "isDefault": "Whether this SmimeInfo is the default one for this user's send-as address.",
+        "expiration": "When the certificate expires (in milliseconds since epoch).",
+        "encryptedKeyPassword": "Encrypted key password, when the key is encrypted.",
+        "key": {
+          "pem": "PEM formatted X509 concatenated certificate string (standard base64 encoding).",
+          "pkcs12": "PKCS#12 format containing a single private/public key pair and certificate chain (base64-encoded)."
+        }
+      }
+    },
+    "functionality": "Insert (upload) the given S/MIME config for the specified send-as alias. Note that pkcs12 format is required for the key.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.settings.sendAs.smimeInfo.setDefault",
+    "api_call": "service.users().settings().sendAs().smimeInfo().setDefault(userId='user_id', sendAsEmail='alias@example.com', id='smime_info_id').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "sendAsEmail": "The email address of the send-as alias to be updated.",
+      "id": "The ID of the S/MIME information to be deleted."
+    },
+    "functionality": "Sets the default S/MIME config for the specified send-as alias.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.threads.delete",
+    "api_call": "service.users().threads().delete(userId='user_id', id='thread_id').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the thread to delete."
+    },
+    "functionality": "Immediately and permanently deletes the specified thread. Any messages that belong to the thread are also deleted. This operation cannot be undone.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.threads.get",
+    "api_call": "service.users().threads().get(userId='user_id', id='thread_id', format='desired_format', metadataHeaders=['header1', 'header2']).execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the thread to retrieve.",
+      "format": "The format to return the messages in.",
+      "metadataHeaders": "When given and format is METADATA, only include headers specified."
+    },
+    "functionality": "Gets the specified thread.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.threads.list",
+    "api_call": "service.users().threads().list(userId='user_id', q='query_string', maxResults=10, pageToken='page_token', labelIds=['label_id1', 'label_id2'], includeSpamTrash=true).execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "maxResults": "Maximum number of threads to return. Defaults to 100. Maximum allowed value is 500.",
+      "pageToken": "Page token to retrieve a specific page of results in the list.",
+      "q": "Query string to filter threads. Supports Gmail search box format.",
+      "labelIds": "List of label IDs to filter threads by.",
+      "includeSpamTrash": "Include threads from SPAM and TRASH in the results (true or false)."
+    },
+    "functionality": "Lists the threads in the user's mailbox.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.threads.modify",
+    "api_call": "service.users().threads().modify(userId='user_id', id='thread_id', body={'addLabelIds': ['label_id1', 'label_id2'], 'removeLabelIds': ['label_id3', 'label_id4']}).execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the thread to modify.",
+      "body": {
+        "addLabelIds": "List of label IDs to add to the thread.",
+        "removeLabelIds": "List of label IDs to remove from the thread."
+      }
+    },
+    "functionality": "Modifies the labels applied to the thread. This applies to all messages in the thread.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.threads.trash",
+    "api_call": "service.users().threads().trash(userId='user_id', id='thread_id').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the thread to trash.",
+    },
+    "functionality": "Moves the specified thread to the trash. Any messages that belong to the thread are also moved to the trash.",
+  }
+  {
+    "user_name": "saikolasani",
+    "api_name": "Gmail API - Users.threads.untrash",
+    "api_call": "service.users().threads().untrash(userId='user_id', id='thread_id').execute()",
+    "api_version": "1.0", 
+    "api_arguments": {
+      "userId": "The user's email address. The special value 'me' can be used to indicate the authenticated user.",
+      "id": "The ID of the thread to untrash.",
+    },
+    "functionality": "Removes the specified thread from the trash. Any messages that belong to the thread are also removed from the trash.",
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+
+
+
+
+
+
+
+
+]

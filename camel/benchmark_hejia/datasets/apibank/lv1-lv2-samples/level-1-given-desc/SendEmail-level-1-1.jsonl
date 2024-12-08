@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you help me send an email to john@example.com with subject \"Meeting Reminder\" and content \"Don't forget our meeting tomorrow at 2pm.\"?"}
+{"role": "AI", "text": "Sure, I can help you with that."}
+{"role": "API", "api_name": "SendEmail", "param_dict": {"receiver": "john@example.com", "subject": "Meeting Reminder", "content": "Don"}, "result": {"api_name": "SendEmail", "input": {"receiver": "john@example.com", "subject": "Meeting Reminder", "content": "Don"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your email has been sent."}

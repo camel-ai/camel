@@ -1,0 +1,1597 @@
+[
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: List Tasks",
+        "api_call": "GET /tasks",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "state": "string: Task State - ASSIGNED, UNASSIGNED, DELEGATED, WITHDRAWN, COMPLETED.\nDefault state is as follows:\n  1) ASSIGNED for MY assignment filter\n  2) UNASSIGNED for GROUP assignment filter\n  3) All states for CREATOR, PERSONA and MEMBER assignment filter\n",
+            "assignment": "string: Assignment Filter -  | MY - My directly assigned tasks, | GROUP - My group assigned tasks, | MY_AND_GROUP -  My and group tasks. Does not fetch tasks that are acquired by other users in the groups you belong to, | MY_AND_GROUP_ALL - Includes tasks that are acquired by other users in the groups you belong to, | CREATOR - Fetch tasks where logged-in user is creator of this task, | PERSONA - Fetch tasks where logged-in user has access to this task due to application permissions, | MEMBER - Fetch tasks where logged-in user is member of instances or adhoc tasks, | Default is MY.",
+            "creatorsIn": "array: Fetch tasks initiated by creatorsIn. Applicable to only PERSONA and MEMBER assignment filter.\n",
+            "assigneesIn": "array: Fetch tasks for assigneesIn. Applicable to only PERSONA and MEMBER assignment filter.\n",
+            "candidateUsersIn": "array: Fetch tasks having candidateUsersIn. Applicable to only PERSONA and MEMBER assignment filter.\n",
+            "candidateRolesIn": "array: Fetch tasks having candidateRolesIn. Applicable to only PERSONA and MEMBER assignment filter.\n",
+            "keyword": "string: Keyword search against task title, task description, taskId, processInstanceId, dpInstanceId.\n",
+            "offset": "integer: 0 based index. The number of items to skip before starting to collect the result set.",
+            "limit": "integer: The number of items to return. If parameter is omitted default value 25 is set. If limit <=0 or limit > 50 then up to 50 records are returned",
+            "totalResults": "boolean: If true return total count of records for given query with filters",
+            "processName": "string: Restrict to tasks that belong to a process definition with the given name.",
+            "processDefinitionId": "string: Restrict to tasks that belong to a given process definitionId.",
+            "processInstanceId": "string: Restrict to tasks that belong to process instances with the given ID.",
+            "dpName": "string: Restrict to tasks that belong to a case definition with the given name.",
+            "dpDefinitionId": "string: Restrict to tasks that belong to a given dp definitionId.",
+            "dpInstanceId": "string: Restrict to tasks that belong to case instances with the given ID.\n",
+            "dueDate": "string: Restrict to tasks that are due on the given date. format: YYYY-MM-DD Or YYYY-MM-DDTHH:MM:SS[.sss]Z\nWe use YYYY-MM-DD date part to match against task due date.\n",
+            "dueDateBefore": "string: Restrict to tasks that are due before the given date. format: YYYY-MM-DDTHH:MM:SS[.sss]Z",
+            "dueDateAfter": "string: Restrict to tasks that are due after the given date. format: YYYY-MM-DDTHH:MM:SS[.sss]Z",
+            "since": "string: Restrict to tasks that were started after the given date. format: YYYY-MM-DDTHH:MM:SS[.sss]Z",
+            "until": "string: Restrict to tasks that were started before the given date. format: YYYY-MM-DDTHH:MM:SS[.sss]Z",
+            "title": "string: The task title.",
+            "titleLike": "string: The task title like.",
+            "summary": "string: The task summary.",
+            "summaryLike": "string: The task summary like.",
+            "rootInstanceId": "string: Restrict query to all process instances whose root process instance id\nis the given process/dp instance.\n",
+            "businessKey": "string: BusinessKey of the Process or DP instance",
+            "businessKeyLike": "string: BusinessKeyLike of the Process or DP instance",
+            "priority": "integer: priority",
+            "orderBy": "string: This query parameter specifies the orderBy clause.\nSupported sortBy fieldName should be any of:\n  title,priority,dueDate,createdDate,completedDate\nThe value must follow the format fieldName[:(asc/desc)]. e.g. priority:asc.\nMultiple ordering is not supported. Default sortOrder is asc if not specified.\nDefault orderBy is createdDate:desc\n",
+            "oci-original-url": "string: Endpoint requested by customer",
+            "withMemberIdentityId": "string: Member's identityId. Use with MEMBER assignment filter.",
+            "memberLabel": "string: The label of member. Use with MEMBER assignment filter.",
+            "memberPermission": "string: Permission level of the member (INSPECT, READ, USE or MANAGE). Use with MEMBER assignment filter.",
+            "expiryDateAfter": "string: Restrict to tasks that were started after the given expiry date. format: YYYY-MM-DDTHH:MM:SS[.sss]Z",
+            "expiryDateBefore": "string: Restrict to tasks that were started before the given expiry date. format: YYYY-MM-DDTHH:MM:SS[.sss]Z",
+            "subState": "string: Sub-state of state. Currently, Expired subState is supported.",
+            "includeParentTaskDetail": "boolean: If true, then parent task details like title and summary is fetched.",
+            "parentTaskIdIn": "array: Fetch tasks that match the parent taskIdIn."
+        },
+        "functionality": "List tasks for the urrent user",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Adhoc Tasks: Create an Adhoc Task",
+        "api_call": "POST /tasks",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "oci-original-url": "string: Endpoint that the customer requested."
+        },
+        "functionality": "Create an adhoc task.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Get a Task",
+        "api_call": "GET /tasks/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "id": "[REQUIRED] string: Task ID",
+            "totalResultsGrouped": "boolean: Boolean flag to fetch total, open, closed, and overdue count of child tasks.",
+            "oci-original-url": "string: Endpoint that the customer requested."
+        },
+        "functionality": "Get task detail by ID",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Update a Task",
+        "api_call": "PUT /tasks/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Update priority or payload for the given task and optionally add comment.\nThis end point must not be used to update only comments.\n",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Comments: List Task Comments",
+        "api_call": "GET /tasks/{id}/comments",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "isTaskLevelComments": "boolean: Fetch task level comments only (Deprecated from April 2023)",
+            "isTaskSpecificComments": "boolean: Fetch task specific comments only",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "List task comments",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Comments: Add a Task Comment",
+        "api_call": "POST /tasks/{id}/comments",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Add a comment to a task",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Comments: Get a Task Comment",
+        "api_call": "GET /tasks/{id}/comments/{commentId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "commentId": "[REQUIRED] string: Comment ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Get a task comment by comment ID",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Payloads: Get a Task Payload",
+        "api_call": "GET /tasks/{id}/payload",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Get a task payload",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Payloads: Update Task Payload",
+        "api_call": "PUT /tasks/{id}/payload",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Update task payload",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Reassign a Task",
+        "api_call": "POST /tasks/{id}/reassign",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Reassign a task to user(s) and/or role(s)",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Request Information on Task",
+        "api_call": "POST /tasks/{id}/request-for-info",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Request information on task from a user",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Submit Information on Task",
+        "api_call": "POST /tasks/{id}/submit-info",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Submit information on task",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Withdraw a Task",
+        "api_call": "POST /tasks/{id}/withdraw",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Withdraw a task",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Claim a Task",
+        "api_call": "POST /tasks/{id}/claim",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Claim a task",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Release a Task",
+        "api_call": "POST /tasks/{id}/release",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Release a task",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Complete a Task",
+        "api_call": "POST /tasks/{id}/complete",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task Id"
+        },
+        "functionality": "Complete a task",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Complete Tasks",
+        "api_call": "POST /tasks/complete",
+        "api_version": "2024.01.17",
+        "api_arguments": {},
+        "functionality": "Complete tasks",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Withdraw Tasks",
+        "api_call": "POST /tasks/withdraw",
+        "api_version": "2024.01.17",
+        "api_arguments": {},
+        "functionality": "Withdraw one or more tasks",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks: Reassign Tasks",
+        "api_call": "POST /tasks/reassign",
+        "api_version": "2024.01.17",
+        "api_arguments": {},
+        "functionality": "Reassign tasks to user(s) and/or role(s)",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Adhoc Tasks/Members: Get All Members of an Adhoc Task",
+        "api_call": "GET /tasks/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "id": "[REQUIRED] string: Adhoc Task ID",
+            "memberLabel": "string: member label",
+            "memberPermission": "string: member permission (INSPECT, READ, USE or MANAGE).",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "User with READ permission or above can get a list of all the members of an adhoc task.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Adhoc Tasks/Members: Update/Delete Members of an Adhoc Task",
+        "api_call": "PUT /tasks/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Adhoc task ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "User with MANAGE permission can update and delete members of an adhoc task.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Adhoc Tasks/Members: Add Members to an Adhoc Task",
+        "api_call": "POST /tasks/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Adhoc task ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "User with MANAGE permission can add members to an adhoc task.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Adhoc Tasks/Members: Get Member Details of Adhoc Task and identityId",
+        "api_call": "GET /tasks/{id}/members/{identityId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Adhoc task ID",
+            "identityId": "[REQUIRED] string: Member identity ID",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "User with READ permission and above can get details of all members of a Adhoc Task. User can also get all details of a member using the identityId.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Adhoc Tasks/Members: Delete a Member of an Adhoc Task",
+        "api_call": "DELETE /tasks/{id}/members/{identityId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Adhoc task ID",
+            "identityId": "[REQUIRED] string: Member identity ID"
+        },
+        "functionality": "User with MANAGE permission can delete members of adhoc tasks.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Documents: List Task Documents",
+        "api_call": "GET /tasks/{id}/documents",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "view": "string: View type of the documents",
+            "isTaskLevelDocuments": "boolean: Fetch task level documents only (Deprecated from April 2023)",
+            "isTaskSpecificDocuments": "boolean: Fetch task specific documents only",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "List task documents",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Documents: Upload a Task Document",
+        "api_call": "POST /tasks/{id}/documents/files/data",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Uploads a task document to storage. Additionally, you can also send a URL to storage. You can upload either a document or an URL at a time. You cannot upload both the document and the URL at the same time.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Documents: Download a Task Document",
+        "api_call": "GET /tasks/{id}/documents/files/{documentId}/data",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "documentId": "[REQUIRED] string: Document Id"
+        },
+        "functionality": "Download a task document",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - User Tasks/Documents: Delete Task Document",
+        "api_call": "DELETE /tasks/{id}/documents/files/{documentId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "documentId": "[REQUIRED] string: Document ID"
+        },
+        "functionality": "Delete task document",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Dynamic Process Resources: List Process Resources",
+        "api_call": "GET /dp-resources",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "deploymentId": "string: Application name for a resource",
+            "applicationName": "string: Application name for a resource",
+            "applicationVersion": "string: Application version for a resource",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "List process resources for a given deployment ID.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Dynamic Process Resources: Get a Process Resource by Name",
+        "api_call": "GET /dp-resources/{name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "name": "[REQUIRED] string: Process Resource name",
+            "deploymentId": "string: Application name for a resource",
+            "applicationName": "string: Application name for a resource",
+            "applicationVersion": "string: Application version for a resource",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "Retrieves the process resource for a given resource name and deployment ID.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Executions: List Process Executions",
+        "api_call": "GET /process-executions",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "processActivityInstanceId": "string: Filter by process activity instance Id.",
+            "processInstanceId": "string: Filter by process instance Id",
+            "processDefinitionId": "string: Filter by process definition ID. Exact match",
+            "processExecutionId": "string: Filter by the ID of the process execution that executed the process activity instance.",
+            "processActivityId": "string: The ID of the process activity that this object is an instance of.",
+            "processActivityName": "string: The name of the process activity that this object is an instance of.",
+            "processActivityType": "string: The type of the activity this process execution belongs to.",
+            "createdBefore": "string: Restrict to instances that were created before the given date. The date must have the format yyyy-MM-dd'T'HH:mm:ss, e.g., 2013-01-23T14:42:45.",
+            "createdAfter": "string: Restrict to instances that were created after the given date. The date must have the format yyyy-MM-dd'T'HH:mm:ss, e.g., 2013-01-23T14:42:45.",
+            "sortBy": "string: Sort the results by a given criterion. Must be used in conjunction with the sortOrder parameter.",
+            "sortOrder": "string: Sort the results in a given order. Values may be asc for ascending order or desc for descending order. Must be used in conjunction with the sortBy parameter.",
+            "offset": "integer: Pagination of results. Specifies the index of the first result to return.",
+            "limit": "integer: Pagination of results. Specifies the maximum number of results to return. Will return less results if there are no more results left.",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "List process executions for the current user. You can use this API function only on structured processes.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Executions: Get a Process Execution",
+        "api_call": "GET /process-executions/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process execution Id",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "Get a Process execution for a given execution ID. You can use this API function only on structured processes.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Executions: Perform an Action on a Process Execution",
+        "api_call": "PUT /process-executions/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Execution ID"
+        },
+        "functionality": "Performs an action on a process execution. You can use this API function only on structured processes.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Instances (Structured Process): Get the Process Instance History",
+        "api_call": "GET /process-instances/{id}/history",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance Id",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "<p>Retrieves the history of a process instance using the instance ID.</p><p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Instances (Structured Process): List Process Instance Jobs",
+        "api_call": "GET /process-instances/{id}/jobs",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "state": "string: Job states:\n * `ALL` - All jobs for the process instance\n * `SCHEDULED` - Jobs with due dates in the future. Can include FAULTED jobs too which are scheduled for retry.\n * `READY` - Jobs with due dates in the past which might be executing currently or are stuck. Can include FAULTED jobs too which are executing or stuck.\n * `FAULTED` - Jobs which have faulted with exception.\n * `EXHAUSTED` - Jobs which have faulted and exhausted all retries.\n",
+            "sortBy": "string: Sort the results by a given criterion. Valid values are JOBID, RETRIES, DUEDATE. Must be used in conjunction with the sortOrder parameter.",
+            "sortOrder": "string: Sort the results in a given order. Values may be ASC for ascending order or DESC for descending order. Must be used in conjunction with the sortBy parameter.",
+            "offset": "integer: Pagination of results. Specifies the index of the first result to return.",
+            "limit": "integer: Pagination of results. Specifies the maximum number of results to return. Will return less results if there are no more results left.",
+            "totalResults": "boolean: Specifies if total number of results need to be returned",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "<p>Retrieves the list of process instance jobs for a given instance ID.</p> <p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Instances (Structured Process): Get a Process Instance Job",
+        "api_call": "GET /process-instances/{id}/jobs/{jobId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance Id",
+            "jobId": "[REQUIRED] string: Job Id",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "<p>Retrieves the details of a process instance Job job using the Instance ID.</p> <p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Instances (Structured Process): Resubmit a Process Instance Job",
+        "api_call": "POST /process-instances/{id}/jobs/{jobId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process instance ID",
+            "jobId": "[REQUIRED] string: Job Id"
+        },
+        "functionality": "<p>Resubmits a process instance job for immediate execution.</p><p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Instances (Structured Process): List Process Instance Incidents",
+        "api_call": "GET /process-instances/{id}/incidents",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "activityId": "string: Restricts to incidents that belong to an activity with the given ID.",
+            "sortBy": "string: Sort the results by a given criterion. Valid values are CREATEDTIME, ACTIVITYID. Must be used in conjunction with the sortOrder parameter.",
+            "sortOrder": "string: Sort the results in a given order. Values may be ASC for ascending order or DESC for descending order. Must be used in conjunction with the sortBy parameter.",
+            "offset": "integer: Pagination of results. Specifies the index of the first result to return.",
+            "limit": "integer: Pagination of results. Specifies the maximum number of results to return. Will return less results if there are no more results left.",
+            "totalResults": "boolean: Specifies if total number of results need to be returned",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "<p>List all the process instance incidents for a given instance ID.</p> <p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Instances (Structured Process): Get a Process Instance Incident",
+        "api_call": "GET /process-instances/{id}/incidents/{incidentId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance Id",
+            "incidentId": "[REQUIRED] string: Incident ID",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "<p>Retrieves the process instance incident detail using the incident ID.</p> <p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Interfaces: List Process Interfaces",
+        "api_call": "GET /process-interfaces",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47.",
+            "type": "string: Filter by inteface type. Exact match.",
+            "definitionType": "string: Filter by definition type",
+            "definitionId": "string: Filter by definition ID",
+            "definitionIdIn": "array: Filter by definition IDs in the array.",
+            "definitionKey": "string: Filter by definition key",
+            "definitionKeyIn": "array: Filter by definition keys in the array.",
+            "defaultVersion": "boolean: Include only Interfaces of Applications with Default versions",
+            "applicationName": "string: Filter by Application Name. Exact match.",
+            "canInstantiate": "boolean: Filter by Applications which can be instantiated by users.",
+            "keyword": "string: Keyword search against process or case definition name and applicationName.\n",
+            "sortBy": "string: Sort the results lexicographically by a given criterion. Must be used in conjunction with the sortOrder parameter.",
+            "sortOrder": "string: Sort the results in a given order. Values may be asc for ascending order or desc for descending order. Must be used in conjunction with the sortBy parameter.",
+            "offset": "integer: Pagination of results. Specifies the index of the first result to return.",
+            "limit": "integer: Pagination of results. Specifies the maximum number of results\nto return. Will return less results if there are no more results left.\n",
+            "totalResults": "boolean: Specifies if total number of results need to be returned",
+            "totalResultsGrouped": "boolean: AdditionalInfo. Specifies if count by group statistics across\nall pages need to be returned. Grouped by \"DEFAULT\",\"ALL\" Definition Versions.\n",
+            "expandSchema": "boolean: AdditionalInfo. Include expanded schema of arguments having complex data types",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "List process interfaces for the current user.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Interfaces: Get a Process Interface",
+        "api_call": "GET /process-interfaces/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "id": "[REQUIRED] string: Process Interface Id",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "Get a Process interface by interface ID",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Process Interfaces: Get a Process Interface Schema",
+        "api_call": "GET /process-interfaces/{id}/schemas/{name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "id": "[REQUIRED] string: Process Interface Id",
+            "name": "[REQUIRED] string: Process Interface  schema name",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "Get a Process interface schema with given Id and schema name",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances: List Process Instances",
+        "api_call": "GET /instances",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "keyword": "string: Filter instances by keyword. This filters instances by partial matches of the keyword in the instance title",
+            "instanceId": "array: Filter by process instance Ids",
+            "type": "string: Filter by the type of the process instance. Exact match. By default, both structured and dynamic process\ninstances will be returned\n",
+            "processDefinitionId": "array: Filter by process definition ID. Exact match",
+            "processDefinitionKey": "array: Filter by process definition key. Exact match",
+            "processDefinitionKeyNotIn": "array: Exclude instances that belong to a set of process definitions. Must be a comma-separated list of process definition keys.",
+            "processDefinitionName": "array: Filter by the name of the process definition the instances run on.",
+            "processDefinitionNameLike": "string: Filter by process definition names that the parameter is a substring of.",
+            "createdBy": "string: Only include process instances that were created by the given user.",
+            "createdBefore": "string: Restrict to instances that were created before the given date. The date string must be in the ISO-8601 standard format. Example - 2019-01-23T12:34:56.123456789Z (for UTC), 2019-01-23T12:34:56.123456789+02:30 (with offset)",
+            "createdAfter": "string: Restrict to instances that were created after the given date. The date string must be in the ISO-8601 standard format. Example - 2019-01-23T12:34:56.123456789Z (for UTC), 2019-01-23T12:34:56.123456789+02:30 (with offset)",
+            "completedBefore": "string: Restrict to instances that were closed before the given date. The date string must be in the ISO-8601 standard format. Example - 2019-01-23T12:34:56.123456789Z (for UTC), 2019-01-23T12:34:56.123456789+02:30 (with offset)",
+            "completedAfter": "string: Restrict to instances that were closed after the given date. The date string must be in the ISO-8601 standard format. Example - 2019-01-23T12:34:56.123456789Z (for UTC), 2019-01-23T12:34:56.123456789+02:30 (with offset)",
+            "parentInstanceId": "string: Restrict query to all process instances that are sub process instances of the given process instance. Takes a process instance ID.",
+            "rootInstanceId": "string: Restrict query to all process instances whose root process instance ID is the given process instance. Takes a process instance ID.",
+            "state": "array: Restrict query to all process instances that are in given states. This is a union of\nall possible states of a Dynamic process and a Structured process. States specific to a Dynamic process\nare ACTIVE, CLOSED, COMPLETED, SUSPENDED, FAULTED and TERMINATED. States specific to a Structured process are\nACTIVE, COMPLETED, SUSPENDED, FAULTED, TERMINATED\n",
+            "applicationName": "string: Restrict query to all process instances that belongs given application name",
+            "applicationNameLike": "string: Restrict query to all process instances that belongs given application name like",
+            "applicationVersion": "string: Restrict query to all process instances that belongs given application version",
+            "sortBy": "string: Sort the results by the given set of columns",
+            "sortOrder": "string: Sort the results in a given order. Values may be asc for ascending order or desc for descending order. Must be used in conjunction with the sortBy parameter.",
+            "offset": "integer: Pagination of results. Specifies the index of the first result to return.",
+            "limit": "integer: Pagination of results. Specifies the maximum number of results to return. Will return less results if there are no more results left.",
+            "totalResults": "boolean: Specifies if total number of results need to be returned",
+            "businessKey": "array: Business Key of the Process instance",
+            "businessKeyLike": "string: Business Key of the Process instance",
+            "dataManagementState": "array: Data Management State of the instance",
+            "excludeFaulted": "boolean: Restrict query to all process instances that are in not in faulted state",
+            "oci-original-url": "string: Actual endpoint which customer requested",
+            "asMember": "boolean: True when the logged in user is a member.",
+            "withMemberIdentityId": "string: Member idenitityId. Use with asMember=true.",
+            "memberLabel": "string: The label of member. Use with asMember=true.",
+            "memberPermission": "string: permission level of the member. Used with asMember=true."
+        },
+        "functionality": "List process instances user has access to including structured and dynamic processes",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances: Create a Process Instance",
+        "api_call": "POST /instances",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "Create a new instance of the process. You can use any of the following to create an instance: processDefinitionId, processDefinitionKey, and applicationName with applicationVersion and processName. When creating by applicationName, applicationVersion and processName, the applicationVersion is optional. If the applicationVersion is not provided, then the default version is selected to create the instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances: Get a Process Instance",
+        "api_call": "GET /instances/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "id": "[REQUIRED] string: Process Instance Id",
+            "oci-original-url": "string: Actual endpoint which customer requested"
+        },
+        "functionality": "Gets the process instance for the given instance Id.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances: Perform an Action on Process Instance",
+        "api_call": "PUT /instances/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance Id"
+        },
+        "functionality": "Perform the specified action on the process instance. Supported actions are TERMINATE, SUSPEND, RESUME, ALTER_FLOW for a Structured Process and CLOSE, COMPLETE, SUSPEND, RESUME, TERMINATE for a Dynamic Process. The TERMINATE action of a dynamic process is controlled by the terminateChildInstances property flag (boolean value). If set to true, it terminates all the linked structured processes. When set to false, the linked structured processes are active. By default, this property is set to false. You can also specify the reason when using this flag.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Data Objects: List Process Instance Data Objects",
+        "api_call": "GET /instances/{id}/data-objects",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance Id",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "List data objects for the given instance Id.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Data Objects: Get a Process Instance Data Object's Value",
+        "api_call": "GET /instances/{id}/data-objects/{name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance Id",
+            "name": "[REQUIRED] string: Process Instance variable name"
+        },
+        "functionality": "Get the data object value for the given instance Id.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Data Objects: Update Data Object of Instance",
+        "api_call": "PUT /instances/{id}/data-objects/{name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "id": "[REQUIRED] string: Process Instance Id",
+            "name": "string: Data Object Name",
+            "oci-original-url": "string: Endpoint requested by customer."
+        },
+        "functionality": "Update data objects of a process instance using instance ID.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Documents: List Process Instance Documents",
+        "api_call": "GET /instances/{id}/documents",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Instance ID",
+            "view": "string: View type of the documents",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "List documents associated with the process instance ID.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Documents: Upload Process Document to Storage",
+        "api_call": "POST /instances/{id}/documents/files/data",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Uploads a process document to storage. Additionally, you can also upload an external link to the storage. You can upload either a document or an URL at a time. You cannot upload both the document and the URL at the same time.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Documents: Download a Process Document",
+        "api_call": "GET /instances/{id}/documents/files/{documentId}/data",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "documentId": "[REQUIRED] string: Document Id"
+        },
+        "functionality": "Download a process document",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Documents: Delete a Process Document",
+        "api_call": "DELETE /instances/{id}/documents/files/{documentId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Instance ID",
+            "documentId": "[REQUIRED] string: Document ID"
+        },
+        "functionality": "Delete a process document",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Comments: List Process Instance Comments",
+        "api_call": "GET /instances/{id}/comments",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "List process instance comments",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Comments: Add a Process Instance Comment",
+        "api_call": "POST /instances/{id}/comments",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Adds a comment to a process instance",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Instance Comments: Get Process Instance Comment by Comment Id",
+        "api_call": "GET /instances/{id}/comments/{commentId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "commentId": "[REQUIRED] string: Comment ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Gets the process instance comment by comment Id.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Members: Add Members to an Instance",
+        "api_call": "POST /instances/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Member with MANAGE permission can add members to a process instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Members: Update/Delete Members of an Instance",
+        "api_call": "PUT /instances/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process Instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Members with MANAGE permission can update and delete members of a process instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Members: Get Members of an Instance",
+        "api_call": "GET /instances/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process instance ID",
+            "memberLabel": "string: member label",
+            "memberPermission": "string: member permission",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Member with READ permission and above can get all members of a process instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Members: Get Member Details of an Instance and IdentityId",
+        "api_call": "GET /instances/{id}/members/{identityId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Process instance ID",
+            "identityId": "[REQUIRED] string: Member identity ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "User with READ permission and above can get member details of a process instance and identityId.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Members: Delete a Member of an Instance",
+        "api_call": "DELETE /instances/{id}/members/{identityId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Task ID",
+            "identityId": "[REQUIRED] string: member identityId"
+        },
+        "functionality": "User with MANAGE permission can delete members of a process instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Alter Flow (Structured Process): List Active Activity IDs of an Instance",
+        "api_call": "GET /instances/{instanceId}/activities",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "<p>Gets all the active activity IDs of a specific instance ID.</p><p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Data Objects: List Data Objects of Sub-process Activity",
+        "api_call": "GET /instances/{instanceId}/activities/{act_inst_id}/data-objects",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process instance ID",
+            "act_inst_id": "string: Activity instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Fetches all the data objects of a sub-process activity.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Data Objects: Get Data Object Value of a Sub-process",
+        "api_call": "GET /instances/{instanceId}/activities/{act_inst_id}/data-objects/{name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process instance Id",
+            "act_inst_id": "[REQUIRED] string: Activity instance Id",
+            "name": "string: Data object name",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Gets the data object value of a sub-process.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Data Objects: Update Data Object of a Sub-process Activity",
+        "api_call": "PUT /instances/{instanceId}/activities/{act_inst_id}/data-objects/{name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process instance ID",
+            "act_inst_id": "[REQUIRED] string: Activity instance ID",
+            "name": "string: Data object name",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Updates the data object of a subprocess activity.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Alter Flow (Structured Process): List Target Activities of an Instance",
+        "api_call": "GET /instances/{instanceId}/target-activities",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process Instance Id",
+            "oci-original-url": "string: Endpoint requested by customer",
+            "fetchCompleted": "boolean: Fetch completed activities"
+        },
+        "functionality": "<p>Fetches all the target activities of a process instance.</p><p><b>Note:</b></p><p>You can use this API only on structured processes.</p>",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Attributes: List Attributes of an Instance",
+        "api_call": "GET /instances/{instanceId}/attributes",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process instance ID",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Get all the attributes of an instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Attributes: List Attribute Values of an Instance",
+        "api_call": "GET /instances/{instanceId}/attributes/{attr_name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process Instance Id",
+            "attr_name": "[REQUIRED] string: Attribute name",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Get all the attribute values of a process instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Processes/Instances/Attributes: Update Attribute Values of an Instance",
+        "api_call": "PUT /instances/{instanceId}/attributes/{attr_name}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "Accept-Language": "string: Accept-Language header in IETF BCP 47",
+            "instanceId": "[REQUIRED] string: Process instance Id",
+            "attr_name": "[REQUIRED] string: Attribute name",
+            "oci-original-url": "string: Endpoint requested by customer"
+        },
+        "functionality": "Updates the attribute values of a process instance.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Credentials: Get Credential Details",
+        "api_call": "GET /maps/{param2}/keys/{param3}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "x-tenant-id": "[REQUIRED] string: Service instance ID. Example value ='coke'.",
+            "param2": "[REQUIRED] string: Name of the credential map",
+            "param3": "[REQUIRED] string: Name of the credential key"
+        },
+        "functionality": "Gets the saved credential details of the REST API.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Credentials: Update a Credential Key and Map ",
+        "api_call": "PUT /maps/{param2}/keys/{param3}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "x-tenant-id": "[REQUIRED] string: Service instance Id. Example value ='coke'.",
+            "param2": "[REQUIRED] string: Name of the credential map",
+            "param3": "[REQUIRED] string: Name of the credential key"
+        },
+        "functionality": "Updates a credential key and map.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Credentials: Create a New Credential",
+        "api_call": "POST /maps/{param2}/keys/{param3}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "x-tenant-id": "[REQUIRED] string: Service instance ID. Example value ='coke'.",
+            "param2": "[REQUIRED] string: Name of the credential map",
+            "param3": "[REQUIRED] string: Name of the credential key"
+        },
+        "functionality": "Creates new credentials for the REST API.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Credentials: Delete a Credential Key",
+        "api_call": "DELETE /maps/{param2}/keys/{param3}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "x-tenant-id": "[REQUIRED] string: Service Instance ID. Example value ='coke'.",
+            "param2": "[REQUIRED] string: Name of the credential map",
+            "param3": "[REQUIRED] string: Name of the credential key"
+        },
+        "functionality": "Delete a credential key from a map.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Connectors: List all Connectors",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/connectors",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Lists all the connectors available for a given application name and version. \n<p>\n<b>Example:</b> \n </p> \n <pre>curl --location --request GET 'http://<HOST>/process/api/v1/design/applications/<APPLICATION_NAME>/versions/<APPLICATION_VERSION>/connectors' --header 'Authorization: Basic c3NlMQ==' </pre> \n",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Connectors: Get a Connector",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/connectors/{connectorId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "connectorId": "[REQUIRED] string: Connector Id"
+        },
+        "functionality": "Get the details of the connector available for a given application name, version, and connector Id. \n<p>\n<b>Example:</b> \n</p> \n <pre> curl --location --request GET 'http://<HOST>/process/api/v1/design/applications/<APPLICATION_NAME>/versions/<APPLICATION_VERSION>/connectors/<CONNECTOR_ID>' --header 'Authorization: Basic c3NlMQ==' </pre>\n",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Connectors: Update the Base URL for a Connector",
+        "api_call": "PATCH /design/applications/{applicationName}/versions/{version}/connectors/{connectorId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "connectorId": "[REQUIRED] string: Connector Id"
+        },
+        "functionality": "Updates the base URL of a connector for a given application name, version, and connector Id.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Connectors: Get List of Global Credentials for the Connector",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/connectors/{connectorId}/credentials/global",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "connectorId": "[REQUIRED] string: Connector Id"
+        },
+        "functionality": "Retrieves the list of global credentials for a given connectorId.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Connectors: Get Associated Global Credential With the Connector",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/connectors/{connectorId}/credentials/global/associate",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "connectorId": "[REQUIRED] string: Connector Id"
+        },
+        "functionality": "Retrieves the associated global credential for a  connectorId.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Connectors: Associate a Global Credential With the Connector",
+        "api_call": "PATCH /design/applications/{applicationName}/versions/{version}/connectors/{connectorId}/credentials/global/associate",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "connectorId": "[REQUIRED] string: Connector Id"
+        },
+        "functionality": "Associates a global credential with a  connectorId.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: List Applications",
+        "api_call": "GET /design/applications",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "expand": ": Expand resources"
+        },
+        "functionality": "Lists all the applications available.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Create or Import an Application",
+        "api_call": "POST /design/applications",
+        "api_version": "2024.01.17",
+        "api_arguments": {},
+        "functionality": "Create an empty application or import from an expx file.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: List Applications by Name",
+        "api_call": "GET /design/applications/{applicationName}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "expand": ": Expand resources"
+        },
+        "functionality": "Show all the applications available by name.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Delete All Versions of an Application",
+        "api_call": "DELETE /design/applications/{applicationName}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name"
+        },
+        "functionality": "Delete an application, including versions and snapshots. Deactivate the application before deleting it.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Get an Application",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "expand": ": Expand resources"
+        },
+        "functionality": "Get an application by name and version.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Delete an Application by Name and Version",
+        "api_call": "DELETE /design/applications/{applicationName}/versions/{version}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Delete an application. Deactivate the application before deleting it.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Export an Application",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/export",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Export application as an expx file.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Clone an Application",
+        "api_call": "PUT /design/applications/{applicationName}/versions/{version}/clone",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Clones an application from the latest changes.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Version an Application",
+        "api_call": "PUT /design/applications/{applicationName}/versions/{version}/version",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Create a new application from another version.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Activate an Application",
+        "api_call": "PUT /design/applications/{applicationName}/versions/{version}/activate",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Activate application from snapshot.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Set an Activated Application as Default",
+        "api_call": "PUT /design/applications/{applicationName}/versions/{version}/default",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Change default for an application. Ensure that the application is activated before you set it as the default application.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications: Deactivate an Application",
+        "api_call": "PUT /design/applications/{applicationName}/versions/{version}/deactivate",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Deactivate an application by name and version.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Snapshots: List Snapshots",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/snapshots",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "List all snapshots from application.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Snapshots: Create a Snapshot",
+        "api_call": "POST /design/applications/{applicationName}/versions/{version}/snapshots",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Creates a new snapshot from the latest changes.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Snapshots: Delete Snapshots",
+        "api_call": "DELETE /design/applications/{applicationName}/versions/{version}/snapshots",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version"
+        },
+        "functionality": "Delete all snapshots from an application.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Snapshots: Get a Snapshot",
+        "api_call": "GET /design/applications/{applicationName}/versions/{version}/snapshots/{snapshotId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "snapshotId": "[REQUIRED] string: Snapshot id"
+        },
+        "functionality": "Get snapshot from an application.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Applications/Snapshots: Delete a Snapshot",
+        "api_call": "DELETE /design/applications/{applicationName}/versions/{version}/snapshots/{snapshotId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "applicationName": "[REQUIRED] string: Application name",
+            "version": "[REQUIRED] string: Application version",
+            "snapshotId": "[REQUIRED] string: Snapshot id"
+        },
+        "functionality": "Delete a snapshot from an application.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles: List Roles",
+        "api_call": "GET /data-access/roles",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "q": "string: This query parameter specifies the filter used to restrict which role object should be returned in a PageableResponse. It defines a filter based on SCIM filtering notation. The filter supports the following fields in expressions: name, description, scopeType, scopeName and createdOn (given in ISO 8601 format). The filter supports expression operators: eq,ne,co,sw,ew,pr,gt,ge,lt,le. It also supports logical operators OR and AND. Boolean expressions may be grouped using parentheses to change the standard order of operations; i.e., evaluate OR logical operators before logical AND operators. For example, ?q=(name sw \"Role\" or (scopeName eq \"Application1\" and description co \"Process\" )).",
+            "offset": "integer: The number of items to skip before starting to collect the result set.",
+            "limit": "integer: The numbers of items to return. If parameter is omitted, the default value 25 is set.",
+            "orderBy": "string: This query parameter specifies the order by clause. The value must follow the format of fieldName[:(asc/desc)][,fieldName[:(asc/desc)]]*."
+        },
+        "functionality": "List all the roles in a paginated format.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles: Create a Role",
+        "api_call": "POST /data-access/roles",
+        "api_version": "2024.01.17",
+        "api_arguments": {},
+        "functionality": "Creates a new role.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles: Get a Role by Id",
+        "api_call": "GET /data-access/roles/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Role ID"
+        },
+        "functionality": "Finds the role using ID in the data access control service.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles: Delete Role by Id",
+        "api_call": "DELETE /data-access/roles/{id}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Role ID"
+        },
+        "functionality": "Deletes a role by Id in the data access control service.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles/Role Members: Get Members of a Role",
+        "api_call": "GET /data-access/roles/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Role ID",
+            "offset": "integer: The number of items to skip before starting to collect the result set.",
+            "limit": "integer: The numbers of items to return. If this parameter is omitted, the default value 25 is set.",
+            "orderBy": "string: This query parameter specifies the order by clause. The value must follow the format of fieldName[:(asc/desc)][,fieldName[:(asc/desc)]]*."
+        },
+        "functionality": "Fetches a paginated list of members of a role in the data access control service.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles/Role Members: Add a Role Member to the Role",
+        "api_call": "POST /data-access/roles/{id}/members",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Role ID"
+        },
+        "functionality": "Adds a new role member in the data access control service.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles/Role Members: Get Role Member of the Role by ID",
+        "api_call": "GET /data-access/roles/{id}/members/{identityId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Role Id",
+            "identityId": "[REQUIRED] string: Identity Id, user ocid or guid"
+        },
+        "functionality": "Gets the role member of the role using ID.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "REST API for Oracle Cloud Infrastructure Process Automation - Roles/Role Members: Delete Role Member of the Role by Role Member ID",
+        "api_call": "DELETE /data-access/roles/{id}/members/{identityId}",
+        "api_version": "2024.01.17",
+        "api_arguments": {
+            "id": "[REQUIRED] string: Role member Id",
+            "identityId": "[REQUIRED] string: Identity id, user ocid or guid"
+        },
+        "functionality": "Deletes a role member of a role using the role member ID in the data access control service.",
+        "metadata": {
+            "documentation_link": "https://docs.oracle.com/en/cloud/paas/process-automation/rest-api-proca/"
+        }
+    }
+]

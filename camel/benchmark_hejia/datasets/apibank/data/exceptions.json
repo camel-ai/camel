@@ -1,0 +1,177 @@
+{
+    "QueryStock": [
+        "The stock code cannot be empty.",
+        "The stock code does not exist.",
+        "The stock price of this date is not maintained."
+    ],
+    "EmergencyKnowledge": [
+        "The symptom cannot be empty.",
+        "The symptom does not exist."
+    ],
+    "DeleteAlarm": [
+        "You have no alarm clock at time : {time}"
+    ],
+    "RegisterUser": [
+        "The username already exists."
+    ],
+    "CheckToken": [
+        "The token is invalid."
+    ],
+    "GetMeeting": [
+        "Meeting Topic and start_time should not be null both",
+        "You have no meeting about {meeting_topic}",
+        "You have no meeting at time : {start_time}",
+        "Error"
+    ],
+    "QueryScene": [
+        "Scene name cannot be empty.",
+        "Scene not found."
+    ],
+    "TimedSwitch": [
+        "device_id cannot be empty."
+    ],
+    "AppointmentRegistration": [
+        "Patient name or doctor name cannot be empty.",
+        "This appointment has already been registered.",
+        "This patient has already been registered in this day."
+    ],
+    "AddScene": [
+        "Scene name cannot be empty.",
+        "Invalid device format.",
+        "Device ID cannot be duplicated.",
+        "Scene name already exists."
+    ],
+    "DeleteAgenda": [
+        "You have no meeting about {content}",
+        "You have no meeting at time : {time}"
+    ],
+    "SymptomSearch": [
+        "The symptom cannot be empty.",
+        "The symptom does not exist."
+    ],
+    "DeleteScene": [
+        "Scene name cannot be empty.",
+        "The scene does not exist."
+    ],
+    "ModifyPassword": [
+        "The old password is incorrect."
+    ],
+    "QueryBalance": [
+        "The token is incorrect.",
+        "The user does not have an account."
+    ],
+    "RecordHealthData": [
+        "The user id cannot be empty.",
+        "The health data cannot be empty.",
+        "The health data cannot be empty.",
+        "The health data has invalid format.",
+        "The health data cannot contain duplicate items."
+    ],
+    "OrderHotel": [
+        "The number of adults is greater than 2. Two rooms are ordered.",
+        "The room is not available."
+    ],
+    "QueryRegistration": [
+        "No appointments found."
+    ],
+    "ModifyReminder": [
+        "Content should not be null",
+        "You have no reminder about {content} or at time : {time}"
+    ],
+    "GetReminder": [
+        "Content should not be null",
+        "You have no reminder about {content} or at time : {time}"
+    ],
+    "ModifyRegistration": [
+        "The appointment ID does not exist.",
+        "Fail because the doctor name is empty.",
+        "Fail because no modification is made.",
+        "Fail because doctor is not changed.",
+        "Fail because date is not changed.",
+        "Fail because no modification is made.",
+        "Fail because date is not changed.",
+        "Fail because doctor is not changed."
+    ],
+    "AddMeeting": [
+        "Meeting Topic should not be null"
+    ],
+    "GetAlarm": [
+        "You have no alarm clock at time : {time}"
+    ],
+    "ForgotPassword": [
+        "The username and email are required for the first call.",
+        "The username does not exist.",
+        "The email is incorrect.",
+        "You need to call the API with status \\Forgot Password\\ at first.",
+        "The new password and verification code are required for the second call.",
+        "The verification code is incorrect.",
+        "The status is only \\Forgot Password\\ or \\Verification Code\\."
+    ],
+    "CancelRegistration": [
+        "The appointment ID is incorrect."
+    ],
+    "CancelTimedSwitch": [
+        "device_id cannot be empty.",
+        "device_id does not exist.",
+        "time does not exist."
+    ],
+    "Calculator": [
+        "invalid formula"
+    ],
+    "QueryHistoryToday": [
+        "The date is not in the database."
+    ],
+    "DeleteMeeting": [
+        "Meeting Topic and start_time should not be null both",
+        "You have no meeting about {meeting_topic}",
+        "You have no meeting at time : {start_time}"
+    ],
+    "ModifyMeeting": [
+        "Meeting Topic and start_time should not be null both",
+        "You have no meeting about {meeting_topic}",
+        "You have no meeting at time : {start_time}"
+    ],
+    "DeleteReminder": [
+        "Content should not be null",
+        "You have no reminder about {content} or at time : {time}"
+    ],
+    "ModifyAgenda": [
+        "You have no agenda about {content}",
+        "You have no agenda at time : {time}",
+        "Error"
+    ],
+    "ModifyAlarm": [
+        "You have no agenda at time : {from_time}"
+    ],
+    "AddReminder": [
+        "Content should not be null"
+    ],
+    "QueryHealthData": [
+        "The user id cannot be empty.",
+        "str(start_time) + ;  + str(end_time)",
+        "The start time cannot be later than the end time.",
+        "The user id does not exist."
+    ],
+    "GetUserToken": [
+        "The username does not exist.",
+        "The password is incorrect."
+    ],
+    "AddAgenda": [
+        "Content should not be null"
+    ],
+    "GetAgenda": [
+        "You have no agenda about {content}",
+        "You have no agenda at time : {time}",
+        "Error"
+    ],
+    "DeleteAccount": [
+        "Lack of token checker.",
+        "No such user."
+    ],
+    "ModifyScene": [
+        "Scene name cannot be empty.",
+        "Invalid device format.",
+        "Device ID cannot be duplicated.",
+        "The scene does not exist."
+    ]
+}

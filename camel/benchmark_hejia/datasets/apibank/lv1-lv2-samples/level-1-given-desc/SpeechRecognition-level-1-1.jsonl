@@ -1,0 +1,6 @@
+{"role": "User", "text": "Can you recognize speech from an audio URL?"}
+{"role": "AI", "text": "Yes, I can. Which URL should I use?"}
+{"role": "User", "text": "https://example.com/voice22.wav."}
+{"role": "AI", "text": "Okay, let me recognize the speech."}
+{"role": "API", "api_name": "SpeechRecognition", "param_dict": {"url": "https://example.com/voice22.wav"}, "result": {"api_name": "SpeechRecognition", "input": {"url": "https://example.com/voice22.wav"}, "output": "What's the best way to get to the beach from here?", "exception": null}}
+{"role": "AI", "text": "The transcript of the audio is \"What's the best way to get to the beach from here?\"."}

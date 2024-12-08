@@ -1,0 +1,154 @@
+[
+  {
+    "user_name": "elva01",
+    "api_name": "Google Forms - Forms.batchUpdate",
+    "api_call": "form_service.forms().batchUpdate(formId=form_id, body=update).execute()",
+    "api_version": "1.0",
+    "api_arguments": {
+      "formId": "Required. The form ID."
+    },
+    "functionality": "Change the form with a batch of updates.",
+    "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+    "meta_data": {
+      "description": "The Forms.batchUpdate method groups changes in batches and can add content or update settings, metadata, or content."
+    },
+    "questions": [
+      "Update the quiz description with a due date of next Friday.",
+      "Add a new video Item to the form."
+    ]
+  },
+  {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.create",
+      "api_call": "form_service.forms().create(body=form).execute()",
+      "api_version": "1.0",
+      "api_arguments": {},
+      "functionality": "Create a new form using the title given in the provided form message in the request.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "The Forms.create method creates a new form with the title. To add other content or updates, use batchUpdate."
+      },
+      "questions": [
+        "Create a new form with the title 'Event RSVP'."
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.get",
+      "api_call": "form_service.forms().get(formId=form_id).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. The form ID."
+      },
+      "functionality": "Get a form.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "The Forms.create method retrieves form content, settings and metadata."
+      },
+      "questions": [
+        "What is the title of the form?"
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.responses.get",
+      "api_call": "service.forms().responses().get(formId=form_id, responseId=response_id).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. The form ID.",
+        "responseId": "Required. The response ID within the form."
+      },
+      "functionality": "Get one response from the form.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "The Forms.responses.get method retrieves a single response specified by response ID."
+      },
+      "questions": [
+        "Get the most recent quiz response."
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.responses.list",
+      "api_call": "service.forms().responses().list(formId=form_id).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. ID of the Form whose responses to list."
+      },
+      "functionality": "List a form's responses.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "The Forms.responses.list method retrieves all the responses in the specified form."
+      },
+      "questions": [
+        "Get all the quiz responses and put them into a document."
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.watches.create",
+      "api_call": "service.forms().watches().create(formId=form_id, body=watch).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. ID of the Form to watch."
+      },
+      "functionality": "Create a new watch.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "Forms.watches.create enables push notifications and validates the provided Cloud Pub/Sub topic. Create a Cloud Pub/Sub topic via Google Cloud Developer Console, command line, or Cloud Pub/Sub API. The limit for each project is one watch per event type per form. The new watch expires seven days after it is created."
+      },
+      "questions": [
+        "Create a notification for every time a response is edited."
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.watches.delete",
+      "api_call": "service.forms().watches().delete(formId=form_id, watchId=watch_id).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. The ID of the Form.",
+        "watchId": "Required. The ID of the Watch to delete."
+      },
+      "functionality": "Delete a watch.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "questions": [
+        "Delete the notification for new form responses."
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.watches.list",
+      "api_call": "service.forms().watches().list(formId=form_id).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. ID of the Form whose watches to list."
+      },
+      "functionality": "Return a list of the watches owned by the invoking project.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "The invoking project is limited to a maximum of two watches and one watch per event type per form."
+      },
+      "questions": [
+        "What are my current form notifications?"
+      ]
+    },
+    {
+      "user_name": "elva01",
+      "api_name": "Google Forms - Forms.watches.renew",
+      "api_call": "service.forms().watches().renew(formId=form_id, watchId=watch_id).execute()",
+      "api_version": "1.0",
+      "api_arguments": {
+        "formId": "Required. The ID of the Form.",
+        "watchId": "Required. The ID of the Watch to renew."
+      },
+      "functionality": "Renew an existing watch for seven days.",
+      "env_requirements": ["google-auth", "google-auth-oauthlib", "google-auth-httplib2", "google-api-python-client"],
+      "meta_data": {
+        "description": "Forms.watches.renew will reset the expire time of a watch to seven days and the state of the watch is active. Renewing an expired watch returns NOT_FOUND."
+      },
+      "questions": [
+        "Keep my form notifications on until the end of my business trip next week."
+      ]
+    }
+]

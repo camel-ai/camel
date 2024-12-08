@@ -1,0 +1,24 @@
+Scene: Personal Assistant
+
+First Utterance: Help me organize my schedule for tomorrow.
+
+Key Info:
+
+"JohnDoe":{
+"password":"pass123",
+"token":"a9s8d7f6g5h4j3k2l1",
+"email":"johndoe@example.com"
+},
+
+- Meeting with Boss
+    Time: 2023-03-31 10:00
+    Location: Beijing Hilton Hotel 2nd Floor
+
+
+- API Calls:
+GetUserToken(username="JohnDoe", password="pass123"): 获取用户令牌
+AddMeeting(token="a9s8d7f6g5h4j3k2l1", meeting_topic="Meeting with Boss", start_time="2023-03-31 10:00:00", end_time="2023-03-31 11:00:00", location="Beijing Hilton Hotel 2nd Floor", attendees=["JohnDoe"]): 添加会议到用户日程
+
+AddReminder(token="a9s8d7f6g5h4j3k2l1", content="Prepare for meeting with Boss", time="2023-03-31 9:00:00"): 添加提醒，让用户在会议前一小时做好准备工作
+
+AddAlarm(token="a9s8d7f6g5h4j3k2l1", time="2023-03-31 8:00:00"): 添加闹钟，让用户在会议当天早上8点起床准备

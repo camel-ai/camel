@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you check a reminder for me to call my mom on March 16th at 2:30 PM?"}
+{"role": "AI", "text": "Sure, I can help with that. Can you confirm your username and password?"}
+{"role": "User", "text": "My username is JohnDoe and my password is pass123."}
+{"role": "AI", "text": "Thank you. Let me authenticate you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "Alright, your account has been authenticated. Now let me check the reminder for you."}
+{"role": "API", "api_name": "QueryReminder", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Call mom", "time": "2023-03-16 14:30:00"}, "result": {"api_name": "QueryReminder", "input": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Call mom", "time": "2023-03-16 14:30:00"}, "output": {"content": "Call mom", "time": "2023-03-16 14:30:00", "username": "JohnDoe"}, "exception": null}}
+{"role": "AI", "text": "Alright, the reminder is already set. You'll be reminded to \"Call mom\" on March 16, 2023 at 2:30 PM."}

@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you help me modify a reminder for paying bills on March 20th at 12 PM?"}
+{"role": "AI", "text": "Sure. I need your token, what is it?"}
+{"role": "User", "text": "I don't know, how can I get it?"}
+{"role": "AI", "text": "Let me check. What is your email and password?"}
+{"role": "User", "text": "My email is admin@example.com and password is adminpass."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "admin", "password": "adminpass"}, "result": {"api_name": "GetUserToken", "input": {"username": "admin", "password": "adminpass"}, "output": {"token": "m9n8b7v6c5x4z3a2s1"}, "exception": null}}
+{"role": "AI", "text": "Your token is m9n8b7v6c5x4z3a2s1. Now, please give me the description of the reminder."}
+{"role": "User", "text": "The content is 'Pay bills' and the time is '2023-03-20 12:00:00'."}
+{"role": "API", "api_name": "ModifyReminder", "param_dict": {"token": "m9n8b7v6c5x4z3a2s1", "content": "Pay bills", "time": "2023-03-20 12:00:00"}, "result": {"api_name": "ModifyReminder", "input": {"token": "m9n8b7v6c5x4z3a2s1", "content": "Pay bills", "time": "2023-03-20 12:00:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Reminder has been modified."}

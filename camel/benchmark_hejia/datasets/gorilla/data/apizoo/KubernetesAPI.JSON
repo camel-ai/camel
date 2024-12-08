@@ -1,0 +1,2641 @@
+[  
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read ReplicationController",
+    "api_call": "GET /api/v1/namespaces/{namespace}/replicationcontrollers/{controllerName}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "controllerName": "string (The name of the ReplicationController to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes ReplicationController in REST format",
+    "example_code": "GET /api/v1/namespaces/my-namespace/replicationcontrollers/my-controller",
+    "meta_data": {
+      "description": "This API operation reads the details of a ReplicationController resource in a Kubernetes namespace.",
+      "documentation": "https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/"
+    },
+    "questions": [
+      "How can I retrieve information about a specific ReplicationController in Kubernetes?",
+      "What details are included in the response when reading a ReplicationController?"
+    ]
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status ReplicationController",
+    "api_call": "GET /api/v1/namespaces/{namespace}/replicationcontrollers/{controllerName}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "controllerName": "string (The name of the ReplicationController to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes ReplicationController in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ReplicationControllers in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/replicationcontrollers",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ReplicationControllers are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ReplicationControllers in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ReplicationControllers",
+    "api_call": "GET /api/v1/replicationcontrollers",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ReplicationControllers in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create ReplicationController",
+    "api_call": "POST /api/v1/namespaces/{namespace}/replicationcontrollers",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController will be created)",
+      "body": "ReplicationController (Required, the ReplicationController object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes ReplicationController in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified ReplicationController",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/replicationcontrollers/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "name": "string (The name of the ReplicationController to replace)",
+      "body": "ReplicationController (Required, the updated ReplicationController object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes ReplicationController in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified ReplicationController",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/replicationcontrollers/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "name": "string (The name of the ReplicationController to replace)",
+      "body": "ReplicationController (Required, the updated ReplicationController object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes ReplicationController in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ReplicationController",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/replicationcontrollers/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "name": "string (The name of the ReplicationController to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes ReplicationController in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ReplicationController Status",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/replicationcontrollers/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "name": "string (The name of the ReplicationController to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes ReplicationController in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete ReplicationController",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/replicationcontrollers/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationController is located)",
+      "name": "string (The name of the ReplicationController to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes ReplicationController in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of ReplicationControllers",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/replicationcontrollers",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicationControllers are located)",
+      "labelSelector": "string (Optional, label selector to filter ReplicationControllers)",
+      "fieldSelector": "string (Optional, field selector to filter ReplicationControllers)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes ReplicationControllers in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read ReplicaSet",
+    "api_call": "GET /api/v1/namespaces/{namespace}/replicasets/{replicaName}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "replicaName": "string (The name of the ReplicaSet to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes ReplicaSet"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status ReplicaSet",
+    "api_call": "GET /api/v1/namespaces/{namespace}/replicasets/{replicaName}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "replicaName": "string (The name of the ReplicaSet to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes ReplicaSet in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ReplicaSets in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/replicasets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ReplicaSets are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ReplicaSets in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ReplicaSets",
+    "api_call": "GET /api/v1/replicasets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ReplicaSets in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create ReplicaSet",
+    "api_call": "POST /api/v1/namespaces/{namespace}/replicasets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet will be created)",
+      "body": "ReplicaSet (Required, the ReplicaSet object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes ReplicaSet in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified ReplicaSet",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/replicasets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "name": "string (The name of the ReplicaSet to replace)",
+      "body": "ReplicaSet (Required, the updated ReplicaSet object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes ReplicaSet in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified ReplicaSet",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/replicasets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "name": "string (The name of the ReplicaSet to replace)",
+      "body": "ReplicaSet (Required, the updated ReplicaSet object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes ReplicaSet in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ReplicaSet",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/replicasets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "name": "string (The name of the ReplicaSet to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes ReplicaSet in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ReplicaSet Status",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/replicasets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "name": "string (The name of the ReplicaSet to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes ReplicaSet in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete ReplicaSet",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/replicasets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSet is located)",
+      "name": "string (The name of the ReplicaSet to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes ReplicaSet in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of ReplicaSet",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/replicasets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ReplicaSets are located)",
+      "labelSelector": "string (Optional, label selector to filter ReplicaSet)",
+      "fieldSelector": "string (Optional, field selector to filter ReplicaSet)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes ReplicaSet in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Deployment",
+    "api_call": "GET /api/v1/namespaces/{namespace}/deployments/{deploymentName}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "deploymentName": "string (The name of the Deployment to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Deployment"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status Deployment",
+    "api_call": "GET /api/v1/namespaces/{namespace}/deployments/{deploymentName}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "deploymentName": "string (The name of the Deployment to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes Deployment in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Deployment in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/deployments",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Deployment are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Deployment in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Deployments",
+    "api_call": "GET /api/v1/deployments",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Deployments in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Deployment",
+    "api_call": "POST /api/v1/namespaces/{namespace}/deployments",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment will be created)",
+      "body": "Deployment (Required, the Deployment object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Deployment in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified Deployment",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/deployments/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "name": "string (The name of the Deployment to replace)",
+      "body": "Deployment (Required, the updated Deployment object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Deployment in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified Deployment",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/deployments/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "name": "string (The name of the Deployment to replace)",
+      "body": "Deployment (Required, the updated Deployment object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes Deployment in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Deployment",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/deployments/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "name": "string (The name of the Deployment to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Deployment in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Deployment Status",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/deployments/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "name": "string (The name of the Deployment to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes Deployment in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Deployment",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/deployments/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment is located)",
+      "name": "string (The name of the Deployment to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Deployment in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Deployments",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/deployments",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment are located)",
+      "labelSelector": "string (Optional, label selector to filter Deployments)",
+      "fieldSelector": "string (Optional, field selector to filter Deployments)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Deployments in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read StatefulSet",
+    "api_call": "GET /api/v1/namespaces/{namespace}/statefulsets/{setName}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet is located)",
+      "setName": "string (The name of the StatefulSet to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes StatefulSet"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status StatefulSet",
+    "api_call": "GET /api/v1/namespaces/{namespace}/statefulsets/{setName}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet is located)",
+      "setName": "string (The name of the StatefulSet to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes StatefulSet in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List StatefulSet in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/statefulsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where StatefulSet are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes StatefulSet in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List StatefulSets",
+    "api_call": "GET /api/v1/statefulsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes StatefulSets in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create StatefulSet",
+    "api_call": "POST /api/v1/namespaces/{namespace}/statefulsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet will be created)",
+      "body": "StatefulSet (Required, the StatefulSet object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes StatefulSet in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified StatefulSet",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/statefulsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the statefulsets is located)",
+      "name": "string (The name of the StatefulSet to replace)",
+      "body": "StatefulSet (Required, the updated StatefulSet object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes StatefulSet in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified StatefulSet",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/statefulsets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet is located)",
+      "name": "string (The name of the StatefulSet to replace)",
+      "body": "StatefulSet (Required, the updated StatefulSet object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes StatefulSet in a specified namespace with an updated version in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch StatefulSet",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/statefulsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet is located)",
+      "name": "string (The name of the StatefulSet to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes StatefulSet in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch StatefulSet Status",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/statefulsets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet is located)",
+      "name": "string (The name of the StatefulSet to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes StatefulSet in a specified namespace in REST format", 
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete StatefulSet",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/statefulsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the StatefulSet is located)",
+      "name": "string (The name of the StatefulSet to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes StatefulSet in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of StatefulSets",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/statefulsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Deployment are located)",
+      "labelSelector": "string (Optional, label selector to filter StatefulSets)",
+      "fieldSelector": "string (Optional, field selector to filter StatefulSets)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes StatefulSets in a specified namespace in REST format",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read DaemonSet",
+    "api_call": "GET /api/v1/namespaces/{namespace}/daemonsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes DaemonSet"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status DaemonSet",
+    "api_call": "GET /api/v1/namespaces/{namespace}/daemonsets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes DaemonSet in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List DaemonSets in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/daemonsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where DaemonSets are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes DaemonSets in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List DaemonSets",
+    "api_call": "GET /api/v1/daemonsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes DaemonSets in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create DaemonSet",
+    "api_call": "POST /api/v1/namespaces/{namespace}/daemonsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet will be created)",
+      "body": "DaemonSet (Required, the DaemonSet object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes DaemonSet in a
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified DaemonSet",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/daemonsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to replace)",
+      "body": "DaemonSet (Required, the updated DaemonSet object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes DaemonSet in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified DaemonSet",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/daemonsets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to replace)",
+      "body": "DaemonSet (Required, the updated DaemonSet object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes DaemonSet in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch DaemonSet",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/daemonsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes DaemonSet in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch DaemonSet Status",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/daemonsets/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes DaemonSet in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete DaemonSet",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/daemonsets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSet is located)",
+      "name": "string (The name of the DaemonSet to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes DaemonSet in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of DaemonSets",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/daemonsets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the DaemonSets are located)",
+      "labelSelector": "string (Optional, label selector to filter DaemonSets)",
+      "fieldSelector": "string (Optional, field selector to filter DaemonSets)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes DaemonSets in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Job",
+    "api_call": "GET /api/v1/namespaces/{namespace}/jobs/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Job in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status Job",
+    "api_call": "GET /api/v1/namespaces/{namespace}/jobs/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes Job in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Jobs in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/jobs",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Jobs are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Jobs in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Jobs",
+    "api_call": "GET /api/v1/jobs",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Jobs in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Job",
+    "api_call": "POST /api/v1/namespaces/{namespace}/jobs",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job will be created)",
+      "body": "Job (Required, the Job object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Job in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified Job",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/jobs/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to replace)",
+      "body": "Job (Required, the updated Job object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Job in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified Job",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/jobs/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to replace)",
+      "body": "Job (Required, the updated Job object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes Job in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Job",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/jobs/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Job in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Job Status",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/jobs/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes Job in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Job",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/jobs/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Job is located)",
+      "name": "string (The name of the Job to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Job in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Jobs",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/jobs",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Jobs are located)",
+      "labelSelector": "string (Optional, label selector to filter Jobs)",
+      "fieldSelector": "string (Optional, field selector to filter Jobs)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Jobs in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Service",
+    "api_call": "GET /api/v1/namespaces/{namespace}/services/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Service"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Service Status",
+    "api_call": "GET /api/v1/namespaces/{namespace}/services/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes Service"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Services in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/services",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Services are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Services in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Services",
+    "api_call": "GET /api/v1/services",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Services in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Service",
+    "api_call": "POST /api/v1/namespaces/{namespace}/services",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service will be created)",
+      "body": "Service (Required, the Service object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Service in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified Service",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/services/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to replace)",
+      "body": "Service (Required, the updated Service object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Service in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace Status of the specified Service",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/services/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to replace)",
+      "body": "Service (Required, the updated Service object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes Service in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Service",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/services/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Service in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Status of Service",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/services/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes Service in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Service",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/services/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Service is located)",
+      "name": "string (The name of the Service to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Service in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Services",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/services",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Services are located)",
+      "labelSelector": "string (Optional, label selector to filter Services)",
+      "fieldSelector": "string (Optional, field selector to filter Services)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Services in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Endpoints",
+    "api_call": "GET /api/v1/namespaces/{namespace}/endpoints/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Endpoints are located)",
+      "name": "string (The name of the Endpoints to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Endpoints"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List or Watch Endpoints in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/endpoints",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Endpoints are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Endpoints in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List or Watch Endpoints",
+    "api_call": "GET /api/v1/endpoints",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Endpoints in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Endpoints",
+    "api_call": "POST /api/v1/namespaces/{namespace}/endpoints",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Endpoints will be created)",
+      "body": "Endpoints (Required, the Endpoints object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Endpoints in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the Specified Endpoints",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/endpoints/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Endpoints are located)",
+      "name": "string (The name of the Endpoints to replace)",
+      "body": "Endpoints (Required, the updated Endpoints object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Endpoints in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Partially Update the Specified Endpoints",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/endpoints/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Endpoints are located)",
+      "name": "string (The name of the Endpoints to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Endpoints in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Endpoints",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/endpoints/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Endpoints are located)",
+      "name": "string (The name of the Endpoints to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Endpoints in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Endpoints",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/endpoints",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Endpoints are located)",
+      "labelSelector": "string (Optional, label selector to filter Endpoints)",
+      "fieldSelector": "string (Optional, field selector to filter Endpoints)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Endpoints in a specified namespace in REST format"
+  },
+  [
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read ConfigMap",
+    "api_call": "GET /api/v1/namespaces/{namespace}/configmaps/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ConfigMap is located)",
+      "name": "string (The name of the ConfigMap to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes ConfigMap"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ConfigMaps in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/configmaps",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ConfigMaps are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ConfigMaps in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ConfigMaps",
+    "api_call": "GET /api/v1/configmaps",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ConfigMaps in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create ConfigMap",
+    "api_call": "POST /api/v1/namespaces/{namespace}/configmaps",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ConfigMap will be created)",
+      "body": "ConfigMap (Required, the ConfigMap object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes ConfigMap in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified ConfigMap",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/configmaps/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ConfigMap is located)",
+      "name": "string (The name of the ConfigMap to replace)",
+      "body": "ConfigMap (Required, the updated ConfigMap object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes ConfigMap in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ConfigMap",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/configmaps/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ConfigMap is located)",
+      "name": "string (The name of the ConfigMap to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes ConfigMap in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete ConfigMap",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/configmaps/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ConfigMap is located)",
+      "name": "string (The name of the ConfigMap to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes ConfigMap in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of ConfigMaps",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/configmaps",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ConfigMaps are located)",
+      "labelSelector": "string (Optional, label selector to filter ConfigMaps)",
+      "fieldSelector": "string (Optional, field selector to filter ConfigMaps)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes ConfigMaps in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Secret",
+    "api_call": "GET /api/v1/namespaces/{namespace}/secrets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Secret is located)",
+      "name": "string (The name of the Secret to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Secret"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Secrets in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/secrets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Secrets are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Secrets in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Secrets",
+    "api_call": "GET /api/v1/secrets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Secrets in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Secret",
+    "api_call": "POST /api/v1/namespaces/{namespace}/secrets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Secret will be created)",
+      "body": "Secret (Required, the Secret object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Secret in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified Secret",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/secrets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Secret is located)",
+      "name": "string (The name of the Secret to replace)",
+      "body": "Secret (Required, the updated Secret object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Secret in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Secret",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/secrets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Secret is located)",
+      "name": "string (The name of the Secret to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Secret in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Secret",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/secrets/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the Secret is located)",
+      "name": "string (The name of the Secret to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Secret in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Secrets",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/secrets",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where Secrets are located)",
+      "labelSelector": "string (Optional, label selector to filter Secrets)",
+      "fieldSelector": "string (Optional, field selector to filter Secrets)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Secrets in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read PersistentVolumeClaim",
+    "api_call": "GET /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes PersistentVolumeClaim"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status PersistentVolumeClaim",
+    "api_call": "GET /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes PersistentVolumeClaim"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List PersistentVolumeClaims in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/persistentvolumeclaims",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where PersistentVolumeClaims are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes PersistentVolumeClaims in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List PersistentVolumeClaims",
+    "api_call": "GET /api/v1/persistentvolumeclaims",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes PersistentVolumeClaims in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create PersistentVolumeClaim",
+    "api_call": "POST /api/v1/namespaces/{namespace}/persistentvolumeclaims",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim will be created)",
+      "body": "PersistentVolumeClaim (Required, the PersistentVolumeClaim object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes PersistentVolumeClaim in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified PersistentVolumeClaim",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to replace)",
+      "body": "PersistentVolumeClaim (Required, the updated PersistentVolumeClaim object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes PersistentVolumeClaim in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the Status of specified PersistentVolumeClaim",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to replace)",
+      "body": "PersistentVolumeClaim (Required, the updated PersistentVolumeClaim object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes PersistentVolumeClaim in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch PersistentVolumeClaim",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes PersistentVolumeClaim in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch the Status PersistentVolumeClaim",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes PersistentVolumeClaim in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete PersistentVolumeClaim",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/persistentvolumeclaims/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the PersistentVolumeClaim is located)",
+      "name": "string (The name of the PersistentVolumeClaim to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes PersistentVolumeClaim in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of PersistentVolumeClaims",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/persistentvolumeclaims",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where PersistentVolumeClaims are located)",
+      "labelSelector": "string (Optional, label selector to filter PersistentVolumeClaims)",
+      "fieldSelector": "string (Optional, field selector to filter PersistentVolumeClaims)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes PersistentVolumeClaims in a specified namespace in REST format"
+  },
+  [
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read ServiceAccount",
+    "api_call": "GET /api/v1/namespaces/{namespace}/serviceaccounts/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ServiceAccount is located)",
+      "name": "string (The name of the ServiceAccount to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes ServiceAccount"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ServiceAccounts in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/serviceaccounts",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ServiceAccounts are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ServiceAccounts in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ServiceAccounts",
+    "api_call": "GET /api/v1/serviceaccounts",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ServiceAccounts in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create ServiceAccount",
+    "api_call": "POST /api/v1/namespaces/{namespace}/serviceaccounts",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ServiceAccount will be created)",
+      "body": "ServiceAccount (Required, the ServiceAccount object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes ServiceAccount in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified ServiceAccount",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/serviceaccounts/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ServiceAccount is located)",
+      "name": "string (The name of the ServiceAccount to replace)",
+      "body": "ServiceAccount (Required, the updated ServiceAccount object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes ServiceAccount in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ServiceAccount",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/serviceaccounts/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ServiceAccount is located)",
+      "name": "string (The name of the ServiceAccount to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes ServiceAccount in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete ServiceAccount",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/serviceaccounts/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ServiceAccount is located)",
+      "name": "string (The name of the ServiceAccount to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes ServiceAccount in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of ServiceAccounts",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/serviceaccounts",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ServiceAccounts are located)",
+      "labelSelector": "string (Optional, label selector to filter ServiceAccounts)",
+      "fieldSelector": "string (Optional, field selector to filter ServiceAccounts)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes ServiceAccounts in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Token of a ServiceAccount",
+    "api_call": "POST /api/v1/namespaces/{namespace}/serviceaccounts/{name}/token",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ServiceAccounts are located)",
+      "name": "string (The name of the ServiceAccount to delete)",
+      "body": "TokenRequest (Required)"
+      "labelSelector": "string (Optional, label selector to filter ServiceAccounts)",
+      "fieldSelector": "string (Optional, field selector to filter ServiceAccounts)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a Token for a Kubernetes ServiceAccount in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read LimitRange",
+    "api_call": "GET /api/v1/namespaces/{namespace}/limitranges/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange is located)",
+      "name": "string (The name of the LimitRange to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes LimitRange"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List LimitRanges in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/limitranges",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where LimitRanges are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes LimitRanges in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List LimitRanges",
+    "api_call": "GET /api/v1/limitranges",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes LimitRanges in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create LimitRange",
+    "api_call": "POST /api/v1/namespaces/{namespace}/limitranges",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange will be created)",
+      "body": "LimitRange (Required, the LimitRange object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes LimitRange in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified LimitRange",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/limitranges/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange is located)",
+      "name": "string (The name of the LimitRange to replace)",
+      "body": "LimitRange (Required, the updated LimitRange object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes LimitRange in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch LimitRange",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/limitranges/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange is located)",
+      "name": "string (The name of the LimitRange to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes LimitRange in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete LimitRange",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/limitranges/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange is located)",
+      "name": "string (The name of the LimitRange to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes LimitRange in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of LimitRanges",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/limitranges",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where LimitRanges are located)",
+      "labelSelector": "string (Optional, label selector to filter LimitRanges)",
+      "fieldSelector": "string (Optional, field selector to filter LimitRanges)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes LimitRanges in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read ResourceQuota",
+    "api_call": "GET /api/v1/namespaces/{namespace}/resourcequotas/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes ResourceQuota"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Status of ResourceQuota",
+    "api_call": "GET /api/v1/namespaces/{namespace}/resourcequotas/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes ResourceQuota"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ResourceQuotas in Namespace",
+    "api_call": "GET /api/v1/namespaces/{namespace}/resourcequotas",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ResourceQuotas are located)",
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ResourceQuotas in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ResourceQuotas",
+    "api_call": "GET /api/v1/resourcequotas",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes ResourceQuotas in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create ResourceQuota",
+    "api_call": "POST /api/v1/namespaces/{namespace}/resourcequotas",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota will be created)",
+      "body": "ResourceQuota (Required, the ResourceQuota object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes ResourceQuota in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified ResourceQuota",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/resourcequotas/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to replace)",
+      "body": "ResourceQuota (Required, the updated ResourceQuota object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes ResourceQuota in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace Status of the specified ResourceQuota",
+    "api_call": "PUT /api/v1/namespaces/{namespace}/resourcequotas/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to replace)",
+      "body": "ResourceQuota (Required, the updated ResourceQuota object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes ResourceQuota in a specified namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch ResourceQuota",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/resourcequotas/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes ResourceQuota in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Status of ResourceQuota",
+    "api_call": "PATCH /api/v1/namespaces/{namespace}/resourcequotas/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes ResourceQuota in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete ResourceQuota",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/resourcequotas/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the ResourceQuota is located)",
+      "name": "string (The name of the ResourceQuota to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes ResourceQuota in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of ResourceQuotas",
+    "api_call": "DELETE /api/v1/namespaces/{namespace}/resourcequotas",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where ResourceQuotas are located)",
+      "labelSelector": "string (Optional, label selector to filter ResourceQuotas)",
+      "fieldSelector": "string (Optional, field selector to filter ResourceQuotas)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes ResourceQuotas in a specified namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Node",
+    "api_call": "GET /api/v1/nodes/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Node"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Node Status",
+    "api_call": "GET /api/v1/nodes/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes Node"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Nodes",
+    "api_call": "GET /api/v1/nodes",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Nodes in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Node",
+    "api_call": "POST /api/v1/nodes",
+    "api_version": "1.0",
+    "api_arguments": {
+      "body": "Node (Required, the Node object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Node in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified Node",
+    "api_call": "PUT /api/v1/nodes/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to replace)",
+      "body": "Node (Required, the updated Node object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Node with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified Node",
+    "api_call": "PUT /api/v1/nodes/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to replace)",
+      "body": "Node (Required, the updated Node object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes Node with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Node",
+    "api_call": "PATCH /api/v1/nodes/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Node in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch the Status of Node",
+    "api_call": "PATCH /api/v1/nodes/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes Node in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Node",
+    "api_call": "DELETE /api/v1/nodes/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Node in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Nodes",
+    "api_call": "DELETE /api/v1/nodes",
+    "api_version": "1.0",
+    "api_arguments": {
+      "labelSelector": "string (Optional, label selector to filter Nodes)",
+      "fieldSelector": "string (Optional, field selector to filter Nodes)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Nodes in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Namespace",
+    "api_call": "GET /api/v1/namespaces/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Node to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes Namespace"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read Namespace Status",
+    "api_call": "GET /api/v1/namespaces/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Namespace to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the status of a specified Kubernetes Namespace"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List Namespaces",
+    "api_call": "GET /api/v1/namespaces",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists or watches Kubernetes Namespaces in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Namespace",
+    "api_call": "POST /api/v1/namespaces",
+    "api_version": "1.0",
+    "api_arguments": {
+      "body": "Namespace (Required, the Namespace object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the specified Namespace",
+    "api_call": "PUT /api/v1/namespaces/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Namespace to replace)",
+      "body": "Namespace (Required, the updated Namespace object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces an existing Kubernetes Namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Replace the status of specified Namespace",
+    "api_call": "PUT /api/v1/namespaces/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Namespace to replace)",
+      "body": "Namespace (Required, the updated Namespace object)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Replaces the status of an existing Kubernetes Namespace with an updated version in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch Namespace",
+    "api_call": "PATCH /api/v1/namespaces/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Namespace to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates an existing Kubernetes Namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Patch the Status of Namespace",
+    "api_call": "PATCH /api/v1/namespaces/{name}/status",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Namespace to partially update)",
+      "body": "Patch (Required, the partial update instructions)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Partially updates the status of an existing Kubernetes Namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Namespace",
+    "api_call": "DELETE /api/v1/namespaces/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the Namespace to delete)",
+      "body": "DeleteOptions (Optional, additional options for the deletion)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional, grace period for deletion)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes an existing Kubernetes Namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Delete Collection of Namespaces",
+    "api_call": "DELETE /api/v1/namespaces",
+    "api_version": "1.0",
+    "api_arguments": {
+      "labelSelector": "string (Optional, label selector to filter Namespaces)",
+      "fieldSelector": "string (Optional, field selector to filter Namespaces)",
+      "dryRun": "string (Optional, dry run mode)",
+      "gracePeriodSeconds": "integer (Optional)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "propagationPolicy": "string (Optional, propagation policy for dependent resources)"
+    },
+    "functionality": "Deletes a collection of Kubernetes Namespaces in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Binding",
+    "api_call": "POST /api/v1/namespaces/{namespace}/bindings",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange will be created)",
+      "body": "Namespace (Required, the Namespace object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Create Binding of Pod",
+    "api_call": "POST /api/v1/namespaces/{namespace}/pods/{name}/bindings",
+    "api_version": "1.0",
+    "api_arguments": {
+      "namespace": "string (The namespace where the LimitRange will be created)",
+      "name": "string (The name of the binding)",
+      "body": "Namespace (Required, the Namespace object to create)",
+      "dryRun": "string (Optional, dry run mode)",
+      "fieldManager": "string (Optional, field manager)",
+      "fieldValidation": "string (Optional, field validation strategy)",
+      "force": "boolean (Optional, force the creation)",
+      "pretty": "string (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Creates a new Kubernetes Namespace in REST format"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes Read ComponentStatus",
+    "api_call": "GET /api/v1/componentstatuses/{name}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "name": "string (The name of the ComponentStatus to read)",
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Reads the details of a specified Kubernetes ComponentStatus"
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Kubernetes List ComponentStatuses",
+    "api_call": "GET /api/v1/componentstatuses",
+    "api_version": "1.0",
+    "api_arguments": {
+      "allowWatchBookmarks": "boolean (Optional, allow watch bookmarks)",
+      "continue": "string (Optional, continue listing from a specific point)",
+      "fieldSelector": "string (Optional, field-based filtering)",
+      "labelSelector": "string (Optional, label-based filtering)",
+      "limit": "integer (Optional, maximum number of objects to return)",
+      "resourceVersion": "string (Optional, resource version for watch)",
+      "resourceVersionMatch": "string (Optional, resource version match for watch)",
+      "pretty": "string (Optional, whether to format the response JSON)",
+      "sendInitialEvents": "boolean (Optional, send initial events)",
+      "timeoutSeconds": "integer (Optional, timeout in seconds)",
+      "watch": "boolean (Optional, whether to watch for changes)"
+    },
+    "functionality": "Lists Kubernetes ComponentStatuses in REST format"
+  }
+]

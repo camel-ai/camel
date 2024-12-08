@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you help me find my upcoming appointment with Dr. Smith?"}
+{"role": "AI", "text": "Sure, I can help you with that. What is the date of your appointment?"}
+{"role": "User", "text": "It's on October 10th, 2023."}
+{"role": "AI", "text": "And, what is your name?"}
+{"role": "User", "text": "My name is Olivia Davis."}
+{"role": "AI", "text": "Great. Let me check."}
+{"role": "API", "api_name": "QueryRegistration", "param_dict": {"patient_name": "Olivia Davis", "date": "2023-10-10"}, "result": {"api_name": "QueryRegistration", "input": {"patient_name": "Olivia Davis", "date": "2023-10-10"}, "output": {"90123456": {"patient_name": "Olivia Davis", "date": "2023-10-10", "doctor_name": "Dr. Smith"}}, "exception": null}}
+{"role": "AI", "text": "According to my records, you have an appointment with Dr. Smith on October 10th, 2023."}

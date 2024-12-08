@@ -1,0 +1,890 @@
+id,类型,应用场景,API名称,参数,路径,类名,input_parameters,expressions,api_info
+1,对外影响 - 数据库操作,账户管理,获取用户Token,用户名 (string)，密码 (string),apis/get_user_token.py,GetUserToken,"(username: str, password: str)","GetUserToken(username: str, password: str)","description = ""Get user token API that takes two parameters - 'username' and 'password'. The 'username' parameter is used to identify the user and the 'password' parameter is used to authenticate the user's identity.""
+input_parameters = {
+    'username': {'type': 'str', 'description': 'The username of the user.'},
+    'password': {'type': 'str', 'description': 'The password of the user.'}
+}
+output_parameters = {
+    'token': {'type': 'str', 'description': 'The token generated upon successful authentication.'}
+}"
+2,对外影响 - 数据库操作 - 增,账户管理,注册用户,用户名 (string)，密码 (string)，邮箱 (string),apis/register_user.py,RegisterUser,"(username: str, password: str, email: str)","RegisterUser(username: str, password: str, email: str)","description = ""API to register a new user with their username, password, and email.""
+input_parameters = {
+    'username': {'type': 'str', 'description': 'The username of the new user.'},
+    'password': {'type': 'str', 'description': 'The password of the new user.'},
+    'email': {'type': 'str', 'description': 'The email of the new user.'},
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+3,对外影响 - 数据库操作 - 删,账户管理,注销账户,Token (string),apis/delete_account.py,DeleteAccount,(token: str),DeleteAccount(token: str),"description = ""Delete account API that takes a token parameter which is the authentication token of the user making the deletion request.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'The authentication token of the user.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+4,对外影响 - 数据库操作 - 改,账户管理,修改账户密码,Token (string)，旧密码 (string)，新密码 (string),apis/modify_password.py,ModifyPassword,"(token: str, old_password: str, new_password: str)","ModifyPassword(token: str, old_password: str, new_password: str)","description = ""Modify password API that takes two parameters - 'old_password' and 'new_password'. The 'old_password' parameter refers to the existing password and the 'new_password' parameter specifies the new password to be set.""
+input_parameters = {
+    'old_password': {'type': 'str', 'description': 'The existing password of the user.'},
+    'new_password': {'type': 'str', 'description': 'The new password to be set.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+5,对外影响 - 数据库操作 - 查,账户管理,忘记密码,用户名 (string)，邮箱 (string),apis/forgot_password.py,ForgotPassword,"(username: str, email: str)","ForgotPassword(username: str, email: str)","description = ""Forgot Password API that takes two parameters - 'username' and 'email'. The 'username' parameter refers to the username of the account for which the password is forgotten and the 'email' parameter specifies the email address associated with the account.""
+input_parameters = {
+    'username': {'type': 'str', 'description': 'The username of the account.'},
+    'email': {'type': 'str', 'description': 'The email address associated with the account.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+6,对外影响 - 数据库操作 - 增,日程安排和管理,添加提醒,Token (string)，内容 (string)，时间 (datetime),apis/add_reminder.py,AddReminder,"(token: str, content: str, time: datetime)","AddReminder(token: str, content: str, time: datetime)","description = ""Add a reminder API that allows users to create new reminders with the specified content and time.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'The user authentication token.'},
+    'content': {'type': 'str', 'description': 'The content of the reminder.'},
+    'time': {'type': 'datetime', 'description': 'The time at which the reminder should be triggered.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Indicates whether the request was successful or not.'}
+}"
+7,对外影响 - 数据库操作 - 删,日程安排和管理,删除提醒,Token (string)，提醒ID (int),apis/delete_reminder.py,DeleteReminder,"(token: str, reminder_id: int)","DeleteReminder(token: str, reminder_id: int)","description = ""Delete a reminder API that takes two parameters - 'token' and 'reminder_id'. The 'token' parameter is a string that represents the user authorization token and the 'reminder_id' parameter represents the unique identifier of the reminder to be deleted.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'A string that represents the user authorization token.'},
+    'reminder_id': {'type': 'int', 'description': 'The unique identifier of the reminder to be deleted.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failed.'}
+}"
+8,对外影响 - 数据库操作 - 改,日程安排和管理,修改提醒,Token (string)，提醒ID (int)，内容 (string)，时间 (datetime),apis/modify_reminder.py,ModifyReminder,"(token: str, reminder_id: int, content: str, time: datetime)","ModifyReminder(token: str, reminder_id: int, content: str, time: datetime)","description = ""Modify an existing reminder API that takes three parameters - 'reminder_id', 'content' and 'time'. The 'reminder_id' parameter refers to the identifier of the reminder that needs to be modified, 'content' parameter refers to the updated description of the reminder, and 'time' parameter specifies the updated time of the reminder.""
+input_parameters = {
+    'reminder_id': {'type': 'int', 'description': 'The identifier of the reminder.'},
+    'content': {'type': 'str', 'description': 'The updated content of the reminder.'},
+    'time': {'type': 'str', 'description': 'The updated time for the reminder. Format: %Y-%m-%d'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+9,对外影响 - 数据库操作 - 查,日程安排和管理,查询提醒,Token (string),apis/query_reminder.py,QueryReminder,(token: str),QueryReminder(token: str),"description = ""Get a list of all reminders API. This API takes a single parameter 'token' which is used for user authentication.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'User authentication token.'}
+}
+output_parameters = {
+    'reminders': {'type': 'list', 'description': 'List of all the user reminders.'}
+}"
+10,对外影响 - 数据库操作 - 增,日程安排和管理,预定会议,Token (string)，内容 (string)，时间 (datetime)，人员 (list of strings),apis/add_meeting.py,AddMeeting,"(token: str, content: str, time: datetime, recipients: List[str])","AddMeeting(token: str, content: str, time: datetime, recipients: List[str])","description = ""Book a meeting API that takes three parameters - 'content', 'time' and 'recipients'. The 'content' parameter refers to the description of the meeting and the 'time' parameter specifies the time at which the meeting is scheduled. The 'recipients' parameter is a list of strings that contains the email addresses of the individuals that are invited to attend the meeting.""
+input_parameters = {
+    'content': {'type': 'str', 'description': 'The content of the meeting.'},
+    'time': {'type': 'datetime', 'description': 'The time of the meeting in the format YYYY-MM-DD HH:MM:SS.'},
+    'recipients': {'type': 'List[str]', 'description': 'A list of email addresses of the individuals that are invited to attend the meeting.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+11,对外影响 - 数据库操作 - 删,日程安排和管理,取消会议,Token (string)，会议ID (int),apis/delete_meeting.py,DeleteMeeting,"(token: str, meeting_id: int)","DeleteMeeting(token: str, meeting_id: int)","description = ""Cancel a meeting API that takes two parameters - 'meeting_id' and 'token'. The 'meeting_id' parameter refers to the ID of the meeting that needs to be cancelled and the 'token' parameter specifies the authorization to access the meeting.""
+
+input_parameters = {
+    'meeting_id': {'type': 'int', 'description': 'The ID of the meeting to be cancelled.'},
+    'token': {'type': 'str', 'description': 'The authorization token for accessing the meeting.'}
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed.'}
+}"
+12,对外影响 - 数据库操作 - 改,日程安排和管理,修改会议,Token (string)，会议ID (int)，内容 (string)，时间 (datetime)，人员 (list of strings),apis/modify_meeting.py,ModifyMeeting,"(token: str, meeting_id: int, content: str, time: datetime, attendees: List[str])","ModifyMeeting(token: str, meeting_id: int, content: str, time: datetime, attendees: List[str])","description = ""Modify a meeting API that takes four parameters - 'meeting_id', 'content', 'time' and 'attendees'. The 'content' parameter refers to the new description of the meeting, 'time' parameter specifies the new time of the meeting, 'attendees' parameter is a list of email addresses of the new attendees who are invited to the meeting.""
+input_parameters = {
+    'meeting_id': {'type': 'int', 'description': 'The ID of the meeting to be modified.'},
+    'content': {'type': 'str', 'description': 'The new content of the meeting.'},
+    'time': {'type': 'str', 'description': 'The new time for meeting. Format: %Y-%m-%d'},
+    'attendees': {'type': 'List[str]', 'description': 'The new attendees (their emails) for the meeting.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+13,对外影响 - 数据库操作 - 查,日程安排和管理,查询会议,Token (string),apis/query_meeting.py,QueryMeeting,(token: str),QueryMeeting(token: str),"description = ""Query meeting API that takes one parameter - 'token'. The 'token' parameter refers to the authentication token to access the user's data.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'The authentication token.'}
+}
+output_parameters = {
+    'meeting_list': {'type': 'list', 'description': 'A list of meetings scheduled by the user.'}
+}"
+14,对外影响 - 数据库操作 - 增,日程安排和管理,添加日程,Token (string)，内容 (string)，时间 (datetime)，地点 (string),apis/add_agenda.py,AddAgenda,"(token: str, content: str, time: datetime, location: str)","AddAgenda(token: str, content: str, time: datetime, location: str)","description = ""Add an agenda API that takes four parameters - 'content', 'time', 'location' and 'token'. The 'content' parameter refers to the description of the agenda, the 'time' parameter specifies the time at which the agenda will happen, the 'location' parameter refers to the venue of the agenda and the 'token' parameter is used for authentication.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'The authentication token.'},
+    'content': {'type': 'str', 'description': 'The content of the agenda.'},
+    'time': {'type': 'datetime', 'description': 'The time for the agenda. Format: %Y-%m-%d %H:%M:%S'},
+    'location': {'type': 'str', 'description': 'The location of the agenda.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+15,对外影响 - 数据库操作 - 删,日程安排和管理,删除日程,Token (string)，日程ID (int),apis/delete_agenda.py,DeleteAgenda,"(token: str, schedule_id: int)","DeleteAgenda(token: str, schedule_id: int)","description = ""Delete an agenda API that takes two parameters - 'token' and 'schedule_id'. The 'token' parameter is a security measure while the 'schedule_id' parameter specifies the schedule to be deleted.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'A security measure to check user authenticity.'},
+    'schedule_id': {'type': 'int', 'description': 'The ID of the schedule to be deleted.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+16,对外影响 - 数据库操作 - 改,日程安排和管理,修改日程,Token (string)，日程ID (int)，内容 (string)，时间 (datetime)，地点 (string),apis/modify_agenda.py,ModifyAgenda,"(token: str, schedule_id: int, content: str, time: datetime, location: str)","ModifyAgenda(token: str, schedule_id: int, content: str, time: datetime, location: str)","description = ""A modify agenda API that takes four parameters - 'schedule_id', 'content', 'time' and 'location'. The 'schedule_id' parameter refers to the ID of the schedule that needs to be modified, the 'content' parameter refers to the updated details of the agenda, the 'time' parameter specifies the new time at which the agenda should be conducted and the 'location' parameter specifies the updated location of the agenda.""
+input_parameters = {
+    'schedule_id': {'type': 'int', 'description': 'The ID of the schedule to be modified.'},
+    'content': {'type': 'str', 'description': 'The updated details of the agenda.'},
+    'time': {'type': 'datetime', 'description': 'The updated time for the agenda.'},
+    'location': {'type': 'str', 'description': 'The updated location of the agenda.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Indicates whether the modifying the agenda was successful or not.'}
+}"
+17,对外影响 - 数据库操作 - 查,日程安排和管理,查询日程,Token (string),apis/query_agenda.py,QueryAgenda,(token: str),QueryAgenda(token: str),"description = ""Query agenda API that allows you to get the user's agenda based on the incoming token.""
+
+input_parameters = {
+    'token': {'type': 'str', 'description': 'A string representing the user token.'}
+}
+
+output_parameters = {
+    'agenda': {'type': 'list', 'description': 'A list of dictionaries representing the user agenda. Each dictionary contains details of a single entry- date, time, and description of the event.'}
+}"
+18,对外影响 - 数据库操作,日程安排和管理,分配优先级,Token (string)，内容 (string)，优先级 (int),apis/assign_priority.py,AssignPriority,"(token: str, content: str, priority: int)","AssignPriority(token: str, content: str, priority: int)","description = ""API that assigns priority to a task identified by its 'content' parameter.""
+input_parameters = {
+    'content': {'type': 'str', 'description': 'The content of the task.'},
+    'priority': {'type': 'int', 'description': 'The priority value to be assigned to the task.'},
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failure message.'}
+}"
+19,对外影响 - 数据库操作 - 增,日程安排和管理,设置计时器/闹钟,Token (string)，时间 (datetime),apis/add_alarm.py,AddAlarm,"(token: str, time: datetime)","AddAlarm(token: str, time: datetime)","description = ""Add an alarm clock API that takes two parameters - 'token' and 'time'. The 'token' parameter authenticates the user and the 'time' parameter specifies the time at which the alarm should go off.""
+
+input_parameters = {
+    'token': {'type': 'str', 'description': 'Authentication token for the user.'},
+    'time': {'type': 'datetime', 'description': 'The time for the alarm clock in the format of ""%Y-%m-%d %H:%M:%S"".'}
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'The status of the request - success or failed.'}
+}"
+20,对外影响 - 数据库操作 - 删,日程安排和管理,取消计时器/闹钟,Token (string)，计时器/闹钟ID (int),apis/delete_alarm.py,DeleteAlarm,"(token: str, timer_id: int)","DeleteAlarm(token: str, timer_id: int)","description = ""Cancel an alarm API that takes two parameters - 'timer_id' and 'token'. The 'timer_id' parameter refers to the id of the alarm to be cancelled and the 'token' parameter is used for user authentication.""
+input_parameters = {
+    'timer_id': {'type': 'int', 'description': 'The id of the alarm to be cancelled'},
+    'token': {'type': 'str', 'description': 'Token for user authentication'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+21,对外影响 - 数据库操作 - 改,日程安排和管理,修改计时器/闹钟,Token (string)，计时器/闹钟ID (int)，时间 (datetime),apis/modify_alarm.py,ModifyAlarm,"(token: str, timer_id: int, time: datetime)","ModifyAlarm(token: str, timer_id: int, time: datetime)","description = ""Modify an alarm API that takes three parameters - 'timer_id', 'time' and 'token'. The 'timer_id' parameter refers to the existing alarm that needs to be modified. The 'time' parameter specifies the new time at which the alarm should be triggered.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'The authorization token.'},
+    'timer_id': {'type': 'int', 'description': 'The id of the timer that needs to be modified.'},
+    'time': {'type': 'str', 'description': 'The new time for the timer. Format: %Y-%m-%d %H:%M:%S'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'},
+    'message': {'type': 'str', 'description': 'Additional information about the status.'}
+}"
+22,对外影响 - 数据库操作 - 查,日程安排和管理,查询计时器/闹钟,Token (string),apis/query_alarm.py,QueryAlarm,(token: str),QueryAlarm(token: str),"description = ""Query alarm API that takes one parameter - 'token'. The 'token' parameter is a unique identifier for the user account.""
+
+input_parameters = {
+    'token': {'type': 'str', 'description': 'A unique identifier for the user account.'}
+}
+output_parameters = {
+    'alarms': {'type': 'list', 'description': 'A list of dictionaries representing the alarms for the user. Each dictionary contains the alarm details.'}
+}"
+23,获取信息 - 数据库查询,日程安排和管理,检查时间冲突,Token (string)，内容 (string)，时间 (datetime),apis/check_time_conflict.py,CheckTimeConflict,"(token: str, content: str, time: datetime)","CheckTimeConflict(token: str, content: str, time: datetime)","description = ""Check time conflict API that takes two parameters - 'content' and 'time'. The 'content' parameter refers to the description of the event and the 'time' parameter specifies the time at which the event is scheduled. This API checks whether there is a time conflict with existing events.""
+input_parameters = {
+    'content': {'type': 'str', 'description': 'The description of the event.'},
+    'time': {'type': 'str', 'description': 'The time for the event. Format: %Y-%m-%d %H:%M'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Indicates whether there is a conflict or not. Possible values: ""conflict"" or ""no conflict""'}
+}"
+24,获取信息 - 外界信息查询,日程安排和管理,今日日期,无,apis/get_today.py,GetToday,None,GetTodayNone,"description = ""Get a list of today's tasks which are not completed yet.""
+input_parameters = {
+    None
+}
+output_parameters = {
+    'tasks': {'type': 'list', 'description': 'A list of task objects with their details.'}
+}"
+25,对外影响 - 数据库操作,财务管理,转账,Token (string)，金额 (float)，账户 (string)，鉴权 (object),apis/transfer.py,Transfer,"(token: str, amount: float, account: str, auth: object)","Transfer(token: str, amount: float, account: str, auth: object)","description = ""API to transfer money between accounts. It requires the user to input the 'token' which is the user's authentication token, the 'amount' which specifies the amount of money to be transferred, the 'account' which is the recipient's account number, and the 'auth' which is the authentication object.""
+input_parameters = {
+    'amount': {'type': 'float', 'description': 'The amount of money to be transferred.'},
+    'account': {'type': 'str', 'description': ""The recipient's account number.""},
+    'auth': {'type': 'object', 'description': 'The authentication object. Contains the user ID and password.'},
+    'token': {'type': 'str', 'description': 'The authentication token.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'The status of the transfer operation. Either successful or failed.'}
+}"
+26,对外影响 - 数据库操作 - 增,财务管理,开户,账户 (string)，密码 (string)，姓名 (string)，邮箱 (string),apis/open_bank_account.py,OpenBankAccount,"(account: str, password: str, name: str, email: str)","OpenBankAccount(account: str, password: str, name: str, email: str)","description = ""Open bank account API that takes four parameters: 'account', 'password', 'name' and 'email'. The 'account' parameter refers to the user's bank account number, the 'password' parameter refers to the user's password for the account, the 'name' parameter refers to the user's name and 'email' parameter refers to the user's email address.""
+input_parameters = {
+    'account': {'type': 'str', 'description': 'The user’s bank account number.'},
+    'password': {'type': 'str', 'description': 'The password for the bank account.'},
+    'name': {'type': 'str', 'description': 'The name of the user.'},
+    'email': {'type': 'str', 'description': 'The email address of the user.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Whether the bank account opening was successful or failed.'}
+}"
+27,对外影响 - 数据库操作 - 删,财务管理,删除账户,Token (string),apis/delete_bank_account.py,DeleteBankAccount,(token: str),DeleteBankAccount(token: str),"description = ""Delete a bank account API that takes one parameter - 'token'. The 'token' parameter refers to the access token required for authentication purposes and to identify the bank account to be deleted.""
+input_parameters = {
+    'token': {'type': 'str', 'description': 'The access token required for authentication purposes and to identify the bank account to be deleted.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+28,对外影响 - 数据库操作 - 改,财务管理,修改账户信息,Token (string)，账户 (string)，密码 (string)，姓名 (string)，邮箱 (string),apis/modify_bank_account.py,ModifyBankAccount,"(token: str, account: str, password: str, name: str, email: str)","ModifyBankAccount(token: str, account: str, password: str, name: str, email: str)","description = ""Modify bank account API that takes five parameters - 'account', 'password', 'name', 'email' and 'token'. The 'token' parameter is used for user authentication. The 'account' parameter refers to the user's account number and the 'password' parameter is used to authenticate the user. The 'name' parameter refers to the user's name and the 'email' parameter refers to the user's email address.""
+
+input_parameters = {
+    'account': {'type': 'str', 'description': 'The user account number.'},
+    'password': {'type': 'str', 'description': 'The user password to authenticate.'},
+    'name': {'type': 'str', 'description': 'The user name.'},
+    'email': {'type': 'str', 'description': 'The user email address.'},
+    'token': {'type': 'str', 'description': 'The user authentication token.'},
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+29,对外影响 - 数据库操作 - 查,财务管理,查询账户信息,Token (string)，账户 (string),apis/query_bank_account.py,QueryBankAccount,"(token: str, account: str)","QueryBankAccount(token: str, account: str)","description = ""A query bank account API that takes two parameters - 'account' and 'token'. The 'account' parameter refers to the bank account number that needs to be queried and the 'token' parameter is used to authenticate the user making the request.""
+
+input_parameters = {
+    'account': {'type': 'str', 'description': 'The bank account number to be queried.'},
+    'token': {'type': 'str', 'description': 'The authentication token of the user making the request.'}
+}
+output_parameters = {
+    'bank_name': {'type': 'str', 'description': 'The name of the bank the account is associated with.'},
+    'account_type': {'type': 'str', 'description': 'The account type - savings, current, etc.'},
+    'balance': {'type': 'float', 'description': 'The available balance in the account.'},
+    'status': {'type': 'str', 'description': 'Success or Failed'}
+}"
+30,获取信息 - 数据库查询,财务管理,汇率查询,货币类型 (string)，时间 (datetime),apis/query_exchange_rate.py,QueryExchangeRate,"(currency_type: str, time: datetime)","QueryExchangeRate(currency_type: str, time: datetime)","description = ""QueryExchangeRate API that takes two parameters - 'currency_type' and 'time'. The 'currency_type' specifies the type of currency for which the exchange rate is to be queried and the 'time' parameter specifies the date and time at which the exchange rate is to be retrieved.""
+input_parameters = {
+    'currency_type': {'type': 'str', 'description': 'The type of currency for which the exchange rate is to be queried.'},
+    'time': {'type': 'str', 'description': 'The date and time at which the exchange rate is to be retrieved.'}
+}
+output_parameters = {
+    'exchange_rate': {'type': 'float', 'description': 'The exchange rate for the specified currency at the given time.'}
+}"
+31,获取信息 - 数据库查询,财务管理,交易明细查询,Token (string)，账户 (string)，时间 (datetime),apis/query_trade_detail.py,QueryTradeDetail,"(token: str, account: str, time: datetime)","QueryTradeDetail(token: str, account: str, time: datetime)","description = ""Query trade details API that takes three parameters - 'account', 'time', and 'token'. The 'account' parameter refers to the account for which trade details are to be fetched. The 'time' parameter specifies a specific time period for which trade details are to be fetched."" 
+input_parameters = {
+    'account': {'type': 'str', 'description': 'The account for which trade details are to be fetched.'},
+    'time': {'type': 'str', 'description': 'The time period for which trade details are to be fetched. Format: %Y-%m-%d'},
+    'token': {'type': 'str', 'description': 'The token for API authentication.'}
+}
+output_parameters = {
+    'trade_details': {'type': 'list', 'description': 'A list of trade details for the specified account and time period.'}
+}"
+32,获取信息 - 数据库查询,财务管理,股票查询,股票代码 (string)，时间 (datetime),apis/query_stock.py,QueryStock,"(stock_code: str, time: datetime)","QueryStock(stock_code: str, time: datetime)","description = ""Query stock API that takes two parameters - 'stock_code' and 'time'. The 'stock_code' parameter refers to the code of the stock and the 'time' parameter specifies the time for fetching the stock data.""
+input_parameters = {
+    'stock_code': {'type': 'str', 'description': 'The code of the stock.'},
+    'time': {'type': 'str', 'description': 'The time for fetching the stock data. Format: %Y-%m-%d'}
+}
+output_parameters = {
+    'stock_data': {'type': 'json', 'description': 'JSON object containing the stock data.'}
+}"
+33,获取信息 - 数据库查询,财务管理,余额查询,Token (string)，账户 (string),apis/query_balance.py,QueryBalance,"(token: str, account: str)","QueryBalance(token: str, account: str)","description = ""API to query account balance. The 'account' parameter refers to the identifier of the account to be queried.""
+input_parameters = {
+    'account': {'type': 'str', 'description': 'The identifier of the account.'}
+}
+output_parameters = {
+    'balance': {'type': 'float', 'description': 'The account balance.'}
+}"
+34,获取信息 - 数据库查询,信息查询和处理,历史上的今天,日期 (datetime),apis/query_history_today.py,QueryHistoryToday,(date: datetime),QueryHistoryToday(date: datetime),"description = ""QueryHistoryToday API takes one parameter 'date'. The parameter 'date' refers to the date for which historical events are to be queried.""
+input_parameters = {
+    'date': {'type': 'str', 'description': 'The date for which historical events are to be queried. Format: %Y-%m-%d'}
+}
+output_parameters = {
+    'events': {'type': 'list', 'description': 'List of historical events that occurred on the given date.'}
+}"
+35,获取信息 - 数据库查询,信息查询和处理,搜索引擎,关键词 (string),apis/search_engine.py,SearchEngine,(keyword: str),SearchEngine(keyword: str),"description = ""API for searching items based on keywords""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The keyword to search.'}
+}
+output_parameters = {
+    'results': {'type': 'list', 'description': 'List of items matching the search criteria.'},
+    'status': {'type': 'str', 'description': 'Status of the API call.'}
+}"
+36,获取信息 - 数据库查询,信息查询和处理,维基百科,关键词 (string),apis/wiki.py,Wiki,(keyword: str),Wiki(keyword: str),"description = ""Wikipedia search API that takes one parameter - 'keyword'. The 'keyword' parameter refers to the search term to be looked up on Wikipedia.""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The keyword to be searched on Wikipedia.'}
+}
+output_parameters = {
+    'title': {'type': 'str', 'description': 'The title of the Wikipedia page matching the search term.'},
+    'summary': {'type': 'str', 'description': 'The summary of the Wikipedia page matching the search term.'},
+    'url': {'type': 'str', 'description': 'The URL of the Wikipedia page matching the search term.'}
+}"
+37,获取信息 - 数据库查询,信息查询和处理,知识图谱,关键词 (string),apis/knowledge_graph.py,KnowledgeGraph,(keyword: str),KnowledgeGraph(keyword: str),"description = ""A Knowledge Graph API that takes a single parameter - 'keyword'. This API returns a Knowledge Graph for the input keyword.""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The keyword for which the Knowledge Graph is to be generated.'}
+}
+output_parameters = {
+    'graph': {'type': 'str', 'description': 'The generated Knowledge Graph.'}
+}"
+38,获取信息 - 数据库查询,信息查询和处理,词典,查询词 (string),apis/dictionary.py,Dictionary,(query: str),Dictionary(query: str),"description = ""API that takes a 'query' parameter as input and retrieves the definition of that word.""
+input_parameters = {
+    'query': {'type': 'str', 'description': 'The word to search the definition for.'},
+}
+output_parameters = {
+    'definition': {'type': 'str', 'description': 'The definition of the requested word.'},
+}"
+39,获取信息 - 数据库查询,信息查询和处理,电商搜索,关键词 (string),apis/ecommerce_search.py,EcommerceSearch,(keyword: str),EcommerceSearch(keyword: str),"description = ""API for searching products in an ecommerce platform using a keyword search. The API takes one parameter - 'keyword', which refers to the search term entered by the user.""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The keyword search term entered by the user.'}
+}
+output_parameters = {
+    'results': {'type': 'list', 'description': 'List of products matching the search term.'}
+}"
+40,其他AI模型,信息查询和处理,图像描述,图像 (URL string),apis/image_caption.py,ImageCaption,(image: str),ImageCaption(image: str),.
+41,其他AI模型,信息查询和处理,语音识别,语音文件 (object),apis/speech_recognition.py,SpeechRecognition,(voice_file: object),SpeechRecognition(voice_file: object),"description = ""An API that performs speech recognition on an audio file containing spoken words.""
+input_parameters = {
+    'voice_file': {'type': 'object', 'description': 'The audio file containing the spoken words.'},
+}
+output_parameters = {
+    'transcription': {'type': 'str', 'description': 'The text transcription of the spoken words'},
+    'confidence': {'type': 'float', 'description': 'The confidence level of the transcription (between 0 and 1)'},
+}"
+42,其他AI模型,信息查询和处理,翻译,文本 (string)，源语言 (string)，目标语言 (string),apis/translate.py,Translate,"(text: str, source_language: str, target_language: str)","Translate(text: str, source_language: str, target_language: str)","description = ""Translate API that takes three parameters - 'text', 'source_language' and 'target_language'. The 'text' parameter is the string that needs to be translated, the 'source_language' parameter is the language in which the initial text is written and the 'target_language' parameter specifies the language to which the text is to be translated.""
+input_parameters = {
+    'text': {'type': 'str', 'description': 'The text to be translated.'},
+    'source_language': {'type': 'str', 'description': 'The language in which the initial text is written. Format: ISO 639 language code'},
+    'target_language': {'type': 'str', 'description': 'The language to which the text is to be translated. Format: ISO 639 language code'}
+}
+output_parameters = {
+    'translated_text': {'type': 'str', 'description': 'The string of the translated text.'}
+}"
+43,其他AI模型,信息查询和处理,摘要生成,文本 (string),apis/summarization.py,Summarization,(text: str),Summarization(text: str),"description = ""A text summarization API that takes a 'text' parameter which is the original text to be summarized.""
+input_parameters = {
+    'text': {'type': 'str', 'description': 'The original text to be summarized.'},
+}
+output_parameters = {
+    'summary': {'type': 'str', 'description': 'The summarized text.'},
+}"
+44,其他AI模型,信息查询和处理,物体检测,图片 (object),apis/object_detection.py,ObjectDetection,(image: object),ObjectDetection(image: object),"description = ""Object Detection API that detects objects in the given image.""
+input_parameters = {
+    'image': {'type': 'object', 'description': 'The image to be processed.'},
+}
+output_parameters = {
+    'objects': {'type': 'list', 'description': 'A list of objects detected in the image.'},
+    'image_size': {'type': 'tuple', 'description': 'The height and width of the image.'}
+}"
+45,其他AI模型,信息查询和处理,表格问答,表格数据 (object)，问题 (string),apis/table_qa.py,TableQA,"(table_data: object, question: str)","TableQA(table_data: object, question: str)","description = ""A TableQA API that extracts information from a given table based on a given question.""
+input_parameters = {
+    'table_data': {'type': 'object', 'description': 'The table data to be queried.'},
+    'question': {'type': 'str', 'description': 'The natural language question to be answered based on the table data.'}
+}
+output_parameters = {
+    'answer': {'type': 'str', 'description': 'The answer to the question based on the table data.'}
+}"
+46,其他AI模型,信息查询和处理,文档问答,文档内容 (string)，问题 (string),apis/document_qa.py,DocumentQA,"(document_content: str, question: str)","DocumentQA(document_content: str, question: str)","description = ""Document Question Answering (DocumentQA) API to provide answers for questions given a document content.""
+input_parameters = {
+    'document_content': {'type': 'str', 'description': 'The content of the document to be analyzed.'},
+    'question': {'type': 'str', 'description': 'The question to answer from the given document.'}
+}
+output_parameters = {
+    'answer': {'type': 'str', 'description': 'The answer for the given question.'},
+}"
+47,其他AI模型,信息查询和处理,语音生成,文本内容 (string),apis/speech_generation.py,SpeechGeneration,(text_content: str),SpeechGeneration(text_content: str),"description = ""A text-to-speech generation API that converts the given 'text_content' parameter into an audio file in a speech-like format.""
+input_parameters = {
+    'text_content': {'type': 'str', 'description': 'The text content that needs to be converted into speech.'},
+}
+output_parameters = {
+    'audio_file': {'type': 'file', 'description': 'The audio file in a speech-like format.'},
+}"
+48,其他AI模型,信息查询和处理,视频描述,视频 (object),apis/video_description.py,VideoDescription,(video: object),VideoDescription(video: object),"description = ""An API that takes one parameter -'video'. This API returns a description of the video passed as a parameter.""
+
+input_parameters = {
+    'video': {'type': 'object', 'description': 'A video object'}
+}
+
+output_parameters = {
+    'description': {'type': 'str', 'description': 'A textual description of the video'}
+}"
+49,其他AI模型,信息查询和处理,论文总结,论文内容 (string),apis/paper_summary.py,PaperSummary,(paper_content: str),PaperSummary(paper_content: str),"description = ""An API that generates a summary of a research paper using the 'paper_content' parameter.""
+input_parameters = {
+    'paper_content': {'type': 'str', 'description': 'The content of the research paper.'}
+}
+output_parameters = {
+    'summary': {'type': 'str', 'description': 'The generated summary of the research paper.'}
+}"
+50,对外影响 - 实时通信,信息查询和处理,发短信,收件人 (string)，内容 (string)，附件 (object),apis/send_message.py,SendMessage,"(recipient: str, content: str, attachment: object)","SendMessage(recipient: str, content: str, attachment: object)","description = ""Send message API that allows you to send a message to a recipient with a specified content and attachment (if applicable).""
+input_parameters = {
+    'recipient': {'type': 'str', 'description': 'The recipient of the message.'},
+    'content': {'type': 'str', 'description': 'The content of the message.'},
+    'attachment': {'type': 'object', 'description': 'The attachment of the message (if any).'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or error message.'}
+}"
+51,对外影响 - 实时通信,信息查询和处理,发送即时通讯信息,收件人 (string)，内容 (string),apis/send_im.py,SendIM,"(recipient: str, content: str)","SendIM(recipient: str, content: str)","description = ""Send an IM API that takes two parameters - 'recipient' and 'content'. The 'recipient' parameter refers to the recipient of the message and the 'content' parameter specifies the content of the message.""
+input_parameters = {
+    'recipient': {'type': 'str', 'description': 'The recipient of the IM message.'},
+    'content': {'type': 'str', 'description': 'The content of the IM message.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+52,对外影响 - 实时通信,信息查询和处理,发送邮件,收件人 (string)，主题 (string)，内容 (string),apis/send_email.py,SendEmail,"(recipient: str, subject: str, content: str)","SendEmail(recipient: str, subject: str, content: str)","description = ""Send email to a recipient with specified subject and content.""
+input_parameters = {
+    'recipient': {'type': 'str', 'description': 'The email address of the recipient.'},
+    'subject': {'type': 'str', 'description': 'The subject of the email.'},
+    'content': {'type': 'str', 'description': 'The content or body of the email.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failed'}
+}"
+53,对外影响 - 实时通信,信息查询和处理,接收邮件,无,apis/receive_email.py,ReceiveEmail,None,ReceiveEmailNone,"description = ""Receive email notification API, without any input parameter.""
+input_parameters = None
+output_parameters = {
+    'email_info': {'type': 'dict', 'description': 'Dictionary that contains the details of the email.'},
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+54,获取信息 - 工具,信息查询和处理,计算器,中序表达式 (string),apis/calculator.py,Calculator,(infix_expression: str),Calculator(infix_expression: str),"description = ""An API to perform arithmetic calculations on an infix expression.""
+input_parameters = {
+    'infix_expression': {'type': 'str', 'description': ""A string representing an arithmetic expression in infix notation.""}
+}
+output_parameters = {
+    'result': {'type': 'float/int', 'description': 'Result of the arithmetic expression.'}
+}"
+55,获取信息 - 数据库查询,信息查询和处理,快递查询,订单号 (string)，快递公司 (string),apis/express_query.py,ExpressQuery,"(order_number: str, courier_company: str)","ExpressQuery(order_number: str, courier_company: str)","description = ""API to query the shipment tracking details of an order based on the order number and the name of the courier company who is handling the delivery.""
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The unique identifier for the order.'},
+    'courier_company': {'type': 'str', 'description': 'The name of the courier company handling the delivery.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Status of the shipment tracking.'},
+    'last_updated_time': {'type': 'str', 'description': 'The timestamp when the shipment tracking was last updated. Format: %Y-%m-%d %H:%M:%S'},
+    'current_location': {'type': 'str', 'description': 'The current location of the shipment.'},
+    'estimated_delivery_date': {'type': 'str', 'description': 'The estimated date of delivery for the shipment. Format: %Y-%m-%d'}
+}"
+56,获取信息 - 数据库查询,健康管理,健康数据查询,用户ID (string)，时间段 (datetime),apis/query_health_data.py,QueryHealthData,"(user_id: str, time_period: datetime)","QueryHealthData(user_id: str, time_period: datetime)","description = ""API that retrieves the health data of a user for a specific time period. The 'user_id' parameter is used to identify the user for whom the data is to be fetched and the 'time_period' parameter specifies the time range for which the data should be retrieved.""
+input_parameters = {
+    'user_id': {'type': 'str', 'description': 'The ID of the user whose health data is to be retrieved.'},
+    'time_period': {'type': 'str', 'description': 'The time period for which health data is required in the format %Y-%m-%d to %Y-%m-%d'}
+}
+output_parameters = {
+    'data': {'type': 'list of dictionaries', 'description': 'The health data of the user for the specified time period.'},
+    'status': {'type': 'str', 'description': 'Success or failure of the API call.'}
+}"
+57,获取信息 - 数据库查询,健康管理,症状检索,症状描述 (string),apis/symptom_search.py,SymptomSearch,(symptom_description: str),SymptomSearch(symptom_description: str),"description = ""An API that searches for medical conditions based on symptom descriptions.""
+input_parameters = {
+    'symptom_description': {'type': 'str', 'description': 'A description of the symptoms being experienced.'}
+}
+output_parameters = {
+    'medical_conditions': {'type': 'list', 'description': 'A list of medical conditions that match the given symptom description.'}
+}"
+58,获取信息 - 数据库查询,健康管理,急救知识,疾病/伤害名称 (string),apis/emergency_knowledge.py,EmergencyKnowledge,(disease_injury_name: str),EmergencyKnowledge(disease_injury_name: str),"description = ""An API that provides information about emergency procedures and first aid activities related to a particular disease or injury. Takes one input parameter - 'disease_injury_name', which is a string referring to the name of the injury or disease for which the user needs emergency knowledge.""
+input_parameters = {
+    'disease_injury_name': {'type': 'str', 'description': ""The name of the disease or injury for which emergency knowledge is required.""}
+}
+output_parameters = {
+    'emergency_procedures': {'type': 'str', 'description': 'Emergency procedures for the specified disease or injury.'},
+    'first_aid_activities': {'type': 'str', 'description': 'First aid activities for the specified disease or injury.'}
+}"
+59,对外影响 - 数据库操作 - 增,健康管理,医院挂号,病人姓名 (string)，就诊时间 (datetime)，医生姓名 (string),apis/appointment_registration.py,AppointmentRegistration,"(patient_name: str, appointment_time: datetime, doctor_name: str)","AppointmentRegistration(patient_name: str, appointment_time: datetime, doctor_name: str)","description = ""Register an appointment API that takes three parameters - 'patient_name', 'doctor_name', and 'appointment_time'. The 'patient_name' parameter refers to the name of the patient who wants to register an appointment, 'doctor_name' refers to the name of the doctor who will take the appointment, and 'appointment_time' specifies the date and time of the appointment.""
+
+input_parameters = {
+    'patient_name': {'type': 'str', 'description': 'The name of the patient who wants to register an appointment.'},
+    'doctor_name': {'type': 'str', 'description': 'The name of the doctor who will take the appointment.'},
+    'appointment_time': {'type': 'str', 'description': 'The date and time of the appointment. Format: %Y-%m-%d %H:%M:%S'}
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+60,对外影响 - 数据库操作 - 删,健康管理,取消挂号,挂号号码 (string),apis/cancel_registration.py,CancelRegistration,(registration_number: str),CancelRegistration(registration_number: str),"description = ""Cancel a registration API that takes one parameter - 'registration_number'. The 'registration_number' parameter refers to the registration number of the conference registration that needs to be cancelled.""
+input_parameters = {
+    'registration_number': {'type': 'str', 'description': 'The registration number of the conference registration to be cancelled.'},
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed.'}
+}"
+61,对外影响 - 数据库操作 - 改,健康管理,修改挂号信息,挂号号码 (string)，新的就诊时间 (datetime),apis/modify_registration.py,ModifyRegistration,"(registration_number: str, new_appointment_time: datetime)","ModifyRegistration(registration_number: str, new_appointment_time: datetime)","description = ""Modify Registration API that takes two parameters - 'registration_number' and 'new_appointment_time'. The 'registration_number' parameter refers to the identification number of the registration to be updated, and the 'new_appointment_time' parameter specifies the new time for the updated registration appointment."" 
+
+input_parameters = {
+  'registration_number': {'type': 'str', 'description': 'The identification number of the registration to be updated.'},
+  'new_appointment_time': {'type': 'datetime', 'description': 'The new time for the updated registration appointment. Format: %Y-%m-%d %H:%M:%S'},
+}
+
+output_parameters = {
+  'status': {'type': 'str', 'description': 'success or failed'}
+}"
+62,对外影响 - 数据库操作 - 查,健康管理,查询挂号信息,病人姓名 (string)，就诊时间 (datetime),apis/query_registration.py,QueryRegistration,"(patient_name: str, appointment_time: datetime)","QueryRegistration(patient_name: str, appointment_time: datetime)","description = ""Query registration API that takes two parameters - 'patient_name' and 'appointment_time'. The 'patient_name' parameter refers to the name of the patient who has made the appointment and the 'appointment_time' parameter specifies the time of the appointment.""
+input_parameters = {
+    'patient_name': {'type': 'str', 'description': 'The name of the patient who has made the appointment.'},
+    'appointment_time': {'type': 'str', 'description': 'The time of the appointment. Format: %Y-%m-%d %H:%M:%S'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'},
+    'registration_details': {'type': 'str', 'description': 'Details of the patient registration.'}
+}"
+63,对外影响 - 数据库操作,健康管理,记录健康历史,用户ID (string)，日期 (datetime)，健康数据 (object),apis/record_health_data.py,RecordHealthData,"(user_id: str, date: datetime, health_data: object)","RecordHealthData(user_id: str, date: datetime, health_data: object)","description = ""Record health history API that takes in three parameters - 'user_id', 'date', and 'health_data'. The 'user_id' parameter refers to the unique identifier of the user whose health history is being recorded. The 'date' parameter specifies the date when the data was recorded. The 'health_data' parameter specifies the data that was recorded, which is an object.""
+input_parameters = {
+    'user_id': {'type': 'str', 'description': 'The unique identifier of the user whose health history is being recorded.'},
+    'date': {'type': 'str', 'description': 'The date when the data was recorded. Format: %Y-%m-%d'},
+    'health_data': {'type': 'object', 'description': 'The data that was recorded.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+64,对外影响 - 实时通信,智能家居控制,设备控制,设备ID (string)，指令 (string),apis/control_device.py,ControlDevice,"(device_id: str, command: str)","ControlDevice(device_id: str, command: str)","description = ""Control a device API that takes two parameters - 'device_id' and 'command'. The 'device_id' parameter refers to the unique identifier of the device and the 'command' parameter specifies the action to be performed on the device.""
+input_parameters = {
+    'device_id': {'type': 'str', 'description': 'The unique identifier of the device.'},
+    'command': {'type': 'str', 'description': 'The command to be executed on the device.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+65,对外影响 - 数据库操作 - 增,智能家居控制,添加场景,场景名称 (string)，设备列表 (list of strings),apis/add_scene.py,AddScene,"(scene_name: str, device_list: List[str])","AddScene(scene_name: str, device_list: List[str])","description = ""Add a scene API that takes two parameters - 'scene_name' and 'device_list'. The 'scene_name' parameter refers to the name of the scene and the 'device_list' parameter specifies the list of devices that are included in the scene.""
+input_parameters = {
+    'scene_name': {'type': 'str', 'description': 'The name of the scene.'},
+    'device_list': {'type': 'List[str]', 'description': 'List of devices included in the scene.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+66,对外影响 - 数据库操作 - 删,智能家居控制,删除场景,场景名称 (string),apis/delete_scene.py,DeleteScene,(scene_name: str),DeleteScene(scene_name: str),"description = ""Delete a scene API that takes one parameter - 'scene_name'. The 'scene_name' parameter refers to the name of the scene that needs to be deleted.""
+input_parameters = {
+    'scene_name': {'type': 'str', 'description': 'The name of the scene to be deleted.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+67,对外影响 - 数据库操作 - 改,智能家居控制,修改场景,场景名称 (string)，新的设备列表 (list of strings),apis/modify_scene.py,ModifyScene,"(scene_name: str, new_device_list: List[str])","ModifyScene(scene_name: str, new_device_list: List[str])","description = ""ModifyScene API that takes two parameters - 'scene_name' and 'new_device_list'. The 'scene_name' parameter specifies the name of the scene which needs to be modified and the 'new_device_list' parameter is a list of strings containing the names of the new devices that will replace the old ones in the scene.""
+input_parameters = {
+    'scene_name': {'type': 'str', 'description': 'The name of the scene that needs to be modified.'},
+    'new_device_list': {'type': 'list', 'description': 'A list of strings containing the new device names to be added to the scene.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or Failed'}
+}"
+68,对外影响 - 数据库操作 - 查,智能家居控制,查询场景,场景名称 (string),apis/query_scene.py,QueryScene,(scene_name: str),QueryScene(scene_name: str),"description = ""API to query a specific 'scene' by providing a 'scene_name'.""
+input_parameters = {
+    'scene_name': {'type': 'str', 'description': 'The name of the scene to be queried.'}
+}
+output_parameters = {
+    'scene_info': {'type': 'dict', 'description': 'A dictionary containing the information about the queried scene.'}
+}"
+69,对外影响 - 数据库操作 - 增,智能家居控制,定时开关,设备ID (string)，开关时间 (datetime)，开/关指令 (string),apis/timed_switch.py,TimedSwitch,"(device_id: str, switch_time: datetime, on_off_command: str)","TimedSwitch(device_id: str, switch_time: datetime, on_off_command: str)","description = ""API for scheduling a timed switch. Sets a switch-time for the specified device-id and executes an on/off command at the specified time.""
+input_parameters = {
+    'device_id': {'type': 'str', 'description': 'ID of the device on which to schedule a timed switch'},
+    'switch_time': {'type': 'datetime', 'description': 'Time at which to execute the on/off command. Format: %Y-%m-%d %H:%M:%S'},
+    'on_off_command': {'type': 'str', 'description': 'The command to execute when the switch time is reached. Should be ""on"" or ""off"".'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failed'}
+}"
+70,对外影响 - 数据库操作 - 删,智能家居控制,取消定时开关,设备ID (string)，开关时间 (datetime),apis/cancel_timed_switch.py,CancelTimedSwitch,"(device_id: str, switch_time: datetime)","CancelTimedSwitch(device_id: str, switch_time: datetime)","description = ""API for canceling a timed switch on a device using its 'device ID' and 'switch time' input parameters.""
+input_parameters = {
+    'device_id': {'type': 'str', 'description': 'The ID of the device for which the timed switch needs to be cancelled.'},
+    'switch_time': {'type': 'datetime', 'description': 'The time of the scheduled switch. Format: %Y-%m-%d %H:%M:%S'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'The status of the API call - success or failed.'}
+}"
+71,获取信息 - 数据库查询,智能家居控制,家居信息查询,设备类型 (string)，房间 (string),apis/query_smart_home.py,QuerySmartHome,"(device_type: str, room: str)","QuerySmartHome(device_type: str, room: str)","description = ""Smart home query API that takes two parameters - 'device_type' and 'room'. The 'device_type' parameter refers to the type of the device to be queried and the 'room' parameter specifies the room where the device is located.""
+input_parameters = {
+    'device_type': {'type': 'str', 'description': 'The type of the device to be queried.'},
+    'room': {'type': 'str', 'description': 'The room where the device is located.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'},
+    'result': {'type': 'str', 'description': 'The query result for the specified device.'}
+}"
+72,对外影响 - 实时通信,娱乐消遣,播放音乐,歌曲/歌单名称 (string)，来源 (string),apis/play_music.py,PlayMusic,"(song_playlist_name: str, source: str)","PlayMusic(song_playlist_name: str, source: str)","description = ""Play Music API that takes two parameters - 'song_playlist_name' and 'source'. The 'song_playlist_name' parameter refers to the name of the playlist which contains the songs to be played and the 'source' parameter specifies the location of the music files on the system.""
+input_parameters = {
+    'song_playlist_name': {'type': 'str', 'description': 'The name of the playlist to be played.'},
+    'source': {'type': 'str', 'description': 'The location of the music files on the system.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+73,获取信息 - 数据库查询,娱乐消遣,搜索电影/音乐,关键词 (string)，类型 (string)，年份 (int),apis/search_movie_music.py,SearchMovieMusic,"(keyword: str, type: str, year: int)","SearchMovieMusic(keyword: str, type: str, year: int)","description = ""Search for movies or music API that takes three parameters - 'keyword', 'type', and 'year'. The 'keyword' parameter refers to the search term for either movies or music. The 'type' parameter specifies whether the API should search for movies or music, and the 'year' parameter filters the results by the year.""
+
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The search keyword for movies or music.'},
+    'type': {'type': 'str', 'description': 'The type of search - movies or music.'},
+    'year': {'type': 'int', 'description': 'The year of the movie or music release.'}
+}
+
+output_parameters = {
+    'result': {'type': 'list', 'description': 'The list of search results.'},
+    'status': {'type': 'str', 'description': 'Success or failed.'}
+}"
+74,其他AI模型,娱乐消遣,识别歌曲,音频文件 (object),apis/identify_song.py,IdentifySong,(audio_file: object),IdentifySong(audio_file: object),"description = ""Identify Song API that takes one parameter - 'audio_file'. The 'audio_file' parameter should be a .wav or .mp3 file containing the audio recording of the song that needs to be identified.""
+input_parameters = {
+    'audio_file': {'type': 'object', 'description': 'Audio file (.wav or .mp3) containing the recording of the song to be identified.'}
+}
+output_parameters = {
+    'song_name': {'type': 'str', 'description': 'The name of the identified song.'},
+    'artist': {'type': 'str', 'description': 'The name of the artist who performs the song.'},
+    'album': {'type': 'str', 'description': 'The name of the album from which the song is taken (if available).'},
+    'year': {'type': 'str', 'description': 'The year the song was released (if available).'},
+    'status': {'type': 'str', 'description': 'Success or failed.'}
+}"
+75,对外影响 - 数据库操作 - 增,娱乐消遣,预定门票,景点名称 (string)，门票类型 (string)，数量 (int)，预定日期 (datetime),apis/book_ticket.py,BookTicket,"(attraction_name: str, ticket_type: str, quantity: int, reservation_date: datetime)","BookTicket(attraction_name: str, ticket_type: str, quantity: int, reservation_date: datetime)","description = ""Book a ticket API that takes four parameters - 'attraction_name', 'ticket_type', 'quantity', 'reservation_date'. The 'attraction_name' parameter refers to the selected attraction name, 'ticket_type' parameter specifies the type of ticket purchased, 'quantity' parameter refers to the quantity of tickets purchased, and the 'reservation_date' parameter specifies the desired date of reservation.""
+
+input_parameters = {
+    'attraction_name': {'type': 'str', 'description': 'The name of the attraction.', 'required': True},
+    'ticket_type': {'type': 'str', 'description': 'The type of ticket to be purchased.', 'required': True},
+    'quantity': {'type': 'int', 'description': 'The number of tickets to be booked.', 'required': True},
+    'reservation_date': {'type': 'datetime', 'description': ""The desired date of reservation. Format: %Y-%m-%d"", 'required': True}
+}
+
+output_parameters = {
+    'booking_id': {'type': 'str', 'description': 'The booking ID for the reservation.'},
+    'status': {'type': 'str', 'description': 'The status of the booking request.'}
+}"
+76,对外影响 - 数据库操作 - 删,娱乐消遣,取消门票,订单号 (string),apis/cancel_ticket.py,CancelTicket,(order_number: str),CancelTicket(order_number: str),"description = ""An API that cancels a ticket and takes one parameter - 'order_number', which refers to the unique identifier of the ticket to be cancelled.""
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The unique identifier of the ticket to be cancelled.'},
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Indicates if the ticket was successfully cancelled or not.'}
+}"
+77,对外影响 - 数据库操作 - 改,娱乐消遣,修改门票时间,订单号 (string)，新的预定日期 (datetime),apis/modify_ticket.py,ModifyTicket,"(order_number: str, new_reservation_date: datetime)","ModifyTicket(order_number: str, new_reservation_date: datetime)","description = ""ModifyTicket API that updates the reservation date for a given order number.""
+
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The order number for which reservation date needs to be updated.'},
+    'new_reservation_date': {'type': 'datetime', 'description': 'The new reservation date. Format: %Y-%m-%d %H:%M:%S'}
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or Failed'}
+}"
+78,对外影响 - 数据库操作 - 查,娱乐消遣,查询已预定门票,用户ID (string),apis/query_ticket.py,QueryTicket,(user_id: str),QueryTicket(user_id: str),"description = ""Query ticket API that takes one parameter - 'user_id'. The 'user_id' parameter refers to the unique identifier of the user for whom the ticket needs to be queried.""
+input_parameters = {
+    'user_id': {'type': 'str', 'description': 'The unique identifier of the user for whom the ticket needs to be queried.'}
+}
+output_parameters = {
+    'ticket_information': {'type': 'str', 'description': 'The information about the ticket for the user_id.'}
+}"
+79,获取信息 - 数据库查询,旅游出行,查询路线,起点 (string)，终点 (string)，交通方式 (string),apis/navigation.py,Navigation,"(origin: str, destination: str, transportation_mode: str)","Navigation(origin: str, destination: str, transportation_mode: str)","description = ""Navigation API that takes three parameters - 'origin', 'destination', and 'transportation_mode'. The 'origin' parameter refers to the starting location for the navigation, 'destination' parameter refers to the endpoint, and 'transportation_mode' parameter specifies the mode of transportation.""
+input_parameters = {
+    'origin': {'type': 'str', 'description': 'The starting location for navigation.'},
+    'destination': {'type': 'str', 'description': 'The endpoint for navigation.'},
+    'transportation_mode': {'type': 'str', 'description': ""The mode of transportation. Examples: 'driving', 'walking', 'bicycling', 'transit'""}
+}
+output_parameters = {
+    'route': {'type': 'str', 'description': 'The suggested route for navigation.'},
+    'time': {'type': 'str', 'description': ""The estimated time of arrival in HH:MM format.""}
+}"
+80,获取信息 - 数据库查询,旅游出行,查询景点/商店信息,关键词 (string)，位置 (string)，类别 (string),apis/query_places.py,QueryPlaces,"(keyword: str, location: str, category: str)","QueryPlaces(keyword: str, location: str, category: str)","description = ""API to search places based on the given keywords, location and category.""
+
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The keyword to search for in the places.'},
+    'location': {'type': 'str', 'description': 'The location to search in. Format: latitude,longitude.'},
+    'category': {'type': 'str', 'description': 'The category of the place to search for.'}
+}
+
+output_parameters = {
+    'places': {'type': 'list', 'description': 'A list of places matching the query.'}
+}"
+81,获取信息 - 数据库查询,旅游出行,搜索周边,位置 (string)，半径 (float)，类别 (string),apis/search_around.py,SearchAround,"(location: str, radius: float, category: str)","SearchAround(location: str, radius: float, category: str)","description = ""API to search for nearby locations based on the provided location, radius and category parameters. The 'location' parameter specifies the latitude and longitude of the center of the search. The 'radius' parameter defines the distance in meters from the center of the search area. The 'category' parameter is used to filter the search results by specific categories such as restaurants, cafes, or hotels.""
+input_parameters = {
+    'location': {'type': 'str', 'description': 'The latitude and longitude of the center of the search. Format: ""latitude, longitude"".'},
+    'radius': {'type': 'float', 'description': 'The radius in meters of the search area.'},
+    'category': {'type': 'str', 'description': 'The category of the location to search for.'}
+}
+output_parameters = {
+    'locations': {'type': 'list', 'description': 'List of locations matching the search criteria.'},
+    'status': {'type': 'str', 'description': 'Indicates whether the search was successful or not.'}
+}"
+82,获取信息 - 数据库查询,旅游出行,查询酒店,目的地 (string)，入住时间 (datetime)，离店时间 (datetime)，房间数 (int)，成人数 (int)，儿童数 (int),apis/query_hotel.py,QueryHotel,"(destination: str, check_in_date: datetime, check_out_date: datetime, room_count: int, adult_count: int, child_count: int)","QueryHotel(destination: str, check_in_date: datetime, check_out_date: datetime, room_count: int, adult_count: int, child_count: int)","description = ""Query hotel API that takes six parameters; 'destination' specifies the location for the hotel, 'check_in_date' refers to the date on which the hotel check-in is to be made, 'check_out_date' refers to the date on which the hotel checkout has to be made, 'room_count' specifies the total number of rooms required, 'adult_count' specifies the number of adults and 'child_count' specifies the number of children staying in the hotel.""
+input_parameters = {
+    'destination': {'type': 'str', 'description': 'The location for the hotel'},
+    'check_in_date': {'type': 'str', 'description': 'The date on which the hotel check-in is to be made. Format: %Y-%m-%d'},
+    'check_out_date': {'type': 'str', 'description': 'The date on which the hotel checkout has to be made. Format: %Y-%m-%d'},
+    'room_count': {'type': 'int', 'description': 'The total number of rooms required.'},
+    'adult_count': {'type': 'int', 'description': 'The number of adults staying in the hotel.'},
+    'child_count': {'type': 'int', 'description': 'The number of children staying in the hotel.'}
+}
+output_parameters = {
+    'hotels': {'type': 'list', 'description': 'List containing details of all the available hotels.'},
+    'status': {'type': 'str', 'description': 'Success or failed.'}
+}"
+83,获取信息 - 数据库查询,旅游出行,查询天气,位置 (string)，时间 (datetime),apis/query_weather.py,QueryWeather,"(location: str, time: datetime)","QueryWeather(location: str, time: datetime)","description = ""API to query the weather forecast for a specified location and time.""
+input_parameters = {
+    'location': {'type': 'str', 'description': 'The location for which to query the weather forecast.'},
+    'time': {'type': 'datetime', 'description': 'The time for which to query the weather forecast.'}
+}
+output_parameters = {
+    'temperature': {'type': 'float', 'description': 'The temperature at the specified location and time.'},
+    'humidity': {'type': 'float', 'description': 'The humidity at the specified location and time.'},
+    'wind_speed': {'type': 'float', 'description': 'The wind speed at the specified location and time.'},
+    'description': {'type': 'str', 'description': 'A textual description of the weather conditions at the specified location and time.'}
+}"
+84,对外影响 - 数据库操作 - 增,旅游出行,预定酒店,酒店名称 (string)，入住时间 (datetime)，离店时间 (datetime)，房间数 (int)，成人数 (int)，儿童数 (int),apis/book_hotel.py,BookHotel,"(hotel_name: str, check_in_date: datetime, check_out_date: datetime, room_count: int, adult_count: int, child_count: int)","BookHotel(hotel_name: str, check_in_date: datetime, check_out_date: datetime, room_count: int, adult_count: int, child_count: int)","description = ""Book a hotel API that takes multiple parameters such as 'hotel_name', 'check_in_date', 'check_out_date', 'room_count', 'adult_count', 'child_count'. The 'check_in_date' parameter is the date when the guest is supposed to arrive at the hotel, the 'check_out_date' parameter is the date when the guest is supposed to leave the hotel, 'room_count' parameter is the number of rooms required, 'adult_count' parameter is the count of adults and 'child_count' parameter is the count of children staying in the hotel.""
+
+input_parameters = {
+    'hotel_name': {'type': 'str', 'description': 'Name of the hotel'},
+    'check_in_date': {'type': 'str', 'description': 'The check-in date. Format: %Y-%m-%d'},
+    'check_out_date': {'type': 'str', 'description': 'The check-out date. Format: %Y-%m-%d'},
+    'room_count': {'type': 'int', 'description': 'Number of rooms required for stay'},
+    'adult_count': {'type': 'int', 'description': 'Number of adults staying in the hotel'},
+    'child_count': {'type': 'int', 'description': 'Number of children staying in the hotel'}
+}
+
+output_parameters = {
+    'booking_status': {'type': 'str', 'description': 'Status of the booking. eg. success, failed'},
+    'booking_reference': {'type': 'str', 'description': 'Booking reference code for the hotel reserved.'},
+    'total_cost':{'type': 'str', 'description': 'Total cost of the stay in US Dollars(USD).'}
+}"
+85,对外影响 - 数据库操作 - 删,旅游出行,取消酒店预定,订单号 (string),apis/cancel_hotel_booking.py,CancelHotelBooking,(order_number: str),CancelHotelBooking(order_number: str),"description = ""Cancel a hotel booking API that takes one parameter - 'order_number'. The 'order_number' parameter refers to the unique identifier of the reservation to be canceled.""
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The unique identifier of the hotel reservation.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failed.'},
+    'refund_amount': {'type': 'float', 'description': 'The amount to be refunded as per the cancellation policy.'}
+}"
+86,对外影响 - 数据库操作 - 改,旅游出行,修改酒店预定,订单号 (string)，新的入住时间 (datetime)，新的离店时间 (datetime)，新的房间数 (int)，新的成人数 (int)，新的儿童数 (int),apis/modify_hotel_booking.py,ModifyHotelBooking,"(order_number: str, new_check_in_date: datetime, new_check_out_date: datetime, new_room_count: int, new_adult_count: int, new_child_count: int)","ModifyHotelBooking(order_number: str, new_check_in_date: datetime, new_check_out_date: datetime, new_room_count: int, new_adult_count: int, new_child_count: int)","description = ""Modify Hotel Booking API that takes the order number and allows the user to modify their hotel booking by changing the check-in and check-out dates, room count, and the number of adults and children.""
+
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The order number of the hotel booking'},
+    'new_check_in_date': {'type': 'str', 'description': 'The new check-in date for the booking. Format: %Y-%m-%d'},
+    'new_check_out_date': {'type': 'str', 'description': 'The new check-out date for the booking. Format: %Y-%m-%d'},
+    'new_room_count': {'type': 'int', 'description': 'The new number of rooms needed for the booking'},
+    'new_adult_count': {'type': 'int', 'description': 'The new number of adults for the booking'},
+    'new_child_count': {'type': 'int', 'description': 'The new number of children for the booking'}
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failure status message'}
+}"
+87,对外影响 - 数据库操作 - 查,旅游出行,查询酒店预定,用户ID (string),apis/query_hotel_booking.py,QueryHotelBooking,(user_id: str),QueryHotelBooking(user_id: str),"description = ""Query hotel bookings API that takes one parameter - 'user_id'. The 'user_id' parameter refers to the unique identifier of the user whose hotel bookings are to be queried.""
+input_parameters = {
+    'user_id': {'type': 'str', 'description': 'The unique identifier of the user whose hotel bookings are to be queried.'}
+}
+output_parameters = {
+    'bookings': {'type': 'list', 'description': 'A list of dictionary objects containing the details of the hotel bookings.'}
+}"
+88,对外影响 - 数据库操作 - 增,旅游出行,购买车票,起点 (string)，终点 (string)，日期 (datetime)，车次 (string)，座位类型 (string)，乘客姓名 (string),apis/buy_train_ticket.py,BuyTrainTicket,"(origin: str, destination: str, date: datetime, train_number: str, seat_type: str, passenger_name: str)","BuyTrainTicket(origin: str, destination: str, date: datetime, train_number: str, seat_type: str, passenger_name: str)","description = ""A API to buy train tickets that takes six parameters. 'origin' parameter refers to the station from which the train will depart, 'destination' parameter refers to the station at which the train will arrive, 'date' parameter specifies the date of the journey, 'train_number' parameter contains the train number, 'seat_type' parameter specifies the type of seat and 'passenger_name' parameter refers to the name of the passenger.""
+
+input_parameters = {
+    'origin': {'type': 'str', 'description': 'The origin station for the train journey.'},
+    'destination': {'type': 'str', 'description': 'The destination station for the train journey.'},
+    'date': {'type': 'str', 'description': 'The date of the train journey. Format: %Y-%m-%d'},
+    'train_number': {'type': 'str', 'description': 'The number of the train.'},
+    'seat_type': {'type': 'str', 'description': 'The seat type. Options: First class, Second class.'},
+    'passenger_name': {'type': 'str', 'description': 'The name of the passenger.'}
+}
+
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success/failure'},
+    'ticket_number': {'type': 'str', 'description': 'The ticket number.'},
+    'seat_number': {'type': 'str', 'description': 'The seat number.'},
+    'departure_time': {'type': 'str', 'description': 'The departure time of the train.'}
+}"
+89,对外影响 - 数据库操作 - 删,旅游出行,取消车票,订单号 (string),apis/cancel_train_ticket.py,CancelTrainTicket,(order_number: str),CancelTrainTicket(order_number: str),"description = ""Cancel a train ticket API that takes one parameter - 'order_number'. The 'order_number' parameter refers to the unique identifier of the train ticket order.""
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The order number of the train ticket.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+90,对外影响 - 数据库操作 - 改,旅游出行,改签车票,订单号 (string)，新的日期 (datetime)，新的车次 (string)，新的座位类型 (string),apis/modify_train_ticket.py,ModifyTrainTicket,"(order_number: str, new_date: datetime, new_train_number: str, new_seat_type: str)","ModifyTrainTicket(order_number: str, new_date: datetime, new_train_number: str, new_seat_type: str)","description = ""Modify Train Ticket API allows users to modify their train ticket order with specified 'order_number'. The API takes in four parameters - 'new_date', 'new_train_number', 'new_seat_type'. The 'new_date' parameter refers to the new date of the train journey, the 'new_train_number' parameter specifies the new train number, and the 'new_seat_type' parameter specifies the new type of seat.""
+
+input_parameters = {
+    'order_number': {'type': 'str', 'description': 'The order number of the train ticket.'},
+    'new_date': {'type': 'datetime', 'description': 'The new date of the train journey. Format: %Y-%m-%d %H:%M:%S'},
+    'new_train_number': {'type': 'str', 'description': 'The new train number to modify.'},
+    'new_seat_type': {'type': 'str', 'description': 'The new type of seat to modify.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+91,对外影响 - 数据库操作 - 查,旅游出行,查询已购车票,用户ID (string),apis/query_train_ticket.py,QueryTrainTicket,(user_id: str),QueryTrainTicket(user_id: str),"description = ""Query Train Ticket API that takes one parameter - 'user_id'. It retrieves information about train tickets booked by the user.""
+input_parameters = {
+    'user_id': {'type': 'str', 'description': 'The user id of the user.'}
+}
+output_parameters = {
+    'ticket_info': {'type': 'list', 'description': 'A list of dictionaries containing the information about booked tickets.'}
+}"
+92,对外影响 - 数据库操作,钉钉,日程安排,日期 (datetime)，日程列表 (list of objects),apis/schedule.py,Schedule,"(date: datetime, schedule_list: List[object])","Schedule(date: datetime, schedule_list: List[object])","description = ""A scheduling API that enables user to add or modify events on a particular date. The API takes two inputs - 'date' and 'schedule_list'. The 'date' parameter specifies the date for which the user wants to perform scheduling operations. The 'schedule_list' parameter is a list of objects, each containing details of the scheduled event like name, start and end time, description, location, etc.""
+input_parameters = {
+    'date': {'type': 'datetime', 'description': 'The date for which scheduling operations to be performed.'},
+    'schedule_list': {'type': 'list', 'description': 'List of objects containing details of scheduled events.'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Indicates whether scheduling operation was successful or not.'}
+}"
+93,对外影响 - 数据库操作,钉钉,备忘,内容 (string)，时间 (datetime)，地点 (string)，提醒时间 (datetime),apis/memo.py,Memo,"(content: str, time: datetime, location: str, reminder_time: datetime)","Memo(content: str, time: datetime, location: str, reminder_time: datetime)","description = ""A memo API that takes four parameters - 'content', 'time', 'location' and 'reminder_time'. The 'content' parameter refers to the description of the memo, the 'time' parameter specifies the time at which the memo was created, the 'location' parameter specifies the location where the memo was created, and the 'reminder_time' parameter specifies the time at which the user wishes to be reminded of the memo.""
+input_parameters = {
+    'content': {'type': 'str', 'description': 'The content/description of the memo.'},
+    'time': {'type': 'datetime', 'description': 'The time when the memo is created. Format: %Y-%m-%d %H:%M:%S'},
+    'location': {'type': 'str', 'description': 'The location where the memo is created.'},
+    'reminder_time': {'type': 'datetime', 'description': 'The time when the user wishes to be reminded of the memo. Format: %Y-%m-%d %H:%M:%S'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'Success or failed.'}
+}"
+94,获取信息 - 数据库查询,学习科研相关,书籍查询,关键词 (string)，作者 (string),apis/search_book.py,SearchBook,"(keyword: str, author: str)","SearchBook(keyword: str, author: str)","description = ""Search book API that takes two parameters - 'keyword' and 'author'. 'keyword' is used to search for books by keyword and 'author' is used to filter the list of results by author.""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'Keyword to search for books.'},
+    'author': {'type': 'str', 'description': 'Author name to filter the list of book results.'},
+}
+output_parameters = {
+    'books': {'type': 'list', 'description': 'List of books that match the search criteria.'}
+}"
+95,获取信息 - 数据库查询,学习科研相关,在线课程查询,关键词 (string)，讲师 (string)，类型 (string),apis/online_course_search.py,OnlineCourseSearch,"(keyword: str, lecturer: str, type: str)","OnlineCourseSearch(keyword: str, lecturer: str, type: str)","description = ""Search for online courses API that takes three optional parameters - 'keyword', 'lecturer', and 'type'. The 'keyword' parameter refers to the topic or title of the course, the 'lecturer' parameter refers to the name of the instructor, and the 'type' parameter specifies the type of course, such as beginner, intermediate, or advanced level courses.""
+
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The topic or title of the course.'},
+    'lecturer': {'type': 'str', 'description': 'The name of the instructor.'},
+    'type': {'type': 'str', 'description': 'The type of course, such as beginner, intermediate, or advanced level courses. This is an optional parameter.'}
+}
+
+output_parameters = {
+    'courses': {'type': 'list', 'description': 'A list of courses matching the search criteria.'},
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+96,获取信息 - 数据库查询,学习科研相关,考试时间查询,考试名称 (string)，考试时间 (datetime),apis/exam_schedule.py,ExamSchedule,"(exam_name: str, exam_time: datetime)","ExamSchedule(exam_name: str, exam_time: datetime)","description = ""API to schedule an exam, taking parameters 'exam_name' and 'exam_time'. The 'exam_name' parameter determines the name of the exam, and the 'exam_time' parameter determines the time at which the exam is scheduled.""
+input_parameters = {
+    'exam_name': {'type': 'str', 'description': 'The name of the exam.'},
+    'exam_time': {'type': 'str', 'description': 'The time for the exam. Format: %Y-%m-%d %H:%M:%S'}
+}
+output_parameters = {
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+97,获取信息 - 数据库查询,学习科研相关,临近人工智能会议查询,会议名称 (string),apis/ai_conference_search.py,AIConferenceSearch,(meeting_name: str),AIConferenceSearch(meeting_name: str),"description = ""An API to search for conferences related to artificial intelligence based on the 'meeting_name' parameter passed.""
+input_parameters = {
+    'meeting_name': {'type': 'str', 'description': 'The name of the conference or a keyword that refers to the conference.'},
+}
+output_parameters = {
+    'conference_details': {'type': 'list', 'description': 'The list of conferences found based on the input parameter.'},
+}"
+98,获取信息 - 数据库查询,工作相关,查询岗位信息,关键词 (string)，地点 (string)，工作经验 (string),apis/job_search.py,JobSearch,"(keyword: str, location: str, work_experience: str)","JobSearch(keyword: str, location: str, work_experience: str)","description = ""A JobSearch API that returns available jobs based on provided search parameters - 'keyword', 'location', and 'work_experience'. The 'keyword' parameter refers to the job title or industry, the 'location' parameter specifies the location of the job, and the 'work_experience' parameter indicates the level of experience required for the job.""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The job title or industry to search for.'},
+    'location': {'type': 'str', 'description': 'The location of the job.'},
+    'work_experience': {'type': 'str', 'description': 'The level of work experience required for the job (e.g. entry-level, mid-level, senior-level).'}
+}
+output_parameters = {
+    'jobs': {'type': 'list', 'description': 'A list of available jobs that match the search parameters.'},
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"
+99,获取信息 - 数据库查询,工作相关,查询公司年报,公司名称 (string)，年份 (int),apis/company_annual_report.py,CompanyAnnualReport,"(company_name: str, year: int)","CompanyAnnualReport(company_name: str, year: int)","description = ""Retrieves the annual report of a company for a particular year based on the provided parameters.""
+input_parameters = {
+    'company_name': {'type': 'str', 'description': 'The name of the requested company.'},
+    'year': {'type': 'int', 'description': 'The year for which the annual report is requested.'}
+}
+output_parameters = {
+    'report': {'type': 'file', 'description': 'The annual report of the requested company for the specified year.'},
+    'status': {'type': 'str', 'description': 'Success if the report is found or Failed if the report does not exist for the specified year.'}
+}"
+100,获取信息 - 数据库查询,工作相关,查询公司经营范围,公司名称 (string),apis/company_business_scope.py,CompanyBusinessScope,(company_name: str),CompanyBusinessScope(company_name: str),"description = ""Retrieve the business scope of a company using the company name.""
+input_parameters = {
+    'company_name': {'type': 'str', 'description': 'The name of the company.'}
+}
+output_parameters = {
+    'business_scope': {'type': 'str', 'description': 'The business scope of the specified company.'}
+}"
+101,获取信息 - 数据库查询,工作相关,查询招聘信息,关键词 (string)，地点 (string)，职位 (string),apis/recruitment_information.py,RecruitmentInformation,"(keyword: str, location: str, position: str)","RecruitmentInformation(keyword: str, location: str, position: str)","description = ""Search recruitment information API that takes three parameters - 'keyword', 'location', and 'position'. The 'keyword' parameter is to search for the job, 'location' parameter is to search job location, and the 'position' parameter is to specify the desired position title.""
+input_parameters = {
+    'keyword': {'type': 'str', 'description': 'The keyword to search for the job.'},
+    'location': {'type': 'str', 'description': 'The location for the job search.'},
+    'position': {'type': 'str', 'description': 'The position to search for.'},
+}
+output_parameters = {
+    'data': {'type': 'list', 'description': 'A list of dictionaries containing the recruitment information.'},
+    'status': {'type': 'str', 'description': 'success or failed'}
+}"

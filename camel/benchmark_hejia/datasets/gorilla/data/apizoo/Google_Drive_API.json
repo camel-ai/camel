@@ -1,0 +1,1104 @@
+[
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - about.get",
+        "api_call": "service.about().get().execute()",
+        "api_version": "v3",
+        "api_arguments": {},
+        "functionality": "Gets information about the user, the user's Drive, and system capabilities.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - apps.get",
+        "api_call": "service.apps().get(appId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "appId": "[REQUIRED] string: The ID of the app."
+        },
+        "functionality": "Gets a specific app.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - apps.list",
+        "api_call": "service.apps().list().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "appFilterExtensions": "string: A comma-separated list of file extensions to limit returned results. All results within the given app query scope which can open any of the given file extensions are included in the response. If `appFilterMimeTypes` are provided as well, the result is a union of the two resulting app lists.",
+            "appFilterMimeTypes": "string: A comma-separated list of file extensions to limit returned results. All results within the given app query scope which can open any of the given MIME types will be included in the response. If `appFilterExtensions` are provided as well, the result is a union of the two resulting app lists.",
+            "languageCode": "string: A language or locale code, as defined by BCP 47, with some extensions from Unicode's LDML format (http://www.unicode.org/reports/tr35/)."
+        },
+        "functionality": "Lists a user's installed apps.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - changes.getStartPageToken",
+        "api_call": "service.changes().getStartPageToken().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "string: The ID of the shared drive for which the starting pageToken for listing future changes from that shared drive will be returned.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "teamDriveId": "string: Deprecated: Use `driveId` instead."
+        },
+        "functionality": "Gets the starting pageToken for listing future changes.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - changes.list",
+        "api_call": "service.changes().list(pageToken: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "string: The shared drive from which changes will be returned. If specified the change IDs will be reflective of the shared drive; use the combined drive ID and change ID as an identifier.",
+            "includeCorpusRemovals": "boolean: Whether changes should include the file resource if the file is still accessible by the user at the time of the request, even when a file was removed from the list of changes and there will be no further change entries for this file.",
+            "includeItemsFromAllDrives": "boolean: Whether both My Drive and shared drive items should be included in results.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "includeRemoved": "boolean: Whether to include changes indicating that items have been removed from the list of changes, for example by deletion or loss of access.",
+            "includeTeamDriveItems": "boolean: Deprecated: Use `includeItemsFromAllDrives` instead.",
+            "pageSize": "integer: The maximum number of changes to return per page.",
+            "pageToken": "[REQUIRED] string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response or to the response from the getStartPageToken method.",
+            "restrictToMyDrive": "boolean: Whether to restrict the results to changes inside the My Drive hierarchy. This omits changes to files such as those in the Application Data folder or shared files which have not been added to My Drive.",
+            "spaces": "string: A comma-separated list of spaces to query within the corpora. Supported values are 'drive' and 'appDataFolder'.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "teamDriveId": "string: Deprecated: Use `driveId` instead."
+        },
+        "functionality": "Lists the changes for a user or shared drive.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - changes.watch",
+        "api_call": "service.changes().watch(pageToken: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "string: The shared drive from which changes will be returned. If specified the change IDs will be reflective of the shared drive; use the combined drive ID and change ID as an identifier.",
+            "includeCorpusRemovals": "boolean: Whether changes should include the file resource if the file is still accessible by the user at the time of the request, even when a file was removed from the list of changes and there will be no further change entries for this file.",
+            "includeItemsFromAllDrives": "boolean: Whether both My Drive and shared drive items should be included in results.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "includeRemoved": "boolean: Whether to include changes indicating that items have been removed from the list of changes, for example by deletion or loss of access.",
+            "includeTeamDriveItems": "boolean: Deprecated: Use `includeItemsFromAllDrives` instead.",
+            "pageSize": "integer: The maximum number of changes to return per page.",
+            "pageToken": "[REQUIRED] string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response or to the response from the getStartPageToken method.",
+            "restrictToMyDrive": "boolean: Whether to restrict the results to changes inside the My Drive hierarchy. This omits changes to files such as those in the Application Data folder or shared files which have not been added to My Drive.",
+            "spaces": "string: A comma-separated list of spaces to query within the corpora. Supported values are 'drive' and 'appDataFolder'.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "teamDriveId": "string: Deprecated: Use `driveId` instead."
+        },
+        "functionality": "Subscribes to changes for a user.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - channels.stop",
+        "api_call": "service.channels().stop().execute()",
+        "api_version": "v3",
+        "api_arguments": {},
+        "functionality": "Stops watching resources through this channel.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - comments.create",
+        "api_call": "service.comments().create(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file."
+        },
+        "functionality": "Creates a comment on a file.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - comments.delete",
+        "api_call": "service.comments().delete(fileId: str, commentId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file."
+        },
+        "functionality": "Deletes a comment.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - comments.get",
+        "api_call": "service.comments().get(fileId: str, commentId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeDeleted": "boolean: Whether to return deleted comments. Deleted comments will not include their original content."
+        },
+        "functionality": "Gets a comment by ID.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - comments.list",
+        "api_call": "service.comments().list(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeDeleted": "boolean: Whether to include deleted comments. Deleted comments will not include their original content.",
+            "pageSize": "integer: The maximum number of comments to return per page.",
+            "pageToken": "string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response.",
+            "startModifiedTime": "string: The minimum value of 'modifiedTime' for the result comments (RFC 3339 date-time)."
+        },
+        "functionality": "Lists a file's comments.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - comments.update",
+        "api_call": "service.comments().update(fileId: str, commentId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file."
+        },
+        "functionality": "Updates a comment with patch semantics.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.create",
+        "api_call": "service.drives().create(requestId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "requestId": "[REQUIRED] string: Required. An ID, such as a random UUID, which uniquely identifies this user's request for idempotent creation of a shared drive. A repeated request by the same user and with the same request ID will avoid creating duplicates by attempting to create the same shared drive. If the shared drive already exists a 409 error will be returned."
+        },
+        "functionality": "Creates a shared drive.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.delete",
+        "api_call": "service.drives().delete(driveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "allowItemDeletion": "boolean: Whether any items inside the shared drive should also be deleted. This option is only supported when `useDomainAdminAccess` is also set to `true`.",
+            "driveId": "[REQUIRED] string: The ID of the shared drive.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if they are an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Permanently deletes a shared drive for which the user is an `organizer`. The shared drive cannot contain any untrashed items.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.get",
+        "api_call": "service.drives().get(driveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "[REQUIRED] string: The ID of the shared drive.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if they are an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Gets a shared drive's metadata by ID.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.hide",
+        "api_call": "service.drives().hide(driveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "[REQUIRED] string: The ID of the shared drive."
+        },
+        "functionality": "Hides a shared drive from the default view.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.list",
+        "api_call": "service.drives().list().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "pageSize": "integer: Maximum number of shared drives to return per page.",
+            "pageToken": "string: Page token for shared drives.",
+            "q": "string: Query string for searching shared drives.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then all shared drives of the domain in which the requester is an administrator are returned."
+        },
+        "functionality": " Lists the user's shared drives. This method accepts the `q` parameter, which is a search query combining one or more search terms. For more information, see the [Search for shared drives](/drive/api/guides/search-shareddrives) guide.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.unhide",
+        "api_call": "service.drives().unhide(driveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "[REQUIRED] string: The ID of the shared drive."
+        },
+        "functionality": "Restores a shared drive to the default view.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - drives.update",
+        "api_call": "service.drives().update(driveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "[REQUIRED] string: The ID of the shared drive.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if they are an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Updates the metadate for a shared drive.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.copy",
+        "api_call": "service.files().copy(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "enforceSingleParent": "boolean: Deprecated. Copying files into multiple folders is no longer supported. Use shortcuts instead.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "ignoreDefaultVisibility": "boolean: Whether to ignore the domain's default visibility settings for the created file. Domain administrators can choose to make all uploaded files visible to the domain by default; this parameter bypasses that behavior for the request. Permissions are still inherited from parent folders.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "keepRevisionForever": "boolean: Whether to set the 'keepForever' field in the new head revision. This is only applicable to files with binary content in Google Drive. Only 200 revisions for the file can be kept forever. If the limit is reached, try deleting pinned revisions.",
+            "ocrLanguage": "string: A language hint for OCR processing during image import (ISO 639-1 code).",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead."
+        },
+        "functionality": "Creates a copy of a file and applies any requested updates with patch semantics.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.create",
+        "api_call": "service.files().create().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "enforceSingleParent": "boolean: Deprecated. Creating files in multiple folders is no longer supported.",
+            "ignoreDefaultVisibility": "boolean: Whether to ignore the domain's default visibility settings for the created file. Domain administrators can choose to make all uploaded files visible to the domain by default; this parameter bypasses that behavior for the request. Permissions are still inherited from parent folders.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "keepRevisionForever": "boolean: Whether to set the 'keepForever' field in the new head revision. This is only applicable to files with binary content in Google Drive. Only 200 revisions for the file can be kept forever. If the limit is reached, try deleting pinned revisions.",
+            "ocrLanguage": "string: A language hint for OCR processing during image import (ISO 639-1 code).",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "useContentAsIndexableText": "boolean: Whether to use the uploaded content as indexable text."
+        },
+        "functionality": " Creates a new file. This method supports an */upload* URI and accepts uploaded media with the following characteristics: - *Maximum file size:* 5,120 GB - *Accepted Media MIME types:*`*/*` Note: Specify a valid MIME type, rather than the literal `*/*` value. The literal `*/*` is only used to indicate that any valid MIME type can be uploaded. For more information on uploading files, see [Upload file data](/drive/api/guides/manage-uploads). Apps creating shortcuts with `files.create` must specify the MIME type `application/vnd.google-apps.shortcut`. Apps should specify a file extension in the `name` property when inserting files with the API. For example, an operation to insert a JPEG file should specify something like `\"name\": \"cat.jpg\"` in the metadata. Subsequent `GET` requests include the read-only `fileExtension` property populated with the extension originally specified in the `title` property. When a Google Drive user requests to download a file, or when the file is downloaded through the sync client, Drive builds a full filename (with extension) based on the title. In cases where the extension is missing, Drive attempts to determine the extension based on the file's MIME type.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.delete",
+        "api_call": "service.files().delete(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "enforceSingleParent": "boolean: Deprecated: If an item is not in a shared drive and its last parent is deleted but the item itself is not, the item will be placed under its owner's root.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead."
+        },
+        "functionality": "Permanently deletes a file owned by the user without moving it to the trash. If the file belongs to a shared drive, the user must be an `organizer` on the parent folder. If the target is a folder, all descendants owned by the user are also deleted.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.emptyTrash",
+        "api_call": "service.files().emptyTrash().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "driveId": "string: If set, empties the trash of the provided shared drive.",
+            "enforceSingleParent": "boolean: Deprecated: If an item is not in a shared drive and its last parent is deleted but the item itself is not, the item will be placed under its owner's root."
+        },
+        "functionality": "Permanently deletes all of the user's trashed files.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.export",
+        "api_call": "service.files().export(fileId: str, mimeType: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "mimeType": "[REQUIRED] string: Required. The MIME type of the format requested for this export."
+        },
+        "functionality": "Exports a Google Workspace document to the requested MIME type and returns exported byte content. Note that the exported content is limited to 10MB.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.generateIds",
+        "api_call": "service.files().generateIds().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "count": "integer: The number of IDs to return.",
+            "space": "string: The space in which the IDs can be used to create new files. Supported values are 'drive' and 'appDataFolder'. (Default: 'drive')",
+            "type": "string: The type of items which the IDs can be used for. Supported values are 'files' and 'shortcuts'. Note that 'shortcuts' are only supported in the `drive` 'space'. (Default: 'files')"
+        },
+        "functionality": "Generates a set of file IDs which can be provided in create or copy requests.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.get",
+        "api_call": "service.files().get(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "acknowledgeAbuse": "boolean: Whether the user is acknowledging the risk of downloading known malware or other abusive files. This is only applicable when alt=media.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead."
+        },
+        "functionality": " Gets a file's metadata or content by ID. If you provide the URL parameter `alt=media`, then the response includes the file contents in the response body. Downloading content with `alt=media` only works if the file is stored in Drive. To download Google Docs, Sheets, and Slides use [`files.export`](/drive/api/reference/rest/v3/files/export) instead. For more information, see [Download & export files](/drive/api/guides/manage-downloads).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.list",
+        "api_call": "service.files().list().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "corpora": "string: Bodies of items (files/documents) to which the query applies. Supported bodies are 'user', 'domain', 'drive', and 'allDrives'. Prefer 'user' or 'drive' to 'allDrives' for efficiency. By default, corpora is set to 'user'. However, this can change depending on the filter set through the 'q' parameter.",
+            "corpus": "string: Deprecated: The source of files to list. Use 'corpora' instead.",
+            "driveId": "string: ID of the shared drive to search.",
+            "includeItemsFromAllDrives": "boolean: Whether both My Drive and shared drive items should be included in results.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "includeTeamDriveItems": "boolean: Deprecated: Use `includeItemsFromAllDrives` instead.",
+            "orderBy": "string: A comma-separated list of sort keys. Valid keys are 'createdTime', 'folder', 'modifiedByMeTime', 'modifiedTime', 'name', 'name_natural', 'quotaBytesUsed', 'recency', 'sharedWithMeTime', 'starred', and 'viewedByMeTime'. Each key sorts ascending by default, but can be reversed with the 'desc' modifier. Example usage: ?orderBy=folder,modifiedTime desc,name.",
+            "pageSize": "integer: The maximum number of files to return per page. Partial or empty result pages are possible even before the end of the files list has been reached.",
+            "pageToken": "string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response.",
+            "q": "string: A query for filtering the file results. See the \"Search for files & folders\" guide for supported syntax.",
+            "spaces": "string: A comma-separated list of spaces to query within the corpora. Supported values are 'drive' and 'appDataFolder'.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "teamDriveId": "string: Deprecated: Use `driveId` instead."
+        },
+        "functionality": " Lists the user's files. This method accepts the `q` parameter, which is a search query combining one or more search terms. For more information, see the [Search for files & folders](/drive/api/guides/search-files) guide. *Note:* This method returns *all* files by default, including trashed files. If you don't want trashed files to appear in the list, use the `trashed=false` query parameter to remove trashed files from the results.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.listLabels",
+        "api_call": "service.files().listLabels(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID for the file.",
+            "maxResults": "integer: The maximum number of labels to return per page. When not set, defaults to 100.",
+            "pageToken": "string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response."
+        },
+        "functionality": "Lists the labels on a file.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.modifyLabels",
+        "api_call": "service.files().modifyLabels(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file to which the labels belong."
+        },
+        "functionality": "Modifies the set of labels applied to a file. Returns a list of the labels that were added or modified.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.update",
+        "api_call": "service.files().update(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "addParents": "string: A comma-separated list of parent IDs to add.",
+            "enforceSingleParent": "boolean: Deprecated: Adding files to multiple folders is no longer supported. Use shortcuts instead.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "keepRevisionForever": "boolean: Whether to set the 'keepForever' field in the new head revision. This is only applicable to files with binary content in Google Drive. Only 200 revisions for the file can be kept forever. If the limit is reached, try deleting pinned revisions.",
+            "ocrLanguage": "string: A language hint for OCR processing during image import (ISO 639-1 code).",
+            "removeParents": "string: A comma-separated list of parent IDs to remove.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "useContentAsIndexableText": "boolean: Whether to use the uploaded content as indexable text."
+        },
+        "functionality": " Updates a file's metadata and/or content. When calling this method, only populate fields in the request that you want to modify. When updating fields, some fields might be changed automatically, such as `modifiedDate`. This method supports patch semantics. This method supports an */upload* URI and accepts uploaded media with the following characteristics: - *Maximum file size:* 5,120 GB - *Accepted Media MIME types:*`*/*` Note: Specify a valid MIME type, rather than the literal `*/*` value. The literal `*/*` is only used to indicate that any valid MIME type can be uploaded. For more information on uploading files, see [Upload file data](/drive/api/guides/manage-uploads).",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - files.watch",
+        "api_call": "service.files().watch(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "acknowledgeAbuse": "boolean: Whether the user is acknowledging the risk of downloading known malware or other abusive files. This is only applicable when alt=media.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeLabels": "string: A comma-separated list of IDs of labels to include in the `labelInfo` part of the response.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead."
+        },
+        "functionality": "Subscribes to changes to a file.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - permissions.create",
+        "api_call": "service.permissions().create(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "emailMessage": "string: A plain text custom message to include in the notification email.",
+            "enforceSingleParent": "boolean: Deprecated: See `moveToNewOwnersRoot` for details.",
+            "fileId": "[REQUIRED] string: The ID of the file or shared drive.",
+            "moveToNewOwnersRoot": "boolean: This parameter will only take effect if the item is not in a shared drive and the request is attempting to transfer the ownership of the item. If set to `true`, the item will be moved to the new owner's My Drive root folder and all prior parents removed. If set to `false`, parents are not changed.",
+            "sendNotificationEmail": "boolean: Whether to send a notification email when sharing to users or groups. This defaults to true for users and groups, and is not allowed for other requests. It must not be disabled for ownership transfers.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "transferOwnership": "boolean: Whether to transfer ownership to the specified user and downgrade the current owner to a writer. This parameter is required as an acknowledgement of the side effect.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if the file ID parameter refers to a shared drive and the requester is an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Creates a permission for a file or shared drive. **Warning:** Concurrent permissions operations on the same file are not supported; only the last update is applied.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - permissions.delete",
+        "api_call": "service.permissions().delete(fileId: str, permissionId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file or shared drive.",
+            "permissionId": "[REQUIRED] string: The ID of the permission.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if the file ID parameter refers to a shared drive and the requester is an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Deletes a permission. **Warning:** Concurrent permissions operations on the same file are not supported; only the last update is applied.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - permissions.get",
+        "api_call": "service.permissions().get(fileId: str, permissionId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "permissionId": "[REQUIRED] string: The ID of the permission.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if the file ID parameter refers to a shared drive and the requester is an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Gets a permission by ID.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - permissions.list",
+        "api_call": "service.permissions().list(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file or shared drive.",
+            "includePermissionsForView": "string: Specifies which additional view's permissions to include in the response. Only 'published' is supported.",
+            "pageSize": "integer: The maximum number of permissions to return per page. When not set for files in a shared drive, at most 100 results will be returned. When not set for files that are not in a shared drive, the entire list will be returned.",
+            "pageToken": "string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if the file ID parameter refers to a shared drive and the requester is an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Lists a file's or shared drive's permissions.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - permissions.update",
+        "api_call": "service.permissions().update(fileId: str, permissionId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file or shared drive.",
+            "permissionId": "[REQUIRED] string: The ID of the permission.",
+            "removeExpiration": "boolean: Whether to remove the expiration date.",
+            "supportsAllDrives": "boolean: Whether the requesting application supports both My Drives and shared drives.",
+            "supportsTeamDrives": "boolean: Deprecated: Use `supportsAllDrives` instead.",
+            "transferOwnership": "boolean: Whether to transfer ownership to the specified user and downgrade the current owner to a writer. This parameter is required as an acknowledgement of the side effect.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if the file ID parameter refers to a shared drive and the requester is an administrator of the domain to which the shared drive belongs."
+        },
+        "functionality": "Updates a permission with patch semantics. **Warning:** Concurrent permissions operations on the same file are not supported; only the last update is applied.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - replies.create",
+        "api_call": "service.replies().create(fileId: str, commentId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file."
+        },
+        "functionality": "Creates a reply to a comment.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - replies.delete",
+        "api_call": "service.replies().delete(fileId: str, commentId: str, replyId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "replyId": "[REQUIRED] string: The ID of the reply."
+        },
+        "functionality": "Deletes a reply.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - replies.get",
+        "api_call": "service.replies().get(fileId: str, commentId: str, replyId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeDeleted": "boolean: Whether to return deleted replies. Deleted replies will not include their original content.",
+            "replyId": "[REQUIRED] string: The ID of the reply."
+        },
+        "functionality": "Gets a reply by ID.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - replies.list",
+        "api_call": "service.replies().list(fileId: str, commentId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "includeDeleted": "boolean: Whether to include deleted replies. Deleted replies will not include their original content.",
+            "pageSize": "integer: The maximum number of replies to return per page.",
+            "pageToken": "string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response."
+        },
+        "functionality": "Lists a comment's replies.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - replies.update",
+        "api_call": "service.replies().update(fileId: str, commentId: str, replyId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "commentId": "[REQUIRED] string: The ID of the comment.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "replyId": "[REQUIRED] string: The ID of the reply."
+        },
+        "functionality": "Updates a reply with patch semantics.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - revisions.delete",
+        "api_call": "service.revisions().delete(fileId: str, revisionId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "revisionId": "[REQUIRED] string: The ID of the revision."
+        },
+        "functionality": "Permanently deletes a file version. You can only delete revisions for files with binary content in Google Drive, like images or videos. Revisions for other files, like Google Docs or Sheets, and the last remaining file version can't be deleted.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - revisions.get",
+        "api_call": "service.revisions().get(fileId: str, revisionId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "acknowledgeAbuse": "boolean: Whether the user is acknowledging the risk of downloading known malware or other abusive files. This is only applicable when alt=media.",
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "revisionId": "[REQUIRED] string: The ID of the revision."
+        },
+        "functionality": "Gets a revision's metadata or content by ID.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - revisions.list",
+        "api_call": "service.revisions().list(fileId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "pageSize": "integer: The maximum number of revisions to return per page.",
+            "pageToken": "string: The token for continuing a previous list request on the next page. This should be set to the value of 'nextPageToken' from the previous response."
+        },
+        "functionality": "Lists a file's revisions.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - revisions.update",
+        "api_call": "service.revisions().update(fileId: str, revisionId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "fileId": "[REQUIRED] string: The ID of the file.",
+            "revisionId": "[REQUIRED] string: The ID of the revision."
+        },
+        "functionality": "Updates a revision with patch semantics.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - teamdrives.create",
+        "api_call": "service.teamdrives().create(requestId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "requestId": "[REQUIRED] string: Required. An ID, such as a random UUID, which uniquely identifies this user's request for idempotent creation of a Team Drive. A repeated request by the same user and with the same request ID will avoid creating duplicates by attempting to create the same Team Drive. If the Team Drive already exists a 409 error will be returned."
+        },
+        "functionality": "Deprecated: Use `drives.create` instead.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - teamdrives.delete",
+        "api_call": "service.teamdrives().delete(teamDriveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "teamDriveId": "[REQUIRED] string: The ID of the Team Drive"
+        },
+        "functionality": "Deprecated: Use `drives.delete` instead.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - teamdrives.get",
+        "api_call": "service.teamdrives().get(teamDriveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "teamDriveId": "[REQUIRED] string: The ID of the Team Drive",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if they are an administrator of the domain to which the Team Drive belongs."
+        },
+        "functionality": "Deprecated: Use `drives.get` instead.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - teamdrives.list",
+        "api_call": "service.teamdrives().list().execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "pageSize": "integer: Maximum number of Team Drives to return.",
+            "pageToken": "string: Page token for Team Drives.",
+            "q": "string: Query string for searching Team Drives.",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then all Team Drives of the domain in which the requester is an administrator are returned."
+        },
+        "functionality": "Deprecated: Use `drives.list` instead.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    },
+    {
+        "user_name": "meenakshimittal",
+        "api_name": "Google Drive API - teamdrives.update",
+        "api_call": "service.teamdrives().update(teamDriveId: str).execute()",
+        "api_version": "v3",
+        "api_arguments": {
+            "teamDriveId": "[REQUIRED] string: The ID of the Team Drive",
+            "useDomainAdminAccess": "boolean: Issue the request as a domain administrator; if set to true, then the requester will be granted access if they are an administrator of the domain to which the Team Drive belongs."
+        },
+        "functionality": "Deprecated: Use `drives.update` instead.",
+        "env_requirements": [
+            "google-auth",
+            "google-auth-oauthlib",
+            "google-auth-httplib2",
+            "google-api-python-client"
+        ],
+        "metadata": {
+            "documentation_link": "https://developers.google.com/drive/api/reference/rest/v3"
+        }
+    }
+]

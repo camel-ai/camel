@@ -1,0 +1,52 @@
+{
+    "JohnDoe":{
+        "balance":2739.25,
+        "age":29,
+        "city":"New York"
+    },
+    "JaneSmith":{
+        "balance":410.87,
+        "age":38,
+        "city":"Los Angeles"
+    },
+    "testuser":{
+        "balance":1935.44,
+        "age":27,
+        "city":"Chicago"
+    },
+    "foo":{
+        "balance":682.01,
+        "age":45,
+        "city":"Houston"
+    },
+    "newuser":{
+        "balance":1047.19,
+        "age":23,
+        "city":"Philadelphia"
+    },
+    "admin":{
+        "balance":3296.52,
+        "age":34,
+        "city":"Phoenix"
+    },
+    "user1":{
+        "balance":617.93,
+        "age":50,
+        "city":"San Antonio"
+    },
+    "user2":{
+        "balance":215.66,
+        "age":28,
+        "city":"San Diego"
+    },
+    "user3":{
+        "balance":1683.29,
+        "age":33,
+        "city":"Dallas"
+    },
+    "user4":{
+        "balance":825.07,
+        "age":26,
+        "city":"San Jose"
+    }
+}

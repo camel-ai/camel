@@ -1,0 +1,6 @@
+{"role": "User", "text": "Can you help me reschedule my appointment with Dr. Smith on October 10th?"}
+{"role": "AI", "text": "Sure! To do that, I'll need the appointment ID and the new appointment date and doctor's name. Do you have that information?"}
+{"role": "User", "text": "Yes, the appointment ID is 90123456 and the new appointment is with Dr. Lee on October 12th."}
+{"role": "AI", "text": "Great! Let me check with the system to see if that's possible."}
+{"role": "API", "api_name": "ModifyRegistration", "param_dict": {"appointment_id": "90123456", "new_appointment_date": "2023-10-12", "new_appointment_doctor": "Dr. Lee"}, "result": {"api_name": "ModifyRegistration", "input": {"appointment_id": "90123456", "new_appointment_date": "2023-10-12", "new_appointment_doctor": "Dr. Lee"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "According to the system, the appointment has been successfully rescheduled. Is there anything else I can help you with?"}

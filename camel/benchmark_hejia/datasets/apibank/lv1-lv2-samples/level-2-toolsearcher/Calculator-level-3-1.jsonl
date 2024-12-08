@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you help me calculate 25*3+7/3?"}
+{"role": "AI", "text": "Sure, let me calculate that for you."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "calculate 25*3+7/3"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "calculate 25*3+7/3"}, "output": {"name": "Calculator", "description": "This API provides basic arithmetic operations: addition, subtraction, multiplication, and division.", "input_parameters": {"formula": {"type": "str", "description": "The formula that needs to be calculated. Only integers are supported. Valid operators are +, -, *, /, and (, ). For example, '(1 + 2) * 3'."}}, "output_parameters": {"result": {"type": "float", "description": "The result of the formula."}}}, "exception": null}}
+{"role": "API", "api_name": "Calculator", "param_dict": {"formula": "25*3+7/3"}, "result": {"api_name": "Calculator", "input": {"formula": "25*3+7/3"}, "output": 77.33333333333333, "exception": null}}
+{"role": "AI", "text": "The result is 77.3333."}

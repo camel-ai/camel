@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you help me find out my schedule for tomorrow? Today is 2023-03-17."}
+{"role": "AI", "text": "Sure, I can help you with that. To access your schedule, I need to authenticate you. Can you please provide me with your email and password?"}
+{"role": "User", "text": "Sure, my username is JohnDoe and password is pass123."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "Thanks for providing the information. I have generated a token for you. Now, can you please tell me what is the content of the agenda, the time, and the location for tomorrow's schedule?"}
+{"role": "User", "text": "My agenda is a meeting with a client. The time is 3 PM, and the location is 123 Main St."}
+{"role": "API", "api_name": "QueryAgenda", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Meeting with client", "time": "2023-03-18 15:00:00", "location": "123 Main St"}, "result": {"api_name": "QueryAgenda", "input": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Meeting with client", "time": "2023-03-18 15:00:00", "location": "123 Main St"}, "output": {"content": "Meeting with client", "time": "2023-03-18", "location": "123 Main St", "username": "JohnDoe"}, "exception": null}}
+{"role": "AI", "text": "Thanks, let me check your schedule. According to your schedule, you have a meeting with a client tomorrow at 3 PM, and the location is 123 Main St."}

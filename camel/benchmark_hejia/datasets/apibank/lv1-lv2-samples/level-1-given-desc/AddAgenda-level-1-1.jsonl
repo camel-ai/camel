@@ -1,0 +1,13 @@
+{"role": "User", "text": "Hi, can you help me add a new schedule for my meeting tomorrow at 2pm? Today is 2021-09-27"}
+{"role": "AI", "text": "Sure, I can help you with that. What's the content of the agenda?"}
+{"role": "User", "text": "The meeting with the marketing team"}
+{"role": "AI", "text": "Great, and where is the meeting located?"}
+{"role": "User", "text": "At the conference room"}
+{"role": "AI", "text": "Okay, at what time is the meeting scheduled to start?"}
+{"role": "User", "text": "Tomorrow at 2pm"}
+{"role": "AI", "text": "Got it, I need to authenticate with your account first. Can you please provide me with your username and password?"}
+{"role": "User", "text": "Sure, my username is foo and my password is bar"}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "foo", "password": "bar"}, "result": {"api_name": "GetUserToken", "input": {"username": "foo", "password": "bar"}, "output": {"token": "z9x8c7v6b5n4m3q2w1"}, "exception": null}}
+{"role": "AI", "text": "Thank you, I have retrieved your token. Now, let me add the agenda for you."}
+{"role": "API", "api_name": "AddAgenda", "param_dict": {"token": "z9x8c7v6b5n4m3q2w1", "content": "Meeting with the marketing team", "time": "2021-09-28 14:00:00", "location": "Conference room"}, "result": {"api_name": "AddAgenda", "input": {"token": "z9x8c7v6b5n4m3q2w1", "content": "Meeting with the marketing team", "time": "2021-09-28 14:00:00", "location": "Conference room"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "The agenda has been added successfully."}

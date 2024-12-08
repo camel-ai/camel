@@ -1,0 +1,138 @@
+{
+    "relaxing time":[
+        {
+            "name":"light",
+            "description":"Smart light in the living room"
+        },
+        {
+            "name":"air conditioner",
+            "description":"Smart air conditioner in the bedroom"
+        },
+        {
+            "name":"sound system",
+            "description":"Smart sound system in the living room"
+        }
+    ],
+    "cooking time":[
+        {
+            "name":"light",
+            "description":"Smart light in the kitchen"
+        },
+        {
+            "name":"oven",
+            "description":"Smart oven in the kitchen"
+        },
+        {
+            "name":"range hood",
+            "description":"Smart range hood in the kitchen"
+        }
+    ],
+    "movie time":[
+        {
+            "name":"light",
+            "description":"Smart light in the living room"
+        },
+        {
+            "name":"sound system",
+            "description":"Smart sound system in the living room"
+        },
+        {
+            "name":"tv",
+            "description":"Smart TV in the living room"
+        }
+    ],
+    "bedtime":[
+        {
+            "name":"air conditioner",
+            "description":"Smart air conditioner in the bedroom"
+        },
+        {
+            "name":"humidifier",
+            "description":"Smart humidifier in the bedroom"
+        }
+    ],
+    "morning routine":[
+        {
+            "name":"light",
+            "description":"Smart light in the living room"
+        },
+        {
+            "name":"coffee maker",
+            "description":"Smart coffee maker in the kitchen"
+        },
+        {
+            "name":"blinds",
+            "description":"Smart blinds in the living room"
+        }
+    ],
+    "afternoon nap":[
+        {
+            "name":"air conditioner",
+            "description":"Smart air conditioner in the bedroom"
+        },
+        {
+            "name":"smart curtain",
+            "description":"Smart curtain in the bedroom"
+        },
+        {
+            "name":"sound system",
+            "description":"Smart sound system in the living room"
+        }
+    ],
+    "study time":[
+        {
+            "name":"light",
+            "description":"Smart light in the living room"
+        },
+        {
+            "name":"smart desk",
+            "description":"Smart desk in the study room"
+        },
+        {
+            "name":"air purifier",
+            "description":"Smart air purifier in the study room"
+        }
+    ],
+    "outdoor party":[
+        {
+            "name":"outdoor light",
+            "description":"Smart outdoor light"
+        },
+        {
+            "name":"outdoor speaker",
+            "description":"Smart outdoor speaker"
+        },
+        {
+            "name":"smart grill",
+            "description":"Smart grill in the backyard"
+        }
+    ],
+    "gaming time":[
+        {
+            "name":"sound system",
+            "description":"Smart sound system in the living room"
+        },
+        {
+            "name":"tv",
+            "description":"Smart TV in the living room"
+        },
+        {
+            "name":"gaming chair",
+            "description":"Smart gaming chair in the living room"
+        }
+    ],
+    "yoga time":[
+        {
+            "name":"light",
+            "description":"Smart light in the living room"
+        },
+        {
+            "name":"yoga mat",
+            "description":"Smart yoga mat in the living room"
+        },
+        {
+            "name":"smart speaker",
+            "description":"Smart speaker in the living room"
+        }
+    ]
+}

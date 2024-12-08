@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you tell me the stock price of NFLX on February 17, 2022?"}
+{"role": "AI", "text": "Sure, I can help you with that."}
+{"role": "API", "api_name": "QueryStock", "param_dict": {"stock_code": "NFLX", "date": "2022-02-17"}, "result": {"api_name": "QueryStock", "input": {"stock_code": "NFLX", "date": "2022-02-17"}, "output": 605.7, "exception": null}}
+{"role": "AI", "text": "The stock price of NFLX on February 17, 2022 was 605.7."}
+{"role": "User", "text": "What is my current balance?"}
+{"role": "AI", "text": "To protect your account, can you please authenticate by providing your username and password?"}
+{"role": "User", "text": "Okay. My username is user1 and my password is user1pass."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user1", "password": "user1pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user1", "password": "user1pass"}, "output": {"token": "n9m8k7j6h5g4f3d2s1a0"}, "exception": null}}
+{"role": "API", "api_name": "QueryBalance", "param_dict": {"token": "n9m8k7j6h5g4f3d2s1a0"}, "result": {"api_name": "QueryBalance", "input": {"token": "n9m8k7j6h5g4f3d2s1a0"}, "output": 617.93, "exception": null}}
+{"role": "AI", "text": "Your current balance is 617.93."}

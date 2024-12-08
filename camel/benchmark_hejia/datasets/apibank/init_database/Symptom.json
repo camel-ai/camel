@@ -1,0 +1,120 @@
+{
+    "headache":[
+        {
+            "name":"Migraine",
+            "description":"A neurological condition characterized by recurrent headaches, often accompanied by other symptoms such as nausea, vomiting, and sensitivity to light and sound.",
+            "aid":"Treatment may involve medications to manage symptoms and prevent attacks, lifestyle changes to avoid triggers, and in some cases, preventive medications."
+        },
+        {
+            "name":"Tension headache",
+            "description":"A type of headache characterized by a dull, aching pain that can be felt on both sides of the head.",
+            "aid":"Treatment may involve over-the-counter pain relievers, lifestyle changes, and stress management techniques."
+        },
+        {
+            "name":"Cluster headache",
+            "description":"A type of headache that occurs in cyclical patterns, with periods of frequent attacks followed by periods of remission.",
+            "aid":"Treatment may involve medications to manage symptoms and prevent attacks, as well as oxygen therapy and nerve blocks in some cases."
+        }
+    ],
+    "fever":[
+        {
+            "name":"Influenza",
+            "description":"A viral infection that can cause fever, cough, sore throat, body aches, and other symptoms.",
+            "aid":"Treatment may involve antiviral medications, over-the-counter medications to manage symptoms, and rest and fluids to help the body recover."
+        },
+        {
+            "name":"Malaria",
+            "description":"A parasitic infection that can cause recurrent episodes of fever, chills, and flu-like symptoms.",
+            "aid":"Treatment may involve medications to kill the parasites and manage symptoms, as well as preventive measures such as mosquito nets and insect repellent."
+        }
+    ],
+    "rash":[
+        {
+            "name":"Contact dermatitis",
+            "description":"A type of rash that occurs when the skin comes into contact with an irritant or allergen.",
+            "aid":"Treatment may involve avoiding irritants, using moisturizers and topical corticosteroids, and in severe cases, oral medications or light therapy."
+        },
+        {
+            "name":"Eczema",
+            "description":"A chronic skin condition that can cause dry, itchy patches of skin.",
+            "aid":"Treatment may involve avoiding irritants, using moisturizers and topical corticosteroids, and in severe cases, oral medications or light therapy."
+        }
+    ],
+    "fatigue":[
+        {
+            "name":"Chronic fatigue syndrome",
+            "description":"A debilitating condition characterized by persistent fatigue that is not relieved by rest and is not due to another underlying medical condition.",
+            "aid":"Treatment may involve a combination of medications, lifestyle changes, and cognitive-behavioral therapy to manage symptoms."
+        },
+        {
+            "name":"Anemia",
+            "description":"A condition in which the body does not have enough red blood cells or hemoglobin, leading to fatigue and weakness.",
+            "aid":"Treatment may involve iron supplements, blood transfusions, or other medications to address the underlying cause."
+        },
+        {
+            "name":"Depression",
+            "description":"A mood disorder that can cause feelings of sadness, hopelessness, and fatigue.",
+            "aid":"Treatment may involve therapy, medications, or a combination of both to manage symptoms."
+        }
+    ],
+    "chest pain":[
+        {
+            "name":"Heart attack",
+            "description":"A medical emergency in which blood flow to the heart is blocked, causing chest pain, shortness of breath, and other symptoms",
+            "aid":"Treatment may involve medications to dissolve blood clots and restore blood flow, as well as procedures such as angioplasty or bypass surgery."
+        },
+        {
+            "name":"Angina",
+            "description":"A type of chest pain that occurs when the heart muscle does not receive enough blood and oxygen.",
+            "aid":"Treatment may involve medications to manage symptoms and reduce the risk of complications, as well as lifestyle changes to improve heart health."
+        }
+    ],
+    "shortness of breath":[
+        {
+            "name":"Asthma",
+            "description":"A chronic respiratory condition characterized by inflammation and narrowing of the airways, leading to shortness of breath, wheezing, and coughing.",
+            "aid":"Treatment may involve inhalers or nebulizers to open the airways, as well as medications to manage inflammation and prevent attacks."
+        },
+        {
+            "name":"Pneumonia",
+            "description":"An infection of the lungs that can cause fever, cough, shortness of breath, and other symptoms.",
+            "aid":"Treatment may involve antibiotics, rest, and fluids to help the body fight the infection and recover."
+        }
+    ],
+    "nausea":[
+        {
+            "name":"Gastroenteritis",
+            "description":"An infection or inflammation of the digestive tract that can cause nausea, vomiting, diarrhea, and other symptoms.",
+            "aid":"Treatment may involve rest, fluids, and medications to manage symptoms and prevent dehydration."
+        },
+        {
+            "name":"Migraine",
+            "description":"A neurological condition characterized by recurrent headaches, often accompanied by other symptoms such as nausea, vomiting, and sensitivity to light and sound.",
+            "aid":"Treatment may involve medications to manage symptoms and prevent attacks, lifestyle changes to avoid triggers, and in some cases, preventive medications."
+        }
+    ],
+    "cough":[
+        {
+            "name":"Acute bronchitis",
+            "description":"An inflammation of the airways that can cause coughing, chest discomfort, and other symptoms.",
+            "aid":"Treatment may involve rest, fluids, and over-the-counter medications to manage symptoms, as well as antibiotics in some cases."
+        },
+        {
+            "name":"Pneumonia",
+            "description":"An infection of the lungs that can cause fever, cough, shortness of breath, and other symptoms.",
+            "aid":"Treatment may involve antibiotics, rest, and fluids to help the body fight the infection and recover."
+        }
+    ],
+    "abdominal pain":[
+        {
+            "name":"Gastritis",
+            "description":"An inflammation of the stomach lining that can cause abdominal pain, nausea, and other symptoms.",
+            "aid":"Treatment may involve medications to reduce stomach acid and manage symptoms, as well as lifestyle changes to avoid triggers."
+        },
+        {
+            "name":"Irritable bowel syndrome",
+            "description":"A chronic digestive disorder characterized by abdominal pain, bloating, and changes in bowel habits.",
+            "aid":"Treatment may involve dietary changes, stress management techniques, and medications to manage symptoms."
+        }
+    ]
+}

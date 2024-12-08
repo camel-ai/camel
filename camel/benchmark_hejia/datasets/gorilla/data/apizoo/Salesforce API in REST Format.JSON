@@ -1,0 +1,1432 @@
+[
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Version",
+    "api_call": "GET /services/data/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Lists summary information about each Salesforce version currently available, including the version, label, and a link to each version's root."
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Resources by Version",
+    "api_call": "GET /services/data/v60.0",
+    "api_version": "60.0",
+    "api_arguments": {
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Lists available resources for the specified API version, including resource name and URI."
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Limits",
+    "api_call": "GET /services/data/v60.0/limits",
+    "api_version": "60.0",
+    "api_arguments": {
+      "pretty": "boolean (Optional, whether to format the response JSON)"
+    },
+    "functionality": "Lists information about limits in your org. For each limit, this resource returns the maximum allocation and the remaining allocation based on usage."
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Describe Global",
+    "api_call": "GET /services/data/v60.0/sobjects",
+    "api_version": "60.0",
+    "api_arguments": {
+      "pretty": "boolean (Optional, whether to format the response JSON)",
+      "If-Modified-Since": "string (Optional, specifies a date and time to return records modified after)",
+      "If-Unmodified-Since": "string (Optional, specifies a date and time to return records not modified after)"
+    },
+    "functionality": "Describes the metadata (sObjects) for the organization."
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Object Metadata Using sObject Basic Information",
+    "api_call": "GET /services/data/v60.0/sobjects/{objectType}",
+    "api_version": "60.0",
+    "api_arguments": {
+      "objectType": "string (The name of the object to get metadata for)"
+    },
+    "functionality": "Retrieves metadata for a specific Salesforce object using the sObject Basic Information API."
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Create Records Using sObject Basic Information",
+    "api_call": "POST /services/data/v60.0/sobjects/{objectType}",
+    "api_version": "60.0",
+    "api_arguments": {
+      "objectType": "string (The name of the object to create records for)",
+      "Content-Type": "string (Optional, specifies the format for the request and response)"
+    },
+    "functionality": "Creates records for a specific Salesforce object using the sObject Basic Information API."
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API sObject Describe with Conditional Requests",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the object. For example, 'Account'. Required path parameter.",
+      "If-Modified-Since": "An optional header specifying a date and time. The request returns records that have been modified after this date and time. Format: 'EEE, dd MMM yyyy HH:mm:ss z'. Example: 'Mon, 30 Nov 2020 08:34:54 MST'.",
+      "If-Unmodified-Since": "An optional header specifying a date and time. The request returns records that have not been modified after this date and time. Format: 'EEE, dd MMM yyyy HH:mm:ss z'. Example: 'Mon, 30 Nov 2020 08:34:54 MST'."
+    },
+    "functionality": "Retrieve metadata for a specified Salesforce sObject with support for conditional retrieval based on modification dates.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API sObject Get Deleted",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/deleted/?start=startTime&end=endTime",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object, e.g., 'Contact', 'Account'. Required path parameter.",
+      "start": "The start date and time of the range to retrieve deleted records for. Format: yyyy-MM-ddTHH:mm:ss+00:00.",
+      "end": "The end date and time of the range to retrieve deleted records for. Format: yyyy-MM-ddTHH:mm:ss+00:00."
+    },
+    "functionality": "Retrieves a list of records that have been deleted within the specified time frame for a given sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API sObject Get Updated",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/updated/?start=startTime&end=endTime",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object, e.g., 'Lead', 'Opportunity'. Required path parameter.",
+      "start": "The start date and time of the range to retrieve updated records for. Format: yyyy-MM-ddTHH:mm:ss+00:00.",
+      "end": "The end date and time of the range to retrieve updated records for. Format: yyyy-MM-ddTHH:mm:ss+00:00."
+    },
+    "functionality": "Retrieves a list of records that have been updated (or created) within the specified time frame for a given sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API sObject Named Layouts",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/layouts/layoutName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object, e.g., 'Account', 'Contact'. Required path parameter.",
+      "layoutName": "The name of the specific layout to retrieve. Required path parameter."
+    },
+    "functionality": "Retrieves metadata about a specific named layout for an sObject, including sections, fields, and related lists.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Records Using sObject Rows",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/recordId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object, e.g., 'Lead', 'Case'. Required path parameter.",
+      "recordId": "The unique identifier (ID) of the record to retrieve. Required path parameter."
+    },
+    "functionality": "Retrieves a specific record from a Salesforce sObject using the record's unique ID.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Records with Conditional Headers",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/id?fields=fieldList",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object, e.g., 'Account'. Required path parameter.",
+      "id": "The unique identifier (ID) of the record to retrieve, e.g., '001R0000005hDFYIA2'. Required path parameter.",
+      "fields": "A comma-delimited list of fields to return in the response, e.g., 'Name,Description,NumberOfEmployees,Industry'. Optional query parameter.",
+      "If-Match": "Optional header with a comma-delimited list of ETags. Used for Account objects to process the request only if the ETag matches.",
+      "If-None-Match": "Optional header with a comma-delimited list of ETags. Used for Account objects to process the request only if there's no ETag match.",
+      "If-Modified-Since": "Optional header specifying a date and time, returning records modified after this time. Format: 'EEE, dd MMM yyyy HH:mm:ss z'.",
+      "If-Unmodified-Since": "Optional header specifying a date and time, returning records not modified after this time. Format: 'EEE, dd MMM yyyy HH:mm:ss z'."
+    },
+    "functionality": "Retrieves specific Salesforce records by ID, with options for field selection and conditional data retrieval based on modification times and ETag matches.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Conditional Update Records Using sObject Rows",
+    "api_call": "PATCH /services/data/v60.0/sobjects/sObject/id",
+    "api_version": "60.0",
+    "api_arguments": {
+      "Content-Type": "Specifies the format for the request body and expected response. Possible values: 'application/json', 'application/xml'. Optional header.",
+      "sObject": "The name of the Salesforce object to be updated, e.g., 'Account', 'CustomObject__c'. Required path parameter.",
+      "id": "The unique identifier (ID) of the record to update, e.g., '001R0000005hDFYIA2'. Required path parameter.",
+      "If-Match": "Optional header with a comma-delimited list of ETags. Processes the request only if the object’s ETag matches one of the list.",
+      "If-None-Match": "Optional header with a comma-delimited list of ETags. Processes the request only if there’s no match with the object’s ETag.",
+      "If-Modified-Since": "Optional header specifying a date and time, processing records modified after this. Format: 'EEE, dd MMM yyyy HH:mm:ss z'.",
+      "If-Unmodified-Since": "Optional header specifying a date and time, processing records not modified after this. Format: 'EEE, dd MMM yyyy HH:mm:ss z'."
+    },
+    "functionality": "Conditionally updates specific fields of a Salesforce record, supporting various content types and conditional processing based on ETags and modification times.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Delete Records Using sObject Rows",
+    "api_call": "DELETE /services/data/v60.0/sobjects/sObject/id",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object from which the record will be deleted, e.g., 'Lead', 'Opportunity'. Required path parameter.",
+      "id": "The unique identifier (ID) of the record to be deleted, e.g., '00Q3A00000ShRQWUA3'. Required path parameter.",
+      "If-Match": "An optional header specifying a comma-delimited list of one or more ETags. The request is only processed if the object's ETag matches one of the ETags in the list. This ensures that the record being deleted is the version expected by the client.",
+      "If-None-Match": "An optional header specifying a comma-delimited list of one or more ETags. The request is processed only if the object's ETag does not match any of the ETags in the list, ensuring that deletions do not occur on unexpected versions of the record."
+    },
+    "functionality": "Deletes a specific record from a Salesforce sObject using the record's unique ID, with optional conditional headers for enhanced data management.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API sObject Blob Retrieve",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/id/fieldName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object from which the blob data will be retrieved, e.g., 'Attachment', 'Document'. Required path parameter.",
+      "id": "The unique identifier (ID) of the record from which the blob data will be retrieved, e.g., '00P3A00000ShRQWUA3'. Required path parameter.",
+      "fieldName": "The API name of the field containing the blob data to be retrieved, e.g., 'Body', 'ContentData'. Required path parameter."
+    },
+    "functionality": "Retrieves blob data (like attachments, documents, etc.) from a specified field of a Salesforce sObject record.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Records Using sObject Rows by External ID",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/externalIdFieldName/externalId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object from which the record will be retrieved, e.g., 'Account', 'Contact'. Required path parameter.",
+      "externalIdFieldName": "The API name of the external ID field on the sObject, e.g., 'MyExternalId__c'. Required path parameter.",
+      "externalId": "The external ID value used to retrieve the record, e.g., 'External123'. Required path parameter."
+    },
+    "functionality": "Retrieves a specific record from a Salesforce sObject using a unique external ID, facilitating integration with external systems.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Create Records Without External ID",
+    "api_call": "POST /services/data/v60.0/sobjects/sObject/Id",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the record will be created, e.g., 'Account', 'Contact'.",
+      "body": "JSON payload containing the field values for the new record. Including an external ID field in the payload is optional and does not influence the creation logic.",
+      "Id": "The external ID value used to create the record, e.g., 'External123'. Optional path parameter."
+
+    },
+    "functionality": "Creates a new record in Salesforce for the specified sObject based on the field values included in the request body.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Upsert Records Using sObject Rows by External ID",
+    "api_call": "PATCH /services/data/v60.0/sobjects/sObject/externalIdFieldName/externalId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object to be upserted, e.g., 'Account', 'Contact'.",
+      "externalIdFieldName": "The API name of the external ID field on the sObject, e.g., 'MyExternalId__c'.",
+      "externalId": "The external ID value used for the upsert operation. If a record with this external ID exists, it's updated; otherwise, a new record is created.",
+      "body": "JSON payload containing the fields to update or set on the new record."
+    },
+    "functionality": "Performs an upsert operation on a Salesforce sObject using a unique external ID, enabling record creation or update based on external system identifiers.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Delete Records Using sObject Rows by External ID",
+    "api_call": "DELETE /services/data/v60.0/sobjects/sObject/externalIdFieldName/externalId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object from which the record will be deleted, e.g., 'Account', 'Contact'.",
+      "externalIdFieldName": "The API name of the external ID field on the sObject, e.g., 'MyExternalId__c'.",
+      "externalId": "The external ID value used to identify the record to be deleted."
+    },
+    "functionality": "Deletes a specific record from a Salesforce sObject using a unique external ID, facilitating precise data management and integration with external systems.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Delete Records Using sObject Rows by External ID",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/externalIdFieldName/externalId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object from which the record will be returned, e.g., 'Account', 'Contact'.",
+      "externalIdFieldName": "The API name of the external ID field on the sObject, e.g., 'MyExternalId__c'.",
+      "externalId": "The external ID value used to identify the record to be returned."
+    },
+    "functionality": "Returns only the headers that are returned by sending a GET request to the sObject Rows by External ID resource. This gives you a chance to see returned header values of the GET request before retrieving the content itself.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Approval Layouts",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/approvalLayouts/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which approval layouts are being retrieved, e.g., 'Opportunity', 'Case'."
+    },
+    "functionality": "Retrieves metadata about approval layouts for the specified sObject, including field visibility and layout configuration for approval processes.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Reutrn Headers for Approval Layouts",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/describe/approvalLayouts/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which approval layouts are being returned, e.g., 'Opportunity', 'Case'."
+    },
+    "functionality": "Retrieves headers for approval layouts for the specified sObject, including field visibility and layout configuration for approval processes.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Approval Layout",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/approvalLayouts/approval",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which approval layouts are being retrieved, e.g., 'Opportunity', 'Case'.",
+      "approval": "The name of the approval layout to get"
+    },
+    "functionality": "Retrieves metadata about a specific approval layout for the specified sObject, including field visibility and layout configuration for approval processes.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Compact Layouts",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/compactLayouts/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which compact layouts are being retrieved, e.g., 'Account', 'Contact'."
+    },
+    "functionality": "Retrieves compact layouts for the specified sObject, including field configurations and layout metadata.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Return Headers Compact Layouts",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/describe/compactLayouts/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which compact layouts are being retrieved, e.g., 'Account', 'Contact'."
+    },
+    "functionality": "Retrieves the headers for compact layouts for the specified sObject, including field configurations and layout metadata.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Layouts",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/layouts/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which compact layouts are being retrieved, e.g., 'Account', 'Contact'."
+    },
+    "functionality": "Retrieves layouts for the specified sObject, including field configurations and layout metadata.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Return Headers Layouts",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/describe/layouts/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which compact layouts are being retrieved, e.g., 'Account', 'Contact'."
+    },
+    "functionality": "Retrieves the headers for layouts for the specified sObject, including field configurations and layout metadata.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Layouts for Object with Specific Record Type",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/describe/layouts/recordTypeId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which layouts are being retrieved for a specific record type, e.g., 'Case', 'Opportunity'.",
+      "recordTypeId": "The ID of the specific record type for which the layout is being retrieved."
+    },
+    "functionality": "Retrieves layout information for the specified sObject for a given record type ID. This enables developers to access and customize UI components based on the layout configuration of specific record types, ensuring tailored user experiences.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers for Layouts for Object with Specific Record Type",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/describe/layouts/recordTypeId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which layouts are being retrieved for a specific record type, e.g., 'Case', 'Opportunity'.",
+      "recordTypeId": "The ID of the specific record type for which the layout is being retrieved."
+    },
+    "functionality": "Retrieves the headers of layout information for the specified sObject for a given record type ID. This enables developers to access and customize UI components based on the layout configuration of specific record types, ensuring tailored user experiences.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Global Publisher Layouts",
+    "api_call": "GET /services/data/v60.0/sobjects/Global/describe/layouts/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves global publisher layouts, providing metadata about the layout configurations available in the Salesforce Global Actions menu.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Heards for Global Publisher Layouts",
+    "api_call": "HEAD /services/data/v60.0/sobjects/Global/describe/layouts/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves headers for global publisher layouts, providing metadata about the layout configurations available in the Salesforce Global Actions menu.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Platform Actions for sObject",
+    "api_call": "GET /services/data/v60.0/sobjects/PlatformAction",
+    "api_version": "60.0",
+    "api_arguments": {
+      "query": "A SQL query string that specifies the criteria for selecting platform actions related to a specific sObject or global actions. For example, \"SELECT Label, ActionListContext, SortOrder, Category FROM PlatformAction WHERE ActionListContext = 'Global' OR ActionListContext = 'ObjectSpecific' AND TargetObject = 'Account'\"."
+    },
+    "functionality": "Retrieves platform actions available for a specific sObject or global actions, providing metadata about each action such as labels, types, and context.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve sObject Quick Actions",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/quickActions/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which quick actions are being retrieved, e.g., 'Account', 'Contact'."
+    },
+    "functionality": "Retrieves a list of quick actions available for the specified sObject, including metadata about each action such as labels, types, and target layouts.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve headers for sObject Quick Actions",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/quickActions/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which quick actions are being retrieved, e.g., 'Account', 'Contact'."
+    },
+    "functionality": "Retrieves a list of the headers for quick actions available for the specified sObject, including metadata about each action such as labels, types, and target layouts.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Specific sObject Quick Action",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/quickActions/actionName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the specific quick action is being retrieved, e.g., 'Case', 'Opportunity'.",
+      "actionName": "The API name of the quick action to be retrieved, e.g., 'NewCase', 'LogACall'."
+    },
+    "functionality": "Retrieves detailed information about a specific quick action available for the specified sObject, including metadata such as labels, types, target layouts, and fields.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve the header of Specific sObject Quick Action",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/quickActions/actionName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the specific quick action is being retrieved, e.g., 'Case', 'Opportunity'.",
+      "actionName": "The API name of the quick action to be retrieved, e.g., 'NewCase', 'LogACall'."
+    },
+    "functionality": "Retrieves the header for a specific quick action available for the specified sObject, including metadata such as labels, types, target layouts, and fields.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Create Records Using Specific sObject Quick Action",
+    "api_call": "POST /services/data/v60.0/sobjects/sObject/quickActions/actionName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the quick action designed to create a new record, e.g., 'NewContact', 'NewOpportunity'.",
+      "body": "JSON payload specifying the field values for the new record as defined by the quick action's layout and preconfigured field values."
+    },
+    "functionality": "Executes a specific quick action for an sObject to create a new record, allowing developers to utilize predefined actions for record creation, including any default field values or processes defined by the action.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Describe Specific sObject Quick Action",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/quickActions/actionName/describe/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the specific quick action for which the metadata description is being retrieved, e.g., 'NewContact', 'LogACall'."
+    },
+    "functionality": "Retrieves detailed metadata description for a specific quick action defined for an sObject, providing information about its label, type, layout, fields, and other relevant properties.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Header of Specific sObject Quick Action",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/quickActions/actionName/describe/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the specific quick action for which the metadata description is being retrieved, e.g., 'NewContact', 'LogACall'."
+    },
+    "functionality": "Retrieves the header for a specific quick action defined for an sObject, providing information about its label, type, layout, fields, and other relevant properties.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Default Values for Specific sObject Quick Action",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/quickActions/actionName/defaultValues/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the specific quick action for which the default values are being retrieved, e.g., 'NewContact', 'LogACall'."
+    },
+    "functionality": "Retrieves default field values configured for a specific quick action associated with an sObject, providing information about pre-filled field values when executing the action.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve the header for Default Values for Specific sObject Quick Action",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/quickActions/actionName/defaultValues/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the specific quick action for which the default values are being retrieved, e.g., 'NewContact', 'LogACall'."
+    },
+    "functionality": "Retrieves the header for default field values configured for a specific quick action associated with an sObject, providing information about pre-filled field values when executing the action.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Default Values for Specific sObject Quick Action with Context ID",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/quickActions/actionName/defaultValues/contextId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the specific quick action for which the default values are being retrieved, e.g., 'NewContact', 'LogACall'.",
+      "contextId": "The ID of the context in which the quick action is executed, such as a record ID, user ID, or other relevant context identifier."
+    },
+    "functionality": "Retrieves default field values configured for a specific quick action associated with an sObject in a specific context, providing information about pre-filled field values when executing the action.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve the Header for Default Values for Specific sObject Quick Action with Context ID",
+    "api_call": "HEAD /services/data/v60.0/sobjects/sObject/quickActions/actionName/defaultValues/contextId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object for which the quick action is defined, e.g., 'Account', 'Contact'.",
+      "actionName": "The API name of the specific quick action for which the default values are being retrieved, e.g., 'NewContact', 'LogACall'.",
+      "contextId": "The ID of the context in which the quick action is executed, such as a record ID, user ID, or other relevant context identifier."
+    },
+    "functionality": "Retrieves the header for default field values configured for a specific quick action associated with an sObject in a specific context, providing information about pre-filled field values when executing the action.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Rich Text Image Fields",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/id/richTextImageFields/fieldName/contentReferenceId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object containing the record with the rich text image field, e.g., 'Account', 'Contact'.",
+      "id": "The ID of the specific record containing the rich text image field.",
+      "fieldName": "The API name of the rich text image field from which content is being retrieved.",
+      "contentReferenceId": "The content reference ID of the image content within the rich text field."
+    },
+    "functionality": "Retrieves the image content associated with a specific rich text image field of a record identified by its ID.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Related Records",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/id/relationshipFieldName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object containing the record with the relationship field, e.g., 'Account', 'Contact'.",
+      "id": "The ID of the specific record for which related records are being retrieved.",
+      "relationshipFieldName": "The API name of the relationship field through which related records are accessed."
+    },
+    "functionality": "Retrieves information about related records associated with a specific record via a relationship field.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Update Records Using sObject Relationships",
+    "api_call": "PATCH /services/data/v60.0/sobjects/sObject/id/relationshipFieldName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object containing the record with the relationship field, e.g., 'Account', 'Contact'.",
+      "id": "The ID of the specific record for which related records are being updated.",
+      "payload": "JSON payload containing the fields to be updated on the related records. This payload should include the fields to be modified and their new values.",
+      "relationshipFieldName": "The API name of the relationship field through which related records are accessed."
+    },
+    "functionality": "Updates fields on related records associated with a specific record in Salesforce through sObject relationships.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Delete Records Using sObject Relationships",
+    "api_call": "DELETE /services/data/v60.0/sobjects/sObject/id/relationshipFieldName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "The name of the Salesforce object containing the record with the relationship field, e.g., 'Account', 'Contact'.",
+      "id": "The ID of the specific record for which related records are being updated.",
+      "relationshipFieldName": "The API name of the relationship field through which related records are accessed."
+    },
+    "functionality": "Deletes fields on related records associated with a specific record in Salesforce through sObject relationships.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Suggested Articles",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/suggestedArticles?language=articleLanguage&subject=subject&description=description",
+    "api_version": "60.0",
+    "api_arguments": {
+      "articleTypes": "Optional. Three-character ID prefixes indicating the desired article types. You can specify multiple values for this parameter in a single   call, by repeating the parameter name for each value. For example, articleTypes=ka0&articleTypes=ka1.",
+      "categories": "Optional. The name of the data category group and the data category API name (not category title) for desired articles. The syntax is categories={\"Group\":\"Category\"}. Characters in the URL might need to be encoded. For example: categories=%7B%22Regions%22%3A%22Asia%22%2C%22Products%22%3A%22Laptops%22%7D. The same data category group can’t be specified more than once. However, you can specify multiple data category group and data category pairs.",
+      "description": "Text of the description. Valid only for new records without an existing ID and required if subject is null. Article suggestions are based on common keywords in the subject, description, or both.",
+      "language": "Required. Language that the article is written in.",
+      "limit": "Optional. Specifies the maximum number of suggested articles to return.",
+      "publishStatus": "Optional. The article’s publication status. Valid values: Draft–Not published, Online–Published in Salesforce Knowledge, Archived",
+      "subject": "Text of the subject. Valid only for new records without an existing ID and required if description is null. Article suggestions are based on common keywords in the subject, description, or both.",
+      "topics": "Optional. The topic of returned articles. For example: topics=outlook&topics=email.",
+      "validationStatus": "Optional. The validation status of returned articles."
+    },
+    "functionality": "Retrieves suggested articles based on various parameters such as article types, categories, language, subject, etc.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve User Password Expiration Status",
+    "api_call": "GET /services/data/v60.0/sobjects/User/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password expiration status you want to retrieve."
+    },
+    "functionality": "Retrieves the password expiration status of a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Set User Password",
+    "api_call": "POST /services/data/v60.0/sobjects/User/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password you want to set.",
+      "newPassword": "The new password for the user. This should be sent as part of the request body."
+    },
+    "functionality": "Sets the password for a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Reset User Password",
+    "api_call": "PATCH /services/data/v60.0/sobjects/User/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password you want to reset.",
+      "newPassword": "The new password for the user. This should be sent as part of the request body."
+    },
+    "functionality": "Resets the password for a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Header of User Password Expiration Status",
+    "api_call": "HEAD /services/data/v60.0/sobjects/User/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password expiration status you want to retrieve."
+    },
+    "functionality": "Retrieves header of the password expiration status of a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Self-Service User Password Expiration Status",
+    "api_call": "GET /services/data/v60.0/sobjects/SelfServiceUser/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password expiration status you want to retrieve."
+    },
+    "functionality": "Retrieves the password expiration status of a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Set Self-Service User Password",
+    "api_call": "POST /services/data/v60.0/sobjects/SelfServiceUser/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password you want to set.",
+      "newPassword": "The new password for the user. This should be sent as part of the request body."
+    },
+    "functionality": "Sets the password for a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Reset Self-Service User Password",
+    "api_call": "PATCH /services/data/v60.0/sobjects/SelfServiceUser/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password you want to reset.",
+      "newPassword": "The new password for the user. This should be sent as part of the request body."
+    },
+    "functionality": "Resets the password for a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Header of Self-Service User Password Expiration Status",
+    "api_call": "HEAD /services/data/v60.0/sobjects/SelfServiceUser/userId/password",
+    "api_version": "60.0",
+    "api_arguments": {
+      "userId": "The unique identifier of the user whose password expiration status you want to retrieve."
+    },
+    "functionality": "Retrieves header of the password expiration status of a specific user in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Platform Event Schema by Event Name",
+    "api_call": "GET /services/data/v60.0/sobjects/Event_Name__e/eventSchema?payloadFormat=EXPANDED",
+    "api_version": "60.0",
+    "api_arguments": {
+      "Event_Name__e": "The API name of the platform event for which you want to retrieve the schema.",
+      "payloadFormat": "(Optional) The format of the returned event schema. Available in API version 43.0 and later. This parameter can take one of the following values: EXPANDED or COMPACT."
+    },
+    "functionality": "Retrieves the schema of a platform event by its name in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Retrieve Platform Event Schema by Schema ID",
+    "api_call": "GET /services/data/v60.0/event/eventSchema/schemaId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "eventSchema": "The API name of the platform event schema.",
+      "schemaId": "The ID of the schema for which you want to retrieve the schema details.",
+      "payloadFormat": "(Optional) The format of the returned event schema. Available in API version 43.0 and later. This parameter can take one of the following values: EXPANDED or COMPACT."
+    },
+    "functionality": "Gets the definition of a platform event in JSON format for a schema ID.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get AppMenu Types",
+    "api_call": "GET /services/data/v60.0/appMenu/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the available types of AppMenu in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get AppMenu Items",
+    "api_call": "GET /services/data/v60.0/appMenu/AppSwitcher/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the AppMenu items in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers of AppMenu Items",
+    "api_call": "HEAD /services/data/v60.0/appMenu/AppSwitcher/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the headers for AppMenu items in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get AppMenu Mobile Items",
+    "api_call": "GET /services/data/v60.0/appMenu/Salesforce1/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the AppMenu items in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers of AppMenu Mobile Items",
+    "api_call": "HEAD /services/data/v60.0/appMenu/Salesforce1/",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the headers for AppMenu Mobile items in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Compact Layouts",
+    "api_call": "GET /services/data/v60.0/compactLayouts?q=objectList",
+    "api_version": "60.0",
+    "api_arguments": {
+      "q": "Specifies the object list for which you want to retrieve compact layouts."
+    },
+    "functionality": "Retrieves compact layouts for an object or list of objects in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Consent Action",
+    "api_call": "GET /services/data/v60.0/consent/action/action?ids=listOfIds",
+    "api_version": "60.0",
+    "api_arguments": {
+      "action": {
+        "description": "Specifies the proposed action to be performed on consent records.",
+        "required": true
+      },
+      "aggregatedConsent": {
+        "description": "Optional. If true, returns a single result indicating whether to proceed or not, rather than a result for each ID.",
+        "required": false
+      },
+      "datetime": {
+        "description": "Optional. The timestamp for which consent is determined. Defaults to the current date and time if not specified.",
+        "required": false
+      },
+      "ids": {
+        "description": "Required. Comma-separated list of IDs. The ID can be the record ID or the email address listed on the record.",
+        "required": true
+      },
+      "policy": {
+        "description": "Optional. Use policy=requireExplicitConsent to specify whether explicit consent was given for a contact point channel.",
+        "required": false,
+        "available_from": "API version 49.0"
+      },
+      "purpose": {
+        "description": "Optional. The reason for contacting a customer.",
+        "required": false
+      },
+      "verbose": {
+        "description": "Optional. If true, returns a verbose response.",
+        "required": false
+      }
+    },
+    "functionality": "Performs an action on consent records in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Mulitple Types of Consent Action",
+    "api_call": "GET /services/data/v60.0/consent/multiaction/action?ids=listOfIds",
+    "api_version": "60.0",
+    "api_arguments": {
+      "action": {
+        "description": "Specifies the proposed action to be performed on consent records.",
+        "required": true
+      },
+      "aggregatedConsent": {
+        "description": "Optional. If true, returns a single result indicating whether to proceed or not, rather than a result for each ID.",
+        "required": false
+      },
+      "datetime": {
+        "description": "Optional. The timestamp for which consent is determined. Defaults to the current date and time if not specified.",
+        "required": false
+      },
+      "ids": {
+        "description": "Required. Comma-separated list of IDs. The ID can be the record ID or the email address listed on the record.",
+        "required": true
+      },
+      "policy": {
+        "description": "Optional. Use policy=requireExplicitConsent to specify whether explicit consent was given for a contact point channel.",
+        "required": false,
+        "available_from": "API version 49.0"
+      },
+      "purpose": {
+        "description": "Optional. The reason for contacting a customer.",
+        "required": false
+      },
+      "verbose": {
+        "description": "Optional. If true, returns a verbose response.",
+        "required": false
+      }
+    },
+    "functionality": "Performs an action on Multiple types of consent records in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Embedded Service Configuration",
+    "api_call": "GET /services/data/v60.0/support/embeddedservice/configuration/embeddedServiceConfigDeveloperName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "embeddedServiceConfigDeveloperName": "Specifies the developer name of the embedded service configuration to retrieve."
+    },
+    "functionality": "Retrieves embedded service configuration in Salesforce based on the specified developer name.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Header of Embedded Service Configuration",
+    "api_call": "GET /services/data/v60.0/support/embeddedservice/configuration/embeddedServiceConfigDeveloperName",
+    "api_version": "60.0",
+    "api_arguments": {
+      "embeddedServiceConfigDeveloperName": "Specifies the developer name of the embedded service configuration to retrieve."
+    },
+    "functionality": "Retrieves headers for embedded service configuration in Salesforce based on the specified developer name.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Invocable Actions",
+    "api_call": "GET /services/data/v60.0/actions",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves invocable actions available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers of Invocable Actions",
+    "api_call": "HEAD /services/data/v60.0/actions",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves headers of invocable actions available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Custom Invocable Actions",
+    "api_call": "GET /services/data/v60.0/actions/custom",
+    "api_version": "60.0",
+    "api_arguments": {
+      "none": "No specific arguments required for this endpoint."
+    },
+    "functionality": "Retrieves custom invocable actions available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers of Custom Invocable Actions",
+    "api_call": "HEAD /services/data/v60.0/actions/custom",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves headers of custom invocable actions available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Standard Invocable Actions",
+    "api_call": "GET /services/data/v60.0/actions/standard",
+    "api_version": "60.0",
+    "api_arguments": {
+      "none": "No specific arguments required for this endpoint."
+    },
+    "functionality": "Retrieves Standard invocable actions available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers of Standard Invocable Actions",
+    "api_call": "HEAD /services/data/v60.0/actions/standard",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves headers of Standard invocable actions available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get List View Information by ID",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/listviews/listViewID",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "Specifies the Salesforce object for which you want to retrieve list view information.",
+      "listViewID": "Specifies the ID of the list view for which you want to retrieve information."
+    },
+    "functionality": "Retrieves information about a specific list view for a specified Salesforce object using its ID.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Describe List View using Query Locator",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/listviews/queryLocator/describe",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "Specifies the Salesforce object for which you want to describe the list view.",
+      "queryLocator": "Specifies the query locator for the list view for which you want to retrieve the description."
+    },
+    "functionality": "Describes a specific list view for a specified Salesforce object using its query locator.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get List View Results",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/listviews/listViewID/results",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "Specifies the Salesforce object for which you want to retrieve list view results.",
+      "listViewID": "Specifies the ID of the list view for which you want to retrieve results."
+    },
+    "functionality": "Retrieves results of a specific list view for a specified Salesforce object using its ID.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get List Views for an Object",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/listviews",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObject": "Specifies the Salesforce object for which you want to retrieve list views."
+    },
+    "functionality": "Retrieves list views for a specified Salesforce object.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Data Category Groups",
+    "api_call": "GET /services/data/v60.0/support/dataCategoryGroups",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves data category groups available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Data Category Detail",
+    "api_call": "GET /services/data/v60.0/support/dataCategoryGroups/group/dataCategories/category",
+    "api_version": "60.0",
+    "api_arguments": {
+      "group": "Specifies the ID of the data category group.",
+      "category": "Specifies the ID of the data category within the group for which you want to retrieve details."
+    },
+    "functionality": "Retrieves details of a specific data category within a data category group.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Articles List",
+    "api_call": "GET /services/data/v60.0/support/knowledgeArticles",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves a list of articles from Salesforce Knowledge.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Article Details",
+    "api_call": "GET /services/data/v60.0/support/knowledgeArticles/articleId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "articleId": "Specifies the ID of the article for which you want to retrieve details."
+    },
+    "functionality": "Retrieves details of a specific article from Salesforce Knowledge.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Parameterized Search",
+    "api_call": "GET /services/data/v60.0/parameterizedSearch/?q=searchString",
+    "api_version": "60.0",
+    "api_arguments": {
+      "q": "Specifies the search string that is URL-encoded."
+    },
+    "functionality": "Performs a parameterized search with the specified search string.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Search with Parameters in Request Body",
+    "api_call": "POST /services/data/v60.0/parameterizedSearch",
+    "api_version": "60.0",
+    "api_arguments": {
+      "body": "Specifies the parameters for the search query in the request body."
+    },
+    "functionality": "Performs a search with specified parameters in the request body.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Compile Data for Portability Request",
+    "api_call": "POST /services/data/v60.0/consent/dsr/rtp/execute",
+    "api_version": "60.0",
+    "api_arguments": {
+      "body" : {
+        "dataSubjectId": "Specifies the root ID of the data subject.",
+        "policyName": "Specifies the name of the policy."
+      },
+    },
+    "functionality": "Retrieves data for compiling a portability request as per the Data Subject Request Right to Portability (DSR-RTP) specification.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Portability Request Status",
+    "api_call": "GET /services/data/v60.0/consent/dsr/rtp/status",
+    "api_version": "60.0",
+    "api_arguments": {
+      "policyFileId": "The ID of the file being compiled, returned in the POST method response. The ID is 15 characters."
+    },
+    "functionality": "Retrieves the status of a portability request.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Process Approvals",
+    "api_call": "GET /services/data/v60.0/process/approvals",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves process approvals for the current user.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Submit, Approve, or Reject Process Approvals",
+    "api_call": "POST /services/data/v60.0/process/approvals/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "request_body": {
+        "actionType": "string (Submit, Approve, or Reject)",
+        "contextActorId": "ID of the submitter",
+        "contextId": "ID of the item being acted upon",
+        "comments": "Optional comment to add to the history step",
+        "nextApproverIds": ["ID of the next approver"],
+        "processDefinitionNameOrId": "Developer name or ID of the process definition",
+        "skipEntryCriteria": "Boolean (true or false)"
+      },
+    },
+    "functionality": "Submits, approves, or rejects process approvals for a particular record.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Process Rules",
+    "api_call": "GET /services/data/v60.0/process/rules",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves process rules for the current user.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Trigger Process Rules",
+    "api_call": "POST /services/data/v60.0/process/rules/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "request_body": {
+        "contextIds": ["ID of the item being acted upon"],
+      },
+    },
+    "functionality": "Submits, approves, or rejects process approvals for a particular record.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Headers of Process Rules",
+    "api_call": "HEAD /services/data/v60.0/process/rules",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves headers of process rules for the current user.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Process Rule for sObject",
+    "api_call": "GET /services/data/v60.0/process/rules/sObjectName/ruleId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObjectName": "string",
+      "ruleId": "string"
+    },
+    "functionality": "Retrieves a process rule for a specified sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Trigger Process Rule for sObject",
+    "api_call": "POST /services/data/v60.0/process/rules/sObjectName/ruleId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObjectName": "string",
+      "ruleId": "string"
+    },
+    "functionality": "Triggers a process rule for a specified sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Header of Process Rule for sObject",
+    "api_call": "GET /services/data/v60.0/process/rules/sObjectName/ruleId",
+    "api_version": "60.0",
+    "api_arguments": {
+      "sObjectName": "string",
+      "ruleId": "string"
+    },
+    "functionality": "Retrieves the header of a process rule for a specified sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Get Product Schedules",
+    "api_call": "GET /services/data/v60.0/sobjects/OpportunityLineItem/OpportunityLineItemId/OpportunityLineItemSchedules",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves product schedules for a specific Opportunity Line Item.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Create Product Schedules",
+    "api_call": "PUT /services/data/v60.0/sobjects/OpportunityLineItem/OpportunityLineItemId/OpportunityLineItemSchedules",
+    "api_version": "60.0",
+    "api_arguments": {
+      "type": "string (required)",
+      "quantity": "integer (required)",
+      "quantityScheduleType": "string (required if product has a quantity schedule)",
+      "quantityScheduleInstallmentPeriod": "string (required if product has a quantity schedule)",
+      "quantityScheduleInstallmentsNumber": "integer (required if product has a quantity schedule)",
+      "quantityScheduleStartDate": "string (required if product has a quantity schedule, format: YYYY-MM-DD)",
+      "revenue": "number (required)",
+      "revenueScheduleType": "string (required if product has a revenue schedule)",
+      "revenueScheduleInstallmentPeriod": "string (required if product has a revenue schedule)",
+      "revenueScheduleInstallmentsNumber": "integer (required if product has a revenue schedule)",
+      "revenueScheduleStartDate": "string (required if product has a revenue schedule, format: YYYY-MM-DD)"
+    },
+    "functionality": "Creates product schedules for a specific Opportunity Line Item.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce   API Delete Product Schedules",
+    "api_call": "DELETE /services/data/v60.0/sobjects/OpportunityLineItem/OpportunityLineItemId/OpportunityLineItemSchedules",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Deletes product schedules for a specific Opportunity Line Item.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Query More Results",
+    "api_call": "GET /services/data/v60.0/query/queryLocator",
+    "api_version": "60.0",
+    "api_arguments": {
+      "queryLocator": "string (required)",
+    },
+    "functionality": "Retrieves additional results from a previous SOQL query.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "QueryAll",
+    "api_call": "GET /services/data/v60.0/queryAll?q=SOQLQuery",
+    "api_version": "60.0",
+    "api_arguments": {
+      "q": "string (required)",
+    },
+    "functionality": "Executes a SOQL query that includes deleted records.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "QueryAll More Results",
+    "api_call": "GET /services/data/v60.0/queryAll/queryLocator",
+    "api_version": "60.0",
+    "api_arguments": {
+      "queryLocator": "string (required)",
+    },
+    "functionality": "Retrieves additional results from a previous QueryAll request.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Query Explanation",
+    "api_call": "GET /services/data/v60.0/query?explain=query",
+    "api_version": "60.0",
+    "api_arguments": {
+      "query": "string (required, the SOQL query to be explained)"
+    },
+    "functionality": "Explains a given SOQL query, providing information about the query plan and performance.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Quick Actions",
+    "api_call": "GET /services/data/v60.0/quickActions",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves all available Quick Actions.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Create Records Using Quick Actions",
+    "api_call": "POST /services/data/v60.0/quickActions/",
+    "api_version": "60.0",
+    "api_arguments": {
+      "quickActionName": "string (required, the name of the Quick Action)",
+      "record": "object (required, the record data to be created)"
+    },
+    "functionality": "Creates a record using the specified Quick Action.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Headers of Quick Actions",
+    "api_call": "HEAD /services/data/v60.0/quickActions",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the headers of all available Quick Actions.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Recent List Views",
+    "api_call": "GET /services/data/v60.0/sobjects/sObject/listviews/recent",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves a list of recently accessed list views for a specific sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Recently Viewed Items",
+    "api_call": "GET /services/data/v60.0/recent",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves a list of recently viewed items.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "sObject Relevant Items",
+    "api_call": "GET /services/data/v60.0/sobjects/relevantItems",
+    "api_version": "60.0",
+    "api_arguments": {
+      "lastUpdatedId": {
+        "description": "Compares the entire current list of relevant items to a previous version, if available. Specify the lastUpdatedId value returned in a previous response."
+      },
+      "sobjects": {
+        "description": "To scope the results to a particular object or set of objects, specify the name for one or more sObjects.",
+        "nested_arguments": {
+          "sobject.lastUpdatedId": {
+            "description": "Compares the current list of relevant items for this particular object to a previous version, if available. Specify the lastUpdatedId value returned in a previous response."
+          }
+        }
+      }
+    },
+    "functionality": "Retrieves a list of relevant items for a specific sObject.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Knowledge Language Settings",
+    "api_call": "GET /services/data/v60.0/knowledgeManagement/settings",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieves the language settings for Salesforce Knowledge.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Search",
+    "api_call": "GET /services/data/v60.0/search/?q",
+    "api_version": "60.0",
+    "api_arguments": {
+      "q": "your_search_query_here"
+    },
+    "functionality": "Performs a search across various Salesforce objects.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Search Scope and Order",
+    "api_call": "GET /services/data/v60.0/search/scopeOrder",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Returns an ordered list of objects in the default global search scope of a logged-in user. Global search keeps track of which objects the user interacts with and how often, and arranges the search results accordingly. Objects used most frequently appear at the top of the list.",
+  },
+  { 
+    "user_name": "saikolasani",
+    "api_name": "Search Result Layouts",
+    "api_call": "GET /services/data/v60.0/search/layout/?q=commaDelimitedObjectList",
+    "api_version": "60.0",
+    "api_arguments": {
+      "q": "commaDelimitedObjectList"
+    },
+    "functionality": "Retrieves the layouts for search results in Salesforce for a specified list of objects.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Lightning Toggle Metrics",
+    "api_call": "GET /services/data/v60.0/sobjects/LightningToggleMetrics",
+    "api_version": "60.0",
+    "api_arguments": {
+      "UserId": "The ID of the user for whom the toggle metrics are retrieved.",
+      "RecordCount": "The count of records returned.",
+      "MetricsDate": "The date the switch was recorded.",
+      "Action": "Did the user switch to Salesforce Classic or Lightning Experience."
+    },
+    "functionality": "Retrieves toggle metrics related to Lightning features.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Lightning Usage by App Type",
+    "api_call": "GET /services/data/v60.0/sobjects/LightningUsageByAppTypeMetrics",
+    "api_version": "v60.0",
+    "api_arguments": {
+      "UserId": "The user ID.",
+      "RecordCount": "The count of records returned.",
+      "MetricsDate": "The date the usage data was recorded.",
+      "AppType": "The type of Lightning app being used (e.g., Console, Standard, or Custom)."
+    },
+    "functionality": "Retrieves usage metrics related to Lightning apps categorized by app type.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Lightning Usage by Browser",
+    "api_call": "GET /services/data/v60.0/sobjects/LightningUsageByBrowserMetrics",
+    "api_version": "60.0",
+    "api_arguments": {
+      "UserId": "The user ID.",
+      "RecordCount": "The count of records returned.",
+      "MetricsDate": "The date the usage data was recorded.",
+      "BrowserType": "The type of browser being used (e.g., Chrome, Firefox, Safari, etc.)."
+    },
+    "functionality": "Retrieves usage metrics related to Lightning Experience usage categorized by browser type.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Lightning Usage by Page",
+    "api_call": "GET /services/data/v60.0/sobjects/LightningUsageByPageMetrics",
+    "api_version": "60.0",
+    "api_arguments": {
+      "UserId": "The user ID.",
+      "RecordCount": "The count of records returned.",
+      "MetricsDate": "The date the usage data was recorded.",
+      "PageName": "The name or identifier of the Lightning page being accessed."
+    },
+    "functionality": "Retrieves usage metrics related to Lightning Experience usage categorized by page.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Lightning Usage by FlexiPage",
+    "api_call": "GET /services/data/v60.0/sobjects/LightningUsageByFlexiPageMetrics",
+    "api_version": "60.0",
+    "api_arguments": {
+      "UserId": "The user ID.",
+      "RecordCount": "The count of records returned.",
+      "MetricsDate": "The date the usage data was recorded.",
+      "FlexiPageName": "The name or identifier of the FlexiPage being accessed."
+    },
+    "functionality": "Retrieves usage metrics related to Lightning Experience usage categorized by FlexiPage.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Lightning Exit by Page Metrics",
+    "api_call": "GET /services/data/v60.0/sobjects/LightningExitByPageMetrics",
+    "api_version": "60.0",
+    "api_arguments": {
+      "UserId": "The user ID.",
+      "RecordCount": "The count of records returned.",
+      "MetricsDate": "The date the usage data was recorded.",
+      "PageName": "The name or identifier of the Lightning page where the user exited."
+    },
+    "functionality": "Retrieves metrics related to user exits from Lightning Experience categorized by page.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Tabs",
+    "api_call": "/services/data/v60.0/tabs",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieve a list of all tabs available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Headers of Tabs",
+    "api_call": "/services/data/v60.0/tabs",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieve a list of headers of all tabs available in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Themes",
+    "api_call": "/services/data/v60.0/theme",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieve a list of available themes in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "List Composite Resources",
+    "api_call": "/services/data/v60.0/composite",
+    "api_version": "60.0",
+    "api_arguments": {},
+    "functionality": "Retrieve a list of available composite resources in Salesforce.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Create Records Using sObject Collections",
+    "api_call": "POST /services/data/v60.0/composite/sobjects",
+    "api_version": "60.0",
+    "api_arguments": {
+      "allOrNone": {
+        "description": "Optional. Indicates whether to roll back the entire request if any records fail. Defaults to false, allowing the creation of all valid records even if one or more records fail."
+      },
+      "records": {
+        "description": "Required. An array of sObject records to create. Each record should be in the JSON format corresponding to the sObject's schema."
+      }
+    },
+    "functionality": "Creates multiple records of the specified sObject type in a single request.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Records Using sObject Collections",
+    "api_call": "GET /services/data/v60.0/composite/sobjects",
+    "api_version": "60.0",
+    "api_arguments": {
+        "recordIds": {
+          "description": "Required. A list of one or more IDs of the objects to return. All IDs must belong to the same object type."
+        },
+        "fieldNames": {
+          "description": "Required. A list of fields to include in the response. The field names you specify must be valid, and you must have read-level permissions to each field."
+        }
+    },
+    "functionality": "Retrieves multiple records of the specified sObject type in a single request.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Get Records With a Request Body Using sObject Collections",
+    "api_call": "GET /services/data/v60.0/composite/sobjects",
+    "api_version": "60.0",
+    "api_arguments": {
+        "body": {
+          "ids" : ["recordIds"],
+          "fields" : ["fieldName"]
+        }
+    },
+    "functionality": "Retrieves multiple records of the specified sObject type in a single request.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Update Records Using sObject Collections",
+    "api_call": "PATCH /services/data/v60.0/composite/sobjects",
+    "api_version": "60.0",
+    "api_arguments": {
+      "allOrNone": {
+        "description": "Optional. Indicates whether to roll back the entire request if any records fail. Defaults to false, allowing the creation of all valid records even if one or more records fail."
+      },
+      "records": {
+        "description": "Required. An array of sObject records to create. Each record should be in the JSON format corresponding to the sObject's schema."
+      }
+    },
+    "functionality": "Creates multiple records of the specified sObject type in a single request.",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce REST API Upsert via sObject Collections",
+    "api_call": "PATCH /services/data/v60.0/composite/sobjects/SObjectName/{externalIdFieldName}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "externalIdFieldName": "The name of the field on the object that is specified as the External ID",
+      "sObjectData": "JSON object representing the sObject data to be upserted"
+    },
+    "functionality": "Upsert a record via REST using sObject Collections with an external ID",
+  },
+  {
+    "user_name": "saikolasani",
+    "api_name": "Salesforce REST API Delete sObject Collections",
+    "api_call": "DELETE /services/data/v60.0/composite/sobjects?ids={recordIds}",
+    "api_version": "1.0",
+    "api_arguments": {
+      "recordIds": "Comma-separated list of the record IDs to be deleted",
+      "allOrNone": "Optional. Indicates whether to roll back the entire request if any records fail. Defaults to false, allowing the creation of all valid records even if one or more records fail."
+      
+    },
+    "functionality": "Deletes multiple records via REST using sObject Collections",
+  }
+]

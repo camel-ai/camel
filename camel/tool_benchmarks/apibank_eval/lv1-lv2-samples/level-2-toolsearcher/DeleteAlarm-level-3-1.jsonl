@@ -1,0 +1,12 @@
+{"role": "User", "text": "Can you help me delete an alarm set for March 20th at 6:30 am?"}
+{"role": "AI", "text": "Sure, let me check."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "delete alarm"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "delete alarm"}, "output": [{"name": "GetUserToken", "description": "Get the user token.", "input_parameters": {"username": {"type": "str", "description": "The username of the user."}, "password": {"type": "str", "description": "The password of the user."}}, "output_parameters": {"token": {"type": "str", "description": "The token of the user."}}, "desc_for_search": "get user tokenGet the user token."}, {"name": "DeleteAlarm", "description": "The API for removing an alarm includes a parameter for the time.", "input_parameters": {"token": {"type": "str", "description": "User's token."}, "time": {"type": "str", "description": "The time for alarm. Format: %Y-%m-%d %H:%M:%S"}}, "output_parameters": {"status": {"type": "str", "description": "success or failed"}}}], "exception": null}}
+{"role": "AI", "text": "It looks like I can remove the alarm. May I have your username and password to fetch the token for authentication?"}
+{"role": "User", "text": "My username is JaneSmith and my password is password."}
+{"role": "AI", "text": "Thank you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JaneSmith", "password": "password"}, "result": {"api_name": "GetUserToken", "input": {"username": "JaneSmith", "password": "password"}, "output": {"token": "o8i7u6y5t4r3e2w1q0"}, "exception": null}}
+{"role": "AI", "text": "I have fetched the token. Now, may I have the exact time of the alarm you want to remove?"}
+{"role": "User", "text": "The time is March 20th at 6:30 am."}
+{"role": "AI", "text": "Got it."}
+{"role": "API", "api_name": "DeleteAlarm", "param_dict": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-03-20 06:30:00"}, "result": {"api_name": "DeleteAlarm", "input": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-03-20 06:30:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "The alarm should be deleted now."}

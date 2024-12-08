@@ -1,0 +1,7 @@
+{"role": "User", "text": "Can you help me check a meeting on March 20th from 2 PM to 4 PM in Conference Room A for a Sales Meeting with John Smith and Jane Doe attending?"}
+{"role": "AI", "text": "Sure, I can help you with that. May I have your username and password for authentication?"}
+{"role": "User", "text": "My username is JohnDoe and my password is pass123."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "Authenticated. Now, let me check the meeting for you."}
+{"role": "API", "api_name": "QueryMeeting", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "Sales Meeting", "start_time": "2023-03-20 14:00:00", "end_time": "2023-03-20 16:00:00", "location": "Conference Room A", "attendees": "['John Smith', 'Jane Doe']"}, "result": {"api_name": "QueryMeeting", "input": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "Sales Meeting", "start_time": "2023-03-20 14:00:00", "end_time": "2023-03-20 16:00:00", "location": "Conference Room A", "attendees": ["John Smith", "Jane Doe"]}, "output": {"meeting_topic": "Sales Meeting", "start_time": "2023-03-20 14:00:00", "end_time": "2023-03-20 16:00:00", "location": "Conference Room A", "attendees": ["John Smith", "Jane Doe"], "username": "JohnDoe"}, "exception": null}}
+{"role": "AI", "text": "The meeting is scheduled already."}

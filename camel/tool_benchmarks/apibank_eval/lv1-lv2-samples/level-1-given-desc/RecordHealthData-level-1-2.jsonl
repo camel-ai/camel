@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you record my health data?"}
+{"role": "AI", "text": "Sure! What's your user ID?"}
+{"role": "User", "text": "My user ID is 12345."}
+{"role": "AI", "text": "What is the date and time for the health data?"}
+{"role": "User", "text": "It is today, at 10:30 am. Today is 2021-09-17."}
+{"role": "AI", "text": "Great. What health data would you like to record?"}
+{"role": "User", "text": "Blood pressure is 120/80 and heart rate is 75."}
+{"role": "AI", "text": "Got it."}
+{"role": "API", "api_name": "RecordHealthData", "param_dict": {"user_id": "12345", "time": "2021-09-17 10:30:00", "health_data": "[{'name': 'blood_pressure', 'value': '120/80'}, {'name': 'heart_rate', 'value': '75'}]"}, "result": {"api_name": "RecordHealthData", "input": {"user_id": "12345", "time": "2021-09-17 10:30:00", "health_data": [{"name": "blood_pressure", "value": "120/80"}, {"name": "heart_rate", "value": "75"}]}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your health data has been recorded."}
