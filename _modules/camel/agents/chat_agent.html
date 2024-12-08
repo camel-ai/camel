@@ -1,0 +1,1843 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.agents.chat_agent &#8212; CAMEL 0.2.11 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!-- 
+    this give us a css class that will be invisible only if js is disabled 
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=a3416100" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+
+    <script src="../../../_static/documentation_options.js?v=a64840b6"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/agents/chat_agent';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.11</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Agents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/embodied_agents.html">Embodied Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_society.html">Society Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/task_generation.html">Task Generation Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/knowledge_graph.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning.html">Data generation with CAMEL and finetuning with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral mdoels with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta mdoels with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.agents.chat_agent</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">openai.types.chat</span> <span class="kn">import</span> <span class="n">ChatCompletionMessageToolCall</span>
+<span class="kn">from</span> <span class="nn">openai.types.chat.chat_completion_message_tool_call</span> <span class="kn">import</span> <span class="n">Function</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">camel.agents.base</span> <span class="kn">import</span> <span class="n">BaseAgent</span>
+<span class="kn">from</span> <span class="nn">camel.memories</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AgentMemory</span><span class="p">,</span>
+    <span class="n">ChatHistoryMemory</span><span class="p">,</span>
+    <span class="n">MemoryRecord</span><span class="p">,</span>
+    <span class="n">ScoreBasedContextCreator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">camel.messages</span> <span class="kn">import</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">FunctionCallingMessage</span><span class="p">,</span> <span class="n">OpenAIMessage</span>
+<span class="kn">from</span> <span class="nn">camel.models</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModelBackend</span><span class="p">,</span>
+    <span class="n">ModelFactory</span><span class="p">,</span>
+    <span class="n">ModelManager</span><span class="p">,</span>
+    <span class="n">ModelProcessingError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">camel.responses</span> <span class="kn">import</span> <span class="n">ChatAgentResponse</span>
+<span class="kn">from</span> <span class="nn">camel.types</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ChatCompletion</span><span class="p">,</span>
+    <span class="n">ChatCompletionChunk</span><span class="p">,</span>
+    <span class="n">ModelPlatformType</span><span class="p">,</span>
+    <span class="n">ModelType</span><span class="p">,</span>
+    <span class="n">OpenAIBackendRole</span><span class="p">,</span>
+    <span class="n">RoleType</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">camel.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">func_string_to_callable</span><span class="p">,</span>
+    <span class="n">get_model_encoding</span><span class="p">,</span>
+    <span class="n">get_pydantic_object_schema</span><span class="p">,</span>
+    <span class="n">json_to_function_code</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">Stream</span>
+
+    <span class="kn">from</span> <span class="nn">camel.terminators</span> <span class="kn">import</span> <span class="n">ResponseTerminator</span>
+    <span class="kn">from</span> <span class="nn">camel.toolkits</span> <span class="kn">import</span> <span class="n">FunctionTool</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># AgentOps decorator setting</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AGENTOPS_API_KEY&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">agentops</span> <span class="kn">import</span> <span class="n">track_agent</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span>
+<span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">camel.utils</span> <span class="kn">import</span> <span class="n">track_agent</span>
+
+
+<div class="viewcode-block" id="FunctionCallingRecord">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.FunctionCallingRecord">[docs]</a>
+<span class="k">class</span> <span class="nc">FunctionCallingRecord</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Historical records of functions called in the conversation.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        func_name (str): The name of the function being called.</span>
+<span class="sd">        args (Dict[str, Any]): The dictionary of arguments passed to</span>
+<span class="sd">            the function.</span>
+<span class="sd">        result (Any): The execution result of calling this function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">func_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">args</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">Any</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Overridden version of the string function.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Modified string to represent the function calling.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Function Execution: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">func_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Args: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Result: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="FunctionCallingRecord.as_dict">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.FunctionCallingRecord.as_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the function calling record as a dictionary.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, Any]: The function calling record as a dictionary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ChatAgent">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent">[docs]</a>
+<span class="nd">@track_agent</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ChatAgent&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ChatAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Class for managing conversations of CAMEL Chat Agents.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        system_message (Union[BaseMessage, str], optional): The system message</span>
+<span class="sd">            for the chat agent.</span>
+<span class="sd">        model (BaseModelBackend, optional): The model backend to use for</span>
+<span class="sd">            generating responses. (default: :obj:`ModelPlatformType.DEFAULT`</span>
+<span class="sd">            with `ModelType.DEFAULT`)</span>
+<span class="sd">        memory (AgentMemory, optional): The agent memory for managing chat</span>
+<span class="sd">            messages. If `None`, a :obj:`ChatHistoryMemory` will be used.</span>
+<span class="sd">            (default: :obj:`None`)</span>
+<span class="sd">        message_window_size (int, optional): The maximum number of previous</span>
+<span class="sd">            messages to include in the context window. If `None`, no windowing</span>
+<span class="sd">            is performed. (default: :obj:`None`)</span>
+<span class="sd">        token_limit (int, optional): The maximum number of tokens in a context.</span>
+<span class="sd">            The context will be automatically pruned to fulfill the limitation.</span>
+<span class="sd">            If `None`, it will be set according to the backend model.</span>
+<span class="sd">            (default: :obj:`None`)</span>
+<span class="sd">        output_language (str, optional): The language to be output by the</span>
+<span class="sd">            agent. (default: :obj:`None`)</span>
+<span class="sd">        tools (List[FunctionTool], optional): List of available</span>
+<span class="sd">            :obj:`FunctionTool`. (default: :obj:`None`)</span>
+<span class="sd">        external_tools (List[FunctionTool], optional): List of external tools</span>
+<span class="sd">            (:obj:`FunctionTool`) bind to one chat agent. When these tools</span>
+<span class="sd">            are called, the agent will directly return the request instead of</span>
+<span class="sd">            processing it. (default: :obj:`None`)</span>
+<span class="sd">        response_terminators (List[ResponseTerminator], optional): List of</span>
+<span class="sd">            :obj:`ResponseTerminator` bind to one chat agent.</span>
+<span class="sd">            (default: :obj:`None`)</span>
+<span class="sd">        scheduling_strategy (str): name of function that defines how to select</span>
+<span class="sd">            the next model in ModelManager. (default: :str:`round_robin`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">system_message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">Union</span><span class="p">[</span><span class="n">BaseModelBackend</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseModelBackend</span><span class="p">]]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">memory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AgentMemory</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">message_window_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">token_limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_language</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">FunctionTool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">external_tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">FunctionTool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">response_terminators</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ResponseTerminator</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scheduling_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;round_robin&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">system_message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">system_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_assistant_message</span><span class="p">(</span>
+                <span class="n">role_name</span><span class="o">=</span><span class="s1">&#39;Assistant&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">system_message</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">orig_sys_message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]</span> <span class="o">=</span> <span class="n">system_message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]</span> <span class="o">=</span> <span class="n">system_message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">system_message</span><span class="p">,</span> <span class="s1">&#39;role_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;assistant&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">:</span> <span class="n">RoleType</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">system_message</span><span class="p">,</span> <span class="s1">&#39;role_type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">RoleType</span><span class="o">.</span><span class="n">ASSISTANT</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span> <span class="o">=</span> <span class="n">ModelManager</span><span class="p">(</span>
+            <span class="n">model</span>
+            <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">ModelFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">model_platform</span><span class="o">=</span><span class="n">ModelPlatformType</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+                <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">scheduling_strategy</span><span class="o">=</span><span class="n">scheduling_strategy</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_type</span>
+
+        <span class="c1"># Tool registration</span>
+        <span class="n">external_tools</span> <span class="o">=</span> <span class="n">external_tools</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">tools</span> <span class="o">=</span> <span class="n">tools</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="n">all_tools</span> <span class="o">=</span> <span class="n">tools</span> <span class="o">+</span> <span class="n">external_tools</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">external_tool_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">tool</span><span class="o">.</span><span class="n">get_function_name</span><span class="p">()</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">external_tools</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">tool</span><span class="o">.</span><span class="n">get_function_name</span><span class="p">():</span> <span class="n">tool</span><span class="o">.</span><span class="n">func</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">all_tools</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">tool</span><span class="o">.</span><span class="n">get_function_name</span><span class="p">():</span> <span class="n">tool</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">all_tools</span><span class="p">}</span>
+
+        <span class="c1"># If the user set tools from `ChatAgent`, it will override the</span>
+        <span class="c1"># configured tools in `BaseModelBackend`.</span>
+        <span class="k">if</span> <span class="n">all_tools</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Overriding the configured tools in `BaseModelBackend` with the tools from `ChatAgent`.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">tool_schema_list</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">tool</span><span class="o">.</span><span class="n">get_openai_tool_schema</span><span class="p">()</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">all_tools</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span><span class="p">[</span><span class="s1">&#39;tools&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tool_schema_list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tool_schema_list</span> <span class="o">=</span> <span class="n">tool_schema_list</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_config_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_token_limit</span> <span class="o">=</span> <span class="n">token_limit</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">token_limit</span>
+        <span class="n">context_creator</span> <span class="o">=</span> <span class="n">ScoreBasedContextCreator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">token_counter</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_token_limit</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">:</span> <span class="n">AgentMemory</span> <span class="o">=</span> <span class="n">memory</span> <span class="ow">or</span> <span class="n">ChatHistoryMemory</span><span class="p">(</span>
+            <span class="n">context_creator</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="n">message_window_size</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_language</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_language</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_language</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_output_language</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_language</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response_terminators</span> <span class="o">=</span> <span class="n">response_terminators</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_messages</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_prompt_added</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># ruff: noqa: E501</span>
+    <span class="k">def</span> <span class="nf">_generate_tool_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tool_schema_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates a tool prompt based on the provided tool schema list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tool_schema_list (List[Dict]): A list of dictionaries, each</span>
+<span class="sd">                containing a tool schema.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A string representing the tool prompt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tool_prompts</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tool_schema_list</span><span class="p">:</span>
+            <span class="n">tool_info</span> <span class="o">=</span> <span class="n">tool</span><span class="p">[</span><span class="s1">&#39;function&#39;</span><span class="p">]</span>
+            <span class="n">tool_name</span> <span class="o">=</span> <span class="n">tool_info</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="n">tool_description</span> <span class="o">=</span> <span class="n">tool_info</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
+            <span class="n">tool_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tool_info</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+            <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Use the function &#39;</span><span class="si">{</span><span class="n">tool_name</span><span class="si">}</span><span class="s2">&#39; to &#39;</span><span class="si">{</span><span class="n">tool_description</span><span class="si">}</span><span class="s2">&#39;:</span><span class="se">\n</span><span class="si">{</span><span class="n">tool_json</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">tool_prompts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+
+        <span class="n">tool_prompt_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tool_prompts</span><span class="p">)</span>
+
+        <span class="n">final_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    # Tool prompt</span>
+<span class="s1">    TOOL_PROMPT = f&quot;&quot;&quot;</span>
+<span class="s1">    You have access to the following functions:</span>
+
+<span class="s1">    </span><span class="si">{</span><span class="n">tool_prompt_str</span><span class="si">}</span>
+
+<span class="s1">    If you choose to call a function ONLY reply in the following format with no</span>
+<span class="s1">    prefix or suffix:</span>
+
+<span class="s1">    &lt;function=example_function_name&gt;</span><span class="se">{{</span><span class="s1">&quot;example_name&quot;: &quot;example_value&quot;</span><span class="se">}}</span>
+<span class="s1">    &lt;/function&gt;</span>
+
+<span class="s1">    Reminder:</span>
+<span class="s1">    - Function calls MUST follow the specified format, start with &lt;function=</span>
+<span class="s1">      and end with &lt;/function&gt;</span>
+<span class="s1">    - Required parameters MUST be specified</span>
+<span class="s1">    - Only call one function at a time</span>
+<span class="s1">    - Put the entire function call reply on one line</span>
+<span class="s1">    - If there is no function call available, answer the question like normal </span>
+<span class="s1">      with your current knowledge and do not tell the user about function calls</span>
+<span class="s1">    &quot;&quot;&quot;</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">final_prompt</span>
+
+    <span class="k">def</span> <span class="nf">_parse_tool_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parses the tool response to extract the function name and</span>
+<span class="sd">        arguments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (str): The response from the model containing the</span>
+<span class="sd">                function call.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Dict[str, Any]]: The parsed function name and arguments</span>
+<span class="sd">                if found, otherwise :obj:`None`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">function_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;&lt;function=(\w+)&gt;(.*?)&lt;/function&gt;&quot;</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">function_regex</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">function_name</span><span class="p">,</span> <span class="n">args_string</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">args</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">args_string</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="n">function_name</span><span class="p">,</span> <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="n">args</span><span class="p">}</span>
+            <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error parsing function arguments: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ChatAgent.reset">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Resets the :obj:`ChatAgent` to its initial state.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_messages</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">terminator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_terminators</span><span class="p">:</span>
+            <span class="n">terminator</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">system_message</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The getter method for the property :obj:`system_message`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[BaseMessage]: The system message of this agent if set,</span>
+<span class="sd">                else :obj:`None`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span>
+
+    <span class="nd">@system_message</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">system_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The setter method for the property :obj:`system_message`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (BaseMessage): The message to be set as the</span>
+<span class="sd">                new system message of this agent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span> <span class="o">=</span> <span class="n">message</span>
+
+<div class="viewcode-block" id="ChatAgent.is_tools_added">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.is_tools_added">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_tools_added</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Whether OpenAI function calling is enabled for this agent.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: Whether OpenAI function calling is enabled for this</span>
+<span class="sd">                agent, determined by whether the dictionary of tools</span>
+<span class="sd">                is empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.update_memory">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.update_memory">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_memory</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="n">OpenAIBackendRole</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Updates the agent memory with a new message.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (BaseMessage): The new message to add to the stored</span>
+<span class="sd">                messages.</span>
+<span class="sd">            role (OpenAIBackendRole): The backend role type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">write_record</span><span class="p">(</span>
+            <span class="n">MemoryRecord</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span> <span class="n">role_at_backend</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.set_output_language">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.set_output_language">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_output_language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_language</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseMessage</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sets the output language for the system message. This method</span>
+<span class="sd">        updates the output language for the system message. The output</span>
+<span class="sd">        language determines the language in which the output text should be</span>
+<span class="sd">        generated.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_language (str): The desired output language.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseMessage: The updated system message object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_language</span> <span class="o">=</span> <span class="n">output_language</span>
+        <span class="n">language_prompt</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Regardless of the input language, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;you must output text in </span><span class="si">{</span><span class="n">output_language</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_sys_message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_sys_message</span><span class="o">.</span><span class="n">content</span> <span class="o">+</span> <span class="n">language_prompt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_sys_message</span><span class="o">.</span><span class="n">create_new_instance</span><span class="p">(</span>
+                <span class="n">content</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_assistant_message</span><span class="p">(</span>
+                <span class="n">role_name</span><span class="o">=</span><span class="s2">&quot;Assistant&quot;</span><span class="p">,</span>
+                <span class="n">content</span><span class="o">=</span><span class="n">language_prompt</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">system_record</span> <span class="o">=</span> <span class="n">MemoryRecord</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span><span class="p">,</span>
+            <span class="n">role_at_backend</span><span class="o">=</span><span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">SYSTEM</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">write_record</span><span class="p">(</span><span class="n">system_record</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.get_info">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.get_info">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_info</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">usage</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+        <span class="n">termination_reasons</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">num_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">tool_calls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">],</span>
+        <span class="n">external_tool_request</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChatCompletionMessageToolCall</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a dictionary containing information about the chat session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            session_id (str, optional): The ID of the chat session.</span>
+<span class="sd">            usage (Dict[str, int], optional): Information about the usage of</span>
+<span class="sd">                the LLM model.</span>
+<span class="sd">            termination_reasons (List[str]): The reasons for the termination</span>
+<span class="sd">                of the chat session.</span>
+<span class="sd">            num_tokens (int): The number of tokens used in the chat session.</span>
+<span class="sd">            tool_calls (List[FunctionCallingRecord]): The list of function</span>
+<span class="sd">                calling records, containing the information of called tools.</span>
+<span class="sd">            external_tool_request</span>
+<span class="sd">                (Optional[ChatCompletionMessageToolCall], optional):</span>
+<span class="sd">                The tool calling request of external tools from the model.</span>
+<span class="sd">                These requests are directly returned to the user instead of</span>
+<span class="sd">                being processed by the agent automatically.</span>
+<span class="sd">                (default: :obj:`None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: The chat session information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">session_id</span><span class="p">,</span>
+            <span class="s2">&quot;usage&quot;</span><span class="p">:</span> <span class="n">usage</span><span class="p">,</span>
+            <span class="s2">&quot;termination_reasons&quot;</span><span class="p">:</span> <span class="n">termination_reasons</span><span class="p">,</span>
+            <span class="s2">&quot;num_tokens&quot;</span><span class="p">:</span> <span class="n">num_tokens</span><span class="p">,</span>
+            <span class="s2">&quot;tool_calls&quot;</span><span class="p">:</span> <span class="n">tool_calls</span><span class="p">,</span>
+            <span class="s2">&quot;external_tool_request&quot;</span><span class="p">:</span> <span class="n">external_tool_request</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.init_messages">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.init_messages">[docs]</a>
+    <span class="k">def</span> <span class="nf">init_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initializes the stored messages list with the current system</span>
+<span class="sd">        message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">system_record</span> <span class="o">=</span> <span class="n">MemoryRecord</span><span class="p">(</span>
+                <span class="n">message</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_message</span><span class="p">,</span>
+                <span class="n">role_at_backend</span><span class="o">=</span><span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">SYSTEM</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">write_record</span><span class="p">(</span><span class="n">system_record</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.record_message">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.record_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">record_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">BaseMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Records the externally provided message into the agent memory as if</span>
+<span class="sd">        it were an answer of the :obj:`ChatAgent` from the backend. Currently,</span>
+<span class="sd">        the choice of the critic is submitted with this method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (BaseMessage): An external message to be recorded in the</span>
+<span class="sd">                memory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.step">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.step">[docs]</a>
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_message</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">response_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatAgentResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Performs a single step in the chat session by generating a response</span>
+<span class="sd">        to the input message.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_message (Union[BaseMessage, str]): The input message to the</span>
+<span class="sd">                agent. For BaseMessage input, its `role` field that specifies</span>
+<span class="sd">                the role at backend may be either `user` or `assistant` but it</span>
+<span class="sd">                will be set to `user` anyway since for the self agent any</span>
+<span class="sd">                incoming message is external. For str input, the `role_name` would be `User`.</span>
+<span class="sd">            response_format (Optional[Type[BaseModel]], optional): A pydantic</span>
+<span class="sd">                model class that includes value types and field descriptions</span>
+<span class="sd">                used to generate a structured response by LLM. This schema</span>
+<span class="sd">                helps in defining the expected output format. (default:</span>
+<span class="sd">                :obj:`None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ChatAgentResponse: A struct containing the output messages,</span>
+<span class="sd">                a boolean indicating whether the chat session has terminated,</span>
+<span class="sd">                and information about the chat session.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response_format&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">response_format</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The `response_format` parameter cannot be set both in &quot;</span>
+                <span class="s2">&quot;the model configuration and in the ChatAgent step.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">input_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+                <span class="n">role_name</span><span class="o">=</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">input_message</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;llama&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tools&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_prompt_added</span>
+            <span class="p">):</span>
+                <span class="n">tool_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_tool_prompt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tool_schema_list</span><span class="p">)</span>
+
+                <span class="n">tool_sys_msg</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_assistant_message</span><span class="p">(</span>
+                    <span class="n">role_name</span><span class="o">=</span><span class="s2">&quot;Assistant&quot;</span><span class="p">,</span>
+                    <span class="n">content</span><span class="o">=</span><span class="n">tool_prompt</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">tool_sys_msg</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">SYSTEM</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tool_prompt_added</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">USER</span><span class="p">)</span>
+
+            <span class="n">tool_call_records</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="c1"># Check if token has exceeded</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_token_exceed</span><span class="p">(</span>
+                        <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tool_call_records</span><span class="p">,</span> <span class="s2">&quot;max_tokens_exceeded&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="p">(</span>
+                    <span class="n">response</span><span class="p">,</span>
+                    <span class="n">output_messages</span><span class="p">,</span>
+                    <span class="n">finish_reasons</span><span class="p">,</span>
+                    <span class="n">usage_dict</span><span class="p">,</span>
+                    <span class="n">response_id</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_model_response</span><span class="p">(</span><span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">)</span>
+                <span class="c1"># If the model response is not a function call, meaning the</span>
+                <span class="c1"># model has generated a message response, break the loop</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_tools_added</span><span class="p">()</span>
+                    <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">ChatCompletion</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="s2">&quot;&lt;/function&gt;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>  <span class="c1"># type: ignore[operator]</span>
+                <span class="p">):</span>
+                    <span class="k">break</span>
+
+                <span class="n">parsed_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_tool_response</span><span class="p">(</span>
+                    <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>  <span class="c1"># type: ignore[arg-type]</span>
+                <span class="p">)</span>
+
+                <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">ChatCompletionMessageToolCall</span><span class="p">(</span>
+                        <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+                        <span class="n">function</span><span class="o">=</span><span class="n">Function</span><span class="p">(</span>
+                            <span class="n">arguments</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">parsed_content</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                                <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;&quot;&#39;</span>
+                            <span class="p">),</span>
+                            <span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">parsed_content</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]),</span>
+                        <span class="p">),</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;function&quot;</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">]</span>
+
+                <span class="c1"># Check for external tool call</span>
+                <span class="n">tool_call_request</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">tool_call_request</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_tool_names</span><span class="p">:</span>
+                    <span class="c1"># if model calls an external tool, directly return the</span>
+                    <span class="c1"># request</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_get_info</span><span class="p">(</span>
+                        <span class="n">output_messages</span><span class="p">,</span>
+                        <span class="n">finish_reasons</span><span class="p">,</span>
+                        <span class="n">usage_dict</span><span class="p">,</span>
+                        <span class="n">response_id</span><span class="p">,</span>
+                        <span class="n">tool_call_records</span><span class="p">,</span>
+                        <span class="n">num_tokens</span><span class="p">,</span>
+                        <span class="n">tool_call_request</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+                        <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span>
+                        <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span>
+                        <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># Normal function calling</span>
+                <span class="n">tool_call_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_step_tool_call_and_update</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">response_format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="p">(</span>
+                    <span class="n">output_messages</span><span class="p">,</span>
+                    <span class="n">finish_reasons</span><span class="p">,</span>
+                    <span class="n">usage_dict</span><span class="p">,</span>
+                    <span class="n">response_id</span><span class="p">,</span>
+                    <span class="n">tool_call</span><span class="p">,</span>
+                    <span class="n">num_tokens</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structure_output_with_function</span><span class="p">(</span><span class="n">response_format</span><span class="p">)</span>
+                <span class="n">tool_call_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tool_call</span><span class="p">)</span>
+
+            <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_get_info</span><span class="p">(</span>
+                <span class="n">output_messages</span><span class="p">,</span>
+                <span class="n">finish_reasons</span><span class="p">,</span>
+                <span class="n">usage_dict</span><span class="p">,</span>
+                <span class="n">response_id</span><span class="p">,</span>
+                <span class="n">tool_call_records</span><span class="p">,</span>
+                <span class="n">num_tokens</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_messages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># Auto record if the output result is a single message</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">record_message</span><span class="p">(</span><span class="n">output_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Multiple messages returned in `step()`, message won&#39;t be &quot;</span>
+                    <span class="s2">&quot;recorded automatically. Please call `record_message()` &quot;</span>
+                    <span class="s2">&quot;to record the selected message manually.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+                <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span> <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">USER</span><span class="p">)</span>
+
+            <span class="n">tool_call_records</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># type: ignore[no-redef]</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="c1"># Check if token has exceeded</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_token_exceed</span><span class="p">(</span>
+                        <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tool_call_records</span><span class="p">,</span> <span class="s2">&quot;max_tokens_exceeded&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="p">(</span>
+                    <span class="n">response</span><span class="p">,</span>
+                    <span class="n">output_messages</span><span class="p">,</span>
+                    <span class="n">finish_reasons</span><span class="p">,</span>
+                    <span class="n">usage_dict</span><span class="p">,</span>
+                    <span class="n">response_id</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_model_response</span><span class="p">(</span><span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">)</span>
+                <span class="c1"># If the model response is not a function call, meaning the</span>
+                <span class="c1"># model has generated a message response, break the loop</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_tools_added</span><span class="p">()</span>
+                    <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">ChatCompletion</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span>
+                <span class="p">):</span>
+                    <span class="k">break</span>
+
+                <span class="c1"># Check for external tool call</span>
+                <span class="n">tool_call_request</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">tool_call_request</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_tool_names</span><span class="p">:</span>
+                    <span class="c1"># if model calls an external tool, directly return the</span>
+                    <span class="c1"># request</span>
+                    <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_get_info</span><span class="p">(</span>
+                        <span class="n">output_messages</span><span class="p">,</span>
+                        <span class="n">finish_reasons</span><span class="p">,</span>
+                        <span class="n">usage_dict</span><span class="p">,</span>
+                        <span class="n">response_id</span><span class="p">,</span>
+                        <span class="n">tool_call_records</span><span class="p">,</span>
+                        <span class="n">num_tokens</span><span class="p">,</span>
+                        <span class="n">tool_call_request</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+                        <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span>
+                        <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span>
+                        <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># Normal function calling</span>
+                <span class="n">tool_call_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_step_tool_call_and_update</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">response_format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="o">.</span><span class="n">support_native_tool_calling</span>
+            <span class="p">):</span>
+                <span class="p">(</span>
+                    <span class="n">output_messages</span><span class="p">,</span>
+                    <span class="n">finish_reasons</span><span class="p">,</span>
+                    <span class="n">usage_dict</span><span class="p">,</span>
+                    <span class="n">response_id</span><span class="p">,</span>
+                    <span class="n">tool_call</span><span class="p">,</span>
+                    <span class="n">num_tokens</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structure_output_with_function</span><span class="p">(</span><span class="n">response_format</span><span class="p">)</span>
+                <span class="n">tool_call_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tool_call</span><span class="p">)</span>
+
+            <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_get_info</span><span class="p">(</span>
+                <span class="n">output_messages</span><span class="p">,</span>
+                <span class="n">finish_reasons</span><span class="p">,</span>
+                <span class="n">usage_dict</span><span class="p">,</span>
+                <span class="n">response_id</span><span class="p">,</span>
+                <span class="n">tool_call_records</span><span class="p">,</span>
+                <span class="n">num_tokens</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_messages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># Auto record if the output result is a single message</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">record_message</span><span class="p">(</span><span class="n">output_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Multiple messages returned in `step()`, message won&#39;t be &quot;</span>
+                    <span class="s2">&quot;recorded automatically. Please call `record_message()` &quot;</span>
+                    <span class="s2">&quot;to record the selected message manually.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+                <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span> <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.step_async">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.step_async">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">step_async</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_message</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">response_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatAgentResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Performs a single step in the chat session by generating a response</span>
+<span class="sd">        to the input message. This agent step can call async function calls.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_message (Union[BaseMessage, str]): The input message to the</span>
+<span class="sd">                agent. For BaseMessage input, its `role` field that specifies</span>
+<span class="sd">                the role at backend may be either `user` or `assistant` but it</span>
+<span class="sd">                will be set to `user` anyway since for the self agent any</span>
+<span class="sd">                incoming message is external. For str input, the `role_name` would be `User`.</span>
+<span class="sd">            response_format (Optional[Type[BaseModel]], optional): A pydantic</span>
+<span class="sd">                model class that includes value types and field descriptions</span>
+<span class="sd">                used to generate a structured response by LLM. This schema</span>
+<span class="sd">                helps in defining the expected output format. (default:</span>
+<span class="sd">                :obj:`None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ChatAgentResponse: A struct containing the output messages,</span>
+<span class="sd">                a boolean indicating whether the chat session has terminated,</span>
+<span class="sd">                and information about the chat session.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">input_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="o">.</span><span class="n">make_user_message</span><span class="p">(</span>
+                <span class="n">role_name</span><span class="o">=</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">input_message</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">input_message</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">USER</span><span class="p">)</span>
+
+        <span class="n">tool_call_records</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_token_exceed</span><span class="p">(</span>
+                    <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">tool_call_records</span><span class="p">,</span> <span class="s2">&quot;max_tokens_exceeded&quot;</span>
+                <span class="p">)</span>
+
+            <span class="p">(</span>
+                <span class="n">response</span><span class="p">,</span>
+                <span class="n">output_messages</span><span class="p">,</span>
+                <span class="n">finish_reasons</span><span class="p">,</span>
+                <span class="n">usage_dict</span><span class="p">,</span>
+                <span class="n">response_id</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_model_response</span><span class="p">(</span><span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_tools_added</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">ChatCompletion</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="k">break</span>
+
+            <span class="c1"># Check for external tool call</span>
+            <span class="n">tool_call_request</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">tool_call_request</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_tool_names</span><span class="p">:</span>
+                <span class="c1"># if model calls an external tool, directly return the request</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_get_info</span><span class="p">(</span>
+                    <span class="n">output_messages</span><span class="p">,</span>
+                    <span class="n">finish_reasons</span><span class="p">,</span>
+                    <span class="n">usage_dict</span><span class="p">,</span>
+                    <span class="n">response_id</span><span class="p">,</span>
+                    <span class="n">tool_call_records</span><span class="p">,</span>
+                    <span class="n">num_tokens</span><span class="p">,</span>
+                    <span class="n">tool_call_request</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+                    <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span> <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Normal function calling</span>
+            <span class="n">tool_call_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_tool_call_and_update_async</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">response_format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="o">.</span><span class="n">support_native_tool_calling</span>
+        <span class="p">):</span>
+            <span class="p">(</span>
+                <span class="n">output_messages</span><span class="p">,</span>
+                <span class="n">finish_reasons</span><span class="p">,</span>
+                <span class="n">usage_dict</span><span class="p">,</span>
+                <span class="n">response_id</span><span class="p">,</span>
+                <span class="n">tool_call_record</span><span class="p">,</span>
+                <span class="n">num_tokens</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structure_output_with_function</span><span class="p">(</span><span class="n">response_format</span><span class="p">)</span>
+            <span class="n">tool_call_records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tool_call_record</span><span class="p">)</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_get_info</span><span class="p">(</span>
+            <span class="n">output_messages</span><span class="p">,</span>
+            <span class="n">finish_reasons</span><span class="p">,</span>
+            <span class="n">usage_dict</span><span class="p">,</span>
+            <span class="n">response_id</span><span class="p">,</span>
+            <span class="n">tool_call_records</span><span class="p">,</span>
+            <span class="n">num_tokens</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_messages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Auto record if the output result is a single message</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">record_message</span><span class="p">(</span><span class="n">output_messages</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Multiple messages returned in `step()`, message won&#39;t be &quot;</span>
+                <span class="s2">&quot;recorded automatically. Please call `record_message()` to &quot;</span>
+                <span class="s2">&quot;record the selected message manually.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+            <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span> <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_step_tool_call_and_update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FunctionCallingRecord</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Processes a function call within the chat completion response,</span>
+<span class="sd">        records the function call in the provided list of tool calls and</span>
+<span class="sd">        updates the memory of the current agent.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (ChatCompletion): The response object from the chat</span>
+<span class="sd">                completion.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            FunctionCallingRecord: The record of calling the function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Perform function calling</span>
+        <span class="n">func_assistant_msg</span><span class="p">,</span> <span class="n">func_result_msg</span><span class="p">,</span> <span class="n">tool_call_record</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">step_tool_call</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Update the messages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">func_assistant_msg</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">func_result_msg</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">FUNCTION</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tool_call_record</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_step_tool_call_and_update_async</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FunctionCallingRecord</span><span class="p">:</span>
+        <span class="p">(</span>
+            <span class="n">func_assistant_msg</span><span class="p">,</span>
+            <span class="n">func_result_msg</span><span class="p">,</span>
+            <span class="n">func_record</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_tool_call_async</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">func_assistant_msg</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_memory</span><span class="p">(</span><span class="n">func_result_msg</span><span class="p">,</span> <span class="n">OpenAIBackendRole</span><span class="o">.</span><span class="n">FUNCTION</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">func_record</span>
+
+    <span class="k">def</span> <span class="nf">_structure_output_with_function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">response_format</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span>
+        <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="nb">str</span><span class="p">,</span>
+        <span class="n">FunctionCallingRecord</span><span class="p">,</span>
+        <span class="nb">int</span><span class="p">,</span>
+    <span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Internal function of structuring the output of the agent based on</span>
+<span class="sd">        the given output schema.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response_format (Type[BaseModel]): The output schema to use for</span>
+<span class="sd">                structuring the output.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[List[BaseMessage], List[str], Dict[str, int], str,</span>
+<span class="sd">                FunctionCallingRecord, int]:</span>
+<span class="sd">                A tuple containing the output messages, finish reasons, usage</span>
+<span class="sd">                dictionary, response ID, function calling record, and number of</span>
+<span class="sd">                tokens.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">camel.toolkits</span> <span class="kn">import</span> <span class="n">FunctionTool</span>
+
+        <span class="n">schema_json</span> <span class="o">=</span> <span class="n">get_pydantic_object_schema</span><span class="p">(</span><span class="n">response_format</span><span class="p">)</span>
+        <span class="n">func_str</span> <span class="o">=</span> <span class="n">json_to_function_code</span><span class="p">(</span><span class="n">schema_json</span><span class="p">)</span>
+        <span class="n">func_callable</span> <span class="o">=</span> <span class="n">func_string_to_callable</span><span class="p">(</span><span class="n">func_str</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">FunctionTool</span><span class="p">(</span><span class="n">func_callable</span><span class="p">)</span>
+
+        <span class="n">original_func_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_dict</span>
+        <span class="n">original_model_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span>
+
+        <span class="c1"># Replace the original tools with the structuring function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">func</span><span class="o">.</span><span class="n">get_function_name</span><span class="p">():</span> <span class="n">func</span><span class="o">.</span><span class="n">func</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tool_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">func</span><span class="o">.</span><span class="n">get_function_name</span><span class="p">():</span> <span class="n">func</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span> <span class="o">=</span> <span class="n">original_model_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">func</span><span class="o">.</span><span class="n">get_openai_tool_schema</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span><span class="p">[</span><span class="s2">&quot;tool_choice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;required&quot;</span>
+
+        <span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">get_context</span><span class="p">()</span>
+        <span class="p">(</span>
+            <span class="n">response</span><span class="p">,</span>
+            <span class="n">output_messages</span><span class="p">,</span>
+            <span class="n">finish_reasons</span><span class="p">,</span>
+            <span class="n">usage_dict</span><span class="p">,</span>
+            <span class="n">response_id</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_model_response</span><span class="p">(</span><span class="n">openai_messages</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">ChatCompletion</span><span class="p">):</span>
+            <span class="n">tool_call_record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_tool_call_and_update</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Structured output is not supported for stream responses.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">base_message_item</span> <span class="ow">in</span> <span class="n">output_messages</span><span class="p">:</span>
+            <span class="n">base_message_item</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tool_call_record</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="c1"># Recover the original tools</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_dict</span> <span class="o">=</span> <span class="n">original_func_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_config_dict</span> <span class="o">=</span> <span class="n">original_model_dict</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">output_messages</span><span class="p">,</span>
+            <span class="n">finish_reasons</span><span class="p">,</span>
+            <span class="n">usage_dict</span><span class="p">,</span>
+            <span class="n">response_id</span><span class="p">,</span>
+            <span class="n">tool_call_record</span><span class="p">,</span>
+            <span class="n">num_tokens</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_step_model_response</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">openai_messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OpenAIMessage</span><span class="p">],</span>
+        <span class="n">num_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
+        <span class="n">Union</span><span class="p">[</span><span class="n">ChatCompletion</span><span class="p">,</span> <span class="n">Stream</span><span class="p">],</span>
+        <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span>
+        <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="nb">str</span><span class="p">,</span>
+    <span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Internal function for agent step model response.&quot;&quot;&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Obtain the model&#39;s response</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">models</span><span class="p">)):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">openai_messages</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;An error occurred while running model &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_type</span><span class="si">}</span><span class="s2">, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;index: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">current_model_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">exc_info</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ModelProcessingError</span><span class="p">(</span>
+                <span class="s2">&quot;Unable to process messages: none of the provided models &quot;</span>
+                <span class="s2">&quot;run succesfully.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">model_type</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;index </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">current_model_index</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;processed these messages: </span><span class="si">{</span><span class="n">openai_messages</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">ChatCompletion</span><span class="p">):</span>
+            <span class="n">output_messages</span><span class="p">,</span> <span class="n">finish_reasons</span><span class="p">,</span> <span class="n">usage_dict</span><span class="p">,</span> <span class="n">response_id</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_batch_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output_messages</span><span class="p">,</span> <span class="n">finish_reasons</span><span class="p">,</span> <span class="n">usage_dict</span><span class="p">,</span> <span class="n">response_id</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_stream_response</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">response</span><span class="p">,</span>
+            <span class="n">output_messages</span><span class="p">,</span>
+            <span class="n">finish_reasons</span><span class="p">,</span>
+            <span class="n">usage_dict</span><span class="p">,</span>
+            <span class="n">response_id</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_step_get_info</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">output_messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span>
+        <span class="n">finish_reasons</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">usage_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">response_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">tool_calls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">],</span>
+        <span class="n">num_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">external_tool_request</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChatCompletionMessageToolCall</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process the output of a chat step and gather information about the</span>
+<span class="sd">        step.</span>
+
+<span class="sd">        This method checks for termination conditions, updates the agent&#39;s</span>
+<span class="sd">        state, and collects information about the chat step, including tool</span>
+<span class="sd">        calls and termination reasons.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_messages (List[BaseMessage]): The messages generated in</span>
+<span class="sd">                this step.</span>
+<span class="sd">            finish_reasons (List[str]): The reasons for finishing the</span>
+<span class="sd">                generation for each message.</span>
+<span class="sd">            usage_dict (Dict[str, int]): Dictionary containing token usage</span>
+<span class="sd">                information.</span>
+<span class="sd">            response_id (str): The ID of the response from the model.</span>
+<span class="sd">            tool_calls (List[FunctionCallingRecord]): Records of function calls</span>
+<span class="sd">                made during this step.</span>
+<span class="sd">            num_tokens (int): The number of tokens used in this step.</span>
+<span class="sd">            external_tool_request (Optional[ChatCompletionMessageToolCall]):</span>
+<span class="sd">                Any external tool request made during this step.</span>
+<span class="sd">                (default::obj:`None`)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary containing information about the chat</span>
+<span class="sd">                step, including termination status, reasons, and tool call</span>
+<span class="sd">                information.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This method iterates over all response terminators and checks if</span>
+<span class="sd">            any of them signal termination. If a terminator signals</span>
+<span class="sd">            termination, the agent&#39;s state is updated accordingly, and the</span>
+<span class="sd">            termination reason is recorded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">termination</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">terminator</span><span class="o">.</span><span class="n">is_terminated</span><span class="p">(</span><span class="n">output_messages</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">terminator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_terminators</span>
+        <span class="p">]</span>
+        <span class="c1"># Terminate the agent if any of the terminator terminates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span> <span class="n">termination_reason</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="p">(</span><span class="n">terminated</span><span class="p">,</span> <span class="n">termination_reason</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">termination_reason</span> <span class="ow">in</span> <span class="n">termination</span>
+                <span class="k">if</span> <span class="n">terminated</span>
+            <span class="p">),</span>
+            <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="c1"># For now only retain the first termination reason</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span> <span class="ow">and</span> <span class="n">termination_reason</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">finish_reasons</span> <span class="o">=</span> <span class="p">[</span><span class="n">termination_reason</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">finish_reasons</span><span class="p">)</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_info</span><span class="p">(</span>
+            <span class="n">response_id</span><span class="p">,</span>
+            <span class="n">usage_dict</span><span class="p">,</span>
+            <span class="n">finish_reasons</span><span class="p">,</span>
+            <span class="n">num_tokens</span><span class="p">,</span>
+            <span class="n">tool_calls</span><span class="p">,</span>
+            <span class="n">external_tool_request</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">info</span>
+
+<div class="viewcode-block" id="ChatAgent.handle_batch_response">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.handle_batch_response">[docs]</a>
+    <span class="k">def</span> <span class="nf">handle_batch_response</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process a batch response from the model and extract the necessary</span>
+<span class="sd">        information.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (dict): Model response.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple of list of output `ChatMessage`, list of</span>
+<span class="sd">                finish reasons, usage dictionary, and response id.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+            <span class="n">chat_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="p">(</span>
+                <span class="n">role_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">,</span>
+                <span class="n">role_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">,</span>
+                <span class="n">meta_dict</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span>
+                <span class="n">content</span><span class="o">=</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">parsed</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="s1">&#39;parsed&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="c1"># Process log probabilities and append to the message meta information</span>
+            <span class="k">if</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tokens_logprobs</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span><span class="o">.</span><span class="n">content</span>
+
+                <span class="k">if</span> <span class="n">tokens_logprobs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Extract and structure logprob information</span>
+                    <span class="n">logprobs_info</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="n">token_logprob</span><span class="o">.</span><span class="n">token</span><span class="p">,</span>
+                            <span class="s2">&quot;logprob&quot;</span><span class="p">:</span> <span class="n">token_logprob</span><span class="o">.</span><span class="n">logprob</span><span class="p">,</span>
+                            <span class="s2">&quot;top_logprobs&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">(</span><span class="n">top_logprob</span><span class="o">.</span><span class="n">token</span><span class="p">,</span> <span class="n">top_logprob</span><span class="o">.</span><span class="n">logprob</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">top_logprob</span> <span class="ow">in</span> <span class="n">token_logprob</span><span class="o">.</span><span class="n">top_logprobs</span>
+                            <span class="p">],</span>
+                        <span class="p">}</span>
+                        <span class="k">for</span> <span class="n">token_logprob</span> <span class="ow">in</span> <span class="n">tokens_logprobs</span>
+                    <span class="p">]</span>
+                <span class="c1"># Ensure meta_dict exists before adding logprobs info</span>
+                <span class="k">if</span> <span class="n">chat_message</span><span class="o">.</span><span class="n">meta_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">chat_message</span><span class="o">.</span><span class="n">meta_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">chat_message</span><span class="o">.</span><span class="n">meta_dict</span><span class="p">[</span><span class="s2">&quot;logprobs_info&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">logprobs_info</span>
+            <span class="c1"># Append the processed chat message to output</span>
+            <span class="n">output_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chat_message</span><span class="p">)</span>
+
+        <span class="n">finish_reasons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">finish_reason</span><span class="p">)</span> <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span>
+        <span class="p">]</span>
+        <span class="n">usage</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_safe_model_dump</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">usage</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">usage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="p">{}</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">output_messages</span><span class="p">,</span>
+            <span class="n">finish_reasons</span><span class="p">,</span>
+            <span class="n">usage</span><span class="p">,</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_safe_model_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Safely dump a Pydantic model to a dictionary.</span>
+
+<span class="sd">        This method attempts to use the `model_dump` method if available,</span>
+<span class="sd">        otherwise it falls back to the `dict` method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The Pydantic model instance to be dumped.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary representation of the Pydantic model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if the `model_dump` method exists (Pydantic v2)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;model_dump&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+        <span class="c1"># Fallback to `dict()` method (Pydantic v1)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The object is not a Pydantic model&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ChatAgent.handle_stream_response">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.handle_stream_response">[docs]</a>
+    <span class="k">def</span> <span class="nf">handle_stream_response</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">Stream</span><span class="p">[</span><span class="n">ChatCompletionChunk</span><span class="p">],</span>
+        <span class="n">prompt_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Process a stream response from the model and extract the necessary</span>
+<span class="sd">        information.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (dict): Model response.</span>
+<span class="sd">            prompt_tokens (int): Number of input prompt tokens.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple of list of output `ChatMessage`, list of</span>
+<span class="sd">                finish reasons, usage dictionary, and response id.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">content_dict</span><span class="p">:</span> <span class="n">defaultdict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">finish_reasons_dict</span><span class="p">:</span> <span class="n">defaultdict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">output_messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">response_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># All choices in one response share one role</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">response_id</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">id</span>
+            <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">chunk</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">delta</span>
+                <span class="k">if</span> <span class="n">delta</span><span class="o">.</span><span class="n">content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># When response has not been stopped</span>
+                    <span class="c1"># Notice that only the first chunk_dict has the &quot;role&quot;</span>
+                    <span class="n">content_dict</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">delta</span><span class="o">.</span><span class="n">content</span>
+                <span class="k">if</span> <span class="n">choice</span><span class="o">.</span><span class="n">finish_reason</span><span class="p">:</span>
+                    <span class="n">finish_reasons_dict</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">finish_reason</span>
+                    <span class="n">chat_message</span> <span class="o">=</span> <span class="n">BaseMessage</span><span class="p">(</span>
+                        <span class="n">role_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">,</span>
+                        <span class="n">role_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">,</span>
+                        <span class="n">meta_dict</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span>
+                        <span class="n">content</span><span class="o">=</span><span class="n">content_dict</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="n">output_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chat_message</span><span class="p">)</span>
+        <span class="n">finish_reasons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">finish_reasons_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">finish_reasons_dict</span><span class="p">))</span>
+        <span class="p">]</span>
+        <span class="n">usage_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_usage_dict</span><span class="p">(</span><span class="n">output_messages</span><span class="p">,</span> <span class="n">prompt_tokens</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output_messages</span><span class="p">,</span> <span class="n">finish_reasons</span><span class="p">,</span> <span class="n">usage_dict</span><span class="p">,</span> <span class="n">response_id</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_step_token_exceed</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">tool_calls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">],</span>
+        <span class="n">termination_reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChatAgentResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return trivial response containing number of tokens and information</span>
+<span class="sd">        of called functions when the number of tokens exceeds.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            num_tokens (int): Number of tokens in the messages.</span>
+<span class="sd">            tool_calls (List[FunctionCallingRecord]): List of information</span>
+<span class="sd">                objects of functions called in the current step.</span>
+<span class="sd">            termination_reason (str): String of termination reason.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ChatAgentResponse: The struct containing trivial outputs and</span>
+<span class="sd">                information about token number and called functions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">terminated</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">output_messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_info</span><span class="p">(</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">termination_reason</span><span class="p">],</span>
+            <span class="n">num_tokens</span><span class="p">,</span>
+            <span class="n">tool_calls</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ChatAgentResponse</span><span class="p">(</span>
+            <span class="n">msgs</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span>
+            <span class="n">terminated</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">terminated</span><span class="p">,</span>
+            <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ChatAgent.step_tool_call">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.step_tool_call">[docs]</a>
+    <span class="k">def</span> <span class="nf">step_tool_call</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="n">FunctionCallingMessage</span><span class="p">,</span> <span class="n">FunctionCallingMessage</span><span class="p">,</span> <span class="n">FunctionCallingRecord</span>
+    <span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Execute the function with arguments following the model&#39;s response.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (Dict[str, Any]): The response obtained by calling the</span>
+<span class="sd">                model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple consisting of two obj:`FunctionCallingMessage`,</span>
+<span class="sd">                one about the arguments and the other about the execution</span>
+<span class="sd">                result, and a struct for logging information about this</span>
+<span class="sd">                function call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">choice</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Tool call is None&quot;</span><span class="p">)</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
+        <span class="n">tool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_dict</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="n">assist_msg</span> <span class="o">=</span> <span class="n">FunctionCallingMessage</span><span class="p">(</span>
+            <span class="n">role_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">,</span>
+            <span class="n">role_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">,</span>
+            <span class="n">meta_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">func_name</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">func_msg</span> <span class="o">=</span> <span class="n">FunctionCallingMessage</span><span class="p">(</span>
+            <span class="n">role_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">,</span>
+            <span class="n">role_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">,</span>
+            <span class="n">meta_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">func_name</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Record information about this function call</span>
+        <span class="n">func_record</span> <span class="o">=</span> <span class="n">FunctionCallingRecord</span><span class="p">(</span>
+            <span class="n">func_name</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">assist_msg</span><span class="p">,</span> <span class="n">func_msg</span><span class="p">,</span> <span class="n">func_record</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.step_tool_call_async">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.step_tool_call_async">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">step_tool_call_async</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">response</span><span class="p">:</span> <span class="n">ChatCompletion</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="n">FunctionCallingMessage</span><span class="p">,</span> <span class="n">FunctionCallingMessage</span><span class="p">,</span> <span class="n">FunctionCallingRecord</span>
+    <span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Execute the async function with arguments following the model&#39;s</span>
+<span class="sd">        response.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            response (Dict[str, Any]): The response obtained by calling the</span>
+<span class="sd">                model.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple consisting of two obj:`FunctionCallingMessage`,</span>
+<span class="sd">                one about the arguments and the other about the execution</span>
+<span class="sd">                result, and a struct for logging information about this</span>
+<span class="sd">                function call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Note that when function calling is enabled, `n` is set to 1.</span>
+        <span class="n">choice</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Tool call is None&quot;</span><span class="p">)</span>
+        <span class="n">func_name</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
+        <span class="n">tool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_dict</span><span class="p">[</span><span class="n">func_name</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">tool</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="n">assist_msg</span> <span class="o">=</span> <span class="n">FunctionCallingMessage</span><span class="p">(</span>
+            <span class="n">role_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">,</span>
+            <span class="n">role_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">,</span>
+            <span class="n">meta_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">func_name</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">func_msg</span> <span class="o">=</span> <span class="n">FunctionCallingMessage</span><span class="p">(</span>
+            <span class="n">role_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="p">,</span>
+            <span class="n">role_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="p">,</span>
+            <span class="n">meta_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">func_name</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Record information about this function call</span>
+        <span class="n">func_record</span> <span class="o">=</span> <span class="n">FunctionCallingRecord</span><span class="p">(</span>
+            <span class="n">func_name</span><span class="o">=</span><span class="n">func_name</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">assist_msg</span><span class="p">,</span> <span class="n">func_msg</span><span class="p">,</span> <span class="n">func_record</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.get_usage_dict">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.get_usage_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_usage_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">output_messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">],</span> <span class="n">prompt_tokens</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get usage dictionary when using the stream mode.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_messages (list): List of output messages.</span>
+<span class="sd">            prompt_tokens (int): Number of input prompt tokens.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Usage dictionary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">encoding</span> <span class="o">=</span> <span class="n">get_model_encoding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="o">.</span><span class="n">value_for_tiktoken</span><span class="p">)</span>
+        <span class="n">completion_tokens</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">output_messages</span><span class="p">:</span>
+            <span class="n">completion_tokens</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">encoding</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="n">usage_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">completion_tokens</span><span class="o">=</span><span class="n">completion_tokens</span><span class="p">,</span>
+            <span class="n">prompt_tokens</span><span class="o">=</span><span class="n">prompt_tokens</span><span class="p">,</span>
+            <span class="n">total_tokens</span><span class="o">=</span><span class="n">completion_tokens</span> <span class="o">+</span> <span class="n">prompt_tokens</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">usage_dict</span></div>
+
+
+<div class="viewcode-block" id="ChatAgent.add_model_scheduling_strategy">
+<a class="viewcode-back" href="../../../camel.agents.html#camel.agents.chat_agent.ChatAgent.add_model_scheduling_strategy">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_model_scheduling_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add a scheduling strategy method provided by user to ModelManger.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name of the strategy.</span>
+<span class="sd">            strategy_fn (Callable): The scheduling strategy function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_backend</span><span class="o">.</span><span class="n">add_strategy</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">strategy_fn</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns a string representation of the :obj:`ChatAgent`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The string representation of the :obj:`ChatAgent`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ChatAgent(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role_type</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
