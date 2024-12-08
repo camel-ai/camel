@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from tqdm import tqdm
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
+from camel.tool_benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 
 logger = logging.getLogger(__name__)

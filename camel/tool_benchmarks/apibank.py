@@ -27,7 +27,7 @@ from tqdm import tqdm
 from .apibank_eval.api_call_extraction import parse_api_call
 from .apibank_eval.tool_manager import ToolManager
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
+from camel.tool_benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 

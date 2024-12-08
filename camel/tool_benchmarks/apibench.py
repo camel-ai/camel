@@ -24,7 +24,7 @@ from tqdm import tqdm
 from .apibench_eval.eval_scripts.ast_eval import ast_parse, evaluate_response
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
+from camel.tool_benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 
 logger = logging.getLogger(__name__)
