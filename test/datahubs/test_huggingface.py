@@ -82,7 +82,7 @@ def test_create_dataset_card():
         mock_upload_file.assert_called_once_with(
             file_content="---\nauthors:\n- camel-ai\ndescription: Test dataset"
             "\nlanguage:\n- en\nlicense: MIT\npretty_name: "
-            "user/test-dataset\nsize_categories:\n- <1MB\ntags:\n"
+            "user/test-dataset\nsize_categories: <1MB\ntags:\n"
             "- test\n- example\ntask_categories:\n- other\n"
             "version: 0.1.0\n\n---\n\n# Additional Information\n"
             "Additional information about the dataset.\n",
