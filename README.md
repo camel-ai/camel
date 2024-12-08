@@ -322,6 +322,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
 | **[3 Ways to Ingest Data from Websites with Firecrawl](https://docs.camel-ai.org/cookbooks/ingest_data_from_websites_with_Firecrawl.html)** | Explore three methods for extracting and processing data from websites using Firecrawl. |
 | **[Data Deneration with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/sft_data_generation_and_unsloth_finetuning.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
+| **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_with_agentic_RAG.html)** |  Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 
 ## Utilize Various LLMs as Backends
 
