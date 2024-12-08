@@ -14,31 +14,18 @@
 import json
 import os
 import tempfile
-from enum import Enum
 from typing import Any, List, Optional
 
-import yaml
-from huggingface_hub import HfApi, hf_hub_download
-from huggingface_hub.errors import (
-    EntryNotFoundError,
-    RepositoryNotFoundError,
-)
-
-from camel.datahubs.clients.base import DatasetManager
+from camel.datahubs.base import BaseDatasetManager
 from camel.datahubs.models import Record
 from camel.logger import get_logger
+from camel.types import HuggingFaceRepoType
 from camel.utils import api_keys_required, dependencies_required
 
 logger = get_logger(__name__)
 
 
-class RepoType(str, Enum):
-    DATASET = "dataset"
-    MODEL = "model"
-    SPACE = "space"
-
-
-class HuggingFaceDatasetManager(DatasetManager):
+class HuggingFaceDatasetManager(BaseDatasetManager):
     r"""A dataset manager for Hugging Face datasets. This class provides
     methods to create, add, update, delete, and list records in a dataset on
     the Hugging Face Hub.
@@ -51,6 +38,8 @@ class HuggingFaceDatasetManager(DatasetManager):
     @api_keys_required("HUGGING_FACE_TOKEN")
     @dependencies_required('huggingface_hub')
     def __init__(self, token: Optional[str] = None):
+        from huggingface_hub import HfApi
+
         self._api_key = token or os.getenv("HUGGING_FACE_TOKEN")
         self.api = HfApi(token=self._api_key)
 
@@ -62,7 +51,7 @@ class HuggingFaceDatasetManager(DatasetManager):
         version: Optional[str] = None,
         tags: Optional[List[str]] = None,
         authors: Optional[List[str]] = None,
-        size_category: Optional[str] = None,
+        size_category: Optional[List[str]] = None,
         language: Optional[List[str]] = None,
         task_categories: Optional[List[str]] = None,
         content: Optional[str] = None,
@@ -73,43 +62,36 @@ class HuggingFaceDatasetManager(DatasetManager):
         Args:
             dataset_name (str): The name of the dataset.
             description (str): A description of the dataset.
-            license (str): The license of the dataset. Defaults to None.
-            version (str): The version of the dataset. Defaults to None.
-            tags (list): A list of tags for the dataset. Defaults to None.
-            authors (list): A list of authors of the dataset. Defaults to None.
-            size_category (str): A size category for the dataset. Defaults to
-                None.
-            language (list): A list of languages the dataset is in. Defaults to
-                None.
-            task_categories (list): A list of task categories. Defaults to
-                None.
+            license (str): The license of the dataset. (default: :obj:`None`)
+            version (str): The version of the dataset. (default: :obj:`None`)
+            tags (list): A list of tags for the dataset.(default: :obj:`None`)
+            authors (list): A list of authors of the dataset. (default:
+                :obj:`None`)
+            size_category (list): A size category for the dataset. (default:
+                :obj:`None`)
+            language (list): A list of languages the dataset is in. (default:
+                :obj:`None`)
+            task_categories (list): A list of task categories. (default:
+                :obj:`None`)
             content (str): Custom markdown content that the user wants to add
-                to the dataset card. Defaults to None.
+                to the dataset card. (default: :obj:`None`)
         """
-
-        if not authors:
-            authors = []
-
-        if not tags:
-            tags = []
+        import yaml
 
         metadata = {
             "license": license,
-            "task_categories": task_categories if task_categories else [],
-            "language": language if language else [],
+            "authors": authors,
+            "task_categories": task_categories,
+            "language": language,
             "tags": tags,
             "pretty_name": dataset_name,
-            "size_categories": [size_category] if size_category else [],
+            "size_categories": size_category,
+            "version": version,
+            "description": description,
         }
 
-        if version:
-            metadata["version"] = version
-
-        if authors:
-            metadata["authors"] = authors
-
-        if description:
-            metadata["description"] = description
+        # Remove keys with None values
+        metadata = {k: v for k, v in metadata.items() if v}
 
         card_content = (
             "---\n"
@@ -141,14 +123,18 @@ class HuggingFaceDatasetManager(DatasetManager):
         Returns:
             str: The URL of the created dataset.
         """
+        from huggingface_hub.errors import RepositoryNotFoundError
+
         try:
             self.api.repo_info(
-                repo_id=name, repo_type=RepoType.DATASET.value, **kwargs
+                repo_id=name,
+                repo_type=HuggingFaceRepoType.DATASET.value,
+                **kwargs,
             )
         except RepositoryNotFoundError:
             self.api.create_repo(
                 repo_id=name,
-                repo_type=RepoType.DATASET.value,
+                repo_type=HuggingFaceRepoType.DATASET.value,
                 private=private,
             )
 
@@ -161,8 +147,8 @@ class HuggingFaceDatasetManager(DatasetManager):
 
         Args:
             username (str): The username of the user whose datasets to list.
-            limit (int): The maximum number of datasets to list. defaults to
-                100.
+            limit (int): The maximum number of datasets to list.
+                (default: :obj:`100`)
             kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -189,7 +175,7 @@ class HuggingFaceDatasetManager(DatasetManager):
         try:
             self.api.delete_repo(
                 repo_id=dataset_name,
-                repo_type=RepoType.DATASET.value,
+                repo_type=HuggingFaceRepoType.DATASET.value,
                 **kwargs,
             )
             logger.info(f"Dataset '{dataset_name}' deleted successfully.")
@@ -256,10 +242,17 @@ class HuggingFaceDatasetManager(DatasetManager):
         )
 
         if not existing_records:
-            raise ValueError(
-                f"Dataset '{dataset_name}' does not have an existing file to "
-                f"update. Use `add_records` first."
+            logger.warning(
+                f"Dataset '{dataset_name}' does not have existing "
+                "records. Adding new records."
             )
+            self._upload_records(
+                records=records,
+                dataset_name=dataset_name,
+                filepath=filepath,
+                **kwargs,
+            )
+            return
 
         old_dict = {record.id: record for record in existing_records}
         new_dict = {record.id: record for record in records}
@@ -336,11 +329,14 @@ class HuggingFaceDatasetManager(DatasetManager):
     def _download_records(
         self, dataset_name: str, filepath: str, **kwargs: Any
     ) -> List[Record]:
+        from huggingface_hub import hf_hub_download
+        from huggingface_hub.errors import EntryNotFoundError
+
         try:
             downloaded_file_path = hf_hub_download(
                 repo_id=dataset_name,
                 filename=filepath,
-                repo_type=RepoType.DATASET.value,
+                repo_type=HuggingFaceRepoType.DATASET.value,
                 token=self._api_key,
                 **kwargs,
             )
@@ -374,7 +370,7 @@ class HuggingFaceDatasetManager(DatasetManager):
                 path_or_fileobj=temp_file_path,
                 path_in_repo=filepath,
                 repo_id=dataset_name,
-                repo_type=RepoType.DATASET.value,
+                repo_type=HuggingFaceRepoType.DATASET.value,
                 **kwargs,
             )
         except Exception as e:
@@ -425,7 +421,7 @@ class HuggingFaceDatasetManager(DatasetManager):
                 path_or_fileobj=temp_file_path,
                 path_in_repo=filepath,
                 repo_id=dataset_name,
-                repo_type=RepoType.DATASET.value,
+                repo_type=HuggingFaceRepoType.DATASET.value,
                 **kwargs,
             )
             logger.info(f"File uploaded successfully: {filepath}")

@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from huggingface_hub.errors import EntryNotFoundError
 
-from camel.datahubs.clients.huggingface import HuggingFaceDatasetManager
+from camel.datahubs.huggingface import HuggingFaceDatasetManager
 from camel.datahubs.models import Record
 
 TOKEN = "your_huggingface_token"
@@ -62,7 +62,7 @@ def test_create_dataset_card():
     content = "Additional information about the dataset."
 
     with patch(
-        "camel.datahubs.clients.huggingface.HuggingFaceDatasetManager._upload_file"
+        "camel.datahubs.HuggingFaceDatasetManager._upload_file"
     ) as mock_upload_file:
         mock_upload_file.return_value = None
 
@@ -111,7 +111,7 @@ def test_add_records(manager):
 
     with (
         patch(
-            "camel.datahubs.clients.huggingface.hf_hub_download",
+            "huggingface_hub.hf_hub_download",
             side_effect=EntryNotFoundError("404 Client Error."),
         ) as mock_download,
         patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
@@ -152,9 +152,7 @@ def test_update_records(manager):
     ]
 
     with (
-        patch(
-            "camel.datahubs.clients.huggingface.hf_hub_download"
-        ) as mock_download,
+        patch("huggingface_hub.hf_hub_download") as mock_download,
         patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
         patch("builtins.open", new_callable=MagicMock) as mock_open,
     ):
@@ -191,9 +189,7 @@ def test_list_records(manager):
     ]
 
     with (
-        patch(
-            "camel.datahubs.clients.huggingface.hf_hub_download"
-        ) as mock_download,
+        patch("huggingface_hub.hf_hub_download") as mock_download,
         patch("builtins.open", new_callable=MagicMock) as mock_open,
     ):
         mock_download.return_value = "/mock/path/records.json"
@@ -224,7 +220,7 @@ def test_add_records_error_on_existing_file(manager):
 
     with (
         patch(
-            "camel.datahubs.clients.huggingface.hf_hub_download",
+            "huggingface_hub.hf_hub_download",
             side_effect=ValueError(
                 "Dataset 'records/records.json' already exists. "
                 "Use `update_records` to modify."
@@ -266,9 +262,7 @@ def test_delete_dataset(manager):
 
 def test_delete_record(manager):
     with (
-        patch(
-            "camel.datahubs.clients.huggingface.hf_hub_download"
-        ) as mock_download,
+        patch("huggingface_hub.hf_hub_download") as mock_download,
         patch("huggingface_hub.HfApi.upload_file") as mock_upload_file,
         patch("builtins.open", new_callable=MagicMock) as mock_open,
     ):

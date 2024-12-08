@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from camel.datahubs.clients.huggingface import HuggingFaceDatasetManager
+from camel.datahubs.huggingface import HuggingFaceDatasetManager
 from camel.datahubs.models import Record
 
 manager = HuggingFaceDatasetManager()

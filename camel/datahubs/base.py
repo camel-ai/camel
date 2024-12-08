@@ -17,7 +17,7 @@ from typing import Any, List
 from camel.datahubs.models import Record
 
 
-class DatasetManager(ABC):
+class BaseDatasetManager(ABC):
     r"""Abstract base class for dataset managers."""
 
     @abstractmethod
@@ -31,7 +31,7 @@ class DatasetManager(ABC):
         Returns:
             str: The URL of the created dataset.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
 
     @abstractmethod
     def list_datasets(
@@ -41,14 +41,14 @@ class DatasetManager(ABC):
 
         Args:
             username (str): The username of the user whose datasets to list.
-            limit (int): The maximum number of datasets to list. defaults to
-                100.
+            limit (int): The maximum number of datasets to list.
+                (default::obj:`100`)
             kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[str]: A list of dataset ids.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
 
     @abstractmethod
     def delete_dataset(self, dataset_name: str, **kwargs: Any) -> None:
@@ -58,7 +58,7 @@ class DatasetManager(ABC):
             dataset_name (str): The name of the dataset to delete.
             kwargs (Any): Additional keyword arguments.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
 
     @abstractmethod
     def add_records(
@@ -74,9 +74,10 @@ class DatasetManager(ABC):
             dataset_name (str): The name of the dataset.
             records (List[Record]): A list of records to add to the dataset.
             filepath (str): The path to the file containing the records.
+                (default::obj:`"records/records.json"`)
             kwargs (Any): Additional keyword arguments.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
 
     @abstractmethod
     def update_records(
@@ -92,9 +93,10 @@ class DatasetManager(ABC):
             dataset_name (str): The name of the dataset.
             records (List[Record]): A list of records to update in the dataset.
             filepath (str): The path to the file containing the records.
+                (default::obj:`"records/records.json"`)
             kwargs (Any): Additional keyword arguments.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
 
     @abstractmethod
     def list_records(
@@ -108,9 +110,10 @@ class DatasetManager(ABC):
         Args:
             dataset_name (str): The name of the dataset.
             filepath (str): The path to the file containing the records.
+                (default::obj:`"records/records.json"`)
             kwargs (Any): Additional keyword arguments.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
 
     # New method for record deletion
     @abstractmethod
@@ -127,6 +130,7 @@ class DatasetManager(ABC):
             dataset_name (str): The name of the dataset.
             record_id (str): The ID of the record to delete.
             filepath (str): The path to the file containing the records.
+                (default::obj:`"records/records.json"`)
             kwargs (Any): Additional keyword arguments.
         """
-        raise NotImplementedError("Method not implemented.")
+        pass
