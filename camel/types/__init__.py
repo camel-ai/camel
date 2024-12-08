@@ -14,6 +14,7 @@
 from .enums import (
     AudioModelType,
     EmbeddingModelType,
+    HuggingFaceRepoType,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
@@ -73,4 +74,5 @@ __all__ = [
     'NOT_GIVEN',
     'NotGiven',
     'ParsedChatCompletion',
+    'HuggingFaceRepoType',
 ]

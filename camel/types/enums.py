@@ -749,3 +749,9 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class HuggingFaceRepoType(str, Enum):
+    DATASET = "dataset"
+    MODEL = "model"
+    SPACE = "space"
