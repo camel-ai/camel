@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import logging
+import threading
 import time
 from threading import Thread
 from typing import Any, Dict, List, Optional, Union
@@ -42,7 +44,7 @@ class SGLangModel(BaseModelBackend):
             the model service. SGLang doesn't need API key, it would be ignored
             if set. (default: :obj:`None`)
         url (Optional[str], optional): The url to the model service. If not
-            provided, :obj:`"http://localhost:8000/v1"` will be used.
+            provided, :obj:`"http://127.0.0.1:30000/v1"` will be used.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -62,17 +64,18 @@ class SGLangModel(BaseModelBackend):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = SGLangConfig().as_dict()
-        self.server_process = None
-        self.last_run_time = time.time()
+
+        self._lock = threading.Lock()
+        with self._lock:
+            self.server_process = None
+            self.last_run_time = time.time()
+
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
+
         if not self._url:
             self._start_server()
-
-        # Start monitoring inactivity
-        monitor_thread = Thread(target=self._monitor_inactivity, daemon=True)
-        monitor_thread.start()
 
         self._client = OpenAI(
             timeout=60,
@@ -80,6 +83,10 @@ class SGLangModel(BaseModelBackend):
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
+
+        # Start monitoring inactivity
+        monitor_thread = Thread(target=self._monitor_inactivity, daemon=True)
+        monitor_thread.start()
 
     def _start_server(self) -> None:
         from sglang.utils import (  # type: ignore[import-untyped]
@@ -100,11 +107,17 @@ class SGLangModel(BaseModelBackend):
             self._url = "http://127.0.0.1:30000/v1"
             self.server_process = server_process
         except Exception as e:
-            print(f"Failed to start SGLang server: {e}")
+            raise RuntimeError(f"Failed to start SGLang server: {e}") from e
+
+    def _ensure_server_running(self) -> None:
+        r"""Ensures that the server is running. If not, starts the server."""
+        with self._lock:
+            if self.server_process is None:
+                self._start_server()
 
     def _monitor_inactivity(self):
-        r"""Monitor whether the server process
-        has been inactive for over 10 minutes.
+        r"""Monitor whether the server process has been inactive for over 10
+        minutes.
         """
         from sglang.utils import terminate_process
 
@@ -112,12 +125,16 @@ class SGLangModel(BaseModelBackend):
             # Check every 10 seconds
             time.sleep(10)
             # Over 10 minutes
-            if time.time() - self.last_run_time > 600:
-                if self.server_process:
-                    terminate_process(self.server_process)
-                    self.server_process = None
-                    print("Server process terminated due to inactivity.")
-                break
+            with self._lock:
+                # Over 10 minutes
+                if time.time() - self.last_run_time > 600:
+                    if self.server_process:
+                        terminate_process(self.server_process)
+                        self.server_process = None
+                        logging.info(
+                            "Server process terminated due to inactivity."
+                        )
+                    break
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -161,8 +178,13 @@ class SGLangModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Update last run time
-        self.last_run_time = time.time()
+
+        # Ensure server is running
+        self._ensure_server_running()
+
+        with self._lock:
+            # Update last run time
+            self.last_run_time = time.time()
 
         response = self._client.chat.completions.create(
             messages=messages,
