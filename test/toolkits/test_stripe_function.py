@@ -16,7 +16,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-import stripe
 from stripe import (
     Balance,
     BalanceTransaction,
@@ -37,12 +36,10 @@ def stripe_toolkit_fixture():
         return toolkit
 
 
-r"""CustomerAdapter Tests
+r"""Customer Tests
 """
-
-
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
-class TestCustomerAdapter:
+class TestCustomer:
     @patch('stripe.Customer.retrieve')
     def test_get_customer_success(
         self, mock_customer_retrieve, stripe_toolkit_fixture
@@ -124,12 +121,10 @@ class TestCustomerAdapter:
         assert expected_error in result
 
 
-r"""BalanceAdapter Tests
+r"""Balance Tests
 """
-
-
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
-class TestBalanceAdapter:
+class TestBalance:
     @patch('stripe.Balance.retrieve')
     def test_get_balance_success(
         self, mock_balance_retrieve, stripe_toolkit_fixture
@@ -217,12 +212,10 @@ class TestBalanceAdapter:
         assert expected_error in result
 
 
-r"""PaymentAdapter Tests
+r"""Payment Tests
 """
-
-
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
-class TestPaymentAdapter:
+class TestPayment:
     @patch('stripe.PaymentIntent.retrieve')
     def test_get_payment_success(
         self, mock_payment_retrieve, stripe_toolkit_fixture
@@ -309,12 +302,10 @@ class TestPaymentAdapter:
         assert expected_error in result
 
 
-r"""RefundAdapter Tests
+r"""Refund Tests
 """
-
-
 @pytest.mark.usefixtures("stripe_toolkit_fixture")
-class TestRefundAdapter:
+class TestRefund:
     @patch('stripe.Refund.retrieve')
     def test_get_refund_success(
         self, mock_refund_retrieve, stripe_toolkit_fixture
