@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 
 class PlayMusic(API):
     description = 'This API triggers a music player to play music.'

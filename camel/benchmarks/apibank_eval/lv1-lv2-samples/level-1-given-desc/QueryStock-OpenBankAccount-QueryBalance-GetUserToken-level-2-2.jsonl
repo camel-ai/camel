@@ -1,0 +1,17 @@
+{"role": "User", "text": "Can you tell me the stock price of AMZN on March 11, 2022?"}
+{"role": "AI", "text": "Sure, let me check that for you."}
+{"role": "API", "api_name": "QueryStock", "param_dict": {"stock_code": "AMZN", "date": "2022-03-11"}, "result": {"api_name": "QueryStock", "input": {"stock_code": "AMZN", "date": "2022-03-11"}, "output": 3012.7, "exception": null}}
+{"role": "AI", "text": "The stock price of AMZN on March 11, 2022 was 3012.7 dollars."}
+{"role": "User", "text": "I want to open a bank account."}
+{"role": "AI", "text": "Alright, I can help you with that. What account identifier would you like to use?"}
+{"role": "User", "text": "My account identifier will be user4."}
+{"role": "AI", "text": "Great! What would you like your password to be?"}
+{"role": "User", "text": "I would like my password to be user4pass."}
+{"role": "AI", "text": "And what is your name?"}
+{"role": "User", "text": "My name is John."}
+{"role": "API", "api_name": "OpenBankAccount", "param_dict": {"account": "user4", "password": "user4pass", "name": "John"}, "result": {"api_name": "OpenBankAccount", "input": {"account": "user4", "password": "user4pass", "name": "John"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your account has been successfully created."}
+{"role": "User", "text": "Could you check my account balance please?"}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user4", "password": "user4pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user4", "password": "user4pass"}, "output": {"token": "q9w8e7r6t5y4u3i2o1"}, "exception": null}}
+{"role": "API", "api_name": "QueryBalance", "param_dict": {"token": "q9w8e7r6t5y4u3i2o1"}, "result": {"api_name": "QueryBalance", "input": {"token": "q9w8e7r6t5y4u3i2o1"}, "output": 825.07, "exception": null}}
+{"role": "AI", "text": "Your account balance is 825.07 dollars."}

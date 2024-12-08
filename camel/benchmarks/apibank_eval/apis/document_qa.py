@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 
 class DocumentQA(API):
     description = 'This API answers the question from a given document url.'

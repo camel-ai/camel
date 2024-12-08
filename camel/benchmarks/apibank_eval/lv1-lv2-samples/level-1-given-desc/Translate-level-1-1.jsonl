@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you translate \"Hello, how are you?\" to French?"}
+{"role": "AI", "text": "Sure, I can do that."}
+{"role": "API", "api_name": "Translate", "param_dict": {"src": "Hello, how are you?", "tgt_lang": "fr"}, "result": {"api_name": "Translate", "input": {"src": "Hello, how are you?", "tgt_lang": "fr"}, "output": "Bonjour comment allez-vous?", "exception": null}}
+{"role": "AI", "text": "The translation is \"Bonjour comment allez-vous?\""}

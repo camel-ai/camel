@@ -1,0 +1,23 @@
+Scene: Meeting Schedule
+
+First Utterance: Can you please do a meeting booking for me?
+
+Key Info:
+
+"JohnDoe":{
+"password":"pass123",
+"token":"a9s8d7f6g5h4j3k2l1",
+"email":"johndoe@example.com"
+},
+
+Meeting Topic: Quarterly Sales Review
+
+Start Time: 2023-04-15 09:00
+End Time: 2023-04-15 11:00
+Location: Conference Room 2
+Attendees: ["JohnDoe", "AliceSmith", "BobJohnson"]
+
+API Calls:
+GetUserToken(username="JohnDoe", password="pass123")
+AddMeeting(token="a9s8d7f6g5h4j3k2l1", meeting_topic="Quarterly Sales Review", start_time="2023-04-15 09:00:00", end_time="2023-04-15 11:00:00", location="Conference Room 2", attendees=["JohnDoe", "AliceSmith", "BobJohnson"])
+QueryMeeting(token="a9s8d7f6g5h4j3k2l1", meeting_topic="Quarterly Sales Review", start_time="2023-04-15 09:00:00", end_time="2023-04-15 11:00:00", location="Conference Room 2", attendees=["JohnDoe", "AliceSmith", "BobJohnson"])

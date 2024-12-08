@@ -1,4 +1,4 @@
-from apis import API
+from .api import API
 
 class ModifyScene(API):
     description = 'This API modifies a scene of smart home system, given the scene name and a list of smart devices'

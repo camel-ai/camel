@@ -87,7 +87,7 @@ class NexusBenchmark(BaseBenchmark):
                 local_dir_use_symlinks=True
             )
 
-    def load(self, dataset_name, force_download=False):
+    def load(self, dataset_name):
         # Mapping dataset names to their corresponding folder names
         
         if dataset_name not in dataset_mapping:

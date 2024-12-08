@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you help me open a bank account?"}
+{"role": "AI", "text": "Sure. To open a bank account, I'll need your account number, password, and name."}
+{"role": "User", "text": "My account number is 12345, my password is secret123, and my name is John Smith."}
+{"role": "AI", "text": "Alright. Let me create your bank account."}
+{"role": "API", "api_name": "OpenBankAccount", "param_dict": {"account": "12345", "password": "secret123", "name": "John Smith"}, "result": {"api_name": "OpenBankAccount", "input": {"account": "12345", "password": "secret123", "name": "John Smith"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your account was successfully created."}
+{"role": "User", "text": "Thanks. Can you tell me the stock price for Amazon on March 10, 2022?"}
+{"role": "AI", "text": "Sure. Let me check."}
+{"role": "API", "api_name": "QueryStock", "param_dict": {"stock_code": "AMZN", "date": "2022-03-10"}, "result": {"api_name": "QueryStock", "input": {"stock_code": "AMZN", "date": "2022-03-10"}, "output": 3023.6, "exception": null}}
+{"role": "AI", "text": "The stock price for Amazon on March 10, 2022 was $3023.6."}

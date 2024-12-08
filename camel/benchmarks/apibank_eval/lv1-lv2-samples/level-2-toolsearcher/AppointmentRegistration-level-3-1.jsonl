@@ -1,0 +1,8 @@
+{"role": "User", "text": "Hello, I need help registering an appointment for next Monday with Dr. Smith."}
+{"role": "AI", "text": "Sure, let me check."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "hospital appointment registration"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "hospital appointment registration"}, "output": {"name": "AppointmentRegistration", "description": "This API registers an appointment of hospital.", "input_parameters": {"patient_name": {"type": "str", "description": "The name of patient."}, "date": {"type": "str", "description": "The date of appointment. Format be like %Y-%m-%d"}, "doctor_name": {"type": "str", "description": "The name of appointed doctor."}}, "output_parameters": {"appointment_id": {"type": "str", "description": "The ID of appointment."}}}, "exception": null}}
+{"role": "AI", "text": "Based on your request, I find the suitable tool. Can you please provide me with the patient name and the specific date you want the appointment to be on?"}
+{"role": "User", "text": "Yes, the patient name is John Doe, and the date is 2023-07-10."}
+{"role": "AI", "text": "Great, thank you."}
+{"role": "API", "api_name": "AppointmentRegistration", "param_dict": {"patient_name": "John Doe", "date": "2023-07-10", "doctor_name": "Dr. Smith"}, "result": {"api_name": "AppointmentRegistration", "input": {"patient_name": "John Doe", "date": "2023-07-10", "doctor_name": "Dr. Smith"}, "output": "98260171", "exception": null}}
+{"role": "AI", "text": "I have successfully registered an appointment for John Doe with Dr. Smith on July 10, 2023."}

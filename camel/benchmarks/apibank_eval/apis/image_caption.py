@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 
 class ImageCaption(API):
     description = 'This API generates a caption for a given image.'

@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you help me modify my appointment with the details: appointment ID 34567890, new appointment date March 28th, 2023, and new doctor Dr. Lee?"}
+{"role": "AI", "text": "Sure, let me check."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "modify appointment"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "modify appointment"}, "output": {"name": "ModifyRegistration", "description": "This API modifies the registration of a patient given appointment ID.", "input_parameters": {"appointment_id": {"type": "str", "description": "The ID of appointment."}, "new_appointment_date": {"type": "str", "description": "The new appointment date. Format: %Y-%m-%d."}, "new_appointment_doctor": {"type": "str", "description": "The new appointment doctor."}}, "output_parameters": {"status": {"type": "str", "description": "The status of modification."}}}, "exception": null}}
+{"role": "AI", "text": "Ok, I can help you with that."}
+{"role": "API", "api_name": "ModifyRegistration", "param_dict": {"appointment_id": "34567890", "new_appointment_date": "2023-03-28", "new_appointment_doctor": "Dr. Lee"}, "result": {"api_name": "ModifyRegistration", "input": {"appointment_id": "34567890", "new_appointment_date": "2023-03-28", "new_appointment_doctor": "Dr. Lee"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your appointment has been modified. Is there anything else I can help you with?"}
+{"role": "User", "text": "No, thank you."}
+{"role": "AI", "text": "You're welcome. Have a nice day!"}

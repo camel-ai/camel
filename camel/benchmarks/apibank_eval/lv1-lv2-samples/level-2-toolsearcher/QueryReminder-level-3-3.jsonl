@@ -1,0 +1,7 @@
+{"role": "User", "text": "Can you help me set a reminder for a doctor's appointment at 2 PM on March 23rd, 2023?"}
+{"role": "AI", "text": "Sure. Let me check our library for available reminder tools. [ToolSearcher(keywords='reminder')]"}
+{"role": "AI", "text": "To set a reminder, I need your token. Let me get it for you. [GetUserToken(username='user2', password='user2pass')]"}
+{"role": "AI", "text": "Alright, I have obtained your token. [QueryReminder(token='o9i8u7y6t5r4e3w2q1', content='Doctor appointment', time='2023-03-23 14:00:00')]"}
+{"role": "User", "text": "Thanks! Can you also help me book a flight on March 22nd, 2023 at 8 AM?"}
+{"role": "AI", "text": "Of course. Let me see if we have any flight booking tools available. [ToolSearcher(keywords='flight booking')]"}
+{"role": "AI", "text": "Unfortunately, we do not have any flight booking tools in our library. However, I can give you some recommended external websites to book your flight."}

@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 
 class QueryBalance(API):
     description = 'This API queries the balance of a given user.'

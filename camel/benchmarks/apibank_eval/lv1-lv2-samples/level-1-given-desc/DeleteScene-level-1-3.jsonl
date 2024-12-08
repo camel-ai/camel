@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you help me delete a scene named \"Movie Time\"?"}
+{"role": "AI", "text": "Sure, I can assist with that. Deleting scene named \"Movie Time\"."}
+{"role": "API", "api_name": "DeleteScene", "param_dict": {"name": "Movie Time"}, "result": {"api_name": "DeleteScene", "input": {"name": "Movie Time"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "The scene named \"Movie Time\" has been successfully deleted. Is there anything else I can help you with?"}

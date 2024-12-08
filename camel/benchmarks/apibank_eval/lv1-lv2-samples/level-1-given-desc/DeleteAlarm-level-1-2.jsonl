@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you delete my alarm for March 20th at 6:30am?"}
+{"role": "AI", "text": "Sure, let me check. I will need your user token for authentication. Can you please provide your username and password?"}
+{"role": "User", "text": "My username is JaneSmith and my password is password."}
+{"role": "AI", "text": "Thank you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JaneSmith", "password": "password"}, "result": {"api_name": "GetUserToken", "input": {"username": "JaneSmith", "password": "password"}, "output": {"token": "o8i7u6y5t4r3e2w1q0"}, "exception": null}}
+{"role": "AI", "text": "I have received your token. Now, please confirm the time for the alarm you want me to delete."}
+{"role": "User", "text": "The time is March 20th at 6:30am."}
+{"role": "AI", "text": "Thank you."}
+{"role": "API", "api_name": "DeleteAlarm", "param_dict": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-03-20 06:30:00"}, "result": {"api_name": "DeleteAlarm", "input": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-03-20 06:30:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Done, your alarm has been deleted."}

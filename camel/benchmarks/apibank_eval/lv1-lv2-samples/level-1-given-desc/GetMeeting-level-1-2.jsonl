@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you help me check a meeting on March 20th from 2pm to 4pm in Conference Room A with John Smith and Jane Doe?"}
+{"role": "AI", "text": "Sure, I can help with that. Do you have a meeting topic in mind?"}
+{"role": "User", "text": "Oh, yes. The meeting topic is Sales Meeting."}
+{"role": "AI", "text": "Great. To schedule the meeting, I need your username and password for authentication. Can you please provide that?"}
+{"role": "User", "text": "My username is JohnDoe and my password is pass123."}
+{"role": "AI", "text": "Thank you. Now, I need to get the user token for authentication."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "Alright, I got the token. Now, I'll check your meeting."}
+{"role": "API", "api_name": "QueryMeeting", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "Sales Meeting", "start_time": "2023-03-20 14:00:00", "end_time": "2023-03-20 16:00:00", "location": "Conference Room A", "attendees": "['John Smith', 'Jane Doe']"}, "result": {"api_name": "QueryMeeting", "input": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "Sales Meeting", "start_time": "2023-03-20 14:00:00", "end_time": "2023-03-20 16:00:00", "location": "Conference Room A", "attendees": ["John Smith", "Jane Doe"]}, "output": {"meeting_topic": "Sales Meeting", "start_time": "2023-03-20 14:00:00", "end_time": "2023-03-20 16:00:00", "location": "Conference Room A", "attendees": ["John Smith", "Jane Doe"], "username": "JohnDoe"}, "exception": null}}
+{"role": "AI", "text": "Your meeting has been scheduled already."}

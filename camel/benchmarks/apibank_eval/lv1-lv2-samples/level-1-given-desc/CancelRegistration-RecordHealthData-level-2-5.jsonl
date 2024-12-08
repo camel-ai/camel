@@ -1,0 +1,6 @@
+{"role": "User", "text": "Can you please cancel my appointment for David Brown with Dr. Davis on April 10th, 2023 at 10:00 am?"}
+{"role": "AI", "text": "Sure, I can help you with that. What's your appointment ID?"}
+{"role": "User", "text": "56789012"}
+{"role": "AI", "text": "I'm cancelling your appointment with ID 56789012."}
+{"role": "API", "api_name": "CancelRegistration", "param_dict": {"appointment_id": "56789012"}, "result": {"api_name": "CancelRegistration", "input": {"appointment_id": "56789012"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your appointment with ID 56789012 has been successfully cancelled. Is there anything else I can assist you with?"}

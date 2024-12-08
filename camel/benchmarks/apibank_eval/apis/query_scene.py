@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 
 class QueryScene(API):
     description = 'This API queries a scene of smart home system, given the scene name'

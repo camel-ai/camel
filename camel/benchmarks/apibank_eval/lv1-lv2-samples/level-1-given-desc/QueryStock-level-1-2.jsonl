@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you tell me about the stock price of SQ on March 15th, 2022?"}
+{"role": "AI", "text": "Sure, I can help with that."}
+{"role": "API", "api_name": "QueryStock", "param_dict": {"stock_code": "SQ", "date": "2022-03-15"}, "result": {"api_name": "QueryStock", "input": {"stock_code": "SQ", "date": "2022-03-15"}, "output": 250.3, "exception": null}}
+{"role": "AI", "text": "The stock price of SQ on March 15th, 2022 was 250.3."}

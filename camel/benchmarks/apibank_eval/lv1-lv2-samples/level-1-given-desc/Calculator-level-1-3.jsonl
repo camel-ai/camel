@@ -1,0 +1,12 @@
+{"role": "User", "text": "Can you help me with some basic math problems?"}
+{"role": "AI", "text": "Sure thing! What do you need help with?"}
+{"role": "User", "text": "What is the result of (9+6)*3?"}
+{"role": "AI", "text": "Calculating..."}
+{"role": "API", "api_name": "Calculator", "param_dict": {"formula": "(9+6)*3"}, "result": {"api_name": "Calculator", "input": {"formula": "(9+6)*3"}, "output": 45.0, "exception": null}}
+{"role": "AI", "text": "The result of (9+6)*3 is 45. Is there anything else I can help you with?"}
+{"role": "User", "text": "Can you help me with calculating the area of a rectangle?"}
+{"role": "AI", "text": "Definitely! What is the length and width of the rectangle?"}
+{"role": "User", "text": "The length is 5 and the width is 10."}
+{"role": "AI", "text": "Calculating..."}
+{"role": "API", "api_name": "Calculator", "param_dict": {"formula": "5*10"}, "result": {"api_name": "Calculator", "input": {"formula": "5*10"}, "output": 50.0, "exception": null}}
+{"role": "AI", "text": "The area of the rectangle is 50 square units."}

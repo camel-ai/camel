@@ -3,7 +3,8 @@ import logging
 logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
 
 import json
-from apis.api import API
+from .api import API
+import json
 import os
 
 class ToolSearcher(API):

@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you play \"Shape of You\" by Ed Sheeran?"}
+{"role": "AI", "text": "Sure, playing \"Shape of You\" by Ed Sheeran now."}
+{"role": "API", "api_name": "PlayMusic", "param_dict": {"music_name": "Shape of You"}, "result": {"api_name": "PlayMusic", "input": {"music_name": "Shape of You"}, "output": "music://shape of you", "exception": null}}
+{"role": "AI", "text": "Enjoy your music!"}

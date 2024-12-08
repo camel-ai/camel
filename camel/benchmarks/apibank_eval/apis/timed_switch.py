@@ -1,4 +1,4 @@
-from apis import API
+from .api import API
 import datetime
 
 class TimedSwitch(API):

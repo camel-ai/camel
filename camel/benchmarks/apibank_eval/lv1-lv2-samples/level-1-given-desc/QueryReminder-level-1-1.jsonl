@@ -1,0 +1,9 @@
+{"role": "User", "text": "Can you help me check if I have a reminder for attending a meeting on March 18th at 10:30 am?"}
+{"role": "AI", "text": "Sure. Do you have the reminder content?"}
+{"role": "User", "text": "Yes, the content is \"Attend meeting\"."}
+{"role": "AI", "text": "OK. I need to check your token to access the reminder. Can you please provide your username and password?"}
+{"role": "User", "text": "My username is \"newuser\" and my password is \"newpass\"."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "newuser", "password": "newpass"}, "result": {"api_name": "GetUserToken", "input": {"username": "newuser", "password": "newpass"}, "output": {"token": "l9k8j7h6g5f4d3s2a1"}, "exception": null}}
+{"role": "AI", "text": "Thanks! Now, can you please give me a moment to check the reminder?"}
+{"role": "API", "api_name": "QueryReminder", "param_dict": {"token": "l9k8j7h6g5f4d3s2a1", "content": "Attend meeting", "time": "2023-03-18 10:30:00"}, "result": {"api_name": "QueryReminder", "input": {"token": "l9k8j7h6g5f4d3s2a1", "content": "Attend meeting", "time": "2023-03-18 10:30:00"}, "output": {"content": "Attend meeting", "time": "2023-03-18 10:30:00", "username": "newuser"}, "exception": null}}
+{"role": "AI", "text": "You have a reminder for attending a meeting on March 18th at 10:30 am."}

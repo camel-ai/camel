@@ -1,0 +1,12 @@
+{"role": "User", "text": "Hmm, I am actually looking for an alarm clock API."}
+{"role": "AI", "text": "Understood, let me check if we have an API for querying alarm."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "alarm clock"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "alarm clock"}, "output": [{"name": "GetUserToken", "description": "Get the user token.", "input_parameters": {"username": {"type": "str", "description": "The username of the user."}, "password": {"type": "str", "description": "The password of the user."}}, "output_parameters": {"token": {"type": "str", "description": "The token of the user."}}, "desc_for_search": "get user tokenGet the user token."}, {"name": "QueryAlarm", "description": "The API for querying alarm clock, help user to check the alarm clock they have set.", "input_parameters": {"token": {"type": "str", "description": "User's token."}, "time": {"type": "str", "description": "The time for alarm. Format: %Y-%m-%d %H:%M:%S"}}, "output_parameters": {"info": {"type": "json", "description": "alarm info including username, time, content and location"}}}], "exception": null}}
+{"role": "AI", "text": "Yes, we do have an API for that. But it requires authentication. Can you please provide me your username and password?"}
+{"role": "User", "text": "Sure, my username is user4 and my password is user4pass."}
+{"role": "AI", "text": "Thank you. Let me authenticate you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user4", "password": "user4pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user4", "password": "user4pass"}, "output": {"token": "q9w8e7r6t5y4u3i2o1"}, "exception": null}}
+{"role": "AI", "text": "Now that I have the token, can you please tell me the time for which you want to query alarm?"}
+{"role": "User", "text": "I want to check if I have set any alarms for March 25th, 2023 at 2:10 pm."}
+{"role": "AI", "text": "Okay, let me check that for you."}
+{"role": "API", "api_name": "QueryAlarm", "param_dict": {"token": "q9w8e7r6t5y4u3i2o1", "time": "2023-03-25 14:10:00"}, "result": {"api_name": "QueryAlarm", "input": {"token": "q9w8e7r6t5y4u3i2o1", "time": "2023-03-25 14:10:00"}, "output": {"time": "2023-03-25 14:10:00", "username": "user4"}, "exception": null}}
+{"role": "AI", "text": "Based on my search, you have set an alarm for March 25th, 2023 at 2:10 pm."}

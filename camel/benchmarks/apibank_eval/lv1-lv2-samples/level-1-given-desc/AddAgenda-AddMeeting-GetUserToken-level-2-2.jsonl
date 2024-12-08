@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you help me add a schedule item for tomorrow at 9am with the title \"Meeting with John\" at the coffee shop on Main Street?"}
+{"role": "AI", "text": "Sure, to confirm, you want to add a schedule item for tomorrow, October 26th, at 9am, with the title \"Meeting with John\" at the coffee shop on Main Street, is that correct?"}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "API", "api_name": "AddAgenda", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Meeting with John", "time": "2023-10-26 09:00:00", "location": "coffee shop on Main Street"}, "result": {"api_name": "AddAgenda", "input": {"token": "a9s8d7f6g5h4j3k2l1", "content": "Meeting with John", "time": "2023-10-26 09:00:00", "location": "coffee shop on Main Street"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Done. The schedule item has been added."}

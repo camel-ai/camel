@@ -1,5 +1,4 @@
-from apis.api import API
-# from api import API
+from .api import API
 import googletrans
 from googletrans import Translator
 import os

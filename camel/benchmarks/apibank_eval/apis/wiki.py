@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 
 class Wiki(API):
     description = 'This API for searching a keyword in Wikipedia.'

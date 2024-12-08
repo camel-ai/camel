@@ -1,4 +1,4 @@
-from apis.api import API
+from .api import API
 import datetime
 import random
 

@@ -1,5 +1,4 @@
-# from api import API
-from apis.api import API
+from .api import API
 import datetime
 
 class QueryHistoryToday(API):

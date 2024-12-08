@@ -17,5 +17,5 @@ from .nexus import NexusBenchmark
 from .apibench import APIBenchBenchmark
 from .apibank import APIBankBenchmark
 
-__all__ = ["BaseBenchmark, NexusBenchmark, APIBenchBenchmark"]
+__all__ = ["BaseBenchmark, NexusBenchmark, APIBenchBenchmark, APIBankBenchmark"]
 
