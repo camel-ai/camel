@@ -14,14 +14,15 @@
 
 import json
 import os
+import warnings
 from http import HTTPStatus
-from typing import List
+from typing import List, Optional
 
 import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import handle_http_error
+from camel.utils import api_keys_required, handle_http_error
 
 LINKEDIN_POST_LIMIT = 1300
 
@@ -31,24 +32,29 @@ class LinkedInToolkit(BaseToolkit):
 
     This class provides methods for creating a post, deleting a post, and
     retrieving the authenticated user's profile information.
+
+    Args:
+        linkedin_token (Optional[str]): API key for authenticating with
+            the Linkedin API.
     """
 
-    def __init__(self):
-        self._access_token = self._get_access_token()
+    def __init__(self, linkedin_token: Optional[str] = None):
+        self._access_token = self._get_access_token(linkedin_token)
 
-    def create_post(self, text: str) -> dict:
+    def create_post(self, text: str) -> Optional[dict]:
         r"""Creates a post on LinkedIn for the authenticated user.
 
         Args:
             text (str): The content of the post to be created.
 
         Returns:
-            dict: A dictionary containing the post ID and the content of
-                the post. If the post creation fails, the values will be None.
+            Optional[dict]: A dictionary containing the post ID and the
+                content of the post. If the post creation fails, the values
+                will be :obj:`None`.
 
         Raises:
-            Exception: If the post creation fails due to
-                       an error response from LinkedIn API.
+            Exception: If the post creation fails due to an error response
+                from LinkedIn API.
         """
         url = 'https://api.linkedin.com/v2/ugcPosts'
         urn = self.get_profile(include_id=True)
@@ -106,7 +112,7 @@ class LinkedInToolkit(BaseToolkit):
         Reference:
             https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api
         """
-        print(
+        warnings.warn(
             "You are going to delete a LinkedIn post "
             f"with the following ID: {post_id}"
         )
@@ -136,7 +142,11 @@ class LinkedInToolkit(BaseToolkit):
 
         return f"Post deleted successfully. Post ID: {post_id}."
 
-    def get_profile(self, include_id: bool = False) -> dict:
+    def get_profile(
+        self,
+        include_id: bool = False,
+        person_id: Optional[str] = None,
+    ) -> dict:
         r"""Retrieves the authenticated user's LinkedIn profile info.
 
         This function sends a GET request to the LinkedIn API to retrieve the
@@ -146,6 +156,9 @@ class LinkedInToolkit(BaseToolkit):
         Args:
             include_id (bool): Whether to include the LinkedIn profile ID in
                 the response.
+            person_id (str, optional): The ID of the member whose profile is
+                to be retrieved. If `None`, retrieves the authenticated user's
+                profile. (default: :obj:`None`)
 
         Returns:
             dict: A dictionary containing the user's LinkedIn profile
@@ -156,6 +169,11 @@ class LinkedInToolkit(BaseToolkit):
             Exception: If the profile retrieval fails due to an error response
                 from LinkedIn API.
         """
+        if person_id:
+            url = f"https://api.linkedin.com/v2/people/(id:{person_id})"
+        else:
+            url = "https://api.linkedin.com/v2/userinfo"
+
         headers = {
             "Authorization": f"Bearer {self._access_token}",
             'Connection': 'Keep-Alive',
@@ -163,10 +181,7 @@ class LinkedInToolkit(BaseToolkit):
             "X-Restli-Protocol-Version": "2.0.0",
         }
 
-        response = requests.get(
-            "https://api.linkedin.com/v2/userinfo",
-            headers=headers,
-        )
+        response = requests.get(url, headers=headers)
 
         if response.status_code != HTTPStatus.OK:
             raise Exception(
@@ -194,6 +209,55 @@ class LinkedInToolkit(BaseToolkit):
 
         return profile_report
 
+    def get_articles(self, author_id: str) -> dict:
+        r"""Retrieves articles published by the specified author, returning
+        only essential information.
+
+        Args:
+            author_id (str): The ID of the author whose articles are to be
+                retrieved.
+
+        Returns:
+            dict: A dictionary containing the list of articles published by
+                the author.
+
+        Raises:
+            Exception: If the article retrieval fails due to an error response
+                from LinkedIn API.
+        """
+        url = f"https://api.linkedin.com/v2/originalArticles?q=authors&authors=urn:li:person:{author_id}"
+        headers = {
+            "Authorization": f"Bearer {self._access_token}",
+            'Content-Type': 'application/json',
+            "X-Restli-Protocol-Version": "2.0.0",
+        }
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != HTTPStatus.OK:
+            raise Exception(
+                f"Failed to get articles. "
+                f"Status code: {response.status_code}, "
+                f"Response: {response.text}"
+            )
+
+        articles = response.json().get("elements", [])
+
+        essential_articles = []
+        for article in articles:
+            essential_info = {
+                "id": article.get("id"),
+                "title": article.get("title"),
+                "publishedAt": article.get("publishedAt"),
+                "content": article.get("content", {})
+                .get("com.linkedin.publishing.HtmlContent", {})
+                .get("htmlText"),
+                "displayImage": article.get("displayImage"),
+            }
+            essential_articles.append(essential_info)
+
+        return {"articles": essential_articles}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -206,22 +270,27 @@ class LinkedInToolkit(BaseToolkit):
             FunctionTool(self.create_post),
             FunctionTool(self.delete_post),
             FunctionTool(self.get_profile),
+            FunctionTool(self.get_articles),
         ]
 
-    def _get_access_token(self) -> str:
+    @api_keys_required("LINKEDIN_ACCESS_TOKEN")
+    def _get_access_token(
+        self, linkedin_token: Optional[str] = None
+    ) -> Optional[str]:
         r"""Fetches the access token required for making LinkedIn API requests.
 
+        Args:
+            linkedin_token (Optional[str]): API key for authenticating with
+                the Linkedin API.
+
         Returns:
-            str: The OAuth 2.0 access token or warming message if the
-                environment variable `LINKEDIN_ACCESS_TOKEN` is not set or is
-                empty.
+            Optional[str]: The OAuth 2.0 access token if provided, otherwise,
+                returns `None`.
 
         Reference:
             You can apply for your personal LinkedIn API access token through
             the link below:
             https://www.linkedin.com/developers/apps
         """
-        token = os.getenv("LINKEDIN_ACCESS_TOKEN")
-        if not token:
-            return "Access token not found. Please set LINKEDIN_ACCESS_TOKEN."
+        token = linkedin_token or os.getenv("LINKEDIN_ACCESS_TOKEN")
         return token
