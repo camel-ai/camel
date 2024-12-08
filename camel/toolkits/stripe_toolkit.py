@@ -41,15 +41,12 @@ class StripeBaseAdapter:
         else:
             self.logger.error(f"Unexpected error in {func_name}: {error!s}")
             return f"Unexpected error in {func_name}: {error!s}"
-
-
 class StripeToolkit(StripeBaseAdapter):
     r"""A class representing a toolkit for Stripe operations.
     have to config "stripe.api_key" in the file .env
 
     This toolkit provides methods to interact with the Stripe  API,
-    allowing users to operate stripe core resources, including Balance,
-    Charge, Customer, Payout, Refund
+    allowing users to operate stripe core resources, including Customer, Balance, BalanceTransaction, Payment, Refund
 
     Attributes:
         retries (int): Number of retries for API requests in case of failure.
@@ -147,7 +144,7 @@ class StripeToolkit(StripeBaseAdapter):
         except Exception as e:
             return self.handle_exception("balance_get", e)
 
-    def balance_transactions_list(self, limit: int = 100) ->str:
+    def balance_transaction_list(self, limit: int = 100) ->str:
             r"""List balance transactions.
 
             Args:
@@ -170,7 +167,7 @@ class StripeToolkit(StripeBaseAdapter):
                     [transaction for transaction in transactions]
                 )
             except Exception as e:
-                return self.handle_exception("balance_transactions_list", e)
+                return self.handle_exception("balance_transaction_list", e)
 
     def payment_get(self, payment_id: str) -> str:
             r"""Retrieve a payment by ID.
@@ -189,7 +186,7 @@ class StripeToolkit(StripeBaseAdapter):
                 self.logger.info(f"Retrieved payment: {payment.id}")
                 return json.dumps(payment)
             except Exception as e:
-                return self.handle_exception("get_payment", e)
+                return self.handle_exception("payment_get", e)
 
     def payment_list(self, limit: int = 100) -> str:
         r"""List payments.
@@ -264,7 +261,7 @@ class StripeToolkit(StripeBaseAdapter):
             FunctionTool(self.customer_get),
             FunctionTool(self.customer_list),
             FunctionTool(self.balance_get),
-            FunctionTool(self.balance_transactions_list),
+            FunctionTool(self.balance_transaction_list),
             FunctionTool(self.payment_get),
             FunctionTool(self.payment_list),
             FunctionTool(self.refund_get),
