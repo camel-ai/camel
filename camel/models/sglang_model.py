@@ -14,7 +14,6 @@
 import logging
 import threading
 import time
-from threading import Thread
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -65,28 +64,27 @@ class SGLangModel(BaseModelBackend):
         if model_config_dict is None:
             model_config_dict = SGLangConfig().as_dict()
 
+        self.server_process = None
+        self.last_run_time: Optional[float] = (
+            None  # Will be set when the server starts
+        )
         self._lock = threading.Lock()
-        with self._lock:
-            self.server_process = None
-            self.last_run_time = time.time()
+        self._inactivity_thread: Optional[threading.Thread] = None
 
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
 
-        if not self._url:
-            self._start_server()
+        self._client = None
 
-        self._client = OpenAI(
-            timeout=60,
-            max_retries=3,
-            api_key="Set-but-ignored",  # required but ignored
-            base_url=self._url,
-        )
-
-        # Start monitoring inactivity
-        monitor_thread = Thread(target=self._monitor_inactivity, daemon=True)
-        monitor_thread.start()
+        if self._url:
+            # Initialize the client if an existing URL is provided
+            self._client = OpenAI(
+                timeout=60,
+                max_retries=3,
+                api_key="Set-but-ignored",  # required but ignored
+                base_url=self._url,
+            )
 
     def _start_server(self) -> None:
         from sglang.utils import (  # type: ignore[import-untyped]
@@ -95,17 +93,31 @@ class SGLangModel(BaseModelBackend):
         )
 
         try:
-            cmd = (
-                f"python -m sglang.launch_server "
-                f"--model-path {self.model_type} "
-                f"--port 30000 "
-                f"--host 0.0.0.0"
-            )
+            if not self._url:
+                cmd = (
+                    f"python -m sglang.launch_server "
+                    f"--model-path {self.model_type} "
+                    f"--port 30000 "
+                    f"--host 0.0.0.0"
+                )
 
-            server_process = execute_shell_command(cmd)
-            wait_for_server("http://localhost:30000")
-            self._url = "http://127.0.0.1:30000/v1"
-            self.server_process = server_process
+                server_process = execute_shell_command(cmd)
+                wait_for_server("http://localhost:30000")
+                self._url = "http://127.0.0.1:30000/v1"
+                self.server_process = server_process
+                # Start the inactivity monitor in a background thread
+                self._inactivity_thread = threading.Thread(
+                    target=self._monitor_inactivity, daemon=True
+                )
+                self._inactivity_thread.start()
+            self.last_run_time = time.time()
+            # Initialize the client after the server starts
+            self._client = OpenAI(
+                timeout=60,
+                max_retries=3,
+                api_key="Set-but-ignored",  # required but ignored
+                base_url=self._url,
+            )
         except Exception as e:
             raise RuntimeError(f"Failed to start SGLang server: {e}") from e
 
@@ -127,10 +139,13 @@ class SGLangModel(BaseModelBackend):
             # Over 10 minutes
             with self._lock:
                 # Over 10 minutes
-                if time.time() - self.last_run_time > 600:
+                if self.last_run_time and (
+                    time.time() - self.last_run_time > 600
+                ):
                     if self.server_process:
                         terminate_process(self.server_process)
                         self.server_process = None
+                        self._client = None  # Invalidate the client
                         logging.info(
                             "Server process terminated due to inactivity."
                         )
@@ -185,6 +200,11 @@ class SGLangModel(BaseModelBackend):
         with self._lock:
             # Update last run time
             self.last_run_time = time.time()
+
+        if self._client is None:
+            raise RuntimeError(
+                "Client is not initialized. Ensure the server is running."
+            )
 
         response = self._client.chat.completions.create(
             messages=messages,
