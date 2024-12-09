@@ -29,9 +29,9 @@ class File(ABC):
         name (str): The name of the file.
         file_id (str): The unique identifier of the file.
         metadata (Dict[str, Any], optional): Additional metadata
-            associated with the file. Defaults to None.
+            associated with the file. (default: :obj:`None`)
         docs (List[Dict[str, Any]], optional): A list of documents
-            contained within the file. Defaults to None.
+            contained within the file. (default: :obj:`None`)
         raw_bytes (bytes, optional): The raw bytes content of the file.
             Defaults to b"".
     """

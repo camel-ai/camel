@@ -31,6 +31,8 @@ class NvidiaConfig(BaseConfig):
     Args:
         stream (bool, optional): Whether to stream the response.
             (default: :obj:`False`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         temperature (float, optional): Controls randomness in the response.
             Higher values make output more random, lower values make it more
             deterministic. Range: [0.0, 2.0]. (default: :obj:`0.7`)

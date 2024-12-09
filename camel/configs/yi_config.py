@@ -34,6 +34,8 @@ class YiConfig(BaseConfig):
             {"type": "function", "function": {"name": "some_function"}}
             can be used to guide the model to use tools more strongly.
             (default: :obj:`None`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         max_tokens (int, optional): Specifies the maximum number of tokens
             the model can generate. This sets an upper limit, but does not
             guarantee that this number will always be reached.
