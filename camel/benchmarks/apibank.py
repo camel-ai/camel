@@ -20,8 +20,7 @@ import re
 import numpy as np
 from pathlib import Path
 from rouge import Rouge
-from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 
 from tqdm import tqdm
 from .apibank_eval.api_call_extraction import parse_api_call
@@ -249,6 +248,7 @@ class APIBankBenchmark(BaseBenchmark):
             agent (ChatAgent): The agent to run the benchmark.
             level (Literal['level-1', 'level-2', 'level-3']): The level to run the benchmark on.
             randomize (bool, optional): Whether to randomize the data.
+            api_test_enabled (bool): Whether to test API calling (`True`) or response (`False`)
                 (default: :obj:`False`)
             subset (Optional[int], optional): The subset of data to run.
                 (default: :obj:`None`)
