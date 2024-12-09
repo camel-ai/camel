@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
-import json
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -21,6 +19,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
+
 
 def test_sharegpt_converter():
     tool_list = MathToolkit().get_tools()
@@ -53,7 +52,7 @@ def test_sharegpt_converter():
     )
 
     # This will directly run the internal tool
-    response = agent.step(usr_msg)
+    _ = agent.step(usr_msg)
     resp = collector.convert()
     assert resp["system"] == "You are a helpful assistant"
     assert len(resp["conversations"]) == 4
@@ -90,7 +89,7 @@ def test_sharegpt_llm_converter():
     )
 
     # This will directly run the internal tool
-    response = agent.step(usr_msg)
+    _ = agent.step(usr_msg)
     resp = collector.llm_convert()
     assert resp["system"] == "You are a helpful assistant"
     assert len(resp["conversations"]) == 4

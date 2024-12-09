@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import pytest
 
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
@@ -19,6 +18,7 @@ from camel.data_collector import AlpacaDataCollector
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
+
 
 def test_alpaca_converter():
     model_config_dict = ChatGPTConfig(
@@ -48,10 +48,11 @@ def test_alpaca_converter():
 
     _resp = agent.step(usr_msg)
     resp = collector.convert()
-    
+
     assert (
         resp["instruction"]
-        == "You are a helpful assistant. When is the release date of the video game Portal?"
+        == "You are a helpful assistant. "
+        + "When is the release date of the video game Portal?"
     )
     assert resp['input'] == ''
     assert resp['output'] != ''
@@ -85,10 +86,11 @@ def test_alpaca_llm_converter():
 
     _resp = agent.step(usr_msg)
     resp = collector.llm_convert()
-    
+
     assert (
         resp["instruction"]
-        == "You are a helpful assistant. When is the release date of the video game Portal?"
+        == "You are a helpful assistant. "
+        + "When is the release date of the video game Portal?"
     )
     assert resp["input"] == ""
     assert resp["output"] != ""
