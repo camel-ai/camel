@@ -41,7 +41,7 @@ eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
 pillow = "^10.2.0"
-tree-sitter = "0.20.4"
+tree-sitter = "^0.20.4"
 googletrans-py = "4.0.0"
 
 # model-platforms
