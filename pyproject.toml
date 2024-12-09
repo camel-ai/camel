@@ -183,6 +183,8 @@ encoders = [
 
 tools = [
     "beautifulsoup4",
+    "selenium",
+    "rouge",
     "docx2txt",
     "functools",
     "PyMuPDF",
