@@ -221,7 +221,7 @@ def test_function_tool_generate_schema_with_retries(
                     },
                 },
                 'required': ['a', 'b'],
-                'additionalProperties': False
+                'additionalProperties': False,
             },
         },
     }
