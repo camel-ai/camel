@@ -165,9 +165,15 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     else:
         func_description = short_description
 
+    # OpenAI client.beta.chat.completions.parse for structured output has
+    # additional requirements for the schema, refer:
+    # https://platform.openai.com/docs/guides/structured-outputs/some-type-specific-keywords-are-not-yet-supported#supported-schemas
+    parameters_dict["additionalProperties"] = False
+
     openai_function_schema = {
         "name": func.__name__,
         "description": func_description,
+        "strict": True,
         "parameters": parameters_dict,
     }
 
@@ -175,7 +181,42 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         "type": "function",
         "function": openai_function_schema,
     }
+
+    openai_tool_schema = sanitize_and_enforce_required(openai_tool_schema)
     return openai_tool_schema
+
+
+def sanitize_and_enforce_required(parameters_dict):
+    r"""Cleans and updates the function schema to conform with OpenAI's
+    requirements:
+    - Removes invalid 'default' fields from the parameters schema.
+    - Ensures all fields or function parameters are marked as required.
+
+    Args:
+        parameters_dict (dict): The dictionary representing the function
+            schema.
+
+    Returns:
+        dict: The updated dictionary with invalid defaults removed and all
+            fields set as required.
+    """
+    # Check if 'function' and 'parameters' exist
+    if (
+        'function' in parameters_dict
+        and 'parameters' in parameters_dict['function']
+    ):
+        # Access the 'parameters' section
+        parameters = parameters_dict['function']['parameters']
+        properties = parameters.get('properties', {})
+
+        # Remove 'default' key from each property
+        for field in properties.values():
+            field.pop('default', None)
+
+        # Mark all keys in 'properties' as required
+        parameters['required'] = list(properties.keys())
+
+    return parameters_dict
 
 
 def generate_docstring(
