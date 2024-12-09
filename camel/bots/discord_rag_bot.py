@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.agents import ChatAgent
 from camel.bots import DiscordApp
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
@@ -29,9 +30,10 @@ if TYPE_CHECKING:
     from discord import Message
 
 
-class BotAgent:
+class RagBotAgent:
     def __init__(
         self,
+        model: Optional[BaseModelBackend] = None,
         contents: Union[str, List[str], "Element", List["Element"]] = None,
         auto_retriever: Optional[AutoRetriever] = None,
         similarity_threshold: float = 0.5,
@@ -100,6 +102,7 @@ class BotAgent:
         self._agent = ChatAgent(
             assistant_sys_msg,
             message_window_size=10,
+            model=model
         )
 
         self._auto_retriever = None
@@ -146,10 +149,10 @@ class BotAgent:
         return assistant_response.msg.content
 
 
-class DiscordBot(DiscordApp):
+class DiscordRagBot(DiscordApp):
     def __init__(
         self,
-        agent: BotAgent,
+        agent: RagBotAgent,
         token: Optional[str] = None,
         channel_ids: Optional[list[int]] = None,
     ):
@@ -165,7 +168,7 @@ class DiscordBot(DiscordApp):
                 where the bot is allowed to interact.
         """
         super().__init__(token=token, channel_ids=channel_ids)
-        self.agent: BotAgent = agent
+        self.agent: RagBotAgent = agent
 
     async def on_message(self, message: 'Message') -> None:
         r"""Event handler for received messages. This method processes incoming
@@ -197,7 +200,7 @@ class DiscordBot(DiscordApp):
         await message.channel.send(response)
 
 
-async def process_message(agent: BotAgent, msg_queue: asyncio.Queue):
+async def process_message(agent: RagBotAgent, msg_queue: asyncio.Queue):
     r"""Continuously processes messages from the queue and sends responses.
 
     This function waits for new messages in the queue, processes each message
@@ -221,10 +224,10 @@ async def process_message(agent: BotAgent, msg_queue: asyncio.Queue):
 
 
 async def main():
-    agent = BotAgent()
+    agent = RagBotAgent()
 
     # Initialize the DiscordBot with the message queue
-    discord_bot = DiscordBot(agent=agent)
+    discord_bot = DiscordRagBot(agent=agent)
 
     await discord_bot.start()
 
