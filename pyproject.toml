@@ -111,6 +111,7 @@ apify_client = { version = "^1.8.1", optional = true }
 notion-client = { version = "^2.2.1", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
+pyyaml = { version = "^6.0.2", optional = true }
 
 
 # encoders
@@ -222,6 +223,7 @@ tools = [
     "notion-client",
     "yt-dlp",
     "ffmpeg-python",
+    "pyyaml",
 ]
 
 vector-databases = [
@@ -303,6 +305,7 @@ all = [
     "notion-client",
     "yt-dlp",
     "ffmpeg-python",
+    "pyyaml",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -358,6 +361,7 @@ types-setuptools = "*"
 types-tqdm = "*"
 types-colorama = "^0"
 types-requests = "^2"
+types-PyYAML = "^6"
 
 [tool.poetry.group.docs]
 optional = true
@@ -432,6 +436,7 @@ module = [
     "database_connection",
     "huggingface_hub",
     "huggingface_hub.utils._errors",
+    "huggingface_hub.errors",
     "wikipedia",
     "duckduckgo_search",
     "newspaper",
