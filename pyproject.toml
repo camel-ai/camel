@@ -352,8 +352,6 @@ pytest-asyncio = "^0.23.0"
 gradio = "^3"
 mock = "^5"
 pandas-stubs = "^2.1.4"
-types-PyYAML = "^6.0.12.12"
-types-requests = "^2.31.0.10"
 
 # types
 types-Pillow = "*"
@@ -363,6 +361,8 @@ types-regex = "*"
 types-setuptools = "*"
 types-tqdm = "*"
 types-colorama = "^0"
+types-requests = "^2"
+types-PyYAML = "^6"
 pluggy = "^1.5.0"
 
 [tool.poetry.group.docs]
