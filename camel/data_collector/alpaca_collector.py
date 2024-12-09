@@ -17,21 +17,22 @@ from typing import Any, Dict, List, Optional, Union
 from typing_extensions import Self
 
 from camel.agents import ChatAgent
-from camel.data_collector import BaseDataCollector
+from camel.data_collector.base import BaseDataCollector
 from camel.messages import AlpacaItem, BaseMessage
 from camel.schemas import OpenAISchemaConverter
 
+# ruff: noqa: E501
 DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the conversations
     and convert them into a structured JSON format.
     For example:
-    Instructions: You are a helpful assistant
+    Instruction: You are a helpful assistant. 
     User: When is the release date of the video game Portal?
     Assistant: The release date of the video game Portal is October 9.
     Your output should be:
     {
-        "instructions": "You are a helpful assistant",
-        "input": "When is the release date of the video game Portal?",
+        "instruction": "You are a helpful assistant. When is the release date of the video game Portal?",
+        "input": "",
         "output": "The release date of the video game Portal is October 9."
     }
 """
@@ -79,12 +80,12 @@ class AlpacaDataCollector(BaseDataCollector):
             )
 
         input_message, output_message = history
-        instructions = (
+        instruction = (
             self.system_message.content if self.system_message else ""
         ) + str(input_message.message)
 
         data = {
-            "instructions": instructions,
+            "instruction": instruction,
             "input": "",
             "output": output_message.message,
         }
@@ -114,7 +115,7 @@ class AlpacaDataCollector(BaseDataCollector):
         converter = converter or OpenAISchemaConverter()
 
         system = self.system_message.content if self.system_message else ""
-        context = [f"Instructions: {system}\n"]
+        context = [f"Instruction: {system}\n"]
 
         for message in self.get_agent_history(str(self.agent_name)):
             if message.role == "user":

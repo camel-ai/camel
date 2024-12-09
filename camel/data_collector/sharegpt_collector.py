@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from camel.agents import ChatAgent
-from camel.data_collector import BaseDataCollector
+from camel.data_collector.base import BaseDataCollector
 from camel.messages import BaseMessage
 from camel.schemas import OpenAISchemaConverter
 from camel.toolkits import FunctionTool
