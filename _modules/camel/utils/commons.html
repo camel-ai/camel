@@ -1,0 +1,1106 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.utils.commons &#8212; CAMEL 0.2.11 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!-- 
+    this give us a css class that will be invisible only if js is disabled 
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=a3416100" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+
+    <script src="../../../_static/documentation_options.js?v=a64840b6"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/utils/commons';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.11</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Agents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/embodied_agents.html">Embodied Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_society.html">Society Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/task_generation.html">Task Generation Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/knowledge_graph.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning.html">Data generation with CAMEL and finetuning with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral mdoels with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta mdoels with Unsloth</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../modules.html">camel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for camel.utils.commons</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">http</span> <span class="kn">import</span> <span class="n">HTTPStatus</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Set</span><span class="p">,</span>
+    <span class="n">Type</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+
+<span class="kn">import</span> <span class="nn">pydantic</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">camel.logger</span> <span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span> <span class="nn">camel.types</span> <span class="kn">import</span> <span class="n">TaskType</span>
+
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="n">Constants</span>
+
+<span class="n">F</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="print_text_animated">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.print_text_animated">[docs]</a>
+<span class="k">def</span> <span class="nf">print_text_animated</span><span class="p">(</span>
+    <span class="n">text</span><span class="p">,</span> <span class="n">delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Prints the given text with an animated effect.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        text (str): The text to print.</span>
+<span class="sd">        delay (float, optional): The delay between each character printed.</span>
+<span class="sd">            (default: :obj:`0.02`)</span>
+<span class="sd">        end (str, optional): The end character to print after each</span>
+<span class="sd">            character of text. (default: :obj:`&quot;&quot;`)</span>
+<span class="sd">        log_level (int, optional): The log level to use.</span>
+<span class="sd">            See https://docs.python.org/3/library/logging.html#levels</span>
+<span class="sd">            (default: :obj:`logging.INFO`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">log_level</span><span class="p">):</span>
+        <span class="c1"># timestamp and other prefixes</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">log_level</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">char</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+        <span class="c1"># Close the log entry</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">log_level</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># This may be relevant for logging frameworks</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">log_level</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_prompt_template_key_words">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.get_prompt_template_key_words">[docs]</a>
+<span class="k">def</span> <span class="nf">get_prompt_template_key_words</span><span class="p">(</span><span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Given a string template containing curly braces {}, return a set of</span>
+<span class="sd">    the words inside the braces.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        template (str): A string containing curly braces.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[str]: A list of the words inside the curly braces.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; get_prompt_template_key_words(&#39;Hi, {name}! How are you {status}?&#39;)</span>
+<span class="sd">        {&#39;name&#39;, &#39;status&#39;}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;{([^}]*)}&#39;</span><span class="p">,</span> <span class="n">template</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="get_first_int">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.get_first_int">[docs]</a>
+<span class="k">def</span> <span class="nf">get_first_int</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the first integer number found in the given string.</span>
+
+<span class="sd">    If no integer number is found, returns None.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        string (str): The input string.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int or None: The first integer number found in the string, or None if</span>
+<span class="sd">            no integer number is found.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="download_tasks">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.download_tasks">[docs]</a>
+<span class="k">def</span> <span class="nf">download_tasks</span><span class="p">(</span><span class="n">task</span><span class="p">:</span> <span class="n">TaskType</span><span class="p">,</span> <span class="n">folder_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Downloads task-related files from a specified URL and extracts them.</span>
+
+<span class="sd">    This function downloads a zip file containing tasks based on the specified</span>
+<span class="sd">    `task` type from a predefined URL, saves it to `folder_path`, and then</span>
+<span class="sd">    extracts the contents of the zip file into the same folder. After</span>
+<span class="sd">    extraction, the zip file is deleted.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        task (TaskType): An enum representing the type of task to download.</span>
+<span class="sd">        folder_path (str): The path of the folder where the zip file will be</span>
+<span class="sd">                           downloaded and extracted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Define the path to save the zip file</span>
+    <span class="n">zip_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_path</span><span class="p">,</span> <span class="s2">&quot;tasks.zip&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Download the zip file from the Google Drive link</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">&quot;https://huggingface.co/datasets/camel-ai/&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;metadata/resolve/main/</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">_tasks.zip&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Save the zip file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">zip_file_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+        <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">folder_path</span><span class="p">)</span>
+
+    <span class="c1"># Delete the zip file</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">zip_file_path</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_task_list">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.get_task_list">[docs]</a>
+<span class="k">def</span> <span class="nf">get_task_list</span><span class="p">(</span><span class="n">task_response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Parse the response of the Agent and return task list.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        task_response (str): The string response of the Agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[str]: A list of the string tasks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">new_tasks_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">task_string_list</span> <span class="o">=</span> <span class="n">task_response</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># each task starts with #.</span>
+    <span class="k">for</span> <span class="n">task_string</span> <span class="ow">in</span> <span class="n">task_string_list</span><span class="p">:</span>
+        <span class="n">task_parts</span> <span class="o">=</span> <span class="n">task_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">task_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">task_id</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">task_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">())</span>
+            <span class="n">task_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^\w\s_]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">task_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">task_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="n">task_id</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">():</span>
+                <span class="n">new_tasks_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_tasks_list</span></div>
+
+
+
+<div class="viewcode-block" id="check_server_running">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.check_server_running">[docs]</a>
+<span class="k">def</span> <span class="nf">check_server_running</span><span class="p">(</span><span class="n">server_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check whether the port refered by the URL to the server</span>
+<span class="sd">    is open.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        server_url (str): The URL to the server running LLM inference</span>
+<span class="sd">            service.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: Whether the port is open for packets (server is running).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parsed_url</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">server_url</span><span class="p">)</span>
+    <span class="n">url_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="n">parsed_url</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+
+    <span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">connect_ex</span><span class="p">(</span><span class="n">url_tuple</span><span class="p">)</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># if the port is open, the result should be 0.</span>
+    <span class="k">return</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="dependencies_required">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.dependencies_required">[docs]</a>
+<span class="k">def</span> <span class="nf">dependencies_required</span><span class="p">(</span><span class="o">*</span><span class="n">required_modules</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">F</span><span class="p">],</span> <span class="n">F</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A decorator to ensure that specified Python modules</span>
+<span class="sd">    are available before a function executes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        required_modules (str): The required modules to be checked for</span>
+<span class="sd">            availability.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable[[F], F]: The original function with the added check for</span>
+<span class="sd">            required module dependencies.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If any of the required modules are not available.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            @dependencies_required(&#39;numpy&#39;, &#39;pandas&#39;)</span>
+<span class="sd">            def data_processing_function():</span>
+<span class="sd">                # Function implementation...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">F</span><span class="p">:</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">missing_modules</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">required_modules</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">is_module_available</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">missing_modules</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Missing required modules: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_modules</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">wrapper</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+
+<div class="viewcode-block" id="is_module_available">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.is_module_available">[docs]</a>
+<span class="k">def</span> <span class="nf">is_module_available</span><span class="p">(</span><span class="n">module_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if a module is available for import.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        module_name (str): The name of the module to check for availability.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the module can be imported, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">module_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="api_keys_required">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.api_keys_required">[docs]</a>
+<span class="k">def</span> <span class="nf">api_keys_required</span><span class="p">(</span><span class="o">*</span><span class="n">required_keys</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">F</span><span class="p">],</span> <span class="n">F</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A decorator to check if the required API keys are</span>
+<span class="sd">    presented in the environment variables or as an instance attribute.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        required_keys (str): The required API keys to be checked.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable[[F], F]: The original function with the added check</span>
+<span class="sd">            for required API keys.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If any of the required API keys are missing in the</span>
+<span class="sd">            environment variables and the instance attribute.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ::</span>
+
+<span class="sd">            @api_keys_required(&#39;API_KEY_1&#39;, &#39;API_KEY_2&#39;)</span>
+<span class="sd">            def some_api_function():</span>
+<span class="sd">                # Function implementation...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">F</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">F</span><span class="p">:</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">missing_environment_keys</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">required_keys</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="p">(</span><span class="n">args</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;_api_key&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="n">missing_environment_keys</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Missing API keys: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_environment_keys</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">wrapper</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+
+
+<div class="viewcode-block" id="get_system_information">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.get_system_information">[docs]</a>
+<span class="k">def</span> <span class="nf">get_system_information</span><span class="p">():</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Gathers information about the operating system.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing various pieces of OS information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys_info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;OS Name&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="s2">&quot;System&quot;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">(),</span>
+        <span class="s2">&quot;Release&quot;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">release</span><span class="p">(),</span>
+        <span class="s2">&quot;Version&quot;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">version</span><span class="p">(),</span>
+        <span class="s2">&quot;Machine&quot;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">(),</span>
+        <span class="s2">&quot;Processor&quot;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">processor</span><span class="p">(),</span>
+        <span class="s2">&quot;Platform&quot;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">sys_info</span></div>
+
+
+
+<div class="viewcode-block" id="to_pascal">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.to_pascal">[docs]</a>
+<span class="k">def</span> <span class="nf">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a snake_case string to PascalCase.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        snake (str): The snake_case string to be converted.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The converted PascalCase string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if the string is already in PascalCase</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[A-Z][a-zA-Z0-9]*([A-Z][a-zA-Z0-9]*)*$&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">snake</span>
+    <span class="c1"># Remove leading and trailing underscores</span>
+    <span class="n">snake</span> <span class="o">=</span> <span class="n">snake</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="c1"># Replace multiple underscores with a single one</span>
+    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;_+&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>
+    <span class="c1"># Convert to PascalCase</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+        <span class="s1">&#39;_([0-9A-Za-z])&#39;</span><span class="p">,</span>
+        <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+        <span class="n">snake</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_pydantic_major_version">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.get_pydantic_major_version">[docs]</a>
+<span class="k">def</span> <span class="nf">get_pydantic_major_version</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the major version of Pydantic.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: The major version number of Pydantic if installed, otherwise 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="get_pydantic_object_schema">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.get_pydantic_object_schema">[docs]</a>
+<span class="k">def</span> <span class="nf">get_pydantic_object_schema</span><span class="p">(</span><span class="n">pydantic_params</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the JSON schema of a Pydantic model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pydantic_params (Type[BaseModel]): The Pydantic model class to retrieve</span>
+<span class="sd">            the schema for.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The JSON schema of the Pydantic model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pydantic_params</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="func_string_to_callable">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.func_string_to_callable">[docs]</a>
+<span class="k">def</span> <span class="nf">func_string_to_callable</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert a function code string to a callable function object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        code (str): The function code as a string.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable[..., Any]: The callable function object extracted from the</span>
+<span class="sd">            code string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">local_vars</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">exec</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="nb">globals</span><span class="p">(),</span> <span class="n">local_vars</span><span class="p">)</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">local_vars</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Constants</span><span class="o">.</span><span class="n">FUNC_NAME_FOR_STRUCTURED_OUTPUT</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span></div>
+
+
+
+<div class="viewcode-block" id="json_to_function_code">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.json_to_function_code">[docs]</a>
+<span class="k">def</span> <span class="nf">json_to_function_code</span><span class="p">(</span><span class="n">json_obj</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate a Python function code from a JSON schema.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        json_obj (dict): The JSON schema object containing properties and</span>
+<span class="sd">            required fields, and json format is follow openai tools schema</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The generated Python function code as a string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">properties</span> <span class="o">=</span> <span class="n">json_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;properties&#39;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">json_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;required&#39;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">properties</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">required</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;JSON schema must contain &#39;properties&#39; and &#39;required&#39; fields&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">docstring_args</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">return_keys</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">prop_to_python</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="s1">&#39;float&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;integer&#39;</span><span class="p">:</span> <span class="s1">&#39;int&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="s1">&#39;bool&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">required</span><span class="p">:</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="n">prop</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
+        <span class="n">prop_type</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="n">prop</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+        <span class="n">python_type</span> <span class="o">=</span> <span class="n">prop_to_python</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">prop_type</span><span class="p">,</span> <span class="n">prop_type</span><span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">python_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">docstring_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;        </span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">python_type</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">return_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+
+    <span class="c1"># extract entity of schema</span>
+    <span class="n">args_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">docstring_args_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">docstring_args</span><span class="p">)</span>
+    <span class="n">return_keys_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">return_keys</span><span class="p">)</span>
+
+    <span class="c1"># function template</span>
+    <span class="n">function_code</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">def </span><span class="si">{</span><span class="n">Constants</span><span class="o">.</span><span class="n">FUNC_NAME_FOR_STRUCTURED_OUTPUT</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="n">args_str</span><span class="si">}</span><span class="s1">):</span>
+<span class="s1">    r&quot;&quot;&quot;Return response with a specified json format.</span>
+<span class="s1">    Args:</span>
+<span class="si">{</span><span class="n">docstring_args_str</span><span class="si">}</span>
+<span class="s1">    Returns:</span>
+<span class="s1">        Dict: A dictionary containing </span><span class="si">{</span><span class="n">return_keys_str</span><span class="si">}</span><span class="s1">.</span>
+<span class="s1">    &quot;&quot;&quot;</span>
+<span class="s1">    return </span><span class="se">{{</span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s1">&quot;: </span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s1">&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">prop</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">required</span><span class="p">])</span><span class="si">}</span><span class="se">}}</span>
+<span class="s1">    &#39;&#39;&#39;</span>
+
+    <span class="k">return</span> <span class="n">function_code</span></div>
+
+
+
+<div class="viewcode-block" id="text_extract_from_web">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.text_extract_from_web">[docs]</a>
+<span class="k">def</span> <span class="nf">text_extract_from_web</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the text information from given url.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        url (str): The website you want to search.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: All texts extract from the web.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">requests</span>
+        <span class="kn">from</span> <span class="nn">newspaper</span> <span class="kn">import</span> <span class="n">Article</span>
+
+        <span class="c1"># Request the target page</span>
+        <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">parse</span><span class="p">()</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">article</span><span class="o">.</span><span class="n">text</span>
+
+    <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Can&#39;t access </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">, error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Can&#39;t extract text from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">, error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="n">text</span></div>
+
+
+
+<div class="viewcode-block" id="create_chunks">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.create_chunks">[docs]</a>
+<span class="k">def</span> <span class="nf">create_chunks</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns successive n-sized chunks from provided text. Split a text</span>
+<span class="sd">    into smaller chunks of size n&quot;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        text (str): The text to be split.</span>
+<span class="sd">        n (int): The max length of a single chunk.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[str]: A list of split texts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="c1"># Find the nearest end of sentence within a range of 0.5 * n</span>
+        <span class="c1"># and 1.5 * n tokens</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.2</span> <span class="o">*</span> <span class="n">n</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">while</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">n</span><span class="p">):</span>
+            <span class="c1"># Decode the tokens and check for full stop or newline</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">chunk</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="c1"># If no end of sentence found, use n tokens as the chunk size</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="n">n</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+        <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">j</span>
+    <span class="k">return</span> <span class="n">chunks</span></div>
+
+
+
+<div class="viewcode-block" id="is_docker_running">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.is_docker_running">[docs]</a>
+<span class="k">def</span> <span class="nf">is_docker_running</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Check if the Docker daemon is running.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the Docker daemon is running, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;docker&quot;</span><span class="p">,</span> <span class="s2">&quot;info&quot;</span><span class="p">],</span>
+            <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+            <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AGENTOPS_API_KEY&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">agentops</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="n">ToolEvent</span><span class="p">,</span>
+            <span class="n">record</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span>
+<span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+    <span class="n">ToolEvent</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="agentops_decorator">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.agentops_decorator">[docs]</a>
+<span class="k">def</span> <span class="nf">agentops_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Decorator that records the execution of a function if ToolEvent is</span>
+<span class="sd">    available.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        func (callable): The function to be decorated.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        callable: The wrapped function which records its execution details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ToolEvent</span><span class="p">:</span>
+            <span class="n">tool_event</span> <span class="o">=</span> <span class="n">ToolEvent</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">tool_event</span><span class="o">.</span><span class="n">returns</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="n">record</span><span class="p">(</span><span class="n">tool_event</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+
+<div class="viewcode-block" id="AgentOpsMeta">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.AgentOpsMeta">[docs]</a>
+<span class="k">class</span> <span class="nc">AgentOpsMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Metaclass that automatically decorates all callable attributes with</span>
+<span class="sd">    the agentops_decorator,</span>
+<span class="sd">    except for the &#39;get_tools&#39; method.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">    __new__(cls, name, bases, dct):</span>
+<span class="sd">        Creates a new class with decorated methods.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dct</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ToolEvent</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dct</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">and</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s1">&#39;get_tools&#39;</span><span class="p">:</span>
+                    <span class="n">dct</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">agentops_decorator</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dct</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="track_agent">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.track_agent">[docs]</a>
+<span class="k">def</span> <span class="nf">track_agent</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Mock track agent decorator for AgentOps.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">noop</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">f</span>
+
+    <span class="k">return</span> <span class="n">noop</span></div>
+
+
+
+<div class="viewcode-block" id="handle_http_error">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.handle_http_error">[docs]</a>
+<span class="k">def</span> <span class="nf">handle_http_error</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Handles the HTTP errors based on the status code of the response.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        response (requests.Response): The HTTP response from the API call.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The error type, based on the status code.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">UNAUTHORIZED</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Unauthorized. Check your access token.&quot;</span>
+    <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">FORBIDDEN</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Forbidden. You do not have permission to perform this action.&quot;</span>
+    <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Not Found. The resource could not be located.&quot;</span>
+    <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">HTTPStatus</span><span class="o">.</span><span class="n">TOO_MANY_REQUESTS</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Too Many Requests. You have hit the rate limit.&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;HTTP Error&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="retry_request">
+<a class="viewcode-back" href="../../../camel.utils.html#camel.utils.commons.retry_request">[docs]</a>
+<span class="k">def</span> <span class="nf">retry_request</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">delay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Retries a function in case of any errors.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        func (Callable): The function to be retried.</span>
+<span class="sd">        retries (int): Number of retry attempts. (default: :obj:`3`)</span>
+<span class="sd">        delay (int): Delay between retries in seconds. (default: :obj:`1`)</span>
+<span class="sd">        *args: Arguments to pass to the function.</span>
+<span class="sd">        **kwargs: Keyword arguments to pass to the function.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Any: The result of the function call if successful.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: If all retry attempts fail.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">retries</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">retries</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">retries</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
