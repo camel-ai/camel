@@ -1,0 +1,98 @@
+{
+    "A12345":[
+        {
+            "time":"2023-03-15 10:30:00",
+            "blood_pressure":[
+                120,
+                80
+            ],
+            "heart_rate":80
+        }
+    ],
+    "B67890":[
+        {
+            "time":"2023-03-15 08:45:00",
+            "blood_sugar":85,
+            "weight":68.5
+        }
+    ],
+    "C24680":[
+        {
+            "time":"2023-03-14 15:20:00",
+            "cholesterol":200,
+            "triglycerides":150,
+            "blood_pressure":[
+                130,
+                90
+            ]
+        }
+    ],
+    "D13579":[
+        {
+            "time":"2023-03-14 12:00:00",
+            "blood_pressure":[
+                110,
+                70
+            ],
+            "heart_rate":75,
+            "body_temperature":37.1
+        }
+    ],
+    "E97531":[
+        {
+            "time":"2023-03-13 22:30:00",
+            "blood_pressure":[
+                140,
+                90
+            ],
+            "weight":80.2
+        }
+    ],
+    "F24681":[
+        {
+            "time":"2023-03-13 18:15:00",
+            "blood_sugar":102,
+            "heart_rate":95
+        }
+    ],
+    "G46801":[
+        {
+            "time":"2023-03-12 09:00:00",
+            "blood_pressure":[
+                120,
+                80
+            ],
+            "weight":63.7,
+            "cholesterol":180
+        }
+    ],
+    "H13579":[
+        {
+            "time":"2023-03-12 07:30:00",
+            "blood_pressure":[
+                130,
+                85
+            ],
+            "triglycerides":110,
+            "heart_rate":75
+        }
+    ],
+    "I97531":[
+        {
+            "time":"2023-03-11 17:45:00",
+            "weight":79.8,
+            "body_temperature":37.5
+        }
+    ],
+    "J46801":[
+        {
+            "time":"2023-03-11 14:20:00",
+            "blood_pressure":[
+                140,
+                90
+            ],
+            "triglycerides":130,
+            "heart_rate":85
+        }
+    ]
+}

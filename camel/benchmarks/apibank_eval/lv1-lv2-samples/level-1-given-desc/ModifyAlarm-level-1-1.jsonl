@@ -1,0 +1,14 @@
+{"role": "User", "text": "Can you modify my alarm for tomorrow morning at 7am? Today is 2023-03-15."}
+{"role": "AI", "text": "Sure, I can help you with that. What's your username?"}
+{"role": "User", "text": "JohnDoe"}
+{"role": "AI", "text": "Thanks, can you provide me with your password?"}
+{"role": "User", "text": "pass123"}
+{"role": "AI", "text": "Got it. Now let me authenticate you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "Alright, I have your token now. What time would you like to modify your alarm to?"}
+{"role": "User", "text": "7:15am"}
+{"role": "AI", "text": "And from what time should I modify it?"}
+{"role": "User", "text": "7am"}
+{"role": "AI", "text": "Got it."}
+{"role": "API", "api_name": "ModifyAlarm", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "from_time": "2023-03-16 07:00:00", "to_time": "2023-03-16 07:15:00"}, "result": {"api_name": "ModifyAlarm", "input": {"token": "a9s8d7f6g5h4j3k2l1", "from_time": "2023-03-16 07:00:00", "to_time": "2023-03-16 07:15:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your alarm has been successfully modified."}

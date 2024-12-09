@@ -1,0 +1,12 @@
+{"role": "User", "text": "Can you add a schedule for me at 2pm on September 12th called \"Meeting with John\" at the office?"}
+{"role": "AI", "text": "Sure, I can add that schedule for you. When would you like the alarm to remind you?"}
+{"role": "User", "text": "Can you remind me 10 minutes before the schedule?"}
+{"role": "AI", "text": "Absolutely. To schedule the meeting, I first need to authenticate your account. Please provide your username, email, and password."}
+{"role": "User", "text": "My username is JaneSmith, my email is janesmith@example.com, and my password is password."}
+{"role": "AI", "text": "Thank you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JaneSmith", "password": "password"}, "result": {"api_name": "GetUserToken", "input": {"username": "JaneSmith", "password": "password"}, "output": {"token": "o8i7u6y5t4r3e2w1q0"}, "exception": null}}
+{"role": "AI", "text": "I have retrieved your authentication token. Now I will add the schedule and alarm for you."}
+{"role": "API", "api_name": "AddAgenda", "param_dict": {"token": "o8i7u6y5t4r3e2w1q0", "content": "Meeting with John at the office", "time": "2023-09-12 14:00:00", "location": "office"}, "result": {"api_name": "AddAgenda", "input": {"token": "o8i7u6y5t4r3e2w1q0", "content": "Meeting with John at the office", "time": "2023-09-12 14:00:00", "location": "office"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "I have added the schedule, and now I will set the alarm for you."}
+{"role": "API", "api_name": "AddAlarm", "param_dict": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-09-12 13:50:00"}, "result": {"api_name": "AddAlarm", "input": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-09-12 13:50:00"}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your schedule and alarm have been successfully added."}

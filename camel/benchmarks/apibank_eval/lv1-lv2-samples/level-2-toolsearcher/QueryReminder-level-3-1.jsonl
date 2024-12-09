@@ -1,0 +1,7 @@
+{"role": "User", "text": "Can you help me set a reminder to book flight tickets for March 22 at 8 am?"}
+{"role": "AI", "text": "Sure! Let me just search for the relevant tool. [ToolSearcher(keywords='reminder ticket booking')] Based on my search, I can use the QueryReminder API for this. Do you have a token to use for authentication?"}
+{"role": "User", "text": "No, I don't have a token."}
+{"role": "AI", "text": "Not a problem. I'll just get a token for you using the GetUserToken API. Can you please give me your username and password?"}
+{"role": "User", "text": "My username is user2 and my password is user2pass."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user2", "password": "user2pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user2", "password": "user2pass"}, "output": {"token": "o9i8u7y6t5r4e3w2q1"}, "exception": null}}
+{"role": "AI", "text": "Great! I've got your token. [QueryReminder(token='o9i8u7y6t5r4e3w2q1', content='Book flight tickets', time='2023-03-22 08:00:00')] Your reminder has been set for March 22 at 8 am."}

@@ -14,5 +14,8 @@
 
 from .base import BaseBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
+from .nexus import NexusBenchmark
+from .apibench import APIBenchBenchmark
+from .apibank import APIBankBenchmark
 
-__all__ = ["BaseBenchmark", "GAIABenchmark", "DefaultGAIARetriever"]
+__all__ = ["BaseBenchmark", "GAIABenchmark", "DefaultGAIARetriever", "NexusBenchmark", "APIBenchBenchmark", "APIBankBenchmark"]

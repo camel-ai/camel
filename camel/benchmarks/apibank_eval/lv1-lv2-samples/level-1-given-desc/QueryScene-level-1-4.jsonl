@@ -1,0 +1,4 @@
+{"role": "User", "text": "Can you please query the Morning Routine scene for me?"}
+{"role": "AI", "text": "Sure, let me check."}
+{"role": "API", "api_name": "QueryScene", "param_dict": {"name": "Morning Routine"}, "result": {"api_name": "QueryScene", "input": {"name": "Morning Routine"}, "output": [{"name": "Light", "description": "Smart light in the living room"}, {"name": "Coffee Maker", "description": "Smart coffee maker in the kitchen"}, {"name": "Blinds", "description": "Smart blinds in the living room"}], "exception": null}}
+{"role": "AI", "text": "These are the devices in the Morning Routine scene: Light, Coffee Maker, and Blinds."}

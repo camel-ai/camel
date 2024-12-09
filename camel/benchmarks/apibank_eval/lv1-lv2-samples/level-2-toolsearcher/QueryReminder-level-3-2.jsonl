@@ -1,0 +1,5 @@
+{"role": "User", "text": "Can you help me set a reminder to book my flight tickets on March 22 at 8 AM?"}
+{"role": "AI", "text": "Sure, let me check first. [ToolSearcher(keywords='set reminder')]"}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "user2", "password": "user2pass"}, "result": {"api_name": "GetUserToken", "input": {"username": "user2", "password": "user2pass"}, "output": {"token": "o9i8u7y6t5r4e3w2q1"}, "exception": null}}
+{"role": "API", "api_name": "QueryReminder", "param_dict": {"token": "o9i8u7y6t5r4e3w2q1", "content": "Book flight tickets", "time": "2023-03-22 08:00:00"}, "result": {"api_name": "QueryReminder", "input": {"token": "o9i8u7y6t5r4e3w2q1", "content": "Book flight tickets", "time": "2023-03-22 08:00:00"}, "output": {"content": "Book flight tickets", "time": "2023-03-22 08:00:00", "username": "user2"}, "exception": null}}
+{"role": "AI", "text": "Your reminder for booking flight tickets on March 22 at 8 AM has been set."}

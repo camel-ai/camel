@@ -1,0 +1,8 @@
+{"role": "User", "text": "Can you check my account balance?"}
+{"role": "AI", "text": "Sure, to access your account balance, I need to authenticate you. Please provide me with your username and password."}
+{"role": "User", "text": "My username is foo and my password is bar."}
+{"role": "AI", "text": "Okay, let me authenticate you."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "foo", "password": "bar"}, "result": {"api_name": "GetUserToken", "input": {"username": "foo", "password": "bar"}, "output": {"token": "z9x8c7v6b5n4m3q2w1"}, "exception": null}}
+{"role": "AI", "text": "Now that you are authenticated, let me check your account balance."}
+{"role": "API", "api_name": "QueryBalance", "param_dict": {"token": "z9x8c7v6b5n4m3q2w1"}, "result": {"api_name": "QueryBalance", "input": {"token": "z9x8c7v6b5n4m3q2w1"}, "output": 682.01, "exception": null}}
+{"role": "AI", "text": "Your account balance is 682.01 dollars."}

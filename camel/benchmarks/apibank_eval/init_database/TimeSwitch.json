@@ -1,0 +1,62 @@
+{
+    "light":[
+        {
+            "time":"2023-03-15 18:30:00",
+            "on":true
+        }
+    ],
+    "air conditioner":[
+        {
+            "time":"2023-03-16 07:45:00",
+            "on":true
+        }
+    ],
+    "sound system":[
+        {
+            "time":"2023-03-17 22:00:00",
+            "on":false
+        }
+    ],
+    "oven":[
+        {
+            "time":"2023-03-18 14:15:00",
+            "on":false
+        }
+    ],
+    "range hood":[
+        {
+            "time":"2023-03-19 09:30:00",
+            "on":true
+        }
+    ],
+    "tv":[
+        {
+            "time":"2023-03-20 13:00:00",
+            "on":true
+        }
+    ],
+    "humidifier":[
+        {
+            "time":"2023-03-21 20:45:00",
+            "on":false
+        }
+    ],
+    "coffee Maker":[
+        {
+            "time":"2023-03-22 11:30:00",
+            "on":true
+        }
+    ],
+    "blinds":[
+        {
+            "time":"2023-03-23 15:00:00",
+            "on":false
+        }
+    ],
+    "smart curtain":[
+        {
+            "time":"2023-03-24 16:30:00",
+            "on":true
+        }
+    ]
+}

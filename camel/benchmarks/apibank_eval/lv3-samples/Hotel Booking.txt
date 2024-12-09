@@ -1,0 +1,35 @@
+Scene: Hotel Booking
+
+First Utterence: Please help me plan my business trip next week.
+
+Key Info:
+- "JohnDoe":{
+        "password":"pass123",
+        "token":"a9s8d7f6g5h4j3k2l1",
+        "email":"johndoe@example.com"
+    },
+
+- Beijing Hilton Hotel
+- Check in: 2023-03-30
+- Check out: 2023-04-01
+- 1 adults
+- 1 room
+- Add to agenda
+
+- Meeting with Boss
+- Time: 2023-03-31 10:00
+- Location: Beijing Hilton Hotel 2nd Floor
+- Query Meeting
+
+- Alarm at 2023-03-30 8:00
+
+GT API Call:
+BookHotel(hotel_name="Beijing Hilton Hotel", check_in_time="2023-03-30", check_out_time="2023-04-01", room_count=1, adult_count=1, child_count=0)
+GetUserToken(username="JohnDoe", password="pass123")
+AddAgenda(token="a9s8d7f6g5h4j3k2l1", content="Check in", time="2023-03-30 12:00:00", location="Beijing Hilton Hotel")
+AddMeeting(token="a9s8d7f6g5h4j3k2l1", meeting_topic="Meeting with Boss", start_time="2023-03-31 10:00:00", end_time="2023-03-31 11:00:00", location="Beijing Hilton Hotel 2nd Floor", attendees=["JohnDoe"])
+QueryMeeting(token="a9s8d7f6g5h4j3k2l1", meeting_topic="Meeting with Boss", start_time="2023-03-31 10:00:00", end_time="2023-03-31 11:00:00", location="Beijing Hilton Hotel 2nd Floor", attendees=["JohnDoe"])
+AddAlarm(token="a9s8d7f6g5h4j3k2l1", time="2023-03-30 8:00:00")
+
+
+

@@ -1,0 +1,12 @@
+{"role": "User", "text": "Can you help me book a meeting on March 15th at 3pm for the topic \"Project Update\" with John and Jane?"}
+{"role": "AI", "text": "Sure, let me check."}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "book meeting"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "book meeting"}, "output": {"name": "BookHotel", "description": "This API orders a hotel room. Two rooms are ordered if the number of adults is greater than 2. Only one order can be made at same time.", "input_parameters": {"hotel_name": {"type": "str", "description": "The name of the hotel."}, "check_in_time": {"type": "str", "description": "The time to check in. Format: %Y-%m-%d"}, "check_out_time": {"type": "str", "description": "The time to check out. Format: %Y-%m-%d"}, "room_count": {"type": "int", "description": "The number of rooms to order."}, "adult_count": {"type": "int", "description": "The number of adults."}, "child_count": {"type": "int", "description": "The number of children."}}, "output_parameters": {"order_id": {"type": "str", "description": "The ID of the order."}}}, "exception": null}}
+{"role": "AI", "text": "Okay, I can help you with that. What is the location for the meeting?"}
+{"role": "User", "text": "The conference room on the 5th floor."}
+{"role": "AI", "text": "Great. Do you have an account with us?"}
+{"role": "User", "text": "Yes, my username is JohnDoe and my password is pass123."}
+{"role": "AI", "text": "Okay, let me get your token."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JohnDoe", "password": "pass123"}, "result": {"api_name": "GetUserToken", "input": {"username": "JohnDoe", "password": "pass123"}, "output": {"token": "a9s8d7f6g5h4j3k2l1"}, "exception": null}}
+{"role": "AI", "text": "I got your token."}
+{"role": "API", "api_name": "AddMeeting", "param_dict": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "Project Update", "start_time": "2023-03-15 15:00:00", "end_time": "2023-03-15 16:00:00", "location": "conference room on the 5th floor", "attendees": "['John', 'Jane']"}, "result": {"api_name": "AddMeeting", "input": {"token": "a9s8d7f6g5h4j3k2l1", "meeting_topic": "Project Update", "start_time": "2023-03-15 15:00:00", "end_time": "2023-03-15 16:00:00", "location": "conference room on the 5th floor", "attendees": ["John", "Jane"]}, "output": "success", "exception": null}}
+{"role": "AI", "text": "Your meeting has been reserved successfully."}

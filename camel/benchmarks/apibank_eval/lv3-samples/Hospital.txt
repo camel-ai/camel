@@ -1,0 +1,23 @@
+Scene: Go To Hospital
+
+First Utterance: Help me schedule an appointment at Beijing Hospital.
+
+Key Info:
+
+- "JohnDoe":{
+        "password":"pass123",
+        "token":"a9s8d7f6g5h4j3k2l1",
+        "email":"johndoe@example.com"
+    },
+
+- Hospital name: Beijing Hospital
+- Appointment date: 2023-04-01
+- Appointment time: 11:00
+- Doctor name: Dr. Zhang
+- Medical symptoms: fever, cough, headache
+
+API Calls:
+AppointmentRegistration(patient_name="John Doe", date="2023-04-01", doctor_name="Dr. Zhang")
+SymptomSearch(symptom="headache")
+GetUserToken(username="JohnDoe", password="pass123")
+AddAgenda(token=a9s8d7f6g5h4j3k2l1, content="Hospital Appointment", time="2023-04-01 11:00:00", location="Beijing Hospital")

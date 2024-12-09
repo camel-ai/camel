@@ -1,0 +1,6 @@
+{"role": "User", "text": "Can you please check if I have an appointment on April 12th?"}
+{"role": "AI", "text": "Sure, may I know your name please?"}
+{"role": "User", "text": "John Doe"}
+{"role": "API", "api_name": "ToolSearcher", "param_dict": {"keywords": "Query Registration"}, "result": {"api_name": "ToolSearcher", "input": {"keywords": "Query Registration"}, "output": {"name": "QueryRegistration", "description": "This API queries the registration of a patient given patient ID.", "input_parameters": {"patient_name": {"type": "str", "description": "The name of patient."}, "date": {"type": "str", "description": "The date of appointment. Format be like %Y-%m-%d"}}, "output_parameters": {"appointments": {"type": "list", "description": "The dict where from appointment_id to a list like [\"patient_name\":xxx, \"date\":xxx, \"doctor_name\":xxx]"}}}, "exception": null}}
+{"role": "API", "api_name": "QueryRegistration", "param_dict": {"patient_name": "John Doe", "date": "2023-04-12"}, "result": {"api_name": "QueryRegistration", "input": {"patient_name": "John Doe", "date": "2023-04-12"}, "output": {"12345678": {"patient_name": "John Doe", "date": "2023-04-12", "doctor_name": "Dr. Smith"}}, "exception": null}}
+{"role": "AI", "text": "According to our system, you have an appointment with Dr. Smith on April 12th, 2023."}

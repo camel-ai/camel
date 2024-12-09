@@ -1,0 +1,10 @@
+{"role": "User", "text": "Can you tell me my next appointment on March 25th, 2023?"}
+{"role": "AI", "text": "Sure. What is your name?"}
+{"role": "User", "text": "My name is Robert Lee."}
+{"role": "API", "api_name": "QueryRegistration", "param_dict": {"patient_name": "Robert Lee", "date": "2023-03-25"}, "result": {"api_name": "QueryRegistration", "input": {"patient_name": "Robert Lee", "date": "2023-03-25"}, "output": {"34567890": {"patient_name": "Robert Lee", "date": "2023-03-25", "doctor_name": "Dr. Kim"}}, "exception": null}}
+{"role": "AI", "text": "According to my records, your next appointment on March 25th, 2023 is with Dr. Kim."}
+{"role": "User", "text": "Thanks. Can you also give me information about shortness of breath?"}
+{"role": "AI", "text": "Sure. What would you like to know about?"}
+{"role": "User", "text": "Can you give me some possible diseases and first-aid methods?"}
+{"role": "API", "api_name": "EmergencyKnowledge", "param_dict": {"symptom": "shortness of breath"}, "result": {"api_name": "EmergencyKnowledge", "input": {"symptom": "shortness of breath"}, "output": [{"name": "Asthma", "aid": "Treatment may involve inhalers or nebulizers to open the airways, as well as medications to manage inflammation and prevent attacks."}, {"name": "Pneumonia", "aid": "Treatment may involve antibiotics, rest, and fluids to help the body fight the infection and recover."}], "exception": null}}
+{"role": "AI", "text": "Some possible diseases associated with shortness of breath are Asthma and Pneumonia. For Asthma, treatment may involve inhalers or nebulizers to open the airways, as well as medications to manage inflammation and prevent attacks. For Pneumonia, treatment may involve antibiotics, rest, and fluids to help the body fight the infection and recover."}

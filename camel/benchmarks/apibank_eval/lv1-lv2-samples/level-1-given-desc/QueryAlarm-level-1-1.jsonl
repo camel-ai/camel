@@ -1,0 +1,8 @@
+{"role": "User", "text": "Hi, can you help me check my alarm for March 20th, 2023 at 6:30AM?"}
+{"role": "AI", "text": "Sure, to access your alarm information, I'll need to authenticate. Can you please provide me with your email, username, and password?"}
+{"role": "User", "text": "My email is janesmith@example.com, username is JaneSmith, and password is password."}
+{"role": "AI", "text": "Thank you for the information. Let me authenticate you first."}
+{"role": "API", "api_name": "GetUserToken", "param_dict": {"username": "JaneSmith", "password": "password"}, "result": {"api_name": "GetUserToken", "input": {"username": "JaneSmith", "password": "password"}, "output": {"token": "o8i7u6y5t4r3e2w1q0"}, "exception": null}}
+{"role": "AI", "text": "Okay, you are authenticated now. Checking your alarm information for March 20th, 2023 at 6:30AM."}
+{"role": "API", "api_name": "QueryAlarm", "param_dict": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-03-20 06:30:00"}, "result": {"api_name": "QueryAlarm", "input": {"token": "o8i7u6y5t4r3e2w1q0", "time": "2023-03-20 06:30:00"}, "output": {"time": "2023-03-20 06:30:00", "username": "JaneSmith"}, "exception": null}}
+{"role": "AI", "text": "According to our system, you have an alarm set for March 20th, 2023 at 6:30AM. The alarm content and location information is not available at the moment."}
