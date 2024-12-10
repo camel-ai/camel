@@ -17,7 +17,9 @@ from camel.benchmarks import NexusBenchmark
 
 agent = ChatAgent()
 
-benchmark = NexusBenchmark(data_dir="./NexusDatasets", save_to="./NexusResults.jsonl")
+benchmark = NexusBenchmark(
+    data_dir="./NexusDatasets", save_to="./NexusResults.jsonl"
+)
 benchmark.download()
 results = benchmark.run(agent, "OTX")
 print(results)

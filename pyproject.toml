@@ -40,6 +40,7 @@ pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
+rouge = "*"
 pillow = "^10.2.0"
 tree-sitter = "^0.20.4"
 googletrans-py = "4.0.0"
@@ -470,6 +471,8 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
+    "rouge",
+    "datasets",
     "docker.*",
     "google.*",
     "google_generativeai",

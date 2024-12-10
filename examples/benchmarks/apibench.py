@@ -17,6 +17,8 @@ from camel.benchmarks import APIBenchBenchmark
 
 agent = ChatAgent()
 
-benchmark = APIBenchBenchmark(data_dir="./APIBenchDatasets", save_to="./APIBench.jsonl")
+benchmark = APIBenchBenchmark(
+    data_dir="./APIBenchDatasets", save_to="./APIBench.jsonl"
+)
 result = benchmark.run(agent, 'torchhub')
 print(result)

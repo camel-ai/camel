@@ -17,7 +17,9 @@ from camel.benchmarks import APIBankBenchmark
 
 agent = ChatAgent()
 
-benchmark = APIBankBenchmark(data_dir="./APIBankDatasets", save_to="./APIBankResults.jsonl")
+benchmark = APIBankBenchmark(
+    data_dir="./APIBankDatasets", save_to="./APIBankResults.jsonl"
+)
 benchmark.download()
 results = benchmark.run(agent, "level-1", api_test_enabled=True)
 print(results)
