@@ -23,14 +23,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
 from tqdm import tqdm
-from camel.societies.workforce.worker import Worker
-from camel.tasks import Task
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
+from camel.societies.workforce.worker import Worker
 from camel.societies.workforce.workforce import Workforce
+from camel.tasks import Task
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +265,6 @@ class GAIABenchmark(BaseBenchmark):
                     continue
 
                 try:
-
                     result = agent.step(self._create_user_message(task))
                     self._process_result(agent, task, result, f)
                 except Exception as e:
@@ -307,11 +306,16 @@ class GAIABenchmark(BaseBenchmark):
         levels = (
             [1, 2, 3]
             if level == "all"
-            else [level] if isinstance(level, int) else level
+            else [level]
+            if isinstance(level, int)
+            else level
         )
-        if not all(isinstance(level, int) and level in [1, 2, 3] for level in levels):
+        if not all(
+            isinstance(level, int) and level in [1, 2, 3] for level in levels
+        ):
             raise ValueError(
-                f"Invalid value for `level`: {level}, expected 1, 2, 3 " "or 'all'."
+                f"Invalid value for `level`: {level}, expected 1, 2, 3 "
+                "or 'all'."
             )
 
         logger.info(f"Running benchmark on {on} set at levels {levels}.")
@@ -336,7 +340,9 @@ class GAIABenchmark(BaseBenchmark):
 
                 try:
                     result = workforce.process_task(self._create_task(task))
-                    self._process_workforce_result(workforce, task, result, f, None)
+                    self._process_workforce_result(
+                        workforce, task, result, f, None
+                    )
                 except Exception as e:
                     self._process_workforce_result(workforce, task, None, f, e)
                     workforce._running = False
@@ -382,14 +388,14 @@ class GAIABenchmark(BaseBenchmark):
             content=task["Question"],
         )
 
-    def _create_task(self, task: Dict[str, Any]) -> BaseMessage:
+    def _create_task(self, task: Dict[str, Any]) -> Task:
         r"""Create a user message from a task.
-        
+
         Args:
             task (Dict[str, Any]): The task to create the message from.
-            
+
         Returns:
-            BaseMessage: The message created from the task.
+            Task: The task created from the input.
         """
         return Task(id=str(task["task_id"]), content=task["Question"])
 
@@ -445,28 +451,33 @@ class GAIABenchmark(BaseBenchmark):
             file_obj (Any): The file object to write the results to.
             err (Optional[Exception]): The error encountered during processing.
         """
-        if err is None:
-            model_answer = self.get_final_answer(result.result)
+        if err is None and result is not None:
+            model_answer = self.get_final_answer(str(result.result))
             final_answer = task["Final answer"]
             score = self.question_scorer(model_answer, final_answer)
         else:
             model_answer = "ERROR"
             final_answer = task["Final answer"]
-            score = 0
-        agents = [workforce.coordinator_agent, workforce.task_agent] + [
+            score = False
+        agents = [workforce.coordinator_agent, workforce.task_agent]
+        workers = [
             agent for agent in workforce._children if isinstance(agent, Worker)
         ]
-        agent_names = ["coordinator", "task"] + [agent.node_id for agent in agents[2:]]
-        for i in range(2, len(agents)):
-            agents[i] = agents[i].worker
-        history, tool_calls = {}, {}
+        agent_names = ["coordinator", "task"] + [
+            agent.node_id for agent in workers
+        ]
+        for worker in workers:
+            agents.append(worker.worker)  # type: ignore[attr-defined]
+
+        history = {}
+        tool_calls: Dict[str, Any] = {}
 
         for agent, agent_name in zip(agents, agent_names):
             history[agent_name] = agent.memory.get_context()[0]
             tool_calls[agent_name] = []
             for h in history[agent_name]:
                 if h.get("function_call", None):
-                    tool_calls[agent_name].append(h["function_call"])
+                    tool_calls[agent_name].append(h["function_call"])  # type: ignore[union-attr,typeddict-item]
 
         result_data = {
             "task_id": task["task_id"],

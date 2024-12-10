@@ -18,9 +18,9 @@ from camel.benchmarks import DefaultGAIARetriever, GAIABenchmark
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.runtime import RemoteHttpRuntime
+from camel.societies.workforce import Workforce
 from camel.toolkits import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType, StorageType
-from camel.societies.workforce import Workforce
 
 retriever = DefaultGAIARetriever(
     vector_storage_local_path="local_data2/", storage_type=StorageType.QDRANT
