@@ -1,42 +1,24 @@
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 # # O1DataGene with CAMEL
 # ## experimental version
-
-
 
 import os
 from datetime import datetime
 from dotenv import load_dotenv
 import json
-from core import O1DataGene
+from camel.o1datagen.o1datagen import O1DataGene
 
 
 # ### First we will set the OPENAI_API_KEY that will be used to generate the data.
 
+# from getpass import getpass
 
 
-from getpass import getpass
-
-
-openai_api_key = getpass('Enter your OpenAI API key: ')
-os.environ["OPENAI_API_KEY"] = openai_api_key
+# openai_api_key = getpass('Enter your OpenAI API key: ')
+# os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
 # ### Create a system message to define agent's default role and behaviors.
-
 
 
 sys_msg = 'You are a genius at slow-thinking data and code'
@@ -45,9 +27,13 @@ sys_msg = 'You are a genius at slow-thinking data and code'
 # ### Use ModelFactory to set up the backend model for agent, for more detailed model settings
 
 
+
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.configs import ChatGPTConfig
+
+
+
 
 # Define the model, here in this case we use gpt-4o-mini
 model = ModelFactory.create(
@@ -57,24 +43,27 @@ model = ModelFactory.create(
 )
 
 
-
 # Initialize AI model by OPENAI_COMPATIBLE_MODEL
 
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+
+# from camel.models import ModelFactory
+# from camel.types import ModelPlatformType, ModelType
 
 
-sys_msg = 'You are a genius at slow-thinking data and code'
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    model_type="deepseek-chat",
-    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
-    model_config_dict={"temperature": 0.4, "max_tokens": 4096},
-)
+
+# sys_msg = 'You are a genius at slow-thinking data and code'
+# model = ModelFactory.create(
+#     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+#     model_type="deepseek-chat",
+#     api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
+#     url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+#     model_config_dict={"temperature": 0.4, "max_tokens": 4096},
+# )
 
 
 # ### Set ChatAgent
+
+
 
 from camel.agents import ChatAgent
 chat_agent = ChatAgent(
@@ -107,12 +96,12 @@ testo1 = O1DataGene(chat_agent, golden_answers=qa_data)
 
 
 
+
 # Record generated answers
 generated_answers = {}
 
 
 # ### Test Q&A
-
 
 
 
@@ -133,6 +122,7 @@ for question in qa_data.keys():
 
 # ### Export the generated answers to a JSON file
 # 
+
 
 
 simplified_output = {
