@@ -19,4 +19,6 @@ from pydantic import BaseModel
 class Record(BaseModel):
     id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
-    content: Dict[str, Any]
+    
+    class Config:
+        extra = "allow"  # 允许任意额外字段

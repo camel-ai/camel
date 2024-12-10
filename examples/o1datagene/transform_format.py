@@ -36,20 +36,6 @@ def upload_to_huggingface(transformed_data, username, dataset_name=None):
     else:
         dataset_name = f"{username}/{dataset_name}"
     
-    # Create records
-    records = []
-    for idx, item in enumerate(transformed_data):
-        record = Record(
-            id=f"record-{idx+1}",
-            content={
-                "instruction": item["instruction"],
-                "input": item["input"],
-                "output": item["output"]
-            },
-            metadata={"method": "CAMEL-O1DataGene"}
-        )
-        records.append(record)
-    
     # Create dataset
     print(f"Creating dataset: {dataset_name}")
     dataset_url = manager.create_dataset(name=dataset_name)
@@ -70,6 +56,12 @@ def upload_to_huggingface(transformed_data, username, dataset_name=None):
     )
     print("Dataset card created successfully.")
     
+    # Create Record objects with user's key-value pairs directly
+    records = []
+    for item in transformed_data:
+        record = Record(**item)  # 直接将用户的键值对作为Record的字段
+        records.append(record)
+    
     # Add records
     print("Adding records to the dataset...")
     manager.add_records(dataset_name=dataset_name, records=records)
@@ -79,7 +71,7 @@ def upload_to_huggingface(transformed_data, username, dataset_name=None):
 
 if __name__ == "__main__":
     # Use the latest generated answers file
-    input_file = "generated_answers_20241210_104117.json"
+    input_file = "generated_answers_20241210_133518.json"
     output_file, transformed_data = transform_qa_format(input_file)
     print(f"Transformation complete. Output saved to: {output_file}")
     
