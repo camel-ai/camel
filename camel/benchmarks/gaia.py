@@ -23,11 +23,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
 from tqdm import tqdm
+from camel.societies.workforce.worker import Worker
+from camel.tasks import Task
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
+from camel.societies.workforce.workforce import Workforce
 
 logger = logging.getLogger(__name__)
 
@@ -262,12 +265,84 @@ class GAIABenchmark(BaseBenchmark):
                     continue
 
                 try:
+
                     result = agent.step(self._create_user_message(task))
                     self._process_result(agent, task, result, f)
                 except Exception as e:
                     self._handle_error(task, e, f)
                 finally:
                     agent.reset()
+
+        return self._generate_summary()
+
+    def run_workforce(  # type: ignore[override]
+        self,
+        workforce: Workforce,
+        on: Literal["train", "valid", "test"],
+        level: Union[int, List[int], Literal["all"]],
+        randomize: bool = False,
+        subset: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        r"""Run the benchmark.
+
+        Args:
+            workforce (Workforce): The workforce to run the benchmark.
+            on (Literal["valid", "test"]): The set to run the benchmark.
+            level (Union[int, List[int], Literal["all"]]): The level to run
+                the benchmark.
+            randomize (bool, optional): Whether to randomize the data.
+                (default: :obj:`False`)
+            subset (Optional[int], optional): The subset of data to run.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The results of the benchmark.
+        """
+        # Validate inputs
+        if on not in ["valid", "test"]:
+            raise ValueError(
+                f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
+            )
+
+        levels = (
+            [1, 2, 3]
+            if level == "all"
+            else [level] if isinstance(level, int) else level
+        )
+        if not all(isinstance(level, int) and level in [1, 2, 3] for level in levels):
+            raise ValueError(
+                f"Invalid value for `level`: {level}, expected 1, 2, 3 " "or 'all'."
+            )
+
+        logger.info(f"Running benchmark on {on} set at levels {levels}.")
+        datas = [data for data in self._data[on] if data["Level"] in levels]
+
+        # Shuffle and subset data if necessary
+        if randomize:
+            random.shuffle(datas)
+        if subset:
+            datas = datas[:subset]
+
+        logger.info(f"Number of tasks: {len(datas)}")
+
+        # Initialize results storage
+        self._results = []
+
+        # Process tasks
+        with open(self.save_to, "w") as f:
+            for task in tqdm(datas, desc="Running"):
+                if not self._prepare_task(task):
+                    continue
+
+                try:
+                    result = workforce.process_task(self._create_task(task))
+                    self._process_workforce_result(workforce, task, result, f, None)
+                except Exception as e:
+                    self._process_workforce_result(workforce, task, None, f, e)
+                    workforce._running = False
+                finally:
+                    workforce._running = False
+                    workforce.reset()
 
         return self._generate_summary()
 
@@ -307,6 +382,17 @@ class GAIABenchmark(BaseBenchmark):
             content=task["Question"],
         )
 
+    def _create_task(self, task: Dict[str, Any]) -> BaseMessage:
+        r"""Create a user message from a task.
+        
+        Args:
+            task (Dict[str, Any]): The task to create the message from.
+            
+        Returns:
+            BaseMessage: The message created from the task.
+        """
+        return Task(id=str(task["task_id"]), content=task["Question"])
+
     def _process_result(
         self,
         agent: ChatAgent,
@@ -314,7 +400,14 @@ class GAIABenchmark(BaseBenchmark):
         result: Any,
         file_obj: Any,
     ) -> None:
-        r"""Process and store the result of a task."""
+        r"""Process and store the result of a task.
+
+        Args:
+            agent (ChatAgent): The agent that processed the task.
+            task (Dict[str, Any]): The task that was processed.
+            result (Any): The result of processing the task.
+            file_obj (Any): The file object to write the results to.
+        """
         model_answer = self.get_final_answer(result.msgs[0].content)
         final_answer = task["Final answer"]
         score = self.question_scorer(model_answer, final_answer)
@@ -330,6 +423,61 @@ class GAIABenchmark(BaseBenchmark):
             "error": None,
             "score": int(score),
             "history": agent.memory.get_context(),
+        }
+        self._results.append(result_data)
+        file_obj.write(json.dumps(result_data, indent=2) + "\n")
+        file_obj.flush()
+
+    def _process_workforce_result(
+        self,
+        workforce: Workforce,
+        task: Dict[str, Any],
+        result: Optional[Task],
+        file_obj: Any,
+        err: Optional[Exception],
+    ) -> None:
+        r"""Process and store the result of a task.
+
+        Args:
+            workforce (Workforce): The workforce that processed the task.
+            task (Dict[str, Any]): The task that was processed.
+            result (Optional[Task]): The result of processing the task.
+            file_obj (Any): The file object to write the results to.
+            err (Optional[Exception]): The error encountered during processing.
+        """
+        if err is None:
+            model_answer = self.get_final_answer(result.result)
+            final_answer = task["Final answer"]
+            score = self.question_scorer(model_answer, final_answer)
+        else:
+            model_answer = "ERROR"
+            final_answer = task["Final answer"]
+            score = 0
+        agents = [workforce.coordinator_agent, workforce.task_agent] + [
+            agent for agent in workforce._children if isinstance(agent, Worker)
+        ]
+        agent_names = ["coordinator", "task"] + [agent.node_id for agent in agents[2:]]
+        for i in range(2, len(agents)):
+            agents[i] = agents[i].worker
+        history, tool_calls = {}, {}
+
+        for agent, agent_name in zip(agents, agent_names):
+            history[agent_name] = agent.memory.get_context()[0]
+            tool_calls[agent_name] = []
+            for h in history[agent_name]:
+                if h.get("function_call", None):
+                    tool_calls[agent_name].append(h["function_call"])
+
+        result_data = {
+            "task_id": task["task_id"],
+            "question": task["Question"],
+            "level": task["Level"],
+            "model_answer": model_answer,
+            "ground_truth": final_answer,
+            "tool_calls": tool_calls,
+            "error": str(err) if err else None,
+            "score": int(score),
+            "history": history,
         }
         self._results.append(result_data)
         file_obj.write(json.dumps(result_data, indent=2) + "\n")
