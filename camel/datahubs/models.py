@@ -21,4 +21,4 @@ class Record(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
     
     class Config:
-        extra = "allow"  # 允许任意额外字段
+        extra = "allow"  # Allow any additional fields

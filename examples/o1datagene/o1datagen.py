@@ -11,11 +11,11 @@ from camel.o1datagen.o1datagen import O1DataGene
 
 # ### First we will set the OPENAI_API_KEY that will be used to generate the data.
 
-# from getpass import getpass
+from getpass import getpass
 
 
-# openai_api_key = getpass('Enter your OpenAI API key: ')
-# os.environ["OPENAI_API_KEY"] = openai_api_key
+openai_api_key = getpass('Enter your OpenAI API key: ')
+os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
 # ### Create a system message to define agent's default role and behaviors.
