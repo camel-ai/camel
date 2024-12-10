@@ -132,6 +132,7 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
+e2b-code-interpreter = "^1.0.3"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
