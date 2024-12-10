@@ -11,15 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from typing import Any, Dict, Optional
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from pydantic import BaseModel
 
-__version__ = '0.2.11'
 
-__all__ = [
-    '__version__',
-    'camel',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+class Record(BaseModel):
+    id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    content: Dict[str, Any]
