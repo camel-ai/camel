@@ -41,9 +41,12 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
+    # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
     GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
+    GROQ_LLAMA_3_3_70B_PREVIEW = "llama-3.3-70b-specdec"
     GROQ_LLAMA_3_8B = "llama3-8b-8192"
     GROQ_LLAMA_3_70B = "llama3-70b-8192"
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
@@ -76,6 +79,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_1_405B_INSTRUCT = "meta/llama-3.1-405b-instruct"
     NVIDIA_LLAMA3_2_1B_INSTRUCT = "meta/llama-3.2-1b-instruct"
     NVIDIA_LLAMA3_2_3B_INSTRUCT = "meta/llama-3.2-3b-instruct"
+    NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
@@ -211,6 +215,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_3_70B,
+            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
@@ -249,6 +255,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
         }
 
     @property
@@ -362,6 +369,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
@@ -428,6 +436,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
+            ModelType.GROQ_LLAMA_3_3_70B,
         }:
             return 128_000
         elif self in {
