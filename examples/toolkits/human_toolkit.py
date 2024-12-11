@@ -41,8 +41,8 @@ response = agent.step(
 )
 
 print(response.msgs[0].content)
-
-'''
+"""
+==========================================================================
 What is the capital of France?
 Your reply: Paris
 
@@ -56,4 +56,5 @@ Your reply: Tokyo
 That's correct! Tokyo is the capital of Japan. Would you like to continue with
 another question?
 Your reply: no
-'''
+==========================================================================
+"""

@@ -27,6 +27,8 @@ from .dalle_toolkit import DalleToolkit
 from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
+from .meshy_toolkit import MeshyToolkit
+
 from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
 from .code_execution import CodeExecutionToolkit
@@ -70,4 +72,5 @@ __all__ = [
     'HumanToolkit',
     'VideoDownloaderToolkit',
     'StripeToolkit',
+    'MeshyToolkit',
 ]
