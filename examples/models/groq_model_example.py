@@ -13,14 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import NvidiaConfig
+from camel.configs import GroqConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.GROQ,
     model_type=ModelType.GROQ_LLAMA_3_3_70B,
-    model_config_dict=NvidiaConfig(temperature=0.2).as_dict(),
+    model_config_dict=GroqConfig(temperature=0.2).as_dict(),
 )
 
 # Define system message
@@ -35,3 +35,14 @@ user_msg = """Say hi to CAMEL AI, one open-source community
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
+
+'''
+===============================================================================
+Hello to the CAMEL AI community. It's great to see a group of like-minded 
+individuals coming together to explore and advance the field of autonomous and 
+communicative agents. Your open-source approach is truly commendable, as it 
+fosters collaboration, innovation, and transparency. I'm excited to learn more 
+about your projects and initiatives, and I'm happy to help in any way I can. 
+Keep pushing the boundaries of AI research and development!
+===============================================================================
+'''
