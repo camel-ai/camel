@@ -16,7 +16,7 @@ import json
 import logging
 import os
 import random
-from pathlib import Path
+import requests
 from typing import Any, Dict, Literal, Optional
 
 from tqdm import tqdm
@@ -160,20 +160,47 @@ class APIBenchBenchmark(BaseBenchmark):
             local_dir_use_symlinks=True,
         )
 
+        def download_github_subdirectory(
+            repo, subdir, branch="main", data_dir=self.data_dir
+        ):
+            api_url = f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            response = requests.get(api_url, headers=headers)
+            response.raise_for_status()
+            files = response.json()
+            os.makedirs(data_dir, exist_ok=True)
+
+            for file in tqdm(files, desc="Downloading"):
+                file_path = data_dir / file["name"]
+
+                if file["type"] == "file":
+                    file_url = file["download_url"]
+                    file_response = requests.get(file_url)
+                    with open(file_path, "wb") as f:
+                        f.write(file_response.content)
+                elif file["type"] == "dir":
+                    download_github_subdirectory(
+                        repo,
+                        os.path.join(subdir, file["name"]),
+                        branch,
+                        file_path,
+                    )
+
+        repo = "ShishirPatil/gorilla"
+        subdir = "eval/eval-data/questions"
+
+        download_github_subdirectory(repo, subdir)
+
     def load(self, dataset_name):
         r"""Load the Nexus Benchmark dataset.
 
         Args:
             dataset_name: Name of the dataset to be loaded.
         """
-        current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
         for label in ['api', 'eval', 'questions']:
             file_name = dataset_mapping[dataset_name][label]
             if label == 'questions':
-                file_path = (
-                    current_dir
-                    / f"apibench_eval/questions/{dataset_name}/{file_name}"
-                )
+                file_path = self.data_dir / dataset_name / file_name
                 questions = []
                 with open(file_path, "r") as f:
                     for line in f:

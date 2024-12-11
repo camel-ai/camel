@@ -25,8 +25,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
+import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
 
@@ -42,7 +41,7 @@ def get_all_sub_trees(root_node):
         if cur_node.child_count > 0:
             sub_tree_sexp_list.append(
                 [
-                    cur_node.sexp(),
+                    str(cur_node),
                     cur_depth,
                     cur_node,
                     cur_node.children[0].text,
@@ -50,7 +49,7 @@ def get_all_sub_trees(root_node):
             )
         else:
             sub_tree_sexp_list.append(
-                [cur_node.sexp(), cur_depth, cur_node, None]
+                [str(cur_node), cur_depth, cur_node, None]
             )
         for child_node in cur_node.children:
             if len(child_node.children) != 0:
@@ -60,12 +59,9 @@ def get_all_sub_trees(root_node):
 
 
 # Parse the program into AST trees
-def ast_parse(candidate, lang="python"):
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    lang_path = os.path.join(current_dir, "codebleu/parser/my-languages.so")
-    LANGUAGE = Language(lang_path, lang)
-    parser = Parser()
-    parser.set_language(LANGUAGE)
+def ast_parse(candidate):
+    PY_LANGUAGE = Language(tspython.language())
+    parser = Parser(PY_LANGUAGE)
 
     candidate_tree = parser.parse(bytes(candidate, "utf8")).root_node
     return candidate_tree

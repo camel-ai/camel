@@ -42,7 +42,8 @@ curl_cffi = "0.6.2"
 pandoc = "*"
 rouge = "*"
 pillow = "^10.2.0"
-tree-sitter = "^0.20.4"
+tree-sitter = "*"
+tree-sitter-python = "*"
 googletrans-py = "4.0.0"
 
 # model-platforms
@@ -436,6 +437,8 @@ module = [
     "numpy",
     "pandas",
     "torch",
+    "tree-sitter",
+    "tree-sitter-python",
     "sqlalchemy",
     "google.cloud.sql.connector",
     "gradio",

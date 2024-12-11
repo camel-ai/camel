@@ -16,11 +16,12 @@
 import json
 import logging
 import os
+import random
 import re
 import requests
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from rouge import Rouge
@@ -50,6 +51,7 @@ class APIBankBenchmark(BaseBenchmark):
         save_to: str,
         processes: int = 1,
     ):
+        # Predefine data_dir for easier import
         super().__init__("apibank", "api_bank", save_to, processes)
         self._data: Dict[str, List[APIBankSample]] = dict()  # type: ignore[assignment]
 
@@ -96,9 +98,9 @@ class APIBankBenchmark(BaseBenchmark):
         Args:
             level: Level to run benchmark on.
         """
-        if level == "level-1":
+        if level == "level-1" or 1:
             file_path = Path("api_bank/lv1-lv2-samples/level-1-given-desc")
-        elif level == 'level-2':
+        elif level == 'level-2' or 2:
             file_path = Path("api_bank/lv1-lv2-samples/level-2-toolsearcher")
         jsonl_files = [
             f for f in os.listdir(file_path) if f.endswith('.jsonl')
@@ -111,7 +113,7 @@ class APIBankBenchmark(BaseBenchmark):
                 samples = APIBankSample.from_chat_history(history)
                 self._data[file.rsplit('.', 1)[0]] = samples
 
-        # Change import to relative import for the downloaded python files.
+        # Change import to relative import in the downloaded python files
         def process_files(folder_path, replacements):
             for file in os.listdir(folder_path):
                 if file.endswith(".py"):
@@ -122,11 +124,9 @@ class APIBankBenchmark(BaseBenchmark):
 
                         original_content = content
 
-                        # Apply each replacement and debug each match
                         for pattern, replacement in replacements:
                             content = re.sub(pattern, replacement, content)
 
-                        # Write changes only if content is updated
                         if content != original_content:
                             with open(
                                 file_path, "w", encoding="utf-8"
@@ -159,8 +159,8 @@ class APIBankBenchmark(BaseBenchmark):
         agent: ChatAgent,
         level: Literal["level-1", "level-2"],
         api_test_enabled=True,
-        # randomize: bool = False,
-        # subset: Optional[int] = None,
+        randomize: bool = False,
+        subset: Optional[int] = None,
     ) -> Dict[str, Any]:
         r"""Run the benchmark.
 
@@ -189,6 +189,13 @@ class APIBankBenchmark(BaseBenchmark):
         logger.info(f"Running APIBench benchmark on {level}.")
         self.load(level)
         datas = self._data
+        if randomize:
+            randomized_items = list(datas.items())
+            random.shuffle(randomized_items)
+            datas = dict(randomized_items)
+        if subset:
+            datas = dict(list(datas.items())[:subset])
+
         logger.info(f"Number of tasks: {len(datas)}")
         self._results = []
 
@@ -395,6 +402,8 @@ class APIBankBenchmark(BaseBenchmark):
             return {'Dialog_score': np.mean(rougel_scores)}
 
 
+# Migrated from the original repo:
+# https://github.com/AlibabaResearch/DAMO-ConvAI/tree/main/api-bank
 def agent_call(messages: List[Dict], agent: ChatAgent):
     r"""Add messages to agent memory and get response."""
     for i, msg in enumerate(messages):
@@ -478,8 +487,8 @@ class Evaluator:
     r"""Evaluator for APIBank benchmark."""
 
     def __init__(self, samples: List[APIBankSample]):
-        # Place holder for import as import
-        # only works files have been downloaded
+        # Place holder for import as the import
+        # only works after the files have been downloaded
         try:
             from api_bank.tool_manager import ToolManager  # type: ignore[import-not-found]
         except Exception as e:
