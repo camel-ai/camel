@@ -69,4 +69,5 @@ __all__ = [
     'ArxivToolkit',
     'HumanToolkit',
     'VideoDownloaderToolkit',
+    'StripeToolkit',
 ]
