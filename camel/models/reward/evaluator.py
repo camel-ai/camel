@@ -57,6 +57,8 @@ class Evaluator:
         """
         scores = self.evaluate(messages)
         for score_type, threshold in thresholds.items():
+            if score_type not in scores:
+                raise ValueError(f"Score type {score_type} not found.")
             if scores.get(score_type, 0) < threshold:
                 return False
         return True

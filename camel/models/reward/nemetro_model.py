@@ -107,7 +107,6 @@ class NemotroRewardModel(BaseRewardModel):
                 if logprobs
                 else {}
             )
-        except (KeyError, IndexError):
-            scores = {"error": 0.0}
-
-        return scores
+            return scores
+        except Exception as e:
+            raise ValueError(f"Failed to parse scores: {e}")
