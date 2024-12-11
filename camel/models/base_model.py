@@ -21,6 +21,7 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
+    ParsedChatCompletion,
     UnifiedModelType,
 )
 from camel.utils import BaseTokenCounter
@@ -113,6 +114,31 @@ class BaseModelBackend(ABC):
             int: Number of tokens in the messages.
         """
         return self.token_counter.count_tokens_from_messages(messages)
+
+    def _to_chat_completion(
+        self, response: "ParsedChatCompletion"
+    ) -> ChatCompletion:
+        # TODO: Handle n > 1 or warn consumers it's not supported
+        choice = dict(
+            index=response.choices[0].index,
+            message={
+                "role": response.choices[0].message.role,
+                "content": response.choices[0].message.content,
+                "tool_calls": response.choices[0].message.tool_calls,
+                "parsed": response.choices[0].message.parsed,
+            },
+            finish_reason=response.choices[0].finish_reason,
+        )
+
+        obj = ChatCompletion.construct(
+            id=response.id,
+            choices=[choice],
+            created=response.created,
+            model=response.model,
+            object="chat.completion",
+            usage=response.usage,
+        )
+        return obj
 
     @property
     def token_limit(self) -> int:
