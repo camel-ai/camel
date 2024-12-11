@@ -41,6 +41,7 @@ from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
+from .stripe_toolkit import StripeToolkit
 from .video_toolkit import VideoDownloaderToolkit
 
 __all__ = [
@@ -70,5 +71,6 @@ __all__ = [
     'ArxivToolkit',
     'HumanToolkit',
     'VideoDownloaderToolkit',
+    'StripeToolkit',
     'MeshyToolkit',
 ]
