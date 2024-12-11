@@ -12,10 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+# ruff: noqa: E402
 import json
 import logging
 import os
 import re
+import requests
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Literal
 
@@ -27,193 +30,7 @@ from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
 
-
-def parse_api_call():
-    return ""
-
-
-class ToolManager:
-    def __init__(self):
-        pass
-
-    def get_api_description(self, api_name):
-        pass
-
-
 logger = logging.getLogger(__name__)
-
-
-def agent_call(messages: List[Dict], agent: ChatAgent):
-    r"""Add messages to agent memory and get response."""
-    for i, msg in enumerate(messages):
-        if msg['role'] == 'user':
-            message = BaseMessage.make_user_message(
-                role_name="CAMEL User", content=msg['content']
-            )
-        elif msg['role'] == 'assistant':
-            message = BaseMessage.make_assistant_message(
-                role_name="CAMEL Assistant", content=msg['content']
-            )
-        elif msg['role'] == 'system':
-            message = BaseMessage.make_assistant_message(
-                role_name="System", content=msg['content']
-            )
-        else:
-            raise ValueError(f"Unrecognized role: {msg['role']}")
-
-        if i == len(messages) - 1:
-            break
-        agent.record_message(message)
-
-    response = agent.step(message)
-    model_output = response.msgs[0].content
-    logger.info("\nanswer:", model_output)
-    agent.reset()
-    return model_output
-
-
-def calculate_rouge_l_score(reference, hypothesis):
-    r"""Calculate rouge l score between hypothesis and reference."""
-    rouge = Rouge()
-    scores = rouge.get_scores(hypothesis, reference)
-    rouge_l_score = scores[0]['rouge-l']['f']
-    return rouge_l_score
-
-
-def get_api_call(model_output):
-    r"""Parse api call from model output."""
-    api_call_pattern = r"\[(\w+)\((.*)\)\]"
-    api_call_pattern = re.compile(api_call_pattern)
-    match = api_call_pattern.search(model_output)
-    if match:
-        return match.group(0)
-    else:
-        return None
-
-
-class APIBankSample:
-    r"""APIBank sample used to load the datasets."""
-
-    def __init__(self, chat_history, apis, ground_truth):
-        self.chat_history = chat_history
-        self.apis = apis
-        self.ground_truth = ground_truth
-
-    def __repr__(self):
-        return 'Sample(chat_history={}, apis={}, ground_truth={})'.format(
-            self.chat_history, self.apis, self.ground_truth
-        )
-
-    @classmethod
-    def from_chat_history(cls, chat_history):
-        apis = set()
-        api_positions = []
-        for i, item in enumerate(chat_history):
-            if item['role'] == 'API':
-                apis.add(item['api_name'])
-                api_positions.append(i)
-
-        samples = []
-        for i in api_positions:
-            sample = cls(chat_history[:i], apis, chat_history[i])
-            samples.append(sample)
-            sample = cls(chat_history[: i + 1], apis, chat_history[i + 1])
-            samples.append(sample)
-
-        return samples
-
-
-class Evaluator:
-    r"""Evaluator for APIBank benchmark."""
-
-    def __init__(self, samples: List[APIBankSample]):
-        self.dataset = samples
-        self.sample_ids = list(range(len(self.dataset)))
-
-    def get_all_sample_ids(self):
-        return self.sample_ids
-
-    def get_api_description(self, api_name):
-        tool_manager = ToolManager()
-        return tool_manager.get_api_description(api_name)
-
-    def get_model_input(self, sample_id: int):
-        sample = self.dataset[sample_id]
-        apis = sample.apis
-        chat_history = sample.chat_history
-        tool_manager = ToolManager()
-        api_descriptions = []
-        for api_name in apis:
-            api_descriptions.append(tool_manager.get_api_description(api_name))
-        api_description = '\n'.join(api_descriptions)
-        return api_description, chat_history
-
-    def evaluate(self, sample_id, model_output):
-        # model_output [ApiName(param1=value1, param2=value2), ...)]
-        tool_manager = ToolManager()
-
-        sample = self.dataset[sample_id]
-        ground_truth = sample.ground_truth
-        if ground_truth['role'] == 'API':
-            api_name, param_dict = parse_api_call(model_output)
-            if api_name != ground_truth['api_name']:
-                return False, 'API Name Mismatch: {} vs {}'.format(
-                    api_name, ground_truth['api_name']
-                )
-            try:
-                result = tool_manager.api_call(api_name, **param_dict)
-            except Exception as e:
-                return False, str(e)
-            api = tool_manager.init_tool(api_name)
-            try:
-                correct = api.check_api_call_correctness(
-                    result, ground_truth['result']
-                )
-            except KeyError:
-                correct = False
-                result = 'KeyError' + str(result)
-            return correct, result
-        elif ground_truth['role'] == 'AI':
-            score = calculate_rouge_l_score(ground_truth['text'], model_output)
-            return round(score, 4)
-
-
-api_call_prompt = '''
-Based on the given API description and the existing \
-conversation history 1..t, please generate the API request \
-that the AI should call in step t+1 and output it in the \
-format of [ApiName(key1='value1', key2='value2', ...)], \
-replace the ApiName with the actual API name, and \
-replace the key and value with the actual parameters. \
-Your output should start with a square bracket "[" \
-and end with a square bracket "]". Do not output any \
-other explanation or prompt or the result of the API call in your output. 
-This year is 2023.
-Input: 
-User: [User's utterence]
-AI: [AI's utterence]
-
-Expected output:
-[ApiName(key1='value1', key2='value2', ...)]
-
-API descriptions:
-'''
-
-response_prompt = '''
-Based on the given API description and the existing \
-conversation history 1..t, please generate the next \
-dialog that the AI should response after the API call t.
-This year is 2023.
-Input: 
-User: [User's utterence]
-AI: [AI's utterence]
-[ApiName(key1='value1', key2='value2', …)]
-
-Expected output:
-AI: [AI's utterence]
-
-API descriptions:
-'''
 
 
 class APIBankBenchmark(BaseBenchmark):
@@ -223,7 +40,6 @@ class APIBankBenchmark(BaseBenchmark):
     <https://github.com/AlibabaResearch/DAMO-ConvAI/tree/main/api-bank>.
 
     Args:
-        data_dir (str): The directory to save the data.
         save_to (str): The file to save the results.
         processes (int, optional): The number of processes to use.
             (default: :obj:`1`)
@@ -234,15 +50,45 @@ class APIBankBenchmark(BaseBenchmark):
         save_to: str,
         processes: int = 1,
     ):
-        super().__init__(
-            "apibank", 'camel/benchmarks/apibank_eval', save_to, processes
-        )
-        _data: Dict[str, List[APIBankSample]] = dict()  # type: ignore[assignment]
+        super().__init__("apibank", "api_bank", save_to, processes)
+        self._data: Dict[str, List[APIBankSample]] = dict()  # type: ignore[assignment]
 
     def download(self):
-        r"""APIBank benchmark dataset is not available for download from
-        huggingface."""
-        logger.info("Dataset is not available for download.")
+        r"""Download APIBank dataset and code from Github."""
+
+        def download_github_subdirectory(
+            repo, subdir, branch="main", data_dir=self.data_dir
+        ):
+            api_url = f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            response = requests.get(api_url, headers=headers)
+            response.raise_for_status()
+            files = response.json()
+            os.makedirs(data_dir, exist_ok=True)
+
+            for file in tqdm(files, desc="Downloading"):
+                file_path = os.path.join(data_dir, file["name"])
+
+                if file["type"] == "file":
+                    file_url = file["download_url"]
+                    file_response = requests.get(file_url)
+                    with open(file_path, "wb") as f:
+                        f.write(file_response.content)
+                elif file["type"] == "dir":
+                    download_github_subdirectory(
+                        repo,
+                        os.path.join(subdir, file["name"]),
+                        branch,
+                        file_path,
+                    )
+
+        repo = "AlibabaResearch/DAMO-ConvAI"
+        subdir = "api-bank"
+
+        download_github_subdirectory(repo, subdir)
+
+        sys.path.insert(0, self.data_dir)
+        logger.info("Download completed.")
 
     def load(self, level):
         r"""Load the APIBank Benchmark dataset.
@@ -250,16 +96,10 @@ class APIBankBenchmark(BaseBenchmark):
         Args:
             level: Level to run benchmark on.
         """
-        current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
         if level == "level-1":
-            file_path = (
-                current_dir / "apibank_eval/lv1-lv2-samples/level-1-given-desc"
-            )
+            file_path = Path("api_bank/lv1-lv2-samples/level-1-given-desc")
         elif level == 'level-2':
-            file_path = (
-                current_dir
-                / "apibank_eval/lv1-lv2-samples/level-2-toolsearcher"
-            )
+            file_path = Path("api_bank/lv1-lv2-samples/level-2-toolsearcher")
         jsonl_files = [
             f for f in os.listdir(file_path) if f.endswith('.jsonl')
         ]
@@ -270,6 +110,49 @@ class APIBankBenchmark(BaseBenchmark):
                     history.append(json.loads(line))
                 samples = APIBankSample.from_chat_history(history)
                 self._data[file.rsplit('.', 1)[0]] = samples
+
+        # Change import to relative import for the downloaded python files.
+        def process_files(folder_path, replacements):
+            for file in os.listdir(folder_path):
+                if file.endswith(".py"):
+                    file_path = os.path.join(folder_path, file)
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as file:
+                            content = file.read()
+
+                        original_content = content
+
+                        # Apply each replacement and debug each match
+                        for pattern, replacement in replacements:
+                            content = re.sub(pattern, replacement, content)
+
+                        # Write changes only if content is updated
+                        if content != original_content:
+                            with open(
+                                file_path, "w", encoding="utf-8"
+                            ) as file:
+                                file.write(content)
+                            logger.info(f"Updated file: {file_path}")
+
+                    except Exception as e:
+                        logger.info(f"Error processing file {file_path}: {e}")
+
+        api_bank_folder = "api_bank"
+        apis_folder = os.path.join(api_bank_folder, "apis")
+
+        apis_replacements = [
+            (r"from apis.api", "from .api"),
+            (r"from apis import", "from .api import"),
+        ]
+
+        api_bank_replacements = [
+            (r"from apis", "from .apis"),
+            (r"from api_call_extraction", "from .api_call_extraction"),
+            (r"f'{basename}", r"f'api_bank.{basename}"),
+        ]
+
+        process_files(apis_folder, apis_replacements)
+        process_files(api_bank_folder, api_bank_replacements)
 
     def run(  # type: ignore[override, return]
         self,
@@ -510,3 +393,185 @@ class APIBankBenchmark(BaseBenchmark):
             }
         elif dialog_test_enabled:
             return {'Dialog_score': np.mean(rougel_scores)}
+
+
+def agent_call(messages: List[Dict], agent: ChatAgent):
+    r"""Add messages to agent memory and get response."""
+    for i, msg in enumerate(messages):
+        if msg['role'] == 'user':
+            message = BaseMessage.make_user_message(
+                role_name="CAMEL User", content=msg['content']
+            )
+        elif msg['role'] == 'assistant':
+            message = BaseMessage.make_assistant_message(
+                role_name="CAMEL Assistant", content=msg['content']
+            )
+        elif msg['role'] == 'system':
+            message = BaseMessage.make_assistant_message(
+                role_name="System", content=msg['content']
+            )
+        else:
+            raise ValueError(f"Unrecognized role: {msg['role']}")
+
+        if i == len(messages) - 1:
+            break
+        agent.record_message(message)
+
+    response = agent.step(message)
+    model_output = response.msgs[0].content
+    agent.reset()
+    return model_output
+
+
+def calculate_rouge_l_score(reference, hypothesis):
+    r"""Calculate rouge l score between hypothesis and reference."""
+    rouge = Rouge()
+    scores = rouge.get_scores(hypothesis, reference)
+    rouge_l_score = scores[0]['rouge-l']['f']
+    return rouge_l_score
+
+
+def get_api_call(model_output):
+    r"""Parse api call from model output."""
+    api_call_pattern = r"\[(\w+)\((.*)\)\]"
+    api_call_pattern = re.compile(api_call_pattern)
+    match = api_call_pattern.search(model_output)
+    if match:
+        return match.group(0)
+    else:
+        return None
+
+
+class APIBankSample:
+    r"""APIBank sample used to load the datasets."""
+
+    def __init__(self, chat_history, apis, ground_truth):
+        self.chat_history = chat_history
+        self.apis = apis
+        self.ground_truth = ground_truth
+
+    def __repr__(self):
+        return 'Sample(chat_history={}, apis={}, ground_truth={})'.format(
+            self.chat_history, self.apis, self.ground_truth
+        )
+
+    @classmethod
+    def from_chat_history(cls, chat_history):
+        apis = set()
+        api_positions = []
+        for i, item in enumerate(chat_history):
+            if item['role'] == 'API':
+                apis.add(item['api_name'])
+                api_positions.append(i)
+
+        samples = []
+        for i in api_positions:
+            sample = cls(chat_history[:i], apis, chat_history[i])
+            samples.append(sample)
+            sample = cls(chat_history[: i + 1], apis, chat_history[i + 1])
+            samples.append(sample)
+
+        return samples
+
+
+class Evaluator:
+    r"""Evaluator for APIBank benchmark."""
+
+    def __init__(self, samples: List[APIBankSample]):
+        # Place holder for import as import
+        # only works files have been downloaded
+        try:
+            from api_bank.tool_manager import ToolManager  # type: ignore[import-not-found]
+        except Exception as e:
+            logger.info(f"{e}, Module will be imported after download.")
+        self.dataset = samples
+        self.sample_ids = list(range(len(self.dataset)))
+        os.chdir("api_bank")
+        self.tool_manager = ToolManager("apis")
+        os.chdir("..")
+
+    def get_all_sample_ids(self):
+        return self.sample_ids
+
+    def get_api_description(self, api_name):
+        return self.tool_manager.get_api_description(api_name)
+
+    def get_model_input(self, sample_id: int):
+        sample = self.dataset[sample_id]
+        apis = sample.apis
+        chat_history = sample.chat_history
+        api_descriptions = []
+        for api_name in apis:
+            api_descriptions.append(
+                self.tool_manager.get_api_description(api_name)
+            )
+        api_description = '\n'.join(api_descriptions)
+        return api_description, chat_history
+
+    def evaluate(self, sample_id, model_output):
+        try:
+            from api_bank.api_call_extraction import parse_api_call  # type: ignore[import-not-found]
+        except Exception as e:
+            logger.info(f"{e}, Module will be imported after download.")
+        sample = self.dataset[sample_id]
+        ground_truth = sample.ground_truth
+        if ground_truth['role'] == 'API':
+            api_name, param_dict = parse_api_call(model_output)
+            if api_name != ground_truth['api_name']:
+                return False, 'API Name Mismatch: {} vs {}'.format(
+                    api_name, ground_truth['api_name']
+                )
+            try:
+                result = self.tool_manager.api_call(api_name, **param_dict)
+            except Exception as e:
+                return False, str(e)
+            api = self.tool_manager.init_tool(api_name)
+            try:
+                correct = api.check_api_call_correctness(
+                    result, ground_truth['result']
+                )
+            except KeyError:
+                correct = False
+                result = 'KeyError' + str(result)
+            return correct, result
+        elif ground_truth['role'] == 'AI':
+            score = calculate_rouge_l_score(ground_truth['text'], model_output)
+            return round(score, 4)
+
+
+api_call_prompt = '''
+Based on the given API description and the existing \
+conversation history 1..t, please generate the API request \
+that the AI should call in step t+1 and output it in the \
+format of [ApiName(key1='value1', key2='value2', ...)], \
+replace the ApiName with the actual API name, and \
+replace the key and value with the actual parameters. \
+Your output should start with a square bracket "[" \
+and end with a square bracket "]". Do not output any \
+other explanation or prompt or the result of the API call in your output. 
+This year is 2023.
+Input: 
+User: [User's utterence]
+AI: [AI's utterence]
+
+Expected output:
+[ApiName(key1='value1', key2='value2', ...)]
+
+API descriptions:
+'''
+
+response_prompt = '''
+Based on the given API description and the existing \
+conversation history 1..t, please generate the next \
+dialog that the AI should response after the API call t.
+This year is 2023.
+Input: 
+User: [User's utterence]
+AI: [AI's utterence]
+[ApiName(key1='value1', key2='value2', …)]
+
+Expected output:
+AI: [AI's utterence]
+
+API descriptions:
+'''

@@ -402,7 +402,7 @@ ignore = [
     "C408", # we have used lots of dict(...) instead of literal
 ]
 
-per-file-ignores = { "camel/benchmarks/__init__.py" = ["I001"] }
+per-file-ignores = { "camel/benchmarks/__init__.py" = ["I001"], "camel/benchmarks/apibank.py" = ["I001"], "camel/benchmarks/apibench.py" = ["I001"] }
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
