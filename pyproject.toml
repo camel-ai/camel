@@ -457,6 +457,7 @@ module = [
     "unstructured.*",
     "nltk",
     "e2d",
+    "e2b_code_interpreter",
     "firecrawl",
     "imageio",
     "rank_bm25",
