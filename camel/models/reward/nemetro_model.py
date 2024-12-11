@@ -16,7 +16,6 @@ from typing import Dict, List, Optional, Union
 
 from openai import OpenAI
 
-from camel.messages import OpenAIMessage
 from camel.models.reward import BaseRewardModel
 from camel.types import ChatCompletion, ModelType
 from camel.utils import api_keys_required
@@ -55,18 +54,19 @@ class NemotroRewardModel(BaseRewardModel):
         )
 
     @api_keys_required("NVIDIA_API_KEY")
-    def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
+    def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages using the Nemetro model.
 
         Args:
-            messages (List[OpenAIMessage]): A list of messages where each
-                message is an OpenAIMessage object.
+            messages (List[Dict[str, str]]): A list of messages where each
+                message is a dictionary format.
 
         Returns:
-            ChatCompletion: A ChatCompletion object with the scores.
+            Dict[str, float]:  A dictionary mapping score types to their
+                values.
         """
         response = self._client.chat.completions.create(
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
             model=self.model_type,
         )
         scores = self._parse_scores(response)

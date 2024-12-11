@@ -14,7 +14,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
 
-from camel.messages import OpenAIMessage
 from camel.types import ModelType
 
 
@@ -36,7 +35,7 @@ class BaseRewardModel(ABC):
         self.url = url
 
     @abstractmethod
-    def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
+    def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages and return scores based on different
         criteria.
 

@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Dict, List
 
-from camel.messages import OpenAIMessage
 from camel.models.reward import BaseRewardModel
 
 
@@ -28,7 +27,7 @@ class Evaluator:
     def __init__(self, reward_model: BaseRewardModel):
         self.reward_model = reward_model
 
-    def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
+    def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages using the reward model.
 
         Args:
@@ -42,14 +41,14 @@ class Evaluator:
         return scores
 
     def filter_data(
-        self, messages: List[OpenAIMessage], thresholds: Dict[str, float]
+        self, messages: List[Dict[str, str]], thresholds: Dict[str, float]
     ) -> bool:
         r"""Filter messages based on the scores.
 
         Args:
             messages (List[Dict[str, str]]): A list of messages where each
                 message is a dictionary with 'role' and 'content'.
-            threshold (Dict[str, float]): A dictionary mapping score types to
+            thresholds (Dict[str, float]): A dictionary mapping score types to
                 their values.
 
         Returns:

@@ -11,15 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from camel.models.reward import BaseRewardModel
-from typing import Union, Optional, List, Dict
-from camel.messages import OpenAIMessage
-from camel.types import ModelType
+from typing import Dict, List, Optional, Union
+
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+from camel.models.reward import BaseRewardModel
+from camel.types import ModelType
+
+
 class SkyworkRewardModel(BaseRewardModel):
-    r"""Reward model based on the transformers, it will download the model 
+    r"""Reward model based on the transformers, it will download the model
     from huggingface.
 
     Args:
@@ -43,18 +45,19 @@ class SkyworkRewardModel(BaseRewardModel):
             device_map=device,
             attn_implementation="flash_attention_2",
             num_labels=1,
-            )
+        )
         self._tokenizer = AutoTokenizer.from_pretrained(model_type)
 
-    def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
+    def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages using the Skywork model.
 
         Args:
-            messages (List[OpenAIMessage]): A list of messages where each
-                message is an OpenAIMessage object.
+            messages (List[Dict[str, str]]): A list of messages where each
+                message is a dictionary format.
 
         Returns:
-            ChatCompletion: A ChatCompletion object with the scores.
+            Dict[str, float]:  A dictionary mapping score types to their
+                values.
         """
         inputs = self._tokenizer.apply_chat_template(
             messages,
@@ -64,11 +67,10 @@ class SkyworkRewardModel(BaseRewardModel):
         with torch.no_grad():
             score = self._client(inputs).logits[0][0].item()
             return {"score": score}
-        
+
     def get_scores_types(self) -> List[str]:
         """get the scores types
         Returns:
             List[str]: list of scores types
         """
         return ["score"]
-    
