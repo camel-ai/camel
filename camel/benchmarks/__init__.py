@@ -12,11 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apibank import APIBankBenchmark
-from .apibench import APIBenchBenchmark
+# ruff: noqa: E402
 from .base import BaseBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
+from .apibank import APIBankBenchmark
+from .apibench import APIBenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
