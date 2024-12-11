@@ -19,6 +19,7 @@ import pandas as pd
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.types.openbb_types import OpenBBType
 from camel.utils import dependencies_required
 
 
@@ -49,6 +50,8 @@ class OpenBBToolkit(BaseToolkit):
         >>> print(df)
     """
 
+    client: OpenBBType
+
     @dependencies_required("openbb")
     def __init__(self) -> None:
         """Initialize the OpenBBToolkit.
@@ -56,9 +59,11 @@ class OpenBBToolkit(BaseToolkit):
         This method sets up the OpenBB client and initializes the OpenBB
         Hub account system.
         """
+        from typing import cast
+
         from openbb import obb
 
-        self.client = obb
+        self.client = cast(OpenBBType, obb)
         self._init_api_keys(silent=True)
 
     def _init_api_keys(self, silent: bool = False) -> None:
@@ -512,7 +517,7 @@ class OpenBBToolkit(BaseToolkit):
         provider: str = "fmp",
         min_market_cap: Optional[float] = None,
         return_type: Literal["df", "raw"] = "df",
-    ) -> Union[pd.DataFrame, Dict]:
+    ) -> Union[pd.DataFrame, Dict[str, Any]]:
         """Get earnings calendar events.
 
         Args:
@@ -532,10 +537,21 @@ class OpenBBToolkit(BaseToolkit):
                 "provider": provider,
             }
             if min_market_cap:
-                params["min_market_cap"] = min_market_cap
+                params["min_market_cap"] = str(min_market_cap)
 
             data = self.client.calendar.earnings(**params)
-            return data.to_df() if return_type == "df" else data.results
+            if return_type == "df":
+                return data.to_df()
+            else:
+                # Convert DataFrame to dict with string keys
+                if isinstance(data, pd.DataFrame):
+                    return {str(k): v for k, v in data.to_dict().items()}
+                # Ensure dict has string keys
+                return (
+                    {str(k): v for k, v in data.items()}
+                    if isinstance(data, dict)
+                    else {}
+                )
         except Exception as e:
             msg = f"Failed to get earnings calendar: {e!s}"
             print(msg)
@@ -647,7 +663,18 @@ class OpenBBToolkit(BaseToolkit):
             Available indicators with metadata
         """
         data = self.client.economy.available_indicators(provider=provider)
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_indicator_metadata(
         self,
@@ -749,7 +776,18 @@ class OpenBBToolkit(BaseToolkit):
         data = self.client.equity.fundamental.balance(
             symbol=symbol, provider=provider, period=period, limit=limit
         )
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_income_statement(
         self,
@@ -774,7 +812,18 @@ class OpenBBToolkit(BaseToolkit):
         data = self.client.equity.fundamental.income(
             symbol=symbol, provider=provider, period=period, limit=limit
         )
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_cash_flow(
         self,
@@ -799,7 +848,18 @@ class OpenBBToolkit(BaseToolkit):
         data = self.client.equity.fundamental.cash(
             symbol=symbol, provider=provider, period=period, limit=limit
         )
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_financial_ratios(
         self,
@@ -824,7 +884,18 @@ class OpenBBToolkit(BaseToolkit):
         data = self.client.equity.fundamental.ratios(
             symbol=symbol, provider=provider, period=period, limit=limit
         )
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_financial_statements(
         self,
@@ -879,7 +950,18 @@ class OpenBBToolkit(BaseToolkit):
             Search results for financial attributes
         """
         data = self.client.equity.fundamental.search_attributes(keyword)
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_historical_attribute(
         self,
@@ -904,7 +986,18 @@ class OpenBBToolkit(BaseToolkit):
         data = self.client.equity.fundamental.historical_attributes(
             symbol=symbol, tag=tag, frequency=frequency, provider=provider
         )
-        return data.to_df() if return_type == "df" else data.results
+        if return_type == "df":
+            return data.to_df()
+        else:
+            # Convert DataFrame to dict with string keys
+            if isinstance(data, pd.DataFrame):
+                return {str(k): v for k, v in data.to_dict().items()}
+            # Ensure dict has string keys
+            return (
+                {str(k): v for k, v in data.items()}
+                if isinstance(data, dict)
+                else {}
+            )
 
     def get_economic_calendar(
         self,
@@ -949,7 +1042,7 @@ class OpenBBToolkit(BaseToolkit):
         country: Optional[str] = None,
         category: Optional[str] = None,
         return_type: Literal["df", "raw"] = "df",
-    ) -> Union[pd.DataFrame, Dict]:
+    ) -> Union[pd.DataFrame, Dict[str, Any]]:
         """Get available economic indicators.
 
         Args:
@@ -961,7 +1054,7 @@ class OpenBBToolkit(BaseToolkit):
             Economic indicators data
         """
         try:
-            params = {}
+            params: Dict[str, Any] = {}
             if country:
                 params["country"] = country
             if category:
@@ -972,7 +1065,28 @@ class OpenBBToolkit(BaseToolkit):
                 msg = "No indicators found. Check parameters and try again."
                 print(msg)
                 return pd.DataFrame() if return_type == "df" else {}
-            return data.to_df() if return_type == "df" else data.results
+            if return_type == "df":
+                return (
+                    data
+                    if isinstance(data, pd.DataFrame)
+                    else pd.DataFrame(data)
+                )
+            else:
+                if return_type == "df":
+                    return (
+                        data
+                        if isinstance(data, pd.DataFrame)
+                        else pd.DataFrame(data)
+                    )
+                else:
+                    # Convert DataFrame to dict with string keys
+                    if isinstance(data, pd.DataFrame):
+                        result_dict = data.to_dict()
+                        return {str(k): v for k, v in result_dict.items()}
+                    # Ensure dict has string keys
+                    if isinstance(data, dict):
+                        return {str(k): v for k, v in data.items()}
+                    return {}
         except Exception as e:
             msg = "Failed to get indicators: {}"
             print(msg.format(str(e)))
