@@ -428,3 +428,6 @@ temp_files/
 #Benchmark
 benchmark/gaia/Dataset
 benchmark/gaia/results.jsonl
+
+# Secret files for docker
+.container/.env
