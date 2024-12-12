@@ -265,7 +265,7 @@ files = [
 [package.dependencies]
 anyio = ">=3.5.0,<5"
 distro = ">=1.7.0,<2"
-httpx = ">=0.23.0,<1"
+httpx = ">=0.23.0,<0.27.2"
 jiter = ">=0.4.0,<1"
 pydantic = ">=1.9.0,<3"
 sniffio = "*"
@@ -321,7 +321,7 @@ files = [
 
 [package.dependencies]
 apify-shared = ">=1.1.2"
-httpx = ">=0.25.0"
+httpx = ">=0.23.0,<0.27.2"
 more_itertools = ">=10.0.0"
 
 [[package]]
@@ -430,7 +430,7 @@ files = [
 [package.dependencies]
 asgiref = ">=3.7.2,<4.0.0"
 cryptography = ">=40.0.0,<42.0.7"
-httpx = ">=0.27.2,<0.28.0"
+httpx = ">=0.23.0,<0.27.2"
 orjson = ">=3.9.10,<4.0.0"
 pydantic = ">=2.5.3,<3.0.0"
 
@@ -944,7 +944,7 @@ files = [
 
 [package.dependencies]
 fastavro = ">=1.9.4,<2.0.0"
-httpx = ">=0.21.2"
+httpx = ">=0.23.0,<0.27.2"
 httpx-sse = "0.4.0"
 numpy = ">=1.26,<2.0"
 parameterized = ">=0.9.0,<0.10.0"
@@ -2408,7 +2408,7 @@ altair = ">=4.2.0,<6.0"
 fastapi = "*"
 ffmpy = "*"
 gradio-client = "0.6.1"
-httpx = "*"
+httpx = ">=0.23.0,<0.27.2"
 huggingface-hub = ">=0.14.0"
 importlib-resources = ">=1.3,<7.0"
 jinja2 = "<4.0"
@@ -2445,7 +2445,7 @@ files = [
 
 [package.dependencies]
 fsspec = "*"
-httpx = "*"
+httpx = ">=0.23.0,<0.27.2"
 huggingface-hub = ">=0.13.0"
 packaging = "*"
 requests = ">=2.0,<3.0"
@@ -3505,7 +3505,7 @@ files = [
 [package.dependencies]
 aiohttp = "*"
 click = "*"
-httpx = ">=0.23.0,<0.28.0"
+httpx = ">=0.23.0,<0.27.2"
 importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
 jsonschema = ">=4.22.0,<5.0.0"
@@ -3938,7 +3938,7 @@ files = [
 
 [package.dependencies]
 eval-type-backport = ">=0.2.0,<0.3.0"
-httpx = ">=0.27.0,<0.28.0"
+httpx = ">=0.23.0,<0.27.2"
 jsonpath-python = ">=1.0.6,<2.0.0"
 pydantic = ">=2.9.0,<3.0.0"
 python-dateutil = ">=2.8.2,<3.0.0"
@@ -4484,7 +4484,7 @@ files = [
 ]
 
 [package.dependencies]
-httpx = ">=0.15.0"
+httpx = ">=0.23.0,<0.27.2"
 
 [[package]]
 name = "numpy"
@@ -4825,7 +4825,7 @@ files = [
 [package.dependencies]
 anyio = ">=3.5.0,<5"
 distro = ">=1.7.0,<2"
-httpx = ">=0.23.0,<1"
+httpx = ">=0.23.0,<0.27.2"
 jiter = ">=0.4.0,<1"
 pydantic = ">=1.9.0,<3"
 sniffio = "*"
@@ -7119,7 +7119,7 @@ files = [
 ]
 
 [package.dependencies]
-httpx = ">=0.21.2"
+httpx = ">=0.23.0,<0.27.2"
 httpx-sse = "0.4.0"
 idna = ">=3.7"
 pydantic = ">=1.9.2"
@@ -7579,7 +7579,7 @@ bibtexparser = "*"
 deprecated = "*"
 fake-useragent = "*"
 free-proxy = "*"
-httpx = "*"
+httpx = ">=0.23.0,<0.27.2"
 python-dotenv = "*"
 requests = {version = "*", extras = ["socks"]}
 selenium = "*"
@@ -8241,7 +8241,7 @@ files = [
 ]
 
 [package.dependencies]
-httpx = "*"
+httpx = ">=0.23.0,<0.27.2"
 requests = "*"
 tiktoken = ">=0.5.1"
 
@@ -9227,7 +9227,7 @@ files = [
 [package.dependencies]
 cryptography = ">=3.1"
 eval-type-backport = ">=0.2.0,<0.3.0"
-httpx = ">=0.27.0"
+httpx = ">=0.23.0,<0.27.2"
 jsonpath-python = ">=1.0.6,<2.0.0"
 nest-asyncio = ">=1.6.0"
 pydantic = ">=2.9.2,<2.10.0"
@@ -9507,7 +9507,7 @@ files = [
 ]
 
 [package.dependencies]
-httpx = "*"
+httpx = ">=0.23.0,<0.27.2"
 "jaraco.context" = "*"
 more-itertools = "*"
 multidict = "*"
