@@ -20,8 +20,8 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from PIL import Image
 from anthropic.types.beta import BetaMessageParam
+from PIL import Image
 
 from camel.logger import get_logger
 from camel.types import (
@@ -182,7 +182,7 @@ class OpenAITokenCounter(BaseTokenCounter):
         return num_tokens
 
     def _count_tokens_from_image(
-            self, image: Image.Image, detail: OpenAIVisionDetailType
+        self, image: Image.Image, detail: OpenAIVisionDetailType
     ) -> int:
         r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
         resolution model will be treated as :obj:`"high"`. All images with
@@ -244,8 +244,10 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
         # TODO: Use more accurate token counting by providing more information
         return self.client.beta.messages.count_tokens(
-            messages=[BetaMessageParam(content=str(msg["content"]),
-                                       role="user") for msg in messages],
+            messages=[
+                BetaMessageParam(content=str(msg["content"]), role="user")
+                for msg in messages
+            ],
             model="claude-3-5-sonnet-20240620",
         ).input_tokens
 
@@ -359,10 +361,10 @@ class MistralTokenCounter(BaseTokenCounter):
         model_name = (
             "codestral-22b"
             if self.model_type
-               in {
-                   ModelType.MISTRAL_CODESTRAL,
-                   ModelType.MISTRAL_CODESTRAL_MAMBA,
-               }
+            in {
+                ModelType.MISTRAL_CODESTRAL,
+                ModelType.MISTRAL_CODESTRAL_MAMBA,
+            }
             else self.model_type.value
         )
 
@@ -388,7 +390,7 @@ class MistralTokenCounter(BaseTokenCounter):
         return total_tokens
 
     def _convert_response_from_openai_to_mistral(
-            self, openai_msg: OpenAIMessage
+        self, openai_msg: OpenAIMessage
     ) -> ChatCompletionRequest:
         r"""Convert an OpenAI message to a Mistral ChatCompletionRequest.
 
