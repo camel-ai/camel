@@ -13,14 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from collections import defaultdict
-import os
 import json
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict
 
 from camel.agents import ChatAgent
-from camel.logger import get_logger, enable_logging
+from camel.logger import enable_logging, get_logger
 
 # Enable logging if needed
 enable_logging()
@@ -32,37 +31,44 @@ logger = get_logger('o1datagen')
 class O1DataGene:
     r"""Class for generating and managing data through chat agent interactions.
 
-    This class handles the generation of data by interacting with a chat agent,
-    managing golden answers, and maintaining a solution tree for correct solution steps.
+    handling the generation of data by  a chat agent, managing golden answers,
+    and maintaining a solution tree for correct solution steps.
 
     Args:
-        chat_agent (ChatAgent): The chat agent used for generating responses and
-            interacting with the system.
-        golden_answers (dict): Dictionary containing pre-defined correct answers for
-            validation and comparison. Required for answer verification.
-        search_limit (int, optional): Maximum number of search iterations allowed.
-            Defaults to 100.
+        chat_agent (ChatAgent): The chat agent used for generating responses
+         and interacting with the system.
+        golden_answers (dict): Dictionary containing pre-defined
+        correct answers for validation and comparison.
+        Required for answer verification.
+        search_limit (int, optional): Maximum number of search iterations
+        allowed.Defaults to 100.
     """
-    def __init__(self, chat_agent: ChatAgent, golden_answers: Dict[str, str],
-                 search_limit: int = 100):
+
+    def __init__(
+        self,
+        chat_agent: ChatAgent,
+        golden_answers: Dict[str, str],
+        search_limit: int = 100,
+    ):
         self.chat_agent = chat_agent
         self.golden_answers = golden_answers
         self.search_limit = search_limit
-        self.solution_tree = defaultdict(dict)  # Store correct solution steps
-        logger.info("O1DataGene initialized with search_limit=%d", search_limit)
+        self.solution_tree: Dict[str, Dict] = defaultdict(dict)
+        logger.info(
+            "O1DataGene initialized with search_limit=%d", search_limit
+        )
 
     def get_answer(self, question: str, context: str = "") -> str:
         r"""Get the AI's thought process and answer.
-
         Args:
             question (str): The problem or question to be solved by the AI.
-            context (str, optional): Additional context or existing content to consider
-                when generating the answer. Defaults to an empty string.
-
+            context (str, optional): Additional context or existing content to
+            consider when generating the answer. Defaults to an empty string.
         Returns:
-            str: The AI's detailed response including thought process and final answer.
-        """
-        prompt = f"""Please think step by step and solve this problem: {question}
+            str: The AI's detailed response including
+            thought process and final answer."""
+        prompt = f"""
+        Please think step by step and solve this problem: {question}
         Existing content: {context}
         Requirements:
         1. Analyze the problem requirements
@@ -77,21 +83,38 @@ class O1DataGene:
         return answer
 
     def verify_answer(self, question: str, answer: str) -> bool:
-        r"""Verify if the answer is correct by comparing it with the golden answer.
-
-        Args:
-            question (str): The original question being answered, used to lookup the
-                corresponding golden answer.
-            answer (str): The generated answer to verify against the golden answer.
-
-        Returns:
-            bool: True if the answer is semantically equivalent to the golden answer,
-                False otherwise.
+        r"""Verify if a generated answer is semantically equivalent to
+        the golden answer for a given question.
+        Args:question (str): The question to look up
+        in the golden answers dictionary.
+              answer (str): The answer to verify, typically generated
+              by a model or provided by a user.
+        Returns:bool: True if the answer matches the golden answer
+        based on semantic equivalence
+              (meaning the core content and meaning are the same,
+              even if the exact wording differs).
+              False in the following cases:
+              - If the golden answers dictionary is empty
+              - If the provided question doesn't exist in the golden answers
+              - If the answer's meaning differs from the golden answer
         """
-        prompt = f"""Please determine if the following two answers express the same meaning:
+        if not self.golden_answers:
+            logger.error(
+                """golden_answers is empty.
+                 Please import QA data before verification."""
+            )
+            return False
+        golden_answer = self.golden_answers[question]
+        if not golden_answer:
+            raise ValueError(
+                f"""Golden answer for question '{question}' is empty.
+                Cannot proceed with verification."""
+            )
+        prompt = f"""Please determine if the following two answers 
+        express the same meaning:
         Question: {question}
         Answer 1: {answer}
-        Answer 2: {self.golden_answers[question]}
+        Answer 2: {golden_answer}
         Just answer "True" or "False".
         """
         response = self.chat_agent.step(prompt)
@@ -99,27 +122,33 @@ class O1DataGene:
         logger.info("Answer verification result: %s", is_correct)
         return is_correct
 
-    def monte_carlo_tree_search(self, question: str, partial_solution: str = "") -> tuple[str, bool]:
+    def monte_carlo_tree_search(
+        self, question: str, partial_solution: str = ""
+    ) -> tuple[str, bool]:
         r"""
         Generate and verify answers using Monte Carlo Tree Search.
 
-        This method implements a Monte Carlo Tree Search approach to find the best solution
-        by iteratively generating answers and scoring them against the golden answer.
+        This method implements a Monte Carlo Tree Search approach
+        to find the best solution
+        by iteratively generating answers and scoring them against
+        the golden answer.
 
         Args:
             question (str): The problem or question to be solved.
-            partial_solution (str, optional): A partial solution to build upon. This can
-                be used to guide the search process with existing progress. Defaults to
-                an empty string.
+            partial_solution (str, optional): A partial solution to build upon.
+             This canbe used to guide the search process
+             with existing progress.
+             Defaults to an empty string.
 
         Returns:
             tuple[str, bool]: A tuple containing:
-                - str: The best solution found (or empty string if no solution found)
+                - str: The best solution found
+                (or empty string if no solution found)
                 - bool: True if a correct solution was found, False otherwise
         """
         logger.info("Starting Monte Carlo Tree Search")
         best_solution = ""  # Initialize as empty string instead of None
-        best_score = 0
+        best_score: float = 0.0
         for i in range(self.search_limit):
             # Generate new answer
             current_solution = self.get_answer(question, partial_solution)
@@ -128,8 +157,8 @@ class O1DataGene:
             if is_correct:
                 logger.info("Correct answer found! Stopping search")
                 return current_solution, True
-            # Analyze error, get similarity score
-            prompt = f"""Analyze  the similarity of this answer to the correct answer (between 0-1):
+            prompt = f"""Analyze  the similarity of this answer 
+            to the correct answer (between 0-1):
             Question: {question}
             Generated answer: {current_solution}
             Correct answer: {self.golden_answers[question]}
@@ -141,15 +170,20 @@ class O1DataGene:
                 if score > best_score:
                     best_score = score
                     best_solution = current_solution
-                logger.info("Current search progress: %d/%d, best score: %.2f", i+1, self.search_limit, best_score)
+                logger.info(
+                    "Current search progress: %d/%d, best score: %.2f",
+                    i + 1,
+                    self.search_limit,
+                    best_score,
+                )
             except ValueError:
                 continue
         return best_solution, False
 
     def binary_search_error(self, question: str, solution: str) -> int:
         r"""Use binary search to locate the first error in the solution.
-
-        This method splits the solution into sentences using both English and Chinese
+        This method splits the solution into sentences using
+        both English and Chinese
         sentence delimiters and performs binary search to find the first error.
 
         Args:
@@ -157,17 +191,21 @@ class O1DataGene:
             solution (str): The complete solution to analyze.
 
         Returns:
-            int: The position of the first error found in the solution. Returns -1
-                if no errors are found (all sentences are correct).
+            int: The position of the first error found in the solution.
+            Returns -1.if no errors are found (all sentences are correct).
         """
         logger.info("Starting binary search for error location")
         # Split by both English period and Chinese period
-        sentences = [s.strip() for s in solution.replace('。', '.').split('.') if s.strip()]
-        
+        sentences = [
+            s.strip()
+            for s in solution.replace('。', '.').split('.')
+            if s.strip()
+        ]
+
         # First check if the entire solution is correct
         if self.verify_answer(question, solution):
             return -1
-            
+
         left, right = 0, len(sentences)
         while left < right:
             mid = (left + right) // 2
@@ -210,33 +248,35 @@ class O1DataGene:
             logger.info("Monte Carlo Tree Search found correct solution")
             return solution
 
-        # 3. If the answer is not completely correct, use binary search to locate the error
+        # 3. If the answer is not completely correct,
+        #  use binary search to locate the error
         error_pos = self.binary_search_error(question, solution)
-        
+
         # If no errors found (error_pos == -1), return the current solution
         if error_pos == -1:
             logger.info("No errors found in the solution")
             return solution
-            
+
         # 4. Generate new solution based on correct part
         correct_part = '. '.join(solution.split('. ')[:error_pos]) + '.'
         final_solution = self.get_answer(question, correct_part)
         self.solution_tree[question] = {
             "solution": final_solution,
             "correct_part": correct_part,
-            "error_position": error_pos
+            "error_position": error_pos,
         }
         logger.info("Final solution generated")
         return final_solution
 
     def import_qa_from_json(self, data: str | Dict[str, str]) -> bool:
-        r"""Import question and answer data from either a JSON file or a dictionary.
-
+        r"""Import question and answer data from either a
+        JSON file or a dictionary.
         Args:
-            data (Union[str, Dict[str, str]]): Either a path to a JSON file containing
-                QA pairs or a dictionary of question-answer pairs. If a string is
-                provided, it's treated as a file path. The expected format is:
-                {"question1": "answer1", "question2": "answer2", ...}
+            data (Union[str, Dict[str, str]]): Either a path
+            to a JSON file containing
+            QA pairs or a dictionary of question-answer pairs. If a string is
+            provided, it's treated as a file path. The expected format is:
+            {"question1": "answer1", "question2": "answer2", ...}
 
         Returns:
             bool: True if import was successful, False otherwise.
@@ -254,12 +294,12 @@ class O1DataGene:
             if not isinstance(qa_data, dict):
                 logger.error("Invalid data format: expected dictionary")
                 return False
-                
+
             # Update golden answers
             self.golden_answers.update(qa_data)
             logger.info("Successfully imported %d QA pairs", len(qa_data))
             return True
-            
+
         except Exception as e:
             logger.error("Error importing QA data: %s", str(e))
             return False
@@ -267,29 +307,29 @@ class O1DataGene:
     def export_solutions(self, filepath: str = 'solutions.json') -> None:
         r"""
         Export the solution process and results to a JSON file.
-
-        Exports the solution tree, golden answers, and export timestamp to a JSON file.
+        Exports the solution tree, golden answers,
+         and export timestamp to a JSON file.
         The exported data includes:
-        - solutions: The solution tree with intermediate steps
+        - solutions: The solution tree
+            with intermediate steps
         - golden_answers: The reference answers used for verification
         - export_time: ISO format timestamp of the export
 
         Args:
-            filepath (str, optional): Path where the JSON file will be saved. 
+            filepath (str, optional): Path where the JSON file will be saved.
                 Defaults to 'solutions.json'.
 
-        Returns:
-            None: The method writes to a file and logs the result but does not return
-                any value.
+        Returns:None: The method writes to a file and logs
+        the result but does not return any value.
         """
         export_data = {
             "solutions": self.solution_tree,
             "golden_answers": self.golden_answers,
-            "export_time": datetime.now().isoformat()
+            "export_time": datetime.now().isoformat(),
         }
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(export_data, f, ensure_ascii=False, indent=2)
             logger.info(f"Solutions exported successfully to {filepath}")
         except Exception as e:
-            logger.error(f"Error exporting solutions: {str(e)}")
+            logger.error(f"Error exporting solutions: {e!s}")
