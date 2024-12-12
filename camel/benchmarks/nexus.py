@@ -279,8 +279,11 @@ class NexusBenchmark(BaseBenchmark):
                 )
                 ground_truth_call = sample.output
                 try:
+                    # Generate response
                     response = agent.step(msg)
                     agent_call = response.msgs[0].content
+
+                    # Evaluate response
                     if agent_call:
                         result = compare_function_calls(
                             agent_call=agent_call,
@@ -378,7 +381,7 @@ def construct_tool_descriptions(dataset_name) -> str:
 
 
 def construct_prompt(input, tools) -> str:
-    "Construct prompt from tools and input."
+    r"Construct prompt from tools and input."
     return TOOL_CALLING_PROMPT.format(tools=tools, input=input)
 
 

@@ -143,12 +143,12 @@ class APIBenchBenchmark(BaseBenchmark):
             (default: :obj:`1`)
     """
 
+    # TODO: Integrate retriever (pending)
+
     def __init__(
         self,
         data_dir: str,
         save_to: str,
-        # retriever: Optional[RetrieverProtocol] = None,
-        # retriever_type: Literal["bm25", "gpt"] = None,
         processes: int = 1,
     ):
         r"""Initialize the APIBench benchmark.
@@ -160,8 +160,6 @@ class APIBenchBenchmark(BaseBenchmark):
                 parallel processing. (default: :obj:`1`)
         """
         super().__init__("apibench", data_dir, save_to, processes)
-        # self.retriever = retriever
-        # self.retriever_type = retriever_type
 
     def download(self):
         r"""Download the APIBench dataset."""
@@ -207,7 +205,7 @@ class APIBenchBenchmark(BaseBenchmark):
         download_github_subdirectory(repo, subdir)
 
     def load(self, dataset_name):
-        r"""Load the Nexus Benchmark dataset.
+        r"""Load the APIBench Benchmark dataset.
 
         Args:
             dataset_name: Name of the dataset to be loaded.
@@ -267,11 +265,16 @@ class APIBenchBenchmark(BaseBenchmark):
         logger.info(f"Running APIBench benchmark on {dataset}.")
         self.load(dataset)
         datas = self._data['questions']
+
+        # Shuffle and subset data if necessary
         if randomize:
             random.shuffle(datas)
         if subset:
             datas = datas[:subset]
+
         logger.info(f"Number of tasks: {len(datas)}")
+
+        # Initialize results storage
         self._results = []
 
         with open(self.save_to, "w") as f:
@@ -281,6 +284,7 @@ class APIBenchBenchmark(BaseBenchmark):
                     role_name="User", content=prompt
                 )
                 try:
+                    # Generate response
                     responses = agent.step(msg)
                     response = responses.msgs[0].content
                     api_database = self._data['api']
@@ -288,6 +292,7 @@ class APIBenchBenchmark(BaseBenchmark):
                     ast_database = self._data['ast']
                     question_id = question['question_id']
 
+                    # Evaluate response
                     error, correct, hallucination = evaluate_response(
                         response,
                         question_id,

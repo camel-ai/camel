@@ -58,7 +58,7 @@ class APIBankBenchmark(BaseBenchmark):
             processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
         """
-        # Predefine data_dir for easier import
+        # Predefine data_dir for better import management
         super().__init__("apibank", "api_bank", save_to, processes)
         self._data: Dict[str, List[APIBankSample]] = dict()  # type: ignore[assignment]
 
@@ -106,9 +106,9 @@ class APIBankBenchmark(BaseBenchmark):
         Args:
             level: Level to run benchmark on.
         """
-        if level == "level-1" or 1:
+        if level == "level-1":
             file_path = Path("api_bank/lv1-lv2-samples/level-1-given-desc")
-        elif level == 'level-2' or 2:
+        elif level == 'level-2':
             file_path = Path("api_bank/lv1-lv2-samples/level-2-toolsearcher")
         jsonl_files = [
             f for f in os.listdir(file_path) if f.endswith('.jsonl')
@@ -199,6 +199,8 @@ class APIBankBenchmark(BaseBenchmark):
         logger.info(f"Running APIBench benchmark on {level}.")
         self.load(level)
         datas = self._data
+
+        # Shuffle and subset data if necessary
         if randomize:
             randomized_items = list(datas.items())
             random.shuffle(randomized_items)
@@ -207,7 +209,12 @@ class APIBankBenchmark(BaseBenchmark):
             datas = dict(list(datas.items())[:subset])
 
         logger.info(f"Number of tasks: {len(datas)}")
+
+        # Initialize results storage
         self._results = []
+
+        # Adapted from the evaluator
+        # from the original repo
 
         if level == 'level-1':
             tool_search_enabled = False
@@ -222,6 +229,7 @@ class APIBankBenchmark(BaseBenchmark):
                 evaluator = Evaluator(samples)  # type: ignore[arg-type]
 
                 for sample_id in evaluator.get_all_sample_ids():
+                    # Process sample and generate response
                     sample = evaluator.dataset[sample_id]
 
                     if (
@@ -278,6 +286,7 @@ class APIBankBenchmark(BaseBenchmark):
 
                         api_call = get_api_call(model_output)
 
+                        # Evaluate API call
                         if api_call:
                             try:
                                 correct, model_output_result = (
@@ -330,6 +339,7 @@ class APIBankBenchmark(BaseBenchmark):
                         sample.ground_truth['role'] == 'AI'
                         and dialog_test_enabled
                     ):
+                        # Process sample and generate response
                         api_descriptions, chat_history = (
                             evaluator.get_model_input(sample_id)
                         )
@@ -370,6 +380,7 @@ class APIBankBenchmark(BaseBenchmark):
 
                         model_output = agent_call(messages, agent)
 
+                        # Evaluate model response
                         if model_output:
                             score = evaluator.evaluate(sample_id, model_output)
                         else:
