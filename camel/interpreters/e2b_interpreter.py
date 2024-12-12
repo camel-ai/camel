@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, ClassVar, Dict, List, Literal, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
@@ -69,24 +69,12 @@ class E2BInterpreter(BaseInterpreter):
     def run(
         self,
         code: str,
-        code_type: Literal[
-            "python",
-            "py3",
-            "python3",
-            "py",
-            "shell",
-            "bash",
-            "sh",
-            "java",
-            "javascript",
-            "js",
-            "r",
-        ],
+        code_type: str,
     ) -> str:
         r"""Executes the given code in the e2b sandbox.
 
         Args:
-            code (Literal): The code string to execute.
+            code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
                 'bash').
 
