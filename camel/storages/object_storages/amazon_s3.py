@@ -17,7 +17,7 @@ from pathlib import Path, PurePath
 from typing import Optional, Tuple
 from warnings import warn
 
-from camel.loaders import File
+from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
 
 
@@ -156,7 +156,7 @@ class AmazonS3Storage(BaseObjectStorage):
             Bucket=self._bucket_name, Key=file_key
         )
         raw_bytes = response["Body"].read()
-        return File.create_file_from_raw_bytes(raw_bytes, filename)
+        return create_file_from_raw_bytes(raw_bytes, filename)
 
     def _upload_file(
         self, local_file_path: Path, remote_file_key: str
