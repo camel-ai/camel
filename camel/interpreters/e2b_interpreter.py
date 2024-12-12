@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 from typing import Any, ClassVar, Dict, List, Literal, Optional
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
 from camel.utils import api_keys_required
-
-import os
 
 logger = get_logger(__name__)
 
@@ -60,9 +59,11 @@ class E2BInterpreter(BaseInterpreter):
         This method ensures that the e2b sandbox is killed when the
         interpreter is deleted.
         """
-        if (hasattr(self, '_sandbox')
+        if (
+            hasattr(self, '_sandbox')
             and self._sandbox is not None
-            and self._sandbox.is_running()):
+            and self._sandbox.is_running()
+        ):
             self._sandbox.kill()
 
     def run(
@@ -79,7 +80,8 @@ class E2BInterpreter(BaseInterpreter):
             "java",
             "javascript",
             "js",
-            "r"]
+            "r",
+        ],
     ) -> str:
         r"""Executes the given code in the e2b sandbox.
 
