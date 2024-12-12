@@ -22,7 +22,7 @@ from camel.utils import api_keys_required
 
 
 class NemotronRewardModel(BaseRewardModel):
-    r"""Reward model based on the Nemetro model with OpenAI compatibility.
+    r"""Reward model based on the Nemotron model with OpenAI compatibility.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
@@ -32,7 +32,7 @@ class NemotronRewardModel(BaseRewardModel):
         url (Optional[str], optional): The url to the model service.
 
     Note:
-        The Nemetro model does not support model config.
+        The Nemotron model does not support model config.
     """
 
     def __init__(
@@ -55,7 +55,7 @@ class NemotronRewardModel(BaseRewardModel):
 
     @api_keys_required("NVIDIA_API_KEY")
     def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
-        r"""Evaluate the messages using the Nemetro model.
+        r"""Evaluate the messages using the Nemotron model.
 
         Args:
             messages (List[Dict[str, str]]): A list of messages where each
