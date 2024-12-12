@@ -13,80 +13,51 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
+import logging
 from typing import List
 
 from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
+from camel.utils import api_keys_required
 
-class StripeBaseAdapter:
-    def __init__(self, toolkit: 'StripeToolkit'):
-        self.logger = toolkit.logger.getChild(self.__class__.__name__)
 
-    def handle_exception(self, func_name: str, error: Exception) -> str:
-        r"""Handle exceptions by logging and returning an error message.
-
-        Args:
-            func_name (str): The name of the function where the exception occurred.
-            error (Exception): The exception instance.
-
-        Returns:
-            str: An error message string.
-        """
-        import stripe
-        if isinstance(error, stripe.error.StripeError):
-            message = error.user_message or str(error)
-            self.logger.error(f"Stripe error in {func_name}: {message}")
-            return f"Stripe error in {func_name}: {message}"
-        else:
-            self.logger.error(f"Unexpected error in {func_name}: {error!s}")
-            return f"Unexpected error in {func_name}: {error!s}"
-class StripeToolkit(StripeBaseAdapter):
+class StripeToolkit(BaseToolkit):
     r"""A class representing a toolkit for Stripe operations.
-    have to config "stripe.api_key" in the file .env
 
-    This toolkit provides methods to interact with the Stripe  API,
+    This toolkit provides methods to interact with the Stripe API,
     allowing users to operate stripe core resources, including Customer, Balance, BalanceTransaction, Payment, Refund
 
+    Use the Developers Dashboard https://dashboard.stripe.com/test/apikeys to create an API keys as STRIPE_API_KEY.
+
     Attributes:
-        retries (int): Number of retries for API requests in case of failure.
-        version (str): API version.
+        logger (Logger): a logger to write logs.
     """
+
+    @api_keys_required("STRIPE_API_KEY")
     def __init__(self, retries: int = 3):
-        r"""Initializes the WhatsAppToolkit with the specified number of
-        retries and delay.
+        r"""Initializes the StripeToolkit with the specified number of
+        retries.
 
         Args:
-            retries (int): Number of times to retry the request in case of
+            retries (int,optional): Number of times to retry the request in case of
                 failure. (default: :obj:`3`)
         """
         import stripe
+        stripe.max_network_retries = retries
 
         stripe.log = 'info'
-        stripe.max_network_retries = retries
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         handler.setFormatter(formatter)
-
         if not self.logger.handlers:
             self.logger.addHandler(handler)
+        stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
-        stripe.api_key = os.environ.get("STRIPE_API_KEY", None)
-        if not stripe.api_key:
-            raise ValueError(
-                "stripe.api_key credentials are not set. "
-                "Please set the STRIPE_API_KEY environment variables."
-            )
-        else:
-            self.logger.info(
-                "StripeToolkit initialized with provided API key."
-            )
-            
     def customer_get(self, customer_id: str) -> str:
         r"""Retrieve a customer by ID.
 
@@ -110,10 +81,12 @@ class StripeToolkit(StripeBaseAdapter):
         r"""List customers.
 
         Args:
-            limit (int, optional): Number of customers to retrieve. Defaults to 100.
+            limit (int, optional): Number of customers to retrieve. (default:
+                :obj:`100`)
 
         Returns:
-            str: An output str if successful, or an error message string if failed.
+            str: An output str if successful, or an error message string if
+                failed.
         """
         import stripe
         try:
@@ -127,7 +100,7 @@ class StripeToolkit(StripeBaseAdapter):
             return self.handle_exception("customer_list", e)
 
     def balance_get(self) -> str:
-        r"""Retrieve the account balance.
+        r"""Retrieve your account balance.
 
         Returns:
             str: A str containing the account balance if successful, or an
@@ -145,14 +118,14 @@ class StripeToolkit(StripeBaseAdapter):
             return self.handle_exception("balance_get", e)
 
     def balance_transaction_list(self, limit: int = 100) ->str:
-            r"""List balance transactions.
+            r"""List your balance transactions.
 
             Args:
-                limit (int, optional): Number of balance transactions to retrieve. Defaults to 100.
+                limit (int, optional): Number of balance transactions to retrieve. (default:
+                :obj:`100`)
 
             Returns:
-                str: A list of balance transaction data
-                if successful, or an error message string if failed.
+                str: A list of balance transaction data if successful, or an error message string if failed.
             """
             import stripe
             try:
@@ -176,8 +149,7 @@ class StripeToolkit(StripeBaseAdapter):
                 payment_id (str): The ID of the payment to retrieve.
 
             Returns:
-                str:The payment data as a str if successful,
-                or an error message string if failed.
+                str:The payment data as a str if successful, or an error message string if failed.
             """
             import stripe
             try:
@@ -192,11 +164,11 @@ class StripeToolkit(StripeBaseAdapter):
         r"""List payments.
 
         Args:
-            limit (int, optional): Number of payments to retrieve. Defaults to 100.
+            limit (int, optional): Number of payments to retrieve. (default:
+        :obj:`100`)
 
         Returns:
-            str: A list of payment data
-            if successful, or an error message string if failed.
+            str: A list of payment data if successful, or an error message string if failed.
         """
         import stripe
         try:
@@ -216,8 +188,7 @@ class StripeToolkit(StripeBaseAdapter):
             refund_id (str): The ID of the refund to retrieve.
 
         Returns:
-            str: The refund data as a str if successful,
-            or an error message string if failed.
+            str: The refund data as a str if successful, or an error message string if failed.
         """
         import stripe
         try:
@@ -232,11 +203,11 @@ class StripeToolkit(StripeBaseAdapter):
         r"""List refunds.
 
         Args:
-            limit (int, optional): Number of refunds to retrieve. Defaults to 100.
+            limit (int, optional): Number of refunds to retrieve. (default:
+        :obj:`100`).
 
         Returns:
-            str: A list of refund data as a str
-            if successful, or an error message string if failed.
+            str: A list of refund data as a str if successful, or an error message string if failed.
         """
         import stripe
         try:
@@ -248,6 +219,25 @@ class StripeToolkit(StripeBaseAdapter):
             return json.dumps([refund for refund in refunds])
         except Exception as e:
             return self.handle_exception("refund_list", e)
+
+    def handle_exception(self, func_name: str, error: Exception) -> str:
+        r"""Handle exceptions by logging and returning an error message.
+
+        Args:
+            func_name (str): The name of the function where the exception occurred.
+            error (Exception): The exception instance.
+
+        Returns:
+            str: An error message string.
+        """
+        from stripe import StripeError
+        if isinstance(error, StripeError):
+            message = error.user_message or str(error)
+            self.logger.error(f"Stripe error in {func_name}: {message}")
+            return f"Stripe error in {func_name}: {message}"
+        else:
+            self.logger.error(f"Unexpected error in {func_name}: {error!s}")
+            return f"Unexpected error in {func_name}: {error!s}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
