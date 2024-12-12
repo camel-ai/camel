@@ -96,6 +96,14 @@ class NexusBenchmark(BaseBenchmark):
         save_to: str,
         processes: int = 1,
     ):
+        r"""Initialize the Nexus Function Calling benchmark.
+
+        Args:
+            data_dir (str): The directory to save the data.
+            save_to (str): The file to save the results.
+            processes (int, optional): The number of processes to use for
+                parallel processing. (default: :obj:`1`)
+        """
         super().__init__("nexus", data_dir, save_to, processes)
         self._data: List[NexusSample] = []  # type: ignore[assignment]
 
@@ -374,6 +382,7 @@ def construct_prompt(input, tools) -> str:
     return TOOL_CALLING_PROMPT.format(tools=tools, input=input)
 
 
+# Functions for function call evaluation
 def parse_function_call(call) -> tuple:
     r"""Parse a function call string and handle nested function
     calls in both positional and keyword arguments."""

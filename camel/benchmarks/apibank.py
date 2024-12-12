@@ -51,6 +51,13 @@ class APIBankBenchmark(BaseBenchmark):
         save_to: str,
         processes: int = 1,
     ):
+        r"""Initialize the APIBank benchmark.
+
+        Args:
+            save_to (str): The file to save the results.
+            processes (int, optional): The number of processes to use for
+                parallel processing. (default: :obj:`1`)
+        """
         # Predefine data_dir for easier import
         super().__init__("apibank", "api_bank", save_to, processes)
         self._data: Dict[str, List[APIBankSample]] = dict()  # type: ignore[assignment]
@@ -61,6 +68,7 @@ class APIBankBenchmark(BaseBenchmark):
         def download_github_subdirectory(
             repo, subdir, branch="main", data_dir=self.data_dir
         ):
+            r"""Download subdirectory of the Github repo of the benchmark."""
             api_url = f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
             headers = {"Accept": "application/vnd.github.v3+json"}
             response = requests.get(api_url, headers=headers)
@@ -115,6 +123,8 @@ class APIBankBenchmark(BaseBenchmark):
 
         # Change import to relative import in the downloaded python files
         def process_files(folder_path, replacements):
+            r"""Replace absolute imports in downloaded files with
+            relative import."""
             for file in os.listdir(folder_path):
                 if file.endswith(".py"):
                     file_path = os.path.join(folder_path, file)
@@ -402,7 +412,7 @@ class APIBankBenchmark(BaseBenchmark):
             return {'Dialog_score': np.mean(rougel_scores)}
 
 
-# Migrated from the original repo:
+# The following code are migrated from the original repo:
 # https://github.com/AlibabaResearch/DAMO-ConvAI/tree/main/api-bank
 def agent_call(messages: List[Dict], agent: ChatAgent):
     r"""Add messages to agent memory and get response."""

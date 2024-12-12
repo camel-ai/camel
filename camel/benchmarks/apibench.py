@@ -51,6 +51,8 @@ dataset_mapping = {
 }
 
 
+# This function is migrated from the original repo:
+# https://github.com/ShishirPatil/gorilla
 def encode_question(question, dataset_name):
     r"""Encode multiple prompt instructions into a single string."""
 
@@ -145,9 +147,21 @@ class APIBenchBenchmark(BaseBenchmark):
         self,
         data_dir: str,
         save_to: str,
+        # retriever: Optional[RetrieverProtocol] = None,
+        # retriever_type: Literal["bm25", "gpt"] = None,
         processes: int = 1,
     ):
+        r"""Initialize the APIBench benchmark.
+
+        Args:
+            data_dir (str): The directory to save the data.
+            save_to (str): The file to save the results.
+            processes (int, optional): The number of processes to use for
+                parallel processing. (default: :obj:`1`)
+        """
         super().__init__("apibench", data_dir, save_to, processes)
+        # self.retriever = retriever
+        # self.retriever_type = retriever_type
 
     def download(self):
         r"""Download the APIBench dataset."""
@@ -163,6 +177,7 @@ class APIBenchBenchmark(BaseBenchmark):
         def download_github_subdirectory(
             repo, subdir, branch="main", data_dir=self.data_dir
         ):
+            r"""Download subdirectory of the Github repo of the benchmark."""
             api_url = f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
             headers = {"Accept": "application/vnd.github.v3+json"}
             response = requests.get(api_url, headers=headers)
