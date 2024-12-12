@@ -88,3 +88,39 @@ Agent response:
 Weng earned $10.20 for babysitting for 51 minutes at a rate of $12 per hour.
 ===============================================================================
 """
+
+agent_with_e2b = ChatAgent(
+    assistant_sys_msg,
+    model,
+    tools=CodeExecutionToolkit(verbose=True, sandbox="e2b").get_tools(),
+)
+agent_with_e2b.reset()
+
+print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
+
+response_with_e2b = agent_with_e2b.step(user_msg)
+for msg in response_with_e2b.msgs:
+    print_text_animated(Fore.GREEN + f"Agent response:\n{msg.content}\n")
+
+# ruff: noqa: E501
+"""
+===============================================================================
+user prompt:
+Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of babysitting. How much did she earn?
+
+Executed the code below:
+```py
+hourly_wage = 12
+minutes_worked = 51
+# Convert minutes to hours
+hours_worked = minutes_worked / 60
+# Calculate earnings
+earnings = hourly_wage * hours_worked
+earnings
+```
+> Executed Results:
+10.2
+Agent response:
+Weng earned $10.20 for 51 minutes of babysitting.
+===============================================================================
+"""
