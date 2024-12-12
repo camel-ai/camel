@@ -52,8 +52,15 @@ class O1DataGene:
         logger.info("O1DataGene initialized with search_limit=%d", search_limit)
 
     def get_answer(self, question: str, context: str = "") -> str:
-        r"""
-        Get the AI's thought process and answer
+        r"""Get the AI's thought process and answer.
+
+        Args:
+            question (str): The problem or question to be solved by the AI.
+            context (str, optional): Additional context or existing content to consider
+                when generating the answer. Defaults to an empty string.
+
+        Returns:
+            str: The AI's detailed response including thought process and final answer.
         """
         prompt = f"""Please think step by step and solve this problem: {question}
         Existing content: {context}
@@ -70,8 +77,16 @@ class O1DataGene:
         return answer
 
     def verify_answer(self, question: str, answer: str) -> bool:
-        r"""
-        Verify if the answer is correct
+        r"""Verify if the answer is correct by comparing it with the golden answer.
+
+        Args:
+            question (str): The original question being answered, used to lookup the
+                corresponding golden answer.
+            answer (str): The generated answer to verify against the golden answer.
+
+        Returns:
+            bool: True if the answer is semantically equivalent to the golden answer,
+                False otherwise.
         """
         prompt = f"""Please determine if the following two answers express the same meaning:
         Question: {question}
@@ -86,10 +101,24 @@ class O1DataGene:
 
     def monte_carlo_tree_search(self, question: str, partial_solution: str = "") -> tuple[str, bool]:
         r"""
-        Generate and verify answers using Monte Carlo Tree Search
+        Generate and verify answers using Monte Carlo Tree Search.
+
+        This method implements a Monte Carlo Tree Search approach to find the best solution
+        by iteratively generating answers and scoring them against the golden answer.
+
+        Args:
+            question (str): The problem or question to be solved.
+            partial_solution (str, optional): A partial solution to build upon. This can
+                be used to guide the search process with existing progress. Defaults to
+                an empty string.
+
+        Returns:
+            tuple[str, bool]: A tuple containing:
+                - str: The best solution found (or empty string if no solution found)
+                - bool: True if a correct solution was found, False otherwise
         """
         logger.info("Starting Monte Carlo Tree Search")
-        best_solution = None
+        best_solution = ""  # Initialize as empty string instead of None
         best_score = 0
         for i in range(self.search_limit):
             # Generate new answer
@@ -237,7 +266,21 @@ class O1DataGene:
 
     def export_solutions(self, filepath: str = 'solutions.json') -> None:
         r"""
-        Export the solution process and results to a JSON file
+        Export the solution process and results to a JSON file.
+
+        Exports the solution tree, golden answers, and export timestamp to a JSON file.
+        The exported data includes:
+        - solutions: The solution tree with intermediate steps
+        - golden_answers: The reference answers used for verification
+        - export_time: ISO format timestamp of the export
+
+        Args:
+            filepath (str, optional): Path where the JSON file will be saved. 
+                Defaults to 'solutions.json'.
+
+        Returns:
+            None: The method writes to a file and logs the result but does not return
+                any value.
         """
         export_data = {
             "solutions": self.solution_tree,
