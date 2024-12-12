@@ -13,8 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import os
 import logging
+import os
 from typing import List
 
 from camel.toolkits import FunctionTool
@@ -44,8 +44,8 @@ class StripeToolkit(BaseToolkit):
                 failure. (default: :obj:`3`)
         """
         import stripe
-        stripe.max_network_retries = retries
 
+        stripe.max_network_retries = retries
         stripe.log = 'info'
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -68,6 +68,7 @@ class StripeToolkit(BaseToolkit):
             str: The customer data as a str.
         """
         import stripe
+
         try:
             self.logger.info(f"Retrieving customer with ID: {customer_id}")
             customer = stripe.Customer.retrieve(customer_id)
@@ -89,6 +90,7 @@ class StripeToolkit(BaseToolkit):
                 failed.
         """
         import stripe
+
         try:
             self.logger.info(f"Listing customers with limit={limit}")
             customers = stripe.Customer.list(limit=limit).data
@@ -107,6 +109,7 @@ class StripeToolkit(BaseToolkit):
                 error message string if failed.
         """
         import stripe
+
         try:
             self.logger.info("Retrieving account balance.")
             balance = stripe.Balance.retrieve()
@@ -128,6 +131,7 @@ class StripeToolkit(BaseToolkit):
                 str: A list of balance transaction data if successful, or an error message string if failed.
             """
             import stripe
+
             try:
                 self.logger.info(
                     f"Listing balance transactions with limit={limit}"
@@ -152,6 +156,7 @@ class StripeToolkit(BaseToolkit):
                 str:The payment data as a str if successful, or an error message string if failed.
             """
             import stripe
+
             try:
                 self.logger.info(f"Retrieving payment with ID: {payment_id}")
                 payment = stripe.PaymentIntent.retrieve(payment_id)
@@ -164,13 +169,14 @@ class StripeToolkit(BaseToolkit):
         r"""List payments.
 
         Args:
-            limit (int, optional): Number of payments to retrieve. (default:
-        :obj:`100`)
+            limit (int, optional): Number of payments to retrieve.
+                (default::obj:`100`)
 
         Returns:
             str: A list of payment data if successful, or an error message string if failed.
         """
         import stripe
+
         try:
             self.logger.info(f"Listing payments with limit={limit}")
             payments = stripe.PaymentIntent.list(limit=limit).data
@@ -191,6 +197,7 @@ class StripeToolkit(BaseToolkit):
             str: The refund data as a str if successful, or an error message string if failed.
         """
         import stripe
+
         try:
             self.logger.info(f"Retrieving refund with ID: {refund_id}")
             refund = stripe.Refund.retrieve(refund_id)
@@ -199,23 +206,22 @@ class StripeToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("refund_get", e)
 
-    def refund_list( self, limit: int = 100) -> str:
+    def refund_list(self, limit: int = 100) -> str:
         r"""List refunds.
 
         Args:
-            limit (int, optional): Number of refunds to retrieve. (default:
-        :obj:`100`).
+            limit (int, optional): Number of refunds to retrieve.
+                (default::obj:`100`)
 
         Returns:
             str: A list of refund data as a str if successful, or an error message string if failed.
         """
         import stripe
+
         try:
             self.logger.info(f"Listing refunds with limit={limit}")
             refunds = stripe.Refund.list(limit=limit).data
-            self.logger.info(
-                f"Successfully retrieved {len(refunds)} refunds."
-            )
+            self.logger.info(f"Successfully retrieved {len(refunds)} refunds.")
             return json.dumps([refund for refund in refunds])
         except Exception as e:
             return self.handle_exception("refund_list", e)
@@ -231,6 +237,7 @@ class StripeToolkit(BaseToolkit):
             str: An error message string.
         """
         from stripe import StripeError
+
         if isinstance(error, StripeError):
             message = error.user_message or str(error)
             self.logger.error(f"Stripe error in {func_name}: {message}")
