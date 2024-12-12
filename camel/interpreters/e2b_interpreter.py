@@ -11,13 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, ClassVar, Dict, List, Optional
-
-from e2b_code_interpreter import Sandbox
+from typing import Any, ClassVar, Dict, List, Literal, Optional
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
+from camel.utils import api_keys_required
+
+import os
 
 logger = get_logger(__name__)
 
@@ -43,12 +44,15 @@ class E2BInterpreter(BaseInterpreter):
         "r": "r",
     }
 
+    @api_keys_required("E2B_API_KEY")
     def __init__(
         self,
         require_confirm: bool = True,
     ) -> None:
+        from e2b_code_interpreter import Sandbox
+
         self.require_confirm = require_confirm
-        self._sandbox = Sandbox()
+        self._sandbox = Sandbox(api_key=os.environ.get("E2B_API_KEY"))
 
     def __del__(self) -> None:
         r"""Destructor for the E2BInterpreter class.
@@ -56,18 +60,31 @@ class E2BInterpreter(BaseInterpreter):
         This method ensures that the e2b sandbox is killed when the
         interpreter is deleted.
         """
-        if self._sandbox is not None and self._sandbox.is_running():
+        if (hasattr(self, '_sandbox')
+            and self._sandbox is not None
+            and self._sandbox.is_running()):
             self._sandbox.kill()
 
     def run(
         self,
         code: str,
-        code_type: str,
+        code_type: Literal[
+            "python",
+            "py3",
+            "python3",
+            "py",
+            "shell",
+            "bash",
+            "sh",
+            "java",
+            "javascript",
+            "js",
+            "r"]
     ) -> str:
         r"""Executes the given code in the e2b sandbox.
 
         Args:
-            code (str): The code string to execute.
+            code (Literal): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
                 'bash').
 
@@ -92,7 +109,7 @@ class E2BInterpreter(BaseInterpreter):
             )
             while True:
                 choice = input("Running code? [Y/n]:").lower()
-                if choice in ["y", "yes", "ye", ""]:
+                if choice in ["y", "yes", "ye"]:
                     break
                 elif choice not in ["no", "n"]:
                     continue
@@ -108,7 +125,7 @@ class E2BInterpreter(BaseInterpreter):
             execution = self._sandbox.run_code(
                 code=code, language=self._CODE_TYPE_MAPPING[code_type]
             )
-        return execution.text
+        return execution.text if execution.text else str(execution.error)
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
