@@ -27,7 +27,7 @@ from camel.types import ModelType
         ModelType.NVIDIA_NEMOTRON_340B_REWARD,
     ],
 )
-@patch("camel.models.reward.OpenAI")
+@patch("camel.models.reward.nemetro_model.OpenAI")
 def test_nemetro_reward_model(mock_openai, model_type: ModelType):
     mock_client = MagicMock()
     mock_openai.return_value = mock_client
@@ -38,7 +38,7 @@ def test_nemetro_reward_model(mock_openai, model_type: ModelType):
 
 
 @pytest.mark.model_backend
-@patch("camel.models.reward.OpenAI")
+@patch("camel.models.reward.nemetro_model.OpenAI")
 def test_nemetro_reward_model_evaluate(mock_openai):
     mock_client = MagicMock()
     mock_openai.return_value = mock_client
