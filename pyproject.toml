@@ -27,6 +27,7 @@ repository = "https://github.com/camel-ai/camel"
 documentation = "https://docs.camel-ai.org"
 
 [tool.poetry.dependencies]
+httpx = ">=0.23.0,<0.27.2"
 python = ">=3.10,<3.13"
 numpy = "^1"
 openai = "^1.45.0"
