@@ -54,6 +54,11 @@ from camel.configs import DeepSeekConfig
 #     model_config_dict=ChatGPTConfig().as_dict(), # [Optional] the config for model
 # )
 
+
+"""
+please set the below os environment:
+export DEEPSEEK_API_KEY=""
+"""
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEEPSEEK,
     model_type=ModelType.DEEPSEEK_CHAT,
