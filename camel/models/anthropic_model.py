@@ -109,7 +109,8 @@ class AnthropicModel(BaseModelBackend):
             int: The number of tokens in the prompt.
         """
 
-        # TODO: Fill more parameters in count_tokens, such as model, role, for more accurate token counting
+        # TODO: Fill more parameters in count_tokens, such as model,
+        #  role, for more accurate token counting
         return self.client.beta.messages.count_tokens(
             messages=[BetaMessageParam(content=prompt, role="user")],
             model="claude-3-5-sonnet-20240620",
