@@ -33,15 +33,14 @@ This module is designed to read files of various formats, extract their contents
 
 ```python
 from io import BytesIO
-from camel.loaders import read_file
+from camel.loaders import create_file_from_raw_bytes
 
 # Read a pdf file from disk
 with open("test.pdf", "rb") as file:
-    file_content = BytesIO(file.read())
-    file_content.name = "test.pdf"
+    file_content = file.read()
 
-# Use the read_file function to create an object based on the file extension
-file_obj = read_file(file_content)
+# Use the create_file function to create an object based on the file extension
+file_obj = create_file_from_raw_bytes(file_content, "test.pdf")
 
 # Once you have the File object, you can access its content
 print(file_obj.docs[0]["page_content"])
@@ -53,6 +52,9 @@ To get started with the `Unstructured IO` module, you first need to import the m
 
 Utilize `parse_file_or_url` to load and parse unstructured data from a file or URL
 ```python
+from camel.loaders import UnstructuredIO
+
+uio = UnstructuredIO()
 # Set example url
 example_url = (
     "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
@@ -93,7 +95,7 @@ print(cleaned_text)
 Utilize `extract_data_from_text` to do text extraction operation
 ```python
 # Set example email to extract
-example_email_text = ("Contact me at example@email.com.")
+example_email_text = "Contact me at example@email.com."
 
 extracted_text = uio.extract_data_from_text(text=example_email_text,
 extract_type="extract_email_address")
@@ -139,6 +141,8 @@ This is a basic guide to get you started with the `Unstructured IO` module. For 
 
 Initialize the client, set up the required actors and parameters.
 ```python
+from camel.loaders import Apify
+
 apify = Apify()
 
 run_input = {

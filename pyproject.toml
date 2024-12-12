@@ -487,5 +487,8 @@ module = [
     "notion-client",
     "ffmpeg",
     "yt_dlp",
+    "cohere.*",
+    "yaml",
+    "litellm.*"
 ]
 ignore_missing_imports = true
