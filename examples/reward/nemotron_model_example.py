@@ -15,7 +15,7 @@ from camel.models.reward import Evaluator, NemotroRewardModel
 from camel.types import ModelType
 
 reward_model = NemotroRewardModel(
-    model_type=ModelType.NEMOTRON_4_REWARD,
+    model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
     url="https://integrate.api.nvidia.com/v1",
 )
 
