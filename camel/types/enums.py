@@ -621,6 +621,7 @@ class ModelPlatformType(Enum):
     QWEN = "tongyi-qianwen"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
+    SGLANG = "sglang"
 
     @property
     def is_openai(self) -> bool:
@@ -651,6 +652,11 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_sglang(self) -> bool:
+        r"""Returns whether this platform is sglang."""
+        return self is ModelPlatformType.SGLANG
 
     @property
     def is_together(self) -> bool:
