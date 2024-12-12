@@ -14,6 +14,8 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 
+from anthropic.types.beta import BetaMessageParam
+
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
@@ -106,7 +108,12 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             int: The number of tokens in the prompt.
         """
-        return self.client.count_tokens(prompt)
+
+        # TODO: Fill more parameters in count_tokens, such as model, role, for more accurate token counting
+        return self.client.beta.messages.count_tokens(
+            messages=[BetaMessageParam(content=prompt, role="user")],
+            model="claude-3-5-sonnet-20240620",
+        ).input_tokens
 
     @api_keys_required("ANTHROPIC_API_KEY")
     def run(
