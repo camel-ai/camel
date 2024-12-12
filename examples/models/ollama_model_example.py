@@ -69,6 +69,7 @@ class PetList(BaseModel):
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
     model_type="llama3.2",
+    # Ensure using ollama verison >= 0.5.1 to use structured output feature
     model_config_dict={"temperature": 0, "response_format": PetList},
 )
 
