@@ -23,11 +23,11 @@ from camel.o1datagen.o1datagen import O1DataGene
 
 # ### First we will set the OPENAI_API_KEY that will be used to generate the data.
 
-from getpass import getpass
+# from getpass import getpass
 
 
-openai_api_key = getpass('Enter your OpenAI API key: ')
-os.environ["OPENAI_API_KEY"] = openai_api_key
+# openai_api_key = getpass('Enter your OpenAI API key: ')
+# os.environ["OPENAI_API_KEY"] = openai_api_key
 
 
 # ### Create a system message to define agent's default role and behaviors.
@@ -42,18 +42,23 @@ sys_msg = 'You are a genius at slow-thinking data and code'
 
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
 
 
+from camel.configs import DeepSeekConfig
 
 
 # Define the model, here in this case we use gpt-4o-mini
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig().as_dict(), # [Optional] the config for model
-)
+# model = ModelFactory.create(
+#     model_platform=ModelPlatformType.OPENAI,
+#     model_type=ModelType.GPT_4O_MINI,
+#     model_config_dict=ChatGPTConfig().as_dict(), # [Optional] the config for model
+# )
 
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_CHAT,
+    model_config_dict=DeepSeekConfig(temperature=1.3).as_dict(), # [Optional] the config for model
+)
 
 # Initialize AI model by OPENAI_COMPATIBLE_MODEL
 
@@ -61,7 +66,7 @@ model = ModelFactory.create(
 # from camel.models import ModelFactory
 # from camel.types import ModelPlatformType, ModelType
 
-
+# from camel.configs import ChatGPTConfig
 
 # sys_msg = 'You are a genius at slow-thinking data and code'
 # model = ModelFactory.create(

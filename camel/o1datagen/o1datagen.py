@@ -14,38 +14,18 @@
 
 
 from collections import defaultdict
-import logging
 import os
 from datetime import datetime
-from dotenv import load_dotenv
+
+from camel.logger import get_logger, enable_logging
+
+# Enable logging if needed
+enable_logging()
+
+# Get a logger for this module
+logger = get_logger('o1datagen')
 
 
-# ### Configure logging,create a log file and a console handler
-# Configure logging
-def setup_logger():
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-    log_filename = f'logs/omega_prm_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler = logging.FileHandler(log_filename, encoding='utf-8')
-    file_handler.setFormatter(formatter)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-    return logger
-
-
-
-logger = setup_logger()
-
-
-
-# Load environment variables
-load_dotenv()
-logger.info("Environment variables loaded")
 class O1DataGene:
     def __init__(self, chat_agent, golden_answers=None, search_limit=100):
         self.chat_agent = chat_agent
