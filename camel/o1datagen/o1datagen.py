@@ -15,8 +15,11 @@
 
 from collections import defaultdict
 import os
+import json
 from datetime import datetime
+from typing import Dict
 
+from camel.agents import ChatAgent
 from camel.logger import get_logger, enable_logging
 
 # Enable logging if needed
@@ -27,15 +30,29 @@ logger = get_logger('o1datagen')
 
 
 class O1DataGene:
-    def __init__(self, chat_agent, golden_answers=None, search_limit=100):
+    r"""Class for generating and managing data through chat agent interactions.
+
+    This class handles the generation of data by interacting with a chat agent,
+    managing golden answers, and maintaining a solution tree for correct solution steps.
+
+    Args:
+        chat_agent (ChatAgent): The chat agent used for generating responses and
+            interacting with the system.
+        golden_answers (dict): Dictionary containing pre-defined correct answers for
+            validation and comparison. Required for answer verification.
+        search_limit (int, optional): Maximum number of search iterations allowed.
+            Defaults to 100.
+    """
+    def __init__(self, chat_agent: ChatAgent, golden_answers: Dict[str, str],
+                 search_limit: int = 100):
         self.chat_agent = chat_agent
-        self.golden_answers = golden_answers if golden_answers else {}
+        self.golden_answers = golden_answers
         self.search_limit = search_limit
         self.solution_tree = defaultdict(dict)  # Store correct solution steps
         logger.info("O1DataGene initialized with search_limit=%d", search_limit)
 
-    def get_answer(self, question, context=""):
-        """
+    def get_answer(self, question: str, context: str = "") -> str:
+        r"""
         Get the AI's thought process and answer
         """
         prompt = f"""Please think step by step and solve this problem: {question}
@@ -52,8 +69,8 @@ class O1DataGene:
         logger.info("AI thought process:\n%s", answer)
         return answer
 
-    def verify_answer(self, question, answer):
-        """
+    def verify_answer(self, question: str, answer: str) -> bool:
+        r"""
         Verify if the answer is correct
         """
         prompt = f"""Please determine if the following two answers express the same meaning:
@@ -67,8 +84,8 @@ class O1DataGene:
         logger.info("Answer verification result: %s", is_correct)
         return is_correct
 
-    def monte_carlo_tree_search(self, question, partial_solution=""):
-        """
+    def monte_carlo_tree_search(self, question: str, partial_solution: str = "") -> tuple[str, bool]:
+        r"""
         Generate and verify answers using Monte Carlo Tree Search
         """
         logger.info("Starting Monte Carlo Tree Search")
@@ -83,7 +100,7 @@ class O1DataGene:
                 logger.info("Correct answer found! Stopping search")
                 return current_solution, True
             # Analyze error, get similarity score
-            prompt = f"""Analyze the similarity of this answer to the correct answer (between 0-1):
+            prompt = f"""Analyze  the similarity of this answer to the correct answer (between 0-1):
             Question: {question}
             Generated answer: {current_solution}
             Correct answer: {self.golden_answers[question]}
@@ -100,16 +117,32 @@ class O1DataGene:
                 continue
         return best_solution, False
 
-    def binary_search_error(self, question, solution):
-        """
-        Use binary search to locate the first error
+    def binary_search_error(self, question: str, solution: str) -> int:
+        r"""Use binary search to locate the first error in the solution.
+
+        This method splits the solution into sentences using both English and Chinese
+        sentence delimiters and performs binary search to find the first error.
+
+        Args:
+            question (str): The question being solved.
+            solution (str): The complete solution to analyze.
+
+        Returns:
+            int: The position of the first error found in the solution. Returns -1
+                if no errors are found (all sentences are correct).
         """
         logger.info("Starting binary search for error location")
-        sentences = solution.split('。')
+        # Split by both English period and Chinese period
+        sentences = [s.strip() for s in solution.replace('。', '.').split('.') if s.strip()]
+        
+        # First check if the entire solution is correct
+        if self.verify_answer(question, solution):
+            return -1
+            
         left, right = 0, len(sentences)
         while left < right:
             mid = (left + right) // 2
-            partial_solution = '。'.join(sentences[:mid]) + '。'
+            partial_solution = '. '.join(sentences[:mid]) + '.'
             logger.info("Checking solution fragment:\n%s", partial_solution)
             # Verify if the current part is correct
             is_correct = self.verify_answer(question, partial_solution)
@@ -117,58 +150,93 @@ class O1DataGene:
                 left = mid + 1
             else:
                 right = mid
-        error_position = left
-        logger.info("First error position found: sentence %d", error_position)
-        return error_position
+        logger.info("First error position found: sentence %d", left)
+        return left
 
-    def solve(self, question):
-        """
-        Main process to solve the problem
+    def solve(self, question: str) -> str:
+        r"""Main process to solve the problem.
+
+        This method attempts to solve the problem through the following steps:
+        1. Get an initial solution
+        2. If not correct, use Monte Carlo Tree Search
+        3. If still not correct, use binary search to locate errors
+        4. Generate a new solution based on the correct parts
+
+        Args:
+            question (str): The question to solve.
+
+        Returns:
+            str: The final solution to the question.
         """
         logger.info("\n=== Starting to solve the problem: %s ===", question)
-        # 1. Use Monte Carlo Tree Search to generate answer
+        # 1. Get initial solution
+        solution = self.get_answer(question)
+        if self.verify_answer(question, solution):
+            logger.info("Initial solution is correct")
+            return solution
+
+        # 2. Try Monte Carlo Tree Search
         solution, is_correct = self.monte_carlo_tree_search(question)
         if is_correct:
-            logger.info("Problem solved!")
-            self.solution_tree[question] = {
-                "solution": solution,
-                "is_correct": True,
-                "timestamp": datetime.now().isoformat()
-            }
+            logger.info("Monte Carlo Tree Search found correct solution")
             return solution
-        # 2. If the answer is not completely correct, use binary search to locate the error
+
+        # 3. If the answer is not completely correct, use binary search to locate the error
         error_pos = self.binary_search_error(question, solution)
-        # 3. Store the correct part
-        correct_part = '。'.join(solution.split('。')[:error_pos]) + '。'
+        
+        # If no errors found (error_pos == -1), return the current solution
+        if error_pos == -1:
+            logger.info("No errors found in the solution")
+            return solution
+            
+        # 4. Generate new solution based on correct part
+        correct_part = '. '.join(solution.split('. ')[:error_pos]) + '.'
         final_solution = self.get_answer(question, correct_part)
         self.solution_tree[question] = {
             "solution": final_solution,
-            "partial_correct": correct_part,
-            "error_position": error_pos,
-            "is_correct": False,
-            "timestamp": datetime.now().isoformat()
+            "correct_part": correct_part,
+            "error_position": error_pos
         }
-        logger.info("Final answer:\n%s", final_solution)
+        logger.info("Final solution generated")
         return final_solution
 
-    def import_qa_from_json(self, json_file_path):
-        """
-        Import question and answer data from JSON file
-        JSON format should be: {"question1": "answer1", "question2": "answer2", ...}
+    def import_qa_from_json(self, data: str | Dict[str, str]) -> bool:
+        r"""Import question and answer data from either a JSON file or a dictionary.
+
+        Args:
+            data (Union[str, Dict[str, str]]): Either a path to a JSON file containing
+                QA pairs or a dictionary of question-answer pairs. If a string is
+                provided, it's treated as a file path. The expected format is:
+                {"question1": "answer1", "question2": "answer2", ...}
+
+        Returns:
+            bool: True if import was successful, False otherwise.
         """
         try:
-            with open(json_file_path, 'r', encoding='utf-8') as f:
-                qa_data = json.load(f)
-            # Update golden_answers
+            if isinstance(data, str):
+                logger.info("Loading QA pairs from file: %s", data)
+                with open(data, 'r', encoding='utf-8') as f:
+                    qa_data = json.load(f)
+            else:
+                logger.info("Loading QA pairs from provided dictionary")
+                qa_data = data
+
+            # Validate the data format
+            if not isinstance(qa_data, dict):
+                logger.error("Invalid data format: expected dictionary")
+                return False
+                
+            # Update golden answers
             self.golden_answers.update(qa_data)
-            logger.info(f"Successfully imported {len(qa_data)} QA pairs from {json_file_path}")
+            logger.info("Successfully imported %d QA pairs", len(qa_data))
             return True
+            
         except Exception as e:
-            logger.error(f"Error importing JSON data: {str(e)}")
+            logger.error("Error importing QA data: %s", str(e))
             return False
 
-    def export_solutions(self, filepath='solutions.json'):
-        """
+    def export_solutions(self, filepath: str = 'solutions.json') -> None:
+        r"""
         Export the solution process and results to a JSON file
         """
         export_data = {
