@@ -85,11 +85,11 @@ slack-bolt = { version = "^1.20.1", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
 imageio = { extras = ["pyav"], version = "^2.34.2", optional = true }
-e2d = { version = "^1.4.13", optional = true }
+e2b-code-interpreter = { version = "^1.0.3", optional = true }
 pyTelegramBotAPI = { version = "^4.18.0", optional = true }
 "discord.py" = { version = "^2.3.2", optional = true }
 docker = { version = "^7.1.0", optional = true }
-agentops = { version = "^0.3.6", optional = true }
+agentops = { version = "^0.3.21", optional = true }
 azure-storage-blob = { version = "^12.21.0", optional = true }
 google-cloud-storage = { version = "^2.18.0", optional = true }
 botocore = { version = "^1.35.3", optional = true }
@@ -134,7 +134,6 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
-e2b-code-interpreter = "^1.0.3"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -196,7 +195,7 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
-    "e2d",
+    "e2b-code-interpreter",
     "firecrawl-py",
     "arxiv",
     "arxiv2text",
@@ -285,7 +284,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
-    "e2d",
+    "e2b-code-interpreter",
     "nltk",
     "firecrawl-py",
     "arxiv",
@@ -456,7 +455,6 @@ module = [
     "qdrant_client.*",
     "unstructured.*",
     "nltk",
-    "e2d",
     "e2b_code_interpreter",
     "firecrawl",
     "imageio",
@@ -492,8 +490,5 @@ module = [
     "notion-client",
     "ffmpeg",
     "yt_dlp",
-    "cohere.*",
-    "yaml",
-    "litellm.*"
 ]
 ignore_missing_imports = true
