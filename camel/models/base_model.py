@@ -116,9 +116,11 @@ class BaseModelBackend(ABC):
         return self.token_counter.count_tokens_from_messages(messages)
 
     def _to_chat_completion(
-        self, response: "ParsedChatCompletion"
+        self, response: ParsedChatCompletion
     ) -> ChatCompletion:
-        # TODO: Handle n > 1 or warn consumers it's not supported
+        if len(response.choices) > 1:
+            print("Warning: Multiple response choices detected")
+
         choice = dict(
             index=response.choices[0].index,
             message={
