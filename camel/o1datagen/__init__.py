@@ -11,14 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
+from .o1datagen import O1DataGene
 
-
-class Record(BaseModel):
-    id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-    class Config:
-        extra = "allow"  # Allow any additional fields
+__all__ = ['O1DataGene']
