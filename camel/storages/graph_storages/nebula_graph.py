@@ -13,7 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
     from nebula3.data.ResultSet import (  # type: ignore[import-untyped]
@@ -188,31 +189,187 @@ class NebulaGraph(BaseGraphStorage):
         self,
         edge_type: str,
     ) -> None:
-        r"""Ensures that a specified edge type exists in the NebulaGraph
-        database. If the edge type already exists, this method does nothing.
+        """Creates an edge type with temporal support if it doesn't exist.
+
+        Each edge type will have a timestamp property to track temporal
+        information.
 
         Args:
-            edge_type (str): The name of the edge type to be created.
-
-        Raises:
-            Exception: If the edge type creation fails after multiple retry
-                attempts, an exception is raised with the error message.
+            edge_type (str): The type of edge to be created.
         """
-        create_edge_stmt = f'CREATE EDGE IF NOT EXISTS {edge_type}()'
+        create_edge_stmt = (
+            f'CREATE EDGE IF NOT EXISTS {edge_type}' '(timestamp timestamp)'
+        )
 
         for attempt in range(MAX_RETRIES):
             res = self.query(create_edge_stmt)
             if res.is_succeeded():
-                return  # Tag creation succeeded, exit the method
+                return
 
             if attempt < MAX_RETRIES - 1:
                 time.sleep(RETRY_DELAY)
             else:
-                # Final attempt failed, raise an exception
                 raise Exception(
-                    f"Failed to create tag `{edge_type}` after "
+                    f"Failed to create edge {edge_type} after "
                     f"{MAX_RETRIES} attempts: {res.error_msg()}"
                 )
+
+    def add_temporal_triplet(
+        self,
+        subj: str,
+        obj: str,
+        rel: str,
+        timestamp: Optional[datetime] = None,
+    ) -> None:
+        """Adds a temporal triplet (subject-relationship-object with
+           timestamp).
+
+        Args:
+            subj (str): The identifier for the subject entity.
+            obj (str): The identifier for the object entity.
+            rel (str): The identifier for the relationship type.
+            timestamp (datetime, optional): The timestamp for the relationship.
+                Defaults to current time if not specified.
+        """
+        self.ensure_tag_exists(subj)
+        self.ensure_tag_exists(obj)
+        self.ensure_edge_type_exists(rel)
+        self.add_node(node_id=subj, tag_name=subj)
+        self.add_node(node_id=obj, tag_name=obj)
+
+        timestamp = timestamp or datetime.now()
+        formatted_timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+        insert_stmt = (
+            f'INSERT EDGE IF NOT EXISTS {rel}(timestamp) VALUES '
+            f'"{subj}"->"{obj}":('
+            f'timestamp("{formatted_timestamp}"))'
+        )
+
+        res = self.query(insert_stmt)
+        if not res.is_succeeded():
+            raise Exception(
+                f'Failed to create temporal relationship: {res.error_msg()}'
+            )
+
+    def query_temporal_triplets(
+        self,
+        subj: Optional[str] = None,
+        obj: Optional[str] = None,
+        rel: Optional[str] = None,
+        time_range: Optional[Tuple[datetime, datetime]] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Queries temporal triplets with flexible filtering options.
+
+        Args:
+            subj (str, optional): Filter by subject identifier
+            obj (str, optional): Filter by object identifier
+            rel (str, optional): Filter by relationship type
+            time_range (Tuple[datetime, datetime], optional): Time range filter
+                as (start_time, end_time)
+            limit (int, optional): Maximum number of results to return
+
+        Returns:
+            List[Dict[str, Any]]: List of matching temporal triplets
+        """
+        where_clauses = []
+
+        if time_range:
+            start_time, end_time = time_range
+            start_str = start_time.strftime("%Y-%m-%d %H:%M:%S")
+            end_str = end_time.strftime("%Y-%m-%d %H:%M:%S")
+            where_clauses.extend(
+                [
+                    f'e.timestamp >= timestamp("{start_str}")',
+                    f'e.timestamp <= timestamp("{end_str}")',
+                ]
+            )
+
+        # Build the MATCH clause based on provided filters
+        if rel:
+            edge_type = f":{rel}"
+        else:
+            edge_type = ""
+
+        source = f'"{subj}"' if subj else "v1"
+        target = f'"{obj}"' if obj else "v2"
+
+        # Construct the query
+        query = f"""
+        MATCH path = ({source})-[e{edge_type}]->({target})
+        WHERE {' AND '.join(where_clauses) if where_clauses else 'TRUE'}
+        RETURN startNode(path) AS subject, 
+               type(e) AS relationship,
+               endNode(path) AS object,
+               e.timestamp AS timestamp
+        ORDER BY e.timestamp DESC
+        """
+
+        if limit:
+            query += f"\nLIMIT {limit}"
+
+        result = self.query(query)
+        triplets = []
+
+        if result.is_succeeded():
+            for row in result.rows():
+                triplet = {
+                    'subject': row.values[0].get_sVal().decode('utf-8'),
+                    'relationship': row.values[1].get_sVal().decode('utf-8'),
+                    'object': row.values[2].get_sVal().decode('utf-8'),
+                    'timestamp': row.values[3].get_dVal(),
+                }
+                triplets.append(triplet)
+
+        return triplets
+
+    def get_temporal_evolution(
+        self,
+        subj: Optional[str] = None,
+        obj: Optional[str] = None,
+        time_points: Optional[List[datetime]] = None,
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Retrieves the evolution of relationships over specified time points.
+
+        Args:
+            subj (str, optional): Subject identifier to track
+            obj (str, optional): Object identifier to track
+            time_points (List[datetime], optional):
+                List of time points to check.
+                If None, uses daily intervals in the data range.
+
+        Returns:
+            Dict[str, List[Dict[str, Any]]]:
+            Temporal evolution of relationships
+        """
+        if time_points is None:
+            # Get the full time range from the data
+            range_query = """
+            MATCH ()-[e]->()
+            RETURN min(e.timestamp) as min_time, max(e.timestamp) as max_time
+            """
+            result = self.query(range_query)
+            if result.is_succeeded() and result.rows():
+                row = result.rows()[0]
+                min_time = row.values[0].get_dVal()
+                max_time = row.values[1].get_dVal()
+                # Generate daily time points
+                time_points = [
+                    min_time + timedelta(days=x)
+                    for x in range((max_time - min_time).days + 1)
+                ]
+
+        evolution = {}
+        for point in time_points:  # type:ignore[union-attr]
+            triplets = self.query_temporal_triplets(
+                subj=subj,
+                obj=obj,
+                time_range=(point, point + timedelta(days=1)),
+            )
+            evolution[point.strftime("%Y-%m-%d")] = triplets
+
+        return evolution
 
     def ensure_tag_exists(self, tag_name: str) -> None:
         r"""Ensures a tag is created in the NebulaGraph database. If the tag
