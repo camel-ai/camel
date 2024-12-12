@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.models.reward import NemotroRewardModel
+from camel.models.reward import NemotronRewardModel
 from camel.types import ModelType
 
 
@@ -32,7 +32,7 @@ def test_nemetro_reward_model(mock_openai, model_type: ModelType):
     mock_client = MagicMock()
     mock_openai.return_value = mock_client
 
-    model = NemotroRewardModel(model_type)
+    model = NemotronRewardModel(model_type)
     assert model.model_type == model_type
     assert model._client == mock_client
 
@@ -43,7 +43,7 @@ def test_nemetro_reward_model_evaluate(mock_openai):
     mock_client = MagicMock()
     mock_openai.return_value = mock_client
 
-    model = NemotroRewardModel(ModelType.NVIDIA_NEMOTRON_340B_REWARD)
+    model = NemotronRewardModel(ModelType.NVIDIA_NEMOTRON_340B_REWARD)
     messages = [{"role": "user", "content": "Hello"}]
     mock_response = MagicMock()
     mock_client.chat.completions.create.return_value = mock_response
@@ -60,7 +60,7 @@ def test_nemetro_reward_model_evaluate(mock_openai):
 
 @pytest.mark.model_backend
 def test_nemetro_reward_model_get_scores_types():
-    model = NemotroRewardModel(ModelType.NVIDIA_NEMOTRON_340B_REWARD)
+    model = NemotronRewardModel(ModelType.NVIDIA_NEMOTRON_340B_REWARD)
     score_types = model.get_scores_types()
     assert score_types == [
         "helpfulness",
@@ -73,7 +73,7 @@ def test_nemetro_reward_model_get_scores_types():
 
 @pytest.mark.model_backend
 def test_nemetro_reward_model_parse_scores():
-    model = NemotroRewardModel(ModelType.NVIDIA_NEMOTRON_340B_REWARD)
+    model = NemotronRewardModel(ModelType.NVIDIA_NEMOTRON_340B_REWARD)
     mock_response = MagicMock()
     mock_response.choices = [
         MagicMock(

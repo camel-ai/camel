@@ -21,7 +21,7 @@ from camel.types import ChatCompletion, ModelType
 from camel.utils import api_keys_required
 
 
-class NemotroRewardModel(BaseRewardModel):
+class NemotronRewardModel(BaseRewardModel):
     r"""Reward model based on the Nemetro model with OpenAI compatibility.
 
     Args:

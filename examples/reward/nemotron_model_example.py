@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from camel.models.reward import Evaluator, NemotroRewardModel
+from camel.models.reward import Evaluator, NemotronRewardModel
 from camel.types import ModelType
 
-reward_model = NemotroRewardModel(
+reward_model = NemotronRewardModel(
     model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
     url="https://integrate.api.nvidia.com/v1",
 )

@@ -11,12 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base_reward_model import BaseRewardModel
-from .evaluator import Evaluator
-from .nemetron_model import NemotronRewardModel
+from firecrawl import FirecrawlApp
 
-__all__ = [
-    'BaseRewardModel',
-    'NemotronRewardModel',
-    'Evaluator',
-]
+app = FirecrawlApp(
+    api_url="https://firecrawl.testprd.eigent.ai",
+)
+try:
+    crawl_response = app.crawl_url(
+        url="https://docs.camel-ai.org/", params={'formats': ['markdown']}
+    )
+    print("Crawl Response:", crawl_response)
+except Exception as e:
+    print("Error occurred:", str(e))
