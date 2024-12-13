@@ -13,10 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base_reward_model import BaseRewardModel
 from .evaluator import Evaluator
-from .nemetro_model import NemotroRewardModel
+from .nemotron_model import NemotronRewardModel
 
 __all__ = [
     'BaseRewardModel',
-    'NemotroRewardModel',
+    'NemotronRewardModel',
     'Evaluator',
 ]
