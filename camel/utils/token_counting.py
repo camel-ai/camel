@@ -21,6 +21,7 @@ from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
 from camel.logger import get_logger
+from PIL import Image
 from camel.types import (
     ModelType,
     OpenAIImageType,
