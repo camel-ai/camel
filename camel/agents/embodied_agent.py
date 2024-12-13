@@ -191,8 +191,8 @@ class EmbodiedAgent(ChatAgent):
         message = BaseMessage(
             input_message.role_name,
             input_message.role_type,
-            content,
             input_message.meta_dict,
+            content,
         )
         return ChatAgentResponse(
             msgs=[message],
