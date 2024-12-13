@@ -48,7 +48,7 @@ class BaseMessage:
         role_name (str): The name of the user or assistant role.
         role_type (RoleType): The type of role, either :obj:`RoleType.
             ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
+        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated
@@ -65,9 +65,9 @@ class BaseMessage:
 
     role_name: str
     role_type: RoleType
+    meta_dict: Optional[Dict[str, Any]]
     content: str
 
-    meta_dict: Optional[Dict[str, Any]] = None
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
@@ -79,7 +79,7 @@ class BaseMessage:
         cls,
         role_name: str,
         content: str,
-        meta_dict: Optional[Dict[str, Any]] = None,
+        meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
         image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[
@@ -94,7 +94,7 @@ class BaseMessage:
         Args:
             role_name (str): The name of the user role.
             content (str): The content of the message.
-            meta_dict (Optional[Dict[str, Any]]): Additional metadata
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
                 dictionary for the message.
             video_bytes (Optional[bytes]): Optional bytes of a video
                 associated with the message.
@@ -111,8 +111,8 @@ class BaseMessage:
         return cls(
             role_name,
             RoleType.USER,
-            content,
             meta_dict,
+            content,
             video_bytes,
             image_list,
             OpenAIVisionDetailType(image_detail).value,
@@ -124,7 +124,7 @@ class BaseMessage:
         cls,
         role_name: str,
         content: str,
-        meta_dict: Optional[Dict[str, Any]] = None,
+        meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
         image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[
@@ -139,7 +139,7 @@ class BaseMessage:
         Args:
             role_name (str): The name of the assistant role.
             content (str): The content of the message.
-            meta_dict (Optional[Dict[str, Any]]): Additional metadata
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
                 dictionary for the message.
             video_bytes (Optional[bytes]): Optional bytes of a video
                 associated with the message.
@@ -156,8 +156,8 @@ class BaseMessage:
         return cls(
             role_name,
             RoleType.ASSISTANT,
-            content,
             meta_dict,
+            content,
             video_bytes,
             image_list,
             OpenAIVisionDetailType(image_detail).value,
@@ -177,8 +177,8 @@ class BaseMessage:
         return self.__class__(
             role_name=self.role_name,
             role_type=self.role_type,
-            content=content,
             meta_dict=self.meta_dict,
+            content=content,
         )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:

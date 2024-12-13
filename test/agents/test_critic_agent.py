@@ -24,7 +24,8 @@ def critic_agent() -> CriticAgent:
         BaseMessage(
             "critic",
             RoleType.CRITIC,
-            (
+            None,
+            content=(
                 "You are a critic who assists in selecting an option "
                 "and provides explanations. "
                 "Your favorite fruit is Apple. "
