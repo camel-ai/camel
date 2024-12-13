@@ -528,7 +528,7 @@ def test_tool_calling_sync():
     assert str(tool_calls[0]).startswith("Function Execution")
 
     assert tool_calls[0].func_name == "multiply"
-    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].args == {'a': 2, 'b': 8, 'decimal_places': 0}
     assert tool_calls[0].result == 16
 
 
@@ -570,7 +570,7 @@ async def test_tool_calling_math_async():
     assert str(tool_calls[0]).startswith("Function Execution")
 
     assert tool_calls[0].func_name == "multiply"
-    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].args == {'a': 2, 'b': 8, 'decimal_places': 0}
     assert tool_calls[0].result == 16
 
 
