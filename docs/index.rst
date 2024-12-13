@@ -5,7 +5,7 @@
 
 Welcome to CAMEL's documentation!
 =================================
-| **Finding the Scaling Law of Agents. The first and the best multi-agent framework**
+| **Finding the Scaling Law of Agents: The First and the Best Multi-Agent Framework.**
 
 | **CAMEL** emerges as the earliest `LLM-based multi-agent framework <https://arxiv.org/pdf/2303.17760.pdf>`_, and is now a generic framework to build and use LLM-based agents for real-world task solving. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
@@ -69,6 +69,12 @@ Main Documentation
    cookbooks/agents_tracking.ipynb
    cookbooks/workforce_judge_committee.ipynb
    cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
+   cookbooks/sft_data_generation_and_unsloth_finetuning.ipynb
+   cookbooks/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.ipynb
+   cookbooks/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.ipynb
+   cookbooks/sft_data_generation_and_unsloth_finetuning_tinyllama.ipynb
+   cookbooks/customer_service_Discord_bot_with_agentic_RAG.ipynb
+   cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.ipynb
 
 .. toctree::
    :maxdepth: 1

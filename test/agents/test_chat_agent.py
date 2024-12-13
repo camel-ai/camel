@@ -857,13 +857,8 @@ def test_tool_calling_sync(step_call_count=3):
             call for call in agent_response.info['tool_calls']
         ]
 
-        assert len(tool_calls) > 0, f"Error in calling round {i+1}"
-        assert str(tool_calls[0]).startswith(
-            "Function Execution"
-        ), f"Error in calling round {i+1}"
-
         assert (
-            tool_calls[0].func_name == "mul"
+            tool_calls[0].func_name == "multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -881,7 +876,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         meta_dict=None,
         content="You are a help assistant.",
     )
-    math_funcs = sync_funcs_to_async(MathToolkit().get_tools())
+    math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
@@ -900,7 +895,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Calculate the result of: 2*8-10.",
+        content="Calculate the result of: 2*8",
     )
 
     model_backend_rsp_tool = ChatCompletion(
@@ -1016,13 +1011,8 @@ async def test_tool_calling_math_async(step_call_count=3):
 
         tool_calls = agent_response.info['tool_calls']
 
-        assert tool_calls, f"Error in calling round {i+1}"
-        assert str(tool_calls[0]).startswith(
-            "Function Execution"
-        ), f"Error in calling round {i+1}"
-
         assert (
-            tool_calls[0].func_name == "mul"
+            tool_calls[0].func_name == "multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,

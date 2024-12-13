@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from anthropic.types.beta import BetaMessageParam
 
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
@@ -94,19 +96,26 @@ class AnthropicModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = AnthropicTokenCounter()
+            self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
-    def count_tokens_from_prompt(self, prompt: str) -> int:
+    def count_tokens_from_prompt(
+        self, prompt: str, role: Literal["user", "assistant"]
+    ) -> int:
         r"""Count the number of tokens from a prompt.
 
         Args:
             prompt (str): The prompt string.
+            role (Literal["user", "assistant"]): The role of the message
+                sender, either "user" or "assistant".
 
         Returns:
             int: The number of tokens in the prompt.
         """
-        return self.client.count_tokens(prompt)
+        return self.client.beta.messages.count_tokens(
+            messages=[BetaMessageParam(content=prompt, role=role)],
+            model=self.model_type,
+        ).input_tokens
 
     @api_keys_required("ANTHROPIC_API_KEY")
     def run(

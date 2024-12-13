@@ -15,12 +15,15 @@ from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
+from .deepseek_model import DeepSeekModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
+from .model_manager import ModelManager, ModelProcessingError
 from .nemotron_model import NemotronModel
+from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
@@ -28,6 +31,7 @@ from .openai_model import OpenAIModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
+from .sglang_model import SGLangModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
@@ -45,11 +49,14 @@ __all__ = [
     'ZhipuAIModel',
     'CohereModel',
     'ModelFactory',
+    'ModelManager',
     'LiteLLMModel',
     'OpenAIAudioModels',
     'NemotronModel',
+    'NvidiaModel',
     'OllamaModel',
     'VLLMModel',
+    'SGLangModel',
     'GeminiModel',
     'OpenAICompatibleModel',
     'RekaModel',
@@ -57,5 +64,6 @@ __all__ = [
     'TogetherAIModel',
     'YiModel',
     'QwenModel',
-    'FakeLLMModel',
+    'ModelProcessingError',
+    'DeepSeekModel',
 ]

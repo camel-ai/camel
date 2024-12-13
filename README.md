@@ -144,7 +144,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.9 https://github.com/camel-ai/camel.git
+git clone -b v0.2.11 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -321,6 +321,8 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
 | **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
 | **[3 Ways to Ingest Data from Websites with Firecrawl](https://docs.camel-ai.org/cookbooks/ingest_data_from_websites_with_Firecrawl.html)** | Explore three methods for extracting and processing data from websites using Firecrawl. |
+| **[Data Deneration with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/sft_data_generation_and_unsloth_finetuning.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
+| **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_with_agentic_RAG.html)** |  Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 
 ## Utilize Various LLMs as Backends
 
