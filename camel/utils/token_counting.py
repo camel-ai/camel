@@ -144,12 +144,21 @@ class OpenAITokenCounter(BaseTokenCounter):
             num_tokens += self.tokens_per_message
             for key, value in message.items():
                 if not isinstance(value, list):
-                    num_tokens += len(self.encoding.encode(str(value)))
+                    num_tokens += len(
+                        self.encoding.encode(
+                            str(value), allowed_special={'<|endoftext|>'}
+                        )
+                    )
                 else:
                     for item in value:
                         if item["type"] == "text":
                             num_tokens += len(
-                                self.encoding.encode(str(item["text"]))
+                                self.encoding.encode(
+                                    str(
+                                        item["text"],
+                                    ),
+                                    allowed_special={'<|endoftext|>'},
+                                )
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
