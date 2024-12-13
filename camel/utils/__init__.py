@@ -40,7 +40,6 @@ from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
-    FakeTokenCounter,
     GeminiTokenCounter,
     LiteLLMTokenCounter,
     MistralTokenCounter,
