@@ -20,6 +20,7 @@ from camel.types import (
 )
 
 from .conversion import (
+    AlpacaItem,
     HermesFunctionFormatter,
     ShareGPTMessage,
 )
@@ -52,4 +53,5 @@ __all__ = [
     'ShareGPTMessage',
     'BaseMessage',
     'FunctionCallingMessage',
+    'AlpacaItem',
 ]
