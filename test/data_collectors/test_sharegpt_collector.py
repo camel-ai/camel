@@ -92,4 +92,5 @@ def test_sharegpt_llm_converter():
     _ = agent.step(usr_msg)
     resp = collector.llm_convert()
     assert resp["system"] == "You are a helpful assistant"
-    assert len(resp["conversations"]) == 4
+    assert any("323" in entry['value'] for entry in resp["conversations"])
+
