@@ -49,7 +49,7 @@ mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.29.0", optional = true }
 cohere = { version = "^5.11.0", optional = true }
-
+sglang = { version = "^0.4.0", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -58,8 +58,8 @@ accelerate = { version = "^0", optional = true }
 datasets = { version = "^2", optional = true }
 torch = [
     { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
-    # Torch 2.1.0 is used on non-arm64 macOS systems.
-    { version = "2.1.0", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
+    # Torch 2.2.1 is used on non-arm64 macOS systems.
+    { version = "2.2.1", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
 ]
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
@@ -108,10 +108,10 @@ ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
 apify_client = { version = "^1.8.1", optional = true }
 notion-client = { version = "^2.2.1", optional = true }
+stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
-
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -163,6 +163,7 @@ model-platforms = [
     "reka-api",
     "anthropic",
     "cohere",
+    'sglang',
 ]
 
 huggingface-agent = [
@@ -221,6 +222,7 @@ tools = [
     "pdfplumber",
     "apify_client",
     "notion-client",
+    "stripe",
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
@@ -326,6 +328,7 @@ all = [
     "google-generativeai",
     "anthropic",
     "reka-api",
+    "sglang",
     # kv-storages
     "redis",
     # object-storages
@@ -338,6 +341,7 @@ all = [
     "apify_client",
     "fastapi",
     "uvicorn",
+    "stripe",
 ]
 
 [tool.poetry.group.dev]
@@ -476,6 +480,7 @@ module = [
     "mistralai",
     "cohere",
     "reka-api",
+    "sglang",
     "agentops",
     "botocore.*",
     "asknews",
