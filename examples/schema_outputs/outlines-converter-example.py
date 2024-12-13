@@ -18,14 +18,15 @@ from camel.schemas import OutlinesConverter
 
 # Define the model using OutlinesConverter
 model = OutlinesConverter(
-    model_type="microsoft/Phi-3-mini-4k-instruct", 
-    platform="transformers"
+    model_type="microsoft/Phi-3-mini-4k-instruct", platform="transformers"
 )
 
 ######## Regex conversion #########
 
 time_regex_pattern = r"(0?[1-9]|1[0-2]):[0-5]\d\s?(am|pm)?"
-output = model.convert_regex("The the best time to visit a dentist is at ", time_regex_pattern)
+output = model.convert_regex(
+    "The the best time to visit a dentist is at ", time_regex_pattern
+)
 
 print(output)
 '''
@@ -35,11 +36,13 @@ print(output)
 
 ######## JSON conversion #########
 
+
 # 1. Using a Pydantic model
 class Temperature(BaseModel):
     location: str
     date: str
     temperature: float
+
 
 output = model.convert_json(
     "Today is 2023-09-01, the temperature in Beijing is 30 degrees.",

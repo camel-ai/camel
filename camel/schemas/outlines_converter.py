@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Callable, Dict, List, Optional, Type, Union, Literal
+from typing import Any, Callable, List, Literal, Type, Union
 
 import outlines
 from pydantic import BaseModel
@@ -33,23 +33,24 @@ class OutlinesConverter(BaseConverter):
             4. llamacpp
             5. mlx
             (default: "transformers")
-        **kwargs: The keyword arguments to be used. See the outlines documentation for more details.
-        https://dottxt-ai.github.io/outlines/latest/reference/models/models/
+        **kwargs: The keyword arguments to be used. See the outlines
+            documentation for more details. See
+            https://dottxt-ai.github.io/outlines/latest/reference/models/models/
     """
 
     def __init__(
-        self,
-        model_type: str,
-        platform: str = "transformers",
-        **kwargs: Any
+        self, model_type: str, platform: str = "transformers", **kwargs: Any
     ):
         self.model_type = model_type
         from outlines import models
+
         match platform:
             case "vllm":
                 self._outlines_model = models.vllm(model_type, **kwargs)
             case "transformers":
-                self._outlines_model = models.transformers(model_type, **kwargs )
+                self._outlines_model = models.transformers(
+                    model_type, **kwargs
+                )
             case "mamba":
                 self._outlines_model = models.mamba(model_type, **kwargs)
             case "llamacpp":
@@ -60,7 +61,7 @@ class OutlinesConverter(BaseConverter):
                 raise ValueError(f"Unsupported platform: {platform}")
 
     def convert_regex(self, content: str, regex_pattern: str):
-        r'''Convert the content to the specified regex pattern.
+        r"""Convert the content to the specified regex pattern.
 
         Args:
             content (str): The content to be converted.
@@ -68,16 +69,18 @@ class OutlinesConverter(BaseConverter):
 
         Returns:
             str: The converted content.
-        '''
-        regex_generator = outlines.generate.regex(self._outlines_model, regex_pattern)
+        """
+        regex_generator = outlines.generate.regex(
+            self._outlines_model, regex_pattern
+        )
         return regex_generator(content)
 
     def convert_json(
-        self, 
-        content: str, 
-        output_schema: Union[Type[BaseModel], str, Callable]
+        self,
+        content: str,
+        output_schema: Union[Type[BaseModel], str, Callable],
     ):
-        r'''Convert the content to the specified JSON schema.
+        r"""Convert the content to the specified JSON schema.
 
         Args:
             content (str): The content to be converted.
@@ -86,12 +89,14 @@ class OutlinesConverter(BaseConverter):
 
         Returns:
             str: The converted content.
-        '''
-        json_generator = outlines.generate.json(self._outlines_model, output_schema)
+        """
+        json_generator = outlines.generate.json(
+            self._outlines_model, output_schema
+        )
         return json_generator(content)
 
     def convert_type(self, content: str, type_name: type):
-        r'''Convert the content to the specified type.
+        r"""Convert the content to the specified type.
 
         The following types are currently available:
             1. int
@@ -108,12 +113,14 @@ class OutlinesConverter(BaseConverter):
 
         Returns:
             str: The converted content.
-        '''
-        type_generator = outlines.generate.format(self._outlines_model, type_name)
+        """
+        type_generator = outlines.generate.format(
+            self._outlines_model, type_name
+        )
         return type_generator(content)
 
     def convert_choice(self, content: str, choices: List[str]):
-        r'''Convert the content to the specified choice.
+        r"""Convert the content to the specified choice.
 
         Args:
             content (str): The content to be converted.
@@ -121,12 +128,14 @@ class OutlinesConverter(BaseConverter):
 
         Returns:
             str: The converted content.
-        '''
-        choices_generator = outlines.generate.choice(self._outlines_model, choices)
+        """
+        choices_generator = outlines.generate.choice(
+            self._outlines_model, choices
+        )
         return choices_generator(content)
-    
+
     def convert_grammar(self, content: str, grammar: str):
-        r'''Convert the content to the specified grammar.
+        r"""Convert the content to the specified grammar.
 
         Args:
             content (str): The content to be converted.
@@ -134,15 +143,17 @@ class OutlinesConverter(BaseConverter):
 
         Returns:
             str: The converted content.
-        '''
-        grammar_generator = outlines.generate.cfg(self._outlines_model, grammar)
+        """
+        grammar_generator = outlines.generate.cfg(
+            self._outlines_model, grammar
+        )
         return grammar_generator(content)
 
     def convert(  # type: ignore[override]
         self,
         type: Literal["regex", "json", "type", "choice", "grammar"],
         content: str,
-        **kwargs
+        **kwargs,
     ) -> BaseModel:
         r"""Formats the input content into the expected BaseModel
 
@@ -155,14 +166,14 @@ class OutlinesConverter(BaseConverter):
         """
         match type:
             case "regex":
-                return self.convert_regex(content, kwargs.get("regex_pattern"))
+                return self.convert_regex(content, kwargs.get("regex_pattern"))  # type: ignore[arg-type]
             case "json":
-                return self.convert_json(content, kwargs.get("output_schema"))
+                return self.convert_json(content, kwargs.get("output_schema"))  # type: ignore[arg-type]
             case "type":
-                return self.convert_type(content, kwargs.get("type_name"))
+                return self.convert_type(content, kwargs.get("type_name"))  # type: ignore[arg-type]
             case "choice":
-                return self.convert_choice(content, kwargs.get("choices"))
+                return self.convert_choice(content, kwargs.get("choices"))  # type: ignore[arg-type]
             case "grammar":
-                return self.convert_grammar(content, kwargs.get("grammar"))
+                return self.convert_grammar(content, kwargs.get("grammar"))  # type: ignore[arg-type]
             case _:
                 raise ValueError("Unsupported output schema type")
