@@ -362,10 +362,10 @@ We implemented amazing research ideas from other works for you to build, compare
 We warmly invite you to use CAMEL for your impactful research.
 
 ## News
-📢 Added the Workforce module to the 🐫 CAMEL framework! For more details, see the [post](https://x.com/CamelAIOrg/status/1851682063830720912). (Oct 31, 2024)
-- Added subprocess support for Ollama and vLLM models. (Oct, 29, 2024)
-- Integrated Firecrawl's Map into the 🐫 CAMEL framework. (Oct, 22, 2024)
-- Integrated Nvidia's Llama-3.1-Nemotron-70b-Instruct! (Oct, 17, 2024)
+📢 Added support for Qwen models, Deepseek models to the 🐫 CAMEL framework!. (Nov 28, 2024)
+- Integrate SGLang into the 🐫 CAMEL framework. (Dec, 13, 2024)
+- Integrated Reward Model into the 🐫 CAMEL framework. (Dec, 13, 2024)
+- Added GAIA Benchmark! (Dec, 09, 2024)
 - ...
 - Released AI Society and Code dataset (April 2, 2023)
 - Initial release of `CAMEL` python library (March 21, 2023)
