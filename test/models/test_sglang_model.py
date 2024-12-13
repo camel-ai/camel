@@ -15,38 +15,34 @@ import re
 
 import pytest
 
-from camel.configs import AnthropicConfig
-from camel.models import AnthropicModel
-from camel.types import ModelType
-from camel.utils import AnthropicTokenCounter
+from camel.configs import SGLangConfig
+from camel.models import SGLangModel
+from camel.types import ModelType, UnifiedModelType
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.CLAUDE_INSTANT_1_2,
-        ModelType.CLAUDE_2_0,
-        ModelType.CLAUDE_2_1,
-        ModelType.CLAUDE_3_OPUS,
-        ModelType.CLAUDE_3_SONNET,
-        ModelType.CLAUDE_3_HAIKU,
-        ModelType.CLAUDE_3_5_SONNET,
-        ModelType.CLAUDE_3_5_HAIKU,
+        ModelType.GPT_4,
+        ModelType.GPT_4_TURBO,
+        ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
-def test_anthropic_model(model_type: ModelType):
-    model = AnthropicModel(model_type)
+def test_sglang_model(model_type: ModelType):
+    model = SGLangModel(model_type, api_key="sglang")
     assert model.model_type == model_type
-    assert model.model_config_dict == AnthropicConfig().as_dict()
-    assert isinstance(model.token_counter, AnthropicTokenCounter)
-    assert isinstance(model.model_type.value_for_tiktoken, str)
-    assert isinstance(model.model_type.token_limit, int)
+    assert model.model_config_dict == SGLangConfig().as_dict()
+    assert isinstance(model.token_counter, OpenAITokenCounter)
+    assert isinstance(model.model_type, UnifiedModelType)
+    assert isinstance(model.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_anthropic_model_unexpected_argument():
-    model_type = ModelType.CLAUDE_2_0
+def test_sglang_model_unexpected_argument():
+    model_type = ModelType.GPT_4
     model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
@@ -54,8 +50,8 @@ def test_anthropic_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Anthropic model backend."
+                "input into SGLang model backend."
             )
         ),
     ):
-        _ = AnthropicModel(model_type, model_config_dict)
+        _ = SGLangModel(model_type, model_config_dict, api_key="sglang")

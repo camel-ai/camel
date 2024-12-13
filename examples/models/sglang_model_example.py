@@ -12,19 +12,37 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+
+from dotenv import load_dotenv
+
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-vllm_model = ModelFactory.create(
-    model_platform=ModelPlatformType.VLLM,
-    model_type="microsoft/Phi-3-mini-4k-instruct",
+r"""
+Before using sglang to run LLM model offline,
+you need to install flashinfer which cannot 
+be installed by poetry.
+Consider your machine's configuration and 
+install flashinfer in a appropriate version.
+For more details, please refer to:
+https://sgl-project.github.io/start/install.html
+https://docs.flashinfer.ai/installation.html
+
+Please load HF_token in your environment variable.
+export HF_TOKEN=""
+"""
+load_dotenv()
+sglang_model = ModelFactory.create(
+    model_platform=ModelPlatformType.SGLANG,
+    model_type="meta-llama/Llama-3.2-1B",
     model_config_dict={"temperature": 0.0},
+    api_key="sglang",
 )
 
 assistant_sys_msg = "You are a helpful assistant."
 
-agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
+agent = ChatAgent(assistant_sys_msg, model=sglang_model, token_limit=4096)
 
 user_msg = "Say hi to CAMEL AI"
 
@@ -33,9 +51,6 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-vllm server started on http://localhost:8000/v1 for microsoft/
-Phi-3-mini-4k-instruct model
-
-Hello! I'm Phi, an AI developed by Microsoft. How can I help you today?
+CAMEL AI ReferentialAction
 ===============================================================================
 """
