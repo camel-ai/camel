@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import ast
 import asyncio
+import json
 from io import BytesIO
 from typing import List
 from unittest.mock import Mock
@@ -168,7 +168,7 @@ def test_chat_agent_step_with_structure_response():
     )
 
     response = assistant.step(user_msg, response_format=JokeResponse)
-    response_content_json = ast.literal_eval(response.msgs[0].content)
+    response_content_json = json.loads(response.msg.content)
     joke_response_keys = set(
         JokeResponse.model_json_schema()["properties"].keys()
     )

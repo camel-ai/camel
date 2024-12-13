@@ -942,7 +942,7 @@ class ChatAgent(BaseAgent):
             )
 
         for base_message_item in output_messages:
-            base_message_item.content = str(tool_call_record.result)
+            base_message_item.content = json.dumps(tool_call_record.result)
 
         # Recover the original tools
         self.func_dict = original_func_dict
