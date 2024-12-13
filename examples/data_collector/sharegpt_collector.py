@@ -57,6 +57,7 @@ response = agent.step(usr_msg)
 
 print(json.dumps(collector.convert(), indent=4))
 print(json.dumps(collector.llm_convert(), indent=4))
+print(collector.to_sharegpt_conversation(collector.convert()))
 
 # ruff: noqa: E501
 """
@@ -100,4 +101,5 @@ print(json.dumps(collector.llm_convert(), indent=4))
         }
     ]
 }
+root=[ShareGPTMessage(from_='system', value='You are a helpful assistant'), ShareGPTMessage(from_='human', value='Call tools to calculate 17 * 19 = ?'), ShareGPTMessage(from_='gpt', value='{"name": "multiply", "arguments": "{\'a\': 17, \'b\': 19}"}'), ShareGPTMessage(from_='human', value='"{\'result\': {\'323\'}}"'), ShareGPTMessage(from_='gpt', value='The result of \\( 17 \\times 19 \\) is \\( 323 \\).')]
 """

@@ -21,9 +21,19 @@ from typing_extensions import Self
 from camel.agents import ChatAgent
 from camel.data_collector.base import BaseDataCollector
 from camel.messages import BaseMessage
+from camel.messages.conversion.conversation_models import (
+    ShareGPTConversation,
+    ShareGPTMessage,
+)
 from camel.schemas import OpenAISchemaConverter
 from camel.toolkits import FunctionTool
 
+FROM_HASH = {
+    "human": "human",
+    "gpt": "gpt",
+    "observation": "human",
+    "function_call": "gpt",
+}
 # ruff: noqa: E501
 DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the conversations
@@ -179,3 +189,17 @@ class ShareGPTDataCollector(BaseDataCollector):
         return converter.convert(
             "\n".join(context), ShareGPTData, prompt
         ).model_dump()
+
+    @staticmethod
+    def to_sharegpt_conversation(data: Dict[str, Any]) -> ShareGPTConversation:
+        messages = [
+            ShareGPTMessage(from_="system", value=data["system"])  # type: ignore[call-arg]
+        ]
+        for item in data["conversations"]:
+            messages.append(
+                ShareGPTMessage(  # type: ignore[call-arg]
+                    from_=FROM_HASH[item["from"]],
+                    value=item["value"],
+                )
+            )
+        return ShareGPTConversation(root=messages)
