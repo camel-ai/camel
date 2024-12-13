@@ -9,8 +9,8 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 - Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
 
 ### Developer Meeting Time & Link 💻
-- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/aWfgSTh5?event=1288737688794435634)
-- Chinese Speakers: Mondays at 9 PM UTC+8. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/94271505221)
+- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/FFe4nB8MJj?event=1313319275708289034)
+- Chinese Speakers: Mondays at 9 PM UTC+8. Join via TecentMeeting: [Meeting Link](https://meeting.tencent.com/dm/057wap1eeCSY)
 
 ### Our Communication Channels 💬
 - **Discord:** [Join here](https://discord.camel-ai.org/)

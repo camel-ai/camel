@@ -93,4 +93,3 @@ def test_sharegpt_llm_converter():
     resp = collector.llm_convert()
     assert resp["system"] == "You are a helpful assistant"
     assert any("323" in entry['value'] for entry in resp["conversations"])
-
