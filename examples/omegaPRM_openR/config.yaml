@@ -1,0 +1,25 @@
+input:
+  json_file_path: 'example_problems.json'
+
+output:
+  file_prefix: 'example'
+  log_file_path: 'example_processing.log'
+
+processing:
+  initial_rollouts: 20
+  num_rollouts: 20
+  max_iterations: 100
+
+model:
+  model_type: "camel"
+  model_name: "deepseek-chat"
+  model_args:
+    max_tokens: 200
+    temperature_range: [0.7, 1.0]
+
+
+# There are 32 initial scroll execution questions to choose from. 
+# If the questions are too easy (all right) or too hard (all wrong), 
+# then OmegaPRM will not deal with them. 
+# So you may need a problem set of the right difficulty and a model that is not too strong, 
+# such as qwen's open source small model. Then the node node data may be obtained
