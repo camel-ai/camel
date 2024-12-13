@@ -115,7 +115,17 @@ class E2BInterpreter(BaseInterpreter):
             execution = self._sandbox.run_code(
                 code=code, language=self._CODE_TYPE_MAPPING[code_type]
             )
-        return execution.text if execution.text else str(execution.error)
+
+        if execution.text and execution.text.lower() != "none":
+            return execution.text
+
+        if execution.logs:
+            if execution.logs.stdout:
+                return ",".join(execution.logs.stdout)
+            elif execution.logs.stderr:
+                return ",".join(execution.logs.stderr)
+
+        return str(execution.error)
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
