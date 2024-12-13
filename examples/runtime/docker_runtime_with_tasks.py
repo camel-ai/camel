@@ -18,7 +18,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.runtime import DockerRuntime, TaskConfig
+from camel.runtimes import DockerRuntime, TaskConfig
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
@@ -31,8 +31,8 @@ runtime = (
     .add(
         toolkit.get_tools(),
         "camel.toolkits.CodeExecutionToolkit",
-        {"unsafe_mode": True, "import_white_list": ["os", "sys"]},
         True,
+        {"unsafe_mode": True, "import_white_list": ["os", "sys"]},
     )
     .add_task(
         TaskConfig(

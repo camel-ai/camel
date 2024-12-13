@@ -26,7 +26,7 @@ import requests
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from camel.runtime import BaseRuntime, TaskConfig
+from camel.runtimes import BaseRuntime, TaskConfig
 from camel.toolkits import FunctionTool
 
 if TYPE_CHECKING:

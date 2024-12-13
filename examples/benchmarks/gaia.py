@@ -17,7 +17,7 @@ from camel.agents import ChatAgent
 from camel.benchmarks import DefaultGAIARetriever, GAIABenchmark
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.runtime import RemoteHttpRuntime
+from camel.runtimes import RemoteHttpRuntime
 from camel.toolkits import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType, StorageType
 

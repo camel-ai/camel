@@ -18,7 +18,7 @@ from camel.benchmarks import GAIABenchmark
 from camel.benchmarks.gaia import DefaultGAIARetriever
 from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
-from camel.runtime.docker_runtime import DockerRuntime
+from camel.runtimes.docker_runtime import DockerRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types.enums import ModelPlatformType, ModelType, StorageType
 

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
-from camel.runtime import DockerRuntime
+from camel.runtimes import DockerRuntime
 from camel.toolkits import CodeExecutionToolkit, MathToolkit
 
 

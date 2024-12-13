@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
-from camel.runtime import RemoteHttpRuntime
+from camel.runtimes import RemoteHttpRuntime
 from camel.toolkits import MathToolkit
 
 

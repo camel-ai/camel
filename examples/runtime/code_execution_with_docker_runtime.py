@@ -18,7 +18,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.runtime import DockerRuntime
+from camel.runtimes import DockerRuntime
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
@@ -30,7 +30,6 @@ toolkit = CodeExecutionToolkit(verbose=True)
 runtime = DockerRuntime("xukunliu/camel").add(
     toolkit.get_tools(),
     "camel.toolkits.CodeExecutionToolkit",
-    dict(verbose=True),
     redirect_stdout=True,
 )
 
