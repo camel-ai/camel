@@ -26,9 +26,11 @@ class StripeToolkit(BaseToolkit):
     r"""A class representing a toolkit for Stripe operations.
 
     This toolkit provides methods to interact with the Stripe API,
-    allowing users to operate stripe core resources, including Customer, Balance, BalanceTransaction, Payment, Refund
+    allowing users to operate stripe core resources, including Customer,
+    Balance, BalanceTransaction, Payment, Refund
 
-    Use the Developers Dashboard https://dashboard.stripe.com/test/apikeys to create an API keys as STRIPE_API_KEY.
+    Use the Developers Dashboard https://dashboard.stripe.com/test/apikeys to
+    create an API keys as STRIPE_API_KEY.
 
     Attributes:
         logger (Logger): a logger to write logs.
@@ -40,8 +42,8 @@ class StripeToolkit(BaseToolkit):
         retries.
 
         Args:
-            retries (int,optional): Number of times to retry the request in case of
-                failure. (default: :obj:`3`)
+            retries (int,optional): Number of times to retry the request in
+                case of failure. (default: :obj:`3`)
         """
         import stripe
 
@@ -77,7 +79,7 @@ class StripeToolkit(BaseToolkit):
             return json_string
         except Exception as e:
             return self.handle_exception("customer_get", e)
-    
+
     def customer_list(self, limit: int = 100) -> str:
         r"""List customers.
 
@@ -120,50 +122,51 @@ class StripeToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("balance_get", e)
 
-    def balance_transaction_list(self, limit: int = 100) ->str:
-            r"""List your balance transactions.
+    def balance_transaction_list(self, limit: int = 100) -> str:
+        r"""List your balance transactions.
 
-            Args:
-                limit (int, optional): Number of balance transactions to retrieve. (default:
-                :obj:`100`)
+        Args:
+            limit (int, optional): Number of balance transactions to retrieve.
+                (default::obj:`100`)
 
-            Returns:
-                str: A list of balance transaction data if successful, or an error message string if failed.
-            """
-            import stripe
+        Returns:
+            str: A list of balance transaction data if successful, or an error
+                message string if failed.
+        """
+        import stripe
 
-            try:
-                self.logger.info(
-                    f"Listing balance transactions with limit={limit}"
-                )
-                transactions = stripe.BalanceTransaction.list(limit=limit).data
-                self.logger.info(
-                    f"Successfully retrieved {len(transactions)} balance transactions."
-                )
-                return json.dumps(
-                    [transaction for transaction in transactions]
-                )
-            except Exception as e:
-                return self.handle_exception("balance_transaction_list", e)
+        try:
+            self.logger.info(
+                f"Listing balance transactions with limit={limit}"
+            )
+            transactions = stripe.BalanceTransaction.list(limit=limit).data
+            self.logger.info(
+                f"Successfully retrieved {len(transactions)} "
+                "balance transactions."
+            )
+            return json.dumps([transaction for transaction in transactions])
+        except Exception as e:
+            return self.handle_exception("balance_transaction_list", e)
 
     def payment_get(self, payment_id: str) -> str:
-            r"""Retrieve a payment by ID.
+        r"""Retrieve a payment by ID.
 
-            Args:
-                payment_id (str): The ID of the payment to retrieve.
+        Args:
+            payment_id (str): The ID of the payment to retrieve.
 
-            Returns:
-                str:The payment data as a str if successful, or an error message string if failed.
-            """
-            import stripe
+        Returns:
+            str:The payment data as a str if successful, or an error message
+                string if failed.
+        """
+        import stripe
 
-            try:
-                self.logger.info(f"Retrieving payment with ID: {payment_id}")
-                payment = stripe.PaymentIntent.retrieve(payment_id)
-                self.logger.info(f"Retrieved payment: {payment.id}")
-                return json.dumps(payment)
-            except Exception as e:
-                return self.handle_exception("payment_get", e)
+        try:
+            self.logger.info(f"Retrieving payment with ID: {payment_id}")
+            payment = stripe.PaymentIntent.retrieve(payment_id)
+            self.logger.info(f"Retrieved payment: {payment.id}")
+            return json.dumps(payment)
+        except Exception as e:
+            return self.handle_exception("payment_get", e)
 
     def payment_list(self, limit: int = 100) -> str:
         r"""List payments.
@@ -173,7 +176,8 @@ class StripeToolkit(BaseToolkit):
                 (default::obj:`100`)
 
         Returns:
-            str: A list of payment data if successful, or an error message string if failed.
+            str: A list of payment data if successful, or an error message
+                string if failed.
         """
         import stripe
 
@@ -194,7 +198,8 @@ class StripeToolkit(BaseToolkit):
             refund_id (str): The ID of the refund to retrieve.
 
         Returns:
-            str: The refund data as a str if successful, or an error message string if failed.
+            str: The refund data as a str if successful, or an error message
+                string if failed.
         """
         import stripe
 
@@ -214,7 +219,8 @@ class StripeToolkit(BaseToolkit):
                 (default::obj:`100`)
 
         Returns:
-            str: A list of refund data as a str if successful, or an error message string if failed.
+            str: A list of refund data as a str if successful, or an error
+                message string if failed.
         """
         import stripe
 
@@ -230,7 +236,8 @@ class StripeToolkit(BaseToolkit):
         r"""Handle exceptions by logging and returning an error message.
 
         Args:
-            func_name (str): The name of the function where the exception occurred.
+            func_name (str): The name of the function where the exception
+                occurred.
             error (Exception): The exception instance.
 
         Returns:
