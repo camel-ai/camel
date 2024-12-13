@@ -223,12 +223,16 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self):
-        r"""Constructor for the token counter for Anthropic models."""
+    def __init__(self, model: str):
+        r"""Constructor for the token counter for Anthropic models.
+
+        Args:
+            model (str): The name of the Anthropic model being used.
+        """
         from anthropic import Anthropic
 
         self.client = Anthropic()
-        # self.tokenizer = Anthropic.beta.messages
+        self.model = model
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -241,14 +245,15 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-
-        # TODO: Use more accurate token counting by providing more information
         return self.client.beta.messages.count_tokens(
             messages=[
-                BetaMessageParam(content=str(msg["content"]), role="user")
+                BetaMessageParam(
+                    content=str(msg["content"]),
+                    role="user" if msg["role"] == "user" else "assistant",
+                )
                 for msg in messages
             ],
-            model="claude-3-5-sonnet-20240620",
+            model=self.model,
         ).input_tokens
 
 
@@ -365,7 +370,7 @@ class MistralTokenCounter(BaseTokenCounter):
                 ModelType.MISTRAL_CODESTRAL,
                 ModelType.MISTRAL_CODESTRAL_MAMBA,
             }
-            else self.model_type.value
+            else self.model_type
         )
 
         self.tokenizer = MistralTokenizer.from_model(model_name)
@@ -408,7 +413,7 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
-            model=self.model_type.value,
+            model=self.model_type,
             messages=[openai_msg],
         )
 
