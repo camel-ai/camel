@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import random
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from tqdm import tqdm
@@ -94,3 +95,27 @@ Remember to:
             results.append(response.msgs[0].content)
 
         return results
+
+    def generate_rollouts(
+        self, prompt: str, num_copies: Optional[int] = None
+    ) -> List[str]:
+        """Generate multiple rollouts for a given prompt.
+
+        Args:
+            prompt (str): The input prompt to generate responses for
+            num_copies (Optional[int], optional): Number of copies to generate.
+                Defaults to None.
+
+        Returns:
+            List[str]: List of generated responses
+        """
+        if num_copies is None:
+            num_copies = 1
+
+        rollouts = []
+        for _ in range(num_copies):
+            response = self.generate(prompt, "")
+            if response:
+                rollouts.append(response[0])
+
+        return rollouts

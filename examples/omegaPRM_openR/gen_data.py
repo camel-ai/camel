@@ -83,63 +83,68 @@ def setup_logging(log_file):
 
 
 def main():
-    # Load configuration
-    config = load_config('config.yaml')
-
-    # Get parameters from config
-    json_file_path = config['input']['json_file_path']
-    log_file_path = config['output']['log_file_path']
-    file_prefix = config['output']['file_prefix']
-    num_rollouts = config['processing']['num_rollouts']
-    initial_rollouts = config['processing']['initial_rollouts']
-    max_iterations = config['processing']['max_iterations']
-
-    lm_model = LM(
-        model_type=config['model']['model_type'],
-        model_name=config['model']['model_name'],
-        num_rollouts=num_rollouts,
-        **config['model']['model_args'],
-    )
+    # Direct configuration instead of loading from yaml
+    config = {
+        'input': {'json_file_path': 'example_problems.json'},
+        'output': {
+            'file_prefix': 'example',
+            'log_file_path': 'example_processing.log',
+        },
+        'processing': {
+            'initial_rollouts': 30,  # 增加初始rollouts数量
+            'num_rollouts': 25,  # 增加每次迭代的rollouts数量
+            'max_iterations': 150,  # 增加最大迭代次数
+        },
+        'model': {
+            'model_type': 'camel',
+            'model_name': 'deepseek-chat',
+            'model_args': {
+                'max_tokens': 300,  # 增加最大token数
+                'temperature_range': [0.6, 0.9],  # 调整温度范围,增加多样性
+            },
+        },
+    }
 
     # Set up logging
-    setup_logging(log_file_path)
+    setup_logging(config['output']['log_file_path'])
+    logging.info("Starting data generation process...")
 
-    # Start the process and log it
-    logging.info("Started processing the JSON file.")
+    # Load problems from JSON file
+    problems = load_json_file(config['input']['json_file_path'])
+    logging.info(f"Loaded {len(problems)} problems")
 
-    # Load the JSON data
-    data = load_json_file(json_file_path)
+    # Initialize the language model
+    model = LM(
+        model_type=config['model']['model_type'],
+        model_name=config['model']['model_name'],
+        model_args=config['model']['model_args'],
+    )
 
-    # Process each problem and its final answer
-    for i, item in enumerate(data):
-        problem = item.get('problem', 'No problem found')
-        final_answer = item.get('final_answer', 'No answer found')
+    # Process each problem
+    for problem in problems:
+        question = problem['problem']
+        final_answer = problem['final_answer']
 
-        # Log each problem and answer
-        logging.info(f"Processed Problem {i + 1}: {problem}")
-        logging.info(f"Final Answer: {final_answer}")
+        # Create initial node
+        initial_node = Node(question, "", final_answer)
+        nodes = [initial_node]
 
-        # Initialize the root node and perform rollouts
-        nodes = []
-        root_node = Node(problem, "", final_answer)
-        rollouts, correctness_flags = perform_rollouts(
-            root_node, lm_model, initial_rollouts
+        # Perform initial rollouts
+        perform_rollouts(
+            initial_node, model, config['processing']['initial_rollouts']
         )
-        mc_score = calculate_mc_score(root_node)
-        root_node.mc_score = mc_score
+        calculate_mc_score(initial_node)
 
-        nodes.append(root_node)
+        # Process annotations
+        process_annotations(
+            question,
+            nodes,
+            model,
+            filename=f"{config['output']['file_prefix']}_nodes_data.json",
+            max_iterations=config['processing']['max_iterations'],
+        )
 
-        # Check if further processing is needed
-        if 0 < sum(correctness_flags) < initial_rollouts:
-            print("Processing annotations ...\n")
-            filename = f"{file_prefix}_{i+1}_nodes_data.json"
-            process_annotations(
-                problem, nodes, lm_model, filename, max_iterations
-            )
-
-    # Log completion
-    logging.info("Finished processing the JSON file.")
+    logging.info("Data generation process completed")
 
 
 if __name__ == "__main__":

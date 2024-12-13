@@ -17,6 +17,7 @@ import os
 import re
 
 from model_utils import LM
+from omegaprm_v2 import OmegaPRMV2
 
 
 class Node:
@@ -169,45 +170,36 @@ def compute_u_value(node, all_nodes, exploration_param=0.125):
 def process_annotations(
     question, nodes, model: LM, filename='nodes_data.json', max_iterations=100
 ):
-    print("++++++")
-    iteration = 0
-    leaf_nodes = []
-    while True:
-        node, rollout, max_qu = select_best_node(nodes)
-        if node is not None and node.partial_answer != '':
-            new_entry = {
-                "question": question,
-                "partial_answer": node.partial_answer,
-                "mc_score": node.mc_score,
+    """Process annotations using OmegaPRM v2."""
+    # Initialize OmegaPRM v2
+    omegaprm = OmegaPRMV2(
+        model=model,
+        c_puct=0.2,
+        alpha=0.5,
+        beta=0.9,
+        L=500,
+        k=5,
+        N=max_iterations,
+        rollout_budget=1000,
+        save_data_tree=True,
+    )
+
+    # Process each node
+    for node in nodes:
+        collected_data = omegaprm.run(node.question, node.correct_answer)
+
+        # Save collected data
+        for data in collected_data:
+            data_entry = {
+                'question': node.question,
+                'correct_answer': node.correct_answer,
+                'iteration': data['iteration'],
+                'total_rollouts': data['total_rollouts'],
+                'tree_structure': data['tree_structure'],
             }
-            append_to_json(filename, new_entry)
-            iteration += 1
-            if iteration > max_iterations:
-                break
-        if node is None:
-            break
-        print()
-        print("[Selected Node]")
-        print(node)
-        print("  Rollout:", rollout, " || QU Value:", max_qu)
-        node.increment_visits()
-        expanded_nodes, leaves = locate_error(node, rollout, model)
-        if not expanded_nodes:
-            continue
-        nodes.extend(
-            n
-            for n in expanded_nodes
-            if n is not None and n.partial_answer != ''
-        )
-        leaf_nodes.extend(leaves)
-    for leaf_node in leaf_nodes:
-        new_entry = {
-            "question": question,
-            "partial_answer": leaf_node.partial_answer,
-            "mc_score": leaf_node.mc_score,
-        }
-        append_to_json(filename, new_entry)
-    print("++++++")
+            append_to_json(filename, data_entry)
+
+    return nodes
 
 
 # Utils
