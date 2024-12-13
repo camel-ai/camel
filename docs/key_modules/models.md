@@ -34,10 +34,11 @@ The following table lists currently supported model platforms by CAMEL.
 | Mistral AI | open-mixtral-8x7b | N |
 | Mistral AI | open-mixtral-8x22b | N |
 | Mistral AI | open-codestral-mamba | N |
-| Anthropic | claude-3-5-sonnet-20240620 | Y |
+| Anthropic | claude-3-5-sonnet-latest | Y |
+| Anthropic | claude-3-5-haiku-latest | N |
 | Anthropic | claude-3-haiku-20240307 | Y |
 | Anthropic | claude-3-sonnet-20240229 | Y |
-| Anthropic | claude-3-opus-20240229 | Y |
+| Anthropic | claude-3-opus-latest | Y |
 | Anthropic | claude-2.0 | N |
 | Gemini | gemini-1.5-pro | Y |
 | Gemini | gemini-1.5-flash | Y |
@@ -72,7 +73,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Reka | reka-core | Y |
 | Reka | reka-flash | Y |
 | Reka | reka-edge | Y |
-| Nividia | nemotron-4-340b-reward | N |
+| Nvidia | https://docs.api.nvidia.com/nim/reference/llm-apis | ----- |
 | SambaNova| https://community.sambanova.ai/t/supported-models/193 | ----- |
 | Groq | https://console.groq.com/docs/models | ----- |
 | Ollama | https://ollama.com/library | ----- |

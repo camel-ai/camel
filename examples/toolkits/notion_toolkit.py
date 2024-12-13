@@ -95,4 +95,5 @@ print(str(response.info['tool_calls'])[:1000])
 [FunctionCallingRecord(func_name='list_all_users', args={}, result=[{'type':
 'person', 'name': 'user a', 'workspace': ''}, {'type': 'bot', 'name':
 'test', 'workspace': "user a's Notion"}])]
+==========================================================================
 """

@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
+from camel.toolkits import FunctionTool, MathToolkit, SearchToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -25,30 +26,43 @@ class Student(BaseModel):
 
 
 class StudentList(BaseModel):
-    studentLlst: list[Student]
+    studentList: list[Student]
 
 
 openai_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=ChatGPTConfig(
-        temperature=0.0, response_format=StudentList
-    ).as_dict(),
+    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
 )
 
 # Set agent
-camel_agent = ChatAgent(model=openai_model)
+camel_agent = ChatAgent(
+    model=openai_model,
+    tools=[
+        *MathToolkit().get_tools(),
+        FunctionTool(SearchToolkit().search_duckduckgo),
+    ],
+)
 
 # Set user message
-user_msg = """give me some student infos."""
+user_msg = """give me some student infos, use 2024 minus 1996 as their age
+"""
+
+user_msg_2 = """give me some student infos, use 2024 minus 1996 as their age, 
+search internet to get the most famous peoples in 2024 as their name"""
 
 # Get response information
-response = camel_agent.step(user_msg)
+response = camel_agent.step(user_msg, response_format=StudentList)
 print(response.msgs[0].content)
+print(response.msgs[0].parsed)
 '''
 ===============================================================================
 {"studentLlst":[{"name":"Alice Johnson","age":"20"},{"name":"Brian Smith",
 "age":"22"},{"name":"Catherine Lee","age":"19"},{"name":"David Brown",
 "age":"21"},{"name":"Eva White","age":"20"}]}
+
+studentList=[Student(name='Alice Johnson', age='20'), Student(name=
+'Brian Smith', age='22'), Student(name='Catherine Lee', age='19'),
+Student(name='David Brown', age='21'), Student(name='Eva White', age='23')]
 ===============================================================================
 '''

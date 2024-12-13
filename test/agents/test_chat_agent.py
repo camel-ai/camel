@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import ast
 import asyncio
+import json
 from io import BytesIO
 from typing import List
 from unittest.mock import Mock
@@ -168,7 +168,7 @@ def test_chat_agent_step_with_structure_response():
     )
 
     response = assistant.step(user_msg, response_format=JokeResponse)
-    response_content_json = ast.literal_eval(response.msgs[0].content)
+    response_content_json = json.loads(response.msg.content)
     joke_response_keys = set(
         JokeResponse.model_json_schema()["properties"].keys()
     )
@@ -527,8 +527,8 @@ def test_tool_calling_sync():
     assert len(tool_calls) > 0
     assert str(tool_calls[0]).startswith("Function Execution")
 
-    assert tool_calls[0].func_name == "mul"
-    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].func_name == "multiply"
+    assert tool_calls[0].args == {'a': 2, 'b': 8, 'decimal_places': 0}
     assert tool_calls[0].result == 16
 
 
@@ -541,7 +541,7 @@ async def test_tool_calling_math_async():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    math_funcs = sync_funcs_to_async(MathToolkit().get_tools())
+    math_funcs = sync_funcs_to_async([FunctionTool(MathToolkit().multiply)])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
@@ -560,7 +560,7 @@ async def test_tool_calling_math_async():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Calculate the result of: 2*8-10.",
+        content="Calculate the result of: 2*8",
     )
     agent_response = await agent.step_async(user_msg)
 
@@ -569,8 +569,8 @@ async def test_tool_calling_math_async():
     assert tool_calls
     assert str(tool_calls[0]).startswith("Function Execution")
 
-    assert tool_calls[0].func_name == "mul"
-    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].func_name == "multiply"
+    assert tool_calls[0].args == {'a': 2, 'b': 8, 'decimal_places': 0}
     assert tool_calls[0].result == 16
 
 

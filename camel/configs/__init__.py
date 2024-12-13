@@ -19,6 +19,7 @@ from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
+from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
 from .qwen_config import QWEN_API_PARAMS, QwenConfig
@@ -29,6 +30,7 @@ from .samba_config import (
     SambaCloudAPIConfig,
     SambaVerseAPIConfig,
 )
+from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
@@ -44,6 +46,8 @@ __all__ = [
     'GroqConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
+    'NvidiaConfig',
+    'NVIDIA_API_PARAMS',
     'OllamaConfig',
     'OLLAMA_API_PARAMS',
     'ZhipuAIConfig',
@@ -52,6 +56,8 @@ __all__ = [
     'Gemini_API_PARAMS',
     'VLLMConfig',
     'VLLM_API_PARAMS',
+    'SGLangConfig',
+    'SGLANG_API_PARAMS',
     'MistralConfig',
     'MISTRAL_API_PARAMS',
     'RekaConfig',

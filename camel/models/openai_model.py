@@ -24,7 +24,6 @@ from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
-    ParsedChatCompletion,
 )
 from camel.utils import (
     BaseTokenCounter,
@@ -147,30 +146,6 @@ class OpenAIModel(BaseModelBackend):
             **self.model_config_dict,
         )
         return response
-
-    def _to_chat_completion(
-        self, response: "ParsedChatCompletion"
-    ) -> ChatCompletion:
-        # TODO: Handle n > 1 or warn consumers it's not supported
-        choice = dict(
-            index=response.choices[0].index,
-            message={
-                "role": response.choices[0].message.role,
-                "content": response.choices[0].message.content,
-                "tool_calls": response.choices[0].message.tool_calls,
-            },
-            finish_reason=response.choices[0].finish_reason,
-        )
-
-        obj = ChatCompletion.construct(
-            id=response.id,
-            choices=[choice],
-            created=response.created,
-            model=response.model,
-            object="chat.completion",
-            usage=response.usage,
-        )
-        return obj
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any

@@ -23,6 +23,7 @@ from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
 from .nemotron_model import NemotronModel
+from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatible_model import OpenAICompatibleModel
@@ -30,6 +31,7 @@ from .openai_model import OpenAIModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
+from .sglang_model import SGLangModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
@@ -51,8 +53,10 @@ __all__ = [
     'LiteLLMModel',
     'OpenAIAudioModels',
     'NemotronModel',
+    'NvidiaModel',
     'OllamaModel',
     'VLLMModel',
+    'SGLangModel',
     'GeminiModel',
     'OpenAICompatibleModel',
     'RekaModel',

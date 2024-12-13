@@ -37,8 +37,7 @@ def _configure_library_logging():
 
 
 def disable_logging():
-    r"""
-    Disable all logging for the Camel library.
+    r"""Disable all logging for the Camel library.
 
     This function sets the log level to a value higher than CRITICAL,
     effectively disabling all log messages, and adds a NullHandler to
@@ -46,12 +45,17 @@ def disable_logging():
     """
     os.environ['CAMEL_LOGGING_DISABLED'] = 'true'
     _logger.setLevel(logging.CRITICAL + 1)
-    _logger.addHandler(logging.NullHandler())
+    # Avoid adding multiple NullHandlers
+    if not any(
+        isinstance(handler, logging.NullHandler)
+        for handler in _logger.handlers
+    ):
+        _logger.addHandler(logging.NullHandler())
+    _logger.debug("Logging has been disabled.")
 
 
 def enable_logging():
-    r"""
-    Enable logging for the Camel library.
+    r"""Enable logging for the Camel library.
 
     This function re-enables logging if it was previously disabled,
     and configures the library logging using the default settings.
@@ -63,8 +67,7 @@ def enable_logging():
 
 
 def set_log_level(level):
-    r"""
-    Set the logging level for the Camel library.
+    r"""Set the logging level for the Camel library.
 
     Args:
         level (Union[str, int]): The logging level to set. This can be a string
@@ -89,11 +92,11 @@ def set_log_level(level):
         )
 
     _logger.setLevel(level)
+    _logger.debug(f"Logging level set to: {logging.getLevelName(level)}")
 
 
 def get_logger(name):
-    r"""
-    Get a logger with the specified name, prefixed with 'camel.'.
+    r"""Get a logger with the specified name, prefixed with 'camel.'.
 
     Args:
         name (str): The name to be appended to 'camel.' to create the logger.
@@ -104,4 +107,6 @@ def get_logger(name):
     return logging.getLogger(f'camel.{name}')
 
 
-_configure_library_logging()
+# Lazy configuration: Only configure logging if explicitly enabled.
+if os.environ.get('CAMEL_LOGGING_DISABLED', 'False').strip().lower() != 'true':
+    _configure_library_logging()

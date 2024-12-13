@@ -20,6 +20,7 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
+from anthropic.types.beta import BetaMessageParam
 from PIL import Image
 
 from camel.logger import get_logger
@@ -46,6 +47,7 @@ SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
 
 logger = get_logger(__name__)
+
 
 def get_model_encoding(value_for_tiktoken: str):
     r"""Get model encoding from tiktoken.
@@ -221,12 +223,16 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self):
-        r"""Constructor for the token counter for Anthropic models."""
+    def __init__(self, model: str):
+        r"""Constructor for the token counter for Anthropic models.
+
+        Args:
+            model (str): The name of the Anthropic model being used.
+        """
         from anthropic import Anthropic
 
         self.client = Anthropic()
-        self.tokenizer = self.client.get_tokenizer()
+        self.model = model
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -239,11 +245,16 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        num_tokens = 0
-        for message in messages:
-            content = str(message["content"])
-            num_tokens += self.client.count_tokens(content)
-        return num_tokens
+        return self.client.beta.messages.count_tokens(
+            messages=[
+                BetaMessageParam(
+                    content=str(msg["content"]),
+                    role="user" if msg["role"] == "user" else "assistant",
+                )
+                for msg in messages
+            ],
+            model=self.model,
+        ).input_tokens
 
 
 class GeminiTokenCounter(BaseTokenCounter):
@@ -359,7 +370,7 @@ class MistralTokenCounter(BaseTokenCounter):
                 ModelType.MISTRAL_CODESTRAL,
                 ModelType.MISTRAL_CODESTRAL_MAMBA,
             }
-            else self.model_type.value
+            else self.model_type
         )
 
         self.tokenizer = MistralTokenizer.from_model(model_name)
@@ -402,7 +413,7 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
-            model=self.model_type.value,
+            model=self.model_type,
             messages=[openai_msg],
         )
 

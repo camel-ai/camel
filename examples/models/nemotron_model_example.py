@@ -15,7 +15,7 @@
 from camel.models import NemotronModel
 from camel.types import ModelType
 
-nemotro = NemotronModel(model_type=ModelType.NEMOTRON_4_REWARD)
+nemotron = NemotronModel(model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD)
 
 message = [
     {"role": "user", "content": "I am going to Paris, what should I see?"},
@@ -26,7 +26,7 @@ message = [
     },
 ]
 
-ans = nemotro.run(message)
+ans = nemotron.run(message)
 print(ans)
 '''
 ===============================================================================

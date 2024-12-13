@@ -39,6 +39,7 @@ from camel.utils import OpenAITokenCounter
         ModelType.GPT_4,
         ModelType.GPT_4_TURBO,
         ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
 def test_openai_model(model_type):
@@ -59,6 +60,7 @@ def test_openai_model(model_type):
         ModelType.GPT_4,
         ModelType.GPT_4_TURBO,
         ModelType.GPT_4O,
+        ModelType.GPT_4O_MINI,
     ],
 )
 def test_openai_model_create(model_type: ModelType):

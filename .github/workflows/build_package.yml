@@ -69,6 +69,7 @@ jobs:
           ASKNEWS_CLIENT_ID: "${{ secrets.ASKNEWS_CLIENT_ID }}"
           ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
           CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
+          MESHY_API_KEY: "${{ secrets.MESHY_API_KEY }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test
