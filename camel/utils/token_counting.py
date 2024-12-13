@@ -20,9 +20,6 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from anthropic.types.beta import BetaMessageParam
-from PIL import Image
-
 from camel.logger import get_logger
 from camel.types import (
     ModelType,
@@ -234,6 +231,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
         self.client = Anthropic()
         self.model = model
 
+    @dependencies_required('anthropic')
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
         loaded tokenizer specific for this type of model.
@@ -245,6 +243,8 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
+        from anthropic.types.beta import BetaMessageParam
+
         return self.client.beta.messages.count_tokens(
             messages=[
                 BetaMessageParam(
