@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.11"
+version = "0.2.12"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -27,6 +27,7 @@ repository = "https://github.com/camel-ai/camel"
 documentation = "https://docs.camel-ai.org"
 
 [tool.poetry.dependencies]
+httpx = ">=0.23.0,<0.27.3"
 python = ">=3.10,<3.13"
 numpy = "^1"
 openai = "^1.45.0"
@@ -47,9 +48,9 @@ litellm = { version = "^1.38.1", optional = true }
 google-generativeai = { version = "^0.6.0", optional = true }
 mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
-anthropic = { version = "^0.29.0", optional = true }
+anthropic = { version = "^0.40.0", optional = true }
 cohere = { version = "^5.11.0", optional = true }
-
+sglang = { version = "^0.4.0", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -58,8 +59,8 @@ accelerate = { version = "^0", optional = true }
 datasets = { version = "^2", optional = true }
 torch = [
     { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
-    # Torch 2.1.0 is used on non-arm64 macOS systems.
-    { version = "2.1.0", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
+    # Torch 2.2.1 is used on non-arm64 macOS systems.
+    { version = "2.2.1", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
 ]
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
@@ -84,16 +85,17 @@ slack-sdk = { version = "^3.27.2", optional = true }
 slack-bolt = { version = "^1.20.1", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
-imageio = { extras = ["pyav"], version = "^2.34.2" }
+imageio = { extras = ["pyav"], version = "^2.34.2", optional = true }
+e2b-code-interpreter = { version = "^1.0.3", optional = true }
 pyTelegramBotAPI = { version = "^4.18.0", optional = true }
 "discord.py" = { version = "^2.3.2", optional = true }
 docker = { version = "^7.1.0", optional = true }
-agentops = { version = "^0.3.6", optional = true }
+agentops = { version = "^0.3.21", optional = true }
 azure-storage-blob = { version = "^12.21.0", optional = true }
 google-cloud-storage = { version = "^2.18.0", optional = true }
 botocore = { version = "^1.35.3", optional = true }
 nltk = { version = "3.8.1", optional = true }
-asknews = { version = "^0.7.43", optional = true }
+asknews = { version = "^0.7.54", optional = true }
 praw = { version = "^7.7.1", optional = true }
 textblob = { version = "^0.18.0.post0", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
@@ -107,10 +109,10 @@ ipykernel = { version = "^6.0.0", optional = true }
 pdfplumber = { version = "^0.11.0", optional = true }
 apify_client = { version = "^1.8.1", optional = true }
 notion-client = { version = "^2.2.1", optional = true }
+stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
-
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -162,6 +164,7 @@ model-platforms = [
     "reka-api",
     "anthropic",
     "cohere",
+    'sglang',
 ]
 
 huggingface-agent = [
@@ -194,6 +197,7 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "e2b-code-interpreter",
     "firecrawl-py",
     "arxiv",
     "arxiv2text",
@@ -219,6 +223,7 @@ tools = [
     "pdfplumber",
     "apify_client",
     "notion-client",
+    "stripe",
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
@@ -282,6 +287,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "e2b-code-interpreter",
     "nltk",
     "firecrawl-py",
     "arxiv",
@@ -323,6 +329,7 @@ all = [
     "google-generativeai",
     "anthropic",
     "reka-api",
+    "sglang",
     # kv-storages
     "redis",
     # object-storages
@@ -335,6 +342,7 @@ all = [
     "apify_client",
     "fastapi",
     "uvicorn",
+    "stripe",
 ]
 
 [tool.poetry.group.dev]
@@ -452,6 +460,7 @@ module = [
     "qdrant_client.*",
     "unstructured.*",
     "nltk",
+    "e2b_code_interpreter",
     "firecrawl",
     "imageio",
     "rank_bm25",
@@ -472,6 +481,7 @@ module = [
     "mistralai",
     "cohere",
     "reka-api",
+    "sglang",
     "agentops",
     "botocore.*",
     "asknews",
