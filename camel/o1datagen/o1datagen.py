@@ -267,7 +267,7 @@ class O1DataGene:
         logger.info("Final solution generated")
         return final_solution
 
-    def import_qa_from_json(self, data: str | Dict[str, str]) -> bool:
+    def import_qa_from_json(self, data: Union[str, Dict[str, str]]) -> bool:
         r"""Import question and answer data from either a
         JSON file or a dictionary.
         Args:
