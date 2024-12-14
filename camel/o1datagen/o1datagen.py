@@ -85,18 +85,21 @@ class O1DataGene:
     def verify_answer(self, question: str, answer: str) -> bool:
         r"""Verify if a generated answer is semantically equivalent to
         the golden answer for a given question.
-        Args:question (str): The question to look up
-        in the golden answers dictionary.
-              answer (str): The answer to verify, typically generated
-              by a model or provided by a user.
-        Returns:bool: True if the answer matches the golden answer
-        based on semantic equivalence
-              (meaning the core content and meaning are the same,
-              even if the exact wording differs).
-              False in the following cases:
-              - If the golden answers dictionary is empty
-              - If the provided question doesn't exist in the golden answers
-              - If the answer's meaning differs from the golden answer
+
+        Args:
+            question (str): The question to look up in the golden answers 
+                dictionary.
+            answer (str): The answer to verify, typically generated
+                by a model or provided by a user.
+
+        Returns:
+            bool: True if the answer matches the golden answer based on 
+                semantic equivalence (meaning the core content and meaning are 
+                the same, even if the exact wording differs).
+                False in the following cases:
+                - If the golden answers dictionary is empty
+                - If the provided question doesn't exist in the golden answers
+                - If the answer's meaning differs from the golden answer
         """
         if not self.golden_answers:
             logger.error(
