@@ -57,13 +57,16 @@ class O1DataGene:
 
     def get_answer(self, question: str, context: str = "") -> str:
         r"""Get the AI's thought process and answer.
+
         Args:
             question (str): The problem or question to be solved by the AI.
-            context (str, optional): Additional context or existing content to
-            consider when generating the answer. Defaults to an empty string.
+            context (str): Additional context or existing content to
+                consider when generating the answer. (default::obj:`""`)
+
         Returns:
-            str: The AI's detailed response including
-            thought process and final answer."""
+            str: The AI's detailed response including thought process and 
+                final answer.
+        """
         prompt = f"""
         Please think step by step and solve this problem: {question}
         Existing content: {context}
