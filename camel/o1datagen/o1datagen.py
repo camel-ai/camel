@@ -14,9 +14,8 @@
 
 
 import json
-from collections import defaultdict
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Union
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -35,7 +34,7 @@ class O1DataGene:
         chat_agent (ChatAgent): The chat agent used for generating responses
             and interacting with the system.
         golden_answers (Dict[str, str]): Dictionary containing pre-defined
-            correct answers for validation and comparison. Required for answer 
+            correct answers for validation and comparison. Required for answer
             verification.
         search_limit (int): Maximum number of search iterations allowed.
             (default::obj:`100`)
@@ -50,7 +49,7 @@ class O1DataGene:
         self.chat_agent = chat_agent
         self.golden_answers = golden_answers
         self.search_limit = search_limit
-        self.solution_tree: Dict[str, Dict[str, str]] = {}
+        self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
         logger.info(
             "O1DataGene initialized with search_limit=%d", search_limit
         )
@@ -64,7 +63,7 @@ class O1DataGene:
                 consider when generating the answer. (default::obj:`""`)
 
         Returns:
-            str: The AI's detailed response including thought process and 
+            str: The AI's detailed response including thought process and
                 final answer.
         """
         prompt = f"""
@@ -77,6 +76,7 @@ class O1DataGene:
         4. Provide the final answer
         Please explain the thought process of each step in detail.
         """
+        self.chat_agent.reset()
         response = self.chat_agent.step(prompt)
         answer = response.msgs[0].content
         logger.info("AI thought process:\n%s", answer)
@@ -87,14 +87,14 @@ class O1DataGene:
         the golden answer for a given question.
 
         Args:
-            question (str): The question to look up in the golden answers 
+            question (str): The question to look up in the golden answers
                 dictionary.
             answer (str): The answer to verify, typically generated
                 by a model or provided by a user.
 
         Returns:
-            bool: True if the answer matches the golden answer based on 
-                semantic equivalence (meaning the core content and meaning are 
+            bool: True if the answer matches the golden answer based on
+                semantic equivalence (meaning the core content and meaning are
                 the same, even if the exact wording differs).
                 False in the following cases:
                 - If the golden answers dictionary is empty
@@ -107,12 +107,10 @@ class O1DataGene:
                  Please import QA data before verification."""
             )
             return False
-        golden_answer = self.golden_answers[question]
-        if not golden_answer:
-            raise ValueError(
-                f"""Golden answer for question '{question}' is empty.
-                Cannot proceed with verification."""
-            )
+        golden_answer = self.golden_answers.get(question)
+        if golden_answer is None:
+            logger.error(f"Question '{question}' not found in golden answers.")
+            return False
         prompt = f"""Please determine if the following two answers 
         express the same meaning:
         Question: {question}
@@ -120,6 +118,7 @@ class O1DataGene:
         Answer 2: {golden_answer}
         Just answer "True" or "False".
         """
+        self.chat_agent.reset()
         response = self.chat_agent.step(prompt)
         is_correct = response.msgs[0].content.strip().lower() == "true"
         logger.info("Answer verification result: %s", is_correct)
@@ -131,12 +130,13 @@ class O1DataGene:
         r"""Generate and verify answers using Monte Carlo Tree Search.
 
         This method implements a Monte Carlo Tree Search approach
-        to find the best solution by iteratively generating answers and scoring them against the golden answer.
+        to find the best solution by iteratively generating answers
+        and scoring them against the golden answer.
 
         Args:
             question (str): The problem or question to be solved.
-            partial_solution (str, optional): A partial solution to build 
-                upon. This canbe used to guide the search process with 
+            partial_solution (str, optional): A partial solution to build
+                upon. This canbe used to guide the search process with
                 existing progress. (default::obj:`""`)
 
         Returns:
@@ -156,19 +156,29 @@ class O1DataGene:
             if is_correct:
                 logger.info("Correct answer found! Stopping search")
                 return current_solution, True
-            prompt = f"""Analyze  the similarity of this answer 
-            to the correct answer (between 0-1):
-            Question: {question}
-            Generated answer: {current_solution}
-            Correct answer: {self.golden_answers[question]}
-            Just return a number between 0-1.
-            """
+            prompt = (
+                f"Please evaluate this solution and "
+                f"give a score between 0-1:\n"
+                f"Question: {question}\n"
+                f"Solution: {current_solution}\n"
+                f"Correct answer: {self.golden_answers.get(question, '')}\n"
+                f"Just return a number between 0-1.\n"
+            )
+            self.chat_agent.reset()
             response = self.chat_agent.step(prompt)
             try:
                 score = float(response.msgs[0].content.strip())
                 if score > best_score:
                     best_score = score
                     best_solution = current_solution
+                    # Exit early if we find a very good solution (score > 0.9)
+                    if score > 0.9:
+                        logger.info(
+                            "Found excellent solution with score %.2f. "
+                            "Stopping search early.",
+                            score,
+                        )
+                        return best_solution, False
                 logger.info(
                     "Current search progress: %d/%d, best score: %.2f",
                     i + 1,
@@ -268,14 +278,17 @@ class O1DataGene:
         return final_solution
 
     def import_qa_from_json(self, data: Union[str, Dict[str, str]]) -> bool:
-        r"""Import question and answer data from either a
-        JSON file or a dictionary.
+        r"""Import question and answer data
+            from either a JSON file or a dictionary.
+
         Args:
-            data (Union[str, Dict[str, str]]): Either a path
-            to a JSON file containing
-            QA pairs or a dictionary of question-answer pairs. If a string is
-            provided, it's treated as a file path. The expected format is:
-            {"question1": "answer1", "question2": "answer2", ...}
+            data (Union[str, Dict[str, str]]): Either a path to a JSON file
+                containing QA pairs or a dictionary of question-answer pairs.
+                If a string is provided, it's treated as a file path.
+                The expected format is:
+                {"question1": "answer1",
+                 "question2": "answer2",
+                 ...}
 
         Returns:
             bool: True if import was successful, False otherwise.
