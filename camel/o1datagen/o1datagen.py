@@ -15,13 +15,25 @@
 
 import json
 from datetime import datetime
-from typing import Dict, Union
+from typing import Annotated, Dict, Union
+
+from pydantic import BaseModel, Field, confloat
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 
 # Get a logger for this module
 logger = get_logger('o1datagen')
+
+
+class AgentResponse(BaseModel):
+    """Model for structured agent responses."""
+
+    score: Annotated[float, confloat(ge=0, le=1)] = Field(
+        ...,
+        description="""Similarity score between 0 and 1 
+        comparing current answer to correct answer""",
+    )
 
 
 class O1DataGene:
@@ -84,7 +96,7 @@ class O1DataGene:
 
     def verify_answer(self, question: str, answer: str) -> bool:
         r"""Verify if a generated answer is semantically equivalent to
-        the golden answer for a given question.
+            the golden answer for a given question.
 
         Args:
             question (str): The question to look up in the golden answers
@@ -97,16 +109,9 @@ class O1DataGene:
                 semantic equivalence (meaning the core content and meaning are
                 the same, even if the exact wording differs).
                 False in the following cases:
-                - If the golden answers dictionary is empty
                 - If the provided question doesn't exist in the golden answers
                 - If the answer's meaning differs from the golden answer
         """
-        if not self.golden_answers:
-            logger.error(
-                """golden_answers is empty.
-                 Please import QA data before verification."""
-            )
-            return False
         golden_answer = self.golden_answers.get(question)
         if golden_answer is None:
             logger.error(f"Question '{question}' not found in golden answers.")
@@ -162,12 +167,15 @@ class O1DataGene:
                 f"Question: {question}\n"
                 f"Solution: {current_solution}\n"
                 f"Correct answer: {self.golden_answers.get(question, '')}\n"
-                f"Just return a number between 0-1.\n"
+                f"Return a JSON object with a single field 'score' containing "
+                f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
             )
             self.chat_agent.reset()
             response = self.chat_agent.step(prompt)
             try:
-                score = float(response.msgs[0].content.strip())
+                response_json = response.msgs[0].content.strip()
+                agent_response = AgentResponse.parse_raw(response_json)
+                score = agent_response.score
                 if score > best_score:
                     best_score = score
                     best_solution = current_solution
@@ -185,7 +193,8 @@ class O1DataGene:
                     self.search_limit,
                     best_score,
                 )
-            except ValueError:
+            except Exception as e:
+                logger.error("Error parsing agent response: %s", str(e))
                 continue
         return best_solution, False
 
