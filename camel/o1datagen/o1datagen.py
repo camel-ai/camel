@@ -50,7 +50,7 @@ class O1DataGene:
         self.chat_agent = chat_agent
         self.golden_answers = golden_answers
         self.search_limit = search_limit
-        self.solution_tree: Dict[str, Dict] = defaultdict(dict)
+        self.solution_tree: Dict[str, Dict[str, str]] = {}
         logger.info(
             "O1DataGene initialized with search_limit=%d", search_limit
         )
