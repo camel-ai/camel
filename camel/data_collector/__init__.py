@@ -12,14 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from .alpaca_collector import AlpacaDataCollector
+from .base import BaseDataCollector
+from .sharegpt_collector import ShareGPTDataCollector
 
-__version__ = '0.2.12'
-
-__all__ = [
-    '__version__',
-    'camel',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+__all__ = ["BaseDataCollector", "AlpacaDataCollector", "ShareGPTDataCollector"]

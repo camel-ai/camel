@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import ast
 import asyncio
+import json
 from copy import deepcopy
 from io import BytesIO
 from typing import List
@@ -223,7 +223,7 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
 
     for i in range(step_call_count):
         response = assistant.step(user_msg, response_format=JokeResponse)
-        response_content_json = ast.literal_eval(response.msgs[0].content)
+        response_content_json = json.loads(response.msg.content)
         joke_response_keys = set(
             JokeResponse.model_json_schema()["properties"].keys()
         )
@@ -863,6 +863,7 @@ def test_tool_calling_sync(step_call_count=3):
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
+            'decimal_places': 0,
         }, f"Error in calling round {i+1}"
         assert tool_calls[0].result == 16, f"Error in calling round {i+1}"
 
@@ -976,6 +977,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         assert tool_calls[0].args == {
             "a": 2,
             "b": 8,
+            'decimal_places': 0,
         }, f"Error in calling round {i+1}"
         assert tool_calls[0].result == 16, f"Error in calling round {i+1}"
 
