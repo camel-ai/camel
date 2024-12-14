@@ -128,20 +128,16 @@ class O1DataGene:
     def monte_carlo_tree_search(
         self, question: str, partial_solution: str = ""
     ) -> tuple[str, bool]:
-        r"""
-        Generate and verify answers using Monte Carlo Tree Search.
+        r"""Generate and verify answers using Monte Carlo Tree Search.
 
         This method implements a Monte Carlo Tree Search approach
-        to find the best solution
-        by iteratively generating answers and scoring them against
-        the golden answer.
+        to find the best solution by iteratively generating answers and scoring them against the golden answer.
 
         Args:
             question (str): The problem or question to be solved.
-            partial_solution (str, optional): A partial solution to build upon.
-             This canbe used to guide the search process
-             with existing progress.
-             Defaults to an empty string.
+            partial_solution (str, optional): A partial solution to build 
+                upon. This canbe used to guide the search process with 
+                existing progress. (default::obj:`""`)
 
         Returns:
             tuple[str, bool]: A tuple containing:
