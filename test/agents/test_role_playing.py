@@ -11,15 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from unittest.mock import MagicMock
+
 import pytest
+from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.completion_usage import CompletionUsage
 
 from camel.agents import ChatAgent, CriticAgent
 from camel.human import Human
 from camel.messages import BaseMessage
-from camel.models import FakeLLMModel, ModelFactory
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MathToolkit
 from camel.types import (
+    ChatCompletion,
     ModelPlatformType,
     ModelType,
     RoleType,
@@ -31,11 +37,39 @@ model = ModelFactory.create(
     model_type=ModelType.GPT_4O,
 )
 
+model_backend_rsp = ChatCompletion(
+    id="mock_response_id",
+    choices=[
+        Choice(
+            finish_reason="stop",
+            index=0,
+            logprobs=None,
+            message=ChatCompletionMessage(
+                content="This is a mock response content.",
+                role="assistant",
+                function_call=None,
+                tool_calls=None,
+            ),
+        )
+    ],
+    created=123456789,
+    model="gpt-4o-2024-05-13",
+    object="chat.completion",
+    usage=CompletionUsage(
+        completion_tokens=32,
+        prompt_tokens=15,
+        total_tokens=47,
+    ),
+)
+
 
 @pytest.mark.parametrize("model", [None, model])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
 def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
+    if model is not None:
+        model.run = MagicMock(return_value=model_backend_rsp)
+    
     role_playing = RolePlaying(
         assistant_role_name="assistant",
         assistant_agent_kwargs=dict(model=model),
@@ -111,8 +145,11 @@ def test_role_playing_step(
     task_type,
     extend_sys_msg_meta_dicts,
     extend_task_specify_meta_dict,
-    call_count=3,
+    step_call_count=3,
 ):
+    if model is not None:
+        model.run = MagicMock(return_value=model_backend_rsp)
+
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
         assistant_agent_kwargs=dict(model=model),
@@ -130,7 +167,7 @@ def test_role_playing_step(
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 
-    for i in range(call_count):
+    for i in range(step_call_count):
         assistant_response, user_response = role_playing.step(
             init_assistant_msg
         )
@@ -138,28 +175,30 @@ def test_role_playing_step(
         for response in (assistant_response, user_response):
             assert isinstance(
                 response.msgs, list
-            ), f"(calling round{i}) response.msgs is not a list"
+            ), f"Error in round {i+1}: response.msgs is not a list"
             assert (
                 len(response.msgs) == 1
-            ), f"(calling round{i}) len(response.msgs) is not 1"
+            ), f"Error in round {i+1}: len(response.msgs) is not 1"
             assert isinstance(
                 response.msgs[0], BaseMessage
-            ), f"(calling round{i}) response.msgs[0] is not a BaseMessage"
+            ), f"Error in round {i+1}: response.msgs[0] is not a BaseMessage"
             assert isinstance(
                 response.terminated, bool
-            ), f"(calling round{i}) response.terminated is not a bool"
+            ), f"Error in round {i+1}: response.terminated is not a bool"
             assert (
                 response.terminated is False
-            ), f"(calling round{i}) response.terminated is not False"
+            ), f"Error in round {i+1}: response.terminated is not False"
             assert isinstance(
                 response.info, dict
-            ), f"(calling round{i}) response.info is not a dict"
+            ), f"Error in round {i+1}: response.info is not a dict"
 
 
 @pytest.mark.model_backend
-def test_role_playing_with_function(call_count=3):
+def test_role_playing_with_function(step_call_count=3):
+    if model is not None:
+        model.run = MagicMock(return_value=model_backend_rsp)
+    
     tools = MathToolkit().get_tools()
-    model = FakeLLMModel(model_type=ModelType.DEFAULT)
 
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
@@ -175,34 +214,32 @@ def test_role_playing_with_function(call_count=3):
     )
 
     input_msg = role_playing.init_chat()
-    for i in range(call_count):
+    for i in range(step_call_count):
         assistant_response, user_response = role_playing.step(input_msg)
         for response in (assistant_response, user_response):
             assert isinstance(
                 response.msgs, list
-            ), f"(calling round{i}) response.msgs is not a list"
+            ), f"Error in round {i+1}: response.msgs is not a list"
             assert (
                 len(response.msgs) == 1
-            ), f"(calling round{i}) len(response.msgs) is not 1"
+            ), f"Error in round {i+1}: len(response.msgs) is not 1"
             assert isinstance(
                 response.msgs[0], BaseMessage
-            ), f"(calling round{i}) response.msgs[0] is not a BaseMessage"
+            ), f"Error in round {i+1}: response.msgs[0] is not a BaseMessage"
             assert isinstance(
                 response.terminated, bool
-            ), f"(calling round{i}) response.terminated is not a bool"
+            ), f"Error in round {i+1}: response.terminated is not a bool"
             assert (
                 response.terminated is False
-            ), f"(calling round{i}) response.terminated is not False"
+            ), f"Error in round {i+1}: response.terminated is not False"
             assert isinstance(
                 response.info, dict
-            ), f"(calling round{i}) response.info is not a dict"
+            ), f"Error in round {i+1}: response.info is not a dict"
 
 
 def test_role_playing_role_sequence(
     model=None,
 ):
-    if model is None:
-        model = FakeLLMModel(model_type=ModelType.DEFAULT)
     task_prompt = "Develop a trading bot for the stock market"
     role_playing = RolePlaying(
         assistant_role_name="Python Programmer",
@@ -213,6 +250,13 @@ def test_role_playing_role_sequence(
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model=model),
     )
+    role_playing.user_agent.model_backend.run = MagicMock(
+        return_value=model_backend_rsp
+    )
+    role_playing.assistant_agent.model_backend.run = MagicMock(
+        return_value=model_backend_rsp
+    )
+
     assistant_role_sequence = []
     user_role_sequence = []
 

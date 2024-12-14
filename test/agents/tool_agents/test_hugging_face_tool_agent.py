@@ -30,11 +30,11 @@ def test_hugging_face_tool_agent_initialization():
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")
 @pytest.mark.model_backend
 @pytest.mark.very_slow
-def test_hugging_face_tool_agent_step(call_count=3):
+def test_hugging_face_tool_agent_step(step_call_count=3):
     from PIL.PngImagePlugin import PngImageFile
 
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
-    for i in range(call_count):
+    for i in range(step_call_count):
         try:
             result = agent.step("Generate an image of a boat in the water")
         except (binascii.Error, requests.exceptions.ConnectionError) as ex:

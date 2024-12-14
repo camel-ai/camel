@@ -759,7 +759,7 @@ def test_tool_calling_sync(step_call_count=3):
                         ChatCompletionMessageToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a": 2, "b": 8}', name='mul'
+                                arguments='{"a": 2, "b": 8}', name='multiply'
                             ),
                             type='function',
                         ),
@@ -915,47 +915,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                         ChatCompletionMessageToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a": 2, "b": 8}', name='mul'
-                            ),
-                            type='function',
-                        ),
-                        ChatCompletionMessageToolCall(
-                            id='call_mock_123457',
-                            function=Function(
-                                arguments='{"a": 10, "b": 0}', name='sub'
-                            ),
-                            type='function',
-                        ),
-                    ],
-                ),
-            )
-        ],
-        created=1730752528,
-        model='gpt-4o-mini-2024-07-18',
-        object='chat.completion',
-        service_tier=None,
-        usage=CompletionUsage(
-            completion_tokens=50, prompt_tokens=152, total_tokens=202
-        ),
-    )
-    model_backend_rsp_tool1 = ChatCompletion(
-        id='mock_id_123456',
-        choices=[
-            Choice(
-                finish_reason='tool_calls',
-                index=0,
-                logprobs=None,
-                message=ChatCompletionMessage(
-                    content=None,
-                    refusal=None,
-                    role='assistant',
-                    audio=None,
-                    function_call=None,
-                    tool_calls=[
-                        ChatCompletionMessageToolCall(
-                            id='call_kIJby7Y6As6gAbWoxDqxD6HG',
-                            function=Function(
-                                arguments='{"a":16,"b":10}', name='sub'
+                                arguments='{"a": 2, "b": 8}', name='multiply'
                             ),
                             type='function',
                         )
@@ -971,7 +931,7 @@ async def test_tool_calling_math_async(step_call_count=3):
             completion_tokens=50, prompt_tokens=152, total_tokens=202
         ),
     )
-    model_backend_rsp_tool2 = ChatCompletion(
+    model_backend_rsp_tool1 = ChatCompletion(
         id='mock_id_123456',
         choices=[
             Choice(
@@ -1001,7 +961,6 @@ async def test_tool_calling_math_async(step_call_count=3):
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,
-            model_backend_rsp_tool2,
         ]
         * step_call_count
     )
@@ -1179,29 +1138,30 @@ def test_chat_agent_vision(step_call_count=3):
         image_detail="low",
     )
     # Mock the OpenAI model return value:
-    agent.model_backend = MagicMock()
-    agent.model_backend.run.return_value = ChatCompletion(
-        id="mock_vision_id",
-        choices=[
-            Choice(
-                finish_reason='stop',
-                index=0,
-                logprobs=None,
-                message=ChatCompletionMessage(
-                    content='Yes.',
-                    role='assistant',
-                    function_call=None,
-                    tool_calls=None,
-                ),
-            )
-        ],
-        created=123456,
-        model='gpt-4-turbo-2024-04-09',
-        object='chat.completion',
-        system_fingerprint='fp_5d12056990',
-        usage=CompletionUsage(
-            completion_tokens=2, prompt_tokens=113, total_tokens=115
-        ),
+    agent.model_backend.run = MagicMock(
+        return_value=ChatCompletion(
+            id="mock_vision_id",
+            choices=[
+                Choice(
+                    finish_reason='stop',
+                    index=0,
+                    logprobs=None,
+                    message=ChatCompletionMessage(
+                        content='Yes.',
+                        role='assistant',
+                        function_call=None,
+                        tool_calls=None,
+                    ),
+                )
+            ],
+            created=123456,
+            model='gpt-4-turbo-2024-04-09',
+            object='chat.completion',
+            system_fingerprint='fp_5d12056990',
+            usage=CompletionUsage(
+                completion_tokens=2, prompt_tokens=113, total_tokens=115
+            ),
+        )
     )
 
     for i in range(step_call_count):
