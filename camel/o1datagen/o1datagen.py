@@ -19,10 +19,7 @@ from datetime import datetime
 from typing import Dict
 
 from camel.agents import ChatAgent
-from camel.logger import enable_logging, get_logger
-
-# Enable logging if needed
-enable_logging()
+from camel.logger import get_logger
 
 # Get a logger for this module
 logger = get_logger('o1datagen')
