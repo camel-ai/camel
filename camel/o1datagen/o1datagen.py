@@ -33,12 +33,12 @@ class O1DataGene:
 
     Args:
         chat_agent (ChatAgent): The chat agent used for generating responses
-         and interacting with the system.
-        golden_answers (dict): Dictionary containing pre-defined
-        correct answers for validation and comparison.
-        Required for answer verification.
-        search_limit (int, optional): Maximum number of search iterations
-        allowed.Defaults to 100.
+            and interacting with the system.
+        golden_answers (Dict[str, str]): Dictionary containing pre-defined
+            correct answers for validation and comparison. Required for answer 
+            verification.
+        search_limit (int): Maximum number of search iterations allowed.
+            (default::obj:`100`)
     """
 
     def __init__(
