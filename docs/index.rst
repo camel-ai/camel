@@ -75,6 +75,7 @@ Main Documentation
    cookbooks/sft_data_generation_and_unsloth_finetuning_tinyllama.ipynb
    cookbooks/customer_service_Discord_bot_with_agentic_RAG.ipynb
    cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.ipynb
+   cookbooks/customer_service_Discord_Bot_with_agentic_RAG_supporting_local_model_.ipynb
 
 .. toctree::
    :maxdepth: 1
