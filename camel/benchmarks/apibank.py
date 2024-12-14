@@ -100,12 +100,21 @@ class APIBankBenchmark(BaseBenchmark):
         sys.path.insert(0, self.data_dir)
         logger.info("Download completed.")
 
-    def load(self, level):
+    def load(self, force_download: bool = False):
         r"""Load the APIBank Benchmark dataset.
 
         Args:
             level: Level to run benchmark on.
+            force_download (bool, optional): Whether to
+                force download the data.
         """
+
+        level = self._level
+
+        if force_download:
+            logger.info("Force downloading data.")
+            self.download()
+
         if level == "level-1":
             file_path = Path("api_bank/lv1-lv2-samples/level-1-given-desc")
         elif level == 'level-2':
@@ -197,7 +206,8 @@ class APIBankBenchmark(BaseBenchmark):
         rougel_scores = []
 
         logger.info(f"Running APIBench benchmark on {level}.")
-        self.load(level)
+        self._level = level
+        self.load()
         datas = self._data
 
         # Shuffle and subset data if necessary

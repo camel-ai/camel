@@ -19,7 +19,8 @@ import os
 import random
 import textwrap
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 from datasets import load_dataset
@@ -120,36 +121,20 @@ class NexusBenchmark(BaseBenchmark):
                 local_dir_use_symlinks=True,
             )
 
-    def load(self, dataset_name, force_download=False):
-        r"""Load the Nexus Benchmark dataset.
+    def load(self, force_download: bool = False):
+        r"""
+        Load the Nexus Benchmark dataset.
 
         Args:
-            dataset_name: Name of the dataset to be loaded.
-            force_download (bool, optional): Whether to
-                force download the data.
+            dataset_name (str): Name of the dataset to be loaded.
+            force_download (bool): Whether to force download the data.
         """
-        if force_download:
-            logger.info("Force downloading data.")
-            self.download()
 
-        # Mapping dataset names to their corresponding folder names
-        if dataset_name not in dataset_mapping:
-            raise ValueError(
-                f"Dataset {dataset_name} is not recognized. \
-                 Available datasets: {list(dataset_mapping.keys())}"
-            )
+        dataset_name = self._dataset_name
 
-        # Get the directory for the dataset
-        dataset_dir = self.data_dir / dataset_name
-        if not dataset_dir.exists():
-            raise FileNotFoundError(
-                f"The dataset directory for {dataset_name} \
-                does not exist at {dataset_dir}. Please download it first."
-            )
-
-        # Load the dataset files
-        dataset = []
-        if dataset_name == "NVDLibrary-NestedCalls":
+        def _load_csv_data(dataset_dir: Path) -> List:
+            r"""Load datasets from CSV files."""
+            dataset = []
             for file_name in os.listdir(dataset_dir):
                 file_path = dataset_dir / file_name
                 if file_name.endswith(".csv"):
@@ -160,56 +145,110 @@ class NexusBenchmark(BaseBenchmark):
                                 sample["Input"], "".join(sample["Output"])
                             )
                         )
-        else:
-            for file_name in os.listdir(dataset_dir / "data"):
-                file_path = dataset_dir / "data" / file_name
+                    continue
+
+                logger.warning(f"Skipping unsupported file: {file_name}")
+            return dataset
+
+        def _load_parquet_data(data_dir: Path, dataset_name: str) -> List:
+            r"""Load datasets from Parquet files."""
+            dataset = []
+            if not data_dir.exists():
+                raise FileNotFoundError(
+                    f"Data directory '{data_dir}' does not exist."
+                )
+
+            for file_name in os.listdir(data_dir):
+                file_path = data_dir / file_name
                 if file_name.endswith(".parquet"):
                     data = pd.read_parquet(file_path)
-                    data.head()
-                    for _, sample in data.iterrows():
-                        if dataset_name == "NVDLibrary":
-                            dataset.append(
-                                NexusSample(
-                                    sample["Input"],
-                                    sample["Output"].replace(
-                                        "r = nvdlib.", ""
-                                    ),
-                                )
-                            )
-                        elif dataset_name == "VirusTotal":
-                            dataset.append(
-                                NexusSample(sample["Input"], sample["Output"])
-                            )
-                        elif dataset_name == "PlacesAPI":
-                            dataset.append(
-                                NexusSample(sample["Input"], sample["Output"])
-                            )
-                        elif dataset_name == "ClimateAPI":
-                            dataset.append(
-                                NexusSample(sample["Input"], sample["Output"])
-                            )
-                        elif dataset_name == "OTX":
-                            dataset.append(
-                                NexusSample(sample["Input"], sample["Output"])
-                            )
-                        elif dataset_name == "VirusTotal-NestedCalls":
-                            if len(sample["fncall"]) == 1:
-                                dataset.append(
-                                    NexusSample(
-                                        sample["generated_question"],
-                                        "".join(sample["fncall"]),
-                                    )
-                                )
-                        elif dataset_name == "VirusTotal-ParallelCalls":
-                            if len(sample["fncall"]) > 1:
-                                dataset.append(
-                                    NexusSample(
-                                        sample["generated_question"],
-                                        "; ".join(sample["fncall"]),
-                                    )
-                                )
+                    dataset.extend(_process_parquet_data(data, dataset_name))
+                    continue
 
-        self._data = dataset
+                logger.warning(f"Skipping unsupported file: {file_name}")
+
+            return dataset
+
+        def _process_parquet_data(
+            data: pd.DataFrame, dataset_name: str
+        ) -> List:
+            """Process data from Parquet files based on dataset name."""
+            dataset: List = []
+            dataset_handlers = {
+                "NVDLibrary": _process_nvdlibrary,
+                "VirusTotal": _process_simple,
+                "PlacesAPI": _process_simple,
+                "ClimateAPI": _process_simple,
+                "OTX": _process_simple,
+                "VirusTotal-NestedCalls": _process_nested_calls,
+                "VirusTotal-ParallelCalls": _process_parallel_calls,
+            }
+
+            if dataset_name not in dataset_handlers:
+                logger.warning(
+                    f"No specific handler for dataset: {dataset_name}"
+                )
+                return dataset
+
+            handler = dataset_handlers[dataset_name]
+            for _, sample in data.iterrows():
+                processed_sample = handler(sample)
+                if processed_sample:
+                    dataset.append(processed_sample)
+            return dataset
+
+        def _process_nvdlibrary(sample) -> NexusSample:
+            """Process samples for the NVDLibrary dataset."""
+            return NexusSample(
+                sample["Input"], sample["Output"].replace("r = nvdlib.", "")
+            )
+
+        def _process_simple(sample) -> NexusSample:
+            r"""Process samples for simple datasets (e.g., VirusTotal)."""
+            return NexusSample(sample["Input"], sample["Output"])
+
+        def _process_nested_calls(sample) -> Union[NexusSample, None]:
+            r"""Process samples for VirusTotal-NestedCalls dataset."""
+            if len(sample["fncall"]) == 1:
+                return NexusSample(
+                    sample["generated_question"], "".join(sample["fncall"])
+                )
+            return None
+
+        def _process_parallel_calls(sample) -> Union[NexusSample, None]:
+            r"""Process samples for VirusTotal-ParallelCalls dataset."""
+            if len(sample["fncall"]) > 1:
+                return NexusSample(
+                    sample["generated_question"], "; ".join(sample["fncall"])
+                )
+            return None
+
+        if force_download:
+            logger.info("Force downloading data.")
+            self.download()
+
+        # Validate dataset name
+        if dataset_name not in dataset_mapping:
+            available_datasets = list(dataset_mapping.keys())
+            raise ValueError(
+                f"Dataset '{dataset_name}' is not recognized. "
+                f"Available datasets: {available_datasets}"
+            )
+
+        # Get the dataset directory
+        dataset_dir = self.data_dir / dataset_name
+        if not dataset_dir.exists():
+            raise FileNotFoundError(
+                f"The dataset directory for '{dataset_name}' \
+                does not exist at {dataset_dir}. "
+                "Please download it first."
+            )
+
+        # Load the dataset
+        if dataset_name == "NVDLibrary-NestedCalls":
+            self._data = _load_csv_data(dataset_dir)
+        else:
+            self._data = _load_parquet_data(dataset_dir / "data", dataset_name)
 
     @property
     def train(self):
@@ -227,9 +266,9 @@ class NexusBenchmark(BaseBenchmark):
             "OTX",
             "PlacesAPI",
             "ClimateAPI",
-            "VirusTotal-Parallel Calls",
-            "VirusTotal-Nested Calls",
-            "NVDLibrary-Nested Calls",
+            "VirusTotal-ParallelCalls",
+            "VirusTotal-NestedCalls",
+            "NVDLibrary-NestedCalls",
         ],
         randomize: bool = False,
         subset: Optional[int] = None,
@@ -239,9 +278,9 @@ class NexusBenchmark(BaseBenchmark):
         Args:
             agent (ChatAgent): The agent to run the benchmark.
             task (Literal["NVDLibrary", "VirusTotal", "OTX",
-            "PlacesAPI", "ClimateAPI", "VirusTotal-Parallel Calls",
-            "VirusTotal-Nested Calls",
-            "NVDLibrary-Nested Calls"]): The task to run the benchmark.
+            "PlacesAPI", "ClimateAPI", "VirusTotal-ParallelCalls",
+            "VirusTotal-NestedCalls",
+            "NVDLibrary-NestedCalls"]): The task to run the benchmark.
             randomize (bool, optional): Whether to randomize the data.
                 (default: :obj:`False`)
             subset (Optional[int], optional): The subset of data to run.
@@ -255,7 +294,8 @@ class NexusBenchmark(BaseBenchmark):
             raise ValueError(f"Invalid value for dataset: {task}.")
 
         logger.info(f"Running Nexus Function Calling benchmark on {task}.")
-        self.load(task)
+        self._dataset_name = task
+        self.load()
         datas = self._data
 
         # Shuffle and subset data if necessary
@@ -270,7 +310,7 @@ class NexusBenchmark(BaseBenchmark):
         self._results = []
 
         # Process samples
-        tools = construct_tool_descriptions(dataset_name=task)
+        tools = construct_tool_descriptions(task)
         with open(self.save_to, "w") as f:
             for sample in tqdm(datas, desc="Running"):
                 prompt = construct_prompt(input=sample.input, tools=tools)
@@ -326,56 +366,47 @@ class NexusBenchmark(BaseBenchmark):
 
 
 # Utility functions
-def construct_tool_descriptions(dataset_name) -> str:
+def construct_tool_descriptions(dataset_name: str) -> str:
     r"""
     Construct tool descriptions from function definitions and descriptions.
     """
-    if dataset_name == "NVDLibrary":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="CVECPE"
-        )["train"]
-    elif dataset_name == "VirusTotal":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="VirusTotal"
-        )["train"]
-    elif dataset_name == "PlacesAPI":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="Places"
-        )["train"]
-    elif dataset_name == "ClimateAPI":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="Climate"
-        )["train"]
-    elif dataset_name == "OTX":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="OTX"
-        )["train"]
-    elif dataset_name == "VirusTotal-NestedCalls":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="VT_Multi (Nested)"
-        )["train"]
-    elif dataset_name == "VirusTotal-ParallelCalls":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="VT_Multi (Parallel)"
-        )["train"]
-    elif dataset_name == "NVDLibrary-NestedCalls":
-        dataset = load_dataset(
-            "Nexusflow/Function_Call_Definitions", name="CVECPE_Multi (Nested)"
-        )["train"]
+    tool_dataset_mapping = {
+        "NVDLibrary": "CVECPE",
+        "VirusTotal": "VirusTotal",
+        "PlacesAPI": "Places",
+        "ClimateAPI": "Climate",
+        "OTX": "OTX",
+        "VirusTotal-NestedCalls": "VT_Multi (Nested)",
+        "VirusTotal-ParallelCalls": "VT_Multi (Parallel)",
+        "NVDLibrary-NestedCalls": "CVECPE_Multi (Nested)",
+    }
 
+    if dataset_name not in tool_dataset_mapping:
+        raise ValueError(
+            f"Dataset '{dataset_name}' is not recognized. "
+            f"Available datasets: {list(dataset_mapping.keys())}"
+        )
+
+    # Load the dataset based on the dataset name
+    dataset = load_dataset(
+        "Nexusflow/Function_Call_Definitions",
+        name=tool_dataset_mapping[dataset_name],
+    )["train"]
+
+    # Construct tool descriptions
     tools = [
         NexusTool(tool["function_calls"], tool["descriptions"])
         for tool in dataset
     ]
 
-    tool_prompt = ""
-    for tool in tools:
-        tool_prompt += (
-            f"Function:\ndef {tool.function_calls}:\n"
-            + "\"\"\"\n"
-            + f"{tool.descriptions}"
-            + "\n\"\"\"\n"
-        )
+    # Generate the tool prompt
+    tool_prompt = "".join(
+        f"Function:\ndef {tool.function_calls}:\n"
+        + "\"\"\"\n"
+        + f"{tool.descriptions}\n"
+        + "\"\"\"\n"
+        for tool in tools
+    )
 
     return tool_prompt
 
@@ -386,9 +417,21 @@ def construct_prompt(input, tools) -> str:
 
 
 # Functions for function call evaluation
-def parse_function_call(call) -> tuple:
-    r"""Parse a function call string and handle nested function
-    calls in both positional and keyword arguments."""
+def parse_function_call(
+    call: str,
+) -> Tuple[Optional[str], Optional[List[Any]], Optional[Dict[str, Any]]]:
+    r"""
+    Parse a function call string to extract the function name,
+    positional arguments, and keyword arguments, including
+    nested function calls.
+
+    Args:
+        call (str): A string in the format `func(arg1, arg2, kwarg=value)`.
+
+    Returns:
+        tuple: (function_name (str), positional_args (list),
+        keyword_args (dict)) or (None, None, None).
+    """
 
     def preprocess_input(call: str) -> str:
         r"""Remove formatting like code blocks and whitespace."""
@@ -447,8 +490,10 @@ def parse_function_call(call) -> tuple:
                 args = [evaluate_arg(arg) for arg in tree.body.args]
 
                 # Extract keyword arguments
-                kwargs = {
-                    kw.arg: evaluate_arg(kw.value) for kw in tree.body.keywords
+                kwargs: Dict[str, Any] = {
+                    kw.arg: evaluate_arg(kw.value)
+                    for kw in tree.body.keywords
+                    if kw.arg is not None
                 }
                 logger.info("Valid call.")
                 return func_name, args, kwargs

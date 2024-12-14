@@ -17,6 +17,7 @@ import logging
 import os
 import random
 import requests
+from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 
 from tqdm import tqdm
@@ -53,7 +54,7 @@ dataset_mapping = {
 
 # This function is migrated from the original repo:
 # https://github.com/ShishirPatil/gorilla
-def encode_question(question, dataset_name):
+def encode_question(question: str, dataset_name: str) -> str:
     r"""Encode multiple prompt instructions into a single string."""
 
     if dataset_name == "torchhub":
@@ -204,38 +205,60 @@ class APIBenchBenchmark(BaseBenchmark):
 
         download_github_subdirectory(repo, subdir)
 
-    def load(self, dataset_name):
+    def load(self, force_download: bool = False):
         r"""Load the APIBench Benchmark dataset.
 
         Args:
             dataset_name: Name of the dataset to be loaded.
+            force_download (bool, optional): Whether to
+                force download the data.
         """
+        dataset_name = self._dataset_name
+
+        if force_download:
+            logger.info("Force downloading data.")
+            self.download()
+
+        def load_json_lines(file_path: Path):
+            """Helper function to load JSON lines from a file."""
+            try:
+                with open(file_path, "r") as f:
+                    return [json.loads(line) for line in f]
+            except FileNotFoundError:
+                raise FileNotFoundError(f"File not found: {file_path}")
+            except json.JSONDecodeError as e:
+                raise ValueError(
+                    f"Error decoding JSON in file {file_path}: {e}"
+                )
+
+        dataset_path = self.data_dir / dataset_name
+        if not dataset_path.exists():
+            raise FileNotFoundError(
+                f"Dataset directory does not exist: {dataset_path}"
+            )
+
         for label in ['api', 'eval', 'questions']:
             file_name = dataset_mapping[dataset_name][label]
-            if label == 'questions':
-                file_path = self.data_dir / dataset_name / file_name
-                questions = []
-                with open(file_path, "r") as f:
-                    for line in f:
-                        questions.append(json.loads(line))
-                self._data[label] = questions
-            if label == 'api':
-                file_path = self.data_dir / file_name
-                api_database = []
-                with open(file_path, "r") as f:
-                    for line in f:
-                        api_database.append(json.loads(line))
-                self._data[label] = api_database
-            elif label == 'eval':
-                file_path = self.data_dir / file_name
-                data = []
-                with open(file_path, "r") as f:
-                    for line in f:
-                        data.append(json.loads(line)['api_data'])
+            file_path = (
+                dataset_path / file_name
+                if label == 'questions'
+                else self.data_dir / file_name
+            )
+
+            # Load data based on label type
+            if label in ['api', 'questions', 'eval']:
+                data = load_json_lines(file_path)
+
+                if label == 'eval':
+                    # Extract 'api_data' specifically for eval label
+                    data = [item['api_data'] for item in data]
+
                 self._data[label] = data
+            else:
+                raise ValueError(f"Unknown label: {label}")
 
         ast_database = []
-        for data in api_database:
+        for data in self._data['api']:
             ast_tree = ast_parse(data['api_call'])
             ast_database.append(ast_tree)
         self._data['ast'] = ast_database
@@ -263,7 +286,8 @@ class APIBenchBenchmark(BaseBenchmark):
             raise ValueError(f"Invalid value for dataset: {dataset}.")
 
         logger.info(f"Running APIBench benchmark on {dataset}.")
-        self.load(dataset)
+        self._dataset_name = dataset
+        self.load()
         datas = self._data['questions']
 
         # Shuffle and subset data if necessary
