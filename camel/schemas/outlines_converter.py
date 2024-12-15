@@ -39,7 +39,12 @@ class OutlinesConverter(BaseConverter):
     """
 
     def __init__(
-        self, model_type: str, platform: str = "transformers", **kwargs: Any
+        self,
+        model_type: str,
+        platform: Literal[
+            "vllm", "transformers", "mamba", "llamacpp", "mlx"
+        ] = "transformers",
+        **kwargs: Any,
     ):
         self.model_type = model_type
         from outlines import models
@@ -157,22 +162,26 @@ class OutlinesConverter(BaseConverter):
     ) -> BaseModel:
         r"""Formats the input content into the expected BaseModel.
 
-    Args:
-        type (Literal["regex", "json", "type", "choice", "grammar"]):
-            The type of conversion to perform. Options are:
-                - "regex": Match the content against a regex pattern.
-                - "json": Convert the content into a JSON object based on a schema.
-                - "type": Convert the content into a specified type.
-                - "choice": Match the content against a list of valid choices.
-                - "grammar": Convert the content using a specified grammar.
-        content (str): The content to be formatted.
-        **kwargs: Additional keyword arguments specific to the conversion type.
+        Args:
+            type (Literal["regex", "json", "type", "choice", "grammar"]):
+                The type of conversion to perform. Options are:
+                    - "regex": Match the content against a regex pattern.
+                    - "json": Convert the content into a JSON object based on
+                      a schema.
+                    - "type": Convert the content into a specified type.
+                    - "choice": Match the content against a list of valid
+                      choices.
+                    - "grammar": Convert the content using a specified grammar.
+            content (str): The content to be formatted.
+            **kwargs: Additional keyword arguments specific to the conversion
+                type.
 
             - For "regex":
                 regex_pattern (str): The regex pattern to use for matching.
 
             - For "json":
-                output_schema (dict): The schema to validate and format the JSON object.
+                output_schema (dict): The schema to validate and format the
+                    JSON object.
 
             - For "type":
                 type_name (str): The target type name for the conversion.
@@ -181,7 +190,9 @@ class OutlinesConverter(BaseConverter):
                 choices (List[str]): A list of valid choices to match against.
 
             - For "grammar":
-                grammar (str): The grammar definition to use for content conversion.
+                grammar (str): The grammar definition to use for content
+                    conversion.
+        """
         match type:
             case "regex":
                 return self.convert_regex(content, kwargs.get("regex_pattern"))  # type: ignore[arg-type]
