@@ -68,8 +68,12 @@ class O1DataGenerator:
     and maintaining a solution tree for correct solution steps.
 
     Args:
-        chat_agent (ChatAgent): The chat agent used for generating responses
-            and interacting with the system.
+        chat_agent (ChatAgent | None): Optional single agent
+            for both tasks (legacy mode)
+        generator_agent (ChatAgent | None): Optional
+            specialized agent for answer generation
+        verifier_agent (ChatAgent | None): Optional
+            specialized agent for answer verification
         golden_answers (Dict[str, str]): Dictionary containing pre-defined
             correct answers for validation and comparison. Required for answer
             verification.
@@ -79,11 +83,47 @@ class O1DataGenerator:
 
     def __init__(
         self,
-        chat_agent: ChatAgent,
+        chat_agent: ChatAgent | None = None,
+        *,
+        generator_agent: ChatAgent | None = None,
+        verifier_agent: ChatAgent | None = None,
         golden_answers: Dict[str, str],
         search_limit: int = 100,
     ):
-        self.chat_agent = chat_agent
+        """Initialize the O1DataGenerator.
+
+        This constructor supports both single-agent and dual-agent modes:
+        1. Single-agent mode (legacy): Pass a single chat_agent
+           that will be used
+           for both generation and verification.
+        2. Dual-agent mode: Pass separate generator_agent
+           and verifier_agent for
+           specialized tasks.
+
+        Args:
+            chat_agent: Optional single agent for both tasks (legacy mode)
+            generator_agent: Optional specialized agent for answer generation
+            verifier_agent: Optional specialized agent for answer verification
+            golden_answers: Dictionary of correct answers for validation
+            search_limit: Maximum search iterations allowed (default: 100)
+        """
+        if chat_agent is not None:
+            if generator_agent is not None or verifier_agent is not None:
+                raise ValueError(
+                    "Cannot specify both chat_agent \
+                    and generator/verifier agents"
+                )
+            self.generator_agent = chat_agent
+            self.verifier_agent = chat_agent
+        else:
+            if generator_agent is None or verifier_agent is None:
+                raise ValueError(
+                    "Must specify either chat_agent or both generator and "
+                    "verifier agents"
+                )
+            self.generator_agent = generator_agent
+            self.verifier_agent = verifier_agent
+
         self.golden_answers = golden_answers
         self.search_limit = search_limit
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
@@ -92,16 +132,15 @@ class O1DataGenerator:
         )
 
     def get_answer(self, question: str, context: str = "") -> str:
-        r"""Get the AI's thought process and answer.
+        r"""Get an answer from the chat agent for a given question.
 
         Args:
-            question (str): The problem or question to be solved by the AI.
-            context (str): Additional context or existing content to
-                consider when generating the answer. (default::obj:`""`)
+            question (str): The question to ask.
+            context (str): Additional context
+                for the question. (default::obj:`""`)
 
         Returns:
-            str: The AI's detailed response including thought process and
-                final answer.
+            str: The generated answer.
         """
         prompt = f"""
         Please think step by step and solve this problem: {question}
@@ -113,8 +152,8 @@ class O1DataGenerator:
         4. Provide the final answer
         Please explain the thought process of each step in detail.
         """
-        self.chat_agent.reset()
-        response = self.chat_agent.step(prompt)
+        self.generator_agent.reset()
+        response = self.generator_agent.step(prompt)
         answer = response.msgs[0].content
         logger.info("AI thought process:\n%s", answer)
         return answer
@@ -124,10 +163,8 @@ class O1DataGenerator:
             the golden answer for a given question.
 
         Args:
-            question (str): The question to look up in the golden answers
-                dictionary.
-            answer (str): The answer to verify, typically generated
-                by a model or provided by a user.
+            question (str): The question being answered.
+            answer (str): The answer to verify.
 
         Returns:
             bool: True if the answer matches the golden answer based on
@@ -138,18 +175,20 @@ class O1DataGenerator:
                 - If the answer's meaning differs from the golden answer
         """
         golden_answer = self.golden_answers.get(question)
-        if golden_answer is None:
-            logger.error(f"Question '{question}' not found in golden answers.")
-            return False
-        prompt = f"""Please determine if the following two answers 
-        express the same meaning:
-        Question: {question}
-        Answer 1: {answer}
-        Answer 2: {golden_answer}
-        Just answer "True" or "False".
-        """
-        self.chat_agent.reset()
-        response = self.chat_agent.step(prompt)
+        if not golden_answer:
+            raise ValueError(
+                f"No golden answer found for question: {question}"
+            )
+
+        prompt = (
+            f"Question: {question}\n"
+            f"Student Answer: {answer}\n"
+            f"Correct Answer: {golden_answer}\n"
+            "Is the student's answer correct? Please respond with 'true' or "
+            "'false' only."
+        )
+        self.verifier_agent.reset()
+        response = self.verifier_agent.step(prompt)
         is_correct = response.msgs[0].content.strip().lower() == "true"
         verification = VerificationResponse(is_correct=is_correct)
         logger.info("Answer verification result: %s", verification.is_correct)
@@ -157,72 +196,39 @@ class O1DataGenerator:
 
     def monte_carlo_tree_search(
         self, question: str, partial_solution: str = ""
-    ) -> tuple[str, bool]:
-        r"""Generate and verify answers using Monte Carlo Tree Search.
-
-        This method implements a Monte Carlo Tree Search approach
-        to find the best solution by iteratively generating answers
-        and scoring them against the golden answer.
+    ) -> float:
+        r"""Perform Monte Carlo Tree Search to find the best solution.
 
         Args:
-            question (str): The problem or question to be solved.
-            partial_solution (str, optional): A partial solution to build
-                upon. This canbe used to guide the search process with
-                existing progress. (default::obj:`""`)
+            question (str): The question to solve.
+            partial_solution (str): The current partial solution.
+                (default::obj:`""`)
 
         Returns:
-            tuple[str, bool]: A tuple containing:
-                - str: The best solution found
-                (or empty string if no solution found)
-                - bool: True if a correct solution was found, False otherwise
+            float: The similarity score between the current
+                solution and golden answer.
         """
-        logger.info("Starting Monte Carlo Tree Search")
-        best_solution = ""  # Initialize as empty string instead of None
-        best_score: float = 0.0
-        for i in range(self.search_limit):
-            # Generate new answer
-            current_solution = self.get_answer(question, partial_solution)
-            # Verify answer
-            is_correct = self.verify_answer(question, current_solution)
-            if is_correct:
-                logger.info("Correct answer found! Stopping search")
-                return current_solution, True
-            prompt = (
-                f"Please evaluate this solution and "
-                f"give a score between 0-1:\n"
-                f"Question: {question}\n"
-                f"Solution: {current_solution}\n"
-                f"Correct answer: {self.golden_answers.get(question, '')}\n"
-                f"Return a JSON object with a single field 'score' containing "
-                f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
+        if question not in self.golden_answers:
+            raise ValueError(
+                f"No golden answer found for question: {question}"
             )
-            self.chat_agent.reset()
-            response = self.chat_agent.step(prompt)
-            try:
-                response_json = response.msgs[0].content.strip()
-                agent_response = AgentResponse.parse_raw(response_json)
-                score = agent_response.score
-                if score > best_score:
-                    best_score = score
-                    best_solution = current_solution
-                    # Exit early if we find a very good solution (score > 0.9)
-                    if score > 0.9:
-                        logger.info(
-                            "Found excellent solution with score %.2f. "
-                            "Stopping search early.",
-                            score,
-                        )
-                        return best_solution, False
-                logger.info(
-                    "Current search progress: %d/%d, best score: %.2f",
-                    i + 1,
-                    self.search_limit,
-                    best_score,
-                )
-            except Exception as e:
-                logger.error("Error parsing agent response: %s", str(e))
-                continue
-        return best_solution, False
+
+        golden_answer = self.golden_answers[question]
+
+        prompt = (
+            f"Please evaluate this solution and "
+            f"give a score between 0-1:\n"
+            f"Question: {question}\n"
+            f"Solution: {partial_solution}\n"
+            f"Correct answer: {golden_answer}\n"
+            f"Return a JSON object with a single field 'score' containing "
+            f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
+        )
+        self.generator_agent.reset()
+        response = self.generator_agent.step(prompt)
+        response_json = response.msgs[0].content.strip()
+        agent_response = AgentResponse.parse_raw(response_json)
+        return agent_response.score
 
     def binary_search_error(self, question: str, solution: str) -> int:
         r"""Use binary search to locate the first error in the solution.
@@ -265,51 +271,90 @@ class O1DataGenerator:
         return left
 
     def solve(self, question: str) -> str:
-        r"""Main process to solve the problem.
+        r"""Solve a question using a multi-step approach.
 
-        This method attempts to solve the problem through the following steps:
-        1. Get an initial solution
-        2. If not correct, use Monte Carlo Tree Search
-        3. If still not correct, use binary search to locate errors
-        4. Generate a new solution based on the correct parts
+        The solution process follows these steps:
+        1. Try to solve directly - if correct, return the solution
+        2. If not correct, use Monte Carlo Tree Search to find a good solution
+        3. If the solution isn't perfect, use binary search to locate errors
+        4. Generate a new solution based on the correct part
 
         Args:
             question (str): The question to solve.
 
         Returns:
-            str: The final solution to the question.
+            str: The best solution found.
         """
-        logger.info("\n=== Starting to solve the problem: %s ===", question)
-        # 1. Get initial solution
+        # 1. Try direct solution first
         solution = self.get_answer(question)
         if self.verify_answer(question, solution):
             logger.info("Initial solution is correct")
             return solution
 
-        # 2. Try Monte Carlo Tree Search
-        solution, is_correct = self.monte_carlo_tree_search(question)
-        if is_correct:
-            logger.info("Monte Carlo Tree Search found correct solution")
-            return solution
+        # 2. If direct solution fails, try Monte Carlo Tree Search
+        # to find a solution with high similarity score
+        best_solution = ""
+        best_score: float = 0.0
+        for i in range(self.search_limit):
+            # Generate new answer
+            current_solution = self.get_answer(question, best_solution)
+
+            # Evaluate solution similarity score
+            prompt = (
+                f"Please evaluate this solution and "
+                f"give a score between 0-1:\n"
+                f"Question: {question}\n"
+                f"Solution: {current_solution}\n"
+                f"Correct answer: {self.golden_answers.get(question, '')}\n"
+                f"Return a JSON object with a single field 'score' containing "
+                f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
+            )
+            self.generator_agent.reset()
+            response = self.generator_agent.step(prompt)
+            try:
+                response_json = response.msgs[0].content.strip()
+                agent_response = AgentResponse.parse_raw(response_json)
+                score = agent_response.score
+
+                # Exit early if we find a very good solution (score > 0.9)
+                if score > 0.9:
+                    logger.info(
+                        "Found excellent solution with score %.2f. "
+                        "Stopping search early.",
+                        score,
+                    )
+                    return current_solution
+
+                if score > best_score:
+                    best_score = score
+                    best_solution = current_solution
+
+                logger.info(
+                    "Current search progress: %d/%d, best score: %.2f",
+                    i + 1,
+                    self.search_limit,
+                    best_score,
+                )
+            except Exception as e:
+                logger.error("Error parsing agent response: %s", str(e))
+                continue
 
         # 3. If the answer is not completely correct,
-        #  use binary search to locate the error
-        error_pos = self.binary_search_error(question, solution)
+        # use binary search to locate the error
+        error_pos = self.binary_search_error(question, best_solution)
 
         # If no errors found (error_pos == -1), return the current solution
         if error_pos == -1:
-            logger.info("No errors found in the solution")
-            return solution
+            logger.info("No specific errors found in the solution")
+            return best_solution
 
         # 4. Generate new solution based on correct part
-        correct_part = '. '.join(solution.split('. ')[:error_pos]) + '.'
+        correct_part = '. '.join(best_solution.split('. ')[:error_pos]) + '.'
         final_solution = self.get_answer(question, correct_part)
         self.solution_tree[question] = {
             "solution": final_solution,
-            "correct_part": correct_part,
             "error_position": error_pos,
         }
-        logger.info("Final solution generated")
         return final_solution
 
     def import_qa_from_json(self, data: Union[str, Dict[str, str]]) -> bool:
