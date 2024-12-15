@@ -91,7 +91,6 @@ def test_step(step_call_count=3):
             response = embodied_agent.step(user_msg)
         except (binascii.Error, requests.exceptions.ConnectionError) as ex:
             print(
-                f"Error in round {i+1} "
                 "Warning: caught an exception, ignoring it since "
                 f"it is a known issue of Huggingface ({ex!s})"
             )

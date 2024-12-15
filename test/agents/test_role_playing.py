@@ -69,7 +69,7 @@ model_backend_rsp = ChatCompletion(
 def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
-    
+
     role_playing = RolePlaying(
         assistant_role_name="assistant",
         assistant_agent_kwargs=dict(model=model),
@@ -197,7 +197,7 @@ def test_role_playing_step(
 def test_role_playing_with_function(step_call_count=3):
     if model is not None:
         model.run = MagicMock(return_value=model_backend_rsp)
-    
+
     tools = MathToolkit().get_tools()
 
     role_playing = RolePlaying(

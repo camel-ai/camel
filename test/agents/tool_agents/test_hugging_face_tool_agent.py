@@ -39,7 +39,6 @@ def test_hugging_face_tool_agent_step(step_call_count=3):
             result = agent.step("Generate an image of a boat in the water")
         except (binascii.Error, requests.exceptions.ConnectionError) as ex:
             print(
-                f"Error in calling round {i+1} "
                 "Warning: caught an exception, ignoring it since "
                 f"it is a known issue of Huggingface ({ex!s})"
             )

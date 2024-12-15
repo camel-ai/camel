@@ -116,53 +116,53 @@ def test_babyagi_playing_step(model, step_call_count=3):
     task_creation_agent_model_rsp0 = deepcopy(model_backend_rsp_base)
     task_creation_agent_model_rsp0.choices[0].message.content = "1. Task 0"
     task_prioritization_agent_model_rsp0 = deepcopy(model_backend_rsp_base)
-    task_prioritization_agent_model_rsp0.choices[0].message.content = (
-        "1. Task 0"
-    )
+    task_prioritization_agent_model_rsp0.choices[
+        0
+    ].message.content = "1. Task 0"
 
     # Solve the highest priority (left most) task: Task 0
     assistant_agent_model_rsp1 = deepcopy(model_backend_rsp_base)
-    assistant_agent_model_rsp1.choices[0].message.content = (
-        "Solution for Task 0"
-    )
+    assistant_agent_model_rsp1.choices[
+        0
+    ].message.content = "Solution for Task 0"
 
     # Task 0 is solved, remove from TaskPrioritizationAgent model response
     task_creation_agent_model_rsp1 = deepcopy(model_backend_rsp_base)
-    task_creation_agent_model_rsp1.choices[0].message.content = (
-        "1. \nTask 1\n\n2. Task 2\n\n3. Task 3"
-    )
+    task_creation_agent_model_rsp1.choices[
+        0
+    ].message.content = "1. \nTask 1\n\n2. Task 2\n\n3. Task 3"
     task_prioritization_agent_model_rsp1 = deepcopy(model_backend_rsp_base)
-    task_prioritization_agent_model_rsp1.choices[0].message.content = (
-        "1. Task 2  \nTask 1  \n3. Task 3 "
-    )
+    task_prioritization_agent_model_rsp1.choices[
+        0
+    ].message.content = "1. Task 2  \nTask 1  \n3. Task 3 "
 
     # Solve the highest priority (left most) task: Task 2
     assistant_agent_model_rsp2 = deepcopy(model_backend_rsp_base)
-    assistant_agent_model_rsp2.choices[0].message.content = (
-        "Solution for Task 2"
-    )
+    assistant_agent_model_rsp2.choices[
+        0
+    ].message.content = "Solution for Task 2"
 
     # Task 2 is solved, remove from TaskPrioritizationAgent model response
     task_creation_agent_model_rsp2 = deepcopy(model_backend_rsp_base)
-    task_creation_agent_model_rsp2.choices[0].message.content = (
-        "1. Task 4\n\n2. Task 5"
-    )
+    task_creation_agent_model_rsp2.choices[
+        0
+    ].message.content = "1. Task 4\n\n2. Task 5"
     task_prioritization_agent_model_rsp2 = deepcopy(model_backend_rsp_base)
-    task_prioritization_agent_model_rsp2.choices[0].message.content = (
-        "1. Task 1  \nTask 3  \n3. Task 4  \n4. Task 5"
-    )
+    task_prioritization_agent_model_rsp2.choices[
+        0
+    ].message.content = "1. Task 1  \nTask 3  \n3. Task 4  \n4. Task 5"
 
     # Solve the highest priority (left most) task: Task 1
     assistant_agent_model_rsp3 = deepcopy(model_backend_rsp_base)
-    assistant_agent_model_rsp3.choices[0].message.content = (
-        "Solution for Task 1"
-    )
+    assistant_agent_model_rsp3.choices[
+        0
+    ].message.content = "Solution for Task 1"
 
     # Task 1 is solved, remove from TaskPrioritizationAgent model response
     task_creation_agent_model_rsp3 = deepcopy(model_backend_rsp_base)
-    task_creation_agent_model_rsp3.choices[0].message.content = (
-        "1. Task 6\n\n2. Task 7\n\n3. Task 8"
-    )
+    task_creation_agent_model_rsp3.choices[
+        0
+    ].message.content = "1. Task 6\n\n2. Task 7\n\n3. Task 8"
     task_prioritization_agent_model_rsp3 = deepcopy(model_backend_rsp_base)
     task_prioritization_agent_model_rsp3.choices[0].message.content = (
         "1. Task 6  \nTask 3  \n3. Task 4  \n"

@@ -230,14 +230,16 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
 
         response_content_keys = set(response_content_json.keys())
 
-        assert joke_response_keys.issubset(
-            response_content_keys
-        ), f"Error in calling round {i+1}"
+        assert joke_response_keys.issubset(response_content_keys), (
+            f"Error in calling round {i+1}: "
+            f"Missing keys: {joke_response_keys - response_content_keys}"
+        )
 
         for key in joke_response_keys:
-            assert (
-                key in response_content_json
-            ), f"Error in calling round {i+1}"
+            assert key in response_content_json, (
+                f"Error in calling round {i+1}: "
+                f"Key {key} not found in response content"
+            )
 
 
 @pytest.mark.model_backend
@@ -857,6 +859,10 @@ def test_tool_calling_sync(step_call_count=3):
             call for call in agent_response.info['tool_calls']
         ]
 
+        assert len(tool_calls) > 0, f"Error in calling round {i+1}"
+        assert str(tool_calls[0]).startswith(
+            "Function Execution"
+        ), f"Error in calling round {i+1}"
         assert (
             tool_calls[0].func_name == "multiply"
         ), f"Error in calling round {i+1}"
