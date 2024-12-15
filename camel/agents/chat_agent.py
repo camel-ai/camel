@@ -663,10 +663,10 @@ class ChatAgent(BaseAgent):
                 break
             # Handle external tool requests
             tool_request = self._extract_tool_call(response)
-            response.choices[0].message.tool_calls = (
-                [tool_request] if tool_request else None
-            )
             if isinstance(response, ChatCompletion) and tool_request:
+                response.choices[0].message.tool_calls = (
+                    [tool_request] if tool_request else None
+                )
                 tool_call_records.append(
                     self._step_tool_call_and_update(response)
                 )
