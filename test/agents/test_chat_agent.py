@@ -194,24 +194,6 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
         system_message=system_msg,
     )
 
-    model_backend_rsp_tool = deepcopy(model_backend_rsp_base)
-    model_backend_rsp_tool.choices[0].message.tool_calls = [
-        ChatCompletionMessageToolCall(
-            id="call_mock123456",
-            function=Function(
-                arguments='{ \
-                    "joke":"What do you call fake spaghetti? An impasta!", \
-                    "funny_level":"6" \
-                }',
-                name="return_json_response",
-            ),
-            type="function",
-        )
-    ]
-    assistant.model_backend.run = MagicMock(
-        return_value=model_backend_rsp_tool
-    )
-
     class JokeResponse(BaseModel):
         joke: str = Field(description="a joke")
         funny_level: str = Field(description="Funny level, from 1 to 10")
@@ -219,6 +201,20 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Tell a jokes.",
+    )
+
+    model_backend_rsp_tool = deepcopy(model_backend_rsp_base)
+
+    model_backend_rsp_tool.choices[0].message.content = '{ \
+        "joke":"What do you call fake spaghetti? An impasta!", \
+        "funny_level":"6" \
+    }'
+    model_backend_rsp_tool.choices[0].message.tool_calls = []
+    model_backend_rsp_tool.choices[0].message.parsed = JokeResponse(
+        joke="What do you call fake spaghetti? An impasta!", funny_level='6'
+    )
+    assistant.model_backend.run = MagicMock(
+        return_value=model_backend_rsp_tool
     )
 
     for i in range(step_call_count):
@@ -761,14 +757,19 @@ def test_tool_calling_sync(step_call_count=3):
                         ChatCompletionMessageToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a": 2, "b": 8}', name='multiply'
+                                arguments='{ \
+                                    "a": 2, \
+                                    "b": 8, \
+                                    "decimal_places": 0 \
+                                }',
+                                name='multiply',
                             ),
                             type='function',
                         ),
                         ChatCompletionMessageToolCall(
                             id='call_mock_123457',
                             function=Function(
-                                arguments='{"a": 10, "b": 0}', name='sub'
+                                arguments='{"a": 0, "b": 10}', name='sub'
                             ),
                             type='function',
                         ),
@@ -825,7 +826,8 @@ def test_tool_calling_sync(step_call_count=3):
                 index=0,
                 logprobs=None,
                 message=ChatCompletionMessage(
-                    content=None,
+                    content='The result of the calculation \
+                        (2 times 8 - 10) is (6).',
                     refusal=None,
                     role='assistant',
                     audio=None,
@@ -922,7 +924,12 @@ async def test_tool_calling_math_async(step_call_count=3):
                         ChatCompletionMessageToolCall(
                             id='call_mock_123456',
                             function=Function(
-                                arguments='{"a": 2, "b": 8}', name='multiply'
+                                arguments='{ \
+                                    "a": 2, \
+                                    "b": 8, \
+                                    "decimal_places": 0 \
+                                }',
+                                name='multiply',
                             ),
                             type='function',
                         )
@@ -946,7 +953,7 @@ async def test_tool_calling_math_async(step_call_count=3):
                 index=0,
                 logprobs=None,
                 message=ChatCompletionMessage(
-                    content=None,
+                    content='The result of ( 2 times 8 ) is ( 16 ).',
                     refusal=None,
                     role='assistant',
                     audio=None,
