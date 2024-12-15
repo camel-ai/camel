@@ -20,7 +20,6 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-from anthropic.types.beta import BetaMessageParam
 from PIL import Image
 
 from camel.logger import get_logger
@@ -145,12 +144,19 @@ class OpenAITokenCounter(BaseTokenCounter):
             num_tokens += self.tokens_per_message
             for key, value in message.items():
                 if not isinstance(value, list):
-                    num_tokens += len(self.encoding.encode(str(value)))
+                    num_tokens += len(
+                        self.encoding.encode(str(value), disallowed_special=())
+                    )
                 else:
                     for item in value:
                         if item["type"] == "text":
                             num_tokens += len(
-                                self.encoding.encode(str(item["text"]))
+                                self.encoding.encode(
+                                    str(
+                                        item["text"],
+                                    ),
+                                    disallowed_special=(),
+                                )
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
@@ -234,6 +240,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
         self.client = Anthropic()
         self.model = model
 
+    @dependencies_required('anthropic')
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
         loaded tokenizer specific for this type of model.
@@ -245,6 +252,8 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
+        from anthropic.types.beta import BetaMessageParam
+
         return self.client.beta.messages.count_tokens(
             messages=[
                 BetaMessageParam(
