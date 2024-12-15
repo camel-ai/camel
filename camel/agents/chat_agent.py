@@ -1030,7 +1030,7 @@ class ChatAgent(BaseAgent):
             num_tokens (int): The number of tokens used in this step.
             external_tool_request (Optional[ChatCompletionMessageToolCall]):
                 Any external tool request made during this step.
-                (default::obj:`None`)
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dictionary containing information about the chat
