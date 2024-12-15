@@ -27,7 +27,16 @@ logger = get_logger('o1datagen')
 
 
 class AgentResponse(BaseModel):
-    """Model for structured agent responses."""
+    r"""Model for structured agent responses.
+
+    A Pydantic model class that represents structured responses from agents,
+    including a similarity score that measures the quality of the response.
+
+    Args:
+        score (float): A similarity score between 0 and 1 that compares the
+            current answer to the correct answer. Must be within the range
+            [0, 1].
+    """
 
     score: Annotated[float, confloat(ge=0, le=1)] = Field(
         ...,
