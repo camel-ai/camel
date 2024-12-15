@@ -121,16 +121,14 @@ class NexusBenchmark(BaseBenchmark):
                 local_dir_use_symlinks=True,
             )
 
-    def load(self, force_download: bool = False):
+    def load(self, dataset_name: str, force_download: bool = False):  # type: ignore[override]
         r"""
         Load the Nexus Benchmark dataset.
 
         Args:
-            dataset_name (str): Name of the dataset to be loaded.
+            dataset_name (str): Name of the specific dataset to be loaded.
             force_download (bool): Whether to force download the data.
         """
-
-        dataset_name = self._dataset_name
 
         def _load_csv_data(dataset_dir: Path) -> List:
             r"""Load datasets from CSV files."""
@@ -294,8 +292,7 @@ class NexusBenchmark(BaseBenchmark):
             raise ValueError(f"Invalid value for dataset: {task}.")
 
         logger.info(f"Running Nexus Function Calling benchmark on {task}.")
-        self._dataset_name = task
-        self.load()
+        self.load(task)
         datas = self._data
 
         # Shuffle and subset data if necessary

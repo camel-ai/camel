@@ -52,6 +52,52 @@ dataset_mapping = {
 }
 
 
+def download_github_subdirectory(
+    repo: str, subdir: str, data_dir: Path, branch="main"
+):
+    r"""Download subdirectory of the Github repo of
+    the benchmark.
+
+    This function downloads all files and subdirectories from a
+    specified subdirectory of a GitHub repository and
+    saves them to a local directory.
+
+    Args:
+        repo (str): The name of the GitHub repository
+                in the format "owner/repo".
+        subdir (str): The path to the subdirectory
+            within the repository to download.
+        data_dir (Path): The local directory where
+            the files will be saved.
+        branch (str, optional): The branch of the repository to use.
+            Defaults to "main".
+    """
+    api_url = (
+        f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
+    )
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    response = requests.get(api_url, headers=headers)
+    response.raise_for_status()
+    files = response.json()
+    os.makedirs(data_dir, exist_ok=True)
+
+    for file in tqdm(files, desc="Downloading"):
+        file_path = data_dir / file["name"]
+
+        if file["type"] == "file":
+            file_url = file["download_url"]
+            file_response = requests.get(file_url)
+            with open(file_path, "wb") as f:
+                f.write(file_response.content)
+        elif file["type"] == "dir":
+            download_github_subdirectory(
+                repo,
+                subdir / file["name"],
+                file_path,
+                branch,
+            )
+
+
 # This function is migrated from the original repo:
 # https://github.com/ShishirPatil/gorilla
 def encode_question(question: str, dataset_name: str) -> str:
@@ -173,47 +219,20 @@ class APIBenchBenchmark(BaseBenchmark):
             local_dir_use_symlinks=True,
         )
 
-        def download_github_subdirectory(
-            repo, subdir, branch="main", data_dir=self.data_dir
-        ):
-            r"""Download subdirectory of the Github repo of the benchmark."""
-            api_url = f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
-            headers = {"Accept": "application/vnd.github.v3+json"}
-            response = requests.get(api_url, headers=headers)
-            response.raise_for_status()
-            files = response.json()
-            os.makedirs(data_dir, exist_ok=True)
-
-            for file in tqdm(files, desc="Downloading"):
-                file_path = data_dir / file["name"]
-
-                if file["type"] == "file":
-                    file_url = file["download_url"]
-                    file_response = requests.get(file_url)
-                    with open(file_path, "wb") as f:
-                        f.write(file_response.content)
-                elif file["type"] == "dir":
-                    download_github_subdirectory(
-                        repo,
-                        os.path.join(subdir, file["name"]),
-                        branch,
-                        file_path,
-                    )
-
         repo = "ShishirPatil/gorilla"
         subdir = "eval/eval-data/questions"
+        data_dir = self.data_dir
 
-        download_github_subdirectory(repo, subdir)
+        download_github_subdirectory(repo, subdir, data_dir)
 
-    def load(self, force_download: bool = False):
+    def load(self, dataset_name: str, force_download: bool = False):  # type: ignore[override]
         r"""Load the APIBench Benchmark dataset.
 
         Args:
-            dataset_name: Name of the dataset to be loaded.
-            force_download (bool, optional): Whether to
-                force download the data.
+            dataset_name (str): Name of the specific dataset to be loaded.
+            force_download (bool, optional): Whether to force
+            download the data. (default: :obj:`False`)
         """
-        dataset_name = self._dataset_name
 
         if force_download:
             logger.info("Force downloading data.")
@@ -266,28 +285,29 @@ class APIBenchBenchmark(BaseBenchmark):
     def run(  # type: ignore[override]
         self,
         agent: ChatAgent,
-        dataset: Literal["huggingface", "tensorflowhub", "torchhub"],
+        dataset_name: Literal["huggingface", "tensorflowhub", "torchhub"],
         randomize: bool = False,
         subset: Optional[int] = None,
     ) -> Dict[str, Any]:
         r"""Run the benchmark.
 
         Args:
-            agent (ChatAgent): The agent to run the benchmark.
-            dataset (Literal["huggingface",
-            "tensorflowhub",
-            "torchhub"]): The dataset to run the benchmark.
+            agent (ChatAgent): The agent to run the
+                benchmark.
+            dataset_name (Literal["huggingface",
+                "tensorflowhub", "torchhub"]):
+                The dataset to run the benchmark.
             randomize (bool, optional): Whether to randomize the data.
                 (default: :obj:`False`)
             subset (Optional[int], optional): The subset of data to run.
                 (default: :obj:`None`)
         """
-        if dataset not in dataset_mapping:
-            raise ValueError(f"Invalid value for dataset: {dataset}.")
 
-        logger.info(f"Running APIBench benchmark on {dataset}.")
-        self._dataset_name = dataset
-        self.load()
+        if dataset_name not in dataset_mapping:
+            raise ValueError(f"Invalid value for dataset: {dataset_name}.")
+
+        logger.info(f"Running APIBench benchmark on {dataset_name}.")
+        self.load(dataset_name)
         datas = self._data['questions']
 
         # Shuffle and subset data if necessary
@@ -303,7 +323,7 @@ class APIBenchBenchmark(BaseBenchmark):
 
         with open(self.save_to, "w") as f:
             for question in tqdm(datas, desc="Running"):
-                prompt = encode_question(question["text"], dataset)
+                prompt = encode_question(question["text"], dataset_name)
                 msg = BaseMessage.make_user_message(
                     role_name="User", content=prompt
                 )
@@ -320,7 +340,7 @@ class APIBenchBenchmark(BaseBenchmark):
                     error, correct, hallucination = evaluate_response(
                         response,
                         question_id,
-                        dataset,
+                        dataset_name,
                         api_database,
                         qa_pairs,
                         ast_database,

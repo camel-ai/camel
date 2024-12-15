@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-# ruff: noqa: E402
 import json
 import logging
 import os
@@ -34,9 +33,94 @@ from camel.messages.base import BaseMessage
 logger = logging.getLogger(__name__)
 
 
+# Helper functions
+def download_github_subdirectory(
+    repo: str, subdir: str, data_dir: Path, branch="main"
+):
+    r"""Download subdirectory of the Github repo of
+    the benchmark.
+
+    This function downloads all files and subdirectories from a
+    specified subdirectory of a GitHub repository and
+    saves them to a local directory.
+
+    Args:
+        repo (str): The name of the GitHub repository
+                in the format "owner/repo".
+        subdir (str): The path to the subdirectory
+            within the repository to download.
+        data_dir (Path): The local directory where
+            the files will be saved.
+        branch (str, optional): The branch of the repository to use.
+            Defaults to "main".
+    """
+    api_url = (
+        f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
+    )
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    response = requests.get(api_url, headers=headers)
+    response.raise_for_status()
+    files = response.json()
+    os.makedirs(data_dir, exist_ok=True)
+
+    for file in tqdm(files, desc="Downloading"):
+        file_path = data_dir / file["name"]
+
+        if file["type"] == "file":
+            file_url = file["download_url"]
+            file_response = requests.get(file_url)
+            with open(file_path, "wb") as f:
+                f.write(file_response.content)
+        elif file["type"] == "dir":
+            download_github_subdirectory(
+                repo, subdir / file["name"], file_path, branch
+            )
+
+
+def process_messages(
+    chat_history: List[Dict[str, Any]],
+    prompt: str,
+) -> List[Dict[str, str]]:
+    """
+    Processes chat history into a structured format for further use.
+
+    Args:
+        chat_history (List[Dict[str, Any]):
+            A list of dictionaries representing the chat history.
+        prompt (str): A propmt to be set as the system message.
+
+    Returns:
+        List[Dict[str, str]]: A list of dictionaries representing
+            the processed messages, where each dictionary has:
+        - 'role': The role of the message ('system', 'user', or 'assistant').
+        - 'content': The content of the message, including formatted
+            API responses when applicable.
+    """
+    messages = [{'role': 'system', 'content': prompt}]
+    for item in chat_history:
+        role_map = {'User': 'user', 'AI': 'assistant', 'API': 'system'}
+        chat_role = role_map.get(
+            item['role'], 'unknown'
+        )  # default role to 'unknown'
+        if item['role'] == 'API':
+            chat_content = '[{}({})] Response: {}'.format(
+                item['api_name'],
+                ', '.join(
+                    [
+                        '{}=\'{}\''.format(k, v)
+                        for k, v in item['param_dict'].items()
+                    ]
+                ),
+                str(item['result']['output']),
+            )
+        else:
+            chat_content = item['text']
+        messages.append({'role': chat_role, 'content': chat_content})
+    return messages
+
+
 class APIBankBenchmark(BaseBenchmark):
-    r"""
-    API-Bank Benchmark adapted from `API-Bank:
+    r"""API-Bank Benchmark adapted from `API-Bank:
     A Comprehensive Benchmark for Tool-Augmented LLMs`
     <https://github.com/AlibabaResearch/DAMO-ConvAI/tree/main/api-bank>.
 
@@ -65,52 +149,23 @@ class APIBankBenchmark(BaseBenchmark):
     def download(self):
         r"""Download APIBank dataset and code from Github."""
 
-        def download_github_subdirectory(
-            repo, subdir, branch="main", data_dir=self.data_dir
-        ):
-            r"""Download subdirectory of the Github repo of the benchmark."""
-            api_url = f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
-            headers = {"Accept": "application/vnd.github.v3+json"}
-            response = requests.get(api_url, headers=headers)
-            response.raise_for_status()
-            files = response.json()
-            os.makedirs(data_dir, exist_ok=True)
-
-            for file in tqdm(files, desc="Downloading"):
-                file_path = os.path.join(data_dir, file["name"])
-
-                if file["type"] == "file":
-                    file_url = file["download_url"]
-                    file_response = requests.get(file_url)
-                    with open(file_path, "wb") as f:
-                        f.write(file_response.content)
-                elif file["type"] == "dir":
-                    download_github_subdirectory(
-                        repo,
-                        os.path.join(subdir, file["name"]),
-                        branch,
-                        file_path,
-                    )
-
         repo = "AlibabaResearch/DAMO-ConvAI"
         subdir = "api-bank"
+        data_dir = self.data_dir
 
-        download_github_subdirectory(repo, subdir)
+        download_github_subdirectory(repo, subdir, data_dir)
 
         sys.path.insert(0, self.data_dir)
         logger.info("Download completed.")
 
-    def load(self, force_download: bool = False):
+    def load(self, level: str, force_download: bool = False):  # type: ignore[override]
         r"""Load the APIBank Benchmark dataset.
 
         Args:
-            level: Level to run benchmark on.
+            level (str): Level to run benchmark on.
             force_download (bool, optional): Whether to
                 force download the data.
         """
-
-        level = self._level
-
         if force_download:
             logger.info("Force downloading data.")
             self.download()
@@ -185,11 +240,11 @@ class APIBankBenchmark(BaseBenchmark):
 
         Args:
             agent (ChatAgent): The agent to run the
-            benchmark.
+                benchmark.
             level (Literal['level-1', 'level-2']):
-            The level to run the benchmark on.
+                The level to run the benchmark on.
             randomize (bool, optional): Whether to
-            randomize the data.
+                randomize the data.
             api_test_enabled (bool): Whether to test
             API calling (`True`) or response (`False`)
                 (default: :obj:`False`)
@@ -200,14 +255,8 @@ class APIBankBenchmark(BaseBenchmark):
         Returns:
             Dict[str, Any]: The results of the benchmark.
         """
-
-        total_api_calls = 0
-        correct_api_calls = 0
-        rougel_scores = []
-
         logger.info(f"Running APIBench benchmark on {level}.")
-        self._level = level
-        self.load()
+        self.load(level)
         datas = self._data
 
         # Shuffle and subset data if necessary
@@ -223,15 +272,11 @@ class APIBankBenchmark(BaseBenchmark):
         # Initialize results storage
         self._results = []
 
-        # Adapted from the evaluator
-        # from the original repo
-
-        if level == 'level-1':
-            tool_search_enabled = False
-        else:
-            tool_search_enabled = True
-
+        # The following code are adapted from the evaluator
+        # from the original repo:
+        tool_search_enabled = level == "level-2"
         dialog_test_enabled = not api_test_enabled
+        total_api_calls, correct_api_calls, rougel_scores = 0, 0, []
 
         with open(self.save_to, "w") as f:
             for test in tqdm(datas, desc="Running"):
@@ -257,43 +302,10 @@ class APIBankBenchmark(BaseBenchmark):
                             api_descriptions, chat_history = (
                                 evaluator.get_model_input(sample_id)
                             )
-                        prompt = api_call_prompt + api_descriptions
-                        messages = [
-                            {'role': 'system', 'content': prompt},
-                        ]
-                        for item in chat_history:
-                            if item['role'] == 'User':
-                                chat_role = 'user'
-                                chat_content = item['text']
-                            elif item['role'] == 'AI':
-                                chat_role = 'assistant'
-                                chat_content = item['text']
-                            elif item['role'] == 'API':
-                                chat_role = 'system'
-                                chat_content = '[{}({})] Response: {}'.format(
-                                    item['api_name'],
-                                    ', '.join(
-                                        [
-                                            '{}=\'{}\''.format(k, v)
-                                            for k, v in item[
-                                                'param_dict'
-                                            ].items()
-                                        ]
-                                    ),
-                                    str(item['result']['output']),
-                                )
-                            else:
-                                raise ValueError(
-                                    'Invalid chat role: {}'.format(
-                                        item['role']
-                                    )
-                                )
-                            messages.append(
-                                {'role': chat_role, 'content': chat_content}
-                            )
-
+                        messages = process_messages(
+                            chat_history, API_CALL_PROMPT + api_descriptions
+                        )
                         model_output = agent_call(messages, agent)
-
                         api_call = get_api_call(model_output)
 
                         # Evaluate API call
@@ -353,41 +365,10 @@ class APIBankBenchmark(BaseBenchmark):
                         api_descriptions, chat_history = (
                             evaluator.get_model_input(sample_id)
                         )
-                        prompt = response_prompt + api_descriptions
-                        messages = [
-                            {'role': 'system', 'content': prompt},
-                        ]
-                        for item in chat_history:
-                            if item['role'] == 'User':
-                                chat_role = 'user'
-                                chat_content = item['text']
-                            elif item['role'] == 'AI':
-                                chat_role = 'assistant'
-                                chat_content = item['text']
-                            elif item['role'] == 'API':
-                                chat_role = 'system'
-                                chat_content = '[{}({})] Response: {}'.format(
-                                    item['api_name'],
-                                    ', '.join(
-                                        [
-                                            '{}=\'{}\''.format(k, v)
-                                            for k, v in item[
-                                                'param_dict'
-                                            ].items()
-                                        ]
-                                    ),
-                                    str(item['result']['output']),
-                                )
-                            else:
-                                raise ValueError(
-                                    'Invalid chat role: {}'.format(
-                                        item['role']
-                                    )
-                                )
-                            messages.append(
-                                {'role': chat_role, 'content': chat_content}
-                            )
 
+                        messages = process_messages(
+                            chat_history, RESPONSE_PROMPT + api_descriptions
+                        )
                         model_output = agent_call(messages, agent)
 
                         # Evaluate model response
@@ -579,7 +560,7 @@ class Evaluator:
             return round(score, 4)
 
 
-api_call_prompt = '''
+API_CALL_PROMPT = '''
 Based on the given API description and the existing \
 conversation history 1..t, please generate the API request \
 that the AI should call in step t+1 and output it in the \
@@ -600,7 +581,7 @@ Expected output:
 API descriptions:
 '''
 
-response_prompt = '''
+RESPONSE_PROMPT = '''
 Based on the given API description and the existing \
 conversation history 1..t, please generate the next \
 dialog that the AI should response after the API call t.
