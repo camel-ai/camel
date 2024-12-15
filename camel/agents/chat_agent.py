@@ -499,6 +499,13 @@ class ChatAgent(BaseAgent):
                 "the model configuration and in the ChatAgent step."
             )
 
+        original_model_dict = self.model_backend.model_config_dict
+        if response_format and self.model_type in {"gpt-4o", "gpt-4o-mini"}:
+            self.model_backend.model_config_dict = original_model_dict.copy()
+            self.model_backend.model_config_dict["response_format"] = (
+                response_format
+            )
+
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
                 role_name='User', content=input_message
@@ -632,6 +639,7 @@ class ChatAgent(BaseAgent):
                 try:
                     openai_messages, num_tokens = self.memory.get_context()
                 except RuntimeError as e:
+                    self.model_backend.model_config_dict = original_model_dict
                     return self._step_token_exceed(
                         e.args[1], tool_call_records, "max_tokens_exceeded"
                     )
@@ -667,6 +675,8 @@ class ChatAgent(BaseAgent):
                         num_tokens,
                         tool_call_request,
                     )
+
+                    self.model_backend.model_config_dict = original_model_dict
                     return ChatAgentResponse(
                         msgs=output_messages,
                         terminated=self.terminated,
@@ -681,6 +691,7 @@ class ChatAgent(BaseAgent):
             if (
                 response_format is not None
                 and self.model_type.support_native_tool_calling
+                and self.model_type not in {"gpt-4o", "gpt-4o-mini"}
             ):
                 (
                     output_messages,
@@ -711,6 +722,7 @@ class ChatAgent(BaseAgent):
                     "to record the selected message manually."
                 )
 
+            self.model_backend.model_config_dict = original_model_dict
             return ChatAgentResponse(
                 msgs=output_messages, terminated=self.terminated, info=info
             )
@@ -930,7 +942,7 @@ class ChatAgent(BaseAgent):
             )
 
         for base_message_item in output_messages:
-            base_message_item.content = str(tool_call_record.result)
+            base_message_item.content = json.dumps(tool_call_record.result)
 
         # Recover the original tools
         self.func_dict = original_func_dict

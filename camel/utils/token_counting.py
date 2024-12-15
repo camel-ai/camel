@@ -144,12 +144,19 @@ class OpenAITokenCounter(BaseTokenCounter):
             num_tokens += self.tokens_per_message
             for key, value in message.items():
                 if not isinstance(value, list):
-                    num_tokens += len(self.encoding.encode(str(value)))
+                    num_tokens += len(
+                        self.encoding.encode(str(value), disallowed_special=())
+                    )
                 else:
                     for item in value:
                         if item["type"] == "text":
                             num_tokens += len(
-                                self.encoding.encode(str(item["text"]))
+                                self.encoding.encode(
+                                    str(
+                                        item["text"],
+                                    ),
+                                    disallowed_special=(),
+                                )
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
@@ -222,13 +229,18 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self):
-        r"""Constructor for the token counter for Anthropic models."""
+    def __init__(self, model: str):
+        r"""Constructor for the token counter for Anthropic models.
+
+        Args:
+            model (str): The name of the Anthropic model being used.
+        """
         from anthropic import Anthropic
 
         self.client = Anthropic()
-        self.tokenizer = self.client.get_tokenizer()
+        self.model = model
 
+    @dependencies_required('anthropic')
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
         loaded tokenizer specific for this type of model.
@@ -240,11 +252,18 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        num_tokens = 0
-        for message in messages:
-            content = str(message["content"])
-            num_tokens += self.client.count_tokens(content)
-        return num_tokens
+        from anthropic.types.beta import BetaMessageParam
+
+        return self.client.beta.messages.count_tokens(
+            messages=[
+                BetaMessageParam(
+                    content=str(msg["content"]),
+                    role="user" if msg["role"] == "user" else "assistant",
+                )
+                for msg in messages
+            ],
+            model=self.model,
+        ).input_tokens
 
 
 class GeminiTokenCounter(BaseTokenCounter):
@@ -360,7 +379,7 @@ class MistralTokenCounter(BaseTokenCounter):
                 ModelType.MISTRAL_CODESTRAL,
                 ModelType.MISTRAL_CODESTRAL_MAMBA,
             }
-            else self.model_type.value
+            else self.model_type
         )
 
         self.tokenizer = MistralTokenizer.from_model(model_name)
@@ -403,7 +422,7 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
-            model=self.model_type.value,
+            model=self.model_type,
             messages=[openai_msg],
         )
 

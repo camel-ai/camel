@@ -41,9 +41,12 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
+    # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
     GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
+    GROQ_LLAMA_3_3_70B_PREVIEW = "llama-3.3-70b-specdec"
     GROQ_LLAMA_3_8B = "llama3-8b-8192"
     GROQ_LLAMA_3_70B = "llama3-70b-8192"
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
@@ -59,10 +62,11 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
     # Claude3 models
-    CLAUDE_3_OPUS = "claude-3-opus-20240229"
+    CLAUDE_3_OPUS = "claude-3-opus-latest"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
-    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
+    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
+    CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -76,6 +80,7 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_1_405B_INSTRUCT = "meta/llama-3.1-405b-instruct"
     NVIDIA_LLAMA3_2_1B_INSTRUCT = "meta/llama-3.2-1b-instruct"
     NVIDIA_LLAMA3_2_3B_INSTRUCT = "meta/llama-3.2-3b-instruct"
+    NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
@@ -202,6 +207,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.CLAUDE_3_5_HAIKU,
         }
 
     @property
@@ -211,6 +217,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_3_70B,
+            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
@@ -249,6 +257,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
         }
 
     @property
@@ -362,6 +371,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
@@ -428,6 +438,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
+            ModelType.GROQ_LLAMA_3_3_70B,
         }:
             return 128_000
         elif self in {
@@ -445,6 +457,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
@@ -611,6 +624,7 @@ class ModelPlatformType(Enum):
     QWEN = "tongyi-qianwen"
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
+    SGLANG = "sglang"
 
     @property
     def is_openai(self) -> bool:
@@ -641,6 +655,11 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_sglang(self) -> bool:
+        r"""Returns whether this platform is sglang."""
+        return self is ModelPlatformType.SGLANG
 
     @property
     def is_together(self) -> bool:
@@ -749,3 +768,9 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class HuggingFaceRepoType(str, Enum):
+    DATASET = "dataset"
+    MODEL = "model"
+    SPACE = "space"

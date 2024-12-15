@@ -365,6 +365,11 @@ class SearchToolkit(BaseToolkit):
 
                 # Iterate over 10 results found
                 for i, search_item in enumerate(search_items, start=1):
+                    # Check metatags are present
+                    if "pagemap" not in search_item:
+                        continue
+                    if "metatags" not in search_item["pagemap"]:
+                        continue
                     if (
                         "og:description"
                         in search_item["pagemap"]["metatags"][0]
