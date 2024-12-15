@@ -12,6 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .o1datagen import O1DataGene
+from .o1datagen import O1DataGenerator
 
-__all__ = ['O1DataGene']
+__all__ = ['O1DataGenerator']

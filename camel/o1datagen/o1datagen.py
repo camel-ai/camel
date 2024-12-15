@@ -23,7 +23,7 @@ from camel.agents import ChatAgent
 from camel.logger import get_logger
 
 # Get a logger for this module
-logger = get_logger('o1datagen')
+logger = get_logger('o1datagenerator')
 
 
 class AgentResponse(BaseModel):
@@ -45,7 +45,23 @@ class AgentResponse(BaseModel):
     )
 
 
-class O1DataGene:
+class VerificationResponse(BaseModel):
+    r"""Model for structured verification responses.
+
+    A Pydantic model class that represents verification results from agents,
+    indicating whether an answer is correct or not.
+
+    Args:
+        is_correct (bool): Boolean indicating if the answer is correct.
+    """
+
+    is_correct: bool = Field(
+        ...,
+        description="Boolean indicating if the answer is correct",
+    )
+
+
+class O1DataGenerator:
     r"""Class for generating and managing data through chat agent interactions.
 
     handling the generation of data by  a chat agent, managing golden answers,
@@ -72,7 +88,7 @@ class O1DataGene:
         self.search_limit = search_limit
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
         logger.info(
-            "O1DataGene initialized with search_limit=%d", search_limit
+            "O1DataGenerator initialized with search_limit=%d", search_limit
         )
 
     def get_answer(self, question: str, context: str = "") -> str:
@@ -135,8 +151,9 @@ class O1DataGene:
         self.chat_agent.reset()
         response = self.chat_agent.step(prompt)
         is_correct = response.msgs[0].content.strip().lower() == "true"
-        logger.info("Answer verification result: %s", is_correct)
-        return is_correct
+        verification = VerificationResponse(is_correct=is_correct)
+        logger.info("Answer verification result: %s", verification.is_correct)
+        return verification.is_correct
 
     def monte_carlo_tree_search(
         self, question: str, partial_solution: str = ""
@@ -219,7 +236,7 @@ class O1DataGene:
 
         Returns:
             int: The position of the first error found in the solution.
-            Returns -1.if no errors are found (all sentences are correct).
+                Returns -1.if no errors are found (all sentences are correct).
         """
         logger.info("Starting binary search for error location")
         # Split by both English period and Chinese period
@@ -349,8 +366,9 @@ class O1DataGene:
             filepath (str, optional): Path where the JSON file will be saved.
                 Defaults to 'solutions.json'.
 
-        Returns:None: The method writes to a file and logs
-        the result but does not return any value.
+        Returns:
+            None: The method writes to a file and logs
+                the result but does not return any value.
         """
         export_data = {
             "solutions": self.solution_tree,
