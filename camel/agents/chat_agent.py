@@ -661,18 +661,18 @@ class ChatAgent(BaseAgent):
             # Finalize on standard response in multi-step mode
             if multi_step and self._is_standard_response(response):
                 break
-
             # Handle external tool requests
-            external_tool_request = self._extract_tool_call(response)
-            if isinstance(response, ChatCompletion) and external_tool_request:
+            tool_request = self._extract_tool_call(response)
+            response.choices[0].message.tool_calls = (
+                [tool_request] if tool_request else None
+            )
+            if isinstance(response, ChatCompletion) and tool_request:
                 tool_call_records.append(
                     self._step_tool_call_and_update(response)
                 )
 
-                if (
-                    external_tool_request.function.name
-                    in self.external_tool_names
-                ):
+                if tool_request.function.name in self.external_tool_names:
+                    external_tool_request = tool_request
                     info = self._step_get_info(
                         output_messages,
                         finish_reasons,
@@ -680,7 +680,7 @@ class ChatAgent(BaseAgent):
                         response_id,
                         tool_call_records,
                         num_tokens,
-                        external_tool_request,
+                        tool_request,
                     )
                     return ChatAgentResponse(
                         msgs=output_messages,
