@@ -113,34 +113,30 @@ class ExampleConstructor:
         examples = []
 
         for data in tqdm(raw_data, desc="Constructing examples"):
-            try:
-                # 1. Text preprocessing
-                processed_text = self._preprocess_text(data.get('text', ''))
-                if not processed_text:
-                    continue
-
-                # 2. Generate key information pairs
-                info_pairs = self._extract_info_pairs(processed_text)
-
-                # 3. Construct question-answer pairs
-                qa_pairs = self._generate_qa_pairs(info_pairs)
-
-                # 4. Add metadata
-                example = {
-                    'text': processed_text,
-                    'qa_pairs': qa_pairs,
-                    'metadata': {
-                        'source': data.get('source', 'unknown'),
-                        'timestamp': data.get('timestamp', ''),
-                        'complexity': self._calculate_complexity(qa_pairs),
-                    },
-                }
-
-                examples.append(example)
-
-            except Exception as e:
-                logger.warning(f"Error constructing example: {e!s}")
+            # 1. Text preprocessing
+            processed_text = self._preprocess_text(data.get('text', ''))
+            if not processed_text:
                 continue
+
+            # 2. Generate key information pairs
+            info_pairs = self._extract_info_pairs(processed_text)
+
+            # 3. Construct question-answer pairs
+            qa_pairs = self._generate_qa_pairs(info_pairs)
+
+            # 4. Add metadata
+            example = {
+                'text': processed_text,
+                'qa_pairs': qa_pairs,
+                'metadata': {
+                    'source': data.get('source', 'unknown'),
+                    'timestamp': data.get('timestamp', ''),
+                    'complexity': self._calculate_complexity(qa_pairs),
+                },
+            }
+
+            examples.append(example)
+
 
         logger.info(f"Successfully constructed {len(examples)} examples")
         return examples
@@ -217,19 +213,14 @@ class ExampleConstructor:
         for pair in info_pairs:
             # 1. Generate multi-hop question-answer pair using AI
             if self.multi_hop_agent:
-                try:
-                    # Construct full context
-                    context = f"{pair['premise']}. {pair['intermediate']}. {pair['conclusion']}"
-                    response = self.multi_hop_agent.generate_multi_hop_qa(
-                        context
-                    )
-                    if response:
-                        qa_pairs.append(response.value.dict())
-                        continue
-                except Exception as e:
-                    logger.warning(
-                        f"Error using MultiHopGeneratorAgent: {e!s}"
-                    )
+                # Construct full context
+                context = f"{pair['premise']}. {pair['intermediate']}. {pair['conclusion']}"
+                response = self.multi_hop_agent.generate_multi_hop_qa(
+                    context
+                )
+                if response:
+                    qa_pairs.append(response.value.dict())
+                    continue
 
             # 2. If AI generation fails, use a simple template
             # Note: This is a fallback and does not represent true multi-hop QA

@@ -23,7 +23,7 @@ class MultiHopQA(BaseModel):
     reasoning_steps: List[ReasoningStep] = Field(..., description="The steps involved in reasoning to answer the question.")
     answer: str = Field(..., description="The answer to the multi-hop question.")
     supporting_facts: List[str] = Field(..., description="Facts that support the reasoning and answer.")
-    type: str = Field(default="multi_hop_qa", description="The type of question-answer pair.")
+    type: str = Field(description="The type of question-answer pair.")
 
     class Config:
         schema_extra = {

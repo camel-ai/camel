@@ -131,6 +131,7 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self._operation_lock = threading.Lock()
+        self._last_message_role = None
 
     def run_atomic(
         self, callback: Callable[[], ProgrammedAgentInstructionResult[T]]
@@ -140,7 +141,7 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
 
         try:
             result = callback()
-            self._last_message_role = result.agent_message.role
+            self._last_message_role = result.agent_message.role_name
             return result
         finally:
             self._operation_lock.release()
