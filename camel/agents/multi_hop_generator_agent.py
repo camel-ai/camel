@@ -13,19 +13,24 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import Any
-from camel.agents import ChatAgent
+
+from pydantic import ConfigDict
+
 from camel.agents.programmed_agent_instruction import (
+    ProgrammableChatAgent,
     ProgrammedAgentInstructionResult,
     programmable_capability,
 )
+from camel.messages import BaseMessage
 from camel.synthetic_datagen.source2synth.models import (
     ContextPrompt,
     MultiHopQA,
 )
-from camel.messages import BaseMessage
 
 
-class MultiHopGeneratorAgent(ChatAgent):
+class MultiHopGeneratorAgent(ProgrammableChatAgent):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 

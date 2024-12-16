@@ -17,20 +17,16 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from dotenv import load_dotenv
 from tqdm import tqdm
 
+from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
 from camel.logger import get_logger
-from camel.synthetic_datagen.source2synth.ai_model_handler import (
-    AIModelHandler,
-)
 from camel.synthetic_datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
-from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
 
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
 logger = get_logger(__name__)
 
@@ -42,7 +38,9 @@ class UserDataProcessor:
         self.config = config or ProcessorConfig()
         random.seed(self.config.seed)
         np.random.seed(self.config.seed)
-        self.multi_hop_agent = MultiHopGeneratorAgent() if self.config.use_ai_model else None
+        self.multi_hop_agent = (
+            MultiHopGeneratorAgent() if self.config.use_ai_model else None
+        )
 
     def process_text(
         self, text: str, source: str = "user_input"
@@ -58,7 +56,7 @@ class UserDataProcessor:
         ]
 
         # Construct examples
-        constructor = ExampleConstructor(self.config, self.ai_handler)
+        constructor = ExampleConstructor(self.config, self.multi_hop_agent)
         examples = constructor.construct_examples(raw_data)
 
         # Manage data
@@ -86,7 +84,7 @@ class UserDataProcessor:
         ]
 
         # Construct examples
-        constructor = ExampleConstructor(self.config, self.ai_handler)
+        constructor = ExampleConstructor(self.config, self.multi_hop_agent)
         examples = constructor.construct_examples(raw_data)
 
         # Manage data
@@ -222,12 +220,16 @@ class ExampleConstructor:
                 try:
                     # Construct full context
                     context = f"{pair['premise']}. {pair['intermediate']}. {pair['conclusion']}"
-                    response = self.multi_hop_agent.generate_multi_hop_qa(context)
+                    response = self.multi_hop_agent.generate_multi_hop_qa(
+                        context
+                    )
                     if response:
                         qa_pairs.append(response.value.dict())
                         continue
                 except Exception as e:
-                    logger.warning(f"Error using MultiHopGeneratorAgent: {e!s}")
+                    logger.warning(
+                        f"Error using MultiHopGeneratorAgent: {e!s}"
+                    )
 
             # 2. If AI generation fails, use a simple template
             # Note: This is a fallback and does not represent true multi-hop QA

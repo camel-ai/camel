@@ -16,14 +16,20 @@ import random
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from camel.agents.MultiHopGeneratorAgent import MultiHopGeneratorAgent
+from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
 
 
 class ProcessorConfig(BaseModel):
     """Data processing configuration class"""
 
+    def __repr__(self):
+        return "MultiHopGeneratorAgent()"
+
     model_config = ConfigDict(
-        validate_assignment=True, frozen=False, protected_namespaces=()
+        validate_assignment=True,
+        frozen=False,
+        protected_namespaces=(),
+        arbitrary_types_allowed=True,
     )
 
     seed: int = Field(  # Generate a random seed for reproducibility
@@ -62,19 +68,6 @@ class ProcessorConfig(BaseModel):
     )
 
     hop_generating_agent: MultiHopGeneratorAgent = Field(
-        default=MultiHopGeneratorAgent(),
+        default_factory=lambda: MultiHopGeneratorAgent(),
         description="Agent for generating multi-hop text",
     )
-
-    # model_temperature: float = Field(
-    #     default=0.4,
-    #     description="Temperature parameter for AI model generation",
-    #     ge=0.0,
-    #     le=1.0,
-    # )
-
-    # max_tokens: int = Field(
-    #     default=4096,
-    #     description="Maximum number of tokens for AI model output",
-    #     gt=0,
-    # )

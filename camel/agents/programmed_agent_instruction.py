@@ -17,7 +17,7 @@ from enum import Enum
 from functools import wraps
 from typing import Any, Callable, Generic, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
@@ -40,6 +40,8 @@ class ProgrammedAgentInstructionResult(BaseModel, Generic[T]):
     user_message: BaseMessage
     agent_message: BaseMessage
     value: T
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class AbstractProgrammableAgent(abc.ABC):
@@ -149,6 +151,3 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
                 raise NotImplementedError(
                     "Must implement repair for LAST_MESSAGE_NOT_USER"
                 )
-
-
-from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
