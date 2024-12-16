@@ -20,18 +20,6 @@ from pydantic import BaseModel
 from .base import BaseConverter
 
 
-# Decorator to add try catch for all the methods
-def exception_handler_decorator(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            print(f"Error in {func.__name__}: {e}")
-            raise e
-
-    return wrapper
-
-
 class OutlinesConverter(BaseConverter):
     r"""OutlinesConverter is a class that converts a string or a function
     into a BaseModel schema.
@@ -77,7 +65,6 @@ class OutlinesConverter(BaseConverter):
             case _:
                 raise ValueError(f"Unsupported platform: {platform}")
 
-    @exception_handler_decorator
     def convert_regex(self, content: str, regex_pattern: str):
         r"""Convert the content to the specified regex pattern.
 
@@ -93,7 +80,6 @@ class OutlinesConverter(BaseConverter):
         )
         return regex_generator(content)
 
-    @exception_handler_decorator
     def convert_json(
         self,
         content: str,
@@ -115,7 +101,6 @@ class OutlinesConverter(BaseConverter):
         )
         return json_generator(content)
 
-    @exception_handler_decorator
     def convert_pydantic(
         self,
         content: str,
@@ -136,7 +121,6 @@ class OutlinesConverter(BaseConverter):
         )
         return json_generator(content)
 
-    @exception_handler_decorator
     def convert_type(self, content: str, type_name: type):
         r"""Convert the content to the specified type.
 
@@ -161,7 +145,6 @@ class OutlinesConverter(BaseConverter):
         )
         return type_generator(content)
 
-    @exception_handler_decorator
     def convert_choice(self, content: str, choices: List[str]):
         r"""Convert the content to the specified choice.
 
@@ -177,7 +160,6 @@ class OutlinesConverter(BaseConverter):
         )
         return choices_generator(content)
 
-    @exception_handler_decorator
     def convert_grammar(self, content: str, grammar: str):
         r"""Convert the content to the specified grammar.
 
