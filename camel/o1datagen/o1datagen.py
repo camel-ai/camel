@@ -12,10 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
 import json
 from datetime import datetime
-from typing import Annotated, Dict, Union
+from typing import Annotated, Dict, Optional, Union
 
 from pydantic import BaseModel, Field, confloat
 
@@ -68,12 +67,12 @@ class O1DataGenerator:
     and maintaining a solution tree for correct solution steps.
 
     Args:
-        chat_agent (ChatAgent | None): Optional single agent
-            for both tasks (legacy mode)
-        generator_agent (ChatAgent | None): Optional
-            specialized agent for answer generation
-        verifier_agent (ChatAgent | None): Optional
-            specialized agent for answer verification
+        chat_agent (Optional[ChatAgent]): Optional single agent
+            for both tasks (legacy mode). (default::obj:`None`)
+        generator_agent (Optional[ChatAgent]): Optional specialized agent for
+            answer generation. (default::obj:`None`)
+        verifier_agent (Optional[ChatAgent]): Optional specialized agent for
+            answer verification. (default::obj:`None`)
         golden_answers (Dict[str, str]): Dictionary containing pre-defined
             correct answers for validation and comparison. Required for answer
             verification.
@@ -83,29 +82,33 @@ class O1DataGenerator:
 
     def __init__(
         self,
-        chat_agent: ChatAgent | None = None,
+        chat_agent: Optional[ChatAgent] = None,
         *,
-        generator_agent: ChatAgent | None = None,
-        verifier_agent: ChatAgent | None = None,
+        generator_agent: Optional[ChatAgent] = None,
+        verifier_agent: Optional[ChatAgent] = None,
         golden_answers: Dict[str, str],
         search_limit: int = 100,
     ):
-        """Initialize the O1DataGenerator.
+        r"""Initialize the O1DataGenerator.
 
         This constructor supports both single-agent and dual-agent modes:
-        1. Single-agent mode (legacy): Pass a single chat_agent
-           that will be used
-           for both generation and verification.
-        2. Dual-agent mode: Pass separate generator_agent
-           and verifier_agent for
-           specialized tasks.
+        1. Single-agent mode (legacy): Pass a single chat_agent that will be
+        used for both generation and verification.
+        2. Dual-agent mode: Pass separate generator_agent and verifier_agent
+        for specialized tasks.
 
         Args:
-            chat_agent: Optional single agent for both tasks (legacy mode)
-            generator_agent: Optional specialized agent for answer generation
-            verifier_agent: Optional specialized agent for answer verification
-            golden_answers: Dictionary of correct answers for validation
-            search_limit: Maximum search iterations allowed (default: 100)
+            chat_agent (Optional[ChatAgent]): Optional single agent for both
+                tasks (legacy mode). (default::obj:`None`)
+            generator_agent (Optional[ChatAgent]): Optional specialized agent
+                for answer generation. (default::obj:`None`)
+            verifier_agent (Optional[ChatAgent]): Optional specialized agent
+                for answer verification. (default::obj:`None`)
+            golden_answers (Dict[str, str]): Dictionary containing pre-defined
+                correct answers for validation and comparison. Required for
+                answer verification.
+            search_limit (int): Maximum number of search iterations allowed.
+                (default::obj:`100`)
         """
         if chat_agent is not None:
             if generator_agent is not None or verifier_agent is not None:
@@ -136,8 +139,8 @@ class O1DataGenerator:
 
         Args:
             question (str): The question to ask.
-            context (str): Additional context
-                for the question. (default::obj:`""`)
+            context (str): Additional context for the question.
+                (default::obj:`""`)
 
         Returns:
             str: The generated answer.
@@ -160,7 +163,7 @@ class O1DataGenerator:
 
     def verify_answer(self, question: str, answer: str) -> bool:
         r"""Verify if a generated answer is semantically equivalent to
-            the golden answer for a given question.
+        the golden answer for a given question.
 
         Args:
             question (str): The question being answered.
@@ -188,11 +191,12 @@ class O1DataGenerator:
             "'false' only."
         )
         self.verifier_agent.reset()
-        response = self.verifier_agent.step(prompt)
-        is_correct = response.msgs[0].content.strip().lower() == "true"
-        verification = VerificationResponse(is_correct=is_correct)
-        logger.info("Answer verification result: %s", verification.is_correct)
-        return verification.is_correct
+        response = self.verifier_agent.step(
+            prompt, response_format=VerificationResponse
+        )
+        is_correct = response.msgs[0].parsed.is_correct  # type:ignore [union-attr]
+        logger.info("Answer verification result: %s", is_correct)
+        return is_correct
 
     def monte_carlo_tree_search(
         self, question: str, partial_solution: str = ""
@@ -232,9 +236,9 @@ class O1DataGenerator:
 
     def binary_search_error(self, question: str, solution: str) -> int:
         r"""Use binary search to locate the first error in the solution.
-        This method splits the solution into sentences using
-        both English and Chinese
-        sentence delimiters and performs binary search to find the first error.
+        This method splits the solution into sentences using both English and
+        Chinese sentence delimiters and performs binary search to find the
+        first error.
 
         Args:
             question (str): The question being solved.
@@ -242,7 +246,7 @@ class O1DataGenerator:
 
         Returns:
             int: The position of the first error found in the solution.
-                Returns -1.if no errors are found (all sentences are correct).
+                Returns -1. If no errors are found (all sentences are correct).
         """
         logger.info("Starting binary search for error location")
         # Split by both English period and Chinese period
@@ -358,8 +362,8 @@ class O1DataGenerator:
         return final_solution
 
     def import_qa_from_json(self, data: Union[str, Dict[str, str]]) -> bool:
-        r"""Import question and answer data
-            from either a JSON file or a dictionary.
+        r"""Import question and answer data from either a JSON file or a
+        dictionary.
 
         Args:
             data (Union[str, Dict[str, str]]): Either a path to a JSON file
@@ -397,8 +401,7 @@ class O1DataGenerator:
             return False
 
     def export_solutions(self, filepath: str = 'solutions.json') -> None:
-        r"""
-        Export the solution process and results to a JSON file.
+        r"""Export the solution process and results to a JSON file.
         Exports the solution tree, golden answers,
          and export timestamp to a JSON file.
         The exported data includes:
@@ -409,11 +412,11 @@ class O1DataGenerator:
 
         Args:
             filepath (str, optional): Path where the JSON file will be saved.
-                Defaults to 'solutions.json'.
+                (default::obj:`'solutions.json'`)
 
         Returns:
-            None: The method writes to a file and logs
-                the result but does not return any value.
+            None: The method writes to a file and logs the result but does not
+                return any value.
         """
         export_data = {
             "solutions": self.solution_tree,
