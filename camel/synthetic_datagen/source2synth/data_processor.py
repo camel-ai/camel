@@ -16,7 +16,6 @@ import random
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
@@ -25,8 +24,6 @@ from camel.synthetic_datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
 
-# Load environment variables
-# load_dotenv()
 
 logger = get_logger(__name__)
 
@@ -51,7 +48,6 @@ class UserDataProcessor:
             {
                 'text': text,
                 'source': source,
-                'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
         ]
 
@@ -78,7 +74,6 @@ class UserDataProcessor:
             {
                 'text': text,
                 'source': source,
-                'timestamp': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
             for text, source in zip(texts, sources)
         ]
@@ -221,29 +216,6 @@ class ExampleConstructor:
                 if response:
                     qa_pairs.append(response.value.dict())
                     continue
-
-            # 2. If AI generation fails, use a simple template
-            # Note: This is a fallback and does not represent true multi-hop QA
-            question = f"Based on the following information: {pair['premise']}, what can we conclude about {pair['conclusion']}?"
-            answer = f"First, {pair['premise']}. Then, considering that {pair['intermediate']}, we can conclude that {pair['conclusion']}"
-
-            qa_pairs.append(
-                {
-                    'question': question,
-                    'answer': answer,
-                    'reasoning_steps': [
-                        f"Consider: {pair['premise']}",
-                        f"Next, note that: {pair['intermediate']}",
-                        f"Finally: {pair['conclusion']}",
-                    ],
-                    'supporting_facts': [
-                        pair['premise'],
-                        pair['intermediate'],
-                        pair['conclusion'],
-                    ],
-                    'type': 'template_generated_multi_hop',
-                }
-            )
 
         return qa_pairs
 
