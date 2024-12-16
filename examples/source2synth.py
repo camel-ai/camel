@@ -52,7 +52,7 @@ def main():
     # 2. Create the processor
     processor = UserDataProcessor(config)
 
-    # 3. Prepare test data - texts containing multiple related pieces of information
+    # 3. Prepare test data - texts containing multiple related information
     test_texts = [
         # Chain of technological developments
         """
@@ -63,7 +63,7 @@ def main():
         This digital revolution eventually gave rise to the internet, connecting billions 
         of people worldwide. Today, this interconnected network powers artificial 
         intelligence systems that are reshaping various industries.
-        """,
+        """,  # noqa: E501
         # Environmental changes causation chain
         """
         Industrial activities have significantly increased carbon dioxide emissions since 
@@ -73,7 +73,7 @@ def main():
         Coastal communities are now facing increased flooding risks, forcing many to 
         consider relocation. This migration pattern is creating new challenges for urban 
         planning and resource management.
-        """,
+        """,  # noqa: E501
         # Biological evolution chain
         """
         The discovery of antibiotics began with Alexander Fleming's observation of 
@@ -83,7 +83,7 @@ def main():
         a significant challenge to modern medicine, requiring the development of new 
         treatment approaches. Scientists are exploring alternative solutions like 
         bacteriophage therapy to combat antibiotic resistance.
-        """,
+        """,  # noqa: E501
     ]
 
     # 4. Process a single text
@@ -132,7 +132,8 @@ def main():
     print("\n=== Batch Processing Statistics ===")
     print(f"Total texts processed: {len(test_texts)}")
     print(
-        f"Total Q&A pairs generated: {sum(len(result['qa_pairs']) for result in batch_results)}"
+        f"Total Q&A pairs generated: {sum(len(result['qa_pairs']) 
+                                          for result in batch_results)}"
     )
 
     # 7. Analyze results

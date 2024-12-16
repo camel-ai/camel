@@ -24,7 +24,6 @@ from camel.synthetic_datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
 
-
 logger = get_logger(__name__)
 
 
@@ -62,7 +61,7 @@ class UserDataProcessor:
         return final_dataset
 
     def process_batch(
-        self, texts: List[str], sources: List[str] = None
+        self, texts: List[str], sources: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
         """Process multiple texts in batch"""
         if sources is None:
@@ -131,7 +130,6 @@ class ExampleConstructor:
             }
 
             examples.append(example)
-
 
         logger.info(f"Successfully constructed {len(examples)} examples")
         return examples
@@ -209,10 +207,11 @@ class ExampleConstructor:
             # 1. Generate multi-hop question-answer pair using AI
             if self.multi_hop_agent:
                 # Construct full context
-                context = f"{pair['premise']}. {pair['intermediate']}. {pair['conclusion']}"
-                response = self.multi_hop_agent.generate_multi_hop_qa(
-                    context
+                context = (
+                    f"{pair['premise']}. {pair['intermediate']}."
+                    f" {pair['conclusion']}"
                 )
+                response = self.multi_hop_agent.generate_multi_hop_qa(context)
                 if response:
                     qa_pairs.append(response.value.dict())
                     continue
@@ -271,13 +270,15 @@ class DataCurator:
         # 1. Quality filtering
         quality_filtered = self._quality_filter(examples)
         logger.info(
-            f"Remaining examples after quality filtering: {len(quality_filtered)}"
+            f"Remaining examples after quality filtering:"
+            f" {len(quality_filtered)}"
         )
 
         # 2. Complexity filtering
         complexity_filtered = self._complexity_filter(quality_filtered)
         logger.info(
-            f"Remaining examples after complexity filtering: {len(complexity_filtered)}"
+            f"Remaining examples after complexity filtering:"
+            f" {len(complexity_filtered)}"
         )
 
         # 3. Deduplication
