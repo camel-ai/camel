@@ -23,7 +23,6 @@ class FilterFunction(ABC):
 
     Subclasses must implement the `apply` method, which determines whether
     a given instruction passes the filter criteria.
-
     """
 
     @abstractmethod
@@ -43,8 +42,14 @@ class LengthFilter(FilterFunction):
     r"""Filters instructions based on their word count.
 
     Args:
+    r"""Filters instructions based on their word count.
+
+    Args:
         min_len (int): The minimum word count required for an instruction.
+            (default::obj:`5`)
         max_len (int): The maximum word count allowed for an instruction.
+            (default::obj:`200`)
+    """
     """
 
     def __init__(self, min_len: int = 5, max_len: int = 200):

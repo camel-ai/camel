@@ -21,6 +21,7 @@ class InstructionFilter:
     def __init__(self, filters_config: Dict[str, Dict[str, Any]]):
         r"""Initialize the InstructionFilter with a dictionary of filter
             configurations.
+
         Args:
             filters_config(Dict[str, Dict[str, Any]]):
                 Example filters_config:
@@ -58,13 +59,12 @@ class InstructionFilter:
         Args:
             instruction (str): The instruction to evaluate.
             return_details (bool): If True, returns a tuple (bool, List[str])
-                                   where the list contains the names of filters
-                                   that failed.
+                where the list contains the names of filters that failed.
+                (default::obj:`False`)
 
         Returns:
             bool: True if the instruction passes all filters, False otherwise.
-            OR
-            (bool, List[str]) if return_details is True.
+                OR (bool, List[str]) if return_details is True.
         """
         failed_filters = []
         for f in self.filters:
