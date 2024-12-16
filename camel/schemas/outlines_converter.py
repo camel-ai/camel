@@ -83,17 +83,38 @@ class OutlinesConverter(BaseConverter):
     def convert_json(
         self,
         content: str,
-        output_schema: Union[Type[BaseModel], str, Callable],
-    ):
-        r"""Convert the content to the specified JSON schema.
+        output_schema: Union[str, Callable],
+    ) -> dict:
+        r"""Convert the content to the specified JSON schema given by
+        output_schema.
 
         Args:
             content (str): The content to be converted.
-            output_schema (Union[Type[BaseModel], str, Callable]): The expected
-                format of the response.
+            output_schema (Union[str, Callable]): The expected format of the
+                response.
 
         Returns:
-            str: The converted content.
+            dict: The converted content in JSON format.
+        """
+        json_generator = outlines.generate.json(
+            self._outlines_model, output_schema
+        )
+        return json_generator(content)
+
+    def convert_pydantic(
+        self,
+        content: str,
+        output_schema: Type[BaseModel],
+    ) -> BaseModel:
+        r"""Convert the content to the specified Pydantic schema.
+
+        Args:
+            content (str): The content to be converted.
+            output_schema (Type[BaseModel]): The expected format of the
+                response.
+
+        Returns:
+            BaseModel: The converted content in pydantic model format.
         """
         json_generator = outlines.generate.json(
             self._outlines_model, output_schema
@@ -159,15 +180,16 @@ class OutlinesConverter(BaseConverter):
         type: Literal["regex", "json", "type", "choice", "grammar"],
         content: str,
         **kwargs,
-    ) -> BaseModel:
+    ):
         r"""Formats the input content into the expected BaseModel.
 
         Args:
             type (Literal["regex", "json", "type", "choice", "grammar"]):
                 The type of conversion to perform. Options are:
                     - "regex": Match the content against a regex pattern.
-                    - "json": Convert the content into a JSON object based on
-                      a schema.
+                    - "pydantic": Convert the content into a pydantic model.
+                    - "json": Convert the content into a JSON based on a
+                      schema.
                     - "type": Convert the content into a specified type.
                     - "choice": Match the content against a list of valid
                       choices.
@@ -179,9 +201,13 @@ class OutlinesConverter(BaseConverter):
             - For "regex":
                 regex_pattern (str): The regex pattern to use for matching.
 
+            - For "pydantic":
+                output_schema (Type[BaseModel]): The schema to validate and
+                    format the pydantic model.
+
             - For "json":
-                output_schema (dict): The schema to validate and format the
-                    JSON object.
+                output_schema (Union[str, Callable]): The schema to validate
+                    and format the JSON object.
 
             - For "type":
                 type_name (str): The target type name for the conversion.
@@ -196,6 +222,10 @@ class OutlinesConverter(BaseConverter):
         match type:
             case "regex":
                 return self.convert_regex(content, kwargs.get("regex_pattern"))  # type: ignore[arg-type]
+            case "pydantic":
+                return self.convert_pydantic(
+                    content, kwargs.get("output_schema")
+                )  # type: ignore[arg-type]
             case "json":
                 return self.convert_json(content, kwargs.get("output_schema"))  # type: ignore[arg-type]
             case "type":

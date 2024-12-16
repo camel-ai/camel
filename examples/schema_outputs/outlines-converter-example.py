@@ -34,27 +34,35 @@ print(output)
 '''
 
 
-######## JSON conversion #########
+######## Pydantic conversion #########
 
 
-# 1. Using a Pydantic model
+# Using a Pydantic model
 class Temperature(BaseModel):
     location: str
     date: str
     temperature: float
 
 
-output = model.convert_json(
+output = model.convert_pydantic(
     "Today is 2023-09-01, the temperature in Beijing is 30 degrees.",
     output_schema=Temperature,
 )
 
+print(type(output))
+'''
+<class '__main__.Temperature'>
+'''
 print(output)
 '''
 location='Beijing' date='2023-09-01' temperature=30.0
 '''
 
-# 2. Using a JSON schema
+
+######## JSON conversion #########
+
+# 1. Using a JSON schema
+
 schema = """
 {
   "title": "User",
@@ -72,14 +80,39 @@ output = model.convert_json(
     "Create a user profile with the fields name, last_name and id",
     output_schema=schema,
 )
-
+print(type(output))
+'''
+<class 'dict'>
+'''
 print(output)
 '''
 {'name': 'John', 'last_name': 'Doe', 'id': 123456}
 '''
 
+# 2. Using a function (Callable)
 
-####### Type constraints #######
+
+def get_temperature(location: str, date: str, temperature: float):
+    print(f"Temperature in {location} on {date} is {temperature} degrees.")
+
+
+output = model.convert_json(
+    "Today is 2023-09-01, the temperature in Beijing is 30 degrees.",
+    output_schema=get_temperature,
+)
+
+print(type(output))
+'''
+<class 'dict'>
+'''
+print(output)
+'''
+{'location': 'Beijing', 'date': '2023-09-01', 'temperature': 30}
+'''
+
+
+######## Type constraints #########
+
 output = model.convert_type(
     "When I was 6 my sister was half my age. Now I'm 70 how old is my sister?",
     int,
@@ -91,7 +124,7 @@ print(output)
 '''
 
 
-####### Mutliple choices #######
+######## Mutliple choices #########
 
 output = model.convert_choice(
     "What is the capital of Spain?",
@@ -104,7 +137,7 @@ Madrid
 '''
 
 
-####### Grammer #######
+######## Grammer #########
 
 arithmetic_grammar = """
     ?start: expression
