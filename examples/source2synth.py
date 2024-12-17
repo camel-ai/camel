@@ -131,10 +131,8 @@ def main():
 
     print("\n=== Batch Processing Statistics ===")
     print(f"Total texts processed: {len(test_texts)}")
-    print(
-        f"Total Q&A pairs generated: {sum(len(result['qa_pairs']) 
-                                          for result in batch_results)}"
-    )
+    pairs_generated = sum(len(result['qa_pairs']) for result in batch_results)
+    print(f"Total Q&A pairs generated: {pairs_generated}")
 
     # 7. Analyze results
     multi_hop_qa = sum(
