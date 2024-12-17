@@ -19,8 +19,8 @@ from typing import List, Optional, Union
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import BaseModelBackend, ModelFactory
-from camel.runtime import BaseRuntime
-from camel.runtime.utils import FunctionRiskToolkit, IgnoreRiskToolkit
+from camel.runtimes import BaseRuntime
+from camel.runtimes.utils import FunctionRiskToolkit, IgnoreRiskToolkit
 from camel.toolkits import FunctionTool
 from camel.types import ModelPlatformType, ModelType
 
