@@ -42,7 +42,6 @@ eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
 pillow = "^10.2.0"
-outlines = "^0.1.7"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
@@ -68,6 +67,7 @@ sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
 
 # tools
+outlines = { version = "^0.1.7", optional = true }
 beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
