@@ -112,6 +112,7 @@ stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
+unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -146,6 +147,7 @@ rag = [
     "nebula3-python",
     "rank-bm25",
     "cohere",
+    "unstructured"
 ]
 
 search_tools = [
@@ -313,6 +315,7 @@ all = [
     "fastapi",
     "uvicorn",
     "stripe",
+    "unstructured",
     # vector-database
     "qdrant-client",
     "pymilvus",
