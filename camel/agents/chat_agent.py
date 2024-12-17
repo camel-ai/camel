@@ -574,10 +574,11 @@ class ChatAgent(BaseAgent):
                 "the model configuration and in the ChatAgent step."
             )
 
-        
         self.original_model_dict = self.model_backend.model_config_dict
         if response_format and self.model_type in {"gpt-4o", "gpt-4o-mini"}:
-            self.model_backend.model_config_dict = self.original_model_dict.copy()
+            self.model_backend.model_config_dict = (
+                self.original_model_dict.copy()
+            )
             self.model_backend.model_config_dict["response_format"] = (
                 response_format
             )
@@ -681,7 +682,9 @@ class ChatAgent(BaseAgent):
                         tool_request,
                     )
                     self._log_final_output(output_messages)
-                    self.model_backend.model_config_dict = self.original_model_dict
+                    self.model_backend.model_config_dict = (
+                        self.original_model_dict
+                    )
                     return ChatAgentResponse(
                         msgs=output_messages,
                         terminated=self.terminated,
@@ -693,7 +696,10 @@ class ChatAgent(BaseAgent):
                 break
 
         # Optional structured output
-        if response_format and self.model_type not in {"gpt-4o", "gpt-4o-mini"}:
+        if response_format and self.model_type not in {
+            "gpt-4o",
+            "gpt-4o-mini",
+        }:
             (
                 output_messages,
                 finish_reasons,
