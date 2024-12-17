@@ -50,6 +50,7 @@ mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.40.0", optional = true }
 cohere = { version = "^5.11.0", optional = true }
+fish-audio-sdk = { version = "^2024.12.5", optional = true }
 sglang = { version = "^0.4.0", optional = true }
 
 # huggingface-agent
@@ -164,6 +165,7 @@ model-platforms = [
     "reka-api",
     "anthropic",
     "cohere",
+    "fish-audio-sdk",
     'sglang',
 ]
 
@@ -332,6 +334,7 @@ all = [
     "litellm",
     "mistralai",
     "cohere",
+    "fish-audio-sdk",
     "google-generativeai",
     "anthropic",
     "reka-api",
@@ -463,6 +466,7 @@ module = [
     "imageio",
     "rank_bm25",
     "cohere",
+    "fish_audio_sdk",
     "sentence_transformers.*",
     "pymilvus",
     "pillow",
@@ -478,6 +482,7 @@ module = [
     "google_generativeai",
     "mistralai",
     "cohere",
+    "fish-audio-sdk",
     "reka-api",
     "sglang",
     "agentops",

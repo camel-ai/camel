@@ -117,9 +117,9 @@ class MeshyToolkit(BaseToolkit):
         Args:
             task_id (str): The ID of the task to monitor.
             polling_interval (int): Seconds to wait between status checks.
-                (default::obj:`10`)
+                (default: :obj:`10`)
             timeout (int): Maximum seconds to wait before timing out.
-                (default::obj:`3600`)
+                (default: :obj:`3600`)
 
         Returns:
             Dict[str, Any]: Final response from the API when task completes.
