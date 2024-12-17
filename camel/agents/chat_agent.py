@@ -662,7 +662,7 @@ class ChatAgent(BaseAgent):
             # Finalize on standard response in multi-step mode
             if self._is_standard_response(response):
                 break
-            # Handle external tool requests
+            # Handle tool requests
             tool_request = self._extract_tool_call(response)
             if isinstance(response, ChatCompletion) and tool_request:
                 response.choices[0].message.tool_calls = [tool_request]
