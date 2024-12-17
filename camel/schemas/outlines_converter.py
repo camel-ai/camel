@@ -14,7 +14,6 @@
 
 from typing import Any, Callable, List, Literal, Type, Union
 
-import outlines
 from pydantic import BaseModel
 
 from .base import BaseConverter
@@ -65,7 +64,7 @@ class OutlinesConverter(BaseConverter):
             case _:
                 raise ValueError(f"Unsupported platform: {platform}")
 
-    def convert_regex(self, content: str, regex_pattern: str):
+    def convert_regex(self, content: str, regex_pattern: str) -> str:
         r"""Convert the content to the specified regex pattern.
 
         Args:
@@ -75,6 +74,8 @@ class OutlinesConverter(BaseConverter):
         Returns:
             str: The converted content.
         """
+        import outlines
+
         regex_generator = outlines.generate.regex(
             self._outlines_model, regex_pattern
         )
@@ -96,6 +97,8 @@ class OutlinesConverter(BaseConverter):
         Returns:
             dict: The converted content in JSON format.
         """
+        import outlines
+
         json_generator = outlines.generate.json(
             self._outlines_model, output_schema
         )
@@ -116,12 +119,14 @@ class OutlinesConverter(BaseConverter):
         Returns:
             BaseModel: The converted content in pydantic model format.
         """
+        import outlines
+
         json_generator = outlines.generate.json(
             self._outlines_model, output_schema
         )
         return json_generator(content)
 
-    def convert_type(self, content: str, type_name: type):
+    def convert_type(self, content: str, type_name: type) -> str:
         r"""Convert the content to the specified type.
 
         The following types are currently available:
@@ -140,12 +145,14 @@ class OutlinesConverter(BaseConverter):
         Returns:
             str: The converted content.
         """
+        import outlines
+
         type_generator = outlines.generate.format(
             self._outlines_model, type_name
         )
         return type_generator(content)
 
-    def convert_choice(self, content: str, choices: List[str]):
+    def convert_choice(self, content: str, choices: List[str]) -> str:
         r"""Convert the content to the specified choice.
 
         Args:
@@ -155,12 +162,14 @@ class OutlinesConverter(BaseConverter):
         Returns:
             str: The converted content.
         """
+        import outlines
+
         choices_generator = outlines.generate.choice(
             self._outlines_model, choices
         )
         return choices_generator(content)
 
-    def convert_grammar(self, content: str, grammar: str):
+    def convert_grammar(self, content: str, grammar: str) -> str:
         r"""Convert the content to the specified grammar.
 
         Args:
@@ -170,6 +179,8 @@ class OutlinesConverter(BaseConverter):
         Returns:
             str: The converted content.
         """
+        import outlines
+
         grammar_generator = outlines.generate.cfg(
             self._outlines_model, grammar
         )
@@ -177,10 +188,10 @@ class OutlinesConverter(BaseConverter):
 
     def convert(  # type: ignore[override]
         self,
-        type: Literal["regex", "json", "type", "choice", "grammar"],
         content: str,
+        type: Literal["regex", "json", "type", "choice", "grammar"],
         **kwargs,
-    ):
+    ) -> Any:
         r"""Formats the input content into the expected BaseModel.
 
         Args:
