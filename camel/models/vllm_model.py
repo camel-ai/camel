@@ -74,7 +74,7 @@ class VLLMModel(BaseModelBackend):
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            api_key="Set-but-ignored",  # required but ignored
+            api_key="EMPTY",  # required but ignored
             base_url=self._url,
         )
 
