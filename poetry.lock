@@ -208,6 +208,17 @@ files = [
 frozenlist = ">=1.1.0"
 
 [[package]]
+name = "airportsdata"
+version = "20241001"
+description = "Extensive database of location and timezone data for nearly every airport and landing strip in the world."
+optional = true
+python-versions = ">=3.9"
+files = [
+    {file = "airportsdata-20241001-py3-none-any.whl", hash = "sha256:67d71cf2c5378cc17ff66b62b1e11aa2444043949c894543ac8fd8dafce192fd"},
+    {file = "airportsdata-20241001.tar.gz", hash = "sha256:fa0bd143b4f4be3557cb892fa0612ef210fd91a92bd720b4d8221de576a4fa00"},
+]
+
+[[package]]
 name = "alabaster"
 version = "0.7.16"
 description = "A light, configurable Sphinx theme"
@@ -933,6 +944,17 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "cloudpickle"
+version = "3.1.0"
+description = "Pickler class to extend the standard pickle.Pickler functionality"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "cloudpickle-3.1.0-py3-none-any.whl", hash = "sha256:fe11acda67f61aaaec473e3afe030feb131d78a43461b718185363384f1ba12e"},
+    {file = "cloudpickle-3.1.0.tar.gz", hash = "sha256:81a929b6e3c7335c863c771d673d105f02efdb89dfaba0c90495d1c64796601b"},
+]
+
+[[package]]
 name = "cohere"
 version = "5.13.3"
 description = ""
@@ -1482,6 +1504,17 @@ docs = ["sphinx (==4.4.0)", "sphinx-inline-tabs (==2023.4.21)", "sphinxcontrib-a
 speed = ["Brotli", "aiodns (>=1.1)", "cchardet (==2.1.7)", "orjson (>=3.5.4)"]
 test = ["coverage[toml]", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "typing-extensions (>=4.3,<5)", "tzdata"]
 voice = ["PyNaCl (>=1.3.0,<1.6)"]
+
+[[package]]
+name = "diskcache"
+version = "5.6.3"
+description = "Disk Cache -- Disk and file backed persistent cache."
+optional = true
+python-versions = ">=3"
+files = [
+    {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
+    {file = "diskcache-5.6.3.tar.gz", hash = "sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc"},
+]
 
 [[package]]
 name = "distlib"
@@ -2937,6 +2970,17 @@ files = [
 ]
 
 [[package]]
+name = "interegular"
+version = "0.3.3"
+description = "a regex intersection checker"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "interegular-0.3.3-py37-none-any.whl", hash = "sha256:b0c07007d48c89d6d19f7204972d369b2a77222722e126b6aa63aa721dc3b19c"},
+    {file = "interegular-0.3.3.tar.gz", hash = "sha256:d9b697b21b34884711399ba0f0376914b81899ce670032486d0d048344a76600"},
+]
+
+[[package]]
 name = "iopath"
 version = "0.1.10"
 description = "A library for providing I/O abstraction."
@@ -3459,6 +3503,23 @@ files = [
 
 [package.dependencies]
 six = "*"
+
+[[package]]
+name = "lark"
+version = "1.2.2"
+description = "a modern parsing library"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "lark-1.2.2-py3-none-any.whl", hash = "sha256:c2276486b02f0f1b90be155f2c8ba4a8e194d42775786db622faccd652d8e80c"},
+    {file = "lark-1.2.2.tar.gz", hash = "sha256:ca807d0162cd16cef15a8feecb862d7319e7a09bdb13aef927968e45040fed80"},
+]
+
+[package.extras]
+atomic-cache = ["atomicwrites"]
+interegular = ["interegular (>=0.3.1,<0.4.0)"]
+nearley = ["js2py"]
+regex = ["regex"]
 
 [[package]]
 name = "layoutparser"
@@ -5194,6 +5255,87 @@ files = [
 attrs = ">=19.2.0"
 
 [[package]]
+name = "outlines"
+version = "0.1.11"
+description = "Probabilistic Generative Model Programming"
+optional = true
+python-versions = ">=3.9"
+files = [
+    {file = "outlines-0.1.11-py3-none-any.whl", hash = "sha256:f5a5f2242ed9802d3aab7a92789bf4008d734c576be9258cc0a297f690124727"},
+    {file = "outlines-0.1.11.tar.gz", hash = "sha256:0997bd9da1cc050e430bd08995dc7d4bd855918bafa4531e49d3f37110a23aba"},
+]
+
+[package.dependencies]
+airportsdata = "*"
+cloudpickle = "*"
+diskcache = "*"
+interegular = "*"
+jinja2 = "*"
+jsonschema = "*"
+lark = "*"
+nest_asyncio = "*"
+numpy = "*"
+outlines_core = "0.1.26"
+pycountry = "*"
+pydantic = ">=2.0"
+referencing = "*"
+requests = "*"
+torch = "*"
+tqdm = "*"
+typing_extensions = "*"
+
+[package.extras]
+exllamav2 = ["exllamav2"]
+llamacpp = ["datasets", "llama-cpp-python", "numpy (<2)", "transformers"]
+mlxlm = ["datasets", "mlx-lm"]
+openai = ["openai"]
+serve = ["fastapi", "pydantic (>=2.0)", "uvicorn", "vllm (>=0.3.0)"]
+test = ["accelerate", "beartype (<0.16.0)", "coverage[toml] (>=5.1)", "datasets", "diff-cover", "exllamav2", "huggingface_hub", "jax", "llama-cpp-python", "mlx-lm (>=0.19.2)", "openai (>=1.0.0)", "pillow", "pre-commit", "pytest", "pytest-benchmark", "pytest-cov", "pytest-mock", "responses", "transformers", "vllm"]
+transformers = ["accelerate", "datasets", "numpy (<2)", "transformers"]
+vllm = ["numpy (<2)", "transformers", "vllm"]
+
+[[package]]
+name = "outlines-core"
+version = "0.1.26"
+description = "Structured Text Generation in Rust"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "outlines_core-0.1.26-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:6a962a7452e7ac170fa04d405342cadae2d28fafa5b1830cef7aa610257ed32f"},
+    {file = "outlines_core-0.1.26-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:15a3684fa29564da2db03934cf0097bef3e871f70d3af0ef2b52fdb886da2e09"},
+    {file = "outlines_core-0.1.26-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:64e01c0cfa9ba371634d7c3f6ea1862397cef98e4509fe98e3f57faa721a72d6"},
+    {file = "outlines_core-0.1.26-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a3c4196148e47f455f1ace78e329d5b97e531cbc406456d681592952adae7e17"},
+    {file = "outlines_core-0.1.26-cp310-cp310-win32.whl", hash = "sha256:f38d290a7f6e5e12cbfcaee03269dfc0dbda49b360024b4279d1aba251fdc346"},
+    {file = "outlines_core-0.1.26-cp310-cp310-win_amd64.whl", hash = "sha256:11ff56af56cb54c563b7f25d86cd9ee77f3fed825f1d4dccd9449bb1e4e89538"},
+    {file = "outlines_core-0.1.26-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:b6787b07b7c673fc3087d2b537719ecac8e03b10a47d032dd1926985c32885b0"},
+    {file = "outlines_core-0.1.26-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:1e0ea28a76da31d25b6f53242bf13e1b59a0241badf82353c88f55e1cf81b128"},
+    {file = "outlines_core-0.1.26-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a8932044a3d9329be53a226118850638f85b4d7842f9b863d0a123f23de220cd"},
+    {file = "outlines_core-0.1.26-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a84b7cd2fb6268bf990dd3d479ffb4fa0bace6f571cb85b15b6cdb44b84f5b69"},
+    {file = "outlines_core-0.1.26-cp311-cp311-win32.whl", hash = "sha256:f19765c151abfc970996368080aeea6d2a19e927817fe4e2af6726e639be3de4"},
+    {file = "outlines_core-0.1.26-cp311-cp311-win_amd64.whl", hash = "sha256:3f59aeccea21ed6ff3cf52102fd163f26d279821c20e5127ddd18d4ea4d0c8d2"},
+    {file = "outlines_core-0.1.26-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:f54633bca50055d42ea4d94ae06dcbe52d3d76a9b621b75723b1177d0d952953"},
+    {file = "outlines_core-0.1.26-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9525321b48700dcaaabf60bcdc951e45f9357ba3fb3e1bfc81b662d7d4170e7c"},
+    {file = "outlines_core-0.1.26-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:00f409f72c11f6ffadb57066950dd384d5388015028c1a1a615c9a64988dae3e"},
+    {file = "outlines_core-0.1.26-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e86a1bb46adc5cbf6dfd7a7fe4105e0e2a4c6e041732a053126b41c521a1f223"},
+    {file = "outlines_core-0.1.26-cp312-cp312-win32.whl", hash = "sha256:19f462f6b00935708677ad27cb4df55e0e17f6ffe713ab750f5f2683b090f95d"},
+    {file = "outlines_core-0.1.26-cp312-cp312-win_amd64.whl", hash = "sha256:9b36bff12779e58883747116893a17b3551bbd10865878b951b03a44d112229a"},
+    {file = "outlines_core-0.1.26-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:7b7849cf40028319ebb9d8ba0fe4c590ef5888eebe524a81b3af30aaa06ea21c"},
+    {file = "outlines_core-0.1.26-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:2f8641aab4a6bd84516907492ce82099503129da01b3c29c1dc9ad50320bae77"},
+    {file = "outlines_core-0.1.26-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bba56604efdbc5932c7a8a88c2b8b0d0c740ab883b0012fb5464a9736796802b"},
+    {file = "outlines_core-0.1.26-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8cc8c87d89bd267356f8149c9066cbb98970425ec162997fbf195c3f1feb7009"},
+    {file = "outlines_core-0.1.26-cp39-cp39-win32.whl", hash = "sha256:9d792a43ed9d8a4e1b38f4d83fe99db442d57aad4404c2edf98b710892eda47e"},
+    {file = "outlines_core-0.1.26-cp39-cp39-win_amd64.whl", hash = "sha256:ad8564ecd7b64bcb840596c5049ff1c1a96346de494302ffcc0f2b188c15675e"},
+    {file = "outlines_core-0.1.26.tar.gz", hash = "sha256:481c4301341e77cc8f1832d616784adb4d461b4fec65878e7c0d2cba7163a189"},
+]
+
+[package.dependencies]
+interegular = "*"
+jsonschema = "*"
+
+[package.extras]
+test = ["accelerate", "asv", "beartype (<0.16.0)", "coverage[toml] (>=5.1)", "datasets", "diff-cover", "huggingface_hub", "numpy", "pillow", "pre-commit", "psutil", "pydantic", "pytest", "pytest-benchmark", "pytest-cov", "pytest-mock", "scipy", "setuptools-rust", "torch", "transformers"]
+
+[[package]]
 name = "packaging"
 version = "24.2"
 description = "Core utilities for Python packages"
@@ -6152,6 +6294,17 @@ files = [
 [package.dependencies]
 matplotlib = ">=2.1.0"
 numpy = "*"
+
+[[package]]
+name = "pycountry"
+version = "24.6.1"
+description = "ISO country, subdivision, language, currency and script definitions and their translations"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "pycountry-24.6.1-py3-none-any.whl", hash = "sha256:f1a4fb391cd7214f8eefd39556d740adcc233c778a27f8942c8dca351d6ce06f"},
+    {file = "pycountry-24.6.1.tar.gz", hash = "sha256:b61b3faccea67f87d10c1f2b0fc0be714409e8fcdcc1315613174f6466c10221"},
+]
 
 [[package]]
 name = "pycparser"
@@ -8946,13 +9099,13 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "transformers"
-version = "4.47.0"
+version = "4.47.1"
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
 optional = true
 python-versions = ">=3.9.0"
 files = [
-    {file = "transformers-4.47.0-py3-none-any.whl", hash = "sha256:a8e1bafdaae69abdda3cad638fe392e37c86d2ce0ecfcae11d60abb8f949ff4d"},
-    {file = "transformers-4.47.0.tar.gz", hash = "sha256:f8ead7a5a4f6937bb507e66508e5e002dc5930f7b6122a9259c37b099d0f3b19"},
+    {file = "transformers-4.47.1-py3-none-any.whl", hash = "sha256:d2f5d19bb6283cd66c893ec7e6d931d6370bbf1cc93633326ff1f41a40046c9c"},
+    {file = "transformers-4.47.1.tar.gz", hash = "sha256:6c29c05a5f595e278481166539202bf8641281536df1c42357ee58a45d0a564a"},
 ]
 
 [package.dependencies]
@@ -10113,7 +10266,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "nltk", "notion-client", "openapi-spec-validator", "opencv-python", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "nltk", "notion-client", "openapi-spec-validator", "opencv-python", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "unstructured", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 encoders = ["sentence-transformers"]
 graph-storages = ["nebula3-python", "neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "torch", "transformers"]
@@ -10125,10 +10278,10 @@ retrievers = ["cohere", "rank-bm25"]
 runtime = ["docker"]
 search-tools = ["duckduckgo-search", "tavily-python", "wikipedia", "wolframalpha"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "newspaper3k", "nltk", "notion-client", "openapi-spec-validator", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "wikipedia", "wolframalpha", "yt-dlp"]
+tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "newspaper3k", "nltk", "notion-client", "openapi-spec-validator", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "f789be494b3da60bc0305c54a92b9bdbeb6ed0f054c559ae10e3f9104af6e7b1"
+content-hash = "612f47ec31021cba718a549489c1c3abd63c236cbc13c03189f124cc00467879"
