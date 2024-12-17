@@ -67,7 +67,7 @@ class OpenAIModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
