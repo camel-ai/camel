@@ -251,7 +251,7 @@ class Workforce(BaseNode):
                 additional_info = "A Workforce node"
             elif isinstance(child, SingleAgentWorker):
                 additional_info = "tools: " + (
-                    ", ".join(child.worker.func_dict.keys())
+                    ", ".join(child.worker.tool_dict.keys())
                 )
             elif isinstance(child, RolePlayingWorker):
                 additional_info = "A Role playing node"

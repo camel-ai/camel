@@ -210,9 +210,6 @@ class ChatAgent(BaseAgent):
         self.all_tools = self.tools + self.external_tools or []
 
         # Create tool dictionaries and configure backend tools if necessary
-        self.func_dict = {
-            tool.get_function_name(): tool.func for tool in self.all_tools
-        }
         self.tool_dict = {
             tool.get_function_name(): tool for tool in self.all_tools
         }
@@ -227,8 +224,6 @@ class ChatAgent(BaseAgent):
                 tool.get_openai_tool_schema() for tool in self.all_tools
             ]
             self.model_backend.model_config_dict['tools'] = tool_schema_list
-
-        self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
@@ -268,29 +263,25 @@ class ChatAgent(BaseAgent):
         # Initialize the tool
         initialized_tool = self._initialize_tools([tool])
 
-        # Helper function to merge tools
-        def merge_tools(existing_tools: List, new_tools: List) -> List:
-            return (existing_tools or []) + new_tools
-
         # Update tools or external tools based on is_external flag
         if is_external:
-            self.external_tools = merge_tools(
-                self.external_tools, initialized_tool
-            )
+            self.external_tools = self.external_tools + initialized_tool
             self.external_tool_names.extend(
                 tool.get_function_name() for tool in initialized_tool
             )
         else:
-            self.tools = merge_tools(self.tools, initialized_tool)
+            self.tools = self.tools + initialized_tool
 
-        # Rebuild all_tools, func_dict, and tool_dict
-        self.all_tools = merge_tools(self.tools, self.external_tools)
-        self.func_dict = {
-            tool.get_function_name(): tool.func for tool in self.all_tools
-        }
+        # Rebuild all_tools, and tool_dict
+        self.all_tools = self.tools + self.external_tools
         self.tool_dict = {
             tool.get_function_name(): tool for tool in self.all_tools
         }
+
+        tool_schema_list = [
+            tool.get_openai_tool_schema() for tool in self.all_tools
+        ]
+        self.model_backend.model_config_dict['tools'] = tool_schema_list
 
     def remove_tool(self, tool_name: str, is_external: bool = False) -> bool:
         r"""Remove a tool by name, specifying if it's an external tool."""
@@ -307,13 +298,15 @@ class ChatAgent(BaseAgent):
                 self.all_tools = (self.tools or []) + (
                     self.external_tools or []
                 )
-                self.func_dict = {
-                    tool.get_function_name(): tool.func
-                    for tool in self.all_tools
-                }
                 self.tool_dict = {
                     tool.get_function_name(): tool for tool in self.all_tools
                 }
+                tool_schema_list = [
+                    tool.get_openai_tool_schema() for tool in self.all_tools
+                ]
+                self.model_backend.model_config_dict['tools'] = (
+                    tool_schema_list
+                )
                 return True
         return False
 
@@ -393,7 +386,7 @@ class ChatAgent(BaseAgent):
                 args = json.loads(args_string)
                 return {"function": function_name, "arguments": args}
             except json.JSONDecodeError as error:
-                print(f"Error parsing function arguments: {error}")
+                logger.error(f"Error parsing function arguments: {error}")
                 return None
         return None
 
@@ -425,14 +418,13 @@ class ChatAgent(BaseAgent):
         self._system_message = message
 
     def is_tools_added(self) -> bool:
-        r"""Whether OpenAI function calling is enabled for this agent.
+        r"""Whether tool calling is enabled for this agent.
 
         Returns:
-            bool: Whether OpenAI function calling is enabled for this
-                agent, determined by whether the dictionary of tools
-                is empty.
+            bool: Whether tool calling is enabled for this agent, determined
+                by whether the dictionary of tools is empty.
         """
-        return len(self.func_dict) > 0
+        return len(self.tool_dict) > 0
 
     def update_memory(
         self, message: BaseMessage, role: OpenAIBackendRole
@@ -589,7 +581,11 @@ class ChatAgent(BaseAgent):
             )
 
         # Handle tool prompt injection if needed
-        if self._needs_tool_prompt() and not self.tool_prompt_added:
+        if (
+            self.is_tools_added()
+            and not self.model_type.support_native_tool_calling
+            and not self.tool_prompt_added
+        ):
             self._inject_tool_prompt()
 
         # Add user input to memory
@@ -603,23 +599,7 @@ class ChatAgent(BaseAgent):
             return self._handle_step(response_format, tool_call_records, False)
 
         # Multi-step mode: loop until a final response
-        if (
-            self.model_backend.model_config_dict.get("tool_choice")
-            == "required"
-        ):
-            raise ValueError(
-                "`tool_choice` cannot be set to `required` for multi-step"
-                " mode. To proceed, set `single_iteration` to `True`."
-            )
-
         return self._handle_step(response_format, tool_call_records, True)
-
-    def _needs_tool_prompt(self) -> bool:
-        r"""Determine if a tool prompt should be injected."""
-        return (
-            not self.model_type.support_native_tool_calling
-            and self.model_backend.model_config_dict.get("tools", False)
-        )
 
     def _inject_tool_prompt(self) -> None:
         r"""Generate and add the tool prompt to memory."""
@@ -639,6 +619,17 @@ class ChatAgent(BaseAgent):
         multi_step: bool = False,
     ) -> ChatAgentResponse:
         r"""Handles a single or multi-step interaction."""
+
+        if (
+            self.model_backend.model_config_dict.get("tool_choice")
+            == "required"
+            and multi_step
+        ):
+            raise ValueError(
+                "`tool_choice` cannot be set to `required` for multi-step"
+                " mode. To proceed, set `single_iteration` to `True`."
+            )
+
         external_tool_request = None
 
         while True:
@@ -659,14 +650,12 @@ class ChatAgent(BaseAgent):
             ) = self._step_model_response(openai_messages, num_tokens)
 
             # Finalize on standard response in multi-step mode
-            if multi_step and self._is_standard_response(response):
+            if self._is_standard_response(response):
                 break
             # Handle external tool requests
             tool_request = self._extract_tool_call(response)
             if isinstance(response, ChatCompletion) and tool_request:
-                response.choices[0].message.tool_calls = (
-                    [tool_request] if tool_request else None
-                )
+                response.choices[0].message.tool_calls = [tool_request]
                 tool_call_records.append(
                     self._step_tool_call_and_update(response)
                 )
@@ -682,6 +671,7 @@ class ChatAgent(BaseAgent):
                         num_tokens,
                         tool_request,
                     )
+                    self._log_final_output(output_messages)
                     return ChatAgentResponse(
                         msgs=output_messages,
                         terminated=self.terminated,
@@ -928,7 +918,7 @@ class ChatAgent(BaseAgent):
 
         # Perform function calling
         func_assistant_msg, func_result_msg, tool_call_record = (
-            self.step_tool_call(response)
+            self._step_tool_call(response)
         )
 
         # Update the messages
@@ -982,11 +972,9 @@ class ChatAgent(BaseAgent):
         func_callable = func_string_to_callable(func_str)
         func = FunctionTool(func_callable)
 
-        original_func_dict = self.func_dict
         original_model_dict = self.model_backend.model_config_dict
 
         # Replace the original tools with the structuring function
-        self.func_dict = {func.get_function_name(): func.func}
         self.tool_dict = {func.get_function_name(): func}
         self.model_backend.model_config_dict = original_model_dict.copy()
         self.model_backend.model_config_dict["tools"] = [
@@ -1014,7 +1002,6 @@ class ChatAgent(BaseAgent):
             base_message_item.content = str(tool_call_record.result)
 
         # Recover the original tools
-        self.func_dict = original_func_dict
         self.model_backend.model_config_dict = original_model_dict
 
         return (
@@ -1314,7 +1301,7 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
-    def step_tool_call(
+    def _step_tool_call(
         self,
         response: ChatCompletion,
     ) -> Tuple[

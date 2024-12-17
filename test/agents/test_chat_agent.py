@@ -510,7 +510,7 @@ def test_tool_calling_sync():
 
     ref_funcs = MathToolkit().get_tools()
 
-    assert len(agent.func_dict) == len(ref_funcs)
+    assert len(agent.tool_dict) == len(ref_funcs)
 
     user_msg = BaseMessage(
         role_name="User",
@@ -554,7 +554,7 @@ async def test_tool_calling_math_async():
 
     ref_funcs = math_funcs
 
-    assert len(agent.func_dict) == len(ref_funcs)
+    assert len(agent.tool_dict) == len(ref_funcs)
 
     user_msg = BaseMessage(
         role_name="User",
@@ -607,7 +607,7 @@ async def test_tool_calling_async():
         tools=[FunctionTool(async_sleep)],
     )
 
-    assert len(agent.func_dict) == 1
+    assert len(agent.tool_dict) == 1
 
     user_msg = BaseMessage(
         role_name="User",
