@@ -113,6 +113,7 @@ stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
+pytesseract = { version = "^0.3.13", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -227,6 +228,7 @@ tools = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "pytesseract",
 ]
 
 vector-databases = [
@@ -310,6 +312,7 @@ all = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "pytesseract",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -422,6 +425,9 @@ markers = [
 
 [tool.coverage.report]
 include_namespace_packages = true
+
+[tool.poetry.scripts]
+"install-poppler" = "bash -c 'sudo apt-get update && sudo apt-get install -y poppler-utils'"
 
 [[tool.mypy.overrides]]
 module = [
