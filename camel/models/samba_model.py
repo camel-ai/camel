@@ -95,7 +95,7 @@ class SambaModel(BaseModelBackend):
 
         if self._url == "https://api.sambanova.ai/v1":
             self._client = OpenAI(
-                timeout=60,
+                timeout=180,
                 max_retries=3,
                 base_url=self._url,
                 api_key=self._api_key,

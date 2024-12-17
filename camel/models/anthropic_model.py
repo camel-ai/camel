@@ -35,7 +35,7 @@ class AnthropicModel(BaseModelBackend):
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into Anthropic.messages.create().  If
             :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
-            (default::obj:`None`)
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Anthropic service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Anthropic service.
