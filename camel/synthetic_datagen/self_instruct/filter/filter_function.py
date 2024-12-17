@@ -42,14 +42,10 @@ class LengthFilter(FilterFunction):
     r"""Filters instructions based on their word count.
 
     Args:
-    r"""Filters instructions based on their word count.
-
-    Args:
         min_len (int): The minimum word count required for an instruction.
             (default::obj:`5`)
         max_len (int): The maximum word count allowed for an instruction.
             (default::obj:`200`)
-    """
     """
 
     def __init__(self, min_len: int = 5, max_len: int = 200):
@@ -130,8 +126,8 @@ class RougeSimilarityFilter(FilterFunction):
     Args:
         existing_instructions (List[str]): A list of existing instructions to
             compare against.
-        threshold (float): The similarity threshold for filtering (default is
-            0.7).
+        threshold (float): The similarity threshold for filtering.
+            (default::obj:`0.7`)
     """
 
     def __init__(
