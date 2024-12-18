@@ -146,7 +146,7 @@ class OpenAIModel(BaseModelBackend):
 
         # Removing 'strict': True from the dictionary for
         # client.chat.completions.create
-        if self.model_config_dict.get('tools', []) is not NOT_GIVEN:
+        if self.model_config_dict.get('tools') is not NOT_GIVEN:
             for tool in self.model_config_dict.get('tools', []):
                 function_dict = tool.get('function', {})
                 if 'strict' in function_dict:
