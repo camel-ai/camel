@@ -229,10 +229,12 @@ class O1DataGenerator:
             f"a float between 0 and 1, like this: {{'score': 0.85}}\n"
         )
         self.generator_agent.reset()
-        response = self.generator_agent.step(prompt)
-        response_json = response.msgs[0].content.strip()
-        agent_response = AgentResponse.parse_raw(response_json)
-        return agent_response.score
+        response = self.generator_agent.step(
+            prompt, response_format=AgentResponse
+        )
+        agent_response = response.msgs[0].parsed.score  # type: ignore [union-attr]
+
+        return agent_response
 
     def binary_search_error(self, question: str, solution: str) -> int:
         r"""Use binary search to locate the first error in the solution.
@@ -316,9 +318,11 @@ class O1DataGenerator:
             self.generator_agent.reset()
             response = self.generator_agent.step(prompt)
             try:
-                response_json = response.msgs[0].content.strip()
-                agent_response = AgentResponse.parse_raw(response_json)
-                score = agent_response.score
+                response = self.generator_agent.step(
+                    prompt, response_format=AgentResponse
+                )
+                agent_response = response.msgs[0].parsed.score  # type: ignore [union-attr]
+                score = agent_response
 
                 # Exit early if we find a very good solution (score > 0.9)
                 if score > 0.9:
