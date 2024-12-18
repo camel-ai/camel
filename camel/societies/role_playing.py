@@ -509,8 +509,8 @@ class RolePlaying:
         # step and once in role play), and the model generates only one
         # response when multi-response support is enabled.
         if (
-            'n' in self.user_agent.model_config_dict.keys()
-            and self.user_agent.model_config_dict['n'] > 1
+            'n' in self.user_agent.model_backend.model_config_dict.keys()
+            and self.user_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.user_agent.record_message(user_msg)
 
@@ -532,8 +532,8 @@ class RolePlaying:
         # step and once in role play), and the model generates only one
         # response when multi-response support is enabled.
         if (
-            'n' in self.assistant_agent.model_config_dict.keys()
-            and self.assistant_agent.model_config_dict['n'] > 1
+            'n' in self.assistant_agent.model_backend.model_config_dict.keys()
+            and self.assistant_agent.model_backend.model_config_dict['n'] > 1
         ):
             self.assistant_agent.record_message(assistant_msg)
 
