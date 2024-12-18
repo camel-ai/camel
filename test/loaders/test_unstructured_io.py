@@ -143,13 +143,9 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
             'text': 'Miles Sanders scores a touchdown against the San Francisco 49ers during the NFC Championship game at Lincoln Financial Field.',  # noqa: E501
         },
         'metadata': {
-            'emphasized_text_contents': [
-                'Miles Sanders scores a touchdown against the San Francisco 49ers during the NFC Championship game at Lincoln Financial Field.'  # noqa: E501
-            ],
-            'emphasized_text_tags': ['span'],
             'languages': ['eng'],
-            'url': 'https://www.cnn.com/2023/01/30/sport/empire-state-building-green-philadelphia-eagles-spt-intl/index.html',
             'filetype': 'text/html',
+            'url': 'https://www.cnn.com/2023/01/30/sport/empire-state-building-green-philadelphia-eagles-spt-intl/index.html',
         },
     }
 

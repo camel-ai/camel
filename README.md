@@ -144,7 +144,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.12 https://github.com/camel-ai/camel.git
+git clone -b v0.2.14 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -323,6 +323,8 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[3 Ways to Ingest Data from Websites with Firecrawl](https://docs.camel-ai.org/cookbooks/ingest_data_from_websites_with_Firecrawl.html)** | Explore three methods for extracting and processing data from websites using Firecrawl. |
 | **[Data Deneration with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/sft_data_generation_and_unsloth_finetuning.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
 | **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_with_agentic_RAG.html)** |  Learn how to build a robust customer service bot for Discord using Agentic RAG. |
+| **[Create AI Agents that work with your PDFs using Chunkr & Mistral AI](https://docs.camel-ai.org/cookbooks/agent_with_chunkr_for_pdf_parsing.html)** | Learn how to create AI agents that work with your PDFs using Chunkr and Mistral AI. |
+| **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_gen_with_real_function_calls_and_hermes_format.html)** |  Explore how to generate data with real function calls and the Hermes format. |
 
 ## Utilize Various LLMs as Backends
 
