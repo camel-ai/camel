@@ -32,7 +32,7 @@ from typing import (
 
 from openai.types.chat import ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_message_tool_call import Function
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from camel.agents.base import BaseAgent
 from camel.memories import (
@@ -59,6 +59,7 @@ from camel.types import (
 )
 from camel.utils import (
     func_string_to_callable,
+    generate_prompt_for_structured_output,
     get_model_encoding,
     get_pydantic_object_schema,
     json_to_function_code,
@@ -603,12 +604,9 @@ class ChatAgent(BaseAgent):
         # Record function calls made during the session
         tool_call_records: List[FunctionCallingRecord] = []
 
-        # Single-step mode
-        if single_iteration:
-            return self._handle_step(response_format, tool_call_records, False)
-
-        # Multi-step mode: loop until a final response
-        return self._handle_step(response_format, tool_call_records, True)
+        return self._handle_step(
+            response_format, tool_call_records, single_iteration
+        )
 
     def _inject_tool_prompt(self) -> None:
         r"""Generate and add the tool prompt to memory."""
@@ -625,14 +623,14 @@ class ChatAgent(BaseAgent):
         self,
         response_format: Optional[Type[BaseModel]],
         tool_call_records: List[FunctionCallingRecord],
-        multi_step: bool = False,
+        single_step: bool,
     ) -> ChatAgentResponse:
         r"""Handles a single or multi-step interaction."""
 
         if (
             self.model_backend.model_config_dict.get("tool_choice")
             == "required"
-            and multi_step
+            and not single_step
         ):
             raise ValueError(
                 "`tool_choice` cannot be set to `required` for multi-step"
@@ -650,6 +648,21 @@ class ChatAgent(BaseAgent):
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
+            # Prompt engineering approach for structured output for non-native tool calling models
+            inject_prompt_for_structured_output = (
+                response_format
+                and not self.model_type.support_native_tool_calling
+            )
+
+            if inject_prompt_for_structured_output:
+                # update last openai message
+                usr_msg = openai_messages.pop()
+                usr_msg["content"] = generate_prompt_for_structured_output(
+                    response_format,
+                    usr_msg["content"],  # type: ignore [arg-type]
+                )
+                openai_messages.append(usr_msg)
+
             # Process model response
             (
                 response,
@@ -659,9 +672,32 @@ class ChatAgent(BaseAgent):
                 response_id,
             ) = self._step_model_response(openai_messages, num_tokens)
 
+            # Try to parse structured output to return a Pydantic object
+            if inject_prompt_for_structured_output and isinstance(
+                response, ChatCompletion
+            ):
+                content = response.choices[0].message.content
+                try:
+                    json_content = json.loads(str(content))
+                    output_messages[0].parsed = response_format(**json_content)  # type: ignore [assignment, misc]
+                except json.JSONDecodeError as e:
+                    logger.error(
+                        f"Failed in parsing the output into JSON: {e}"
+                    )
+                    output_messages[0].parsed = None
+                    break
+                except ValidationError as e:
+                    logger.warning(
+                        "Successfully generating JSON response, "
+                        "but failed in parsing it into Pydantic object :"
+                        f"{e}, return the JSON response in parsed field"
+                    )
+                    output_messages[0].parsed = json_content
+
             # Finalize on standard response in multi-step mode
             if self._is_standard_response(response):
                 break
+
             # Handle tool requests
             tool_request = self._extract_tool_call(response)
             if isinstance(response, ChatCompletion) and tool_request:
@@ -692,14 +728,19 @@ class ChatAgent(BaseAgent):
                     )
 
             # Single-step mode ends after one iteration
-            if not multi_step:
+            if single_step:
                 break
 
-        # Optional structured output
-        if response_format and self.model_type not in {
-            "gpt-4o",
-            "gpt-4o-mini",
-        }:
+        # Optional structured output via function calling
+        if (
+            response_format
+            and not inject_prompt_for_structured_output
+            and self.model_type
+            not in {
+                "gpt-4o",
+                "gpt-4o-mini",
+            }
+        ):
             (
                 output_messages,
                 finish_reasons,
