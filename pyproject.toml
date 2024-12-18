@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.12"
+version = "0.2.13"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -54,6 +54,7 @@ mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.40.0", optional = true }
 cohere = { version = "^5.11.0", optional = true }
+fish-audio-sdk = { version = "^2024.12.5", optional = true }
 sglang = { version = "^0.4.0", optional = true }
 
 # huggingface-agent
@@ -71,6 +72,7 @@ sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
 
 # tools
+outlines = { version = "^0.1.7", optional = true }
 beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
@@ -83,7 +85,6 @@ googlemaps = { version = "^4.10.0", optional = true }
 requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
-unstructured = { extras = ["all-docs"], version = "^0.14", optional = true }
 firecrawl-py = { version = "^1.0.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
 slack-bolt = { version = "^1.20.1", optional = true }
@@ -98,10 +99,10 @@ agentops = { version = "^0.3.21", optional = true }
 azure-storage-blob = { version = "^12.21.0", optional = true }
 google-cloud-storage = { version = "^2.18.0", optional = true }
 botocore = { version = "^1.35.3", optional = true }
-nltk = { version = "3.8.1", optional = true }
+nltk = { version = "3.9.1", optional = true }
 asknews = { version = "^0.7.54", optional = true }
 praw = { version = "^7.7.1", optional = true }
-textblob = { version = "^0.18.0.post0", optional = true }
+textblob = { version = "^0.17.1", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
 datacommons_pandas = { version = "^0.0.3", optional = true }
 tavily-python = { version = "^0.5.0", optional = true }
@@ -117,6 +118,7 @@ stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
+unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -151,7 +153,7 @@ rag = [
     "nebula3-python",
     "rank-bm25",
     "cohere",
-    "unstructured",
+    "unstructured"
 ]
 
 search_tools = [
@@ -168,6 +170,7 @@ model-platforms = [
     "reka-api",
     "anthropic",
     "cohere",
+    "fish-audio-sdk",
     'sglang',
 ]
 
@@ -203,6 +206,7 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "outlines",
     "e2b-code-interpreter",
     "firecrawl-py",
     "arxiv",
@@ -293,6 +297,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "outlines",
     "e2b-code-interpreter",
     "nltk",
     "firecrawl-py",
@@ -316,6 +321,14 @@ all = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "datacommons",
+    "datacommons_pandas",
+    "tavily-python",
+    "apify_client",
+    "fastapi",
+    "uvicorn",
+    "stripe",
+    "unstructured",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -332,6 +345,7 @@ all = [
     "litellm",
     "mistralai",
     "cohere",
+    "fish-audio-sdk",
     "google-generativeai",
     "anthropic",
     "reka-api",
@@ -342,13 +356,6 @@ all = [
     "azure-storage-blob",
     "google-cloud-storage",
     "botocore",
-    "datacommons",
-    "datacommons_pandas",
-    "tavily-python",
-    "apify_client",
-    "fastapi",
-    "uvicorn",
-    "stripe",
 ]
 
 [tool.poetry.group.dev]
@@ -469,13 +476,13 @@ module = [
     "PyMuPDF",
     "fitz",
     "qdrant_client.*",
-    "unstructured.*",
     "nltk",
     "e2b_code_interpreter",
     "firecrawl",
     "imageio",
     "rank_bm25",
     "cohere",
+    "fish_audio_sdk",
     "sentence_transformers.*",
     "pymilvus",
     "pillow",
@@ -493,6 +500,7 @@ module = [
     "google_generativeai",
     "mistralai",
     "cohere",
+    "fish-audio-sdk",
     "reka-api",
     "sglang",
     "agentops",
