@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+from camel.models.reward import BaseRewardModel
 import re
 from abc import ABC, abstractmethod
 from typing import List
@@ -157,3 +159,45 @@ class RougeSimilarityFilter(FilterFunction):
                 return False
 
         return True
+
+class RewardModelFilter(FilterFunction):
+    r"""Filters instructions based on scores provided by a reward model.
+
+    Args:
+        reward_model (BaseRewardModel): The reward model used to evaluate
+            the instructions.
+        threshold (float): The minimum score required for an instruction
+            to pass the filter.
+    """
+
+    def __init__(
+        self, reward_model: BaseRewardModel, threshold: float = 0.5
+    ):
+        self.reward_model = reward_model
+        self.threshold = threshold
+
+    def apply(self, instruction: str) -> bool:
+        r"""Filter the instruction
+
+        Args:
+            instruction (str): The instruction to be filtered.
+
+        Returns:
+            bool: True if the instruction's score is above the threshold.
+        """
+
+        messages = [{"role": "user", "content": instruction}]
+        scores = self.reward_model.evaluate(messages)
+        score_types = self.reward_model.get_scores_types()
+        if not score_types:
+            return True
+
+        score_type = score_types[0]
+        score = scores.get(score_type, None)
+
+        if score is None:
+            return True
+
+        return score >= self.threshold
+
+
