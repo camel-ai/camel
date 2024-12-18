@@ -24,6 +24,14 @@ class BaseConfig(ABC, BaseModel):
 
     This class provides a common interface for all models, ensuring that all
     models have a consistent set of attributes and methods.
+
+    Args:
+        tools (list[FunctionTool], optional): A list of tools the model may
+            call. Currently, only functions are supported as a tool. Use this
+            to provide a list of functions the model may generate JSON inputs
+            for. A max of 128 functions are supported.
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
     """
 
     model_config = ConfigDict(
@@ -33,13 +41,8 @@ class BaseConfig(ABC, BaseModel):
         # UserWarning: conflict with protected namespace "model_"
         protected_namespaces=(),
     )
-
     tools: Optional[List[Any]] = None
-    """A list of tools the model may
-    call. Currently, only functions are supported as a tool. Use this
-    to provide a list of functions the model may generate JSON inputs
-    for. A max of 128 functions are supported.
-    """
+    n: int = 1
 
     @field_validator("tools", mode="before")
     @classmethod

@@ -34,7 +34,7 @@ class BaseConverter(ABC):
         Args:
             text (str): The input text to be structured.
             output_schema (Optional[Type[BaseModel]], optional):
-                The expected format of the response. Defaults to None.
+                The expected format of the response. (default: :obj:`None`)
             prompt (Optional[str], optional): The prompt to be used.
 
         Returns:

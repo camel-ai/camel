@@ -27,6 +27,8 @@ class QwenConfig(BaseConfig):
     Args:
         stream (bool, optional): Whether to stream the response.
             (default: :obj:`False`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         temperature (float, optional): Controls the diversity and focus of
             the generated results. Lower values make the output more focused,
             while higher values make it more diverse. (default: :obj:`0.3`)

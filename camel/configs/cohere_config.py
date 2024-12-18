@@ -27,6 +27,8 @@ class CohereConfig(BaseConfig):
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
             (default: :obj:`0.3`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         documents (list, optional): A list of relevant documents that the
             model can cite to generate a more accurate reply. Each document is
             either a string or document object with content and metadata.

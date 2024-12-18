@@ -130,7 +130,7 @@ class CodePrompt(TextPrompt):
     class with a :obj:`code_type` property.
 
     Attributes:
-        code_type (str, optional): The type of code. Defaults to None.
+        code_type (str, optional): The type of code. (default: :obj:`None`)
     """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> 'CodePrompt':
