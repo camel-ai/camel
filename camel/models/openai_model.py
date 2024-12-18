@@ -143,6 +143,13 @@ class OpenAIModel(BaseModelBackend):
 
             return self._to_chat_completion(response)
 
+        # Removing 'strict': True from the dictionary for
+        # client.chat.completions.create
+        for tool in self.model_config_dict.get('tools', []):
+            function_dict = tool.get('function', {})
+            if 'strict' in function_dict:
+                del function_dict['strict']
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
