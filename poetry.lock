@@ -4595,17 +4595,17 @@ files = [
 
 [[package]]
 name = "notion-client"
-version = "2.2.1"
+version = "2.3.0"
 description = "Python client for the official Notion API"
 optional = true
-python-versions = ">=3.7, <4"
+python-versions = "<4,>=3.7"
 files = [
-    {file = "notion-client-2.2.1.tar.gz", hash = "sha256:3827e381ccb5a21aeb606686787edfb6c7a10681cb3507c4d606a1918e791061"},
-    {file = "notion_client-2.2.1-py2.py3-none-any.whl", hash = "sha256:4ecf9ec527a124462f7bd407d9c9ead9853a9b2c8f00e56f3fa8fb15106ad871"},
+    {file = "notion-client-2.3.0.tar.gz", hash = "sha256:c4b4ae04ce182eb89611d41544dac710049683a4d7309c4b22fde52f81cbcb39"},
+    {file = "notion_client-2.3.0-py2.py3-none-any.whl", hash = "sha256:6696bb057b7872477077d6a3bb4299c4a7924450e7d168174e79cbf8e01d9576"},
 ]
 
 [package.dependencies]
-httpx = ">=0.15.0"
+httpx = ">=0.23.0"
 
 [[package]]
 name = "numpy"
@@ -10267,7 +10267,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "nltk", "notion-client", "openapi-spec-validator", "opencv-python", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "unstructured", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "notion-client", "openapi-spec-validator", "opencv-python", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "unstructured", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 encoders = ["sentence-transformers"]
 graph-storages = ["nebula3-python", "neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "torch", "transformers"]
@@ -10279,10 +10279,10 @@ retrievers = ["cohere", "rank-bm25"]
 runtime = ["docker"]
 search-tools = ["duckduckgo-search", "tavily-python", "wikipedia", "wolframalpha"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "newspaper3k", "nltk", "notion-client", "openapi-spec-validator", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "newspaper3k", "notion-client", "openapi-spec-validator", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "7959a505957a4b66a23ab9f2ef61c44d93cc2522243609e2d25a7c1c3d072e12"
+content-hash = "e0b249c116b707d3a915ef4fa00861a0e1c6692b5088286df0ec3e0437469eef"
