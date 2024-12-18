@@ -17,6 +17,8 @@ import os
 import random
 from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, Field
+
 from camel.agents import ChatAgent
 
 from .filter import RougeSimilarityFilter
@@ -189,11 +191,19 @@ class SelfInstructPipeline:
         clf_prompt = (
             SelfInstructTemplates.clf_template
             + f"Task: {instruction}\nIs it classification?"
+            + "\nRespond in the following structured format:"
+            "\n{\n  \"answer\": true\n}\n"
+            "or\n"
+            "{\n  \"answer\": false\n}\n"
         )
-        clf_prompt += " Only answer yes or no"
         response = self.agent.step(clf_prompt)
-        result = response.msgs[0].content.strip().lower()
-        return result in ["yes", "true"]
+        try:
+            structured_response = AgentResponse.parse_raw(
+                response.msgs[0].content.strip())
+            return structured_response.answer
+        except ValueError as e:
+            print(f"Error parsing agent response: {e}")
+            return False
 
     def generate_machine_instances(self):
         r"""Generate instances for each machine task based on its
@@ -372,3 +382,7 @@ class SelfInstructPipeline:
                 self.machine_tasks.append(instruction_dict)
         self.generate_machine_instances()
         self.construct_data()
+
+class AgentResponse(BaseModel):
+    answer: bool = Field(..., description="Indicates whether the task is "
+                                        "classification (True/False).")
