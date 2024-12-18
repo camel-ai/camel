@@ -14,6 +14,7 @@ The following table lists currently supported model platforms by CAMEL.
 | ----- | ----- | ----- |
 | OpenAI | gpt-4o | Y |
 | OpenAI | gpt-4o-mini | Y |
+| OpenAI | o1 | Y |
 | OpenAI | o1-preview | N |
 | OpenAI | o1-mini | N |
 | OpenAI | gpt-4-turbo | Y |
