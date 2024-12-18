@@ -63,6 +63,7 @@ def get_model_encoding(value_for_tiktoken: str):
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
         if value_for_tiktoken in [
+            ModelType.O1.value,
             ModelType.O1_MINI.value,
             ModelType.O1_PREVIEW.value,
         ]:

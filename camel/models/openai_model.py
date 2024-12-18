@@ -103,7 +103,11 @@ class OpenAIModel(BaseModelBackend):
         """
         # o1-preview and o1-mini have Beta limitations
         # reference: https://platform.openai.com/docs/guides/reasoning
-        if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
+        if self.model_type in [
+            ModelType.O1,
+            ModelType.O1_MINI,
+            ModelType.O1_PREVIEW,
+        ]:
             warnings.warn(
                 "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
                 "which has certain limitations, reference: "
@@ -111,21 +115,20 @@ class OpenAIModel(BaseModelBackend):
                 UserWarning,
             )
 
-            # Remove system message that is not supported in o1 model.
-            messages = [msg for msg in messages if msg.get("role") != "system"]
-
             # Check and remove unsupported parameters and reset the fixed
             # parameters
-            unsupported_keys = ["stream", "tools", "tool_choice"]
+            unsupported_keys = [
+                "temperature",
+                "top_p",
+                "presence_penalty",
+                "frequency_penalty",
+                "logprobs",
+                "top_logprobs",
+                "logit_bias",
+            ]
             for key in unsupported_keys:
                 if key in self.model_config_dict:
                     del self.model_config_dict[key]
-
-            self.model_config_dict["temperature"] = 1.0
-            self.model_config_dict["top_p"] = 1.0
-            self.model_config_dict["n"] = 1
-            self.model_config_dict["presence_penalty"] = 0.0
-            self.model_config_dict["frequency_penalty"] = 0.0
 
         if self.model_config_dict.get("response_format"):
             # stream is not supported in beta.chat.completions.parse
