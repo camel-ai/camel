@@ -1415,17 +1415,6 @@ class ChatAgent(BaseAgent):
         arguments_str = arguments_str.replace("True", "true")
         arguments_str = arguments_str.replace("False", "false")
 
-        # Replace single quotes with double quotes (beware of actual string content)
-        arguments_str = arguments_str.replace("'", '"')
-
-        # Remove trailing commas
-        arguments_str = re.sub(r',\s*}', '}', arguments_str)
-        arguments_str = re.sub(r',\s*\]', ']', arguments_str)
-
-        # Handle empty or malformed strings
-        if arguments_str.strip() == '':
-            raise ValueError("Input string is empty or invalid")
-
         # Attempt to parse the corrected string
         try:
             return json.loads(arguments_str)
