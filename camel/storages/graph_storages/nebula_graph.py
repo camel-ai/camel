@@ -188,7 +188,8 @@ class NebulaGraph(BaseGraphStorage):
         self,
         edge_type: str,
     ) -> None:
-        r"""Ensures that a specified edge type exists in the NebulaGraph
+        r"""
+        Ensures that a specified edge type exists in the NebulaGraph
         database. If the edge type already exists, this method does nothing.
 
         Args:
@@ -197,8 +198,14 @@ class NebulaGraph(BaseGraphStorage):
         Raises:
             Exception: If the edge type creation fails after multiple retry
                 attempts, an exception is raised with the error message.
+
+        Add a `created_at` property to the edge with a default value of
+        the current timestamp
         """
-        create_edge_stmt = f'CREATE EDGE IF NOT EXISTS {edge_type}()'
+        create_edge_stmt = f"""
+        CREATE EDGE IF NOT EXISTS {edge_type}
+        (created_at DATETIME DEFAULT now())
+        """
 
         for attempt in range(MAX_RETRIES):
             res = self.query(create_edge_stmt)
@@ -215,7 +222,8 @@ class NebulaGraph(BaseGraphStorage):
                 )
 
     def ensure_tag_exists(self, tag_name: str) -> None:
-        r"""Ensures a tag is created in the NebulaGraph database. If the tag
+        r"""
+        Ensures a tag is created in the NebulaGraph database. If the tag
         already exists, it does nothing.
 
         Args:
@@ -224,9 +232,15 @@ class NebulaGraph(BaseGraphStorage):
         Raises:
             Exception: If the tag creation fails after retries, an exception
                 is raised with the error message.
+        
+        Add a `created_at` property to the tag with a default
+        value of the current timestamp
         """
 
-        create_tag_stmt = f'CREATE TAG IF NOT EXISTS {tag_name}()'
+        create_tag_stmt = f"""
+        CREATE TAG IF NOT EXISTS {tag_name}
+        (created_at DATETIME DEFAULT now())'
+        """
 
         for attempt in range(MAX_RETRIES):
             res = self.query(create_tag_stmt)
@@ -255,9 +269,12 @@ class NebulaGraph(BaseGraphStorage):
         """
         self.ensure_tag_exists(tag_name)
 
+         current_time = time.strftime("%Y-%m-%dT%H:%M:%S")
+
         # Insert node without properties
         insert_stmt = (
-            f'INSERT VERTEX IF NOT EXISTS {tag_name}() VALUES "{node_id}":()'
+            f'INSERT VERTEX IF NOT EXISTS {tag_name}(created_at) VALUES '
+            f'"{node_id}":("{current_time}")'
         )
 
         for attempt in range(MAX_RETRIES):
@@ -329,7 +346,7 @@ class NebulaGraph(BaseGraphStorage):
     @property
     def get_structured_schema(self) -> Dict[str, Any]:
         r"""Generates a structured schema consisting of node and relationship
-        properties, relationships, and metadata.
+        properties, relationships, and metadata, including timestamps.
 
         Returns:
             Dict[str, Any]: A dictionary representing the structured schema.
@@ -342,10 +359,12 @@ class NebulaGraph(BaseGraphStorage):
         # Build structured_schema
         structured_schema = {
             "node_props": {
-                el["labels"]: el["properties"] for el in node_properties
+                el["labels"]: el["properties"] + ["created_at"] 
+                for el in node_properties
             },
             "rel_props": {
-                el["type"]: el["properties"] for el in rel_properties
+                el["type"]: el["properties"] + ["created_at"] 
+                for el in rel_properties
             },
             "relationships": relationships,
             "metadata": {"index": index},
@@ -418,8 +437,11 @@ class NebulaGraph(BaseGraphStorage):
         # Avoid latenicy
         time.sleep(1)
 
+        current_time = time.strftime("%Y-%m-%dT%H:%M:%S")
+
         insert_stmt = (
-            f'INSERT EDGE IF NOT EXISTS {rel}() VALUES "{subj}"->"{obj}":();'
+            f'INSERT EDGE IF NOT EXISTS {rel}(created_at) VALUES '
+            f'"{subj}"->"{obj}":("{current_time}")'
         )
 
         res = self.query(insert_stmt)
