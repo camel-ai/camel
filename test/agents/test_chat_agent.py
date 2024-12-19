@@ -240,7 +240,7 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools(step_call_count=3):
-    internal_tools = [FunctionTool(SearchToolkit().search_duckduckgo)]
+    internal_tools = [FunctionTool(SearchToolkit().search_wiki)]
     external_tools = MathToolkit().get_tools()
     tool_list = internal_tools + external_tools
 
@@ -272,9 +272,9 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                             id='call_mock_123456',
                             function=Function(
                                 arguments='{ \
-                                    "query": "Portal game release year" \
+                                    "entity": "Portal game release year" \
                                 }',
-                                name='search_duckduckgo',
+                                name='search_wiki',
                             ),
                             type='function',
                         ),
@@ -282,9 +282,9 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
                             id='call_mock_123457',
                             function=Function(
                                 arguments='{ \
-                                    "query": "United States founding year" \
+                                    "entity": "United States founding year" \
                                 }',
-                                name='search_duckduckgo',
+                                name='search_wiki',
                             ),
                             type='function',
                         ),
