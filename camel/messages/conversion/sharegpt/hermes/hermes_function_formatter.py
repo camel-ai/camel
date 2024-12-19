@@ -109,7 +109,10 @@ class HermesFunctionFormatter(
                 format.
         """
         tool_call_dict = {"name": func_name, "arguments": args}
-        return f"{content}\n<tool_call>\n{tool_call_dict}\n</tool_call>"
+
+        if content:
+            return f"{content}\n<tool_call>\n{tool_call_dict}\n</tool_call>"
+        return f"<tool_call>\n{tool_call_dict}\n</tool_call>"
 
     def format_tool_response(self, func_name: str, result: Any) -> str:
         r"""Formats a tool response message with the given function name and
