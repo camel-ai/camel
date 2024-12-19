@@ -156,6 +156,8 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         scheduling_strategy (str): name of function that defines how to select
             the next model in ModelManager. (default: :str:`round_robin`)
+        single_iteration (bool): Whether to let the agent perform only one
+            model calling at each step. (default: :obj:`False`)
     """
 
     def __init__(
@@ -172,6 +174,7 @@ class ChatAgent(BaseAgent):
         external_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
+        single_iteration: bool = False,
     ) -> None:
         # Initialize the system message, converting string to BaseMessage if needed
         if isinstance(system_message, str):
@@ -243,6 +246,7 @@ class ChatAgent(BaseAgent):
         self.response_terminators = response_terminators or []
         self.init_messages()
         self.tool_prompt_added = False
+        self.single_iteration = single_iteration
 
     def _initialize_tools(
         self, tools: List[Union[FunctionTool, Callable]]
@@ -545,7 +549,6 @@ class ChatAgent(BaseAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[Type[BaseModel]] = None,
-        single_iteration: bool = False,
     ) -> ChatAgentResponse:
         r"""Executes a single step in the chat session, generating a response
         to the input message.
@@ -558,8 +561,6 @@ class ChatAgent(BaseAgent):
                 model defining the expected structure of the response. Used to
                 generate a structured response if provided. (default:
                 :obj:`None`)
-            single_iteration (bool): Whether to let the agent perform only one
-                step. (default: :obj:`False`)
 
         Returns:
             ChatAgentResponse: Contains output messages, a termination status
@@ -601,28 +602,22 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        # Record function calls made during the session
-        tool_call_records: List[FunctionCallingRecord] = []
-
-        return self._handle_step(
-            response_format, tool_call_records, single_iteration
-        )
+        return self._handle_step(response_format, self.single_iteration)
 
     def _inject_tool_prompt(self) -> None:
         r"""Generate and add the tool prompt to memory."""
         tool_prompt = self._generate_tool_prompt(
             self.model_backend.model_config_dict["tools"]
         )
-        tool_sys_msg = BaseMessage.make_assistant_message(
+        tool_msg = BaseMessage.make_assistant_message(
             role_name="Assistant", content=tool_prompt
         )
-        self.update_memory(tool_sys_msg, OpenAIBackendRole.SYSTEM)
+        self.update_memory(tool_msg, OpenAIBackendRole.SYSTEM)
         self.tool_prompt_added = True
 
     def _handle_step(
         self,
         response_format: Optional[Type[BaseModel]],
-        tool_call_records: List[FunctionCallingRecord],
         single_step: bool,
     ) -> ChatAgentResponse:
         r"""Handles a single or multi-step interaction."""
@@ -636,6 +631,9 @@ class ChatAgent(BaseAgent):
                 "`tool_choice` cannot be set to `required` for multi-step"
                 " mode. To proceed, set `single_iteration` to `True`."
             )
+
+        # Record function calls made during the session
+        tool_call_records: List[FunctionCallingRecord] = []
 
         external_tool_request = None
 
@@ -1382,7 +1380,9 @@ class ChatAgent(BaseAgent):
             raise RuntimeError("Tool call is None")
         func_name = choice.message.tool_calls[0].function.name
 
-        args = json.loads(choice.message.tool_calls[0].function.arguments)
+        arguments_str = choice.message.tool_calls[0].function.arguments
+        args = self._safe_json_loads(arguments_str)
+
         tool = self.tool_dict[func_name]
         result = tool(**args)
 
@@ -1408,6 +1408,29 @@ class ChatAgent(BaseAgent):
             func_name=func_name, args=args, result=result
         )
         return assist_msg, func_msg, func_record
+
+    def _safe_json_loads(self, arguments_str):
+        # Replace Python types with their JSON equivalents
+        arguments_str = arguments_str.replace("None", "null")
+        arguments_str = arguments_str.replace("True", "true")
+        arguments_str = arguments_str.replace("False", "false")
+
+        # Replace single quotes with double quotes (beware of actual string content)
+        arguments_str = arguments_str.replace("'", '"')
+
+        # Remove trailing commas
+        arguments_str = re.sub(r',\s*}', '}', arguments_str)
+        arguments_str = re.sub(r',\s*\]', ']', arguments_str)
+
+        # Handle empty or malformed strings
+        if arguments_str.strip() == '':
+            raise ValueError("Input string is empty or invalid")
+
+        # Attempt to parse the corrected string
+        try:
+            return json.loads(arguments_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {e}")
 
     async def step_tool_call_async(
         self,
