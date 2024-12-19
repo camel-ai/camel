@@ -81,6 +81,7 @@ The following table lists currently supported model platforms by CAMEL.
 | vLLM | https://docs.vllm.ai/en/latest/models/supported_models.html | ----- |
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
+| SGLang | https://sgl-project.github.io/references/supported_models.html | ----- |
 
 ## 3. Using Models by API calling
 
@@ -222,6 +223,35 @@ assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 ```
 
+### 4.3 Using SGLang to Set meta-llama/Llama Locally
+
+Install [SGLang](https://sgl-project.github.io/start/install.html) first.
+
+Create and run following script (more details please refer to this [example](https://github.com/camel-ai/camel/blob/master/examples/models/sglang_model_example.py)):
+
+```python
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
+
+sglang_model = ModelFactory.create(
+    model_platform=ModelPlatformType.SGLANG,
+    model_type="meta-llama/Llama-3.2-1B-Instruct",
+    model_config_dict={"temperature": 0.0},
+    api_key="sglang",
+)
+
+agent_sys_msg = "You are a helpful assistant."
+
+agent = ChatAgent(agent_sys_msg, model=sglang_model, token_limit=4096)
+
+user_msg = "Say hi to CAMEL AI"
+
+assistant_response = agent.step(user_msg)
+print(assistant_response.msg.content)
+```
+
 ## 5. About Model Speed
 Model speed is a crucial factor in AI application performance. It affects both user experience and system efficiency, especially in real-time or interactive tasks. In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
 
@@ -232,6 +262,25 @@ OpenAI models demonstrate relatively consistent performance, while SambaNova's L
 The chart below illustrates the tokens per second achieved by each model during our tests:
 
 ![Model Speed Comparison](https://i.postimg.cc/4xByytyZ/model-speed.png)
+
+New experiments with SGLang and VLLM show clear performance trends. SGLang achieved higher speeds, with meta-llama/Llama-3.2-1B-Instruct peaking at 220.98 tokens/sec, while VLLM capped at 107.2 tokens/sec. Larger models like Meta-Llama-3-8B-Instruct remained slower across both frameworks, around 50 tokens/sec, highlighting the speed-size trade-off.
+```
+# SGLang
+Model name: meta-llama/Llama-3.2-1B-Instruct
+Tokens per second: 220.64213394682668
+Model name: meta-llama/Llama-3.2-3B-Instruct
+Tokens per second: 98.59121989842943
+Model name: meta-llama/Meta-Llama-3-8B-Instruct
+Tokens per second: 50.728411818301545
+
+# VLLM
+Model name: meta-llama/Llama-3.2-1B-Instruct
+Tokens per second: 107.20302348208216
+Model name: meta-llama/Llama-3.2-3B-Instruct
+Tokens per second: 85.42743500589202
+Model name: meta-llama/Meta-Llama-3-8B-Instruct
+Tokens per second: 48.068671101866336
+```
 
 ## 6. Conclusion
 In conclusion, CAMEL empowers developers to explore and integrate these diverse models, unlocking new possibilities for innovative AI applications. The world of large language models offers a rich tapestry of options beyond just the well-known proprietary solutions. By guiding users through model selection, environment setup, and integration, CAMEL bridges the gap between cutting-edge AI research and practical implementation. Its hybrid approach, combining in-house implementations with third-party integrations, offers unparalleled flexibility and comprehensive support for LLM-based development. Don't just watch this transformation that is happening from the sidelines.
