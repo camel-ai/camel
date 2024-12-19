@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import importlib
-import logging
 import os
 import platform
 import re
@@ -40,19 +39,14 @@ import pydantic
 import requests
 from pydantic import BaseModel
 
-from camel.logger import get_logger
 from camel.types import TaskType
 
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
 
-logger = get_logger(__name__)
 
-
-def print_text_animated(
-    text, delay: float = 0.02, end: str = "", log_level: int = logging.INFO
-):
+def print_text_animated(text, delay: float = 0.02, end: str = ""):
     r"""Prints the given text with an animated effect.
 
     Args:
@@ -61,22 +55,10 @@ def print_text_animated(
             (default: :obj:`0.02`)
         end (str, optional): The end character to print after each
             character of text. (default: :obj:`""`)
-        log_level (int, optional): The log level to use.
-            See https://docs.python.org/3/library/logging.html#levels
-            (default: :obj:`logging.INFO`)
     """
-    if logger.isEnabledFor(log_level):
-        # timestamp and other prefixes
-        logger.log(log_level, '')
-
-        for char in text:
-            print(char, end=end, flush=True)
-            time.sleep(delay)
-        # Close the log entry
-        logger.log(log_level, '')
-    else:
-        # This may be relevant for logging frameworks
-        logger.log(log_level, text)
+    for char in text:
+        print(char, end=end, flush=True)
+        time.sleep(delay)
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
