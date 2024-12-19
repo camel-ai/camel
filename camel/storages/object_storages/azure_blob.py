@@ -28,7 +28,7 @@ class AzureBlobStorage(BaseObjectStorage):
         storage_account_name (str): The name of the storage account.
         container_name (str): The name of the container.
         access_key (Optional[str], optional): The access key of the storage
-            account. Defaults to None.
+            account. (default: :obj:`None`)
 
     References:
         https://azure.microsoft.com/en-us/products/storage/blobs
