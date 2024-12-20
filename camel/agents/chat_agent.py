@@ -683,7 +683,7 @@ class ChatAgent(BaseAgent):
                         f"Failed in parsing the output into JSON: {e}"
                     )
                     output_messages[0].parsed = None
-                    break
+                    # break
                 except ValidationError as e:
                     logger.warning(
                         "Successfully generating JSON response, "
