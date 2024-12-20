@@ -571,6 +571,7 @@ class ChatAgent(BaseAgent):
             self.model_backend.model_config_dict.get("response_format")
             and response_format
         ):
+            print(self.model_backend.model_config_dict)
             raise ValueError(
                 "The `response_format` parameter cannot be set both in "
                 "the model configuration and in the ChatAgent step."
@@ -649,7 +650,7 @@ class ChatAgent(BaseAgent):
             # Prompt engineering approach for structured output for non-native tool calling models
             inject_prompt_for_structured_output = (
                 response_format
-                and not self.model_type.support_native_tool_calling
+                and not self.model_type.support_native_structured_output
             )
 
             if inject_prompt_for_structured_output:
