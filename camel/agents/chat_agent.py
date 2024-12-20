@@ -649,7 +649,7 @@ class ChatAgent(BaseAgent):
             # Prompt engineering approach for structured output for non-native tool calling models
             inject_prompt_for_structured_output = (
                 response_format
-                and not self.model_type.support_native_tool_calling
+                and not self.model_type.support_native_structured_output
             )
 
             if inject_prompt_for_structured_output:
@@ -683,7 +683,6 @@ class ChatAgent(BaseAgent):
                         f"Failed in parsing the output into JSON: {e}"
                     )
                     output_messages[0].parsed = None
-                    break
                 except ValidationError as e:
                     logger.warning(
                         "Successfully generating JSON response, "
