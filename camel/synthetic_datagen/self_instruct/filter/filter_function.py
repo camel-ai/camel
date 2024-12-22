@@ -12,12 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.models.reward import BaseRewardModel
 import re
 from abc import ABC, abstractmethod
 from typing import List
 
 from rouge import Rouge
+
+from camel.models.reward import BaseRewardModel
 
 
 class FilterFunction(ABC):
@@ -160,6 +161,7 @@ class RougeSimilarityFilter(FilterFunction):
 
         return True
 
+
 class RewardModelFilter(FilterFunction):
     r"""Filters instructions based on scores provided by a reward model.
 
@@ -170,9 +172,7 @@ class RewardModelFilter(FilterFunction):
             to pass the filter.
     """
 
-    def __init__(
-        self, reward_model: BaseRewardModel, threshold: float = 0.5
-    ):
+    def __init__(self, reward_model: BaseRewardModel, threshold: float = 0.5):
         self.reward_model = reward_model
         self.threshold = threshold
 
@@ -184,18 +184,25 @@ class RewardModelFilter(FilterFunction):
 
         Returns:
             bool: True if the instruction's score is above the threshold.
+
+        Raises:
+            ValueError: ValueError: If `score_types` is empty or if the
+                required score is not found in `scores`.
         """
 
         messages = [{"role": "user", "content": instruction}]
         scores = self.reward_model.evaluate(messages)
         score_types = self.reward_model.get_scores_types()
         if not score_types:
-            return True
+            raise ValueError("No score types available from the reward model.")
 
         score_type = score_types[0]
         score = scores.get(score_type, None)
 
         if score is None:
-            return True
+            raise ValueError(
+                f"Score type '{score_type}' is not found in the "
+                "evaluation scores."
+            )
 
         return score >= self.threshold

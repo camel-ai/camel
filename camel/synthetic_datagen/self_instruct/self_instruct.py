@@ -31,7 +31,7 @@ class SelfInstructPipeline:
     tasks, combining human and machine task samples.
 
     Args:
-        agent (ChatAgent): The agent used to interact and generate 
+        agent (ChatAgent): The agent used to interact and generate
             instructions.
         seed (str): The path to the human-written instructions.
         num_machine_instructions (int): Number of machine-generated
@@ -199,7 +199,8 @@ class SelfInstructPipeline:
         response = self.agent.step(clf_prompt)
         try:
             structured_response = AgentResponse.parse_raw(
-                response.msgs[0].content.strip())
+                response.msgs[0].content.strip()
+            )
             return structured_response.answer
         except ValueError as e:
             print(f"Error parsing agent response: {e}")
@@ -383,6 +384,10 @@ class SelfInstructPipeline:
         self.generate_machine_instances()
         self.construct_data()
 
+
 class AgentResponse(BaseModel):
-    answer: bool = Field(..., description="Indicates whether the task is "
-                                        "classification (True/False).")
+    answer: bool = Field(
+        ...,
+        description="Indicates whether the task is "
+        "classification (True/False).",
+    )

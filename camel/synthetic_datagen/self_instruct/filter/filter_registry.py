@@ -19,8 +19,8 @@ from .filter_function import (
     LengthFilter,
     NonEnglishFilter,
     PunctuationFilter,
+    RewardModelFilter,
     RougeSimilarityFilter,
-    RewardModelFilter
 )
 
 FILTER_REGISTRY: Dict[str, Callable[[Dict[str, Any]], FilterFunction]] = {
@@ -37,9 +37,9 @@ FILTER_REGISTRY: Dict[str, Callable[[Dict[str, Any]], FilterFunction]] = {
         threshold=kwargs.get("threshold", 0.7),
     ),
     "reward": lambda kwargs: RewardModelFilter(
-        reward_model=kwargs.get("reward_model"),
-        threshold=kwargs.get("threshold", 0.7)
-    )
+        reward_model=kwargs.get("reward_model"),  # type:ignore[arg-type]
+        threshold=kwargs.get("threshold", 0.7),
+    ),
 }
 
 

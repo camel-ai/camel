@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .filter import (
+    FILTER_REGISTRY,
     FilterFunction,
     InstructionFilter,
     KeywordFilter,
@@ -31,4 +32,5 @@ __all__ = [
     'FilterFunction',
     'KeywordFilter',
     'LengthFilter',
+    'FILTER_REGISTRY',
 ]
