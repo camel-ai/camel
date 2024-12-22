@@ -121,6 +121,14 @@ class AutoRetriever:
 
         collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
 
+        # Ensure the first character is either an underscore or a letter for
+        # Milvus
+        if (
+            self.storage_type == StorageType.MILVUS
+            and not collection_name[0].isalpha()
+        ):
+            collection_name = f"_{collection_name}"
+
         return collection_name
 
     def run_vector_retriever(

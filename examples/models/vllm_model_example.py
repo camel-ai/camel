@@ -20,7 +20,6 @@ vllm_model = ModelFactory.create(
     model_platform=ModelPlatformType.VLLM,
     model_type="microsoft/Phi-3-mini-4k-instruct",
     model_config_dict={"temperature": 0.0},
-    api_key="vllm",
 )
 
 assistant_sys_msg = "You are a helpful assistant."
