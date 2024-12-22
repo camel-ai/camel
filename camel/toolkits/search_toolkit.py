@@ -181,7 +181,7 @@ class SearchToolkit(BaseToolkit):
             country (str): The search query country where results come from.
                 The country string is limited to 2 character country codes of
                 supported countries. For a list of supported values, see
-                Country Codes. (default::obj:`US `)
+                Country Codes. (default: :obj:`US `)
             search_lang (str): The search language preference. The 2 or more
                 character language code for which search results are provided.
                 For a list of possible values, see Language Codes.
@@ -365,6 +365,11 @@ class SearchToolkit(BaseToolkit):
 
                 # Iterate over 10 results found
                 for i, search_item in enumerate(search_items, start=1):
+                    # Check metatags are present
+                    if "pagemap" not in search_item:
+                        continue
+                    if "metatags" not in search_item["pagemap"]:
+                        continue
                     if (
                         "og:description"
                         in search_item["pagemap"]["metatags"][0]
@@ -411,7 +416,7 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to send to Wolfram Alpha.
             is_detailed (bool): Whether to include additional details
                 including step by step information in the result.
-                (default::obj:`False`)
+                (default: :obj:`False`)
 
         Returns:
             Union[str, Dict[str, Any]]: The result from Wolfram Alpha.

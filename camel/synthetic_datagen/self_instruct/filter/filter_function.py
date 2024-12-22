@@ -58,11 +58,11 @@ class LengthFilter(FilterFunction):
         r"""Filter the instruction
 
         Args:
-            instruction (str): the instruction to be filtered
+            instruction (str): the instruction to be filtered.
 
         Returns:
             bool: True if the length of the instruction is within the range
-            of [min_len, max_len]
+                of [min_len, max_len]
         """
         word_count = len(instruction.split())
         return self.min_len <= word_count <= self.max_len
@@ -82,7 +82,7 @@ class KeywordFilter(FilterFunction):
         r"""Filter the instruction
 
         Args:
-            instruction (str): the instruction to be filtered
+            instruction (str): the instruction to be filtered.
 
         Returns:
             bool: True Instruction must NOT contain any of the keywords.
@@ -98,7 +98,7 @@ class PunctuationFilter(FilterFunction):
         r"""Filter the instruction
 
         Args:
-            instruction (str): the instruction to be filtered
+            instruction (str): the instruction to be filtered.
 
         Returns:
             bool: True if the instruction does not start with punctuation.
@@ -113,7 +113,7 @@ class NonEnglishFilter(FilterFunction):
         r"""Filter the instruction
 
         Args:
-            instruction (str): the instruction to be filtered
+            instruction (str): the instruction to be filtered.
 
         Returns:
             bool: True if the instruction starts with an English letter.
@@ -143,11 +143,11 @@ class RougeSimilarityFilter(FilterFunction):
         r"""Filter the instruction
 
         Args:
-            instruction (str): the instruction to be filtered
+            instruction (str): the instruction to be filtered.
 
         Returns:
             bool: True if the instruction's similarity to any existing
-            instruction is below the threshold.
+                instruction is below the threshold.
         """
         if not self.existing_instructions:
             return True
@@ -199,5 +199,3 @@ class RewardModelFilter(FilterFunction):
             return True
 
         return score >= self.threshold
-
-

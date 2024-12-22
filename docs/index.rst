@@ -74,6 +74,9 @@ Main Documentation
    cookbooks/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.ipynb
    cookbooks/sft_data_generation_and_unsloth_finetuning_tinyllama.ipynb
    cookbooks/customer_service_Discord_bot_with_agentic_RAG.ipynb
+   cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.ipynb
+   cookbooks/data_gen_with_real_function_calls_and_hermes_format.ipynb
+   cookbooks/agent_with_chunkr_for_pdf_parsing.ipynb
 
 .. toctree::
    :maxdepth: 1

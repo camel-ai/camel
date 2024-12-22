@@ -84,7 +84,7 @@ class SelfInstructPipeline:
 
     def load_seed(self, path: str):
         r"""Load seed tasks from a file. Defaults to a predefined seed file if
-            no path is provided.
+        no path is provided.
 
         Args:
             path (str): Path to the seed file.

@@ -91,7 +91,7 @@ class AzureOpenAIModel(BaseModelBackend):
             azure_deployment=self.azure_deployment_name,
             api_version=self.api_version,
             api_key=self._api_key,
-            timeout=60,
+            timeout=180,
             max_retries=3,
         )
 
