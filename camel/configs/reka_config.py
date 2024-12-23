@@ -26,19 +26,21 @@ class RekaConfig(BaseConfig):
 
     Args:
         temperature (Optional[float], optional): temperature the temperature
-            to use for sampling, e.g. 0.5.
+            to use for sampling, e.g. 0.5. (default: :obj:`None`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         top_p (Optional[float], optional): the cumulative probability of
-            tokens to generate, e.g. 0.9. Defaults to None.
+            tokens to generate, e.g. 0.9. (default: :obj:`None`)
         top_k (Optional[int], optional): Parameter which forces the model to
             only consider the tokens with the `top_k` highest probabilities at
-            the next step. Defaults to 1024.
+            the next step. (default: :obj:`1024`)
         max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. Defaults to None.
+            generate, e.g. 100. (default: :obj:`None`)
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
-            a string list.
+            a string list. (default: :obj:`None`)
         seed (Optional[int], optional): the random seed to use for sampling, e.
-            g. 42. Defaults to None.
+            g. 42. (default: :obj:`None`)
         presence_penalty (float, optional): Number between :obj:`-2.0` and
             :obj:`2.0`. Positive values penalize new tokens based on whether
             they appear in the text so far, increasing the model's likelihood
@@ -52,6 +54,7 @@ class RekaConfig(BaseConfig):
         use_search_engine (Optional[bool]): Whether to consider using search
             engine to complete the request. Note that even if this is set to
             `True`, the model might decide to not use search.
+            (default: :obj:`False`)
     """
 
     temperature: Optional[float] = None

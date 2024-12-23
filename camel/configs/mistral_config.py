@@ -30,27 +30,29 @@ class MistralConfig(BaseConfig):
 
     Args:
         temperature (Optional[float], optional): temperature the temperature
-            to use for sampling, e.g. 0.5.
+            to use for sampling. (default: :obj:`None`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         top_p (Optional[float], optional): the cumulative probability of
-            tokens to generate, e.g. 0.9. Defaults to None.
+            tokens to generate, e.g. 0.9. (default: :obj:`None`)
         max_tokens (Optional[int], optional): the maximum number of tokens to
-            generate, e.g. 100. Defaults to None.
+            generate, e.g. 100. (default: :obj:`None`)
         stop (Optional[Union[str,list[str]]]): Stop generation if this token
             is detected. Or if one of these tokens is detected when providing
-            a string list.
+            a string list. (default: :obj:`None`)
         random_seed (Optional[int], optional): the random seed to use for
-            sampling, e.g. 42. Defaults to None.
+            sampling, e.g. 42. (default: :obj:`None`)
         safe_prompt (bool, optional): whether to use safe prompt, e.g. true.
-            Defaults to False.
+            (default: :obj:`False`)
         response_format (Union[Dict[str, str], ResponseFormat): format of the
-            response.
+            response. (default: :obj:`None`)
         tool_choice (str, optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
             :obj:`"auto"` means the model can pick between generating a
             message or calling one or more tools.  :obj:`"any"` means the
             model must call one or more tools. :obj:`"auto"` is the default
-            value.
+            value. (default: :obj:`auto`)
     """
 
     temperature: Optional[float] = None

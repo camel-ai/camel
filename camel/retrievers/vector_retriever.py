@@ -96,9 +96,9 @@ class VectorRetriever(BaseRetriever):
             should_chunk (bool): If True, divide the content into chunks,
                 otherwise skip chunking. Defaults to True.
             extra_info (Optional[dict]): Extra information to be added
-                to the payload. Defaults to None.
+                to the payload. (default: :obj:`None`)
             metadata_filename (Optional[str]): The metadata filename to be
-                used for storing metadata. Defaults to None.
+                used for storing metadata. (default: :obj:`None`)
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         from unstructured.documents.elements import Element

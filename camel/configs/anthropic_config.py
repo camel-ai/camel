@@ -30,6 +30,8 @@ class AnthropicConfig(BaseConfig):
             before reaching this maximum. This parameter only specifies the
             absolute maximum number of tokens to generate.
             (default: :obj:`256`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         stop_sequences (List[str], optional): Sequences that will cause the
             model to stop generating completion text. Anthropic models stop
             on "\n\nHuman:", and may include additional built-in stop sequences
