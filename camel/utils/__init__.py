@@ -19,6 +19,7 @@ from .commons import (
     check_server_running,
     create_chunks,
     dependencies_required,
+    download_github_subdirectory,
     download_tasks,
     func_string_to_callable,
     generate_prompt_for_structured_output,
@@ -79,5 +80,6 @@ __all__ = [
     "track_agent",
     "handle_http_error",
     "get_pydantic_model",
+    "download_github_subdirectory",
     "generate_prompt_for_structured_output",
 ]
