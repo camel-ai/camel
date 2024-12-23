@@ -127,7 +127,7 @@ notion-client = { version = "^2.2.1", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
-
+openbb = { version = "^4.3.5", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -150,7 +150,6 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
-openbb = "^4.3.5"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -240,6 +239,7 @@ tools = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "openbb",
 ]
 
 vector-databases = [
@@ -353,6 +353,7 @@ all = [
     "apify_client",
     "fastapi",
     "uvicorn",
+    "openbb",
 ]
 
 [tool.poetry.group.dev]

@@ -12,47 +12,108 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import os
-from typing import Any, Dict, List, Literal, Optional, Union
+import logging
+from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 
 import pandas as pd
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.types.openbb_types import OpenBBType
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
+
+
+class OpenBBBaseProtocol(Protocol):
+    r"""Protocol defining the base interface for OpenBB SDK functionality.
+    This protocol specifies the required attributes and methods for interacting
+    with the OpenBB Platform SDK.
+
+    Args:
+        account (Any): Authentication and account management interface
+        user (Any): User settings and credentials management
+        equity (Any): Stock market data and analysis interface
+        etf (Any): Exchange-Traded Funds data interface
+        index (Any): Market indices data interface
+        regulators (Any): Regulatory data access interface
+        stocks (Any): Stock market operations interface
+        calendar (Any): Market events data interface
+        economy (Any): Economic indicators interface
+        currency (Any): Currency exchange data interface
+        crypto (Any): Cryptocurrency data interface
+        indices (Any): Market indices interface
+        futures (Any): Futures market data interface
+        bonds (Any): Bond market data interface
+        to_df (Any): Convert query results to DataFrame
+        results (Any): Access raw query results
+        to_dict (Any): Convert query results to dictionary
+    """
+
+    account: Any
+    user: Any
+    equity: Any
+    etf: Any
+    index: Any
+    regulators: Any
+    stocks: Any
+    calendar: Any
+    economy: Any
+    currency: Any
+    crypto: Any
+    indices: Any
+    futures: Any
+    bonds: Any
+    to_df: Any
+    results: Any
+    to_dict: Any
+
+
+class OpenBBClient:
+    """Type class for OpenBB client implementation."""
+
+    def __init__(self) -> None:
+        """Initialize the OpenBB client type."""
+        self.account: Any = None
+        self.user: Any = None
+        self.equity: Any = None
+        self.etf: Any = None
+        self.index: Any = None
+        self.regulators: Any = None
+        self.stocks: Any = None
+        self.calendar: Any = None
+        self.economy: Any = None
+        self.currency: Any = None
+        self.crypto: Any = None
+        self.indices: Any = None
+        self.futures: Any = None
+        self.bonds: Any = None
+        self.to_df: Any = None
+        self.results: Any = None
+        self.to_dict: Any = None
+
+
+OpenBBType = Union[OpenBBBaseProtocol, OpenBBClient]
 
 
 class OpenBBToolkit(BaseToolkit):
-    """OpenBB Platform toolkit for accessing financial data and analysis.
+    r"""A toolkit for accessing financial data and analysis through OpenBB
+    Platform.
 
-    This toolkit provides a comprehensive interface to the OpenBB Platform,
-    offering access to financial market data, analysis tools, and research
-    capabilities.
+    This toolkit provides methods for retrieving and analyzing financial market
+    data, including stocks, ETFs, cryptocurrencies, economic indicators, and
+    more through the OpenBB Platform SDK.
 
-    The toolkit requires a Personal Access Token (PAT) from OpenBB Platform,
-    which can be obtained at https://my.openbb.co/app/sdk.
-
-    Additional data provider API keys can be configured for enhanced access:
-        - FMP (Financial Modeling Prep)
-        - Polygon.io
-        - FRED (Federal Reserve Economic Data)
+    Args:
+        None: Initialization requires environment variables for authentication.
 
     Environment Variables:
         OPENBB_PAT: OpenBB Platform Personal Access Token
-        FMP_API_KEY: Financial Modeling Prep API key
-        POLYGON_API_KEY: Polygon.io API key
-        FRED_API_KEY: FRED API key
-
-    Example:
-        >>> toolkit = OpenBBToolkit()
-        >>> df = toolkit.get_stock_quote("AAPL")
-        >>> print(df)
+            Get one at https://my.openbb.co/app/sdk
+        FMP_API_KEY: Financial Modeling Prep API key (optional)
+        POLYGON_API_KEY: Polygon.io API key (optional)
+        FRED_API_KEY: Federal Reserve Economic Data API key (optional)
     """
 
-    client: OpenBBType
-
     @dependencies_required("openbb")
+    @api_keys_required("OPENBB_PAT")
     def __init__(self) -> None:
         """Initialize the OpenBBToolkit.
 
@@ -64,69 +125,57 @@ class OpenBBToolkit(BaseToolkit):
         from openbb import obb
 
         self.client = cast(OpenBBType, obb)
-        self._init_api_keys(silent=True)
 
-    def _init_api_keys(self, silent: bool = False) -> None:
-        """Initialize API keys from environment variables.
+    def _format_return(
+        self,
+        data: Union[pd.DataFrame, Dict, Any],
+        return_type: Literal["df", "raw"],
+    ) -> Union[pd.DataFrame, Dict]:
+        """Format data based on return type.
 
         Args:
-            silent (bool): If True, suppress error messages.
-                Defaults to False.
+            data: Data to format
+            return_type: Desired return format
+
+        Returns:
+            Union[pd.DataFrame, Dict]: Formatted data
         """
-        pat = os.getenv("OPENBB_PAT")
-        if not pat:
-            pat = "dummy_key"
+        if return_type == "df":
+            return (
+                pd.DataFrame(data)
+                if not isinstance(data, pd.DataFrame)
+                else data
+            )
 
-        try:
-            self.client.account.login(pat=pat)
-
-            provider_keys = {
-                "POLYGON_API_KEY": (
-                    "polygon_api_key",
-                    "https://polygon.io",
-                ),
-                "FRED_API_KEY": (
-                    "fred_api_key",
-                    "https://fred.stlouisfed.org",
-                ),
-                "FMP_API_KEY": (
-                    "fmp_api_key",
-                    "https://financialmodelingprep.com",
-                ),
-            }
-
-            for env_var, (key_name, url) in provider_keys.items():
-                api_key = os.getenv(env_var)
-                if api_key:
-                    setattr(self.client.user.credentials, key_name, api_key)
-                elif not silent:
-                    provider = key_name.split('_')[0].upper()
-                    print(f"{env_var} not found in environment variables.")
-                    print(f"Some {provider} data may be unavailable.")
-                    print(f"Get an API key at {url}")
-                    print(f"Then set it with: export {env_var}='your-key'")
-
-        except Exception as e:
-            if not silent:
-                print(f"Failed to initialize OpenBB client: {e!s}")
-                if "Session not found" in str(e):
-                    msg = "Please make sure you have a valid "
-                    msg += "Personal Access Token (PAT)"
-                    print(msg)
-                    print("Get one at https://my.openbb.co/app/sdk")
-            raise
+        # Convert to dict with string keys
+        if isinstance(data, pd.DataFrame):
+            return {str(k): v for k, v in data.to_dict().items()}
+        if isinstance(data, dict):
+            return {str(k): v for k, v in data.items()}
+        return {}
 
     def search_equity(
         self,
         query: str,
-        provider: Literal["nasdaq", "sec"] = "nasdaq",
-        return_type: Literal["df", "raw"] = "df",
+        provider: Literal[
+            "nasdaq", "sec", "intrinio", "tmx", "cboe", "tradier"
+        ] = "nasdaq",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Search for equity symbols and company information.
 
+        For more details on available providers, see:
+        https://docs.openbb.co/platform/reference/equity/search
+
         Args:
             query (str): Search query (company name or symbol)
-            provider (Literal["nasdaq", "sec"]): Data provider
+            provider (Literal): Data provider. Available options:
+                - nasdaq: NASDAQ Stock Market
+                - sec: SEC EDGAR Database
+                - intrinio: Intrinio Financial Data
+                - tmx: Toronto Stock Exchange
+                - cboe: Chicago Board Options Exchange
+                - tradier: Tradier Brokerage
             return_type (Literal["df", "raw"]): Return format
 
         Returns:
@@ -139,7 +188,7 @@ class OpenBBToolkit(BaseToolkit):
         self,
         query: str,
         provider: str = "tmx",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Search for ETF information.
 
@@ -158,7 +207,7 @@ class OpenBBToolkit(BaseToolkit):
         self,
         query: str,
         provider: str = "cboe",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Search for market indices.
 
@@ -174,7 +223,7 @@ class OpenBBToolkit(BaseToolkit):
         return data.to_df() if return_type == "df" else data.results
 
     def search_institution(
-        self, query: str, return_type: Literal["df", "raw"] = "df"
+        self, query: str, return_type: Literal["df", "raw"] = "raw"
     ) -> Union[pd.DataFrame, Dict]:
         """Search for financial institutions in SEC database.
 
@@ -193,7 +242,7 @@ class OpenBBToolkit(BaseToolkit):
         identifier: str,
         filing_type: Optional[str] = None,
         provider: str = "sec",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Search for SEC filings.
 
@@ -222,25 +271,39 @@ class OpenBBToolkit(BaseToolkit):
         beta_min: Optional[float] = None,
         beta_max: Optional[float] = None,
         provider: str = "fmp",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Screen markets based on various criteria.
+        """Screens stocks based on market and fundamental criteria using the
+        OpenBB Platform.
 
         Args:
-            country (Optional[str]): Country filter
-            exchange (Optional[str]): Exchange filter
-            sector (Optional[str]): Sector filter
-            industry (Optional[str]): Industry filter
-            market_cap_min (Optional[float]): Min market cap
-            market_cap_max (Optional[float]): Max market cap
-            beta_min (Optional[float]): Min beta value
-            beta_max (Optional[float]): Max beta value
-            provider (str): Data provider
-            return_type (Literal["df", "raw"]): Return format
+            country: Two-letter ISO country code for filtering stocks.
+                Example: 'US' for United States stocks.
+            exchange: Stock exchange code for filtering listings.
+                Example: 'NYSE', 'NASDAQ'. Format varies by provider.
+            sector: Global Industry Classification Standard (GICS) sector.
+                Example: 'Technology', 'Healthcare'. Case sensitive.
+            industry: GICS industry within the specified sector.
+                Example: 'Software', 'Biotechnology'. Case sensitive.
+            market_cap_min: Minimum market capitalization filter in USD.
+                Example: 1e9 for $1 billion minimum.
+            market_cap_max: Maximum market capitalization filter in USD.
+                Example: 10e9 for $10 billion maximum.
+            beta_min: Minimum beta value for volatility filtering.
+                Example: 0.8 for low volatility stocks.
+            beta_max: Maximum beta value for volatility filtering.
+                Example: 1.2 for moderate volatility stocks.
+            provider: Data provider to use for screening.
+                Currently supported: 'fmp' (Financial Modeling Prep).
+            return_type: Format for the returned data.
+                'df' for pandas DataFrame, 'raw' for JSON response.
 
         Returns:
-            Union[pd.DataFrame, Dict]: Screener results
+            Union[pd.DataFrame, Dict]: Screened stocks matching criteria.
+                DataFrame columns: symbol, name, exchange, sector,
+                industry, market_cap, beta (provider dependent).
         """
+        logger = logging.getLogger(__name__)
         try:
             params = {
                 k: v
@@ -261,26 +324,22 @@ class OpenBBToolkit(BaseToolkit):
                 provider=provider, **params
             )
 
-            if return_type == "df":
-                return data.to_df()
-            return data.results
-        except Exception:
-            if return_type == "df":
-                return pd.DataFrame(
-                    columns=[
-                        'symbol',
-                        'name',
-                        'market_cap',
-                        'sector',
-                        'industry',
-                    ]
-                )
-            return {}
+            return self._format_return(data, return_type)
+
+        except Exception as e:
+            logger.warning(
+                "Market screening failed with params: %s, "
+                "provider: %s. Error: %s",
+                params,
+                provider,
+                str(e),
+            )
+            return self._format_return({}, return_type)
 
     def get_available_indices(
         self,
         provider: str = "yfinance",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get list of available market indices.
 
@@ -298,7 +357,7 @@ class OpenBBToolkit(BaseToolkit):
         self,
         symbol: str,
         source: str = "iex",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get current stock quote for a given symbol.
 
@@ -316,8 +375,9 @@ class OpenBBToolkit(BaseToolkit):
             data = self.client.equity.price.quote(symbol=symbol, source=source)
             return data.to_df() if return_type == "df" else data.results
         except Exception as e:
+            logger = logging.getLogger(__name__)
             msg = f"Failed to get stock quote for {symbol}: {e}"
-            print(msg)
+            logger.error(msg)
             return pd.DataFrame() if return_type == "df" else {}
 
     def get_historical_data(
@@ -330,185 +390,147 @@ class OpenBBToolkit(BaseToolkit):
         end_date: Optional[str] = None,
         interval: Literal["1m", "1h", "1d", "1W", "1M"] = "1d",
         provider: Optional[str] = None,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Get historical price data for various financial instruments.
+        """Retrieves historical market data from OpenBB Platform providers.
 
         Args:
-            symbol (str): Symbol to get data for
-            asset_type (Literal): Type of asset
-            start_date (Optional[str]): Start date
-            end_date (Optional[str]): End date
-            interval (Literal): Data interval
-            provider (Optional[str]): Data provider
-            return_type (Literal): Return format
+            symbol: Asset identifier based on type:
+                equity: Ticker symbol (e.g., 'AAPL')
+                index: Index symbol (e.g., '^SPX')
+                currency: Currency pair (e.g., 'EURUSD')
+                crypto: Crypto pair (e.g., 'BTC-USD')
+                future: Future contract (e.g., 'CL=F')
+                option: Option contract (e.g., 'SPY251219P00400000')
+            asset_type: Type of financial instrument.
+                One of: equity, index, currency, crypto, future, option.
+            start_date: Start date in YYYY-MM-DD format.
+                If None, uses provider's default lookback.
+            end_date: End date in YYYY-MM-DD format.
+                If None, uses current date.
+            interval: Data frequency/timeframe.
+                1m=minute, 1h=hour, 1d=day, 1W=week, 1M=month.
+                Note: 1m has limited history availability.
+            provider: Data provider override.
+                If None, uses default provider for asset_type.
+            return_type: Format for returned data.
+                'df' for pandas DataFrame, 'raw' for JSON response.
 
         Returns:
-            Union[pd.DataFrame, Dict]: Historical price data
+            Union[pd.DataFrame, Dict]: Historical market data.
+                DataFrame columns: date, open, high, low, close,
+                volume, adjusted (equities only).
         """
         if provider is None:
-            provider_map = {
-                "equity": "yfinance",
-                "index": "cboe",
-                "currency": "polygon",
-                "crypto": "polygon",
-                "future": "fmp",
-                "option": "polygon",
-            }
-            provider = provider_map[asset_type]
-
-        formatted_symbol = self._format_symbol(symbol, asset_type, provider)
-
-        if asset_type == "equity":
-            data = self.client.equity.price.historical(
-                symbol=formatted_symbol,
-                start_date=start_date,
-                end_date=end_date,
-                interval=interval,
-                provider=provider,
-            )
-        elif asset_type == "index":
-            data = self.client.index.price.historical(
-                symbol=formatted_symbol,
-                start_date=start_date,
-                end_date=end_date,
-                interval=interval,
-                provider=provider,
-            )
-        elif asset_type == "currency":
-            data = self.client.currency.price.historical(
-                symbol=formatted_symbol,
-                start_date=start_date,
-                end_date=end_date,
-                interval=interval,
-                provider=provider,
-            )
-        elif asset_type == "crypto":
-            data = self.client.crypto.price.historical(
-                symbol=formatted_symbol,
-                start_date=start_date,
-                end_date=end_date,
-                interval=interval,
-                provider=provider,
-            )
-        else:
-            data = self.client.equity.price.historical(
-                symbol=formatted_symbol,
-                start_date=start_date,
-                end_date=end_date,
-                interval=interval,
-                provider=provider,
+            provider = (
+                "yfinance"  # Use yfinance as default for all asset types
             )
 
-        return data.to_df() if return_type == "df" else data.results
-
-    def _format_symbol(
-        self, symbol: str, asset_type: str, provider: str
-    ) -> str:
-        """Format symbol based on asset type and provider requirements.
-
-        Args:
-            symbol (str): Original symbol
-            asset_type (str): Type of asset
-            provider (str): Data provider
-
-        Returns:
-            str: Formatted symbol
-        """
-        base_symbol = symbol.replace("=X", "").replace("=F", "")
-        base_symbol = (
-            base_symbol.replace("^", "")
-            .replace("O:", "")
-            .replace("C:", "")
-            .replace("X:", "")
-        )
-
-        if provider == "polygon":
+        try:
             if asset_type == "currency":
-                return f"C:{base_symbol}"
+                response = self.client.currency.price.historical(
+                    symbol=symbol,
+                    start_date=start_date,
+                    end_date=end_date,
+                    interval=interval,
+                    provider=provider,
+                )
             elif asset_type == "crypto":
-                return f"X:{base_symbol}"
-            elif asset_type == "option":
-                return f"O:{base_symbol}"
-            return base_symbol
-        elif provider == "yfinance":
-            if asset_type == "currency":
-                return f"{base_symbol}=X"
-            elif asset_type == "future":
-                return f"{base_symbol}=F"
-            elif asset_type == "index":
-                return f"^{base_symbol}"
-            return base_symbol
+                response = self.client.crypto.price.historical(
+                    symbol=symbol,
+                    start_date=start_date,
+                    end_date=end_date,
+                    interval=interval,
+                    provider=provider,
+                )
+            else:  # equity, index, option, future
+                response = self.client.equity.price.historical(
+                    symbol=symbol,
+                    start_date=start_date,
+                    end_date=end_date,
+                    interval=interval,
+                    provider=provider,
+                )
 
-        return base_symbol
+            if return_type == "df":
+                if hasattr(response, "results") and response.results:
+                    return pd.DataFrame(response.results)
+                return pd.DataFrame()
+            else:
+                if hasattr(response, "results"):
+                    return {"results": response.results}
+                return {}
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get historical data for {symbol}: {e}"
+            logger.error(msg)
+            return pd.DataFrame() if return_type == "df" else {}
 
     def get_company_fundamentals(
         self,
         symbol: str,
-        statement: Literal["balance", "income", "cash"] = "balance",
-        provider: str = "polygon",
-        return_type: Literal["df", "raw"] = "df",
+        provider: str = "fmp",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Get company fundamental financial statements.
+        """Get company fundamental data.
 
         Args:
-            symbol (str): Company symbol
-            statement (Literal): Statement type
-            provider (str): Data provider
-            return_type (Literal): Return format
+            symbol: Company stock ticker symbol
+            provider: Data provider to use
+            return_type: Format for returned data
 
         Returns:
-            Union[pd.DataFrame, Dict]: Financial statement data
+            Union[pd.DataFrame, Dict]: Company fundamental data
         """
-        if statement == "balance":
-            data = self.client.equity.fundamentals.balance_sheet(
-                symbol=symbol, provider=provider
+        try:
+            data = self.client.equity.fundamentals.profile(
+                symbol=symbol,
+                provider=provider,
             )
-        elif statement == "income":
-            data = self.client.equity.fundamentals.income_statement(
-                symbol=symbol, provider=provider
-            )
-        else:
-            data = self.client.equity.fundamentals.cash_flow(
-                symbol=symbol, provider=provider
-            )
-
-        if return_type == "df":
-            return data.to_df()
-        return data.results
+            return self._format_return(data, return_type)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get fundamentals for {symbol}: {e}"
+            logger.error(msg)
+            return self._format_return({}, return_type)
 
     def get_market_data(
         self,
-        market_type: Literal["indices", "futures", "bonds"] = "indices",
-        symbol: Optional[str] = None,
-        provider: str = "yfinance",
-        return_type: Literal["df", "raw"] = "df",
+        category: Literal["gainers", "losers", "active"] = "active",
+        source: str = "yfinance",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Get market data for various instruments.
+        """Get market movers data.
 
         Args:
-            market_type: Type of market data to retrieve
-            symbol: Specific symbol to query
-            provider: Data provider
-            return_type: Return format
+            category: Type of market data.
+                'gainers', 'losers', or 'active'.
+            source: Data source to use.
+                Default is 'yfinance'.
+            return_type: Format for returned data.
+                'df' for DataFrame, 'raw' for JSON.
 
         Returns:
-            Market data or available symbols
+            Union[pd.DataFrame, Dict]: Market movers data
         """
-        try:
-            if market_type == "indices":
-                method = self.client.indices.get_indices
-            elif market_type == "futures":
-                method = self.client.futures.get_futures
-            else:
-                method = self.client.bonds.get_bonds
+        methods = {
+            "gainers": self.client.equity.discovery.gainers,
+            "losers": self.client.equity.discovery.losers,
+            "active": self.client.equity.discovery.most_active,
+        }
 
-            data = method(symbol, provider) if symbol else method(provider)
-            return data.to_df() if return_type == "df" else data.results
-        except Exception as e:
-            msg = f"Failed to get {market_type} data: {e!s}"
-            print(msg)
-            return pd.DataFrame() if return_type == "df" else {}
+        if category in methods:
+            try:
+                data = methods[category](source)
+                return self._format_return(data, return_type)
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                msg = f"Failed to get {category} data: {e}"
+                logger.error(msg)
+                return self._format_return({}, return_type)
+
+        msg = "Category must be 'gainers', 'losers', or 'active'."
+        raise ValueError(msg)
 
     def get_earnings_calendar(
         self,
@@ -516,7 +538,7 @@ class OpenBBToolkit(BaseToolkit):
         end_date: str,
         provider: str = "fmp",
         min_market_cap: Optional[float] = None,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict[str, Any]]:
         """Get earnings calendar events.
 
@@ -543,18 +565,17 @@ class OpenBBToolkit(BaseToolkit):
             if return_type == "df":
                 return data.to_df()
             else:
-                # Convert DataFrame to dict with string keys
                 if isinstance(data, pd.DataFrame):
                     return {str(k): v for k, v in data.to_dict().items()}
-                # Ensure dict has string keys
                 return (
                     {str(k): v for k, v in data.items()}
                     if isinstance(data, dict)
                     else {}
                 )
         except Exception as e:
-            msg = f"Failed to get earnings calendar: {e!s}"
-            print(msg)
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get earnings calendar: {e}"
+            logger.error(msg)
             return pd.DataFrame() if return_type == "df" else {}
 
     def get_dividend_calendar(
@@ -563,7 +584,7 @@ class OpenBBToolkit(BaseToolkit):
         end_date: str,
         provider: str = "nasdaq",
         calculate_yield: bool = True,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get dividend calendar events.
 
@@ -607,8 +628,9 @@ class OpenBBToolkit(BaseToolkit):
 
             return df
         except Exception as e:
-            msg = f"Failed to get dividend calendar: {e!s}"
-            print(msg)
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get dividend calendar: {e}"
+            logger.error(msg)
             return pd.DataFrame() if return_type == "df" else {}
 
     def get_ipo_calendar(
@@ -617,7 +639,7 @@ class OpenBBToolkit(BaseToolkit):
         provider: str = "nasdaq",
         is_spo: bool = False,
         min_offer_amount: Optional[float] = None,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get IPO/SPO calendar events.
 
@@ -644,14 +666,15 @@ class OpenBBToolkit(BaseToolkit):
                 df = df[df["offer_amount"] >= min_offer_amount]
             return df
         except Exception as e:
-            msg = f"Failed to get IPO calendar: {e!s}"
-            print(msg)
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get IPO calendar: {e}"
+            logger.error(msg)
             return pd.DataFrame() if return_type == "df" else {}
 
     def get_available_indicators(
         self,
         provider: str = "econdb",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get list of available economic indicators.
 
@@ -666,10 +689,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -759,7 +780,7 @@ class OpenBBToolkit(BaseToolkit):
         period: Literal["annual", "quarter"] = "annual",
         provider: str = "fmp",
         limit: int = 5,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get company balance sheet data.
 
@@ -779,10 +800,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -795,7 +814,7 @@ class OpenBBToolkit(BaseToolkit):
         period: Literal["annual", "quarter"] = "annual",
         provider: str = "fmp",
         limit: int = 5,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get company income statement data.
 
@@ -815,10 +834,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -831,7 +848,7 @@ class OpenBBToolkit(BaseToolkit):
         period: Literal["annual", "quarter"] = "annual",
         provider: str = "fmp",
         limit: int = 5,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get company cash flow statement data.
 
@@ -851,10 +868,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -867,7 +882,7 @@ class OpenBBToolkit(BaseToolkit):
         period: Literal["annual", "quarter"] = "annual",
         provider: str = "fmp",
         limit: int = 5,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get company financial ratios and metrics.
 
@@ -887,10 +902,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -933,12 +946,13 @@ class OpenBBToolkit(BaseToolkit):
 
             return method(symbol, period, last_n, source)
         except Exception as e:
-            msg = f"Failed to get financial statements for {symbol}: {e!s}"
-            print(msg)
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get financial statements for {symbol}: {e}"
+            logger.error(msg)
             return {}
 
     def search_financial_attributes(
-        self, keyword: str, return_type: Literal["df", "raw"] = "df"
+        self, keyword: str, return_type: Literal["df", "raw"] = "raw"
     ) -> Union[pd.DataFrame, Dict]:
         """Search for available financial attributes/metrics.
 
@@ -953,10 +967,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -969,7 +981,7 @@ class OpenBBToolkit(BaseToolkit):
         tag: str,
         frequency: Literal["quarterly", "annual"] = "quarterly",
         provider: str = "intrinio",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get historical values for a specific financial attribute.
 
@@ -989,10 +1001,8 @@ class OpenBBToolkit(BaseToolkit):
         if return_type == "df":
             return data.to_df()
         else:
-            # Convert DataFrame to dict with string keys
             if isinstance(data, pd.DataFrame):
                 return {str(k): v for k, v in data.to_dict().items()}
-            # Ensure dict has string keys
             return (
                 {str(k): v for k, v in data.items()}
                 if isinstance(data, dict)
@@ -1005,7 +1015,7 @@ class OpenBBToolkit(BaseToolkit):
         end_date: str,
         provider: Literal["fmp", "nasdaq", "tradingeconomics"] = "fmp",
         convert_timezone: bool = True,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get economic calendar events.
 
@@ -1041,7 +1051,7 @@ class OpenBBToolkit(BaseToolkit):
         self,
         country: Optional[str] = None,
         category: Optional[str] = None,
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict[str, Any]]:
         """Get available economic indicators.
 
@@ -1062,8 +1072,9 @@ class OpenBBToolkit(BaseToolkit):
 
             data = self.client.economy.available_indicators(**params)
             if not isinstance(data, pd.DataFrame) or data.empty:
+                logger = logging.getLogger(__name__)
                 msg = "No indicators found. Check parameters and try again."
-                print(msg)
+                logger.warning(msg)
                 return pd.DataFrame() if return_type == "df" else {}
             if return_type == "df":
                 return (
@@ -1079,40 +1090,53 @@ class OpenBBToolkit(BaseToolkit):
                         else pd.DataFrame(data)
                     )
                 else:
-                    # Convert DataFrame to dict with string keys
                     if isinstance(data, pd.DataFrame):
                         result_dict = data.to_dict()
                         return {str(k): v for k, v in result_dict.items()}
-                    # Ensure dict has string keys
                     if isinstance(data, dict):
                         return {str(k): v for k, v in data.items()}
                     return {}
         except Exception as e:
+            logger = logging.getLogger(__name__)
             msg = "Failed to get indicators: {}"
-            print(msg.format(str(e)))
+            logger.error(msg.format(str(e)))
             return pd.DataFrame() if return_type == "df" else {}
 
     def get_market_movers(
         self,
         category: Literal["gainers", "losers", "active"] = "gainers",
-        start_date: str = "1d",
-        end_date: str = "1d",
-        limit: int = 25,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        limit: Optional[int] = None,
         source: str = "yf",
-        return_type: Literal["df", "raw"] = "df",
+        return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Get market movers for a given category.
+        """Get market movers (gainers, losers, most active) data from various
+        sources.
 
         Args:
-            category: Market movers category
-            start_date: Start date
-            end_date: End date
-            limit: Number of movers to return
-            source: Data source
-            return_type: Return format
+            category: Type of market movers to retrieve:
+                - 'gainers': Stocks with highest % gain
+                - 'losers': Stocks with highest % loss
+                - 'active': Most actively traded stocks
+            start_date: Start date for historical comparison (YYYY-MM-DD).
+                Defaults to None (uses source's default).
+            end_date: End date for historical comparison (YYYY-MM-DD).
+                Defaults to None (uses source's default).
+            limit: Maximum number of stocks to return.
+                Defaults to None (uses source's default).
+            source: Data source provider. Available options:
+                - 'yf': Yahoo Finance
+                - 'fmp': Financial Modeling Prep
+                - 'av': Alpha Vantage
+            return_type: Format of returned data:
+                - 'raw': Original JSON response
+                - 'df': Pandas DataFrame with columns:
+                    [symbol, name, price, change, change_pct, volume]
 
         Returns:
-            Market movers data
+            Union[pd.DataFrame, Dict]: Market movers data in specified format.
+                Empty dict/DataFrame if error occurs.
         """
         methods = {
             "gainers": self.client.stocks.movers.gainers,
@@ -1123,4 +1147,22 @@ class OpenBBToolkit(BaseToolkit):
         if category not in methods:
             msg = "Category must be 'gainers', 'losers', or 'active'."
             raise ValueError(msg)
-        return methods[category](source)
+
+        try:
+            params = {
+                "source": source,
+                "start_date": start_date,
+                "end_date": end_date,
+                "limit": limit,
+            }
+            params = {k: v for k, v in params.items() if v is not None}
+
+            response = methods[category](**params)
+
+            return self._format_return(response, return_type)
+
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            msg = f"Failed to get {category} data: {e}"
+            logger.error(msg)
+            return self._format_return({}, return_type)

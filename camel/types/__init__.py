@@ -43,11 +43,6 @@ from .openai_types import (
     NotGiven,
     ParsedChatCompletion,
 )
-from .openbb_types import (
-    OpenBBBaseProtocol,
-    OpenBBClient,
-    OpenBBType,
-)
 from .unified_model_type import UnifiedModelType
 
 __all__ = [
@@ -72,9 +67,6 @@ __all__ = [
     'OpenAIImageType',
     'OpenAIVisionDetailType',
     'OpenAPIName',
-    'OpenBBBaseProtocol',
-    'OpenBBClient',
-    'OpenBBType',
     'ParsedChatCompletion',
     'RoleType',
     'StorageType',
