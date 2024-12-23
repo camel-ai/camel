@@ -22,6 +22,7 @@ from .commons import (
     download_github_subdirectory,
     download_tasks,
     func_string_to_callable,
+    generate_prompt_for_structured_output,
     get_first_int,
     get_prompt_template_key_words,
     get_pydantic_major_version,
@@ -80,4 +81,5 @@ __all__ = [
     "handle_http_error",
     "get_pydantic_model",
     "download_github_subdirectory",
+    "generate_prompt_for_structured_output",
 ]
