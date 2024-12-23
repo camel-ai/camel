@@ -609,6 +609,7 @@ def retry_request(
             else:
                 raise
 
+
 def download_github_subdirectory(
     repo: str, subdir: str, data_dir: Path, branch="main"
 ):
@@ -652,6 +653,7 @@ def download_github_subdirectory(
             download_github_subdirectory(
                 repo, f'{subdir}/{file["name"]}', file_path, branch
             )
+
 
 def generate_prompt_for_structured_output(
     response_format: Optional[Type[BaseModel]],
