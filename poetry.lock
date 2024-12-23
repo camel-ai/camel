@@ -2139,13 +2139,13 @@ files = [
 
 [[package]]
 name = "fsspec"
-version = "2024.12.0"
+version = "2024.9.0"
 description = "File-system specification"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fsspec-2024.12.0-py3-none-any.whl", hash = "sha256:b520aed47ad9804237ff878b504267a3b0b441e97508bd6d2d8774e3db85cee2"},
-    {file = "fsspec-2024.12.0.tar.gz", hash = "sha256:670700c977ed2fb51e0d9f9253177ed20cbde4a3e5c0283cc5385b5870c8533f"},
+    {file = "fsspec-2024.9.0-py3-none-any.whl", hash = "sha256:a0947d552d8a6efa72cc2c730b12c41d043509156966cca4fb157b0f2a0c574b"},
+    {file = "fsspec-2024.9.0.tar.gz", hash = "sha256:4b0afb90c2f21832df142f292649035d80b421f60a9e1c027802e5a0da2b04e8"},
 ]
 
 [package.dependencies]
@@ -4375,17 +4375,17 @@ testing-docutils = ["pygments", "pytest (>=8,<9)", "pytest-param-files (>=0.6.0,
 
 [[package]]
 name = "narwhals"
-version = "1.19.0"
+version = "1.19.1"
 description = "Extremely lightweight compatibility layer between dataframe libraries"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "narwhals-1.19.0-py3-none-any.whl", hash = "sha256:517eca140103dbf61e4513fe462885a06bc21b565521a5ac0b79a7e31f152efe"},
-    {file = "narwhals-1.19.0.tar.gz", hash = "sha256:a1a03bf922548ed1da5426acc954327a94c02c3a08558b65a0937dbd3b77fb48"},
+    {file = "narwhals-1.19.1-py3-none-any.whl", hash = "sha256:72476dcc95f1d3f2c0c1f047cdd4879346b2871fe13d1223025466d8a3dcaea4"},
+    {file = "narwhals-1.19.1.tar.gz", hash = "sha256:e597e7ed9da42ffb2c80b21e174817b27592a8570edea8c46c90a726e3b796af"},
 ]
 
 [package.extras]
-cudf = ["cudf (>=23.08.00)"]
+cudf = ["cudf (>=24.12.0)"]
 dask = ["dask[dataframe] (>=2024.7)"]
 dev = ["covdefaults", "dask[dataframe]", "duckdb", "hypothesis", "hypothesis[numpy]", "pandas", "polars", "pyarrow", "pyarrow-stubs", "pyspark", "pytest", "pytest-cov", "pytest-env", "pytest-randomly", "scikit-learn", "tqdm", "typing-extensions"]
 docs = ["black", "duckdb", "jinja2", "markdown-exec[ansi]", "mkdocs", "mkdocs-autorefs", "mkdocs-material", "mkdocstrings[python]", "pandas", "polars (>=1.0.0)", "pyarrow"]
@@ -6569,13 +6569,13 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pymilvus"
-version = "2.5.0"
+version = "2.5.1"
 description = "Python Sdk for Milvus"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "pymilvus-2.5.0-py3-none-any.whl", hash = "sha256:a0e8653d8fe78019abfda79b3404ef7423f312501e8cbd7dc728051ce8732652"},
-    {file = "pymilvus-2.5.0.tar.gz", hash = "sha256:4da14a3bd957a4921166f9355fd1f1ac5c5e4e80b46f12f64d9c9a6dcb8cb395"},
+    {file = "pymilvus-2.5.1-py3-none-any.whl", hash = "sha256:28c7ba5169d4479c109ba584ee3fe7d4702a6c5df4c2630f332aa540b167368f"},
+    {file = "pymilvus-2.5.1.tar.gz", hash = "sha256:1dbbbbd5a9e0856fb2bd529233eab5e1e7f02b5a2812a06ac97d1491a6112720"},
 ]
 
 [package.dependencies]
@@ -9337,19 +9337,19 @@ tests = ["tree-sitter-html (>=0.23.0)", "tree-sitter-javascript (>=0.23.0)", "tr
 
 [[package]]
 name = "tree-sitter-python"
-version = "0.23.5"
+version = "0.23.6"
 description = "Python grammar for tree-sitter"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:095d104f7f13694ee95ca8540b39a77a57bf9f037797c2658b8400c5b5ece117"},
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:a27f874083b2a204a5c1aa85ebe15e23a441816ee60a6bcf6a4daad7044176ca"},
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3cb5aebdd64a30e3557e481bd0f6d553a1570e088626529fac5a70165a67b84e"},
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:040c0cbebf127b578e183ce084feb8f0ca7e9e26bcd0a4f6cf1a8f47e13b0b5a"},
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:c62262e96e67f6f63467f74b37c6fa4b618b3d2ddd7ad16280c101d1f9be8a8a"},
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-win_amd64.whl", hash = "sha256:2b52ec8279193b0f8979aef4b0ac60c99e2856ab02eeeb1a62b55a03c012e3fd"},
-    {file = "tree_sitter_python-0.23.5-cp39-abi3-win_arm64.whl", hash = "sha256:efd1a1a44322c46b27ff439e6103d8199d53ffc38c021e7856067c9c90617460"},
-    {file = "tree_sitter_python-0.23.5.tar.gz", hash = "sha256:bd18325d93d633b4d411f24bb5e7d34ee653cd3254e5963fb3c2738ee3c4a1ee"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:28fbec8f74eeb2b30292d97715e60fac9ccf8a8091ce19b9d93e9b580ed280fb"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:680b710051b144fedf61c95197db0094f2245e82551bf7f0c501356333571f7a"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8a9dcef55507b6567207e8ee0a6b053d0688019b47ff7f26edc1764b7f4dc0a4"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:29dacdc0cd2f64e55e61d96c6906533ebb2791972bec988450c46cce60092f5d"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:7e048733c36f564b379831689006801feb267d8194f9e793fbb395ef1723335d"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-win_amd64.whl", hash = "sha256:a24027248399fb41594b696f929f9956828ae7cc85596d9f775e6c239cd0c2be"},
+    {file = "tree_sitter_python-0.23.6-cp39-abi3-win_arm64.whl", hash = "sha256:71334371bd73d5fe080aed39fbff49ed8efb9506edebe16795b0c7567ed6a272"},
+    {file = "tree_sitter_python-0.23.6.tar.gz", hash = "sha256:354bfa0a2f9217431764a631516f85173e9711af2c13dbd796a8815acfe505d9"},
 ]
 
 [package.extras]
@@ -9521,13 +9521,13 @@ urllib3 = ">=2"
 
 [[package]]
 name = "types-setuptools"
-version = "75.6.0.20241126"
+version = "75.6.0.20241223"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types_setuptools-75.6.0.20241126-py3-none-any.whl", hash = "sha256:aaae310a0e27033c1da8457d4d26ac673b0c8a0de7272d6d4708e263f2ea3b9b"},
-    {file = "types_setuptools-75.6.0.20241126.tar.gz", hash = "sha256:7bf25ad4be39740e469f9268b6beddda6e088891fa5a27e985c6ce68bf62ace0"},
+    {file = "types_setuptools-75.6.0.20241223-py3-none-any.whl", hash = "sha256:7cbfd3bf2944f88bbcdd321b86ddd878232a277be95d44c78a53585d78ebc2f6"},
+    {file = "types_setuptools-75.6.0.20241223.tar.gz", hash = "sha256:d9478a985057ed48a994c707f548e55aababa85fe1c9b212f43ab5a1fffd3211"},
 ]
 
 [[package]]
@@ -10453,11 +10453,10 @@ retrievers = ["cohere", "rank-bm25"]
 runtime = ["docker"]
 search-tools = ["duckduckgo-search", "tavily-python", "wikipedia", "wolframalpha"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "newspaper3k", "notion-client", "openapi-spec-validator", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "rouge", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "newspaper3k", "notion-client", "openapi-spec-validator", "outlines", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "rouge", "rouge", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "56d1af3058f812df37cf34b43e59fbeb24cc9719f02c528cf171622ecd847375"
-
+content-hash = "f289606bd7f1020fac10ffa53f10ab95e6fcd0670fb8866f229beb69ce0ea651"
