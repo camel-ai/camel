@@ -17,7 +17,6 @@ import logging
 import os
 import random
 import re
-import requests
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
@@ -29,52 +28,9 @@ from tqdm import tqdm
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
+from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
-
-
-# Helper functions
-def download_github_subdirectory(
-    repo: str, subdir: str, data_dir: Path, branch="main"
-):
-    r"""Download subdirectory of the Github repo of
-    the benchmark.
-
-    This function downloads all files and subdirectories from a
-    specified subdirectory of a GitHub repository and
-    saves them to a local directory.
-
-    Args:
-        repo (str): The name of the GitHub repository
-                in the format "owner/repo".
-        subdir (str): The path to the subdirectory
-            within the repository to download.
-        data_dir (Path): The local directory where
-            the files will be saved.
-        branch (str, optional): The branch of the repository to use.
-            Defaults to "main".
-    """
-    api_url = (
-        f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
-    )
-    headers = {"Accept": "application/vnd.github.v3+json"}
-    response = requests.get(api_url, headers=headers)
-    response.raise_for_status()
-    files = response.json()
-    os.makedirs(data_dir, exist_ok=True)
-
-    for file in tqdm(files, desc="Downloading"):
-        file_path = data_dir / file["name"]
-
-        if file["type"] == "file":
-            file_url = file["download_url"]
-            file_response = requests.get(file_url)
-            with open(file_path, "wb") as f:
-                f.write(file_response.content)
-        elif file["type"] == "dir":
-            download_github_subdirectory(
-                repo, subdir / file["name"], file_path, branch
-            )
 
 
 def process_messages(
@@ -408,7 +364,9 @@ class APIBankBenchmark(BaseBenchmark):
             return {
                 'total': total_api_calls,
                 'correct': correct_api_calls,
-                "accuracy": correct_api_calls / total_api_calls,
+                "accuracy": correct_api_calls / total_api_calls
+                if total_api_calls
+                else 0,
             }
         elif dialog_test_enabled:
             return {'Dialog_score': np.mean(rougel_scores)}

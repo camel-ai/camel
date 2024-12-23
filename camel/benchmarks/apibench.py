@@ -14,19 +14,17 @@
 
 import json
 import logging
-import os
 import random
-import requests
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
-
 from tqdm import tqdm
+import tree_sitter_python as tspython
+from tree_sitter import Language, Parser
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.messages.base import BaseMessage
-
-from .utils.ast_eval import ast_parse, evaluate_response
+from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
 
@@ -50,52 +48,6 @@ dataset_mapping = {
         "questions": "questions_torchhub_0_shot.jsonl",
     },
 }
-
-
-def download_github_subdirectory(
-    repo: str, subdir: str, data_dir: Path, branch="main"
-):
-    r"""Download subdirectory of the Github repo of
-    the benchmark.
-
-    This function downloads all files and subdirectories from a
-    specified subdirectory of a GitHub repository and
-    saves them to a local directory.
-
-    Args:
-        repo (str): The name of the GitHub repository
-                in the format "owner/repo".
-        subdir (str): The path to the subdirectory
-            within the repository to download.
-        data_dir (Path): The local directory where
-            the files will be saved.
-        branch (str, optional): The branch of the repository to use.
-            Defaults to "main".
-    """
-    api_url = (
-        f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
-    )
-    headers = {"Accept": "application/vnd.github.v3+json"}
-    response = requests.get(api_url, headers=headers)
-    response.raise_for_status()
-    files = response.json()
-    os.makedirs(data_dir, exist_ok=True)
-
-    for file in tqdm(files, desc="Downloading"):
-        file_path = data_dir / file["name"]
-
-        if file["type"] == "file":
-            file_url = file["download_url"]
-            file_response = requests.get(file_url)
-            with open(file_path, "wb") as f:
-                f.write(file_response.content)
-        elif file["type"] == "dir":
-            download_github_subdirectory(
-                repo,
-                subdir / file["name"],
-                file_path,
-                branch,
-            )
 
 
 # This function is migrated from the original repo:
@@ -231,7 +183,7 @@ class APIBenchBenchmark(BaseBenchmark):
         Args:
             dataset_name (str): Name of the specific dataset to be loaded.
             force_download (bool, optional): Whether to force
-            download the data. (default: :obj:`False`)
+                download the data. (default: :obj:`False`)
         """
 
         if force_download:
@@ -239,7 +191,7 @@ class APIBenchBenchmark(BaseBenchmark):
             self.download()
 
         def load_json_lines(file_path: Path):
-            """Helper function to load JSON lines from a file."""
+            r"""Helper function to load JSON lines from a file."""
             try:
                 with open(file_path, "r") as f:
                     return [json.loads(line) for line in f]
@@ -351,7 +303,7 @@ class APIBenchBenchmark(BaseBenchmark):
                             "agent_response": response,
                             "correct": correct,
                             "hallucination": hallucination,
-                            "error": str(error),
+                            "error": str(error) if error else None,
                         }
                     )
                 except Exception as e:
@@ -381,6 +333,163 @@ class APIBenchBenchmark(BaseBenchmark):
             "total": total,
             "correct": correct,
             "hallucination": hallucination,
-            "accuracy": correct / total,
-            "hallucination rate": hallucination / total,
+            "accuracy": correct / total if total else "N/A",
+            "hallucination rate": hallucination / total if total else "N/A",
         }
+
+
+# This code is modified from the
+# evaluators in the original repo
+# https://github.com/ShishirPatil/gorilla
+# Get all the subtrees given a root_node
+def get_all_sub_trees(root_node):
+    node_stack = []
+    sub_tree_sexp_list = []
+    depth = 1
+    # text = root_node.text
+    node_stack.append([root_node, depth])
+    while len(node_stack) != 0:
+        cur_node, cur_depth = node_stack.pop()
+        if cur_node.child_count > 0:
+            sub_tree_sexp_list.append(
+                [
+                    str(cur_node),
+                    cur_depth,
+                    cur_node,
+                    cur_node.children[0].text,
+                ]
+            )
+        else:
+            sub_tree_sexp_list.append(
+                [str(cur_node), cur_depth, cur_node, None]
+            )
+        for child_node in cur_node.children:
+            if len(child_node.children) != 0:
+                depth = cur_depth + 1
+                node_stack.append([child_node, depth])
+    return sub_tree_sexp_list
+
+
+# Parse the program into AST trees
+def ast_parse(candidate):
+    PY_LANGUAGE = Language(tspython.language())
+    parser = Parser(PY_LANGUAGE)
+
+    candidate_tree = parser.parse(bytes(candidate, "utf8")).root_node
+    return candidate_tree
+
+
+# Get all the arguments in the ast tree
+def get_args(node, dataset_name):
+    if node.child_count == 0:
+        return []
+    args_list = []
+    if dataset_name == "huggingface":
+        for child in node.children[0].children[0].children[1].children:
+            if "=" in child.text.decode():
+                args_list.append(child.children[2].text)
+            elif (
+                child.text.decode() != "("
+                and child.text.decode() != ")"
+                and child.text.decode() != ","
+            ):
+                args_list.append(child.text)
+    elif dataset_name == "tensorflowhub":
+        for child in node.children[0].children[0].children[1].children:
+            if (
+                'model=' in child.text.decode()
+                or 'model =' in child.text.decode()
+            ):
+                args_list.append(child.children[2].text)
+            elif (
+                child.text.decode() != "("
+                and child.text.decode() != ")"
+                and child.text.decode() != ","
+            ):
+                args_list.append(child.text)
+    elif dataset_name == "torchhub":
+        for child in node.children[0].children[0].children[1].children:
+            if (
+                "repo_or_dir" in child.text.decode()
+                or "model" in child.text.decode()
+            ):
+                args_list.append(child.children[2].text)
+    return args_list
+
+
+# Check if there is an api match
+def ast_check(candidate_subtree_list, base_tree_list, dataset_name):
+    for idx, base_tree in enumerate(base_tree_list):
+        if base_tree.children[0].children[0].child_count == 0:
+            continue
+        api_name = base_tree.children[0].children[0].children[0].text
+        for candidate_tree in candidate_subtree_list:
+            if candidate_tree[3] == api_name:
+                break
+        # Now we have a sub-tree
+        candidate_tree = candidate_tree[2]
+        args_list = get_args(base_tree, dataset_name)
+        if len(args_list) == 0:
+            continue
+        ast_match = True
+        for arg in args_list:
+            if (
+                arg.decode().lstrip("'").rstrip("'")
+                not in candidate_tree.text.decode()
+            ):
+                ast_match = False
+                break
+        if ast_match:
+            return idx
+    return -1
+
+
+def evaluate_response(
+    response, question_id, dataset_name, api_database, qa_pairs, ast_database
+):
+    try:
+        # Index the "api_call" domain
+        output = response.split("api_call")
+        if len(output) == 1:
+            api_call = output[0]
+        else:
+            # Parse the output
+            output = output[1].split("api_provider")[0]
+            if ":" not in output:
+                start = 0
+            else:
+                start = output.index(":")
+            if ")" not in output:
+                end = -2
+            else:
+                end = output.rindex(")")
+            api_call = output[start + 2 : end + 1]
+
+        try:
+            ast_tree = ast_parse(api_call)
+        except Exception as parse_error:
+            print(f"Error parsing api_call: {api_call}, error: {parse_error}")
+            return parse_error, False, False
+        # Search for a subtree
+        ast_subtree_list = get_all_sub_trees(ast_tree)
+        # Check which ast tree is matching
+        database_index = ast_check(
+            ast_subtree_list, ast_database, dataset_name
+        )
+        # We cannot index this ast in our database
+        if database_index == -1:
+            halluncination = True
+            correct = False
+        # We index our reference api_call
+        ref_api_call = api_database[database_index]
+        # Check for functionality
+        if ref_api_call['domain'] == qa_pairs[question_id - 1]['domain']:
+            correct = True
+            halluncination = False
+        else:
+            return None, False, False
+    except Exception as e:
+        print(f'Error parsing response: {response}, error: {e}')
+        return e, False, False
+
+    return None, correct, halluncination

@@ -79,8 +79,7 @@ Question: {input}
 
 
 class NexusBenchmark(BaseBenchmark):
-    r"""
-    Nexus Function Calling Benchmark adapted from `NexusRaven V2
+    r"""Nexus Function Calling Benchmark adapted from `NexusRaven V2
     Function Calling Benchmark`
     <https://huggingface.co/collections/Nexusflow/nexusraven-v2-function-calling-benchmark-657a597fb84dbe7a09ebfc3e>.
 
@@ -122,8 +121,7 @@ class NexusBenchmark(BaseBenchmark):
             )
 
     def load(self, dataset_name: str, force_download: bool = False):  # type: ignore[override]
-        r"""
-        Load the Nexus Benchmark dataset.
+        r"""Load the Nexus Benchmark dataset.
 
         Args:
             dataset_name (str): Name of the specific dataset to be loaded.
@@ -170,7 +168,7 @@ class NexusBenchmark(BaseBenchmark):
         def _process_parquet_data(
             data: pd.DataFrame, dataset_name: str
         ) -> List:
-            """Process data from Parquet files based on dataset name."""
+            r"""Process data from Parquet files based on dataset name."""
             dataset: List = []
             dataset_handlers = {
                 "NVDLibrary": _process_nvdlibrary,
@@ -196,7 +194,7 @@ class NexusBenchmark(BaseBenchmark):
             return dataset
 
         def _process_nvdlibrary(sample) -> NexusSample:
-            """Process samples for the NVDLibrary dataset."""
+            r"""Process samples for the NVDLibrary dataset."""
             return NexusSample(
                 sample["Input"], sample["Output"].replace("r = nvdlib.", "")
             )
@@ -364,9 +362,8 @@ class NexusBenchmark(BaseBenchmark):
 
 # Utility functions
 def construct_tool_descriptions(dataset_name: str) -> str:
-    r"""
-    Construct tool descriptions from function definitions and descriptions.
-    """
+    r"""Construct tool descriptions from function definitions and
+    descriptions."""
     tool_dataset_mapping = {
         "NVDLibrary": "CVECPE",
         "VirusTotal": "VirusTotal",
@@ -408,7 +405,7 @@ def construct_tool_descriptions(dataset_name: str) -> str:
     return tool_prompt
 
 
-def construct_prompt(input, tools) -> str:
+def construct_prompt(input: str, tools: str) -> str:
     r"Construct prompt from tools and input."
     return TOOL_CALLING_PROMPT.format(tools=tools, input=input)
 
@@ -417,8 +414,7 @@ def construct_prompt(input, tools) -> str:
 def parse_function_call(
     call: str,
 ) -> Tuple[Optional[str], Optional[List[Any]], Optional[Dict[str, Any]]]:
-    r"""
-    Parse a function call string to extract the function name,
+    r"""Parse a function call string to extract the function name,
     positional arguments, and keyword arguments, including
     nested function calls.
 
@@ -502,8 +498,7 @@ def parse_function_call(
 
 
 def compare_function_calls(agent_call: str, ground_truth_call: str) -> bool:
-    r"""
-    Compare the function name and arguments of
+    r"""Compare the function name and arguments of
     agent_call and ground_truth_call.
     Args:
         agent_call (str): Function call by agent.
