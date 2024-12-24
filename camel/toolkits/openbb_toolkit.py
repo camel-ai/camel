@@ -135,7 +135,7 @@ class OpenBBToolkit(BaseToolkit):
         self,
         data: Union[pd.DataFrame, Dict, Any],
         return_type: Literal["df", "raw"],
-    ) -> Union[pd.DataFrame, Dict]:
+    ) -> Union[pd.DataFrame, Dict[str, Any]]:
         """Format data based on return type.
 
         Args:
@@ -145,26 +145,20 @@ class OpenBBToolkit(BaseToolkit):
         Returns:
             Union[pd.DataFrame, Dict]: Formatted data
         """
-        if return_type == "df":
-            if isinstance(data, pd.DataFrame):
-                return data
-            elif hasattr(data, "to_df"):
-                return data.to_df()
-            elif hasattr(data, "results"):
-                return pd.DataFrame(data.results)
-            elif isinstance(data, dict):
-                return pd.DataFrame(data)
-            else:
-                return pd.DataFrame()
-
-        # Convert to dict with string keys
         if hasattr(data, "results"):
-            return data.results
+            data = data.results
+        if isinstance(data, pd.Series):
+            data = data.to_frame()
         if isinstance(data, pd.DataFrame):
+            if return_type == "df":
+                return data
             return {str(k): v for k, v in data.to_dict().items()}
         if isinstance(data, dict):
+            if return_type == "df":
+                return pd.DataFrame.from_dict(data)
             return {str(k): v for k, v in data.items()}
-        return {}
+        # For any other type, convert to dict
+        return {"result": data}
 
     def search_equity(
         self,
