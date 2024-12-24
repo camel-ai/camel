@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import sys
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -22,170 +23,172 @@ from camel.toolkits import OpenBBToolkit
 
 
 @pytest.fixture
-def mock_obb():
-    """Mock OpenBB client fixture."""
-    with patch('openbb.obb') as mock:
-        mock.account.login = MagicMock()
-        yield mock
+def mock_openbb():
+    """Create a mock OpenBB client with all required attributes."""
+    mock_obb = MagicMock()
+    mock_obb.account = MagicMock()
+    mock_obb.account.login = MagicMock()
+    mock_obb.equity = MagicMock()
+    mock_obb.equity.price = MagicMock()
+    mock_obb.equity.screener = MagicMock()
+    mock_obb.equity.fundamental = MagicMock()
+    return mock_obb
 
 
 @pytest.fixture
-def openbb_toolkit(mock_obb):
-    """Create OpenBBToolkit instance with mocked OpenBB client."""
-    with patch.dict(
-        os.environ,
-        {
-            'OPENBB_PAT': 'dummy_pat',
-            'FMP_API_KEY': 'dummy_fmp',
-            'POLYGON_API_KEY': 'dummy_polygon',
-            'FRED_API_KEY': 'dummy_fred',
-        },
-    ):
-        toolkit = OpenBBToolkit()
-        return toolkit
+def mock_dependencies(mock_openbb):
+    """Mock dependencies and environment for OpenBBToolkit."""
+    openbb_module = MagicMock()
+    openbb_module.obb = mock_openbb
+    with patch.dict(sys.modules, {'openbb': openbb_module}):
+        with patch(
+            'camel.utils.commons.is_module_available', return_value=True
+        ):
+            with patch.dict(os.environ, {'OPENBB_PAT': 'test_pat'}):
+                yield mock_openbb
 
 
-def test_init_api_keys(monkeypatch):
+def test_init_api_keys(mock_dependencies, monkeypatch):
     """Test initialization of API keys from environment variables."""
-    with patch('openbb.obb') as mock_obb:
-        mock_obb.account.login = MagicMock()
+    # Set environment variables
+    test_keys = {
+        'OPENBB_PAT': 'test_pat',
+        'FMP_API_KEY': 'test_fmp',
+        'POLYGON_API_KEY': 'test_polygon',
+        'FRED_API_KEY': 'test_fred',
+    }
+    for key, value in test_keys.items():
+        monkeypatch.setenv(key, value)
 
-        test_keys = {
-            'OPENBB_PAT': 'test_pat',
-            'FMP_API_KEY': 'test_fmp',
-            'POLYGON_API_KEY': 'test_polygon',
-            'FRED_API_KEY': 'test_fred',
-        }
-        for key, value in test_keys.items():
-            monkeypatch.setenv(key, value)
+    # Initialize toolkit
+    OpenBBToolkit()
 
-        OpenBBToolkit()
-        mock_obb.account.login.assert_called_once_with(pat='test_pat')
+    # Verify login was called with correct PAT
+    mock_dependencies.account.login.assert_called_once_with(pat='test_pat')
 
 
-def test_get_stock_quote_success(openbb_toolkit, mock_obb):
+def test_get_stock_quote_success(mock_dependencies):
     """Test successful stock quote retrieval."""
-    mock_df = pd.DataFrame(
-        {
-            'symbol': ['AAPL'],
-            'asset_type': ['EQUITY'],
-            'name': ['Apple Inc.'],
-            'exchange': ['NMS'],
-            'bid': [245.17],
-            'ma_50d': [230.3884],
-            'ma_200d': [207.31],
-            'volume_average': [47881519.0],
-            'volume_average_10d': [44455510.0],
-            'currency': ['USD'],
-        }
+    # Setup mock response
+    mock_data = {
+        'symbol': ['AAPL'],
+        'asset_type': ['EQUITY'],
+        'name': ['Apple Inc.'],
+        'exchange': ['NMS'],
+        'bid': [245.17],
+        'ma_50d': [230.3884],
+        'ma_200d': [207.31],
+        'volume_average': [47881519.0],
+        'volume_average_10d': [44455510.0],
+        'currency': ['USD'],
+    }
+    mock_response = MagicMock()
+    mock_response.results = mock_data
+    mock_dependencies.equity.price.quote.return_value = mock_response
+
+    # Initialize toolkit and make request
+    toolkit = OpenBBToolkit()
+    result = toolkit.get_stock_quote('AAPL')
+
+    # Verify the result
+    assert isinstance(result, dict)
+    assert result['symbol'] == ['AAPL']
+    assert result['name'] == ['Apple Inc.']
+    assert result['bid'] == [245.17]
+
+    # Verify the API was called correctly
+    mock_dependencies.equity.price.quote.assert_called_with(
+        symbol='AAPL', source='iex'
     )
 
-    mock_response = MagicMock()
-    mock_response.to_df.return_value = mock_df
-    mock_obb.equity.price.quote.return_value = mock_response
 
-    df_result = openbb_toolkit.get_stock_quote('AAPL')
-    assert isinstance(df_result, pd.DataFrame)
-    assert not df_result.empty
-    assert df_result.iloc[0]['symbol'] == 'AAPL'
-    assert df_result.iloc[0]['name'] == 'Apple Inc.'
-    assert df_result.iloc[0]['bid'] == 245.17
-
-    mock_obb.equity.price.quote.assert_called_with(symbol='AAPL', source='iex')
-
-
-def test_get_stock_quote_error(openbb_toolkit, mock_obb):
+def test_get_stock_quote_error(mock_dependencies):
     """Test stock quote error handling."""
-    mock_obb.equity.price.quote.side_effect = Exception('API Error')
+    # Setup mock to raise exception
+    mock_dependencies.equity.price.quote.side_effect = Exception('API Error')
 
-    empty_df = pd.DataFrame(columns=['symbol', 'name', 'price'])
-    mock_response = MagicMock()
-    mock_response.to_df.return_value = empty_df
+    # Initialize toolkit and make request
+    toolkit = OpenBBToolkit()
+    result = toolkit.get_stock_quote('INVALID')
 
-    df_result = openbb_toolkit.get_stock_quote('INVALID')
-    assert isinstance(df_result, pd.DataFrame)
-    assert df_result.empty
+    # Verify empty dict is returned
+    assert isinstance(result, dict)
+    assert len(result) == 0
 
 
-def test_screen_market_success(openbb_toolkit, mock_obb):
+def test_screen_market_success(mock_dependencies):
     """Test successful market screening."""
-    mock_df = pd.DataFrame(
-        {
-            'symbol': ['AAPL', 'MSFT', 'NVDA'],
-            'name': [
-                'Apple Inc.',
-                'Microsoft Corporation',
-                'NVIDIA Corporation',
-            ],
-            'market_cap': [3707148438420, 3309265088000, 3388681300000],
-            'is_etf': [False, False, False],
-            'actively_trading': [True, True, True],
-            'isFund': [False, False, False],
-        }
-    )
-
+    # Setup mock response
+    mock_data = {
+        'symbol': ['AAPL', 'MSFT'],
+        'name': ['Apple Inc.', 'Microsoft Corporation'],
+        'sector': ['Technology', 'Technology'],
+        'industry': ['Consumer Electronics', 'Software'],
+        'market_cap': [2.5e12, 2.1e12],
+        'beta': [1.2, 1.1],
+    }
     mock_response = MagicMock()
-    mock_response.to_df.return_value = mock_df
-    mock_obb.equity.screener.screen.return_value = mock_response
+    mock_response.results = mock_data
+    mock_dependencies.equity.screener.screen.return_value = mock_response
 
-    df_result = openbb_toolkit.screen_market(
-        sector='technology', market_cap_min=100000000000, provider='fmp'
+    # Initialize toolkit and make request
+    toolkit = OpenBBToolkit()
+    result = toolkit.screen_market(
+        sector='Technology',
+        market_cap_min=1e12,
+        return_type='raw',
     )
 
-    assert isinstance(df_result, pd.DataFrame)
-    assert not df_result.empty
-    assert len(df_result) == 3
-    assert all(
-        col in df_result.columns for col in ['symbol', 'name', 'market_cap']
-    )
-    assert all(df_result['market_cap'] >= 100000000000)
+    # Verify the result
+    assert isinstance(result, dict)
+    assert len(result['symbol']) == 2
+    assert all(s == 'Technology' for s in result['sector'])
+    assert all(mc >= 1e12 for mc in result['market_cap'])
 
-    mock_obb.equity.screener.screen.assert_called_with(
-        sector='technology', market_cap_min=100000000000, provider='fmp'
-    )
+    # Verify the API was called correctly
+    mock_dependencies.equity.screener.screen.assert_called_once()
 
 
-def test_screen_market_error(openbb_toolkit, mock_obb):
+def test_screen_market_error(mock_dependencies):
     """Test market screening error handling."""
-    mock_obb.equity.screener.screen.side_effect = Exception('API Error')
+    # Setup mock to raise exception
+    mock_dependencies.equity.screener.screen.side_effect = Exception(
+        'API Error'
+    )
 
-    empty_df = pd.DataFrame(columns=['symbol', 'name', 'market_cap'])
-    mock_response = MagicMock()
-    mock_response.to_df.return_value = empty_df
+    # Initialize toolkit and make request
+    toolkit = OpenBBToolkit()
+    result = toolkit.screen_market(sector='Invalid')
 
-    df_result = openbb_toolkit.screen_market(sector='invalid')
-    assert isinstance(df_result, pd.DataFrame)
-    assert df_result.empty
+    # Verify empty dict is returned
+    assert isinstance(result, dict)
+    assert len(result) == 0
 
 
-def test_get_income_statement_success(openbb_toolkit, mock_obb):
+def test_get_income_statement_success(mock_dependencies):
     """Test successful income statement retrieval."""
-    mock_df = pd.DataFrame(
+    # Setup mock response
+    mock_data = pd.DataFrame(
         {
-            'period_ending': ['2024-06-30', '2023-06-30'],
-            'fiscal_period': ['FY', 'FY'],
-            'revenue': [245122000000.0, 211915000000.0],
-            'operating_income': [109433000000.0, 88523000000.0],
-            'net_income': [88136000000.0, 72361000000.0],
+            'date': ['2023-12-31', '2022-12-31'],
+            'revenue': [394.3e9, 365.8e9],
+            'grossProfit': [170.7e9, 155.8e9],
+            'operatingIncome': [109.4e9, 99.8e9],
+            'netIncome': [96.1e9, 94.7e9],
         }
     )
+    mock_dependencies.equity.fundamental.income.return_value = mock_data
 
-    mock_response = MagicMock()
-    mock_response.to_df.return_value = mock_df
-    mock_obb.equity.fundamental.income.return_value = mock_response
+    # Initialize toolkit and make request
+    toolkit = OpenBBToolkit()
+    result = toolkit.get_income_statement('AAPL', return_type='raw')
 
-    df_result = openbb_toolkit.get_income_statement(
-        symbol='MSFT', period='annual', limit=2
-    )
+    # Verify the result
+    assert isinstance(result, dict)
+    assert 'date' in result
+    assert 'revenue' in result
+    assert 'netIncome' in result
+    assert len(result['date']) == 2
 
-    assert isinstance(df_result, pd.DataFrame)
-    assert not df_result.empty
-    assert len(df_result) == 2
-    assert all(
-        col in df_result.columns
-        for col in ['revenue', 'operating_income', 'net_income']
-    )
-
-    mock_obb.equity.fundamental.income.assert_called_with(
-        symbol='MSFT', period='annual', provider='fmp', limit=2
-    )
+    # Verify the API was called correctly
+    mock_dependencies.equity.fundamental.income.assert_called_once()

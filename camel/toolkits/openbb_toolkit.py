@@ -120,11 +120,16 @@ class OpenBBToolkit(BaseToolkit):
         This method sets up the OpenBB client and initializes the OpenBB
         Hub account system.
         """
+        import os
         from typing import cast
 
         from openbb import obb
 
         self.client = cast(OpenBBType, obb)
+        # Initialize OpenBB Hub account with PAT
+        pat = os.getenv("OPENBB_PAT")
+        if pat:
+            self.client.account.login(pat=pat)
 
     def _format_return(
         self,
@@ -141,13 +146,20 @@ class OpenBBToolkit(BaseToolkit):
             Union[pd.DataFrame, Dict]: Formatted data
         """
         if return_type == "df":
-            return (
-                pd.DataFrame(data)
-                if not isinstance(data, pd.DataFrame)
-                else data
-            )
+            if isinstance(data, pd.DataFrame):
+                return data
+            elif hasattr(data, "to_df"):
+                return data.to_df()
+            elif hasattr(data, "results"):
+                return pd.DataFrame(data.results)
+            elif isinstance(data, dict):
+                return pd.DataFrame(data)
+            else:
+                return pd.DataFrame()
 
         # Convert to dict with string keys
+        if hasattr(data, "results"):
+            return data.results
         if isinstance(data, pd.DataFrame):
             return {str(k): v for k, v in data.to_dict().items()}
         if isinstance(data, dict):
@@ -373,12 +385,12 @@ class OpenBBToolkit(BaseToolkit):
         """
         try:
             data = self.client.equity.price.quote(symbol=symbol, source=source)
-            return data.to_df() if return_type == "df" else data.results
+            return self._format_return(data, return_type)
         except Exception as e:
             logger = logging.getLogger(__name__)
             msg = f"Failed to get stock quote for {symbol}: {e}"
             logger.error(msg)
-            return pd.DataFrame() if return_type == "df" else {}
+            return self._format_return({}, return_type)
 
     def get_historical_data(
         self,
