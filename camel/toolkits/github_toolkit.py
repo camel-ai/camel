@@ -139,7 +139,7 @@ class GithubToolkit(BaseToolkit):
 
         Args:
             state (Literal["open", "closed", "all"]): The state of pull
-                requests to retrieve. (default::obj: `all`)
+                requests to retrieve. (default: :obj: `all`)
                 Options are:
                 - "open": Retrieve only open pull requests.
                 - "closed": Retrieve only closed pull requests.
@@ -179,7 +179,7 @@ class GithubToolkit(BaseToolkit):
 
         Args:
             state (Literal["open", "closed", "all"]): The state of pull
-                requests to retrieve. (default::obj: `all`)
+                requests to retrieve. (default: :obj: `all`)
                 Options are:
                 - "open": Retrieve only open pull requests.
                 - "closed": Retrieve only closed pull requests.
@@ -254,7 +254,7 @@ class GithubToolkit(BaseToolkit):
         Args:
             path (str): The repository path to start the traversal from.
                 empty string means starts from the root directory.
-                (default::obj: `""`)
+                (default: :obj: `""`)
 
         Returns:
             List[str]: A list of file paths within the specified directory

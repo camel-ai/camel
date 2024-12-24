@@ -72,7 +72,7 @@ class TogetherAIModel(BaseModelBackend):
         )
 
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,

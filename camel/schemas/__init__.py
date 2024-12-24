@@ -13,5 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .openai_converter import OpenAISchemaConverter
+from .outlines_converter import OutlinesConverter
 
-__all__ = ["OpenAISchemaConverter"]
+__all__ = ["OpenAISchemaConverter", "OutlinesConverter"]
