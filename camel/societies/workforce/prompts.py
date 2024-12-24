@@ -147,8 +147,8 @@ Now you should summarize the scenario and return the result of the task.
 """
 )
 
-WF_TASK_DECOMPOSE_PROMPT = r"""You need to split the given task into 
-subtasks according to the workers available in the group.
+WF_TASK_DECOMPOSE_PROMPT = TextPrompt(
+    """You need to split the given task into subtasks according to the workers available in the group.
 The content of the task is:
 
 ==============================
@@ -177,3 +177,4 @@ You must return the subtasks in the format of a numbered list within <tasks> tag
 
 Though it's not a must, you should try your best effort to make each subtask achievable for a worker. The tasks should be clear and concise.
 """
+)
