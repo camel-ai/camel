@@ -38,6 +38,7 @@ from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
+from .linkup_model import LinkupModel
 
 __all__ = [
     'BaseModelBackend',
@@ -68,4 +69,5 @@ __all__ = [
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
+    'LinkupModel',
 ]

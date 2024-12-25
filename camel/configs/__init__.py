@@ -35,6 +35,7 @@ from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
+from .linkup_config import LINKUP_API_PARAMS, LinkupConfig
 
 __all__ = [
     'BaseConfig',
@@ -54,6 +55,8 @@ __all__ = [
     'ZHIPUAI_API_PARAMS',
     'GeminiConfig',
     'Gemini_API_PARAMS',
+    'LinkupConfig',
+    'LINKUP_API_PARAMS',
     'VLLMConfig',
     'VLLM_API_PARAMS',
     'SGLangConfig',

@@ -142,6 +142,9 @@ class ModelType(UnifiedModelType, Enum):
     # DeepSeek models
     DEEPSEEK_CHAT = "deepseek-chat"
 
+    # Linkup
+    LINKUP = "linkup"
+
     def __str__(self):
         return self.value
 
@@ -292,6 +295,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
             ModelType.REKA_FLASH,
+        }
+    
+    @property
+    def is_linkup(self) -> bool:
+        r"""Returns whether this type of models is Linkup model.
+
+        Returns:
+            bool: Whether this type of models is Linkup.
+        """
+        return self in {
+            ModelType.LINKUP,
         }
 
     @property
@@ -634,6 +648,7 @@ class ModelPlatformType(Enum):
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     SGLANG = "sglang"
+    LINKUP = "linkup"
 
     @property
     def is_openai(self) -> bool:
@@ -644,6 +659,11 @@ class ModelPlatformType(Enum):
     def is_azure(self) -> bool:
         r"""Returns whether this platform is azure."""
         return self is ModelPlatformType.AZURE
+    
+    @property
+    def is_linkup(self) -> bool:
+        r"""Returns whether this platform is linkup."""
+        return self is ModelPlatformType.LINKUP
 
     @property
     def is_anthropic(self) -> bool:
