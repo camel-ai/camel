@@ -10692,6 +10692,17 @@ files = [
 ]
 
 [[package]]
+name = "types-oauthlib"
+version = "3.2.0.20240806"
+description = "Typing stubs for oauthlib"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-oauthlib-3.2.0.20240806.tar.gz", hash = "sha256:31a8d7f7bffc067a4143d30167694ccb304316aced04de50741014155f502043"},
+    {file = "types_oauthlib-3.2.0.20240806-py3-none-any.whl", hash = "sha256:581bb8e194700d16ae1f0b62a6039261ed1afd0b88e78782e1c48f6507c52f34"},
+]
+
+[[package]]
 name = "types-pillow"
 version = "10.2.0.20240822"
 description = "Typing stubs for Pillow"
@@ -10815,6 +10826,21 @@ files = [
 
 [package.dependencies]
 urllib3 = ">=2"
+
+[[package]]
+name = "types-requests-oauthlib"
+version = "2.0.0.20240417"
+description = "Typing stubs for requests-oauthlib"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-requests-oauthlib-2.0.0.20240417.tar.gz", hash = "sha256:68edfdfaf7bc235ec09529d04e21291dcbe91471b16faaeff8fce0e5165aa098"},
+    {file = "types_requests_oauthlib-2.0.0.20240417-py3-none-any.whl", hash = "sha256:aa1a742c5b39d3920aba14e6ab5af4a81328b2b5c7b4419b3ea76af1aa323c28"},
+]
+
+[package.dependencies]
+types-oauthlib = "*"
+types-requests = "*"
 
 [[package]]
 name = "types-setuptools"
@@ -11935,4 +11961,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "b7ddaceb0e01f7c39a61ff2e12b99a9f208aae130c87657eb3d1d9d82918609a"
+content-hash = "d821bc114b6c64b92cb33bb4aa62800e93e3e27ed274e92914d1d4bfb17fbc81"
