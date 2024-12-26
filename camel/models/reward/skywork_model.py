@@ -69,4 +69,4 @@ class SkyworkRewardModel(BaseRewardModel):
         Returns:
             List[str]: list of scores types
         """
-        return ["score"]
+        return ["Score"]
