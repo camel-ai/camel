@@ -19,7 +19,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 class SkyworkRewardModel(BaseRewardModel):
-    r"""Reward model based on the transformers, it will download the model 
+    r"""Reward model based on the transformers, it will download the model
     from huggingface.
 
     Args:
@@ -46,12 +46,11 @@ class SkyworkRewardModel(BaseRewardModel):
             )
         self._tokenizer = AutoTokenizer.from_pretrained(model_type)
 
-    def evaluate(self, messages: List[OpenAIMessage]) -> Dict[str, float]:
+    def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages using the Skywork model.
 
         Args:
-            messages (List[OpenAIMessage]): A list of messages where each
-                message is an OpenAIMessage object.
+            messages (List[Dict[str, str]]): A list of messages.
 
         Returns:
             ChatCompletion: A ChatCompletion object with the scores.
@@ -64,11 +63,10 @@ class SkyworkRewardModel(BaseRewardModel):
         with torch.no_grad():
             score = self._client(inputs).logits[0][0].item()
             return {"score": score}
-        
+
     def get_scores_types(self) -> List[str]:
         """get the scores types
         Returns:
             List[str]: list of scores types
         """
         return ["score"]
-    
