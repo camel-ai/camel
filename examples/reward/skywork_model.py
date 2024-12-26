@@ -4,7 +4,7 @@ from camel.models.reward import Evaluator, SkyworkRewardModel
 from camel.types import ModelType
 
 reward_model = SkyworkRewardModel(
-    model_type="Skywork/Skywork-Reward-Gemma-2-27B-v0.2",
+    model_type="Skywork/Skywork-Reward-Llama-3.1-8B-v0.2",
 )
 
 evaluator = Evaluator(reward_model=reward_model)
@@ -28,8 +28,7 @@ scores = evaluator.evaluate(messages)
 print("Scores: ", scores)
 '''
 ===============================================================================
-Scores:  {'helpfulness': 1.6171875, 'correctness': 1.6484375, 'coherence': 3.
-3125, 'complexity': 0.546875, 'verbosity': 0.515625}
+Scores:  {'Score': 13.6875}
 ===============================================================================
 '''
 
@@ -37,12 +36,12 @@ scores_types = reward_model.get_scores_types()
 print("Types: ", scores_types)
 '''
 ===============================================================================
-Types:  ['helpfulness', 'correctness', 'coherence', 'complexity', 'verbosity']
+Types:  ['Score']
 ===============================================================================
 '''
 
-threshoids = {"Score": 0}
-is_acceptable = evaluator.filter_data(messages, threshoids)
+thresholds = {"Score": 0}
+is_acceptable = evaluator.filter_data(messages, thresholds)
 print("Is acceptable: ", is_acceptable)
 '''
 ===============================================================================

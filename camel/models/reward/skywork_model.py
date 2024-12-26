@@ -42,6 +42,8 @@ class SkyworkRewardModel(BaseRewardModel):
             torch_dtype=torch.bfloat16,
             device_map=device,
             attn_implementation="flash_attention_2",
+            # device_map="auto",
+            # offload_folder="offload",
             num_labels=1,
             )
         self._tokenizer = AutoTokenizer.from_pretrained(model_type)
@@ -62,7 +64,7 @@ class SkyworkRewardModel(BaseRewardModel):
         )
         with torch.no_grad():
             score = self._client(inputs).logits[0][0].item()
-            return {"score": score}
+            return {"Score": score}
 
     def get_scores_types(self) -> List[str]:
         """get the scores types
