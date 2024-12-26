@@ -181,7 +181,7 @@ def check_url_validity(url: str) -> bool:
             False otherwise.
     """
     try:
-        response = requests.get(url, stream=True, timeout=2)
+        response = requests.get(url, stream=True, timeout=5)
         if response.status_code == 200:
             content_type = response.headers.get('Content-Type', '').lower()
             return content_type == 'application/pdf'
