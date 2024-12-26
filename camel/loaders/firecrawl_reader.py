@@ -93,8 +93,13 @@ class Firecrawl:
 
         try:
             crawl_result = self.app.crawl_url(
-                url,
-                {'formats': ['markdown']},
+                url=url,
+                params={
+                    'limit': 100,
+                    'scrapeOptions': {
+                        'formats': ['markdown']
+                    },
+                }
             )
             if not isinstance(crawl_result, list):
                 raise ValueError("Unexpected response format")
