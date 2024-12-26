@@ -14,6 +14,8 @@
 
 from typing import Dict, Generator, List, Optional
 
+import requests
+
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
@@ -98,10 +100,22 @@ class ArxivToolkit(BaseToolkit):
                 "authors": [author.name for author in paper.authors],
                 "entry_id": paper.entry_id,
                 "summary": paper.summary,
-                # TODO: Use chunkr instead of atxiv_to_text for better
-                # performance
-                "paper_text": arxiv_to_text(paper.pdf_url),
+                "pdf_url": paper.pdf_url,
             }
+
+            # Extract text from the paper if the PDF URL is valid
+            text = ""
+            if check_url_validity(paper_info["pdf_url"]):
+                try:
+                    # TODO: Use chunkr instead of atxiv_to_text for better
+                    # performance and reliability
+                    text = arxiv_to_text(paper_info["pdf_url"])
+                except Exception:
+                    pass
+            else:
+                pass
+            paper_info['paper_text'] = text
+
             papers_data.append(paper_info)
 
         return papers_data
@@ -153,3 +167,25 @@ class ArxivToolkit(BaseToolkit):
             FunctionTool(self.search_papers),
             FunctionTool(self.download_papers),
         ]
+
+
+# Helper function to verify if a URL points to a PDF file
+def check_url_validity(url: str) -> bool:
+    r"""Check if a given URL is valid and points to a PDF file.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the URL is valid and points to a PDF,
+            False otherwise.
+    """
+    try:
+        response = requests.get(url, stream=True, timeout=2)
+        if response.status_code == 200:
+            content_type = response.headers.get('Content-Type', '').lower()
+            return content_type == 'application/pdf'
+    except requests.RequestException:
+        pass
+
+    return False
