@@ -81,7 +81,6 @@ The following table lists currently supported model platforms by CAMEL.
 | vLLM | https://docs.vllm.ai/en/latest/models/supported_models.html | ----- |
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
-| Linkup | https://docs.linkup.so/pages/api-reference/endpoint/post-search | ----- |
 
 ## 3. Using Models by API calling
 

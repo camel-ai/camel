@@ -28,7 +28,6 @@ from camel.models.openai_compatible_model import OpenAICompatibleModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
-from camel.models.linkup_model import LinkupModel
 from camel.models.samba_model import SambaModel
 from camel.models.sglang_model import SGLangModel
 from camel.models.stub_model import StubModel
@@ -117,8 +116,6 @@ class ModelFactory:
             model_class = MistralModel
         elif model_platform.is_reka and model_type.is_reka:
             model_class = RekaModel
-        elif model_platform.is_linkup and model_type.is_linkup:
-            model_class = LinkupModel
         elif model_platform.is_cohere and model_type.is_cohere:
             model_class = CohereModel
         elif model_platform.is_yi and model_type.is_yi:

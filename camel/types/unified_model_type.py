@@ -97,11 +97,6 @@ class UnifiedModelType(str):
     def is_reka(self) -> bool:
         r"""Returns whether the model is a Reka model."""
         return True
-    
-    @property
-    def is_linkup(self) -> bool:
-        r"""Returns whether the model is a Linkup model."""
-        return True
 
     @property
     def is_cohere(self) -> bool:
