@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from camel.models.reward import BaseRewardModel
-from typing import Union, Optional, List, Dict
-from camel.messages import OpenAIMessage
-from camel.types import ModelType
+from typing import Dict, List, Optional, Union
+
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+from camel.models.reward import BaseRewardModel
+from camel.types import ModelType
+
 
 class SkyworkRewardModel(BaseRewardModel):
     r"""Reward model based on the transformers, it will download the model
@@ -45,7 +47,7 @@ class SkyworkRewardModel(BaseRewardModel):
             # device_map="auto",
             # offload_folder="offload",
             num_labels=1,
-            )
+        )
         self._tokenizer = AutoTokenizer.from_pretrained(model_type)
 
     def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
