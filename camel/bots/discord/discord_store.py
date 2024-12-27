@@ -11,65 +11,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import logging
-from logging import Logger
-from typing import List, Optional
 
-import aiosqlite
+from typing import Optional
 
 from .discord_installation import DiscordInstallation
 
 
-class DiscordAsyncInstallationStore:
-    """Manages all installation associated with a DiscordApp"""
+class DiscordBaseInstallationStore:
+    r"""Abstract base class for managing Discord installations.
 
-    def __init__(self, *, database: str, logger: Optional[Logger] = None):
-        self.database = database
-        self.init_called = False
-        self._logger = logger or logging.getLogger(__name__)
-
-    @property
-    def logger(self) -> Logger:
-        if self._logger is None:
-            self._logger = logging.getLogger(__name__)
-        return self._logger
+    This class defines the interface for database operations related to storing
+    and retrieving Discord installation data. Subclasses must implement these
+    methods to handle database-specific logic.
+    """
 
     async def init(self):
-        try:
-            async with aiosqlite.connect(self.database) as conn:
-                await conn.execute(
-                    "SELECT count(1) FROM discord_installations;"
-                )
-                self.logger.debug(f"Database {self.database} is initialized")
-        except Exception:
-            await self.create_tables()
-        self.init_called = True
+        r"""Initializes the database connection or structure."""
+        pass
 
-    async def connect(self):
-        if not self.init_called:
-            await self.init()
-        return await aiosqlite.connect(self.database)
+    async def save(self, installation: DiscordInstallation):
+        r"""Saves or updates a Discord installation record."""
+        pass
 
-    async def create_tables(self):
-        async with aiosqlite.connect(self.database) as conn:
-            await conn.execute(
+    async def find_by_guild(
+        self, guild_id: str
+    ) -> Optional[DiscordInstallation]:
+        r"""Finds an installation record by guild ID."""
+        pass
+
+    async def delete(self, guild_id: str):
+        r"""Deletes an installation record by guild ID."""
+        pass
+
+
+class DiscordSQLiteInstallationStore(DiscordBaseInstallationStore):
+    r"""SQLite-based implementation for managing Discord installations.
+
+    This class provides methods for initializing the database, saving,
+    retrieving, and deleting installation records using SQLite.
+
+    Attributes:
+        database (str): Path to the SQLite database file.
+    """
+
+    def __init__(self, database: str):
+        r"""Initializes the SQLite installation store.
+
+        Args:
+            database (str): Path to the SQLite database file.
+        """
+        self.database = database
+
+    async def init(self):
+        r"""Initializes the database by creating the required table if it
+        does not exist."""
+        import aiosqlite
+
+        async with aiosqlite.connect(self.database) as db:
+            await db.execute(
                 """
                 CREATE TABLE IF NOT EXISTS discord_installations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    guild_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL UNIQUE,
                     access_token TEXT NOT NULL,
                     refresh_token TEXT NOT NULL,
                     installed_at DATETIME NOT NULL,
@@ -77,32 +80,27 @@ class DiscordAsyncInstallationStore:
                 );
                 """
             )
-            await conn.execute(
-                """
-                CREATE INDEX IF NOT EXISTS discord_installations_idx 
-                ON discord_installations (
-                    guild_id,
-                    installed_at
-                );
-                """
-            )
-            self.logger.debug(
-                f"Tables have been created (database: {self.database})"
-            )
-            await conn.commit()
+            await db.commit()
 
-    async def async_save(self, installation: DiscordInstallation):
-        async with await self.connect() as conn:
-            await conn.execute(
+    async def save(self, installation: DiscordInstallation):
+        r"""Saves a new installation record or updates an existing one.
+
+        Args:
+            installation (DiscordInstallation): The installation data to save.
+        """
+        import aiosqlite
+
+        async with aiosqlite.connect(self.database) as db:
+            await db.execute(
                 """
                 INSERT INTO discord_installations (
-                    guild_id,
-                    access_token,
-                    refresh_token,
-                    installed_at,
-                    token_expires_at
-                )
-                VALUES (?, ?, ?, ?, ?);
+                    guild_id, access_token, refresh_token, 
+                    installed_at, token_expires_at
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(guild_id) DO UPDATE SET
+                    access_token = excluded.access_token,
+                    refresh_token = excluded.refresh_token,
+                    token_expires_at = excluded.token_expires_at;
                 """,
                 [
                     installation.guild_id,
@@ -112,136 +110,51 @@ class DiscordAsyncInstallationStore:
                     installation.token_expires_at,
                 ],
             )
-            self.logger.debug(
-                f"New row in discord_installations has been "
-                f"created (database: {self.database})"
-            )
-            await conn.commit()
+            await db.commit()
 
-    async def async_find_installations_by_guild(
+    async def find_by_guild(
         self, guild_id: str
     ) -> Optional[DiscordInstallation]:
-        try:
-            async with await self.connect() as conn:
-                async with conn.execute(
-                    """
-                    SELECT
-                        guild_id,
-                        access_token,
-                        refresh_token,
-                        installed_at,
-                        token_expires_at
-                    FROM
-                        discord_installations
-                    WHERE
-                        guild_id = ?
-                    ORDER BY installed_at DESC
-                    LIMIT 1
-                    """,
-                    [guild_id],
-                ) as cursor:
-                    row = await cursor.fetchone()
-                    if row:
-                        return DiscordInstallation(
-                            guild_id=row[0],
-                            access_token=row[1],
-                            refresh_token=row[2],
-                            installed_at=row[3],
-                            token_expires_at=row[4],
-                        )
-                    return None
-        except Exception as e:
-            message = (
-                f"Failed to find installation data for guild: {guild_id}: {e}"
-            )
-            self.logger.exception(message)
-            return None
+        r"""Finds an installation record by guild ID.
 
-    async def async_find_installation_by_token(
-        self, bot_token: str
-    ) -> Optional[DiscordInstallation]:
-        try:
-            async with await self.connect() as conn:
-                async with conn.execute(
-                    """
-                    SELECT
-                        guild_id,
-                        access_token,
-                        refresh_token,
-                        installed_at,
-                        token_expires_at
-                    FROM
-                        discord_installations
-                    WHERE
-                        access_token = ?
-                    ORDER BY installed_at DESC
-                    LIMIT 1
-                    """,
-                    [bot_token],
-                ) as cursor:
-                    row = await cursor.fetchone()
-                    if row:
-                        return DiscordInstallation(
-                            guild_id=row[0],
-                            access_token=row[1],
-                            refresh_token=row[2],
-                            installed_at=row[3],
-                            token_expires_at=row[4],
-                        )
-                    return None
-        except Exception as e:
-            message = (
-                f"Failed to find installation data by token: {bot_token}: {e}"
-            )
-            self.logger.exception(message)
-            return None
+        Args:
+            guild_id (str): The guild ID to search for.
 
-    async def async_delete_installation(self, guild_id: str):
-        try:
-            async with await self.connect() as conn:
-                await conn.execute(
-                    """
-                    DELETE FROM discord_installations
-                    WHERE guild_id = ?
-                    """,
-                    [guild_id],
-                )
-                await conn.commit()
-        except Exception as e:
-            message = (
-                f"Failed to delete installation data "
-                f"for guild: {guild_id}: {e}"
-            )
-            self.logger.exception(message)
+        Returns:
+            Optional[DiscordInstallation]: The installation record if found,
+                otherwise None.
+        """
+        import aiosqlite
 
-    async def async_list_all_installations(self) -> List[DiscordInstallation]:
-        try:
-            async with await self.connect() as conn:
-                async with conn.execute(
-                    """
-                    SELECT
-                        guild_id,
-                        access_token,
-                        refresh_token,
-                        installed_at,
-                        token_expires_at
-                    FROM
-                        discord_installations
-                    ORDER BY installed_at DESC
-                    """
-                ) as cursor:
-                    rows = await cursor.fetchall()
-                    return [
-                        DiscordInstallation(
-                            guild_id=row[0],
-                            access_token=row[1],
-                            refresh_token=row[2],
-                            installed_at=row[3],
-                            token_expires_at=row[4],
-                        )
-                        for row in rows
-                    ]
-        except Exception as e:
-            message = f"Failed to list all installations: {e}"
-            self.logger.exception(message)
-            return []
+        async with aiosqlite.connect(self.database) as db:
+            async with db.execute(
+                "SELECT guild_id, access_token, refresh_token, "
+                "installed_at, token_expires_at FROM discord_installations "
+                "WHERE guild_id = ?",
+                [guild_id],
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    return DiscordInstallation(
+                        guild_id=row[0],
+                        access_token=row[1],
+                        refresh_token=row[2],
+                        installed_at=row[3],
+                        token_expires_at=row[4],
+                    )
+                return None
+
+    async def delete(self, guild_id: str):
+        r"""Deletes an installation record by guild ID.
+
+        Args:
+            guild_id (str): The guild ID of the record to delete.
+        """
+        import aiosqlite
+
+        async with aiosqlite.connect(self.database) as db:
+            await db.execute(
+                "DELETE FROM discord_installations WHERE guild_id = ?",
+                [guild_id],
+            )
+            await db.commit()

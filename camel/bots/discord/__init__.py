@@ -26,10 +26,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .discord_app import DiscordApp
 from .discord_installation import DiscordInstallation
-from .discord_store import DiscordAsyncInstallationStore
+from .discord_store import (
+    DiscordBaseInstallationStore,
+    DiscordSQLiteInstallationStore,
+)
 
 __all__ = [
     "DiscordApp",
     "DiscordInstallation",
-    "DiscordAsyncInstallationStore",
+    "DiscordSQLiteInstallationStore",
+    "DiscordBaseInstallationStore",
 ]

@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from camel.bots.discord.discord_installation import DiscordInstallation
 from camel.utils import dependencies_required
 
-from .discord_store import DiscordAsyncInstallationStore
+from .discord_store import DiscordBaseInstallationStore
 
 if TYPE_CHECKING:
     from discord import Message
@@ -56,6 +56,7 @@ class DiscordApp:
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
+        installation_store: Optional[DiscordBaseInstallationStore] = None,
     ) -> None:
         r"""Initialize the DiscordApp instance by setting up the Discord client
         and event handlers.
@@ -70,14 +71,15 @@ class DiscordApp:
             client_id (Optional[str]): The client ID for Discord OAuth.
             client_secret (Optional[str]): The client secret for Discord OAuth.
             redirect_uri (str): The redirect URI for OAuth callbacks.
-
+            installation_store (DiscordAsyncInstallationStore): The database
+                stores all information of all installations.
         Raises:
             ValueError: If the `DISCORD_TOKEN` is not found in environment
                 variables.
         """
         self.token = token or os.getenv("DISCORD_BOT_TOKEN")
         self.channel_ids = channel_ids
-        self.installation_store = DiscordAsyncInstallationStore()
+        self.installation_store = installation_store
 
         if not self.token:
             raise ValueError(
@@ -101,7 +103,10 @@ class DiscordApp:
         self.redirect_uri = redirect_uri
 
         self.oauth_flow = bool(
-            self.client_id and self.client_secret and self.redirect_uri
+            self.client_id
+            and self.client_secret
+            and self.redirect_uri
+            and self.installation_store
         )
 
         self.app = FastAPI()
@@ -123,29 +128,13 @@ class DiscordApp:
         """
         self._client.run(self.token)  # type: ignore[arg-type]
 
-    def get_oauth_url(self) -> Optional[str]:
-        r"""Generate the OAuth URL for user authorization.
-        Returns:
-            str: The URL that users should visit to authorize the application.
-        """
-        if not self.oauth_flow:
-            logger.warning(
-                "OAuth is not enabled. Missing client_id, "
-                "client_secret, or redirect_uri."
-            )
-            return None
-        return (
-            f"https://discord.com/api/oauth2/authorize?client_id={self.client_id}"
-            f"&redirect_uri={self.redirect_uri}&response_type=code&scope=identify%20guilds"
-        )
-
     async def exchange_code_for_token_response(
         self, code: str
     ) -> Optional[str]:
         r"""Exchange the authorization code for an access token.
         Args:
             code (str): The authorization code received from Discord after
-            user authorization.
+                user authorization.
         Returns:
             Optional[str]: The access token if successful, otherwise None.
         """
@@ -195,7 +184,7 @@ class DiscordApp:
 
         Args:
             refresh_token (str): The refresh token issued by Discord that
-            can be used to obtain a new access token.
+                can be used to obtain a new access token.
 
         Returns:
             Optional[str]: The new access token if successful, otherwise None.
@@ -244,10 +233,8 @@ class DiscordApp:
             )
             return None
 
-        installation = (
-            await self.installation_store.async_find_installations_by_guild(
-                guild_id=guild_id
-            )
+        installation = await self.installation_store.find_by_guild(
+            guild_id=guild_id
         )
         if not installation:
             logger.error(f"No installation found for guild: {guild_id}")
@@ -269,7 +256,7 @@ class DiscordApp:
                 installation.token_expires_at = datetime.now() + timedelta(
                     seconds=3600
                 )
-                await self.installation_store.async_save(installation)
+                await self.installation_store.save(installation)
                 return new_access_token
             else:
                 logger.error(
@@ -284,7 +271,7 @@ class DiscordApp:
         guild_id: str,
         access_token: str,
         refresh_token: str,
-        token_expires_at: datetime,
+        expires_in: int,
     ):
         r"""Save the installation information for a given guild.
 
@@ -292,7 +279,7 @@ class DiscordApp:
             guild_id (str): The ID of the guild where the bot is installed.
             access_token (str): The access token for the guild.
             refresh_token (str): The refresh token for the guild.
-            token_expires_at (datetime): The expiration time of the
+            expires_in: (int): The expiration time of the
                 access token.
 
         Returns:
@@ -304,14 +291,15 @@ class DiscordApp:
                 "client_secret, or redirect_uri."
             )
             return None
-        new_installation = DiscordInstallation(
+        expires_at = datetime.now() + timedelta(seconds=expires_in)
+        installation = DiscordInstallation(
             guild_id=guild_id,
             access_token=access_token,
             refresh_token=refresh_token,
             installed_at=datetime.now(),
-            token_expires_at=token_expires_at,
+            token_expires_at=expires_at,
         )
-        await self.installation_store.async_save(new_installation)
+        await self.installation_store.save(installation)
         logger.info(f"Installation saved for guild: {guild_id}")
 
     async def remove_installation(self, guild: discord.Guild):
@@ -330,9 +318,7 @@ class DiscordApp:
                 "client_secret, or redirect_uri."
             )
             return None
-        await self.installation_store.async_delete_installation(
-            guild_id=str(guild.id)
-        )
+        await self.installation_store.delete(guild_id=str(guild.id))
         print(f"Bot removed from guild: {guild.id}")
 
     async def on_ready(self) -> None:
