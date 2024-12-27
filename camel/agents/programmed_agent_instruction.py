@@ -30,8 +30,7 @@ class ProgrammableAgentRequirement(Enum):
 
 
 class ProgrammedAgentInstructionResult(BaseModel, Generic[T]):
-    r"""
-    Result of a programmable agent instruction execution.
+    r"""Result of a programmable agent instruction execution.
 
     Contains the messages exchanged during execution and the computed value.
     The value type is specified by the generic type parameter T.
