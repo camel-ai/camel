@@ -12,12 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
+
+from camel.agents import ChatAgent
 from camel.bots.slack.slack_app import SlackApp
+from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from camel.configs import ChatGPTConfig
-from camel.agents import ChatAgent
-import asyncio
 
 slack_bot = SlackApp(
     token="please input your slack token",
@@ -35,9 +36,12 @@ agent = ChatAgent(
     message_window_size=10,
     model=o1_model,
 )
+
+
 def custom_handler(message: str) -> str:
     response = agent.step(message)
-    return response.msg.content 
+    return response.msg.content
+
 
 slack_bot.set_custom_handler(custom_handler)
 
