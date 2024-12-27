@@ -19,4 +19,7 @@ from pydantic import BaseModel
 class Record(BaseModel):
     id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
-    content: Dict[str, Any]
+    content: Optional[Dict[str, Any]] = None
+
+    class Config:
+        extra = "allow"  # Allow any additional fields

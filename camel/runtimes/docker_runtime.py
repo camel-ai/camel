@@ -42,10 +42,10 @@ class DockerRuntime(BaseRuntime):
 
     Args:
         image (str): The name of the Docker image to use for the runtime.
-        port (int): The port number to use for the runtime API. (default::obj:
+        port (int): The port number to use for the runtime API. (default: :obj:
             `8000`)
         remove (bool): Whether to remove the container after stopping it. '
-            (default::obj: `True`)
+            (default: :obj: `True`)
         kwargs (dict): Additional keyword arguments to pass to the
             Docker client.
     """
@@ -170,7 +170,7 @@ class DockerRuntime(BaseRuntime):
 
         Args:
             time_out (int): The number of seconds to wait for the container to
-                start. (default::obj: `15`)
+                start. (default: :obj: `15`)
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -259,9 +259,9 @@ class DockerRuntime(BaseRuntime):
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
             redirect_stdout (bool): Whether to return the stdout of
-                the function. (default::obj: `False`)
+                the function. (default: :obj: `False`)
             arguments (Optional[Dict[str, Any]]): The arguments for the
-                function. (default::obj: `None`)
+                function. (default: :obj: `None`)
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -330,7 +330,7 @@ class DockerRuntime(BaseRuntime):
 
         Args:
             remove (Optional[bool]): Whether to remove the container
-                after stopping it. (default::obj: `None`)
+                after stopping it. (default: :obj: `None`)
 
         Returns:
             DockerRuntime: The DockerRuntime instance.
@@ -366,7 +366,7 @@ class DockerRuntime(BaseRuntime):
         r"""Wait for the API Server to be ready.
 
         Args:
-            timeout (int): The number of seconds to wait. (default::obj: `10`)
+            timeout (int): The number of seconds to wait. (default: :obj: `10`)
 
         Returns:
             bool: Whether the API Server is ready.

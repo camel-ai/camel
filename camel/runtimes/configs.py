@@ -21,23 +21,23 @@ class TaskConfig(BaseModel):
 
     Arttributes:
         cmd (str or list): Command to be executed
-        stdout (bool): Attach to stdout. (default::obj: `True`)
-        stderr (bool): Attach to stderr. (default::obj: `True`)
-        stdin (bool): Attach to stdin. (default::obj: `False`)
-        tty (bool): Allocate a pseudo-TTY. (default::obj: `False`)
-        privileged (bool): Run as privileged. (default::obj: `False`)
-        user (str): User to execute command as. (default::obj: `""`)
+        stdout (bool): Attach to stdout. (default: :obj: `True`)
+        stderr (bool): Attach to stderr. (default: :obj: `True`)
+        stdin (bool): Attach to stdin. (default: :obj: `False`)
+        tty (bool): Allocate a pseudo-TTY. (default: :obj: `False`)
+        privileged (bool): Run as privileged. (default: :obj: `False`)
+        user (str): User to execute command as. (default: :obj: `""`)
         detach (bool): If true, detach from the exec command.
-            (default::obj: `False`)
-        stream (bool): Stream response data. (default::obj: `False`)
+            (default: :obj: `False`)
+        stream (bool): Stream response data. (default: :obj: `False`)
         socket (bool): Return the connection socket to allow custom
-            read/write operations. (default::obj: `False`)
+            read/write operations. (default: :obj: `False`)
         environment (dict or list): A dictionary or a list of strings in
             the following format ``["PASSWORD=xxx"]`` or
-            ``{"PASSWORD": "xxx"}``. (default::obj: `None`)
+            ``{"PASSWORD": "xxx"}``. (default: :obj: `None`)
         workdir (str): Path to working directory for this exec session.
-            (default::obj: `None`)
-        demux (bool): Return stdout and stderr separately. (default::obj:
+            (default: :obj: `None`)
+        demux (bool): Return stdout and stderr separately. (default: :obj:
             `False`)
     """
 

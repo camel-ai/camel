@@ -14,8 +14,6 @@
 import os
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from anthropic.types.beta import BetaMessageParam
-
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
@@ -37,7 +35,7 @@ class AnthropicModel(BaseModelBackend):
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into Anthropic.messages.create().  If
             :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
-            (default::obj:`None`)
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Anthropic service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Anthropic service.
@@ -99,6 +97,7 @@ class AnthropicModel(BaseModelBackend):
             self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
+    @dependencies_required('anthropic')
     def count_tokens_from_prompt(
         self, prompt: str, role: Literal["user", "assistant"]
     ) -> int:
@@ -112,6 +111,8 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             int: The number of tokens in the prompt.
         """
+        from anthropic.types.beta import BetaMessageParam
+
         return self.client.beta.messages.count_tokens(
             messages=[BetaMessageParam(content=prompt, role=role)],
             model=self.model_type,

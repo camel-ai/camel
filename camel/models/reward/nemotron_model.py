@@ -47,7 +47,7 @@ class NemotronRewardModel(BaseRewardModel):
         api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         super().__init__(model_type, api_key, url)
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             base_url=self.url,
             api_key=self.api_key,
