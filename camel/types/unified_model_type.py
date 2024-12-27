@@ -114,6 +114,11 @@ class UnifiedModelType(str):
         return True
 
     @property
+    def support_native_structured_output(self) -> bool:
+        r"""Returns whether the model supports native structured output."""
+        return False
+
+    @property
     def support_native_tool_calling(self) -> bool:
         r"""Returns whether the model supports native tool calling."""
         return False

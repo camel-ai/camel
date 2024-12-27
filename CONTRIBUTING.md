@@ -9,8 +9,8 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 - Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
 
 ### Developer Meeting Time & Link 💻
-- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/aWfgSTh5?event=1288737688794435634)
-- Chinese Speakers: Mondays at 9 PM UTC+8. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/94271505221)
+- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/FFe4nB8MJj?event=1313319275708289034)
+- Chinese Speakers: Mondays at 9 PM UTC+8. Join via TecentMeeting: [Meeting Link](https://meeting.tencent.com/dm/057wap1eeCSY)
 
 ### Our Communication Channels 💬
 - **Discord:** [Join here](https://discord.camel-ai.org/)
@@ -44,6 +44,48 @@ Ensuring excellent documentation and thorough testing is absolutely crucial. Her
   - Add a demo script in the `examples` directory.
  
 We're a small team focused on building great things. If you have something in mind that you'd like to add or modify, opening a pull request is the ideal way to catch our attention. 🚀
+
+### Contributing to the Cookbook Writing 📚
+
+We are excited that you want to contribute to our cookbook! The CAMEL cookbook is an essential resource for users, and we want to make sure that it remains high-quality, accurate, and helpful.
+
+We use Google Colab as the primary platform for writing and reviewing our cookbooks, and we have a specific [template](https://colab.research.google.com/drive/17SiWWjoK7l8Sy9FBsGKUHC6zuEsLt2yX?usp=sharing) that contributors should follow to maintain consistency. Please feel free to share any suggestions for improvements or additions to the template.
+
+Here’s how you can contribute to writing cookbooks:
+
+#### 1. Writing the Cookbook
+
+- Template Usage: We have a [template](https://colab.research.google.com/drive/17SiWWjoK7l8Sy9FBsGKUHC6zuEsLt2yX?usp=sharing) for cookbook entries. Always use this template to ensure uniformity in style and structure.
+- Start in Colab: Begin writing your cookbook in Google Colab. Colab allows us to run interactive code and include explanations side-by-side, which is ideal for a practical, hands-on cookbook.
+- Correctness: Ensure that the **LLM-generated responses are correct**. Each recipe in the cookbook should be verified with real code execution, and the results must be accurate.
+- Clear and Concise Explanations: Provide clear explanations of the code, its purpose, and how it works. Make sure any complex logic or steps are well documented and explained in simple terms.
+- Interactive Elements: Whenever applicable, add interactive code cells in Colab that users can directly run and modify.
+
+#### 2. Reviewing the Cookbook
+Once the initial draft of the cookbook is ready:
+
+- Review in Colab: The review process for cookbooks is done in Colab. We will leave comments and suggestions directly in the Colab document. Reviewers will focus on:
+ - Accuracy: Ensure that the code is correct, performs the expected tasks, and generates the intended results.
+ - Clarity: Check that the explanations are clear, detailed, and easy to understand.
+ - Structure: Ensure that the flow of the cookbook is logical and easy to follow, with a step-by-step approach.
+ - Formatting: Verify that the formatting follows the template guidelines (e.g., headers, code blocks, comments).
+ - Feedback Process: If there are issues or suggestions for improvement, the reviewer will leave comments directly in the Colab notebook. The contributor should address these comments and update the Colab file accordingly.
+
+#### 3. Submitting the Cookbook
+When the Colab cookbook is ready for integration:
+
+- Download the Cookbook: Once the Colab notebook is finalized and reviewed, download the notebook as a .ipynb file.
+- Create a Pull Request: Open a pull request to add the cookbook to the docs folder of the repository. This pull request will include the downloadable .ipynb file and also include any necessary documentation or references to integrate the cookbook into the main docs.
+
+#### 4. Principles to Follow
+To ensure that the cookbook meets the highest standards, please keep the following principles in mind:
+
+- High Quality: Every cookbook entry must be of high quality. This includes accurate code, well-written explanations, and comprehensive tests (if applicable).
+- LLM-Generated Responses: If you use a large language model (LLM) to generate part of the cookbook content, ensure that the responses are correct and validated with real-world examples. Do not include any code that is incorrect or doesn't work as expected.
+- Reproducibility: Ensure that all code in the cookbook is reproducible. Any user following the steps should be able to get the same results by running the code on their own machine.
+- Accessibility: Make sure the content is accessible to a wide range of users, from beginners to advanced users. Provide context where necessary and define technical terms.
+
+By following these guidelines, you'll help us maintain a high-quality, helpful, and engaging cookbook for the CAMEL community. Thank you for contributing to this valuable resource! 🌟
 
 ### Contributing to Code Reviews 🔍
 This part outlines the guidelines and best practices for conducting code reviews in CAMEL. The aim is to ensure that all contributions are of high quality, align with the project's goals, and are consistent with our coding standards.

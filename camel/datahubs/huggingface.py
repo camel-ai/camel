@@ -362,7 +362,13 @@ class HuggingFaceDatasetManager(BaseDatasetManager):
         with tempfile.NamedTemporaryFile(
             delete=False, mode="w", newline="", encoding="utf-8"
         ) as f:
-            json.dump([record.model_dump() for record in records], f)
+            json.dump(
+                [
+                    record.model_dump(exclude_defaults=True)
+                    for record in records
+                ],
+                f,
+            )
             temp_file_path = f.name
 
         try:

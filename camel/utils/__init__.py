@@ -21,6 +21,7 @@ from .commons import (
     dependencies_required,
     download_tasks,
     func_string_to_callable,
+    generate_prompt_for_structured_output,
     get_first_int,
     get_prompt_template_key_words,
     get_pydantic_major_version,
@@ -78,4 +79,5 @@ __all__ = [
     "track_agent",
     "handle_http_error",
     "get_pydantic_model",
+    "generate_prompt_for_structured_output",
 ]

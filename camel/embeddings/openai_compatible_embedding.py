@@ -46,7 +46,7 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         )
         self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
