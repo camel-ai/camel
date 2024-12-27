@@ -44,8 +44,7 @@ class ProgrammedAgentInstructionResult(BaseModel, Generic[T]):
 
 
 class AbstractProgrammableAgent(abc.ABC):
-    r"""
-    Abstract class for a programmable agent.
+    r"""Abstract class for a programmable agent.
 
     A programmable agent is an agent that can be programmed to perform a
     specific function or task. This class defines the interface for a
