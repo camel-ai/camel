@@ -78,7 +78,7 @@ agent = ChatAgent(
     tools=tools,
 )
 
-workforce = Workforce("GAIA Workforce")
+workforce = Workforce("GAIA Workforce", new_worker_agent_kwargs={})
 workforce.add_single_agent_worker(
     "An agent that can do code execution",
     worker=agent,
