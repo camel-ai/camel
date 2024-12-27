@@ -39,13 +39,10 @@ def test_get_search_results(mock_client, mock_search):
     assert list(result_generator)
 
 
-@patch('camel.toolkits.arxiv_toolkit.check_url_validity', return_value=True)
 @patch('arxiv2text.arxiv_to_text')
 @patch('arxiv.Search')
 @patch('arxiv.Client')
-def test_search_papers(
-    mock_client, mock_search, mock_arxiv_to_text, mock_check_url_validity
-):
+def test_search_papers(mock_client, mock_search, mock_arxiv_to_text):
     toolkit = ArxivToolkit()
     mock_client_instance = mock_client.return_value
     mock_arxiv_to_text.return_value = "Extracted text"
@@ -95,10 +92,3 @@ def test_get_tools():
     assert len(tools) == 2
     assert tools[0].func == toolkit.search_papers
     assert tools[1].func == toolkit.download_papers
-
-
-def test_check_url_validity():
-    from camel.toolkits.arxiv_toolkit import check_url_validity
-
-    assert check_url_validity("https://arxiv.org/pdf/2303.17760")
-    assert not check_url_validity("http://example.com/404")
