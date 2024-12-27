@@ -63,8 +63,7 @@ class AbstractProgrammableAgent(abc.ABC):
     def run_atomic(
         self, callback: Callable[[], ProgrammedAgentInstructionResult[T]]
     ) -> ProgrammedAgentInstructionResult[T]:
-        r"""
-        Run an atomic operation on the agent.
+        r"""Run an atomic operation on the agent.
 
         An atomic operation is an operation that is guaranteed to
         be executed without interruption by any other operation.
