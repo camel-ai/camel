@@ -60,6 +60,7 @@ def test_crawl_failure():
         except RuntimeError as e:
             assert 'Failed to crawl the URL' in str(e)
 
+
 def test_check_crawl_job_success():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
