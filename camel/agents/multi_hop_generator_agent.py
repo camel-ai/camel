@@ -34,7 +34,7 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        self.system_message = """You are an expert at generating multi-hop 
+        system_text: str = """You are an expert at generating multi-hop 
         question-answer pairs.
         For each context, you should:
         1. Identify multiple related facts or pieces of information
@@ -43,7 +43,7 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         4. Generate questions that require at least 2-3 steps of reasoning
         5. Include the reasoning steps in the answer
 
-        Format your response as:
+        Give your response with this information:
         Question: [Complex question requiring multiple reasoning steps]
         Reasoning Steps:
         1. [First reasoning step]
@@ -52,6 +52,9 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         Answer: [Final answer]
         Supporting Facts: [List of relevant text segments used]
         """
+        self.system_message = BaseMessage.make_assistant_message(
+            role_name='Assistant', content=system_text
+        )
 
     @programmable_capability
     def generate_multi_hop_qa(

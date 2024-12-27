@@ -39,7 +39,7 @@ class MultiHopQA(BaseModel):
     type: str = Field(description="The type of question-answer pair.")
 
     class Config:
-        schema_extra: ClassVar[Dict[str, Any]] = {
+        json_schema_extra: ClassVar[Dict[str, Any]] = {
             "example": {
                 "question": "What is the capital of France?",
                 "reasoning_steps": [

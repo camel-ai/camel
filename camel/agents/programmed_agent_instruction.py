@@ -15,7 +15,7 @@ import abc
 import threading
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
@@ -131,7 +131,7 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self._operation_lock = threading.Lock()
-        self._last_message_role = None
+        self._last_message_role: Optional[str] = None
 
     def run_atomic(
         self, callback: Callable[[], ProgrammedAgentInstructionResult[T]]

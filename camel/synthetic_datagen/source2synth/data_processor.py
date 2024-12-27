@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import random
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 from tqdm import tqdm
@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 class UserDataProcessor:
     """User Data Processor"""
 
-    def __init__(self, config: ProcessorConfig = None):
+    def __init__(self, config: Optional[ProcessorConfig] = None):
         self.config = config or ProcessorConfig()
         random.seed(self.config.seed)
         np.random.seed(self.config.seed)
@@ -170,7 +170,7 @@ class ExampleConstructor:
 
         return True
 
-    def _extract_info_pairs(self, text: str) -> List[Dict[str, str]]:
+    def _extract_info_pairs(self, text: str) -> List[Dict[str, Sequence[str]]]:
         """Extract information pairs and relationships"""
         # Split into sentences
         sentences = [s.strip() for s in text.split('.') if s.strip()]
@@ -198,7 +198,7 @@ class ExampleConstructor:
         return info_pairs
 
     def _generate_qa_pairs(
-        self, info_pairs: List[Dict[str, str]]
+        self, info_pairs: List[Dict[str, Sequence[str]]]
     ) -> List[Dict[str, str]]:
         """Generate multi-hop question-answer pairs"""
         qa_pairs = []
