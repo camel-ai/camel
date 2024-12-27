@@ -325,6 +325,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_with_agentic_RAG.html)** |  Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 | **[Create AI Agents that work with your PDFs using Chunkr & Mistral AI](https://docs.camel-ai.org/cookbooks/agent_with_chunkr_for_pdf_parsing.html)** | Learn how to create AI agents that work with your PDFs using Chunkr and Mistral AI. |
 | **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_gen_with_real_function_calls_and_hermes_format.html)** |  Explore how to generate data with real function calls and the Hermes format. |
+| **[O1 Data Generation with CAMEL and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/O1datagen_with_CAMEL_And_Upload_Data_To_Huggingface.html)** | Uncover how to generate O1 data with CAMEL and seamlessly upload it to Huggingface. |
 
 ## Utilize Various LLMs as Backends
 
