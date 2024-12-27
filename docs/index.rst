@@ -78,6 +78,7 @@ Main Documentation
    cookbooks/data_gen_with_real_function_calls_and_hermes_format.ipynb
    cookbooks/agent_with_chunkr_for_pdf_parsing.ipynb
    cookbooks/O1datagen_with_CAMEL_And_Upload_Data_To_Huggingface.ipynb
+   cookbooks/O1datagen_with_CAMEL_And_Sft_Qwen_With_Unsolth_And_Upload_Data_And_Model_To_Huggingface.ipynb
 
 .. toctree::
    :maxdepth: 1
