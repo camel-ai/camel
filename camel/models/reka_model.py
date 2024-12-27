@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 from camel.configs import REKA_API_PARAMS, RekaConfig
 from camel.messages import OpenAIMessage
@@ -112,6 +114,8 @@ class RekaModel(BaseModelBackend):
     def _convert_openai_to_reka_messages(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> List["ChatMessage"]:
         r"""Converts OpenAI API messages to Reka API messages.
 
@@ -169,9 +173,11 @@ class RekaModel(BaseModelBackend):
         return self._token_counter
 
     @api_keys_required("REKA_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 

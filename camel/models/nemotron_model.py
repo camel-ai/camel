@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import List, Optional, Union
+from typing import List, Optional, Type, Union
 
 from openai import OpenAI
+from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -59,9 +60,11 @@ class NemotronModel(BaseModelBackend):
         )
 
     @api_keys_required("NVIDIA_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> ChatCompletion:
         r"""Runs inference of OpenAI chat completion.
 

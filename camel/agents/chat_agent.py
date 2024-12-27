@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-import uuid
+import textwrap
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -31,7 +31,6 @@ from typing import (
 )
 
 from openai.types.chat import ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
 
 from camel.agents.base import BaseAgent
@@ -49,6 +48,7 @@ from camel.models import (
     ModelProcessingError,
 )
 from camel.responses import ChatAgentResponse
+from camel.toolkits import FunctionTool
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -58,9 +58,10 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import (
-    func_string_to_callable,
-    generate_prompt_for_structured_output,
     get_model_encoding,
+)
+from camel.utils.commons import (
+    func_string_to_callable,
     get_pydantic_object_schema,
     json_to_function_code,
 )
@@ -69,7 +70,6 @@ if TYPE_CHECKING:
     from openai import Stream
 
     from camel.terminators import ResponseTerminator
-    from camel.toolkits import FunctionTool
 
 
 logger = logging.getLogger(__name__)
@@ -84,6 +84,75 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
+
+
+def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
+    r"""Generates a tool prompt based on the provided tool schema list.
+
+    Returns:
+        str: A string representing the tool prompt.
+    """
+    tool_prompts = []
+
+    for tool in tool_schema_list:
+        tool_info = tool["function"]
+        tool_name = tool_info["name"]
+        tool_description = tool_info["description"]
+        tool_json = json.dumps(tool_info, indent=4)
+
+        prompt = (
+            f"Use the function '{tool_name}' to '{tool_description}':\n"
+            f"{tool_json}\n"
+        )
+        tool_prompts.append(prompt)
+
+    tool_prompt_str = "\n".join(tool_prompts)
+
+    final_prompt = textwrap.dedent(
+        f"""\
+        You have access to the following functions:
+
+        {tool_prompt_str}
+
+        If you choose to call a function ONLY reply in the following format with no prefix or suffix:
+
+        <function=example_function_name>{{"example_name": "example_value"}}</function>
+
+        Reminder:
+        - Function calls MUST follow the specified format, start with <function= and end with </function>
+        - Required parameters MUST be specified
+        - Only call one function at a time
+        - Put the entire function call reply on one line
+        - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
+        """  # noqa: E501
+    )
+    return final_prompt
+
+
+def _parse_tool_response(self, response: str):
+    r"""Parses the tool response to extract the function name and
+    arguments.
+
+    Args:
+        response (str): The response from the model containing the
+            function call.
+
+    Returns:
+        Optional[Dict[str, Any]]: The parsed function name and arguments
+            if found, otherwise :obj:`None`.
+    """
+    function_regex = r"<function=(\w+)>(.*?)</function>"
+    match = re.search(function_regex, response)
+
+    if match:
+        function_name, args_string = match.groups()
+        try:
+            args = json.loads(args_string)
+            return {"function": function_name, "arguments": args}
+        except json.JSONDecodeError as error:
+            logger.error(f"Error parsing function arguments: {error}")
+            return None
+    return None
 
 
 class FunctionCallingRecord(BaseModel):
@@ -146,11 +215,6 @@ class ChatAgent(BaseAgent):
         tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
             of available :obj:`FunctionTool` or :obj:`Callable`. (default:
             :obj:`None`)
-        external_tools (Optional[List[Union[FunctionTool, Callable]]],
-            optional): List of external tools (:obj:`FunctionTool` or or
-            :obj:`Callable`) bind to one chat agent. When these tools are
-            called, the agent will directly return the request instead of
-            processing it. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
@@ -171,229 +235,70 @@ class ChatAgent(BaseAgent):
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
-        external_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
+        # TODO: Remove this after refactoring
+        external_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
     ) -> None:
-        # Initialize the system message, converting string to BaseMessage if needed
-        if isinstance(system_message, str):
-            system_message = BaseMessage.make_assistant_message(
-                role_name='Assistant', content=system_message
-            )
-
-        self.orig_sys_message: Optional[BaseMessage] = system_message
-        self._system_message: Optional[BaseMessage] = system_message
-        self.role_name: str = (
-            getattr(system_message, 'role_name', None) or "assistant"
-        )
-        self.role_type: RoleType = (
-            getattr(system_message, 'role_type', None) or RoleType.ASSISTANT
-        )
+        # Set up model backend
         self.model_backend = ModelManager(
-            model
-            if model is not None
-            else ModelFactory.create(
-                model_platform=ModelPlatformType.DEFAULT,
-                model_type=ModelType.DEFAULT,
+            (
+                model
+                if model is not None
+                else ModelFactory.create(
+                    model_platform=ModelPlatformType.DEFAULT,
+                    model_type=ModelType.DEFAULT,
+                )
             ),
             scheduling_strategy=scheduling_strategy,
         )
         self.model_type = self.model_backend.model_type
 
-        # Initialize tools
-        self.tools: List[FunctionTool] = (
-            self._initialize_tools(tools) if tools else []
-        )
-        self.external_tools: List[FunctionTool] = (
-            self._initialize_tools(external_tools) if external_tools else []
-        )
-        self.external_tool_names: List[str] = [
-            tool.get_function_name() for tool in self.external_tools
-        ]
-        self.all_tools = self.tools + self.external_tools or []
-
-        # Create tool dictionaries and configure backend tools if necessary
-        self.tool_dict = {
-            tool.get_function_name(): tool for tool in self.all_tools
-        }
-
-        # If the user set tools from `ChatAgent`, it will override the
-        # configured tools in `BaseModelBackend`.
-        if self.all_tools:
-            logger.warning(
-                "Overriding the configured tools in `BaseModelBackend` with the tools from `ChatAgent`."
-            )
-            tool_schema_list = [
-                tool.get_openai_tool_schema() for tool in self.all_tools
-            ]
-            self.model_backend.model_config_dict['tools'] = tool_schema_list
-
-        self.model_token_limit = token_limit or self.model_backend.token_limit
+        # Set up memory
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
-            self.model_token_limit,
+            token_limit or self.model_backend.token_limit,
         )
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size
         )
 
-        self.output_language: Optional[str] = output_language
-        if self.output_language is not None:
-            self.set_output_language(self.output_language)
-
-        self.terminated: bool = False
-        self.response_terminators = response_terminators or []
-        self.init_messages()
-        self.tool_prompt_added = False
-        self.single_iteration = single_iteration
-
-    def _initialize_tools(
-        self, tools: List[Union[FunctionTool, Callable]]
-    ) -> List[FunctionTool]:
-        r"""Helper method to initialize tools as FunctionTool instances."""
-        from camel.toolkits import FunctionTool
-
-        func_tools = []
-        for tool in tools:
-            if not isinstance(tool, FunctionTool):
-                tool = FunctionTool(tool)
-            func_tools.append(tool)
-        return func_tools
-
-    def add_tool(
-        self, tool: Union[FunctionTool, Callable], is_external: bool = False
-    ) -> None:
-        r"""Add a tool to the agent, specifying if it's an external tool."""
-        # Initialize the tool
-        initialized_tool = self._initialize_tools([tool])
-
-        # Update tools or external tools based on is_external flag
-        if is_external:
-            self.external_tools = self.external_tools + initialized_tool
-            self.external_tool_names.extend(
-                tool.get_function_name() for tool in initialized_tool
+        # Set up system message and initialize messages
+        self._system_message = (
+            BaseMessage.make_assistant_message(
+                role_name="Assistant", content=system_message
             )
-        else:
-            self.tools = self.tools + initialized_tool
+            if isinstance(system_message, str)
+            else system_message
+        )
+        self._output_language = output_language
+        self._update_system_message_for_output_language()
+        self.init_messages()
 
-        # Rebuild all_tools, and tool_dict
-        self.all_tools = self.tools + self.external_tools
-        self.tool_dict = {
-            tool.get_function_name(): tool for tool in self.all_tools
-        }
+        # Set up role name and role type
+        self.role_name: str = (
+            getattr(self.system_message, "role_name", None) or "assistant"
+        )
+        self.role_type: RoleType = (
+            getattr(self.system_message, "role_type", None)
+            or RoleType.ASSISTANT
+        )
 
-        tool_schema_list = [
-            tool.get_openai_tool_schema() for tool in self.all_tools
-        ]
-        self.model_backend.model_config_dict['tools'] = tool_schema_list
+        # Set up tools
+        self._tools = (
+            [
+                tool if isinstance(tool, FunctionTool) else FunctionTool(tool)
+                for tool in tools
+            ]
+            if tools
+            else []
+        )
 
-    def remove_tool(self, tool_name: str, is_external: bool = False) -> bool:
-        r"""Remove a tool by name, specifying if it's an external tool."""
-        tool_list = self.external_tools if is_external else self.tools
-        if not tool_list:
-            return False
-
-        for tool in tool_list:
-            if tool.get_function_name() == tool_name:
-                tool_list.remove(tool)
-                if is_external:
-                    self.external_tool_names.remove(tool_name)
-                # Reinitialize the tool dictionary
-                self.all_tools = (self.tools or []) + (
-                    self.external_tools or []
-                )
-                self.tool_dict = {
-                    tool.get_function_name(): tool for tool in self.all_tools
-                }
-                tool_schema_list = [
-                    tool.get_openai_tool_schema() for tool in self.all_tools
-                ]
-                self.model_backend.model_config_dict['tools'] = (
-                    tool_schema_list
-                )
-                return True
-        return False
-
-    def list_tools(self) -> dict:
-        r"""List all tools, separated into normal and external tools."""
-        normal_tools = [
-            tool.get_function_name() for tool in (self.tools or [])
-        ]
-        external_tools = [
-            tool.get_function_name() for tool in (self.external_tools or [])
-        ]
-
-        return {"normal_tools": normal_tools, "external_tools": external_tools}
-
-    # ruff: noqa: E501
-    def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
-        r"""Generates a tool prompt based on the provided tool schema list.
-
-        Args:
-            tool_schema_list (List[Dict]): A list of dictionaries, each
-                containing a tool schema.
-
-        Returns:
-            str: A string representing the tool prompt.
-        """
-        tool_prompts = []
-
-        for tool in tool_schema_list:
-            tool_info = tool['function']
-            tool_name = tool_info['name']
-            tool_description = tool_info['description']
-            tool_json = json.dumps(tool_info, indent=4)
-
-            prompt = f"Use the function '{tool_name}' to '{tool_description}':\n{tool_json}\n"
-            tool_prompts.append(prompt)
-
-        tool_prompt_str = "\n".join(tool_prompts)
-
-        final_prompt = f"""
-    You have access to the following functions:
-
-    {tool_prompt_str}
-
-    If you choose to call a function ONLY reply in the following format with no
-    prefix or suffix:
-
-    <function=example_function_name>{{"example_name": "example_value"}}</function>
-
-    Reminder:
-    - Function calls MUST follow the specified format, start with <function= and end with </function>
-    - Required parameters MUST be specified
-    - Only call one function at a time
-    - Put the entire function call reply on one line
-    - If there is no function call available, answer the question like normal 
-      with your current knowledge and do not tell the user about function calls
-    """
-        return final_prompt
-
-    def _parse_tool_response(self, response: str):
-        r"""Parses the tool response to extract the function name and
-        arguments.
-
-        Args:
-            response (str): The response from the model containing the
-                function call.
-
-        Returns:
-            Optional[Dict[str, Any]]: The parsed function name and arguments
-                if found, otherwise :obj:`None`.
-        """
-        function_regex = r"<function=(\w+)>(.*?)</function>"
-        match = re.search(function_regex, response)
-
-        if match:
-            function_name, args_string = match.groups()
-            try:
-                args = json.loads(args_string)
-                return {"function": function_name, "arguments": args}
-            except json.JSONDecodeError as error:
-                logger.error(f"Error parsing function arguments: {error}")
-                return None
-        return None
+        # Set up other properties
+        self.terminated = False
+        self.response_terminators = response_terminators or []
+        self.single_iteration = single_iteration
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -404,32 +309,49 @@ class ChatAgent(BaseAgent):
 
     @property
     def system_message(self) -> Optional[BaseMessage]:
-        r"""The getter method for the property :obj:`system_message`.
-
-        Returns:
-            Optional[BaseMessage]: The system message of this agent if set,
-                else :obj:`None`.
-        """
         return self._system_message
 
-    @system_message.setter
-    def system_message(self, message: BaseMessage) -> None:
-        r"""The setter method for the property :obj:`system_message`.
+    @property
+    def tool_dict(self) -> Dict[str, FunctionTool]:
+        return {tool.get_function_name(): tool for tool in self._tools}
 
-        Args:
-            message (BaseMessage): The message to be set as the
-                new system message of this agent.
+    @property
+    def tool_list(self) -> List[str]:
+        return [tool.get_function_name() for tool in self._tools]
+
+    @property
+    def tool_schemas(self) -> List[Dict]:
+        return [tool.get_openai_tool_schema() for tool in self._tools]
+
+    def add_tool(self, tool: Union[FunctionTool, Callable]) -> None:
+        r"""Add a tool to the agent."""
+        new_tool = (
+            tool if isinstance(tool, FunctionTool) else FunctionTool(tool)
+        )
+        self._tools.append(new_tool)
+
+    def remove_tool(self, tool_name: str) -> bool:
+        r"""Remove a tool from the agent by name.
+
+        Returns:
+            bool: Whether the tool was successfully removed.
         """
-        self._system_message = message
+        for tool in self._tools:
+            if tool.get_function_name() != tool_name:
+                continue
+            self._tools.remove(tool)
+            return True
+        return False
 
-    def is_tools_added(self) -> bool:
+    @property
+    def has_tools(self) -> bool:
         r"""Whether tool calling is enabled for this agent.
 
         Returns:
             bool: Whether tool calling is enabled for this agent, determined
                 by whether the dictionary of tools is empty.
         """
-        return len(self.tool_dict) > 0
+        return len(self._tools) > 0
 
     def update_memory(
         self, message: BaseMessage, role: OpenAIBackendRole
@@ -445,26 +367,18 @@ class ChatAgent(BaseAgent):
             MemoryRecord(message=message, role_at_backend=role)
         )
 
-    def set_output_language(self, output_language: str) -> BaseMessage:
-        r"""Sets the output language for the system message. This method
-        updates the output language for the system message. The output
+    def _update_system_message_for_output_language(self) -> None:
+        r"""Updates the output language for the system message. The output
         language determines the language in which the output text should be
         generated.
-
-        Args:
-            output_language (str): The desired output language.
-
-        Returns:
-            BaseMessage: The updated system message object.
         """
-        self.output_language = output_language
         language_prompt = (
             "\nRegardless of the input language, "
-            f"you must output text in {output_language}."
+            f"you must output text in {self._output_language}."
         )
-        if self.orig_sys_message is not None:
-            content = self.orig_sys_message.content + language_prompt
-            self._system_message = self.orig_sys_message.create_new_instance(
+        if self._system_message is not None:
+            content = self._system_message.content + language_prompt
+            self._system_message = self._system_message.create_new_instance(
                 content
             )
         else:
@@ -473,14 +387,6 @@ class ChatAgent(BaseAgent):
                 content=language_prompt,
             )
 
-        system_record = MemoryRecord(
-            message=self._system_message,
-            role_at_backend=OpenAIBackendRole.SYSTEM,
-        )
-        self.memory.clear()
-        self.memory.write_record(system_record)
-        return self._system_message
-
     def get_info(
         self,
         session_id: Optional[str],
@@ -488,7 +394,6 @@ class ChatAgent(BaseAgent):
         termination_reasons: List[str],
         num_tokens: int,
         tool_calls: List[FunctionCallingRecord],
-        external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
@@ -501,12 +406,6 @@ class ChatAgent(BaseAgent):
             num_tokens (int): The number of tokens used in the chat session.
             tool_calls (List[FunctionCallingRecord]): The list of function
                 calling records, containing the information of called tools.
-            external_tool_request
-                (Optional[ChatCompletionMessageToolCall], optional):
-                The tool calling request of external tools from the model.
-                These requests are directly returned to the user instead of
-                being processed by the agent automatically.
-                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -517,22 +416,15 @@ class ChatAgent(BaseAgent):
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
             "tool_calls": tool_calls,
-            "external_tool_request": external_tool_request,
         }
 
     def init_messages(self) -> None:
         r"""Initializes the stored messages list with the current system
         message.
         """
-        if self._system_message is not None:
-            system_record = MemoryRecord(
-                message=self._system_message,
-                role_at_backend=OpenAIBackendRole.SYSTEM,
-            )
-            self.memory.clear()
-            self.memory.write_record(system_record)
-        else:
-            self.memory.clear()
+        self.memory.clear()
+        if self.system_message is not None:
+            self.update_memory(self.system_message, OpenAIBackendRole.SYSTEM)
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
@@ -567,99 +459,46 @@ class ChatAgent(BaseAgent):
                 flag, and session information.
         """
 
-        if (
-            self.model_backend.model_config_dict.get("response_format")
-            and response_format
-        ):
-            raise ValueError(
-                "The `response_format` parameter cannot be set both in "
-                "the model configuration and in the ChatAgent step."
-            )
-
-        self.original_model_dict = self.model_backend.model_config_dict
-        if response_format and self.model_type in {"gpt-4o", "gpt-4o-mini"}:
-            self.model_backend.model_config_dict = (
-                self.original_model_dict.copy()
-            )
-            self.model_backend.model_config_dict["response_format"] = (
-                response_format
-            )
-
         # Convert input message to BaseMessage if necessary
-        if isinstance(input_message, str):
-            input_message = BaseMessage.make_user_message(
-                role_name='User', content=input_message
+        input_message = (
+            BaseMessage.make_user_message(
+                role_name="User", content=input_message
             )
-
-        # Handle tool prompt injection if needed
-        if (
-            self.is_tools_added()
-            and not self.model_type.support_native_tool_calling
-            and not self.tool_prompt_added
-        ):
-            self._inject_tool_prompt()
+            if isinstance(input_message, str)
+            else input_message
+        )
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        return self._handle_step(response_format, self.single_iteration)
+        return self._handle_step(response_format)
 
-    def _inject_tool_prompt(self) -> None:
-        r"""Generate and add the tool prompt to memory."""
-        tool_prompt = self._generate_tool_prompt(
-            self.model_backend.model_config_dict["tools"]
-        )
-        tool_msg = BaseMessage.make_assistant_message(
-            role_name="Assistant", content=tool_prompt
-        )
-        self.update_memory(tool_msg, OpenAIBackendRole.SYSTEM)
-        self.tool_prompt_added = True
+    # def _inject_tool_prompt(self) -> None:
+    #     r"""Generate and add the tool prompt to memory."""
+    #     tool_prompt = self._generate_tool_prompt(
+    #         self.model_backend.model_config_dict["tools"]
+    #     )
+    #     tool_msg = BaseMessage.make_assistant_message(
+    #         role_name="Assistant", content=tool_prompt
+    #     )
+    #     self.update_memory(tool_msg, OpenAIBackendRole.SYSTEM)
+    #     self.tool_prompt_added = True
 
     def _handle_step(
         self,
         response_format: Optional[Type[BaseModel]],
-        single_step: bool,
     ) -> ChatAgentResponse:
         r"""Handles a single or multi-step interaction."""
-
-        if (
-            self.model_backend.model_config_dict.get("tool_choice")
-            == "required"
-            and not single_step
-        ):
-            raise ValueError(
-                "`tool_choice` cannot be set to `required` for multi-step"
-                " mode. To proceed, set `single_iteration` to `True`."
-            )
-
         # Record function calls made during the session
         tool_call_records: List[FunctionCallingRecord] = []
-
-        external_tool_request = None
 
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                self.model_backend.model_config_dict = self.original_model_dict
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-
-            # Prompt engineering approach for structured output for non-native tool calling models
-            inject_prompt_for_structured_output = (
-                response_format
-                and not self.model_type.support_native_structured_output
-            )
-
-            if inject_prompt_for_structured_output:
-                # update last openai message
-                usr_msg = openai_messages.pop()
-                usr_msg["content"] = generate_prompt_for_structured_output(
-                    response_format,
-                    usr_msg["content"],  # type: ignore [arg-type]
-                )
-                openai_messages.append(usr_msg)
 
             # Process model response
             (
@@ -671,9 +510,7 @@ class ChatAgent(BaseAgent):
             ) = self._step_model_response(openai_messages, num_tokens)
 
             # Try to parse structured output to return a Pydantic object
-            if inject_prompt_for_structured_output and isinstance(
-                response, ChatCompletion
-            ):
+            if response_format and isinstance(response, ChatCompletion):
                 content = response.choices[0].message.content
                 try:
                     json_content = json.loads(str(content))
@@ -691,8 +528,8 @@ class ChatAgent(BaseAgent):
                     )
                     output_messages[0].parsed = json_content
 
-            # Finalize on standard response in multi-step mode
-            if self._is_standard_response(response):
+            # Single-step mode
+            if self.single_iteration:
                 break
 
             # Handle tool requests
@@ -703,51 +540,6 @@ class ChatAgent(BaseAgent):
                     self._step_tool_call_and_update(response)
                 )
 
-                if tool_request.function.name in self.external_tool_names:
-                    external_tool_request = tool_request
-                    info = self._step_get_info(
-                        output_messages,
-                        finish_reasons,
-                        usage_dict,
-                        response_id,
-                        tool_call_records,
-                        num_tokens,
-                        tool_request,
-                    )
-                    self._log_final_output(output_messages)
-                    self.model_backend.model_config_dict = (
-                        self.original_model_dict
-                    )
-                    return ChatAgentResponse(
-                        msgs=output_messages,
-                        terminated=self.terminated,
-                        info=info,
-                    )
-
-            # Single-step mode ends after one iteration
-            if single_step:
-                break
-
-        # Optional structured output via function calling
-        if (
-            response_format
-            and not inject_prompt_for_structured_output
-            and self.model_type
-            not in {
-                "gpt-4o",
-                "gpt-4o-mini",
-            }
-        ):
-            (
-                output_messages,
-                finish_reasons,
-                usage_dict,
-                response_id,
-                tool_call,
-                num_tokens,
-            ) = self._structure_output_with_function(response_format)
-            tool_call_records.append(tool_call)
-
         # Final info and response
         info = self._step_get_info(
             output_messages,
@@ -756,10 +548,9 @@ class ChatAgent(BaseAgent):
             response_id,
             tool_call_records,
             num_tokens,
-            external_tool_request,
         )
+
         self._log_final_output(output_messages)
-        self.model_backend.model_config_dict = self.original_model_dict
         return ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
@@ -776,32 +567,32 @@ class ChatAgent(BaseAgent):
             Optional[ChatCompletionMessageToolCall]: The parsed tool call if
                 present, otherwise None.
         """
-        # Check if the response contains tool calls
-        if (
-            self.is_tools_added()
-            and not self.model_type.support_native_tool_calling
-            and "</function>" in response.choices[0].message.content
-        ):
-            parsed_content = self._parse_tool_response(
-                response.choices[0].message.content
-            )
-            if parsed_content:
-                return ChatCompletionMessageToolCall(
-                    id=str(uuid.uuid4()),
-                    function=Function(
-                        arguments=str(parsed_content["arguments"]).replace(
-                            "'", '"'
-                        ),
-                        name=str(parsed_content["function"]),
-                    ),
-                    type="function",
-                )
-        elif (
-            self.is_tools_added()
-            and self.model_type.support_native_tool_calling
-            and response.choices[0].message.tool_calls
-        ):
-            return response.choices[0].message.tool_calls[0]
+        # # Check if the response contains tool calls
+        # if (
+        #     self.has_tools
+        #     and not self.model_type.support_native_tool_calling
+        #     and "</function>" in response.choices[0].message.content
+        # ):
+        #     parsed_content = self._parse_tool_response(
+        #         response.choices[0].message.content
+        #     )
+        #     if parsed_content:
+        #         return ChatCompletionMessageToolCall(
+        #             id=str(uuid.uuid4()),
+        #             function=Function(
+        #                 arguments=str(parsed_content["arguments"]).replace(
+        #                     "'", '"'
+        #                 ),
+        #                 name=str(parsed_content["function"]),
+        #             ),
+        #             type="function",
+        #         )
+        # elif (
+        #     self.has_tools
+        #     and self.model_type.support_native_tool_calling
+        #     and response.choices[0].message.tool_calls
+        # ):
+        #     return response.choices[0].message.tool_calls[0]
 
         # No tool call found
         return None
@@ -817,7 +608,7 @@ class ChatAgent(BaseAgent):
             bool: `True` if the response is a standard reply, `False`
                 otherwise.
         """
-        if not self.is_tools_added():
+        if not self.has_tools:
             return True
 
         if not isinstance(response, ChatCompletion):
@@ -868,7 +659,7 @@ class ChatAgent(BaseAgent):
         """
         if isinstance(input_message, str):
             input_message = BaseMessage.make_user_message(
-                role_name='User', content=input_message
+                role_name="User", content=input_message
             )
 
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -891,28 +682,11 @@ class ChatAgent(BaseAgent):
             ) = self._step_model_response(openai_messages, num_tokens)
 
             if (
-                not self.is_tools_added()
+                not self.has_tools
                 or not isinstance(response, ChatCompletion)
                 or not response.choices[0].message.tool_calls
             ):
                 break
-
-            # Check for external tool call
-            external_tool_request = response.choices[0].message.tool_calls[0]
-            if external_tool_request.function.name in self.external_tool_names:
-                # if model calls an external tool, directly return the request
-                info = self._step_get_info(
-                    output_messages,
-                    finish_reasons,
-                    usage_dict,
-                    response_id,
-                    tool_call_records,
-                    num_tokens,
-                    external_tool_request,
-                )
-                return ChatAgentResponse(
-                    msgs=output_messages, terminated=self.terminated, info=info
-                )
 
             # Normal function calling
             tool_call_records.append(
@@ -996,6 +770,7 @@ class ChatAgent(BaseAgent):
 
         return func_record
 
+    # TODO: Simplify format -> Schema
     def _structure_output_with_function(
         self, response_format: Type[BaseModel]
     ) -> Tuple[
@@ -1030,7 +805,7 @@ class ChatAgent(BaseAgent):
         original_model_dict = self.model_backend.model_config_dict
 
         # Replace the original tools with the structuring function
-        self.tool_dict = {func.get_function_name(): func}
+        self._tools = [func]
         self.model_backend.model_config_dict = original_model_dict.copy()
         self.model_backend.model_config_dict["tools"] = [
             func.get_openai_tool_schema()
@@ -1131,7 +906,6 @@ class ChatAgent(BaseAgent):
         response_id: str,
         tool_calls: List[FunctionCallingRecord],
         num_tokens: int,
-        external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
         r"""Process the output of a chat step and gather information about the
         step.
@@ -1151,9 +925,6 @@ class ChatAgent(BaseAgent):
             tool_calls (List[FunctionCallingRecord]): Records of function calls
                 made during this step.
             num_tokens (int): The number of tokens used in this step.
-            external_tool_request (Optional[ChatCompletionMessageToolCall]):
-                Any external tool request made during this step.
-                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: A dictionary containing information about the chat
@@ -1189,7 +960,6 @@ class ChatAgent(BaseAgent):
             finish_reasons,
             num_tokens,
             tool_calls,
-            external_tool_request,
         )
         return info
 
@@ -1213,9 +983,9 @@ class ChatAgent(BaseAgent):
                 role_type=self.role_type,
                 meta_dict=dict(),
                 content=choice.message.content or "",
-                parsed=getattr(choice.message, 'parsed', None),
+                parsed=getattr(choice.message, "parsed", None),
             )
-            # Process log probabilities and append to the message meta information
+            # Process log probabilities, append to the message meta information
             if choice.logprobs is not None:
                 tokens_logprobs = choice.logprobs.content
 
@@ -1267,10 +1037,10 @@ class ChatAgent(BaseAgent):
             dict: A dictionary representation of the Pydantic model.
         """
         # Check if the `model_dump` method exists (Pydantic v2)
-        if hasattr(obj, 'model_dump'):
+        if hasattr(obj, "model_dump"):
             return obj.model_dump()
         # Fallback to `dict()` method (Pydantic v1)
-        elif hasattr(obj, 'dict'):
+        elif hasattr(obj, "dict"):
             return obj.dict()
         else:
             raise TypeError("The object is not a Pydantic model")

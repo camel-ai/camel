@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import QWEN_API_PARAMS, QwenConfig
 from camel.messages import OpenAIMessage
@@ -78,9 +79,11 @@ class QwenModel(BaseModelBackend):
         )
 
     @api_keys_required("QWEN_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Qwen chat completion.
 

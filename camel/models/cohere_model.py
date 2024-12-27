@@ -16,7 +16,9 @@ import json
 import logging
 import os
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from cohere.types import ChatMessageV2, ChatResponse
@@ -211,7 +213,12 @@ class CohereModel(BaseModelBackend):
         return self._token_counter
 
     @api_keys_required("COHERE_API_KEY")
-    def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
+    ) -> ChatCompletion:
         r"""Runs inference of Cohere chat completion.
 
         Args:

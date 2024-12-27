@@ -15,10 +15,11 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import httpx
 from openai import OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import (
     SAMBA_CLOUD_API_PARAMS,
@@ -144,8 +145,11 @@ class SambaModel(BaseModelBackend):
             )
 
     @api_keys_required("SAMBA_API_KEY")
-    def run(  # type: ignore[misc]
-        self, messages: List[OpenAIMessage]
+    def _run(  # type: ignore[misc]
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs SambaNova's service.
 

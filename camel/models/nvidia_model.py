@@ -13,13 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import OpenAI, Stream
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionChunk,
 )
+from pydantic import BaseModel
 
 from camel.configs import NVIDIA_API_PARAMS, NvidiaConfig
 from camel.messages import OpenAIMessage
@@ -73,9 +74,11 @@ class NvidiaModel(BaseModelBackend):
         )
 
     @api_keys_required("NVIDIA_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of NVIDIA chat completion.
 

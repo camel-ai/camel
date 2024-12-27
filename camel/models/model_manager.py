@@ -20,10 +20,13 @@ from typing import (
     Callable,
     Dict,
     List,
+    Optional,
+    Type,
     Union,
 )
 
 from openai import Stream
+from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
@@ -178,7 +181,10 @@ class ModelManager:
         return choice(self.models)
 
     def run(
-        self, messages: List[OpenAIMessage]
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Process a list of messages by selecting a model based on
             the scheduling strategy.
@@ -198,7 +204,7 @@ class ModelManager:
 
         # Pass all messages to the selected model and get the response
         try:
-            response = self.current_model.run(messages)
+            response = self.current_model.run(messages, response_format, tools)
         except Exception as exc:
             logger.error(f"Error processing with model: {self.current_model}")
             if self.scheduling_strategy == self.always_first:

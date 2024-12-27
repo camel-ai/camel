@@ -12,9 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import Stream
+from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
 from camel.types import (
@@ -74,22 +75,43 @@ class BaseModelBackend(ABC):
         pass
 
     @abstractmethod
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        pass
+
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs the query to the backend model.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The response format
+                to use for the model. (default: :obj:`None`)
+            tools (Optional[List[Tool]]): The schema of tools to use for the
+                model for this request. Will override the tools specified in
+                the model configuration (but not change the configuration).
+                (default: :obj:`None`)
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        pass
+        response_format = (
+            self.model_config_dict.get("response_format", None)
+            or response_format
+        )
+        tools = self.model_config_dict.get("tools", None) or tools
+        return self._run(messages, response_format, tools)
 
     @abstractmethod
     def check_model_config(self):

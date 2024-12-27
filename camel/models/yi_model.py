@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import YI_API_PARAMS, YiConfig
 from camel.messages import OpenAIMessage
@@ -77,9 +78,11 @@ class YiModel(BaseModelBackend):
         )
 
     @api_keys_required("YI_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Yi chat completion.
 

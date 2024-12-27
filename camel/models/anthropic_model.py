@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
+
+from pydantic import BaseModel
 
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
@@ -119,9 +121,11 @@ class AnthropicModel(BaseModelBackend):
         ).input_tokens
 
     @api_keys_required("ANTHROPIC_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ):
         r"""Run inference of Anthropic chat completion.
 

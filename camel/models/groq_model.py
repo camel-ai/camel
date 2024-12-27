@@ -15,6 +15,7 @@ import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import GROQ_API_PARAMS, GroqConfig
 from camel.messages import OpenAIMessage
@@ -90,9 +91,11 @@ class GroqModel(BaseModelBackend):
         return self._token_counter
 
     @api_keys_required("GROQ_API_KEY")
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[type[BaseModel]] = None,
+        tools: Optional[List[str]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
