@@ -47,6 +47,7 @@ class TestSlackApp(unittest.TestCase):
         # to test the ValueError
         for var in [
             "SLACK_TOKEN",
+            "SLACK_APP_TOKEN",
             "SLACK_SCOPES",
             "SLACK_SIGNING_SECRET",
         ]:
