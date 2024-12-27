@@ -64,15 +64,19 @@ class DiscordApp:
         Args:
             channel_ids (Optional[List[int]]): A list of allowed channel IDs.
                 The bot will only respond to messages in these channels if
-                provided.
+                provided. (default: :obj:`None`)
             token (Optional[str]): The Discord bot token for authentication.
                 If not provided, the token will be retrieved from the
-                environment variable `DISCORD_TOKEN`.
-            client_id (Optional[str]): The client ID for Discord OAuth.
+                environment variable `DISCORD_TOKEN`. (default: :obj:`None`)
+            client_id (str, optional): The client ID for Discord OAuth.
+                (default: :obj:`None`)
             client_secret (Optional[str]): The client secret for Discord OAuth.
+                (default: :obj:`None`)
             redirect_uri (str): The redirect URI for OAuth callbacks.
+                (default: :obj:`None`)
             installation_store (DiscordAsyncInstallationStore): The database
                 stores all information of all installations.
+                (default: :obj:`None`)
         Raises:
             ValueError: If the `DISCORD_TOKEN` is not found in environment
                 variables.
@@ -232,7 +236,7 @@ class DiscordApp:
                 "client_secret, or redirect_uri."
             )
             return None
-
+        assert self.installation_store is not None
         installation = await self.installation_store.find_by_guild(
             guild_id=guild_id
         )
@@ -252,7 +256,7 @@ class DiscordApp:
                 installation.refresh_token
             )
             if new_access_token:
-                installation.bot_token = new_access_token
+                installation.access_token = new_access_token
                 installation.token_expires_at = datetime.now() + timedelta(
                     seconds=3600
                 )
@@ -291,6 +295,7 @@ class DiscordApp:
                 "client_secret, or redirect_uri."
             )
             return None
+        assert self.installation_store is not None
         expires_at = datetime.now() + timedelta(seconds=expires_in)
         installation = DiscordInstallation(
             guild_id=guild_id,
@@ -318,6 +323,7 @@ class DiscordApp:
                 "client_secret, or redirect_uri."
             )
             return None
+        assert self.installation_store is not None
         await self.installation_store.delete(guild_id=str(guild.id))
         print(f"Bot removed from guild: {guild.id}")
 
