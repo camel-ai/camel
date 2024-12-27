@@ -14,9 +14,12 @@
 
 from typing import Dict, Generator, List, Optional
 
+from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
+
+logger = get_logger(__name__)
 
 
 class ArxivToolkit(BaseToolkit):
@@ -106,7 +109,12 @@ class ArxivToolkit(BaseToolkit):
                 # TODO: Use chunkr instead of atxiv_to_text for better
                 # performance and reliability
                 text = arxiv_to_text(paper_info["pdf_url"])
-            except Exception:
+            except Exception as e:
+                logger.error(
+                    "Failed to extract text content from the PDF at "
+                    "the specified URL. "
+                    f"URL: {paper_info.get('pdf_url', 'Unknown')} | Error: {e}"
+                )
                 text = ""
 
             paper_info['paper_text'] = text
