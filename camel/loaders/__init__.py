@@ -18,6 +18,7 @@ from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .unstructured_io import UnstructuredIO
+from .panda_reader import PandaReader
 
 __all__ = [
     'File',
@@ -26,4 +27,5 @@ __all__ = [
     'Firecrawl',
     'Apify',
     'ChunkrReader',
+    'PandaReader',
 ]
