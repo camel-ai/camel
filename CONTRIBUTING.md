@@ -375,15 +375,15 @@ The recommended way to run the integration tests is to create a draft PR and all
 
 To run a single unit test locally, use
 ```bash
-pytest ./test/unit/agents/test_agent_base.py
-```
+pytest ./test/agents/test_agent_base.py
+``**
 
-A developer is expected to add unit tests under `test/unit` and integration tests under `test/integration`.
+**From now on, a developer is expected to add unit tests under `test/unit` and integration tests under `test/integration`.** We would probably fix the existing tests, but we do want to make sure the tests in the future are categorized correctly.
 
-Note: We have some tech debt that unit tests and integration tests are not decoupled. So some tests under integration might actually be unit tests.
+Note: We have some tech debt that unit tests and integration tests are not decoupled. 
 
 ### Use Decorator
-Ideally you should use pytest decorators for all the tests, check pytest.ini for marker definitions.
+Ideally you should use pytest decorators for all the tests, check pytest.ini for marker definitions. For example, you should use unit for unit tests and integration for integration tests.
 
 ## Documentation 📚
 
