@@ -77,41 +77,6 @@ class Firecrawl:
         except Exception as e:
             raise RuntimeError(f"Failed to crawl the URL: {e}")
 
-    def markdown_crawl(self, url: str) -> str:
-        r"""Crawl a URL and all accessible subpages and return the content in
-        Markdown format.
-
-        Args:
-            url (str): The URL to crawl.
-
-        Returns:
-            str: The content of the URL in Markdown format.
-
-        Raises:
-            RuntimeError: If the crawling process fails.
-        """
-
-        try:
-            crawl_result = self.app.crawl_url(
-                url=url,
-                params={
-                    'limit': 100,
-                    'scrapeOptions': {
-                        'formats': ['markdown']
-                    },
-                }
-            )
-            if not isinstance(crawl_result, list):
-                raise ValueError("Unexpected response format")
-            markdown_contents = [
-                result.get('markdown', '') for result in crawl_result
-            ]
-            return '\n'.join(markdown_contents)
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to crawl the URL and retrieve markdown: {e}"
-            )
-
     def check_crawl_job(self, job_id: str) -> Dict:
         r"""Check the status of a crawl job.
 
