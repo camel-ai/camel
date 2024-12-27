@@ -69,7 +69,8 @@ class SkyworkRewardModel(BaseRewardModel):
             return {"Score": score}
 
     def get_scores_types(self) -> List[str]:
-        """get the scores types
+        r"""get the scores types
+        
         Returns:
             List[str]: list of scores types
         """
