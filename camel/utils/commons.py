@@ -322,7 +322,7 @@ def api_keys_required(
             if missing_keys:
                 raise ValueError(
                     "Missing or empty required API keys in "
-                    "environment variables: {', '.join(missing_keys)}"
+                    f"environment variables: {', '.join(missing_keys)}"
                 )
             return func(*args, **kwargs)
 
