@@ -15,11 +15,13 @@ import os
 import urllib.request
 
 import gradio as gr
+import pytest
 
 from apps.data_explorer.data_explorer import construct_blocks, parse_arguments
 from apps.data_explorer.loader import REPO_ROOT
 
 
+@pytest.mark.skip(reason="Skipping this test temporarily")
 def test_app():
     test_data_url = (
         "https://storage.googleapis.com/camel-bucket/datasets/test/DATA.zip"

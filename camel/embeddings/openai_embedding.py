@@ -61,7 +61,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             assert isinstance(dimensions, int)
             self.output_dim = dimensions
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.client = OpenAI(timeout=60, max_retries=3, api_key=self._api_key)
+        self.client = OpenAI(timeout=180, max_retries=3, api_key=self._api_key)
 
     def embed_list(
         self,

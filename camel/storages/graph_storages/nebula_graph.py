@@ -12,8 +12,19 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import logging
+import re
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
+from camel.storages.graph_storages.base import BaseGraphStorage
+from camel.storages.graph_storages.graph_element import (
+    GraphElement,
+)
+from camel.utils.commons import dependencies_required
+
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from nebula3.data.ResultSet import (  # type: ignore[import-untyped]
@@ -24,11 +35,6 @@ if TYPE_CHECKING:
         Session,
     )
 
-from camel.storages.graph_storages.base import BaseGraphStorage
-from camel.storages.graph_storages.graph_element import (
-    GraphElement,
-)
-from camel.utils.commons import dependencies_required
 
 MAX_RETRIES = 5
 RETRY_DELAY = 3
@@ -178,11 +184,21 @@ class NebulaGraph(BaseGraphStorage):
         """
         nodes = self._extract_nodes(graph_elements)
         for node in nodes:
-            self.add_node(node['id'], node['type'])
+            try:
+                self.add_node(node['id'], node['type'])
+            except Exception as e:
+                logger.warning(f"Failed to add node {node}. Error: {e}")
+                continue
 
         relationships = self._extract_relationships(graph_elements)
         for rel in relationships:
-            self.add_triplet(rel['subj']['id'], rel['obj']['id'], rel['type'])
+            try:
+                self.add_triplet(
+                    rel['subj']['id'], rel['obj']['id'], rel['type']
+                )
+            except Exception as e:
+                logger.warning(f"Failed to add relationship {rel}. Error: {e}")
+                continue
 
     def ensure_edge_type_exists(
         self,
@@ -253,6 +269,9 @@ class NebulaGraph(BaseGraphStorage):
             node_id (str): The ID of the node.
             tag_name (str): The tag name of the node.
         """
+        node_id = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', node_id)
+        tag_name = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', tag_name)
+
         self.ensure_tag_exists(tag_name)
 
         # Insert node without properties
@@ -409,6 +428,10 @@ class NebulaGraph(BaseGraphStorage):
             obj (str): The identifier for the object entity.
             rel (str): The relationship between the subject and object.
         """
+        subj = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', subj)
+        obj = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', obj)
+        rel = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', rel)
+
         self.ensure_tag_exists(subj)
         self.ensure_tag_exists(obj)
         self.ensure_edge_type_exists(rel)
