@@ -301,7 +301,6 @@ class SearchToolkit(BaseToolkit):
         data = response.json()["web"]
         return data
 
-    @api_keys_required("GOOGLE_API_KEY", "SEARCH_ENGINE_ID")
     @api_keys_required(
         [
             (None, 'GOOGLE_API_KEY'),

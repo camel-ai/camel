@@ -189,22 +189,33 @@ class TestApiKeysRequired(TestCase):
     def test_invalid_env_var_name_type(self):
         with self.assertRaises(TypeError) as context:
 
-            @api_keys_required([('api_key_arg', 123)])
+            @api_keys_required(
+                [('api_key_arg', 123)]
+            )  # Non-string environment variable name
             def some_function(api_key_arg=None):
                 return "Function called"
 
-        assert "Environment variable name must be a string" in str(
-            context.exception
+            # Call the function to trigger the validation
+            some_function()
+
+        self.assertIn(
+            "Environment variable name must be a string",
+            str(context.exception),
         )
 
     def test_invalid_param_name_type(self):
         with self.assertRaises(TypeError) as context:
 
-            @api_keys_required([(123, 'API_KEY')])
+            @api_keys_required([(123, 'API_KEY')])  # Non-string parameter name
             def some_function(api_key_arg=None):
                 return "Function called"
 
-        assert "Parameter name must be a string" in str(context.exception)
+            # Call the function to trigger the validation
+            some_function()
+
+        self.assertIn(
+            "Parameter name must be a string", str(context.exception)
+        )
 
     @patch.dict(os.environ, {'API_KEY': ' '}, clear=True)
     def test_empty_env_var(self):
