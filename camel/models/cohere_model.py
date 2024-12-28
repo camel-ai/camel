@@ -43,6 +43,11 @@ except (ImportError, AttributeError):
 class CohereModel(BaseModelBackend):
     r"""Cohere API in a unified BaseModelBackend interface."""
 
+    @api_keys_required(
+        [
+            ("api_key", 'COHERE_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -210,11 +215,6 @@ class CohereModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required(
-        [
-            ("api_key", 'COHERE_API_KEY'),
-        ]
-    )
     def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
         r"""Runs inference of Cohere chat completion.
 

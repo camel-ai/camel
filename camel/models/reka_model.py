@@ -56,6 +56,11 @@ class RekaModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "REKA_API_KEY"),
+        ]
+    )
     @dependencies_required('reka')
     def __init__(
         self,
@@ -168,11 +173,6 @@ class RekaModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required(
-        [
-            ("api_key", "REKA_API_KEY"),
-        ]
-    )
     def run(
         self,
         messages: List[OpenAIMessage],

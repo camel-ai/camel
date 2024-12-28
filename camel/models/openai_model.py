@@ -52,6 +52,11 @@ class OpenAIModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "OPENAI_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -86,11 +91,6 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_keys_required(
-        [
-            ("api_key", "OPENAI_API_KEY"),
-        ]
-    )
     def run(
         self,
         messages: List[OpenAIMessage],

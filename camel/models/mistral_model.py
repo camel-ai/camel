@@ -59,6 +59,11 @@ class MistralModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "MISTRAL_API_KEY"),
+        ]
+    )
     @dependencies_required('mistralai')
     def __init__(
         self,
@@ -200,11 +205,6 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required(
-        [
-            ("api_key", "MISTRAL_API_KEY"),
-        ]
-    )
     def run(
         self,
         messages: List[OpenAIMessage],

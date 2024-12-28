@@ -52,6 +52,11 @@ class QwenModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "QWEN_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -77,11 +82,6 @@ class QwenModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required(
-        [
-            ("api_key", "QWEN_API_KEY"),
-        ]
-    )
     def run(
         self,
         messages: List[OpenAIMessage],
