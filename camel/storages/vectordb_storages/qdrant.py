@@ -1,18 +1,22 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
 
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -25,6 +29,7 @@ from camel.types import VectorDistance
 from camel.utils import dependencies_required
 
 _qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
+logger = logging.getLogger(__name__)
 
 
 class QdrantStorage(BaseVectorStorage):
@@ -107,7 +112,13 @@ class QdrantStorage(BaseVectorStorage):
             hasattr(self, "delete_collection_on_del")
             and self.delete_collection_on_del
         ):
-            self._delete_collection(self.collection_name)
+            try:
+                self._delete_collection(self.collection_name)
+            except RuntimeError as e:
+                logger.error(
+                    f"Failed to delete collection"
+                    f" '{self.collection_name}': {e}"
+                )
 
     def _create_client(
         self,
@@ -244,6 +255,10 @@ class QdrantStorage(BaseVectorStorage):
             "config": collection_info.config,
         }
 
+    def close_client(self, **kwargs):
+        r"""Closes the client connection to the Qdrant storage."""
+        self._client.close(**kwargs)
+
     def add(
         self,
         records: List[VectorRecord],
@@ -273,35 +288,123 @@ class QdrantStorage(BaseVectorStorage):
                 f"{op_info}."
             )
 
-    def delete(
-        self,
-        ids: List[str],
-        **kwargs: Any,
+    def update_payload(
+        self, ids: List[str], payload: Dict[str, Any], **kwargs: Any
     ) -> None:
-        r"""Deletes a list of vectors identified by their IDs from the storage.
+        r"""Updates the payload of the vectors identified by their IDs.
 
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
-                deleted.
+                updated.
+            payload (Dict[str, Any]): List of payloads to be updated.
             **kwargs (Any): Additional keyword arguments.
 
         Raises:
-            RuntimeError: If there is an error during the deletion process.
+            RuntimeError: If there is an error during the update process.
         """
         from qdrant_client.http.models import PointIdsList, UpdateStatus
 
         points = cast(List[Union[str, int]], ids)
-        op_info = self._client.delete(
+
+        op_info = self._client.set_payload(
             collection_name=self.collection_name,
-            points_selector=PointIdsList(points=points),
-            wait=True,
+            payload=payload,
+            points=PointIdsList(points=points),
             **kwargs,
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to delete vectors in Qdrant, operation info: "
+                "Failed to update payload in Qdrant, operation info: "
                 f"{op_info}"
             )
+
+    def delete_collection(self) -> None:
+        r"""Deletes the entire collection in the Qdrant storage."""
+        self._delete_collection(self.collection_name)
+
+    def delete(
+        self,
+        ids: Optional[List[str]] = None,
+        payload_filter: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        r"""Deletes points from the collection based on either IDs or payload
+        filters.
+
+        Args:
+            ids (Optional[List[str]], optional): List of unique identifiers
+                for the vectors to be deleted.
+            payload_filter (Optional[Dict[str, Any]], optional): A filter for
+                the payload to delete points matching specific conditions. If
+                `ids` is provided, `payload_filter` will be ignored unless both
+                are combined explicitly.
+            **kwargs (Any): Additional keyword arguments pass to `QdrantClient.
+                delete`.
+
+        Examples:
+            >>> # Delete points with IDs "1", "2", and "3"
+            >>> storage.delete(ids=["1", "2", "3"])
+            >>> # Delete points with payload filter
+            >>> storage.delete(payload_filter={"name": "Alice"})
+
+        Raises:
+            ValueError: If neither `ids` nor `payload_filter` is provided.
+            RuntimeError: If there is an error during the deletion process.
+
+        Notes:
+            - If `ids` is provided, the points with these IDs will be deleted
+                directly, and the `payload_filter` will be ignored.
+            - If `ids` is not provided but `payload_filter` is, then points
+                matching the `payload_filter` will be deleted.
+        """
+        from qdrant_client.http.models import (
+            Condition,
+            FieldCondition,
+            Filter,
+            MatchValue,
+            PointIdsList,
+            UpdateStatus,
+        )
+
+        if not ids and not payload_filter:
+            raise ValueError(
+                "You must provide either `ids` or `payload_filter` to delete "
+                "points."
+            )
+
+        if ids:
+            op_info = self._client.delete(
+                collection_name=self.collection_name,
+                points_selector=PointIdsList(
+                    points=cast(List[Union[int, str]], ids)
+                ),
+                **kwargs,
+            )
+            if op_info.status != UpdateStatus.COMPLETED:
+                raise RuntimeError(
+                    "Failed to delete vectors in Qdrant, operation info: "
+                    f"{op_info}"
+                )
+
+        if payload_filter:
+            filter_conditions = [
+                FieldCondition(key=key, match=MatchValue(value=value))
+                for key, value in payload_filter.items()
+            ]
+
+            op_info = self._client.delete(
+                collection_name=self.collection_name,
+                points_selector=Filter(
+                    must=cast(List[Condition], filter_conditions)
+                ),
+                **kwargs,
+            )
+
+            if op_info.status != UpdateStatus.COMPLETED:
+                raise RuntimeError(
+                    "Failed to delete vectors in Qdrant, operation info: "
+                    f"{op_info}"
+                )
 
     def status(self) -> VectorDBStatus:
         status = self._get_collection_info(self.collection_name)
@@ -313,6 +416,7 @@ class QdrantStorage(BaseVectorStorage):
     def query(
         self,
         query: VectorDBQuery,
+        filter_conditions: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided
@@ -321,31 +425,50 @@ class QdrantStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            filter_conditions (Optional[Dict[str, Any]], optional): A
+                dictionary specifying conditions to filter the query results.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
                 storage based on similarity to the query vector.
         """
-        # TODO: filter
+        from qdrant_client.http.models import (
+            Condition,
+            FieldCondition,
+            Filter,
+            MatchValue,
+        )
+
+        # Construct filter if filter_conditions is provided
+        search_filter = None
+        if filter_conditions:
+            must_conditions = [
+                FieldCondition(key=key, match=MatchValue(value=value))
+                for key, value in filter_conditions.items()
+            ]
+            search_filter = Filter(must=cast(List[Condition], must_conditions))
+
+        # Execute the search with optional filter
         search_result = self._client.search(
             collection_name=self.collection_name,
             query_vector=query.query_vector,
             with_payload=True,
             with_vectors=True,
             limit=query.top_k,
+            query_filter=search_filter,
             **kwargs,
         )
-        query_results = []
-        for point in search_result:
-            query_results.append(
-                VectorDBQueryResult.create(
-                    similarity=point.score,
-                    id=str(point.id),
-                    payload=point.payload,
-                    vector=point.vector,  # type: ignore[arg-type]
-                )
+
+        query_results = [
+            VectorDBQueryResult.create(
+                similarity=point.score,
+                id=str(point.id),
+                payload=point.payload,
+                vector=point.vector,  # type: ignore[arg-type]
             )
+            for point in search_result
+        ]
 
         return query_results
 
@@ -363,6 +486,6 @@ class QdrantStorage(BaseVectorStorage):
         pass
 
     @property
-    def client(self) -> Any:
+    def client(self) -> "QdrantClient":
         r"""Provides access to the underlying vector database client."""
         return self._client

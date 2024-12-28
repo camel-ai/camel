@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List
 
@@ -21,8 +21,8 @@ from camel.configs import MistralConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import (
-    MATH_FUNCS,
-    SEARCH_FUNCS,
+    MathToolkit,
+    SearchToolkit,
 )
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
@@ -41,12 +41,11 @@ def main(
 
     user_model_config = MistralConfig(temperature=0.2)
 
-    function_list = [
-        *MATH_FUNCS,
-        *SEARCH_FUNCS,
+    tools_list = [
+        *MathToolkit().get_tools(),
+        *SearchToolkit().get_tools(),
     ]
     assistant_model_config = MistralConfig(
-        tools=function_list,
         temperature=0.2,
     )
 
@@ -59,7 +58,7 @@ def main(
                 model_type=model_type,
                 model_config_dict=assistant_model_config.as_dict(),
             ),
-            tools=function_list,
+            tools=tools_list,
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(

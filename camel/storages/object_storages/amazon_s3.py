@@ -1,23 +1,23 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
 from pathlib import Path, PurePath
 from typing import Optional, Tuple
 from warnings import warn
 
-from camel.loaders import File
+from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
 
 
@@ -70,18 +70,20 @@ class AmazonS3Storage(BaseObjectStorage):
             aws_key_id = None
             aws_secret_key = None
 
-        import boto3
+        import botocore.session
         from botocore import UNSIGNED
         from botocore.config import Config
 
+        session = botocore.session.get_session()
+
         if not anonymous:
-            self._client = boto3.client(
+            self._client = session.create_client(
                 "s3",
                 aws_access_key_id=aws_key_id,
                 aws_secret_access_key=aws_secret_key,
             )
         else:
-            self._client = boto3.client(
+            self._client = session.create_client(
                 "s3", config=Config(signature_version=UNSIGNED)
             )
 
@@ -154,7 +156,7 @@ class AmazonS3Storage(BaseObjectStorage):
             Bucket=self._bucket_name, Key=file_key
         )
         raw_bytes = response["Body"].read()
-        return File.create_file_from_raw_bytes(raw_bytes, filename)
+        return create_file_from_raw_bytes(raw_bytes, filename)
 
     def _upload_file(
         self, local_file_path: Path, remote_file_key: str
@@ -165,11 +167,10 @@ class AmazonS3Storage(BaseObjectStorage):
             local_file_path (Path): The path to the local file to be uploaded.
             remote_file_key (str): The path to the object in the bucket.
         """
-        self._client.upload_file(
-            Bucket=self._bucket_name,
-            Key=remote_file_key,
-            Filename=local_file_path,
-        )
+        with open(local_file_path, "rb") as f:
+            self._client.put_object(
+                Bucket=self._bucket_name, Key=remote_file_key, Body=f
+            )
 
     def _download_file(
         self,
@@ -182,11 +183,12 @@ class AmazonS3Storage(BaseObjectStorage):
             local_file_path (Path): The path to the local file to be saved.
             remote_file_key (str): The key of the object in the bucket.
         """
-        self._client.download_file(
+        file = self._client.get_object(
             Bucket=self._bucket_name,
             Key=remote_file_key,
-            Filename=local_file_path,
         )
+        with open(local_file_path, "wb") as f:
+            f.write(file["Body"].read())
 
     def _object_exists(self, file_key: str) -> bool:
         r"""

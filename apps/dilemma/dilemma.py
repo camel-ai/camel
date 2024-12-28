@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 Gradio-based web UI to select between two
 options and save the answers to a database.
@@ -26,6 +26,9 @@ import gradio as gr
 from database_connection import DatabaseConnection
 
 from apps.common.auto_zip import AutoZip
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def parse_arguments():
@@ -74,7 +77,7 @@ def parse_arguments():
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
-        print("Unknown args: ", unknown)
+        logger.warn("Unknown args: ", unknown)
     return args
 
 
@@ -171,7 +174,7 @@ def construct_ui(
         else:
             who_is_better = state[choice]['who']
         name = state['name']
-        print(
+        logger.info(
             "choice=", choice, "who_is_better=", who_is_better, "name=", name
         )
         if db_conn is not None:
@@ -204,11 +207,11 @@ def construct_blocks(data_path: str, has_connection: bool):
         gr.Blocks: Blocks instance.
     """
 
-    print("Loading the dataset...")
+    logger.info("Loading the dataset...")
     dataset = load_dataset(data_path)
-    print("Dataset is loaded")
+    logger.info("Dataset is loaded")
 
-    print("Getting Dilemma web server online...")
+    logger.info("Getting Dilemma web server online...")
 
     with gr.Blocks() as blocks:
         construct_ui(blocks, dataset, has_connection)
@@ -230,7 +233,7 @@ def main():
         server_port=args.server_port,
     )
 
-    print("Exiting.")
+    logger.info("Exiting.")
 
 
 if __name__ == "__main__":

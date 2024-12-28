@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import importlib
 import os
 import platform
@@ -20,6 +20,7 @@ import subprocess
 import time
 import zipfile
 from functools import wraps
+from http import HTTPStatus
 from typing import (
     Any,
     Callable,
@@ -28,6 +29,7 @@ from typing import (
     Mapping,
     Optional,
     Set,
+    Type,
     TypeVar,
     cast,
 )
@@ -57,7 +59,6 @@ def print_text_animated(text, delay: float = 0.02, end: str = ""):
     for char in text:
         print(char, end=end, flush=True)
         time.sleep(delay)
-    print('\n')
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
@@ -255,18 +256,18 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             missing_environment_keys = [
                 k for k in required_keys if k not in os.environ
             ]
             if (
-                not getattr(self, '_api_key', None)
+                not (args and getattr(args[0], '_api_key', None))
                 and missing_environment_keys
             ):
                 raise ValueError(
                     f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
 
         return cast(F, wrapper)
 
@@ -328,12 +329,12 @@ def get_pydantic_major_version() -> int:
         return 0
 
 
-def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
+def get_pydantic_object_schema(pydantic_params: Type[BaseModel]) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
 
     Args:
-        pydantic_params (BaseModel): The Pydantic model to retrieve the schema
-            for.
+        pydantic_params (Type[BaseModel]): The Pydantic model class to retrieve
+            the schema for.
 
     Returns:
         dict: The JSON schema of the Pydantic model.
@@ -353,7 +354,7 @@ def func_string_to_callable(code: str):
     """
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
-    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT)
+    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT)
     return func
 
 
@@ -379,10 +380,18 @@ def json_to_function_code(json_obj: Dict) -> str:
     docstring_args = []
     return_keys = []
 
+    prop_to_python = {
+        'string': 'str',
+        'number': 'float',
+        'integer': 'int',
+        'boolean': 'bool',
+    }
+
     for prop in required:
-        description = properties[prop]['description']
+        # if no description, return empty string
+        description = properties[prop].get('description', "")
         prop_type = properties[prop]['type']
-        python_type = 'str' if prop_type == 'string' else prop_type
+        python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
         docstring_args.append(
             f"        {prop} ({python_type}): {description}."
@@ -396,7 +405,7 @@ def json_to_function_code(json_obj: Dict) -> str:
 
     # function template
     function_code = f'''
-def {Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT}({args_str}):
+def {Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT}({args_str}):
     r"""Return response with a specified json format.
     Args:
 {docstring_args_str}
@@ -541,9 +550,96 @@ class AgentOpsMeta(type):
         return super().__new__(cls, name, bases, dct)
 
 
-# Mock trak agent decorator for AgentOps
 def track_agent(*args, **kwargs):
+    r"""Mock track agent decorator for AgentOps."""
+
     def noop(f):
         return f
 
     return noop
+
+
+def handle_http_error(response: requests.Response) -> str:
+    r"""Handles the HTTP errors based on the status code of the response.
+
+    Args:
+        response (requests.Response): The HTTP response from the API call.
+
+    Returns:
+        str: The error type, based on the status code.
+    """
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
+        return "Unauthorized. Check your access token."
+    elif response.status_code == HTTPStatus.FORBIDDEN:
+        return "Forbidden. You do not have permission to perform this action."
+    elif response.status_code == HTTPStatus.NOT_FOUND:
+        return "Not Found. The resource could not be located."
+    elif response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+        return "Too Many Requests. You have hit the rate limit."
+    else:
+        return "HTTP Error"
+
+
+def retry_request(
+    func: Callable, retries: int = 3, delay: int = 1, *args: Any, **kwargs: Any
+) -> Any:
+    r"""Retries a function in case of any errors.
+
+    Args:
+        func (Callable): The function to be retried.
+        retries (int): Number of retry attempts. (default: :obj:`3`)
+        delay (int): Delay between retries in seconds. (default: :obj:`1`)
+        *args: Arguments to pass to the function.
+        **kwargs: Keyword arguments to pass to the function.
+
+    Returns:
+        Any: The result of the function call if successful.
+
+    Raises:
+        Exception: If all retry attempts fail.
+    """
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
+
+
+def generate_prompt_for_structured_output(
+    response_format: Optional[Type[BaseModel]],
+    user_message: str,
+) -> str:
+    """
+    This function generates a prompt based on the provided Pydantic model and
+    user message.
+
+    Args:
+        response_format (Type[BaseModel]): The Pydantic model class.
+        user_message (str): The user message to be used in the prompt.
+
+    Returns:
+        str: A prompt string for the LLM.
+    """
+    if response_format is None:
+        return user_message
+
+    json_schema = response_format.model_json_schema()
+    sys_prompt = (
+        "Given the user message, please generate a JSON response adhering "
+        "to the following JSON schema:\n"
+        f"{json_schema}\n"
+        "Make sure the JSON response is valid and matches the EXACT structure "
+        "defined in the schema. Your result should only be a valid json "
+        "object, without any other text or comments.\n"
+    )
+    user_prompt = f"User message: {user_message}\n"
+
+    final_prompt = f"""
+    {sys_prompt}
+    {user_prompt}
+    """
+    return final_prompt

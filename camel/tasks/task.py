@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import re
 from enum import Enum
@@ -93,6 +93,10 @@ class Task(BaseModel):
 
     result: Optional[str] = ""
 
+    failure_count: int = 0
+
+    additional_info: Optional[str] = None
+
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.
@@ -126,6 +130,11 @@ class Task(BaseModel):
         self.set_state(TaskState.DONE)
 
     def set_id(self, id: str):
+        r"""Set the id of the task.
+
+        Args:
+            id (str): The id of the task.
+        """
         self.id = id
 
     def set_state(self, state: TaskState):
@@ -143,10 +152,20 @@ class Task(BaseModel):
             self.parent.set_state(state)
 
     def add_subtask(self, task: "Task"):
+        r"""Add a subtask to the current task.
+
+        Args:
+            task (Task): The subtask to be added.
+        """
         task.parent = self
         self.subtasks.append(task)
 
     def remove_subtask(self, id: str):
+        r"""Remove a subtask from the current task.
+
+        Args:
+            id (str): The id of the subtask to be removed.
+        """
         self.subtasks = [task for task in self.subtasks if task.id != id]
 
     def get_running_task(self) -> Optional["Task"]:
@@ -193,7 +212,7 @@ class Task(BaseModel):
     def decompose(
         self,
         agent: ChatAgent,
-        template: TextPrompt = TASK_DECOMPOSE_PROMPT,
+        prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
         r"""Decompose a task to a list of sub-tasks. It can be used for data
@@ -201,8 +220,8 @@ class Task(BaseModel):
 
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
-            template (TextPrompt): The prompt template to decompose
-                task. If not provided, the default template will be used.
+            prompt (str, optional): A prompt to decompose the task. If not
+                provided, the default prompt will be used.
             task_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response. If not provided,
                 the default parse_response will be used.
@@ -212,7 +231,7 @@ class Task(BaseModel):
         """
 
         role_name = agent.role_name
-        content = template.format(
+        content = prompt or TASK_DECOMPOSE_PROMPT.format(
             role_name=role_name,
             content=self.content,
         )
@@ -221,6 +240,8 @@ class Task(BaseModel):
         )
         response = agent.step(msg)
         tasks = task_parser(response.msg.content, self.id)
+        for task in tasks:
+            task.additional_info = self.additional_info
         return tasks
 
     def compose(
@@ -248,6 +269,7 @@ class Task(BaseModel):
         content = template.format(
             role_name=role_name,
             content=self.content,
+            additional_info=self.additional_info,
             other_results=sub_tasks_result,
         )
         msg = BaseMessage.make_user_message(

@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 import re
 from abc import ABC, abstractmethod
@@ -20,6 +20,47 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional
 
 from camel.utils import dependencies_required
+
+
+def create_file(file: BytesIO, filename: str) -> "File":
+    r"""Reads an uploaded file and returns a File object.
+
+    Args:
+        file (BytesIO): A BytesIO object representing the contents of the
+            file.
+        filename (str): The name of the file.
+
+    Returns:
+        File: A File object.
+    """
+    ext_to_cls = {
+        "docx": DocxFile,
+        "pdf": PdfFile,
+        "txt": TxtFile,
+        "json": JsonFile,
+        "html": HtmlFile,
+    }
+
+    ext = filename.split(".")[-1].lower()
+    if ext not in ext_to_cls:
+        raise NotImplementedError(f"File type {ext} not supported")
+
+    out_file = ext_to_cls[ext].from_bytes(file, filename)
+    return out_file
+
+
+def create_file_from_raw_bytes(raw_bytes: bytes, filename: str) -> "File":
+    r"""Reads raw bytes and returns a File object.
+
+    Args:
+        raw_bytes (bytes): The raw bytes content of the file.
+        filename (str): The name of the file.
+
+    Returns:
+        File: A File object.
+    """
+    file = BytesIO(raw_bytes)
+    return create_file(file, filename)
 
 
 class File(ABC):
@@ -78,47 +119,6 @@ class File(ABC):
         """
         file = BytesIO(raw_bytes)
         return cls.from_bytes(file, filename)
-
-    @staticmethod
-    def create_file(file: BytesIO, filename: str) -> "File":
-        r"""Reads an uploaded file and returns a File object.
-
-        Args:
-            file (BytesIO): A BytesIO object representing the contents of the
-                file.
-            filename (str): The name of the file.
-
-        Returns:
-            File: A File object.
-        """
-        ext_to_cls = {
-            "docx": DocxFile,
-            "pdf": PdfFile,
-            "txt": TxtFile,
-            "json": JsonFile,
-            "html": HtmlFile,
-        }
-
-        ext = filename.split(".")[-1].lower()
-        if ext not in ext_to_cls:
-            raise NotImplementedError(f"File type {ext} not supported")
-
-        out_file = ext_to_cls[ext].from_bytes(file, filename)
-        return out_file
-
-    @staticmethod
-    def create_file_from_raw_bytes(raw_bytes: bytes, filename: str) -> "File":
-        r"""Reads raw bytes and returns a File object.
-
-        Args:
-            raw_bytes (bytes): The raw bytes content of the file.
-            filename (str): The name of the file.
-
-        Returns:
-            File: A File object.
-        """
-        file = BytesIO(raw_bytes)
-        return File.create_file(file, filename)
 
     def __repr__(self) -> str:
         return (

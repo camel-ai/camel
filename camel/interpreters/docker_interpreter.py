@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import io
 import shlex
@@ -23,10 +23,13 @@ from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.logger import get_logger
 from camel.utils import is_docker_running
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
+
+logger = get_logger(__name__)
 
 
 class DockerInterpreter(BaseInterpreter):
@@ -80,6 +83,11 @@ class DockerInterpreter(BaseInterpreter):
         self._container: Optional[Container] = None
 
     def __del__(self) -> None:
+        r"""Destructor for the DockerInterpreter class.
+
+        This method ensures that the Docker container is removed when the
+        interpreter is deleted.
+        """
         if self._container is not None:
             self._container.remove(force=True)
 
@@ -182,8 +190,10 @@ class DockerInterpreter(BaseInterpreter):
 
         # Print code for security checking
         if self.require_confirm:
-            print(f"The following {code_type} code will run in container:")
-            print(Fore.CYAN + code + Fore.RESET)
+            logger.info(
+                f"The following {code_type} code will run on your "
+                "computer: {code}"
+            )
             while True:
                 choice = input("Running code? [Y/n]:").lower()
                 if choice in ["y", "yes", "ye", ""]:

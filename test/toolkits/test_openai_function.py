@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import copy
 import json
 from datetime import datetime
@@ -19,7 +19,7 @@ from typing import List
 import pytest
 from jsonschema.exceptions import SchemaError
 
-from camel.toolkits import OpenAIFunction, get_openai_tool_schema
+from camel.toolkits import FunctionTool, get_openai_tool_schema
 from camel.types import RoleType
 from camel.utils import get_pydantic_major_version
 
@@ -87,7 +87,6 @@ def test_get_openai_tool_schema():
                         'description': 'datatime_para desc',
                     },
                     'default_enum_para': {
-                        'default': 'critic',
                         'allOf': [{'$ref': '#/definitions/RoleType'}],
                         'description': 'default_enum_para desc',
                     },
@@ -120,6 +119,7 @@ def test_get_openai_tool_schema():
             'name': 'test_all_parameters',
             'description': 'A function to test all parameter type.'
             '\nThe parameters will be provided by user.',
+            'strict': True,
             'parameters': {
                 '$defs': {
                     'RoleType': {
@@ -161,8 +161,7 @@ def test_get_openai_tool_schema():
                         'description': 'datatime_para desc',
                     },
                     'default_enum_para': {
-                        'allOf': [{'$ref': '#/$defs/RoleType'}],
-                        'default': 'critic',
+                        '$ref': '#/$defs/RoleType',
                         'description': 'default_enum_para desc',
                     },
                 },
@@ -173,8 +172,10 @@ def test_get_openai_tool_schema():
                     'list_para',
                     'float_para',
                     'datatime_para',
+                    'default_enum_para',
                 ],
                 'type': 'object',
+                'additionalProperties': False,
             },
         },
     }
@@ -249,6 +250,7 @@ def test_different_docstring_style():
         "function": {
             "name": "mul",
             "description": "Multiply two integers.",
+            "strict": true,
             "parameters": {
                 "properties": {
                     "a": {
@@ -262,7 +264,8 @@ def test_different_docstring_style():
                     }
                 },
                 "required": ["a", "b"],
-                "type": "object"
+                "type": "object",
+                "additionalProperties": false
             }
         }
     }""")
@@ -313,6 +316,7 @@ def add_with_wrong_doc(a: int, b: int) -> int:
 function_schema = {
     "name": "add",
     "description": "Adds two numbers.",
+    'strict': True,
     "parameters": {
         'type': 'object',
         'properties': {
@@ -325,7 +329,47 @@ function_schema = {
                 'description': 'The second number to be added.',
             },
         },
+        'additionalProperties': False,
         'required': ['a', 'b'],
+    },
+}
+
+function_schema_without_docs = {
+    "description": '',
+    "name": "add",
+    "strict": True,
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+            },
+            'b': {
+                'type': 'integer',
+            },
+        },
+        'required': ['a', 'b'],
+        'additionalProperties': False,
+    },
+}
+
+function_schema_with_wrong_docs = {
+    "name": "add",
+    "description": "Adds two numbers.",
+    "strict": True,
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+                'description': 'The first number to be added.',
+            },
+            'b': {
+                'type': 'integer',
+            },
+        },
+        'required': ['a', 'b'],
+        'additionalProperties': False,
     },
 }
 
@@ -334,37 +378,45 @@ tool_schema = {
     "function": function_schema,
 }
 
+tool_schema_without_docs = {
+    "type": "function",
+    "function": function_schema_without_docs,
+}
+
+tool_schema_with_wrong_docs = {
+    "type": "function",
+    "function": function_schema_with_wrong_docs,
+}
+
 
 def test_correct_function():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     add.set_function_name("add")
     assert add.get_openai_function_schema() == function_schema
 
 
 def test_function_without_doc():
-    add = OpenAIFunction(add_without_doc)
+    add = FunctionTool(add_without_doc)
     add.set_function_name("add")
-    with pytest.raises(Exception, match="miss function description"):
-        _ = add.get_openai_function_schema()
-    add.set_openai_function_schema(function_schema)
-    assert add.get_openai_function_schema() == function_schema
+    with pytest.warns(UserWarning, match="Function description is missing"):
+        _ = FunctionTool(add_without_doc).get_openai_function_schema()
+    with pytest.warns(UserWarning, match="Parameter description is missing"):
+        _ = FunctionTool(add_without_doc).get_openai_function_schema()
+    assert add.get_openai_tool_schema() == tool_schema_without_docs
 
 
 def test_function_with_wrong_doc():
-    add = OpenAIFunction(add_with_wrong_doc)
+    add = FunctionTool(add_with_wrong_doc)
     add.set_function_name("add")
-    with pytest.raises(Exception, match="miss description of parameter \"b\""):
-        _ = add.get_openai_function_schema()
-    add.set_parameter("b", function_schema["parameters"]["properties"]["b"])
-    assert add.get_openai_function_schema() == function_schema
+    assert add.get_openai_tool_schema() == tool_schema_with_wrong_docs
 
 
 def test_validate_openai_tool_schema_valid():
-    OpenAIFunction.validate_openai_tool_schema(tool_schema)
+    FunctionTool.validate_openai_tool_schema(tool_schema)
 
 
 def test_get_set_openai_tool_schema():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     assert add.get_openai_tool_schema() is not None
     new_schema = copy.deepcopy(tool_schema)
     new_schema["function"]["description"] = "New description"
@@ -373,20 +425,20 @@ def test_get_set_openai_tool_schema():
 
 
 def test_get_set_parameter_description():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     assert add.get_paramter_description("a") == "The first number to be added."
     add.set_paramter_description("a", "New description for a.")
     assert add.get_paramter_description("a") == "New description for a."
 
 
 def test_get_set_parameter_description_non_existing():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     with pytest.raises(KeyError):
         add.get_paramter_description("non_existing")
 
 
 def test_get_set_openai_function_schema():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_schema = add.get_openai_function_schema()
     assert initial_schema is not None
 
@@ -400,7 +452,7 @@ def test_get_set_openai_function_schema():
 
 
 def test_get_set_function_name():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     assert add.get_function_name() == "add_with_doc"
 
     add.set_function_name("new_add")
@@ -408,7 +460,7 @@ def test_get_set_function_name():
 
 
 def test_get_set_function_description():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_description = add.get_function_description()
     assert initial_description is not None
 
@@ -418,7 +470,7 @@ def test_get_set_function_description():
 
 
 def test_get_set_parameter():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_param_schema = add.get_parameter("a")
     assert initial_param_schema is not None
 
@@ -431,7 +483,7 @@ def test_get_set_parameter():
 
 
 def test_parameters_getter_setter():
-    add = OpenAIFunction(add_with_doc)
+    add = FunctionTool(add_with_doc)
     initial_params = add.parameters
     assert initial_params is not None
 

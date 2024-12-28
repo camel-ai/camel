@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 Gradio-based web UI to explore the Camel dataset.
 """
@@ -22,6 +22,9 @@ from typing import Dict, List, Optional, Tuple
 import gradio as gr
 
 from apps.data_explorer.loader import Datasets, load_datasets
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def parse_arguments():
@@ -70,7 +73,7 @@ def parse_arguments():
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
-        print("Unknown args: ", unknown)
+        logger.warn("Unknown args: %s", unknown)
     return args
 
 
@@ -150,7 +153,7 @@ def construct_ui(
                 "(https://github.com/lightaime/camel)\n"
                 '<div style="display:flex; justify-content:center;">'
                 '<img src="https://raw.githubusercontent.com/camel-ai/camel/'
-                'master/misc/primary_logo.png" alt="Logo" style='
+                'master/misc/logo_light.png" alt="Logo" style='
                 '"max-width:50%;">'
                 '</div>'
             )
@@ -407,11 +410,11 @@ def construct_blocks(data_path: str, default_dataset: Optional[str]):
         gr.Blocks: Blocks instance.
     """
 
-    print("Loading the dataset...")
+    logger.info("Loading the dataset...")
     datasets = load_datasets(data_path)
-    print("Dataset is loaded")
+    logger.info("Dataset is loaded")
 
-    print("Getting Data Explorer web server online...")
+    logger.info("Getting Data Explorer web server online...")
 
     with gr.Blocks() as blocks:
         construct_ui(blocks, datasets, default_dataset)
@@ -433,7 +436,7 @@ def main():
         server_port=args.server_port,
     )
 
-    print("Exiting.")
+    logger.info("Exiting.")
 
 
 if __name__ == "__main__":

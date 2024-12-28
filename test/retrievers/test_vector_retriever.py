@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -80,7 +80,7 @@ def test_process(mock_unstructured_modules):
 
     # Assert that methods are called as expected
     mock_instance.parse_file_or_url.assert_called_once_with(
-        "https://www.camel-ai.org/"
+        input_path="https://www.camel-ai.org/", metadata_filename=None
     )
     mock_instance.chunk_elements.assert_called_once()
 
@@ -98,3 +98,39 @@ def test_query(vector_retriever):
     results = vector_retriever.query(query, top_k=top_k)
     assert len(results) == 1
     assert results[0]['similarity score'] == '0.8'
+
+
+# Test query with no results found
+def test_query_no_results(vector_retriever):
+    query = "test query"
+    top_k = 1
+    # Setup mock behavior for vector storage query
+    vector_retriever.storage.load = Mock()
+    vector_retriever.storage.query.return_value = []
+
+    with pytest.raises(
+        ValueError,
+        match="Query result is empty, please check if the "
+        "vector storage is empty.",
+    ):
+        vector_retriever.query(query, top_k=top_k)
+
+
+# Test query with payload None
+def test_query_payload_none(vector_retriever):
+    query = "test query"
+    top_k = 1
+    # Setup mock behavior for vector storage query
+    vector_retriever.storage.load = Mock()
+    vector_retriever.storage.query.return_value = [
+        Mock(similarity=0.8, record=Mock(payload=None))
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Payload of vector storage is None, "
+            "please check the collection."
+        ),
+    ):
+        vector_retriever.query(query, top_k=top_k)
