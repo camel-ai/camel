@@ -29,7 +29,7 @@ class Apify:
 
     @api_keys_required(
         [
-            ("api_key", 'APIFY_API_KEY'),
+            ("api_key", "APIFY_API_KEY"),
         ]
     )
     def __init__(

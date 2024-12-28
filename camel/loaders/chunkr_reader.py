@@ -42,7 +42,7 @@ class ChunkrReader:
 
     @api_keys_required(
         [
-            ("api_key", 'CHUNKR_API_KEY'),
+            ("api_key", "CHUNKR_API_KEY"),
         ]
     )
     def __init__(

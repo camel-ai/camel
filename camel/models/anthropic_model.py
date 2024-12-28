@@ -110,7 +110,7 @@ class AnthropicModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'ANTHROPIC_API_KEY'),
+            ("api_key", "ANTHROPIC_API_KEY"),
         ]
     )
     def run(

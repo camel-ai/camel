@@ -92,7 +92,7 @@ class DeepSeekModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'DEEPSEEK_API_KEY'),
+            ("api_key", "DEEPSEEK_API_KEY"),
         ]
     )
     def run(

@@ -91,7 +91,7 @@ class GroqModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'GROQ_API_KEY'),
+            ("api_key", "GROQ_API_KEY"),
         ]
     )
     def run(

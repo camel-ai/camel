@@ -71,7 +71,7 @@ class OpenAISchemaConverter(BaseConverter):
 
     @api_keys_required(
         [
-            (None, 'OPENAI_API_KEY'),
+            (None, "OPENAI_API_KEY"),
         ]
     )
     def convert(  # type: ignore[override]

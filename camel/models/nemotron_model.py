@@ -60,7 +60,7 @@ class NemotronModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'NVIDIA_API_KEY'),
+            ("api_key", "NVIDIA_API_KEY"),
         ]
     )
     def run(

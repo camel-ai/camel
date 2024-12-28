@@ -202,7 +202,7 @@ class MistralModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'MISTRAL_API_KEY'),
+            ("api_key", "MISTRAL_API_KEY"),
         ]
     )
     def run(

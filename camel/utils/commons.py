@@ -293,26 +293,42 @@ def api_keys_required(
 
             missing_keys = []
             for param_name, env_var_name in param_env_list:
-                if param_name:
-                    # Check function argument first, then environment variable
+                if not isinstance(env_var_name, str):
+                    raise TypeError(
+                        f"Environment variable name must be a string, got"
+                        f" {type(env_var_name)}"
+                    )
+
+                value = None
+                if (
+                    param_name
+                ):  # If param_name is provided, check function argument first
+                    if not isinstance(param_name, str):
+                        raise TypeError(
+                            f"Parameter name must be a string, "
+                            f"got {type(param_name)}"
+                        )
                     value = arguments.get(param_name)
-                    if value is None:
-                        value = os.environ.get(env_var_name)
-                else:
-                    # Only check environment variable
-                    value = os.environ.get(env_var_name)
-                if not value:
+                    # If we found a valid value in arguments, continue to next
+                    # item
+                    if value:
+                        continue
+
+                # Check environment variable if no valid value found yet
+                value = os.environ.get(env_var_name)
+                if not value or value.strip() == "":
                     missing_keys.append(env_var_name)
+
             if missing_keys:
                 raise ValueError(
-                    f"Missing required API keys: {', '.join(missing_keys)}"
+                    "Missing or empty required API keys in "
+                    "environment variables: {', '.join(missing_keys)}"
                 )
             return func(*args, **kwargs)
 
         return cast(F, wrapper)
 
     return decorator
-
 
 
 def get_system_information():

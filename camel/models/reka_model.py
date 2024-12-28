@@ -170,7 +170,7 @@ class RekaModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'REKA_API_KEY'),
+            ("api_key", "REKA_API_KEY"),
         ]
     )
     def run(

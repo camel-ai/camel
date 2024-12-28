@@ -148,18 +148,21 @@ def test_is_docker_running(mock_subprocess_run):
 class TestApiKeysRequired(TestCase):
     @patch.dict(os.environ, {}, clear=True)
     def test_missing_keys(self):
-        @api_keys_required({'api_key_arg': 'API_KEY'})
+        @api_keys_required([('api_key_arg', 'API_KEY')])
         def some_function(api_key_arg=None):
             return "Function called"
 
         with self.assertRaises(ValueError) as context:
             some_function()
 
-        assert "Missing required API keys: API_KEY" in str(context.exception)
+        assert (
+            "Missing or empty required API keys in environment variables"
+            ": API_KEY" in str(context.exception)
+        )
 
     @patch.dict(os.environ, {'API_KEY': 'secret_environment_key'}, clear=True)
     def test_keys_in_environment(self):
-        @api_keys_required({'api_key_arg': 'API_KEY'})
+        @api_keys_required([('api_key_arg', 'API_KEY')])
         def some_function(api_key_arg=None):
             return f"Function called with api_key_arg={api_key_arg}"
 
@@ -167,7 +170,7 @@ class TestApiKeysRequired(TestCase):
         assert result == "Function called with api_key_arg=None"
 
     def test_keys_in_arguments(self):
-        @api_keys_required({'api_key_arg': 'API_KEY'})
+        @api_keys_required([('api_key_arg', 'API_KEY')])
         def some_function(api_key_arg=None):
             return f"Function called with api_key_arg={api_key_arg}"
 
@@ -176,9 +179,43 @@ class TestApiKeysRequired(TestCase):
 
     @patch.dict(os.environ, {'API_KEY': 'secret_environment_key'}, clear=True)
     def test_keys_in_both(self):
-        @api_keys_required({'api_key_arg': 'API_KEY'})
+        @api_keys_required([('api_key_arg', 'API_KEY')])
         def some_function(api_key_arg=None):
             return f"Function called with api_key_arg={api_key_arg}"
 
         result = some_function(api_key_arg='secret_argument_key')
         assert result == "Function called with api_key_arg=secret_argument_key"
+
+    def test_invalid_env_var_name_type(self):
+        with self.assertRaises(TypeError) as context:
+
+            @api_keys_required([('api_key_arg', 123)])
+            def some_function(api_key_arg=None):
+                return "Function called"
+
+        assert "Environment variable name must be a string" in str(
+            context.exception
+        )
+
+    def test_invalid_param_name_type(self):
+        with self.assertRaises(TypeError) as context:
+
+            @api_keys_required([(123, 'API_KEY')])
+            def some_function(api_key_arg=None):
+                return "Function called"
+
+        assert "Parameter name must be a string" in str(context.exception)
+
+    @patch.dict(os.environ, {'API_KEY': ' '}, clear=True)
+    def test_empty_env_var(self):
+        @api_keys_required([('api_key_arg', 'API_KEY')])
+        def some_function(api_key_arg=None):
+            return "Function called"
+
+        with self.assertRaises(ValueError) as context:
+            some_function()
+
+        assert (
+            "Missing or empty required API keys in environment "
+            "variables: API_KEY" in str(context.exception)
+        )

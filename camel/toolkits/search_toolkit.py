@@ -151,7 +151,7 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
-    @api_keys_required([(None, 'GOOGLE_API_KEY'), (None, 'SEARCH_ENGINE_ID')])
+    @api_keys_required([(None, "GOOGLE_API_KEY"), (None, "SEARCH_ENGINE_ID")])
     def search_google(
         self, query: str, num_result_pages: int = 5
     ) -> List[Dict[str, Any]]:
@@ -278,8 +278,7 @@ class SearchToolkit(BaseToolkit):
         if not WOLFRAMALPHA_APP_ID:
             raise ValueError(
                 "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: "
-                "`https://products.wolframalpha.com/api/`."
+                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
             )
 
         try:
