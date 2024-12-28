@@ -125,7 +125,12 @@ class SearchToolkit(BaseToolkit):
                 schema for structured output.
 
         Returns:
-            Any: The response from the Linkup API.
+            Any: The Linkup API search result. If output_type is 
+            "searchResults", the result will be a linkup.LinkupSearchResults. 
+            If output_type is "sourcedAnswer", the result will be a linkup.
+            LinkupSourcedAnswer. If output_type is "structured", the result 
+            will be either an instance of the provided pydantic.BaseModel, or 
+            an arbitrary data structure, following structured_output_schema.
         """
         from linkup import LinkupClient
 
@@ -149,12 +154,14 @@ class SearchToolkit(BaseToolkit):
                              output. "
             )
 
-    def _process_response(self, response, output_type: str) -> Dict[str, Any]:
+    def _process_response(
+        self, response: Any, output_type: str
+    ) -> Dict[str, Any]:
         """
         Process the response based on the specified output type.
 
         Args:
-            response: The API response to be processed.
+            response (Any): The API response to be processed.
             output_type (str): The output type (searchResults, sourcedAnswer,
                 structured).
 
@@ -174,12 +181,12 @@ class SearchToolkit(BaseToolkit):
         else:
             return {"error": f"Unknown output type: {output_type}"}
 
-    def _process_search_results(self, response) -> Dict[str, Any]:
+    def _process_search_results(self, response: Any) -> Dict[str, Any]:
         """
         Process raw search results from the API response.
 
         Args:
-            response: The API response containing search results.
+            response (Any): The API response containing search results.
 
         Returns:
             Dict[str, Any]: A dictionary containing the search results.
@@ -190,12 +197,12 @@ class SearchToolkit(BaseToolkit):
             ]
         }
 
-    def _process_sourced_answer(self, response) -> Dict[str, Any]:
+    def _process_sourced_answer(self, response: Any) -> Dict[str, Any]:
         """
         Process the sourced answer from the API response.
 
         Args:
-            response: The API response containing the answer and sources.
+            response (Any): The API response containing search results.
 
         Returns:
             Dict[str, Any]: A dictionary containing the answer and its sources.
