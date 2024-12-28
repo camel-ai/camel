@@ -13,10 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Literal, Optional, Type, TypeAlias, Union
+from typing import Any, Dict, List, Optional, TypeAlias, Union
 
 import requests
-from pydantic import BaseModel
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -63,149 +62,6 @@ class SearchToolkit(BaseToolkit):
             result = f"An exception occurred during the search: {e}"
 
         return result
-
-    @dependencies_required("linkup")
-    @api_keys_required("LINKUP_API_KEY")
-    def search_linkup(
-        self,
-        query: str,
-        depth: Literal["standard", "deep"] = "standard",
-        output_type: Literal[
-            "searchResults", "sourcedAnswer", "structured"
-        ] = "searchResults",
-        structured_output_schema: Union[Type[BaseModel], str, None] = None,
-    ) -> Dict[str, Any]:
-        """
-        Search for a query in the Linkup API and return results in various
-        formats.
-
-        Args:
-            query (str): The search query.
-            depth (Literal["standard", "deep"]): The depth of the search.
-                "standard" for a straightforward search, "deep" for a more
-                comprehensive search.
-            output_type (Literal["searchResults", "sourcedAnswer",
-                "structured"]): The type of output:
-                - "searchResults" for raw search results,
-                - "sourcedAnswer" for an answer with supporting sources,
-                - "structured" for output based on a provided schema.
-            structured_output_schema (Union[Type[BaseModel], str, None]): If
-                `output_type` is "structured",specify the schema of the
-                output. Can be a Pydantic BaseModel or a JSON schema string.
-
-        Returns:
-            Dict[str, Any]: A dictionary representing the search result. The
-            structure depends on the `output_type`. If an error occurs,
-            returns an error message.
-        """
-        try:
-            response = self._perform_search(
-                query, depth, output_type, structured_output_schema
-            )
-            return self._process_response(response, output_type)
-
-        except Exception as e:
-            return {"error": f"An unexpected error occurred: {e!s}"}
-
-    def _perform_search(
-        self,
-        query: str,
-        depth: str,
-        output_type: str,
-        structured_output_schema: Union[Type[BaseModel], str, None],
-    ) -> Any:
-        """
-        Perform the search operation based on the provided parameters.
-
-        Args:
-            query (str): The search query.
-            depth (str): The depth of the search ("standard" or "deep").
-            output_type (str): The type of output required.
-            structured_output_schema (Union[Type[BaseModel], str, None]): The
-                schema for structured output.
-
-        Returns:
-            Any: The response from the Linkup API.
-        """
-        from linkup import LinkupClient
-
-        LINKUP_API_KEY = os.getenv("LINKUP_API_KEY")
-        client = LinkupClient(api_key=LINKUP_API_KEY)
-
-        if output_type == "structured" and structured_output_schema:
-            return client.search(
-                query=query,
-                depth=depth,
-                output_type=output_type,
-                structured_output_schema=structured_output_schema,
-            )
-        elif output_type != "structured":
-            return client.search(
-                query=query, depth=depth, output_type=output_type
-            )
-        else:
-            raise ValueError(
-                "Please specify the schema for structured \
-                             output. "
-            )
-
-    def _process_response(self, response, output_type: str) -> Dict[str, Any]:
-        """
-        Process the response based on the specified output type.
-
-        Args:
-            response: The API response to be processed.
-            output_type (str): The output type (searchResults, sourcedAnswer,
-                structured).
-
-        Returns:
-            Dict[str, Any]: A dictionary representing the processed result.
-        """
-        if output_type == "searchResults":
-            return self._process_search_results(response)
-
-        elif output_type == "sourcedAnswer":
-            return self._process_sourced_answer(response)
-
-        elif output_type == "structured":
-            # Structured response is already in the desired format
-            return response.__dict__
-
-        else:
-            return {"error": f"Unknown output type: {output_type}"}
-
-    def _process_search_results(self, response) -> Dict[str, Any]:
-        """
-        Process raw search results from the API response.
-
-        Args:
-            response: The API response containing search results.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the search results.
-        """
-        return {
-            "results": [
-                item.__dict__ for item in response.__dict__.get('results', [])
-            ]
-        }
-
-    def _process_sourced_answer(self, response) -> Dict[str, Any]:
-        """
-        Process the sourced answer from the API response.
-
-        Args:
-            response: The API response containing the answer and sources.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the answer and its sources.
-        """
-        return {
-            "answer": response.__dict__.get('answer', ''),
-            "sources": [
-                item.__dict__ for item in response.__dict__.get('sources', [])
-            ],
-        }
 
     @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
@@ -762,7 +618,6 @@ class SearchToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.search_wiki),
-            FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
             FunctionTool(self.query_wolfram_alpha),
