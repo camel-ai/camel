@@ -72,7 +72,7 @@ class OpenAICompatibleModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 

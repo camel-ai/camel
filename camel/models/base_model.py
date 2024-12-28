@@ -78,8 +78,8 @@ class BaseModelBackend(ABC):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         pass
 
@@ -87,7 +87,7 @@ class BaseModelBackend(ABC):
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs the query to the backend model.
 

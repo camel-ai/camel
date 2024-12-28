@@ -79,7 +79,7 @@ class StubModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.

@@ -22,7 +22,6 @@ from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
-    NOT_GIVEN,
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
@@ -32,6 +31,16 @@ from camel.utils import (
     OpenAITokenCounter,
     api_keys_required,
 )
+
+O1_UNSUPPORTED_PARAMS = [
+    "temperature",
+    "top_p",
+    "presence_penalty",
+    "frequency_penalty",
+    "logprobs",
+    "top_logprobs",
+    "logit_bias",
+]
 
 
 class OpenAIModel(BaseModelBackend):
@@ -65,15 +74,38 @@ class OpenAIModel(BaseModelBackend):
             model_config_dict = ChatGPTConfig().as_dict()
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
         url = url or os.environ.get("OPENAI_API_BASE_URL")
+
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
+
+        self._sanitize_model_config()
+
         self._client = OpenAI(
             timeout=180,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
         )
+
+    def _sanitize_model_config(self) -> None:
+        """Sanitize the model configuration for O1 models."""
+        if self.model_type in [
+            ModelType.O1,
+            ModelType.O1_MINI,
+            ModelType.O1_PREVIEW,
+        ]:
+            warnings.warn(
+                "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
+                "which has certain limitations, reference: "
+                "`https://platform.openai.com/docs/guides/reasoning`.",
+                UserWarning,
+            )
+            self.model_config_dict = {
+                k: v
+                for k, v in self.model_config_dict.items()
+                if k not in O1_UNSUPPORTED_PARAMS
+            }
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -91,74 +123,46 @@ class OpenAIModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[str]]): The schema of the tools to use for the
+                request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # o1-preview and o1-mini have Beta limitations
-        # reference: https://platform.openai.com/docs/guides/reasoning
-        if self.model_type in [
-            ModelType.O1,
-            ModelType.O1_MINI,
-            ModelType.O1_PREVIEW,
-        ]:
-            warnings.warn(
-                "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
-                "which has certain limitations, reference: "
-                "`https://platform.openai.com/docs/guides/reasoning`.",
-                UserWarning,
-            )
+        request_config = self.model_config_dict.copy()
 
-            # Check and remove unsupported parameters and reset the fixed
-            # parameters
-            unsupported_keys = [
-                "temperature",
-                "top_p",
-                "presence_penalty",
-                "frequency_penalty",
-                "logprobs",
-                "top_logprobs",
-                "logit_bias",
-            ]
-            for key in unsupported_keys:
-                if key in self.model_config_dict:
-                    del self.model_config_dict[key]
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("strict", None)
+            request_config["tools"] = tools
 
-        if self.model_config_dict.get("response_format"):
-            # stream is not supported in beta.chat.completions.parse
-            if "stream" in self.model_config_dict:
-                del self.model_config_dict["stream"]
-
+        if response_format:
+            request_config["response_format"] = response_format
+            request_config.pop("stream", None)
             response = self._client.beta.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
-
             return self._to_chat_completion(response)
-
-        # Removing 'strict': True from the dictionary for
-        # client.chat.completions.create
-        if self.model_config_dict.get('tools') is not NOT_GIVEN:
-            for tool in self.model_config_dict.get('tools', []):
-                function_dict = tool.get('function', {})
-                if 'strict' in function_dict:
-                    del function_dict['strict']
 
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
         return response
 

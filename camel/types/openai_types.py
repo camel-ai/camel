@@ -34,16 +34,18 @@ from openai.types.completion_usage import CompletionUsage
 from openai.types.chat import ParsedChatCompletion
 from openai._types import NOT_GIVEN, NotGiven
 
-Choice = Choice
-ChatCompletion = ChatCompletion
-ChatCompletionChunk = ChatCompletionChunk
-ChatCompletionMessage = ChatCompletionMessage
-ChatCompletionMessageParam = ChatCompletionMessageParam
-ChatCompletionSystemMessageParam = ChatCompletionSystemMessageParam
-ChatCompletionUserMessageParam = ChatCompletionUserMessageParam
-ChatCompletionAssistantMessageParam = ChatCompletionAssistantMessageParam
-ChatCompletionFunctionMessageParam = ChatCompletionFunctionMessageParam
-CompletionUsage = CompletionUsage
-NOT_GIVEN = NOT_GIVEN
-NotGiven = NotGiven
-ParsedChatCompletion = ParsedChatCompletion
+__all__ = [
+    "Choice",
+    "ChatCompletion",
+    "ChatCompletionChunk",
+    "ChatCompletionMessage",
+    "ChatCompletionMessageParam",
+    "ChatCompletionSystemMessageParam",
+    "ChatCompletionUserMessageParam",
+    "ChatCompletionAssistantMessageParam",
+    "ChatCompletionFunctionMessageParam",
+    "CompletionUsage",
+    "ParsedChatCompletion",
+    "NOT_GIVEN",
+    "NotGiven",
+]

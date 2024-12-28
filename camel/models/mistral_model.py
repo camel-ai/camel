@@ -207,7 +207,7 @@ class MistralModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 

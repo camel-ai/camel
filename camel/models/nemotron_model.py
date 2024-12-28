@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import OpenAI
 from pydantic import BaseModel
@@ -64,7 +64,7 @@ class NemotronModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[str]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         r"""Runs inference of OpenAI chat completion.
 
