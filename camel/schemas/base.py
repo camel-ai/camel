@@ -15,8 +15,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from pydantic import BaseModel
-
 
 class BaseConverter(ABC):
     r"""A base class for schema outputs that includes functionality
@@ -30,7 +28,7 @@ class BaseConverter(ABC):
     @abstractmethod
     def convert(
         self, content: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> BaseModel:
+    ) -> Any:
         r"""Structures the input text into the expected response format.
 
         Args:
@@ -40,6 +38,6 @@ class BaseConverter(ABC):
             prompt (Optional[str], optional): The prompt to be used.
 
         Returns:
-            Optional[BaseModel]: The structured response.
+           Any: The converted response.
         """
         pass
