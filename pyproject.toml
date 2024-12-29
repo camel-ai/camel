@@ -73,6 +73,7 @@ beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
+linkup-sdk = { version = "^0.2.1", optional = true }
 duckduckgo-search = { version = "^6.3.5", optional = true }
 newspaper3k = { version = "^0.2.8", optional = true }
 wolframalpha = { version = "^5.0.0", optional = true }
@@ -155,6 +156,7 @@ rag = [
 search_tools = [
     "duckduckgo-search",
     "wikipedia",
+    "linkup-sdk",
     "wolframalpha",
     "tavily-python",
 ]
@@ -191,6 +193,7 @@ tools = [
     "functools",
     "PyMuPDF",
     "wikipedia",
+    "linkup-sdk",
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
@@ -282,6 +285,7 @@ all = [
     "discord.py",
     "PyMuPDF",
     "wikipedia",
+    "linkup-sdk",
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
@@ -451,6 +455,7 @@ module = [
     "huggingface_hub.utils._errors",
     "huggingface_hub.errors",
     "wikipedia",
+    "linkup-sdk",
     "duckduckgo_search",
     "newspaper",
     "wolframalpha",
