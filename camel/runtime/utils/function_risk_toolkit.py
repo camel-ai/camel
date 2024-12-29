@@ -22,7 +22,7 @@ class FunctionRiskToolkit(BaseToolkit):
 
     Args:
         verbose (Optional[bool]): Whether to print verbose output.
-            (default::obj:`False`)
+            (default: :obj:`False`)
     """
 
     def __init__(self, verbose: Optional[bool] = False):

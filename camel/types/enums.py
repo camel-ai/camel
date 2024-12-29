@@ -34,6 +34,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    O1 = "o1"
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
 
@@ -154,8 +155,14 @@ class ModelType(UnifiedModelType, Enum):
         return "gpt-4o-mini"
 
     @property
+    def support_native_structured_output(self) -> bool:
+        return self.is_openai
+
+    @property
     def support_native_tool_calling(self) -> bool:
-        return any([self.is_openai, self.is_gemini, self.is_mistral])
+        return any(
+            [self.is_openai, self.is_gemini, self.is_mistral, self.is_qwen]
+        )
 
     @property
     def is_openai(self) -> bool:
@@ -166,6 +173,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
         }
@@ -452,6 +460,7 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 131_072
         elif self in {
+            ModelType.O1,
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,

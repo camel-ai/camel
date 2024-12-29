@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import importlib
-import logging
 import os
 import platform
 import re
@@ -22,6 +21,7 @@ import time
 import zipfile
 from functools import wraps
 from http import HTTPStatus
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -40,19 +40,14 @@ import pydantic
 import requests
 from pydantic import BaseModel
 
-from camel.logger import get_logger
 from camel.types import TaskType
 
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
 
-logger = get_logger(__name__)
 
-
-def print_text_animated(
-    text, delay: float = 0.02, end: str = "", log_level: int = logging.INFO
-):
+def print_text_animated(text, delay: float = 0.02, end: str = ""):
     r"""Prints the given text with an animated effect.
 
     Args:
@@ -61,22 +56,10 @@ def print_text_animated(
             (default: :obj:`0.02`)
         end (str, optional): The end character to print after each
             character of text. (default: :obj:`""`)
-        log_level (int, optional): The log level to use.
-            See https://docs.python.org/3/library/logging.html#levels
-            (default: :obj:`logging.INFO`)
     """
-    if logger.isEnabledFor(log_level):
-        # timestamp and other prefixes
-        logger.log(log_level, '')
-
-        for char in text:
-            print(char, end=end, flush=True)
-            time.sleep(delay)
-        # Close the log entry
-        logger.log(log_level, '')
-    else:
-        # This may be relevant for logging frameworks
-        logger.log(log_level, text)
+    for char in text:
+        print(char, end=end, flush=True)
+        time.sleep(delay)
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
@@ -406,7 +389,8 @@ def json_to_function_code(json_obj: Dict) -> str:
     }
 
     for prop in required:
-        description = properties[prop]['description']
+        # if no description, return empty string
+        description = properties[prop].get('description', "")
         prop_type = properties[prop]['type']
         python_type = prop_to_python.get(prop_type, prop_type)
         args.append(f"{prop}: {python_type}")
@@ -624,3 +608,84 @@ def retry_request(
                 time.sleep(delay)
             else:
                 raise
+
+
+def download_github_subdirectory(
+    repo: str, subdir: str, data_dir: Path, branch="main"
+):
+    r"""Download subdirectory of the Github repo of
+    the benchmark.
+
+    This function downloads all files and subdirectories from a
+    specified subdirectory of a GitHub repository and
+    saves them to a local directory.
+
+    Args:
+        repo (str): The name of the GitHub repository
+                in the format "owner/repo".
+        subdir (str): The path to the subdirectory
+            within the repository to download.
+        data_dir (Path): The local directory where
+            the files will be saved.
+        branch (str, optional): The branch of the repository to use.
+            Defaults to "main".
+    """
+    from tqdm import tqdm
+
+    api_url = (
+        f"https://api.github.com/repos/{repo}/contents/{subdir}?ref={branch}"
+    )
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    response = requests.get(api_url, headers=headers)
+    response.raise_for_status()
+    files = response.json()
+    os.makedirs(data_dir, exist_ok=True)
+
+    for file in tqdm(files, desc="Downloading"):
+        file_path = data_dir / file["name"]
+
+        if file["type"] == "file":
+            file_url = file["download_url"]
+            file_response = requests.get(file_url)
+            with open(file_path, "wb") as f:
+                f.write(file_response.content)
+        elif file["type"] == "dir":
+            download_github_subdirectory(
+                repo, f'{subdir}/{file["name"]}', file_path, branch
+            )
+
+
+def generate_prompt_for_structured_output(
+    response_format: Optional[Type[BaseModel]],
+    user_message: str,
+) -> str:
+    """
+    This function generates a prompt based on the provided Pydantic model and
+    user message.
+
+    Args:
+        response_format (Type[BaseModel]): The Pydantic model class.
+        user_message (str): The user message to be used in the prompt.
+
+    Returns:
+        str: A prompt string for the LLM.
+    """
+    if response_format is None:
+        return user_message
+
+    json_schema = response_format.model_json_schema()
+    sys_prompt = (
+        "Given the user message, please generate a JSON response adhering "
+        "to the following JSON schema:\n"
+        f"{json_schema}\n"
+        "Make sure the JSON response is valid and matches the EXACT structure "
+        "defined in the schema. Your result should only be a valid json "
+        "object, without any other text or comments.\n"
+    )
+    user_prompt = f"User message: {user_message}\n"
+
+    final_prompt = f"""
+    {sys_prompt}
+    {user_prompt}
+    """
+    return final_prompt
