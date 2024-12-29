@@ -32,7 +32,7 @@ from camel.utils import (
     api_keys_required,
 )
 
-O1_UNSUPPORTED_PARAMS = [
+O1_UNSUPPORTED_PARAMS = {
     "temperature",
     "top_p",
     "presence_penalty",
@@ -40,7 +40,7 @@ O1_UNSUPPORTED_PARAMS = [
     "logprobs",
     "top_logprobs",
     "logit_bias",
-]
+}
 
 
 class OpenAIModel(BaseModelBackend):
@@ -133,38 +133,55 @@ class OpenAIModel(BaseModelBackend):
                 in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
                 response.
-            tools (Optional[List[str]]): The schema of the tools to use for the
-                request.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if response_format:
+            return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(messages, tools)
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         request_config = self.model_config_dict.copy()
 
-        if tools:
+        if tools is not None:
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
-            request_config["tools"] = tools
+        request_config["tools"] = tools
 
-        if response_format:
-            request_config["response_format"] = response_format
-            request_config.pop("stream", None)
-            response = self._client.beta.chat.completions.parse(
-                messages=messages,
-                model=self.model_type,
-                **request_config,
-            )
-            return self._to_chat_completion(response)
-
-        response = self._client.chat.completions.create(
+        return self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
-        return response
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        request_config["tools"] = tools
+
+        return self._client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any

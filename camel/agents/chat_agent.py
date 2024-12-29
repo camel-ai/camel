@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-import textwrap
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -30,8 +28,7 @@ from typing import (
     Union,
 )
 
-from openai.types.chat import ChatCompletionMessageToolCall
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
 from camel.memories import (
@@ -60,11 +57,6 @@ from camel.types import (
 from camel.utils import (
     get_model_encoding,
 )
-from camel.utils.commons import (
-    func_string_to_callable,
-    get_pydantic_object_schema,
-    json_to_function_code,
-)
 
 if TYPE_CHECKING:
     from openai import Stream
@@ -84,75 +76,6 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
-
-
-def _generate_tool_prompt(self, tool_schema_list: List[Dict]) -> str:
-    r"""Generates a tool prompt based on the provided tool schema list.
-
-    Returns:
-        str: A string representing the tool prompt.
-    """
-    tool_prompts = []
-
-    for tool in tool_schema_list:
-        tool_info = tool["function"]
-        tool_name = tool_info["name"]
-        tool_description = tool_info["description"]
-        tool_json = json.dumps(tool_info, indent=4)
-
-        prompt = (
-            f"Use the function '{tool_name}' to '{tool_description}':\n"
-            f"{tool_json}\n"
-        )
-        tool_prompts.append(prompt)
-
-    tool_prompt_str = "\n".join(tool_prompts)
-
-    final_prompt = textwrap.dedent(
-        f"""\
-        You have access to the following functions:
-
-        {tool_prompt_str}
-
-        If you choose to call a function ONLY reply in the following format with no prefix or suffix:
-
-        <function=example_function_name>{{"example_name": "example_value"}}</function>
-
-        Reminder:
-        - Function calls MUST follow the specified format, start with <function= and end with </function>
-        - Required parameters MUST be specified
-        - Only call one function at a time
-        - Put the entire function call reply on one line
-        - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
-        """  # noqa: E501
-    )
-    return final_prompt
-
-
-def _parse_tool_response(self, response: str):
-    r"""Parses the tool response to extract the function name and
-    arguments.
-
-    Args:
-        response (str): The response from the model containing the
-            function call.
-
-    Returns:
-        Optional[Dict[str, Any]]: The parsed function name and arguments
-            if found, otherwise :obj:`None`.
-    """
-    function_regex = r"<function=(\w+)>(.*?)</function>"
-    match = re.search(function_regex, response)
-
-    if match:
-        function_name, args_string = match.groups()
-        try:
-            args = json.loads(args_string)
-            return {"function": function_name, "arguments": args}
-        except json.JSONDecodeError as error:
-            logger.error(f"Error parsing function arguments: {error}")
-            return None
-    return None
 
 
 class FunctionCallingRecord(BaseModel):
@@ -473,17 +396,6 @@ class ChatAgent(BaseAgent):
 
         return self._handle_step(response_format)
 
-    # def _inject_tool_prompt(self) -> None:
-    #     r"""Generate and add the tool prompt to memory."""
-    #     tool_prompt = self._generate_tool_prompt(
-    #         self.model_backend.model_config_dict["tools"]
-    #     )
-    #     tool_msg = BaseMessage.make_assistant_message(
-    #         role_name="Assistant", content=tool_prompt
-    #     )
-    #     self.update_memory(tool_msg, OpenAIBackendRole.SYSTEM)
-    #     self.tool_prompt_added = True
-
     def _handle_step(
         self,
         response_format: Optional[Type[BaseModel]],
@@ -507,38 +419,20 @@ class ChatAgent(BaseAgent):
                 finish_reasons,
                 usage_dict,
                 response_id,
-            ) = self._step_model_response(openai_messages, num_tokens)
-
-            # Try to parse structured output to return a Pydantic object
-            if response_format and isinstance(response, ChatCompletion):
-                content = response.choices[0].message.content
-                try:
-                    json_content = json.loads(str(content))
-                    output_messages[0].parsed = response_format(**json_content)  # type: ignore [assignment, misc]
-                except json.JSONDecodeError as e:
-                    logger.error(
-                        f"Failed in parsing the output into JSON: {e}"
-                    )
-                    output_messages[0].parsed = None
-                except ValidationError as e:
-                    logger.warning(
-                        "Successfully generating JSON response, "
-                        "but failed in parsing it into Pydantic object :"
-                        f"{e}, return the JSON response in parsed field"
-                    )
-                    output_messages[0].parsed = json_content
+            ) = self._step_model_response(
+                openai_messages, response_format, num_tokens
+            )
 
             # Single-step mode
             if self.single_iteration:
                 break
 
             # Handle tool requests
-            tool_request = self._extract_tool_call(response)
-            if isinstance(response, ChatCompletion) and tool_request:
-                response.choices[0].message.tool_calls = [tool_request]
-                tool_call_records.append(
-                    self._step_tool_call_and_update(response)
-                )
+            if (
+                isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls
+            ):
+                tool_call_records.append(self._step_tool_call(response))
 
         # Final info and response
         info = self._step_get_info(
@@ -555,72 +449,6 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-    def _extract_tool_call(
-        self, response: Any
-    ) -> Optional[ChatCompletionMessageToolCall]:
-        r"""Extract the tool call from the model response, if present.
-
-        Args:
-            response (Any): The model's response object.
-
-        Returns:
-            Optional[ChatCompletionMessageToolCall]: The parsed tool call if
-                present, otherwise None.
-        """
-        # # Check if the response contains tool calls
-        # if (
-        #     self.has_tools
-        #     and not self.model_type.support_native_tool_calling
-        #     and "</function>" in response.choices[0].message.content
-        # ):
-        #     parsed_content = self._parse_tool_response(
-        #         response.choices[0].message.content
-        #     )
-        #     if parsed_content:
-        #         return ChatCompletionMessageToolCall(
-        #             id=str(uuid.uuid4()),
-        #             function=Function(
-        #                 arguments=str(parsed_content["arguments"]).replace(
-        #                     "'", '"'
-        #                 ),
-        #                 name=str(parsed_content["function"]),
-        #             ),
-        #             type="function",
-        #         )
-        # elif (
-        #     self.has_tools
-        #     and self.model_type.support_native_tool_calling
-        #     and response.choices[0].message.tool_calls
-        # ):
-        #     return response.choices[0].message.tool_calls[0]
-
-        # No tool call found
-        return None
-
-    def _is_standard_response(self, response: Any) -> bool:
-        r"""Determine if the provided response is a standard reply without
-        tool calls.
-
-        Args:
-            response (Any): The response object to evaluate.
-
-        Returns:
-            bool: `True` if the response is a standard reply, `False`
-                otherwise.
-        """
-        if not self.has_tools:
-            return True
-
-        if not isinstance(response, ChatCompletion):
-            return True
-
-        if self.model_type.support_native_tool_calling:
-            return response.choices[0].message.tool_calls is None
-
-        return "</function>" not in str(
-            response.choices[0].message.content or ""
-        )
-
     def _log_final_output(self, output_messages: List[BaseMessage]) -> None:
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
@@ -631,6 +459,7 @@ class ChatAgent(BaseAgent):
                 "selected message manually using `record_message()`."
             )
 
+    # TODO: Redesign this method
     async def step_async(
         self,
         input_message: Union[BaseMessage, str],
@@ -679,7 +508,9 @@ class ChatAgent(BaseAgent):
                 finish_reasons,
                 usage_dict,
                 response_id,
-            ) = self._step_model_response(openai_messages, num_tokens)
+            ) = self._step_model_response(
+                openai_messages, response_format, num_tokens
+            )
 
             if (
                 not self.has_tools
@@ -690,22 +521,8 @@ class ChatAgent(BaseAgent):
 
             # Normal function calling
             tool_call_records.append(
-                await self._step_tool_call_and_update_async(response)
+                await self._step_tool_call_async(response)
             )
-
-        if (
-            response_format is not None
-            and self.model_type.support_native_tool_calling
-        ):
-            (
-                output_messages,
-                finish_reasons,
-                usage_dict,
-                response_id,
-                tool_call_record,
-                num_tokens,
-            ) = self._structure_output_with_function(response_format)
-            tool_call_records.append(tool_call_record)
 
         info = self._step_get_info(
             output_messages,
@@ -730,122 +547,10 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-    def _step_tool_call_and_update(
-        self, response: ChatCompletion
-    ) -> FunctionCallingRecord:
-        r"""Processes a function call within the chat completion response,
-        records the function call in the provided list of tool calls and
-        updates the memory of the current agent.
-
-        Args:
-            response (ChatCompletion): The response object from the chat
-                completion.
-
-        Returns:
-            FunctionCallingRecord: The record of calling the function.
-        """
-
-        # Perform function calling
-        func_assistant_msg, func_result_msg, tool_call_record = (
-            self._step_tool_call(response)
-        )
-
-        # Update the messages
-        self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
-        self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
-
-        return tool_call_record
-
-    async def _step_tool_call_and_update_async(
-        self, response: ChatCompletion
-    ) -> FunctionCallingRecord:
-        (
-            func_assistant_msg,
-            func_result_msg,
-            func_record,
-        ) = await self.step_tool_call_async(response)
-
-        self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
-        self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
-
-        return func_record
-
-    # TODO: Simplify format -> Schema
-    def _structure_output_with_function(
-        self, response_format: Type[BaseModel]
-    ) -> Tuple[
-        List[BaseMessage],
-        List[str],
-        Dict[str, int],
-        str,
-        FunctionCallingRecord,
-        int,
-    ]:
-        r"""Internal function of structuring the output of the agent based on
-        the given output schema.
-
-        Args:
-            response_format (Type[BaseModel]): The output schema to use for
-                structuring the output.
-
-        Returns:
-            Tuple[List[BaseMessage], List[str], Dict[str, int], str,
-                FunctionCallingRecord, int]:
-                A tuple containing the output messages, finish reasons, usage
-                dictionary, response ID, function calling record, and number of
-                tokens.
-        """
-        from camel.toolkits import FunctionTool
-
-        schema_json = get_pydantic_object_schema(response_format)
-        func_str = json_to_function_code(schema_json)
-        func_callable = func_string_to_callable(func_str)
-        func = FunctionTool(func_callable)
-
-        original_model_dict = self.model_backend.model_config_dict
-
-        # Replace the original tools with the structuring function
-        self._tools = [func]
-        self.model_backend.model_config_dict = original_model_dict.copy()
-        self.model_backend.model_config_dict["tools"] = [
-            func.get_openai_tool_schema()
-        ]
-        self.model_backend.model_config_dict["tool_choice"] = "required"
-
-        openai_messages, num_tokens = self.memory.get_context()
-        (
-            response,
-            output_messages,
-            finish_reasons,
-            usage_dict,
-            response_id,
-        ) = self._step_model_response(openai_messages, num_tokens)
-
-        if isinstance(response, ChatCompletion):
-            tool_call_record = self._step_tool_call_and_update(response)
-        else:
-            raise ValueError(
-                "Structured output is not supported for stream responses."
-            )
-
-        for base_message_item in output_messages:
-            base_message_item.content = json.dumps(tool_call_record.result)
-
-        # Recover the original tools
-        self.model_backend.model_config_dict = original_model_dict
-
-        return (
-            output_messages,
-            finish_reasons,
-            usage_dict,
-            response_id,
-            tool_call_record,
-            num_tokens,
-        )
-
     def _step_model_response(
         self,
         openai_messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
         num_tokens: int,
     ) -> tuple[
         Union[ChatCompletion, Stream],
@@ -860,7 +565,9 @@ class ChatAgent(BaseAgent):
         # Obtain the model's response
         for _ in range(len(self.model_backend.models)):
             try:
-                response = self.model_backend.run(openai_messages)
+                response = self.model_backend.run(
+                    openai_messages, response_format, self.tool_schemas
+                )
                 break
             except Exception as exc:
                 logger.error(
@@ -1129,9 +836,7 @@ class ChatAgent(BaseAgent):
     def _step_tool_call(
         self,
         response: ChatCompletion,
-    ) -> Tuple[
-        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
-    ]:
+    ) -> FunctionCallingRecord:
         r"""Execute the function with arguments following the model's response.
 
         Args:
@@ -1176,7 +881,10 @@ class ChatAgent(BaseAgent):
         func_record = FunctionCallingRecord(
             func_name=func_name, args=args, result=result
         )
-        return assist_msg, func_msg, func_record
+        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+        self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+        return func_record
 
     def _safe_json_loads(self, arguments_str):
         # Replace Python types with their JSON equivalents
@@ -1190,12 +898,10 @@ class ChatAgent(BaseAgent):
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON format: {e}")
 
-    async def step_tool_call_async(
+    async def _step_tool_call_async(
         self,
         response: ChatCompletion,
-    ) -> Tuple[
-        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
-    ]:
+    ) -> FunctionCallingRecord:
         r"""Execute the async function with arguments following the model's
         response.
 
@@ -1240,7 +946,11 @@ class ChatAgent(BaseAgent):
         func_record = FunctionCallingRecord(
             func_name=func_name, args=args, result=result
         )
-        return assist_msg, func_msg, func_record
+
+        self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
+        self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
+
+        return func_record
 
     def get_usage_dict(
         self, output_messages: List[BaseMessage], prompt_tokens: int
