@@ -27,8 +27,8 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
-from camel.messages.base import BaseMessage
+from camel.benchmarks.base import BaseBenchmark
+from camel.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 

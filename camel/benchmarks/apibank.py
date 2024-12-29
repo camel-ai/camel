@@ -26,8 +26,8 @@ from rouge import Rouge
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
-from camel.messages.base import BaseMessage
+from camel.benchmarks.base import BaseBenchmark
+from camel.messages import BaseMessage
 from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
@@ -460,7 +460,9 @@ class Evaluator:
         # Place holder for import as the import
         # only works after the files have been downloaded
         try:
-            from api_bank.tool_manager import ToolManager  # type: ignore[import-not-found]
+            from api_bank.tool_manager import (  # type: ignore[import-not-found]
+                ToolManager,
+            )
         except Exception as e:
             logger.info(f"{e}, Module will be imported after download.")
         self.dataset = samples
@@ -489,7 +491,9 @@ class Evaluator:
 
     def evaluate(self, sample_id, model_output):
         try:
-            from api_bank.api_call_extraction import parse_api_call  # type: ignore[import-not-found]
+            from api_bank.api_call_extraction import (  # type: ignore[import-not-found]
+                parse_api_call,
+            )
         except Exception as e:
             logger.info(f"{e}, Module will be imported after download.")
         sample = self.dataset[sample_id]
