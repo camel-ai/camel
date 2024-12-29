@@ -106,10 +106,10 @@ class SearchToolkit(BaseToolkit):
 
             # Perform the search using the specified output_type
             response = client.search(
-                query=query, 
-                depth=depth, 
+                query=query,
+                depth=depth,
                 output_type=output_type,
-                structured_output_schema=structured_output_schema
+                structured_output_schema=structured_output_schema,
             )
 
             if output_type == "searchResults":
