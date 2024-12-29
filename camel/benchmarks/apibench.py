@@ -23,8 +23,8 @@ from tqdm import tqdm
 from tree_sitter import Language, Parser
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
-from camel.messages.base import BaseMessage
+from camel.benchmarks.base import BaseBenchmark
+from camel.messages import BaseMessage
 from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
