@@ -11,14 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict
+from camel.agents import ChatAgent
+from camel.benchmarks import NexusBenchmark
 
+agent = ChatAgent()
 
-class Record(BaseModel):
-    id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-    content: Optional[Dict[str, Any]] = None
-
-    model_config = ConfigDict(extra="allow")
+benchmark = NexusBenchmark(
+    data_dir="./NexusDatasets", save_to="./NexusResults.jsonl"
+)
+benchmark.download()
+results = benchmark.run(agent, "OTX")
+print(results)
