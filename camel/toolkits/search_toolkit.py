@@ -75,8 +75,7 @@ class SearchToolkit(BaseToolkit):
         ] = "searchResults",
         structured_output_schema: Union[Type[BaseModel], str, None] = None,
     ) -> Dict[str, Any]:
-        """
-        Search for a query in the Linkup API and return results in various
+        r"""Search for a query in the Linkup API and return results in various
         formats.
 
         Args:
@@ -95,8 +94,8 @@ class SearchToolkit(BaseToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary representing the search result. The
-            structure depends on the `output_type`. If an error occurs,
-            returns an error message.
+                structure depends on the `output_type`. If an error occurs,
+                returns an error message.
         """
         try:
             response = self._perform_search(
@@ -114,8 +113,7 @@ class SearchToolkit(BaseToolkit):
         output_type: str,
         structured_output_schema: Union[Type[BaseModel], str, None],
     ) -> Any:
-        """
-        Perform the search operation based on the provided parameters.
+        r"""Perform the search operation based on the provided parameters.
 
         Args:
             query (str): The search query.
@@ -126,11 +124,12 @@ class SearchToolkit(BaseToolkit):
 
         Returns:
             Any: The Linkup API search result. If output_type is 
-            "searchResults", the result will be a linkup.LinkupSearchResults. 
-            If output_type is "sourcedAnswer", the result will be a linkup.
-            LinkupSourcedAnswer. If output_type is "structured", the result 
-            will be either an instance of the provided pydantic.BaseModel, or 
-            an arbitrary data structure, following structured_output_schema.
+                "searchResults", the result will be a linkup.
+                LinkupSearchResults. If output_type is "sourcedAnswer", the 
+                result will be a linkup. LinkupSourcedAnswer. If output_type 
+                is "structured", the result will be either an instance of the 
+                provided pydantic.BaseModel, or an arbitrary data structure, 
+                following structured_output_schema.
         """
         from linkup import LinkupClient
 
@@ -157,8 +156,7 @@ class SearchToolkit(BaseToolkit):
     def _process_response(
         self, response: Any, output_type: str
     ) -> Dict[str, Any]:
-        """
-        Process the response based on the specified output type.
+        r"""Process the response based on the specified output type.
 
         Args:
             response (Any): The API response to be processed.
@@ -182,8 +180,7 @@ class SearchToolkit(BaseToolkit):
             return {"error": f"Unknown output type: {output_type}"}
 
     def _process_search_results(self, response: Any) -> Dict[str, Any]:
-        """
-        Process raw search results from the API response.
+        r"""Process raw search results from the API response.
 
         Args:
             response (Any): The API response containing search results.
@@ -198,8 +195,7 @@ class SearchToolkit(BaseToolkit):
         }
 
     def _process_sourced_answer(self, response: Any) -> Dict[str, Any]:
-        """
-        Process the sourced answer from the API response.
+        r"""Process the sourced answer from the API response.
 
         Args:
             response (Any): The API response containing search results.
