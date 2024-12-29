@@ -17,8 +17,9 @@ import logging
 import random
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
-from tqdm import tqdm
+
 import tree_sitter_python as tspython
+from tqdm import tqdm
 from tree_sitter import Language, Parser
 
 from camel.agents import ChatAgent
