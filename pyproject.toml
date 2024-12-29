@@ -41,10 +41,7 @@ pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
-pillow = "^10.2.0"
-tree-sitter = "*"
-tree-sitter-python = "*"
-googletrans-py = "4.0.0"
+pillow = "^11.0.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
@@ -119,6 +116,9 @@ yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
 unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
+pandas = { version = "^2.2.3", optional = true }
+tree-sitter-python = { version = "^0.23.6", optional = true }
+tree-sitter = { version = "^0.23.2", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -192,8 +192,6 @@ encoders = [
 
 tools = [
     "beautifulsoup4",
-    "selenium",
-    "rouge",
     "docx2txt",
     "functools",
     "PyMuPDF",
@@ -239,6 +237,9 @@ tools = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
 ]
 
 vector-databases = [
@@ -331,7 +332,9 @@ all = [
     "fastapi",
     "uvicorn",
     "stripe",
-    "unstructured",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -421,8 +424,6 @@ ignore = [
     "C408", # we have used lots of dict(...) instead of literal
 ]
 
-per-file-ignores = { "camel/benchmarks/__init__.py" = ["I001"], "camel/benchmarks/apibank.py" = ["I001"], "camel/benchmarks/apibench.py" = ["I001"] }
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -453,10 +454,7 @@ module = [
     "_pytest.config",
     "_pytest.nodes",
     "numpy",
-    "pandas",
     "torch",
-    "tree-sitter",
-    "tree-sitter-python",
     "sqlalchemy",
     "google.cloud.sql.connector",
     "gradio",
@@ -498,8 +496,6 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
-    "rouge",
-    "datasets",
     "docker.*",
     "google.*",
     "google_generativeai",
@@ -522,5 +518,9 @@ module = [
     "notion-client",
     "ffmpeg",
     "yt_dlp",
+    "datasets",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
 ]
 ignore_missing_imports = true
