@@ -191,17 +191,6 @@ L'Huillier in Physics and Katalin Karikó in Physiology or Medicine (2023)."}]}
 (camel-ai-py3.10) ruihan@RuideMac-mini camel % 
 """
 
-query = """
-        Research IBM and provide:
-        - Company name, website, and brief description
-        - Most recent funding round or financial announcement
-        - Current leadership team members
-        - Technologies and tools they use
-        - Recent news from the last 3 months
-        
-        Focus on current, verified information.
-        """
-
 
 class PersonInfo(BaseModel):
     # Basic company information
@@ -213,7 +202,7 @@ search_linkup_response = SearchToolkit().search_linkup(
     query="Can you tell me which women were awared the Physics Nobel Prize",
     depth="standard",
     output_type="structured",
-    structured_output_schema=PersonInfo,
+    structured_output_schema=PersonInfo
 )
 print(search_linkup_response)
 

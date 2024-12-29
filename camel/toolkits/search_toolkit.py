@@ -98,117 +98,43 @@ class SearchToolkit(BaseToolkit):
                 returns an error message.
         """
         try:
-            response = self._perform_search(
-                query, depth, output_type, structured_output_schema
+            from linkup import LinkupClient
+
+            # Initialize the Linkup client with the API key
+            LINKUP_API_KEY = os.getenv("LINKUP_API_KEY")
+            client = LinkupClient(api_key=LINKUP_API_KEY)
+
+            # Perform the search using the specified output_type
+            response = client.search(
+                query=query, 
+                depth=depth, 
+                output_type=output_type,
+                structured_output_schema=structured_output_schema
             )
-            return self._process_response(response, output_type)
+
+            if output_type == "searchResults":
+                results = [
+                    item.__dict__
+                    for item in response.__dict__.get('results', [])
+                ]
+                return {"results": results}
+
+            elif output_type == "sourcedAnswer":
+                answer = response.__dict__.get('answer', '')
+                sources = [
+                    item.__dict__
+                    for item in response.__dict__.get('sources', [])
+                ]
+                return {"answer": answer, "sources": sources}
+
+            elif output_type == "structured" and structured_output_schema:
+                return response.__dict__
+
+            else:
+                return {"error": f"Invalid output_type: {output_type}"}
 
         except Exception as e:
             return {"error": f"An unexpected error occurred: {e!s}"}
-
-    def _perform_search(
-        self,
-        query: str,
-        depth: str,
-        output_type: str,
-        structured_output_schema: Union[Type[BaseModel], str, None],
-    ) -> Any:
-        r"""Perform the search operation based on the provided parameters.
-
-        Args:
-            query (str): The search query.
-            depth (str): The depth of the search ("standard" or "deep").
-            output_type (str): The type of output required.
-            structured_output_schema (Union[Type[BaseModel], str, None]): The
-                schema for structured output.
-
-        Returns:
-            Any: The Linkup API search result. If output_type is 
-                "searchResults", the result will be a linkup.
-                LinkupSearchResults. If output_type is "sourcedAnswer", the 
-                result will be a linkup. LinkupSourcedAnswer. If output_type 
-                is "structured", the result will be either an instance of the 
-                provided pydantic.BaseModel, or an arbitrary data structure, 
-                following structured_output_schema.
-        """
-        from linkup import LinkupClient
-
-        LINKUP_API_KEY = os.getenv("LINKUP_API_KEY")
-        client = LinkupClient(api_key=LINKUP_API_KEY)
-
-        if output_type == "structured" and structured_output_schema:
-            return client.search(
-                query=query,
-                depth=depth,
-                output_type=output_type,
-                structured_output_schema=structured_output_schema,
-            )
-        elif output_type != "structured":
-            return client.search(
-                query=query, depth=depth, output_type=output_type
-            )
-        else:
-            raise ValueError(
-                "Please specify the schema for structured \
-                             output. "
-            )
-
-    def _process_response(
-        self, response: Any, output_type: str
-    ) -> Dict[str, Any]:
-        r"""Process the response based on the specified output type.
-
-        Args:
-            response (Any): The API response to be processed.
-            output_type (str): The output type (searchResults, sourcedAnswer,
-                structured).
-
-        Returns:
-            Dict[str, Any]: A dictionary representing the processed result.
-        """
-        if output_type == "searchResults":
-            return self._process_search_results(response)
-
-        elif output_type == "sourcedAnswer":
-            return self._process_sourced_answer(response)
-
-        elif output_type == "structured":
-            # Structured response is already in the desired format
-            return response.__dict__
-
-        else:
-            return {"error": f"Unknown output type: {output_type}"}
-
-    def _process_search_results(self, response: Any) -> Dict[str, Any]:
-        r"""Process raw search results from the API response.
-
-        Args:
-            response (Any): The API response containing search results.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the search results.
-        """
-        return {
-            "results": [
-                item.__dict__ for item in response.__dict__.get('results', [])
-            ]
-        }
-
-    def _process_sourced_answer(self, response: Any) -> Dict[str, Any]:
-        r"""Process the sourced answer from the API response.
-
-        Args:
-            response (Any): The API response containing search results.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the answer and its sources.
-        """
-        return {
-            "answer": response.__dict__.get('answer', ''),
-            "sources": [
-                item.__dict__ for item in response.__dict__.get('sources', [])
-            ],
-        }
 
     @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
