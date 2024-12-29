@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, ConfigDict
+from camel.agents import ChatAgent
+from camel.benchmarks import APIBenchBenchmark
 
+agent = ChatAgent()
 
-class Record(BaseModel):
-    id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-    content: Optional[Dict[str, Any]] = None
-
-    model_config = ConfigDict(extra="allow")
+benchmark = APIBenchBenchmark(
+    data_dir="./APIBenchDatasets", save_to="./APIBench.jsonl"
+)
+result = benchmark.run(agent, 'torchhub')
+print(result)
