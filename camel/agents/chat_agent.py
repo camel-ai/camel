@@ -158,11 +158,12 @@ class ChatAgent(BaseAgent):
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+        external_tools: Optional[
+            List[Union[FunctionTool, Callable, Dict[str, Any]]]
+        ] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
-        # TODO: Remove this after refactoring
-        external_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
     ) -> None:
         # Set up model backend
         self.model_backend = ModelManager(
@@ -243,7 +244,7 @@ class ChatAgent(BaseAgent):
         return [tool.get_function_name() for tool in self._tools]
 
     @property
-    def tool_schemas(self) -> List[Dict]:
+    def tool_schemas(self) -> List[Dict[str, Any]]:
         return [tool.get_openai_tool_schema() for tool in self._tools]
 
     def add_tool(self, tool: Union[FunctionTool, Callable]) -> None:
