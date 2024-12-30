@@ -65,7 +65,11 @@ class SearchToolkit(BaseToolkit):
         return result
 
     @dependencies_required("linkup")
-    @api_keys_required("LINKUP_API_KEY")
+    @api_keys_required(
+        [
+            (None, "LINKUP_API_KEY"),
+        ]
+    )
     def search_linkup(
         self,
         query: str,
