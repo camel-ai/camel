@@ -14,7 +14,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from camel.synthetic_datagen.self_instruct import (
+from camel.datagen.self_instruct import (
     FILTER_REGISTRY,
     FilterFunction,
     InstructionFilter,
