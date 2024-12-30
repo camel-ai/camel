@@ -77,6 +77,7 @@ Main Documentation
    cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.ipynb
    cookbooks/data_gen_with_real_function_calls_and_hermes_format.ipynb
    cookbooks/agent_with_chunkr_for_pdf_parsing.ipynb
+   cookbooks/synthetic_dataevaluation&filter_with_reward_model.ipynb
 
 .. toctree::
    :maxdepth: 1
