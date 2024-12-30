@@ -12,17 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apibank import APIBankBenchmark
-from .apibench import APIBenchBenchmark
-from .base import BaseBenchmark
-from .gaia import DefaultGAIARetriever, GAIABenchmark
-from .nexus import NexusBenchmark
+from camel.agents import ChatAgent
+from camel.benchmarks import NexusBenchmark
 
-__all__ = [
-    "BaseBenchmark",
-    "GAIABenchmark",
-    "DefaultGAIARetriever",
-    "NexusBenchmark",
-    "APIBenchBenchmark",
-    "APIBankBenchmark",
-]
+agent = ChatAgent()
+
+benchmark = NexusBenchmark(
+    data_dir="./NexusDatasets", save_to="./NexusResults.jsonl"
+)
+benchmark.download()
+results = benchmark.run(agent, "OTX")
+print(results)
