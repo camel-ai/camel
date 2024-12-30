@@ -33,7 +33,11 @@ class MeshyToolkit(BaseToolkit):
     https://docs.meshy.ai/api-text-to-3d-beta#create-a-text-to-3d-preview-task
     """
 
-    @api_keys_required("MESHY_API_KEY")
+    @api_keys_required(
+        [
+            (None, 'MESHY_API_KEY'),
+        ]
+    )
     def __init__(self):
         r"""Initializes the MeshyToolkit with the API key from the
         environment.
