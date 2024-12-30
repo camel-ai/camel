@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import MagicMock, mock_open, patch
 
 from camel.agents import ChatAgent
-from camel.synthetic_datagen.self_instruct import (
+from camel.datagen.self_instruct import (
     InstructionFilter,
     SelfInstructPipeline,
 )
