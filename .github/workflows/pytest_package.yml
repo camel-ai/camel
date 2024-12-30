@@ -49,6 +49,12 @@ jobs:
         ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
         CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
         MESHY_API_KEY: "${{ secrets.MESHY_API_KEY }}"
+        YI_API_KEY: "${{ secrets.YI_API_KEY }}"
+        TOGETHER_API_KEY: "${{ secrets.TOGETHER_API_KEY }}"
+        SAMBA_API_KEY: "${{ secrets.SAMBA_API_KEY }}"
+        QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
+        GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+        DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -87,6 +93,12 @@ jobs:
         ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
         CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
         MESHY_API_KEY: "${{ secrets.MESHY_API_KEY }}"
+        YI_API_KEY: "${{ secrets.YI_API_KEY }}"
+        TOGETHER_API_KEY: "${{ secrets.TOGETHER_API_KEY }}"
+        SAMBA_API_KEY: "${{ secrets.SAMBA_API_KEY }}"
+        QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
+        GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+        DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -125,4 +137,10 @@ jobs:
         ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
         CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
         MESHY_API_KEY: "${{ secrets.MESHY_API_KEY }}"
+        YI_API_KEY: "${{ secrets.YI_API_KEY }}"
+        TOGETHER_API_KEY: "${{ secrets.TOGETHER_API_KEY }}"
+        SAMBA_API_KEY: "${{ secrets.SAMBA_API_KEY }}"
+        QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
+        GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+        DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/
