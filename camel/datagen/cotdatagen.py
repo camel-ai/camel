@@ -22,7 +22,7 @@ from camel.agents import ChatAgent
 from camel.logger import get_logger
 
 # Get a logger for this module
-logger = get_logger('o1datagenerator')
+logger = get_logger('CotDataGenerator')
 
 
 class AgentResponse(BaseModel):
@@ -60,7 +60,7 @@ class VerificationResponse(BaseModel):
     )
 
 
-class O1DataGenerator:
+class CotDataGenerator:
     r"""Class for generating and managing data through chat agent interactions.
 
     handling the generation of data by  a chat agent, managing golden answers,
@@ -89,7 +89,7 @@ class O1DataGenerator:
         golden_answers: Dict[str, str],
         search_limit: int = 100,
     ):
-        r"""Initialize the O1DataGenerator.
+        r"""Initialize the CotDataGenerator.
 
         This constructor supports both single-agent and dual-agent modes:
         1. Single-agent mode (legacy): Pass a single chat_agent that will be
@@ -131,7 +131,7 @@ class O1DataGenerator:
         self.search_limit = search_limit
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
         logger.info(
-            "O1DataGenerator initialized with search_limit=%d", search_limit
+            "CotDataGenerator initialized with search_limit=%d", search_limit
         )
 
     def get_answer(self, question: str, context: str = "") -> str:
