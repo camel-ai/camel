@@ -27,7 +27,11 @@ class Apify:
         api_key (Optional[str]): API key for authenticating with the Apify API.
     """
 
-    @api_keys_required("APIFY_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", "APIFY_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         api_key: Optional[str] = None,

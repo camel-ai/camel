@@ -11,8 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .self_instruct import SelfInstructPipeline
 
-__all__ = [
-    "SelfInstructPipeline",
-]
+from camel.agents import ChatAgent
+from camel.benchmarks import APIBankBenchmark
+
+agent = ChatAgent()
+
+benchmark = APIBankBenchmark(
+    data_dir="./APIBankDatasets", save_to="./APIBankResults.jsonl"
+)
+benchmark.download()
+results = benchmark.run(agent, "level-1", api_test_enabled=True)
+print(results)
