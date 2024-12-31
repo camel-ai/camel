@@ -12,6 +12,62 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+"""
+Chain of Thought (CoT) Data Generation Algorithm Overview
+======================================================
+
+This module implements a sophisticated Chain of Thought data generation system
+that combines several key algorithms to produce high-quality reasoning paths.
+Here's a detailed breakdown of the core algorithms:
+
+1. Monte Carlo Tree Search (MCTS)
+--------------------------------
+- Purpose: Explores different solution paths to find optimal reasoning chains
+- Process:
+  a. Selection: Choose promising partial solutions based on previous scores
+  b. Expansion: Generate new solution steps using the generator agent
+  c. Simulation: Evaluate solution quality using similarity scores
+  d. Backpropagation: Update solution tree with new findings
+
+2. Binary Search Error Detection
+------------------------------
+- Purpose: Efficiently locates the first error in a solution chain
+- Process:
+  a. Split solution into sentences (supports both English and Chinese)
+  b. Use binary search to identify the first incorrect step
+  c. Time complexity: O(log n) where n is the number of solution steps
+
+3. Dual-Agent Verification System
+-------------------------------
+- Components:
+  a. Generator Agent: Creates solution steps and reasoning chains
+  b. Verifier Agent: Validates solutions against golden answers
+- Features:
+  - Semantic equivalence checking
+  - Support for both single and dual agent modes
+  - Automated quality scoring
+
+4. Solution Tree Management
+-------------------------
+- Maintains a hierarchical structure of:
+  - Partial solutions
+  - Verification scores
+  - Search paths
+  - Solution iterations
+
+The system employs an iterative refinement process:
+1. Initial direct solution attempt
+2. MCTS-based exploration if needed
+3. Error detection and correction
+4. Solution regeneration from last known correct step
+
+This implementation ensures:
+- Robust error handling
+- High-quality solution generation
+- Efficient search space exploration
+- Verifiable solution paths
+"""
+
 import json
 from datetime import datetime
 from typing import Annotated, Dict, Optional, Union
