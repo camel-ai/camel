@@ -60,7 +60,7 @@ class OpenBBToolkit(BaseToolkit):
         self.client = obb
         # Initialize OpenBB Hub account with access token
         token = os.getenv("OPENBB_TOKEN")
-        self.client.account.login(token=token)  # type: ignore[union-attr]
+        self.client.account.login(pat=token)  # type: ignore[union-attr]
 
     @staticmethod
     def _ensure_columns_exist(

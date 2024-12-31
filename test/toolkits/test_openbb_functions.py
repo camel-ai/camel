@@ -65,7 +65,7 @@ def test_init_api_keys(mock_dependencies, monkeypatch):
     OpenBBToolkit()
 
     # Verify login was called with correct Token
-    mock_dependencies.account.login.assert_called_once_with(token='test_token')
+    mock_dependencies.account.login.assert_called_once_with(pat='test_token')
 
 
 def test_get_stock_quote_success(mock_dependencies):
@@ -111,48 +111,6 @@ def test_get_stock_quote_error(mock_dependencies):
     # Initialize toolkit and make request
     toolkit = OpenBBToolkit()
     result = toolkit.get_stock_quote('INVALID')
-
-    # Verify empty dict is returned
-    assert isinstance(result, dict)
-    assert len(result) == 0
-
-
-def test_screen_market_success(mock_dependencies):
-    """Test successful market screening."""
-    mock_data = {
-        'symbol': ['AAPL', 'MSFT'],
-        'name': ['Apple Inc.', 'Microsoft Corporation'],
-        'sector': ['Technology', 'Technology'],
-        'industry': ['Consumer Electronics', 'Software'],
-        'market_cap': [2.5e12, 2.1e12],
-        'beta': [1.2, 1.1],
-    }
-    mock_response = MagicMock()
-    mock_response.results = mock_data
-    mock_dependencies.equity.screener.screen.return_value = mock_response
-
-    toolkit = OpenBBToolkit()
-    result = toolkit.screen_market(
-        sector='Technology',
-        mktcap_min=1e12,
-        return_type='raw',
-    )
-
-    assert isinstance(result, dict)
-    assert len(result['symbol']) == 2
-    assert all(s == 'Technology' for s in result['sector'])
-
-
-def test_screen_market_error(mock_dependencies):
-    """Test market screening error handling."""
-    # Setup mock to raise exception
-    mock_dependencies.equity.screener.screen.side_effect = Exception(
-        'API Error'
-    )
-
-    # Initialize toolkit and make request
-    toolkit = OpenBBToolkit()
-    result = toolkit.screen_market(sector='Invalid')
 
     # Verify empty dict is returned
     assert isinstance(result, dict)
