@@ -41,25 +41,7 @@ pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
-pillow = "^10.2.0"
-requests-oauthlib = ">=1.3.1"
-
-# Type stubs for dependencies
-types-redis = "^4.6.0.20240106"
-types-requests = "^2.31.0.20240106"
-types-requests-oauthlib = "^2.0.0"
-types-python-dateutil = "^2.8.19.20240106"
-types-pytz = "^2024.1.0.20240104"
-types-PyYAML = "^6.0.12.12"
-types-beautifulsoup4 = "^4.12.0.20240106"
-types-colorama = "^0.4.15.20240106"
-types-docutils = "^0.20.0.20240106"
-types-jsonschema = "^4.21.0.20240106"
-types-pillow = "^10.2.0.20240106"
-types-protobuf = "^4.24.0.20240106"
-types-setuptools = "^69.0.0.20240106"
-types-six = "^1.16.21.20240106"
-types-urllib3 = "^1.26.25.14"
+pillow = "^11.0.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
@@ -97,6 +79,7 @@ newspaper3k = { version = "^0.2.8", optional = true }
 wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 googlemaps = { version = "^4.10.0", optional = true }
+requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 rouge = { version = "^1.0.1", optional = true }
@@ -159,7 +142,6 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
-huggingface-hub = "^0.27.0"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -221,6 +203,7 @@ tools = [
     "wolframalpha",
     "pyowm",
     "googlemaps",
+    "requests_oauthlib",
     "prance",
     "openapi-spec-validator",
     "unstructured",
@@ -315,6 +298,7 @@ all = [
     "wolframalpha",
     "pyowm",
     "googlemaps",
+    "requests_oauthlib",
     "prance",
     "openapi-spec-validator",
     "unstructured",
@@ -352,6 +336,7 @@ all = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
+    "openbb",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -379,19 +364,12 @@ all = [
     "azure-storage-blob",
     "google-cloud-storage",
     "botocore",
-    "datacommons",
-    "datacommons_pandas",
-    "tavily-python",
-    "apify_client",
-    "fastapi",
-    "uvicorn",
-    "openbb",
 ]
 
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
-ruff = ">=0.7,<0.8"
+ruff = "^0.7"
 mypy = "^1.5.1"
 toml = ">=0.10.2"
 pre-commit = "^3"
@@ -400,7 +378,6 @@ pytest-cov = "^4"
 pytest-asyncio = "^0.23.0"
 gradio = "^3"
 mock = "^5"
-pandas-stubs = "^2.1.4"
 
 # types
 types-Pillow = "*"
@@ -412,13 +389,6 @@ types-tqdm = "*"
 types-colorama = "^0"
 types-requests = "^2"
 types-PyYAML = "^6"
-pluggy = "^1.5.0"
-types-redis = "^4.6.0.20241004"
-pygithub = "^2.3.0"
-wikipedia = "^1.4.0"
-duckduckgo-search = "^6.2.12"
-wolframalpha = "^5.0.0"
-types-requests-oauthlib = "^2.0.0.20240417"
 
 [tool.poetry.group.docs]
 optional = true
@@ -501,6 +471,7 @@ module = [
     "wolframalpha",
     "pyowm",
     "googlemaps",
+    "requests_oauthlib",
     "prance",
     "openapi-spec-validator",
     "jsonschema.*",
