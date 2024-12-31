@@ -208,6 +208,16 @@ files = [
 frozenlist = ">=1.1.0"
 
 [[package]]
+name = "aiosqlite"
+version = "0.4.0"
+description = "asyncio bridge to the standard sqlite3 module"
+optional = true
+python-versions = "*"
+files = [
+    {file = "aiosqlite-0.4.0.tar.gz", hash = "sha256:1040ed1bda9873b503be4d0dc1529ff1dba3a89e73c6faea7723b9e352e19d04"},
+]
+
+[[package]]
 name = "airportsdata"
 version = "20241001"
 description = "Extensive database of location and timezone data for nearly every airport and landing strip in the world."
@@ -4004,6 +4014,7 @@ python-versions = ">=3.7"
 files = [
     {file = "milvus_lite-2.4.10-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:fc4246d3ed7d1910847afce0c9ba18212e93a6e9b8406048436940578dfad5cb"},
     {file = "milvus_lite-2.4.10-py3-none-macosx_11_0_arm64.whl", hash = "sha256:74a8e07c5e3b057df17fbb46913388e84df1dc403a200f4e423799a58184c800"},
+    {file = "milvus_lite-2.4.10-py3-none-manylinux2014_aarch64.whl", hash = "sha256:240c7386b747bad696ecb5bd1f58d491e86b9d4b92dccee3315ed7256256eddc"},
     {file = "milvus_lite-2.4.10-py3-none-manylinux2014_x86_64.whl", hash = "sha256:211d2e334a043f9282bdd9755f76b9b2d93b23bffa7af240919ffce6a8dfe325"},
 ]
 
@@ -6200,6 +6211,7 @@ description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs 
 optional = true
 python-versions = ">=3.8"
 files = [
+    {file = "pyasn1-0.6.1-py3-none-any.whl", hash = "sha256:0d632f46f2ba09143da3a8afe9e33fb6f92fa2320ab7e886e2d0f7672af84629"},
     {file = "pyasn1-0.6.1.tar.gz", hash = "sha256:6f580d2bdd84365380830acf45550f2511469f673cb4a5ae3857a3170128b034"},
 ]
 
@@ -6210,6 +6222,7 @@ description = "A collection of ASN.1-based protocols modules"
 optional = true
 python-versions = ">=3.8"
 files = [
+    {file = "pyasn1_modules-0.4.1-py3-none-any.whl", hash = "sha256:49bfa96b45a292b711e986f222502c1c9a5e1f4e568fc30e2574a6c7d07838fd"},
     {file = "pyasn1_modules-0.4.1.tar.gz", hash = "sha256:c28e2dbf9c06ad61c71a075c7e0f9fd0f1b0bb2d2ad4377f240d33ac2ab60a7c"},
 ]
 
@@ -6567,6 +6580,7 @@ python-versions = ">=3.9"
 files = [
     {file = "pymupdf-1.25.1-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:793f9f6d51029e97851c711b3f6d9fe912313d95a306fbe8b1866f301d0e2bd3"},
     {file = "pymupdf-1.25.1-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:15e6f4013ad0a029a2221920f9d2081f56dc43259dabfdf5cad7fbf1cee4b5a7"},
+    {file = "pymupdf-1.25.1-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:a39afbd80381f43e30d6eb2ec4613f465f507ac2b76070abdd2da8724f32ef36"},
     {file = "pymupdf-1.25.1-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:b63f8e9e65b0bda48f9217efd4d2a8c6d7a739dd28baf460c1ae78439b9af489"},
     {file = "pymupdf-1.25.1-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:a687bd387589e30abd810a78a23341f57f43fa16a4d8d8c0b870bb6d89607343"},
     {file = "pymupdf-1.25.1-cp39-abi3-win32.whl", hash = "sha256:fc7dbc1aa9e298a4c81084e389c9623c26fcaa232c71efaa073af150069e2221"},
@@ -10415,7 +10429,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "notion-client", "openapi-spec-validator", "opencv-python", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "rouge", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+all = ["PyMuPDF", "accelerate", "agentops", "aiosqlite", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "notion-client", "openapi-spec-validator", "opencv-python", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "rouge", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 encoders = ["sentence-transformers"]
 graph-storages = ["nebula3-python", "neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "torch", "transformers"]
@@ -10427,10 +10441,10 @@ retrievers = ["cohere", "rank-bm25"]
 runtime = ["docker"]
 search-tools = ["duckduckgo-search", "linkup-sdk", "tavily-python", "wikipedia", "wolframalpha"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "newspaper3k", "notion-client", "openapi-spec-validator", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "rouge", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+tools = ["PyMuPDF", "agentops", "aiosqlite", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "newspaper3k", "notion-client", "openapi-spec-validator", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "rouge", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "c893b945a3adf9f314a5aeb27d828bada7df7a1f94e3373e84d6df05f9b5af48"
+content-hash = "5c219bc10f7cde9cf8b04ee03e084154a9878f951cff6fa405641f03ac4ff62c"
