@@ -15,7 +15,7 @@
 import logging
 import re
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from camel.storages.graph_storages.base import BaseGraphStorage
 from camel.storages.graph_storages.graph_element import (
@@ -203,18 +203,26 @@ class NebulaGraph(BaseGraphStorage):
     def ensure_edge_type_exists(
         self,
         edge_type: str,
+        created_at: Optional[str] = None,
     ) -> None:
         r"""Ensures that a specified edge type exists in the NebulaGraph
         database. If the edge type already exists, this method does nothing.
 
         Args:
             edge_type (str): The name of the edge type to be created.
+            created_at (str, optional): A specific timestamp to set as the
+                default value for the `created_at` property. If not
+                provided, defaults to the current timestamp.
 
         Raises:
             Exception: If the edge type creation fails after multiple retry
                 attempts, an exception is raised with the error message.
         """
-        create_edge_stmt = f'CREATE EDGE IF NOT EXISTS {edge_type}()'
+
+        created_at_default = f"'{created_at}'" if created_at else "now()"
+
+        create_edge_stmt = f"""CREATE EDGE IF NOT EXISTS {edge_type}
+        (created_at DATETIME DEFAULT {created_at_default})"""
 
         for attempt in range(MAX_RETRIES):
             res = self.query(create_edge_stmt)
@@ -230,19 +238,27 @@ class NebulaGraph(BaseGraphStorage):
                     f"{MAX_RETRIES} attempts: {res.error_msg()}"
                 )
 
-    def ensure_tag_exists(self, tag_name: str) -> None:
+    def ensure_tag_exists(
+        self, tag_name: str, created_at: Optional[str] = None
+    ) -> None:
         r"""Ensures a tag is created in the NebulaGraph database. If the tag
         already exists, it does nothing.
 
         Args:
             tag_name (str): The name of the tag to be created.
+            created_at (str, optional): A specific timestamp to set as the
+                default value for the `created_at` property. If not provided,
+                defaults to the current timestamp.
 
         Raises:
             Exception: If the tag creation fails after retries, an exception
                 is raised with the error message.
         """
 
-        create_tag_stmt = f'CREATE TAG IF NOT EXISTS {tag_name}()'
+        created_at_default = f"'{created_at}'" if created_at else "now()"
+
+        create_tag_stmt = f"""CREATE TAG IF NOT EXISTS {tag_name}
+        (created_at DATETIME DEFAULT {created_at_default})"""
 
         for attempt in range(MAX_RETRIES):
             res = self.query(create_tag_stmt)
@@ -262,21 +278,30 @@ class NebulaGraph(BaseGraphStorage):
         self,
         node_id: str,
         tag_name: str,
+        created_at: Optional[str] = None,
     ) -> None:
-        r"""Add a node with the specified tag and properties.
+        r"""Add a node with the specified tag and properties. including a
+        created_at` timestamp.
 
         Args:
             node_id (str): The ID of the node.
             tag_name (str): The tag name of the node.
+            created_at (str, optional): A specific timestamp to set for
+            the node's `created_at` property. Defaults to the current time.
+
         """
         node_id = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', node_id)
         tag_name = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', tag_name)
 
         self.ensure_tag_exists(tag_name)
 
+        created_at_value = (
+            created_at if created_at else time.strftime("%Y-%m-%dT%H:%M:%S")
+        )
         # Insert node without properties
         insert_stmt = (
-            f'INSERT VERTEX IF NOT EXISTS {tag_name}() VALUES "{node_id}":()'
+            f'INSERT VERTEX IF NOT EXISTS {tag_name}(created_at) VALUES '
+            f'"{node_id}":("{created_at_value}")'
         )
 
         for attempt in range(MAX_RETRIES):
@@ -348,7 +373,7 @@ class NebulaGraph(BaseGraphStorage):
     @property
     def get_structured_schema(self) -> Dict[str, Any]:
         r"""Generates a structured schema consisting of node and relationship
-        properties, relationships, and metadata.
+        properties, relationships, and metadata, including timestamps.
 
         Returns:
             Dict[str, Any]: A dictionary representing the structured schema.
@@ -361,10 +386,12 @@ class NebulaGraph(BaseGraphStorage):
         # Build structured_schema
         structured_schema = {
             "node_props": {
-                el["labels"]: el["properties"] for el in node_properties
+                el["labels"]: el["properties"] + ["created_at"]
+                for el in node_properties
             },
             "rel_props": {
-                el["type"]: el["properties"] for el in rel_properties
+                el["type"]: el["properties"] + ["created_at"]
+                for el in rel_properties
             },
             "relationships": relationships,
             "metadata": {"index": index},
@@ -419,14 +446,18 @@ class NebulaGraph(BaseGraphStorage):
         subj: str,
         obj: str,
         rel: str,
+        created_at: Optional[str] = None,
     ) -> None:
         r"""Adds a relationship (triplet) between two entities in the Nebula
-        Graph database.
+        Graph database, including a 'created_at' timestamp.
 
         Args:
             subj (str): The identifier for the subject entity.
             obj (str): The identifier for the object entity.
             rel (str): The relationship between the subject and object.
+            created_at (str, optional): A specific timestamp to set for the
+                `created_at` property of the relationship. Defaults to the
+                current time.
         """
         subj = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', subj)
         obj = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5]', '', obj)
@@ -441,8 +472,13 @@ class NebulaGraph(BaseGraphStorage):
         # Avoid latenicy
         time.sleep(1)
 
+        created_at_value = (
+            created_at if created_at else time.strftime("%Y-%m-%dT%H:%M:%S")
+        )
+
         insert_stmt = (
-            f'INSERT EDGE IF NOT EXISTS {rel}() VALUES "{subj}"->"{obj}":();'
+            f'INSERT EDGE IF NOT EXISTS {rel}(created_at) VALUES '
+            f'"{subj}"->"{obj}":("{created_at_value}")'
         )
 
         res = self.query(insert_stmt)
