@@ -594,9 +594,7 @@ class OpenBBToolkit(BaseToolkit):
                 if v is not None
             }
 
-            data = self.client.equity.screener.screen(  # type: ignore[union-attr]
-                provider=provider, **params
-            )
+            data = self.client.equity.screener(provider=provider, **params)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()

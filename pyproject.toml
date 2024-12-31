@@ -241,6 +241,7 @@ tools = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
+    "openbb",
 ]
 
 vector-databases = [
