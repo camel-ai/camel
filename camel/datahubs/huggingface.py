@@ -35,7 +35,11 @@ class HuggingFaceDatasetManager(BaseDatasetManager):
             will be read from the environment variable `HUGGING_FACE_TOKEN`.
     """
 
-    @api_keys_required("HUGGING_FACE_TOKEN")
+    @api_keys_required(
+        [
+            ("token", "HUGGING_FACE_TOKEN"),
+        ]
+    )
     @dependencies_required('huggingface_hub')
     def __init__(self, token: Optional[str] = None):
         from huggingface_hub import HfApi

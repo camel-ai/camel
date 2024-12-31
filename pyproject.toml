@@ -57,7 +57,7 @@ sglang = { version = "^0.4.0", optional = true }
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
-datasets = { version = "^2", optional = true }
+datasets = { version = "^3", optional = true }
 torch = [
     { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
     # Torch 2.2.1 is used on non-arm64 macOS systems.
@@ -116,6 +116,9 @@ yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
 unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
+pandas = { version = "^2.2.3", optional = true }
+tree-sitter-python = { version = "^0.23.6", optional = true }
+tree-sitter = { version = "^0.23.2", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -234,6 +237,9 @@ tools = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
 ]
 
 vector-databases = [
@@ -326,7 +332,9 @@ all = [
     "fastapi",
     "uvicorn",
     "stripe",
-    "unstructured",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -510,5 +518,9 @@ module = [
     "notion-client",
     "ffmpeg",
     "yt_dlp",
+    "datasets",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
 ]
 ignore_missing_imports = true

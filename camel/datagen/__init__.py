@@ -13,5 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .o1datagen import O1DataGenerator
+from .self_instruct import SelfInstructPipeline
 
-__all__ = ['O1DataGenerator']
+__all__ = [
+    "O1DataGenerator",
+    "SelfInstructPipeline",
+]
