@@ -45,7 +45,7 @@ def mock_dependencies(mock_openbb):
         with patch(
             'camel.utils.commons.is_module_available', return_value=True
         ):
-            with patch.dict(os.environ, {'OPENBB_PAT': 'test_pat'}):
+            with patch.dict(os.environ, {'OPENBB_TOKEN': 'test_token'}):
                 yield mock_openbb
 
 
@@ -53,7 +53,7 @@ def test_init_api_keys(mock_dependencies, monkeypatch):
     """Test initialization of API keys from environment variables."""
     # Set environment variables
     test_keys = {
-        'OPENBB_PAT': 'test_pat',
+        'OPENBB_TOKEN': 'test_token',
         'FMP_API_KEY': 'test_fmp',
         'POLYGON_API_KEY': 'test_polygon',
         'FRED_API_KEY': 'test_fred',
@@ -64,8 +64,8 @@ def test_init_api_keys(mock_dependencies, monkeypatch):
     # Initialize toolkit
     OpenBBToolkit()
 
-    # Verify login was called with correct PAT
-    mock_dependencies.account.login.assert_called_once_with(pat='test_pat')
+    # Verify login was called with correct Token
+    mock_dependencies.account.login.assert_called_once_with(token='test_token')
 
 
 def test_get_stock_quote_success(mock_dependencies):

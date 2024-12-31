@@ -13,84 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import logging
-from typing import Any, Dict, List, Literal, Optional, Protocol, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import pandas as pd
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import api_keys_required, dependencies_required
-
-
-class OpenBBBaseProtocol(Protocol):
-    r"""Protocol defining the base interface for OpenBB SDK functionality.
-    This protocol specifies the required attributes and methods for interacting
-    with the OpenBB Platform SDK.
-
-    Args:
-        account (Any): Authentication and account management interface
-        user (Any): User settings and credentials management
-        equity (Any): Stock market data and analysis interface
-        etf (Any): Exchange-Traded Funds data interface
-        index (Any): Market indices data interface
-        regulators (Any): Regulatory data access interface
-        stocks (Any): Stock market operations interface
-        calendar (Any): Market events data interface
-        economy (Any): Economic indicators interface
-        currency (Any): Currency exchange data interface
-        crypto (Any): Cryptocurrency data interface
-        indices (Any): Market indices interface
-        futures (Any): Futures market data interface
-        bonds (Any): Bond market data interface
-        to_df (Any): Convert query results to DataFrame
-        results (Any): Access raw query results
-        to_dict (Any): Convert query results to dictionary
-    """
-
-    account: Any
-    user: Any
-    equity: Any
-    etf: Any
-    index: Any
-    regulators: Any
-    stocks: Any
-    calendar: Any
-    economy: Any
-    currency: Any
-    crypto: Any
-    indices: Any
-    futures: Any
-    bonds: Any
-    to_df: Any
-    results: Any
-    to_dict: Any
-
-
-class OpenBBClient:
-    """Type class for OpenBB client implementation."""
-
-    def __init__(self) -> None:
-        """Initialize the OpenBB client type."""
-        self.account: Any = None
-        self.user: Any = None
-        self.equity: Any = None
-        self.etf: Any = None
-        self.index: Any = None
-        self.regulators: Any = None
-        self.stocks: Any = None
-        self.calendar: Any = None
-        self.economy: Any = None
-        self.currency: Any = None
-        self.crypto: Any = None
-        self.indices: Any = None
-        self.futures: Any = None
-        self.bonds: Any = None
-        self.to_df: Any = None
-        self.results: Any = None
-        self.to_dict: Any = None
-
-
-OpenBBType = Union[OpenBBBaseProtocol, OpenBBClient]
 
 
 class OpenBBToolkit(BaseToolkit):
@@ -105,7 +34,7 @@ class OpenBBToolkit(BaseToolkit):
         None: Initialization requires environment variables for authentication.
 
     Environment Variables:
-        OPENBB_PAT: OpenBB Platform Personal Access Token
+        OPENBB_TOKEN: OpenBB Platform Personal Access Token
             Get one at https://my.openbb.co/app/sdk
         FMP_API_KEY: Financial Modeling Prep API key (optional)
         POLYGON_API_KEY: Polygon.io API key (optional)
@@ -113,23 +42,25 @@ class OpenBBToolkit(BaseToolkit):
     """
 
     @dependencies_required("openbb")
-    @api_keys_required("OPENBB_PAT")
+    @api_keys_required(
+        [
+            (None, "OPENBB_TOKEN"),
+        ]
+    )
     def __init__(self) -> None:
-        """Initialize the OpenBBToolkit.
+        r"""Initialize the OpenBBToolkit.
 
         This method sets up the OpenBB client and initializes the OpenBB
         Hub account system.
         """
         import os
-        from typing import cast
 
         from openbb import obb
 
-        self.client = cast(OpenBBType, obb)
-        # Initialize OpenBB Hub account with PAT
-        pat = os.getenv("OPENBB_PAT")
-        if pat:
-            self.client.account.login(pat=pat)
+        self.client = obb
+        # Initialize OpenBB Hub account with access token
+        token = os.getenv("OPENBB_TOKEN")
+        self.client.account.login(token=token)  # type: ignore[union-attr]
 
     @staticmethod
     def _ensure_columns_exist(
@@ -270,7 +201,7 @@ class OpenBBToolkit(BaseToolkit):
                 - cik: SEC Central Index Key
         """
         try:
-            data = self.client.equity.search(query, provider=provider)
+            data = self.client.equity.search(query, provider=provider)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -316,7 +247,7 @@ class OpenBBToolkit(BaseToolkit):
                 - cik: SEC Central Index Key (10-digit format)
         """
         try:
-            data = self.client.regulators.sec.institutions_search(query)
+            data = self.client.regulators.sec.institutions_search(query)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -377,7 +308,7 @@ class OpenBBToolkit(BaseToolkit):
                 - filing_detail_url: Filing detail page URL
         """
         try:
-            data = self.client.equity.fundamental.filings(
+            data = self.client.equity.fundamental.filings(  # type: ignore[union-attr]
                 identifier,
                 type=filing_type,
                 provider=provider,
@@ -494,7 +425,7 @@ class OpenBBToolkit(BaseToolkit):
                 - beta_20y: 20-year beta
         """
         try:
-            data = self.client.etf.search(query, provider=provider)
+            data = self.client.etf.search(query, provider=provider)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -600,85 +531,6 @@ class OpenBBToolkit(BaseToolkit):
                 provider=provider,
             )
 
-    def search_index(
-        self,
-        query: str,
-        provider: str = "cboe",
-        return_type: Literal["df", "raw"] = "raw",
-        limit: Optional[int] = None,
-    ) -> Union[pd.DataFrame, Dict]:
-        """Search for market indices.
-
-        Args:
-            query: Search query for index symbols or names
-            provider: Data provider (default: "cboe")
-            return_type: Return format ('df' for DataFrame, 'raw' for
-            dictionary)
-            limit: Maximum number of results to return (None for all)
-
-        Returns:
-            Union[pd.DataFrame, Dict]: Index search results with columns:
-                - symbol: Index symbol
-                - name: Index name
-                - description: Detailed description
-                - data_delay: Data delay in minutes
-                - currency: Trading currency
-                - time_zone: Trading timezone
-                - open_time: Market open time
-                - close_time: Market close time
-                - tick_days: Trading days
-                - tick_frequency: Tick frequency
-                - tick_period: Trading period
-        """
-        try:
-            data = self.client.index.search(query, provider=provider)
-
-            if return_type == "df":
-                df = data.to_df()
-
-                # Ensure consistent column order and names
-                expected_columns = [
-                    "symbol",
-                    "name",
-                    "description",
-                    "data_delay",
-                    "currency",
-                    "time_zone",
-                    "open_time",
-                    "close_time",
-                    "tick_days",
-                    "tick_frequency",
-                    "tick_period",
-                ]
-
-                # Add missing columns with None values
-                df = self._ensure_columns_exist(df, expected_columns)
-
-                # Format time columns if present
-                for time_col in ['open_time', 'close_time']:
-                    if time_col in df.columns and df[time_col].notna().any():
-                        df[time_col] = pd.to_datetime(
-                            df[time_col]
-                        ).dt.strftime('%H:%M:%S')
-
-                # Apply limit if specified
-                if limit is not None:
-                    df = df.tail(limit) if limit > 0 else df.head(abs(limit))
-
-                return df[expected_columns]
-
-            return data.results
-
-        except Exception as e:
-            return self._handle_api_error(
-                error=e,
-                operation="search index",
-                return_type=return_type,
-                log_level="warning",
-                query=query,
-                provider=provider,
-            )
-
     def screen_market(
         self,
         country: Optional[str] = None,
@@ -742,7 +594,7 @@ class OpenBBToolkit(BaseToolkit):
                 if v is not None
             }
 
-            data = self.client.equity.screener.screen(
+            data = self.client.equity.screener.screen(  # type: ignore[union-attr]
                 provider=provider, **params
             )
 
@@ -827,7 +679,7 @@ class OpenBBToolkit(BaseToolkit):
                 - symbol: Ticker symbol (e.g., '^AXJO')
         """
         try:
-            data = self.client.index.available(provider=provider)
+            data = self.client.index.available(provider=provider)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -884,7 +736,7 @@ class OpenBBToolkit(BaseToolkit):
             Stock quote data in requested format
         """
         try:
-            data = self.client.equity.price.quote(symbol=symbol, source=source)
+            data = self.client.equity.price.quote(symbol=symbol, source=source)  # type: ignore[union-attr]
             return self._format_return(data, return_type)
         except Exception as e:
             return self._handle_api_error(
@@ -943,7 +795,7 @@ class OpenBBToolkit(BaseToolkit):
 
         try:
             if asset_type == "currency":
-                response = self.client.currency.price.historical(
+                response = self.client.currency.price.historical(  # type: ignore[union-attr]
                     symbol=symbol,
                     start_date=start_date,
                     end_date=end_date,
@@ -951,7 +803,7 @@ class OpenBBToolkit(BaseToolkit):
                     provider=provider,
                 )
             elif asset_type == "crypto":
-                response = self.client.crypto.price.historical(
+                response = self.client.crypto.price.historical(  # type: ignore[union-attr]
                     symbol=symbol,
                     start_date=start_date,
                     end_date=end_date,
@@ -959,7 +811,7 @@ class OpenBBToolkit(BaseToolkit):
                     provider=provider,
                 )
             else:  # equity, index, option, future
-                response = self.client.equity.price.historical(
+                response = self.client.equity.price.historical(  # type: ignore[union-attr]
                     symbol=symbol,
                     start_date=start_date,
                     end_date=end_date,
@@ -996,7 +848,7 @@ class OpenBBToolkit(BaseToolkit):
         provider: str = "yfinance",
         return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Get historical OHLC+V price data for a symbol.
+        r"""Get historical OHLC+V price data for a symbol.
 
         Supports various symbol types and formats depending on the provider:
 
@@ -1078,7 +930,7 @@ class OpenBBToolkit(BaseToolkit):
             if interval:
                 params["interval"] = interval
 
-            data = self.client.equity.price.historical(**params)
+            data = self.client.equity.price.historical(**params)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -1142,38 +994,6 @@ class OpenBBToolkit(BaseToolkit):
                 provider=provider,
             )
 
-    def get_company_fundamentals(
-        self,
-        symbol: str,
-        provider: str = "fmp",
-        return_type: Literal["df", "raw"] = "raw",
-    ) -> Union[pd.DataFrame, Dict]:
-        """Get company fundamental data.
-
-        Args:
-            symbol: Company ticker symbol
-            provider: Data provider to use
-            return_type: Format for returned data
-
-        Returns:
-            Union[pd.DataFrame, Dict]: Company fundamental data
-        """
-        try:
-            data = self.client.equity.fundamentals.profile(
-                symbol=symbol,
-                provider=provider,
-            )
-            return self._format_return(data, return_type)
-        except Exception as e:
-            return self._handle_api_error(
-                error=e,
-                operation="get company fundamentals",
-                return_type=return_type,
-                log_level="error",
-                symbol=symbol,
-                provider=provider,
-            )
-
     def get_market_data(
         self,
         category: Literal["gainers", "losers", "active"] = "active",
@@ -1194,9 +1014,9 @@ class OpenBBToolkit(BaseToolkit):
             Union[pd.DataFrame, Dict]: Market movers data
         """
         methods = {
-            "gainers": self.client.equity.discovery.gainers,
-            "losers": self.client.equity.discovery.losers,
-            "active": self.client.equity.discovery.most_active,
+            "gainers": self.client.equity.discovery.gainers,  # type: ignore[union-attr]
+            "losers": self.client.equity.discovery.losers,  # type: ignore[union-attr]
+            "active": self.client.equity.discovery.active,  # type: ignore[union-attr]
         }
 
         if category in methods:
@@ -1225,7 +1045,6 @@ class OpenBBToolkit(BaseToolkit):
         sort_by: Optional[str] = None,
         ascending: bool = False,
         limit: Optional[int] = None,
-        convert_currency: bool = False,
         return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
         """Get company earnings calendar with filtering and sorting options.
@@ -1244,8 +1063,6 @@ class OpenBBToolkit(BaseToolkit):
             "revenue_consensus")
             ascending: Sort order (default: False for descending)
             limit: Maximum number of results to return
-            convert_currency: Convert all monetary values to USD (default:
-            False)
             return_type: Return format ('df' for DataFrame, 'raw' for
             dictionary)
 
@@ -1271,7 +1088,7 @@ class OpenBBToolkit(BaseToolkit):
             if end_date:
                 params["end_date"] = end_date
 
-            data = self.client.equity.calendar.earnings(**params)
+            data = self.client.equity.calendar.earnings(**params)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -1293,42 +1110,6 @@ class OpenBBToolkit(BaseToolkit):
                     "actual_revenue",
                 ]
                 df = self._convert_numeric_columns(df, numeric_cols)
-
-                # Currency conversion if requested
-                if convert_currency and "currency" in df.columns:
-                    # Get exchange rates from the client
-                    try:
-                        fx_data = self.client.forex.rates(
-                            provider=provider
-                        ).to_df()
-
-                        # Apply conversion to USD for monetary columns
-                        monetary_cols = [
-                            "eps_consensus",
-                            "actual_eps",
-                            "revenue_consensus",
-                            "actual_revenue",
-                        ]
-
-                        for col in monetary_cols:
-                            if col in df.columns:
-                                df[col] = df.apply(
-                                    lambda row, col=col: row[col]
-                                    * fx_data.get(
-                                        row.get("currency", "USD"), 1.0
-                                    ),
-                                    axis=1,
-                                )
-
-                        # Add currency indicator
-                        df = df.assign(values_in="USD")
-
-                    except Exception as e:
-                        logger = logging.getLogger(__name__)
-                        logger.warning(
-                            f"""Failed to convert currencies to USD. Error: {
-                                e!s}"""
-                        )
 
                 # Filter for entries with estimates
                 if filter_estimates:
@@ -1411,7 +1192,7 @@ class OpenBBToolkit(BaseToolkit):
             if end_date:
                 params["end_date"] = end_date
 
-            data = self.client.equity.calendar.dividend(**params)
+            data = self.client.equity.calendar.dividend(**params)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -1459,7 +1240,7 @@ class OpenBBToolkit(BaseToolkit):
                     try:
                         # Get current prices
                         symbols = df.index.tolist()
-                        prices = self.client.equity.price.quote(
+                        prices = self.client.equity.price.quote(  # type: ignore[union-attr]
                             symbols,
                             provider="fmp",  # FMP has good global coverage
                         ).to_df()
@@ -1575,7 +1356,7 @@ class OpenBBToolkit(BaseToolkit):
                 if max_amount:
                     params["max_amount"] = str(max_amount)
 
-            data = self.client.equity.calendar.ipo(**params)
+            data = self.client.equity.calendar.ipo(**params)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -1661,7 +1442,7 @@ class OpenBBToolkit(BaseToolkit):
                 - last_insert_timestamp: Last update time
         """
         try:
-            data = self.client.economy.available_indicators(provider=provider)
+            data = self.client.economy.available_indicators(provider=provider)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -1705,7 +1486,7 @@ class OpenBBToolkit(BaseToolkit):
         Returns:
             Indicator metadata including frequency, units, scale, etc.
         """
-        data = self.client.economy.indicators(
+        data = self.client.economy.indicators(  # type: ignore[union-attr]
             symbol=symbol, country=country, provider=provider
         )
 
@@ -1726,7 +1507,7 @@ class OpenBBToolkit(BaseToolkit):
         include_metadata: bool = True,
         return_type: Literal["df", "raw"] = "raw",
     ) -> Union[pd.DataFrame, Dict]:
-        """Get economic indicators from EconDB.
+        r"""Get economic indicators from EconDB.
 
         Note: Requires API key for full access. Without key, uses temporary
         token
@@ -1767,7 +1548,7 @@ class OpenBBToolkit(BaseToolkit):
             # Build parameters dict
             params = {"provider": provider}
             if country:
-                params["country"] = country
+                params["country"] = ", ".join(country)
             if transform:
                 params["transform"] = (
                     transform if isinstance(transform, str) else transform[0]
@@ -1777,7 +1558,7 @@ class OpenBBToolkit(BaseToolkit):
             if end_date:
                 params["end_date"] = end_date
 
-            data = self.client.economy.indicators(symbol=symbols, **params)
+            data = self.client.economy.indicators(symbol=symbols, **params)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -1834,7 +1615,7 @@ class OpenBBToolkit(BaseToolkit):
             if category:
                 params["category"] = category
 
-            data = self.client.economy.available_indicators(**params)
+            data = self.client.economy.available_indicators(**params)  # type: ignore[union-attr]
             if not isinstance(data, pd.DataFrame) or data.empty:
                 logger = logging.getLogger(__name__)
                 msg = "No indicators found. Check parameters and try again."
@@ -1900,9 +1681,9 @@ class OpenBBToolkit(BaseToolkit):
                 Empty dict/DataFrame if error occurs.
         """
         methods = {
-            "gainers": self.client.equity.discovery.gainers,
-            "losers": self.client.equity.discovery.losers,
-            "active": self.client.equity.discovery.active,
+            "gainers": self.client.equity.discovery.gainers,  # type: ignore[union-attr]
+            "losers": self.client.equity.discovery.losers,  # type: ignore[union-attr]
+            "active": self.client.equity.discovery.active,  # type: ignore[union-attr]
         }
 
         if category not in methods:
@@ -1974,7 +1755,7 @@ class OpenBBToolkit(BaseToolkit):
                 Additional fields vary by provider
         """
         try:
-            data = self.client.equity.fundamental.metrics(
+            data = self.client.equity.fundamental.metrics(  # type: ignore[union-attr]
                 symbol=symbol, period=period, provider=provider, limit=limit
             )
 
@@ -2043,7 +1824,7 @@ class OpenBBToolkit(BaseToolkit):
                 Additional fields vary by provider
         """
         try:
-            data = self.client.equity.profile(symbol=symbol, provider=provider)
+            data = self.client.equity.profile(symbol=symbol, provider=provider)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -2101,7 +1882,7 @@ class OpenBBToolkit(BaseToolkit):
         """
         try:
             # Get all available indicators
-            data = self.client.economy.available_indicators(provider=provider)
+            data = self.client.economy.available_indicators(provider=provider)  # type: ignore[union-attr]
 
             if return_type == "df":
                 df = data.to_df()
@@ -2143,53 +1924,8 @@ class OpenBBToolkit(BaseToolkit):
                 provider=provider,
             )
 
-    def get_country_groups(
-        self,
-        provider: str = "econdb",
-        return_type: Literal["df", "raw"] = "raw",
-    ) -> Union[pd.DataFrame, Dict]:
-        """Get list of available country groups and regions.
-
-        Args:
-            provider: Data provider (default: "econdb")
-            return_type: Return format ('df' for DataFrame, 'raw' for
-            dictionary)
-
-        Returns:
-            Union[pd.DataFrame, Dict]: Available groups with columns:
-                - group: Group identifier
-                - type: Group type (region/economic)
-                - name: Full group name
-                - description: Group description
-                - members: List of member country codes
-        """
-        try:
-            data = self.client.economy.country_groups(provider=provider)
-
-            if return_type == "df":
-                df = data.to_df()
-
-                # Convert member lists to proper format
-                if "members" in df.columns:
-                    df["members"] = df["members"].apply(
-                        lambda x: x if isinstance(x, list) else []
-                    )
-
-                return df
-
-            return data.results
-
-        except Exception as e:
-            return self._handle_api_error(
-                error=e,
-                operation="get country groups",
-                return_type=return_type,
-                log_level="warning",
-                provider=provider,
-            )
-
     def get_tools(self) -> List[FunctionTool]:
-        """Returns a list of available OpenBB financial tools.
+        r"""Returns a list of available OpenBB financial tools.
 
         Returns:
             List[FunctionTool]: List of available tools
@@ -2200,9 +1936,6 @@ class OpenBBToolkit(BaseToolkit):
             ),
             FunctionTool(
                 func=self.search_etf,
-            ),
-            FunctionTool(
-                func=self.search_index,
             ),
             FunctionTool(
                 func=self.search_institution,
@@ -2270,9 +2003,9 @@ class OpenBBToolkit(BaseToolkit):
         try:
             # Map statement type to client endpoint
             endpoint_map = {
-                "balance": self.client.equity.fundamental.balance,
-                "income": self.client.equity.fundamental.income,
-                "cash": self.client.equity.fundamental.cash,
+                "balance": self.client.equity.fundamental.balance,  # type: ignore[union-attr]
+                "income": self.client.equity.fundamental.income,  # type: ignore[union-attr]
+                "cash": self.client.equity.fundamental.cash,  # type: ignore[union-attr]
             }
 
             endpoint = endpoint_map.get(statement_type)
@@ -2335,7 +2068,7 @@ class OpenBBToolkit(BaseToolkit):
                 - value: Attribute value
         """
         try:
-            data = self.client.equity.fundamental.historical_attributes(
+            data = self.client.equity.fundamental.historical_attributes(  # type: ignore[union-attr]
                 symbol=symbol, tag=tag, frequency=frequency, provider=provider
             )
 
@@ -2394,7 +2127,7 @@ class OpenBBToolkit(BaseToolkit):
                 - unit: Measurement unit
         """
         try:
-            data = self.client.equity.fundamental.search_attributes(
+            data = self.client.equity.fundamental.search_attributes(  # type: ignore[union-attr]
                 query=query, provider=provider
             )
 
@@ -2474,7 +2207,7 @@ class OpenBBToolkit(BaseToolkit):
                 - TradingEconomics: category
         """
         try:
-            data = self.client.economy.calendar(
+            data = self.client.economy.calendar(  # type: ignore[union-attr]
                 start_date=start_date, end_date=end_date, provider=provider
             )
 
@@ -2582,10 +2315,10 @@ class OpenBBToolkit(BaseToolkit):
         try:
             # Map calendar type to client endpoint
             endpoint_map = {
-                "earnings": self.client.equity.calendar.earnings,
-                "dividends": self.client.equity.calendar.dividends,
-                "splits": self.client.equity.calendar.splits,
-                "ipo": self.client.equity.calendar.ipo,
+                "earnings": self.client.equity.calendar.earnings,  # type: ignore[union-attr]
+                "dividend": self.client.equity.calendar.dividend,  # type: ignore[union-attr]
+                "splits": self.client.equity.calendar.splits,  # type: ignore[union-attr]
+                "ipo": self.client.equity.calendar.ipo,  # type: ignore[union-attr]
             }
 
             endpoint = endpoint_map.get(calendar_type)
