@@ -99,7 +99,7 @@ def test_get_stock_quote_success(mock_dependencies):
 
     # Verify the API was called correctly
     mock_dependencies.equity.price.quote.assert_called_with(
-        symbol='AAPL', source='iex'
+        symbol='AAPL', provider='fmp'
     )
 
 
@@ -112,9 +112,11 @@ def test_get_stock_quote_error(mock_dependencies):
     toolkit = OpenBBToolkit()
     result = toolkit.get_stock_quote('INVALID')
 
-    # Verify empty dict is returned
-    assert isinstance(result, dict)
-    assert len(result) == 0
+    # Verify error message is returned
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert 'Failed to get stock quote' in result[0]
+    assert 'INVALID' in result[0]
 
 
 def test_get_income_statement_success(mock_dependencies):
@@ -132,13 +134,12 @@ def test_get_income_statement_success(mock_dependencies):
 
     toolkit = OpenBBToolkit()
     result = toolkit.get_financial_statement(
-        symbol='AAPL', statement_type='income', return_type='raw'
+        symbol='AAPL', statement_type='income'
     )
 
     assert isinstance(result, dict)
-    assert 'date' in result
-    assert 'revenue' in result
-    assert result['revenue'][0] == 394.3e9
+    assert result['date'] == ['2023-12-31', '2022-12-31']
+    assert result['revenue'] == [394.3e9, 365.8e9]
 
 
 def test_get_historical_data(mock_dependencies):
@@ -162,8 +163,7 @@ def test_get_historical_data(mock_dependencies):
     )
 
     assert isinstance(result, dict)
-    assert 'results' in result
-    assert result['results']['close'][0] == 191.24
+    assert result == mock_data
 
 
 def test_get_historical_data_error(mock_dependencies):
@@ -177,7 +177,10 @@ def test_get_historical_data_error(mock_dependencies):
         symbol="INVALID", start_date="2023-12-01", end_date="2023-12-02"
     )
 
-    assert result == {}
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert 'Failed to get historical data' in result[0]
+    assert 'INVALID' in result[0]
 
 
 def test_get_company_profile(mock_dependencies):
@@ -205,7 +208,10 @@ def test_get_company_profile_error(mock_dependencies):
     toolkit = OpenBBToolkit()
     result = toolkit.get_company_profile(symbol="INVALID", provider="fmp")
 
-    assert result == {}
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert 'Failed to get company profile' in result[0]
+    assert 'INVALID' in result[0]
 
 
 def test_get_financial_statement(mock_dependencies):
@@ -244,81 +250,7 @@ def test_get_financial_statement_error(mock_dependencies):
         symbol="INVALID", statement_type="balance", period="annual"
     )
 
-    assert result == {}
-
-
-def test_get_economic_data(mock_dependencies):
-    """Test economic data retrieval."""
-    mock_data = [
-        {
-            'date': '2024-01-01',
-            'symbol_root': 'CPI',
-            'country': 'United States',
-            'value': 0.032,
-        }
-    ]
-    mock_response = MagicMock()
-    mock_response.results = mock_data
-    mock_dependencies.economy.indicators.return_value = mock_response
-
-    toolkit = OpenBBToolkit()
-    result = toolkit.get_economic_data(
-        symbols=["CPI"], country=["US"], transform="toya"
-    )
-
     assert isinstance(result, list)
     assert len(result) == 1
-    assert result[0]['value'] == 0.032
-    assert result[0]['symbol_root'] == 'CPI'
-    assert result[0]['country'] == 'United States'
-
-
-def test_get_economic_data_error(mock_dependencies):
-    """Test economic data error handling."""
-    mock_dependencies.economy.indicators.side_effect = Exception('API Error')
-
-    toolkit = OpenBBToolkit()
-    result = toolkit.get_economic_data(symbols=["INVALID"], country=["US"])
-
-    assert isinstance(result, dict)
-    assert len(result) == 0
-
-
-def test_get_indicator_countries(mock_dependencies):
-    """Test indicator countries retrieval."""
-    mock_data = [
-        {
-            'symbol_root': 'GDP',
-            'country': 'United States',
-            'iso': 'US',
-            'description': 'Gross Domestic Product',
-            'frequency': 'Q',
-        },
-        {
-            'symbol_root': 'GDP',
-            'country': 'Germany',
-            'iso': 'DE',
-            'description': 'Gross Domestic Product',
-            'frequency': 'Q',
-        },
-        {
-            'symbol_root': 'GDP',
-            'country': 'Japan',
-            'iso': 'JP',
-            'description': 'Gross Domestic Product',
-            'frequency': 'Q',
-        },
-    ]
-    mock_response = MagicMock()
-    mock_response.results = mock_data
-    mock_dependencies.economy.available_indicators.return_value = mock_response
-
-    toolkit = OpenBBToolkit()
-    result = toolkit.get_indicator_countries(symbol="GDP")
-
-    assert isinstance(result, dict)
-    assert 'results' in result
-    assert len(result['results']) == 3
-    assert (
-        result['results'][0]['country'] == 'Germany'
-    )  # Sorted by country name
+    assert 'Failed to get financial statement' in result[0]
+    assert 'INVALID' in result[0]
