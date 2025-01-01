@@ -267,16 +267,6 @@ class ChatAgent(BaseAgent):
             return True
         return False
 
-    @property
-    def has_tools(self) -> bool:
-        r"""Whether tool calling is enabled for this agent.
-
-        Returns:
-            bool: Whether tool calling is enabled for this agent, determined
-                by whether the dictionary of tools is empty.
-        """
-        return len(self._tools) > 0
-
     def update_memory(
         self, message: BaseMessage, role: OpenAIBackendRole
     ) -> None:
@@ -395,14 +385,6 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        return self._handle_step(response_format)
-
-    def _handle_step(
-        self,
-        response_format: Optional[Type[BaseModel]],
-    ) -> ChatAgentResponse:
-        r"""Handles a single or multi-step interaction."""
-        # Record function calls made during the session
         tool_call_records: List[FunctionCallingRecord] = []
 
         while True:
@@ -424,7 +406,6 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, num_tokens
             )
 
-            # Single-step mode
             if self.single_iteration:
                 break
 
@@ -434,6 +415,9 @@ class ChatAgent(BaseAgent):
                 and response.choices[0].message.tool_calls
             ):
                 tool_call_records.append(self._step_tool_call(response))
+                continue
+
+            break
 
         # Final info and response
         info = self._step_get_info(
@@ -513,17 +497,19 @@ class ChatAgent(BaseAgent):
                 openai_messages, response_format, num_tokens
             )
 
-            if (
-                not self.has_tools
-                or not isinstance(response, ChatCompletion)
-                or not response.choices[0].message.tool_calls
-            ):
+            if self.single_iteration:
                 break
 
-            # Normal function calling
-            tool_call_records.append(
-                await self._step_tool_call_async(response)
-            )
+            if (
+                isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls
+            ):
+                tool_call_records.append(
+                    await self._step_tool_call_async(response)
+                )
+                continue
+
+            break
 
         info = self._step_get_info(
             output_messages,

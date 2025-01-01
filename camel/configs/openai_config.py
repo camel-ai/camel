@@ -18,7 +18,6 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 from pydantic import BaseModel, Field
 
 from camel.configs.base_config import BaseConfig
-from camel.toolkits import FunctionTool
 
 
 class ChatGPTConfig(BaseConfig):
@@ -120,6 +119,8 @@ class ChatGPTConfig(BaseConfig):
             Dict[str, Any]: A dictionary representation of the current
                 configuration.
         """
+        from camel.toolkits import FunctionTool
+
         config_dict = self.model_dump()
         if self.tools:
             tools_schema = []

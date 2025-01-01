@@ -110,7 +110,8 @@ class BaseModelBackend(ABC):
             self.model_config_dict.get("response_format", None)
             or response_format
         )
-        tools = self.model_config_dict.get("tools", None) or tools
+        # If tools are empty, make it None
+        tools = self.model_config_dict.get("tools", None) or tools or None
         return self._run(messages, response_format, tools)
 
     @abstractmethod
