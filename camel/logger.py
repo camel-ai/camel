@@ -31,7 +31,7 @@ def _configure_library_logging():
             stream=sys.stdout,
         )
         logging.setLoggerClass(logging.Logger)
-        _logger.info("Camel library logging has been configured.")
+        _logger.info("CAMEL library logging has been configured.")
     else:
         _logger.debug("Existing logger configuration found, using that.")
 

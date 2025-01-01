@@ -53,6 +53,11 @@ class ZhipuAIModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", 'ZHIPUAI_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -77,7 +82,6 @@ class ZhipuAIModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required("ZHIPUAI_API_KEY")
     def _run(
         self,
         messages: List[OpenAIMessage],

@@ -53,6 +53,11 @@ class GeminiModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", 'GEMINI_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -78,7 +83,6 @@ class GeminiModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @api_keys_required("GEMINI_API_KEY")
     def _run(
         self,
         messages: List[OpenAIMessage],

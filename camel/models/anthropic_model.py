@@ -47,6 +47,11 @@ class AnthropicModel(BaseModelBackend):
             will be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "ANTHROPIC_API_KEY"),
+        ]
+    )
     @dependencies_required('anthropic')
     def __init__(
         self,
@@ -120,7 +125,6 @@ class AnthropicModel(BaseModelBackend):
             model=self.model_type,
         ).input_tokens
 
-    @api_keys_required("ANTHROPIC_API_KEY")
     def _run(
         self,
         messages: List[OpenAIMessage],

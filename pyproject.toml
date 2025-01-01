@@ -115,6 +115,7 @@ stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
+openbb = { version = "^4.3.5", optional = true }
 unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
 pandas = { version = "^2.2.3", optional = true }
 tree-sitter-python = { version = "^0.23.6", optional = true }
@@ -240,6 +241,7 @@ tools = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
+    "openbb",
 ]
 
 vector-databases = [
@@ -335,6 +337,7 @@ all = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
+    "openbb",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -367,7 +370,7 @@ all = [
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.4.1"
+ruff = "^0.7"
 mypy = "^1.5.1"
 toml = ">=0.10.2"
 pre-commit = "^3"
