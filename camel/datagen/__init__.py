@@ -12,10 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .Cotdatagen import CotDataGenerator
+from .cotdatagen import CoTDataGenerator
 from .self_instruct import SelfInstructPipeline
 
 __all__ = [
-    "CotDataGenerator",
+    "CoTDataGenerator",
     "SelfInstructPipeline",
 ]

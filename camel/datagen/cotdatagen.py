@@ -12,62 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-"""
-Chain of Thought (CoT) Data Generation Algorithm Overview
-======================================================
-
-This module implements a sophisticated Chain of Thought data generation system
-that combines several key algorithms to produce high-quality reasoning paths.
-Here's a detailed breakdown of the core algorithms:
-
-1. Monte Carlo Tree Search (MCTS)
---------------------------------
-- Purpose: Explores different solution paths to find optimal reasoning chains
-- Process:
-  a. Selection: Choose promising partial solutions based on previous scores
-  b. Expansion: Generate new solution steps using the generator agent
-  c. Simulation: Evaluate solution quality using similarity scores
-  d. Backpropagation: Update solution tree with new findings
-
-2. Binary Search Error Detection
-------------------------------
-- Purpose: Efficiently locates the first error in a solution chain
-- Process:
-  a. Split solution into sentences (supports both English and Chinese)
-  b. Use binary search to identify the first incorrect step
-  c. Time complexity: O(log n) where n is the number of solution steps
-
-3. Dual-Agent Verification System
--------------------------------
-- Components:
-  a. Generator Agent: Creates solution steps and reasoning chains
-  b. Verifier Agent: Validates solutions against golden answers
-- Features:
-  - Semantic equivalence checking
-  - Support for both single and dual agent modes
-  - Automated quality scoring
-
-4. Solution Tree Management
--------------------------
-- Maintains a hierarchical structure of:
-  - Partial solutions
-  - Verification scores
-  - Search paths
-  - Solution iterations
-
-The system employs an iterative refinement process:
-1. Initial direct solution attempt
-2. MCTS-based exploration if needed
-3. Error detection and correction
-4. Solution regeneration from last known correct step
-
-This implementation ensures:
-- Robust error handling
-- High-quality solution generation
-- Efficient search space exploration
-- Verifiable solution paths
-"""
-
 import json
 from datetime import datetime
 from typing import Annotated, Dict, Optional, Union
@@ -78,7 +22,7 @@ from camel.agents import ChatAgent
 from camel.logger import get_logger
 
 # Get a logger for this module
-logger = get_logger('CotDataGenerator')
+logger = get_logger('CoTDataGenerator')
 
 
 class AgentResponse(BaseModel):
@@ -116,11 +60,17 @@ class VerificationResponse(BaseModel):
     )
 
 
-class CotDataGenerator:
+class CoTDataGenerator:
     r"""Class for generating and managing data through chat agent interactions.
 
-    handling the generation of data by  a chat agent, managing golden answers,
-    and maintaining a solution tree for correct solution steps.
+    This module implements a sophisticated Chain of Thought data generation
+    system that combines several key algorithms to produce high-quality
+    reasoning paths. Methods implemented:
+
+    1. Monte Carlo Tree Search (MCTS)
+    2. Binary Search Error Detection
+    3. Dual-Agent Verification System
+    4. Solution Tree Management
 
     Args:
         chat_agent (Optional[ChatAgent]): Optional single agent
@@ -145,7 +95,7 @@ class CotDataGenerator:
         golden_answers: Dict[str, str],
         search_limit: int = 100,
     ):
-        r"""Initialize the CotDataGenerator.
+        r"""Initialize the CoTDataGenerator.
 
         This constructor supports both single-agent and dual-agent modes:
         1. Single-agent mode (legacy): Pass a single chat_agent that will be
@@ -187,7 +137,7 @@ class CotDataGenerator:
         self.search_limit = search_limit
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
         logger.info(
-            "CotDataGenerator initialized with search_limit=%d", search_limit
+            "CoTDataGenerator initialized with search_limit=%d", search_limit
         )
 
     def get_answer(self, question: str, context: str = "") -> str:
@@ -258,6 +208,13 @@ class CotDataGenerator:
         self, question: str, partial_solution: str = ""
     ) -> float:
         r"""Perform Monte Carlo Tree Search to find the best solution.
+
+        Process:
+        a. Selection: Choose promising partial solutions based on previous
+        scores
+        b. Expansion: Generate new solution steps using the generator agent
+        c. Simulation: Evaluate solution quality using similarity scores
+        d. Backpropagation: Update solution tree with new findings
 
         Args:
             question (str): The question to solve.
