@@ -22,7 +22,7 @@ from camel.agents import ChatAgent
 from camel.logger import get_logger
 
 # Get a logger for this module
-logger = get_logger('o1datagenerator')
+logger = get_logger('CoTDataGenerator')
 
 
 class AgentResponse(BaseModel):
@@ -60,11 +60,17 @@ class VerificationResponse(BaseModel):
     )
 
 
-class O1DataGenerator:
+class CoTDataGenerator:
     r"""Class for generating and managing data through chat agent interactions.
 
-    handling the generation of data by  a chat agent, managing golden answers,
-    and maintaining a solution tree for correct solution steps.
+    This module implements a sophisticated Chain of Thought data generation
+    system that combines several key algorithms to produce high-quality
+    reasoning paths. Methods implemented:
+
+    1. Monte Carlo Tree Search (MCTS)
+    2. Binary Search Error Detection
+    3. Dual-Agent Verification System
+    4. Solution Tree Management
 
     Args:
         chat_agent (Optional[ChatAgent]): Optional single agent
@@ -89,7 +95,7 @@ class O1DataGenerator:
         golden_answers: Dict[str, str],
         search_limit: int = 100,
     ):
-        r"""Initialize the O1DataGenerator.
+        r"""Initialize the CoTDataGenerator.
 
         This constructor supports both single-agent and dual-agent modes:
         1. Single-agent mode (legacy): Pass a single chat_agent that will be
@@ -131,7 +137,7 @@ class O1DataGenerator:
         self.search_limit = search_limit
         self.solution_tree: Dict[str, Dict[str, Union[str, int]]] = {}
         logger.info(
-            "O1DataGenerator initialized with search_limit=%d", search_limit
+            "CoTDataGenerator initialized with search_limit=%d", search_limit
         )
 
     def get_answer(self, question: str, context: str = "") -> str:
@@ -202,6 +208,13 @@ class O1DataGenerator:
         self, question: str, partial_solution: str = ""
     ) -> float:
         r"""Perform Monte Carlo Tree Search to find the best solution.
+
+        Process:
+        a. Selection: Choose promising partial solutions based on previous
+        scores
+        b. Expansion: Generate new solution steps using the generator agent
+        c. Simulation: Evaluate solution quality using similarity scores
+        d. Backpropagation: Update solution tree with new findings
 
         Args:
             question (str): The question to solve.
