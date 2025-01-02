@@ -31,15 +31,17 @@ https://docs.flashinfer.ai/installation.html
 
 Please load HF_token in your environment variable.
 export HF_TOKEN=""
+When using the OpenAI interface to run SGLang model server, 
+the base model may fail to recognize  huggingface default
+chat template, switching to the Instruct model resolves the issue.
 """
 load_dotenv()
 sglang_model = ModelFactory.create(
     model_platform=ModelPlatformType.SGLANG,
-    model_type="meta-llama/Llama-3.2-1B",
+    model_type="meta-llama/Llama-3.2-1B-Instruct",
     model_config_dict={"temperature": 0.0},
     api_key="sglang",
 )
-
 assistant_sys_msg = "You are a helpful assistant."
 
 agent = ChatAgent(assistant_sys_msg, model=sglang_model, token_limit=4096)

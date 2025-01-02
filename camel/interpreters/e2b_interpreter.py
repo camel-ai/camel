@@ -43,7 +43,11 @@ class E2BInterpreter(BaseInterpreter):
         "r": "r",
     }
 
-    @api_keys_required("E2B_API_KEY")
+    @api_keys_required(
+        [
+            (None, "E2B_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         require_confirm: bool = True,

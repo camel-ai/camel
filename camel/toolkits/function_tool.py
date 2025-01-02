@@ -14,6 +14,7 @@
 import ast
 import inspect
 import logging
+import textwrap
 import warnings
 from inspect import Parameter, getsource, signature
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
@@ -24,7 +25,6 @@ from jsonschema.validators import Draft202012Validator as JSONValidator
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 
-from camel.agents import ChatAgent
 from camel.models import BaseModelBackend, ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import get_pydantic_object_schema, to_pascal
@@ -237,41 +237,43 @@ def generate_docstring(
     Returns:
         str: The generated docstring.
     """
+
+    from camel.agents import ChatAgent
+
     # Create the docstring prompt
-    docstring_prompt = '''
-    **Role**: Generate professional Python docstrings conforming to 
-    PEP 8/PEP 257.
+    docstring_prompt = textwrap.dedent(
+        """\
+        **Role**: Generate professional Python docstrings conforming to PEP 8/PEP 257.
 
-    **Requirements**:
-    - Use appropriate format: reST, Google, or NumPy, as needed.
-    - Include parameters, return values, and exceptions.
-    - Reference any existing docstring in the function and 
-      retain useful information.
+        **Requirements**:
+        - Use appropriate format: reST, Google, or NumPy, as needed.
+        - Include parameters, return values, and exceptions.
+        - Reference any existing docstring in the function and retain useful information.
 
-    **Input**: Python function.
+        **Input**: Python function.
 
-    **Output**: Docstring content (plain text, no code markers).
+        **Output**: Docstring content (plain text, no code markers).
 
-    **Example:**
+        **Example:**
 
-    Input:
-    ```python
-    def add(a: int, b: int) -> int:
-        return a + b
-    ```
+        Input:
+        ```python
+        def add(a: int, b: int) -> int:
+            return a + b
+        ```
 
-    Output:
-    Adds two numbers.
-    Args:
-        a (int): The first number.
-        b (int): The second number.
+        Output:
+        Adds two numbers.
+        Args:
+            a (int): The first number.
+            b (int): The second number.
 
-    Returns:
-        int: The sum of the two numbers.
+        Returns:
+            int: The sum of the two numbers.
 
-    **Task**: Generate a docstring for the function below.
-
-    '''
+        **Task**: Generate a docstring for the function below.
+        """  # noqa: E501
+    )
     # Initialize assistant with system message and model
     assistant_sys_msg = "You are a helpful assistant."
     docstring_assistant = ChatAgent(assistant_sys_msg, model=model)
@@ -665,7 +667,7 @@ class FunctionTool:
             Any: Synthesized output from the function execution. If no
                 synthesis model is provided, a warning is logged.
         """
-        import textwrap
+        from camel.agents import ChatAgent
 
         # Retrieve the function source code
         function_string = inspect.getsource(self.func)
@@ -694,39 +696,37 @@ class FunctionTool:
             function_string += f"\nkwargs:\n{kwargs}"
 
         # Define the assistant system message
-        assistant_sys_msg = '''
-**Role:** AI Assistant specialized in synthesizing tool execution outputs
-without actual execution.
+        assistant_sys_msg = textwrap.dedent(
+            '''\
+            **Role:** AI Assistant specialized in synthesizing tool execution outputs without actual execution.
 
-**Capabilities:**
-- Analyzes function to understand their
-  purpose and expected outputs.
-- Generates synthetic outputs based on the function logic.
-- Ensures the synthesized output is contextually accurate and aligns with the
-  function's intended behavior.
+            **Capabilities:**
+            - Analyzes function to understand their purpose and expected outputs.
+            - Generates synthetic outputs based on the function logic.
+            - Ensures the synthesized output is contextually accurate and aligns with the function's intended behavior.
 
-**Instructions:**
-1. **Input:** Provide the function code, function docstring, args, and kwargs.
-2. **Output:** Synthesize the expected output of the function based on the
-   provided args and kwargs.
+            **Instructions:**
+            1. **Input:** Provide the function code, function docstring, args, and kwargs.
+            2. **Output:** Synthesize the expected output of the function based on the provided args and kwargs.
 
-**Example:**
-- **User Input:**
-def sum(a, b, c=0):
-    """Adds three numbers together."""
-    return a + b + c
+            **Example:**
+            - **User Input:**
+            def sum(a, b, c=0):
+                """Adds three numbers together."""
+                return a + b + c
 
-- **Input Arguments:**
-args: (1, 2)
-kwargs: {"c": 3}
+            - **Input Arguments:**
+            args: (1, 2)
+            kwargs: {"c": 3}
 
-- **Output:**
-6
+            - **Output:**
+            6
 
-**Note:**
-- Just return the synthesized output of the function without any explanation.
-- The output should be in plain text without any formatting.
-'''
+            **Note:**
+            - Just return the synthesized output of the function without any explanation.
+            - The output should be in plain text without any formatting.
+            '''  # noqa: E501
+        )
 
         # Initialize the synthesis agent
         synthesis_agent = ChatAgent(
