@@ -147,7 +147,7 @@ class DappierToolkit(BaseToolkit):
                 Defaults to "most_recent".
 
         Returns:
-            List[Dict[str, Any]]: A list of recommended articles or content
+            List[Dict[str, str]]: A list of recommended articles or content
             based on the specified parameters, query, and data model.
         """
         try:
