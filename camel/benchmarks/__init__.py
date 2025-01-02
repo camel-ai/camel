@@ -14,5 +14,11 @@
 
 from .base import BaseBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
+from .ragbench import RAGBenchBenchmark
 
-__all__ = ["BaseBenchmark", "GAIABenchmark", "DefaultGAIARetriever"]
+__all__ = [
+    "BaseBenchmark",
+    "GAIABenchmark",
+    "DefaultGAIARetriever",
+    "RAGBenchBenchmark"
+]

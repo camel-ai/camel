@@ -18,6 +18,7 @@ from datasets import Dataset  # type: ignore[import]
 from ragas import evaluate  # type: ignore[import]
 from ragas.metrics import (  # type: ignore[import]
     context_relevancy,
+    answer_relevancy,
     faithfulness,
 )
 from sklearn.metrics import roc_auc_score  # type: ignore[import]
