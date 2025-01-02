@@ -263,24 +263,7 @@ The chart below illustrates the tokens per second achieved by each model during 
 
 ![Model Speed Comparison](https://i.postimg.cc/4xByytyZ/model-speed.png)
 
-New experiments with SGLang and VLLM show clear performance trends. SGLang achieved higher speeds, with meta-llama/Llama-3.2-1B-Instruct peaking at 220.98 tokens/sec, while VLLM capped at 107.2 tokens/sec. Larger models like Meta-Llama-3-8B-Instruct remained slower across both frameworks, around 50 tokens/sec, highlighting the speed-size trade-off.
-```
-# SGLang
-Model name: meta-llama/Llama-3.2-1B-Instruct
-Tokens per second: 220.64213394682668
-Model name: meta-llama/Llama-3.2-3B-Instruct
-Tokens per second: 98.59121989842943
-Model name: meta-llama/Meta-Llama-3-8B-Instruct
-Tokens per second: 50.728411818301545
-
-# VLLM
-Model name: meta-llama/Llama-3.2-1B-Instruct
-Tokens per second: 107.20302348208216
-Model name: meta-llama/Llama-3.2-3B-Instruct
-Tokens per second: 85.42743500589202
-Model name: meta-llama/Meta-Llama-3-8B-Instruct
-Tokens per second: 48.068671101866336
-```
+For local inference, we conducted a straightforward comparison locally between vLLM and SGLang. SGLang demonstrated superior performance, with `meta-llama/Llama-3.2-1B-Instruct` reaching a peak speed of 220.98 tokens per second, compared to vLLM, which capped at 107.2 tokens per second.
 
 ## 6. Conclusion
 In conclusion, CAMEL empowers developers to explore and integrate these diverse models, unlocking new possibilities for innovative AI applications. The world of large language models offers a rich tapestry of options beyond just the well-known proprietary solutions. By guiding users through model selection, environment setup, and integration, CAMEL bridges the gap between cutting-edge AI research and practical implementation. Its hybrid approach, combining in-house implementations with third-party integrations, offers unparalleled flexibility and comprehensive support for LLM-based development. Don't just watch this transformation that is happening from the sidelines.
