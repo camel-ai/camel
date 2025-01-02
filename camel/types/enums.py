@@ -155,8 +155,14 @@ class ModelType(UnifiedModelType, Enum):
         return "gpt-4o-mini"
 
     @property
+    def support_native_structured_output(self) -> bool:
+        return self.is_openai
+
+    @property
     def support_native_tool_calling(self) -> bool:
-        return any([self.is_openai, self.is_gemini, self.is_mistral])
+        return any(
+            [self.is_openai, self.is_gemini, self.is_mistral, self.is_qwen]
+        )
 
     @property
     def is_openai(self) -> bool:

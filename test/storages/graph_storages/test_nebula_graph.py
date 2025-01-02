@@ -145,7 +145,7 @@ class TestNebulaGraph(unittest.TestCase):
     def test_add_triplet(self):
         subj = 'node1'
         obj = 'node2'
-        rel = 'RELATES_TO'
+        rel = 'RELATESTO'
         self.graph.ensure_tag_exists = Mock()
         self.graph.ensure_edge_type_exists = Mock()
         self.graph.add_node = Mock()

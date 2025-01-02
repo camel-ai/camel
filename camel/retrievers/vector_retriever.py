@@ -161,13 +161,16 @@ class VectorRetriever(BaseRetriever):
                 # content path, chunk metadata, and chunk text
                 for vector, chunk in zip(batch_vectors, batch_chunks):
                     if isinstance(content, str):
-                        content_path_info = {"content path": content}
+                        content_path_info = {"content path": content[:100]}
                     elif isinstance(content, IOBase):
                         content_path_info = {"content path": "From file bytes"}
                     elif isinstance(content, Element):
                         content_path_info = {
-                            "content path": content.metadata.file_directory
-                            or ""
+                            "content path": content.metadata.file_directory[
+                                :100
+                            ]
+                            if content.metadata.file_directory
+                            else ""
                         }
 
                     chunk_metadata = {"metadata": chunk.metadata.to_dict()}

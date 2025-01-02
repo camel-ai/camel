@@ -71,7 +71,7 @@ class NotionToolkit(BaseToolkit):
 
     Attributes:
         notion_token (Optional[str], optional): The notion_token used to
-            interact with notion APIs.(default: :obj:`None`)
+            interact with notion APIs. (default: :obj:`None`)
         notion_client (module): The notion module for interacting with
             the notion APIs.
     """

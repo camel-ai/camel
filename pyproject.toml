@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.14"
+version = "0.2.15a0"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -57,7 +57,7 @@ sglang = { version = "^0.4.0", optional = true }
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
-datasets = { version = "^2", optional = true }
+datasets = { version = "^3", optional = true }
 torch = [
     { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
     # Torch 2.2.1 is used on non-arm64 macOS systems.
@@ -73,7 +73,8 @@ beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
-duckduckgo-search = { version = "^6.2.12", optional = true }
+linkup-sdk = { version = "^0.2.1", optional = true }
+duckduckgo-search = { version = "^6.3.5", optional = true }
 newspaper3k = { version = "^0.2.8", optional = true }
 wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
@@ -81,6 +82,7 @@ googlemaps = { version = "^4.10.0", optional = true }
 requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
+rouge = { version = "^1.0.1", optional = true }
 firecrawl-py = { version = "^1.0.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
 slack-bolt = { version = "^1.20.1", optional = true }
@@ -113,7 +115,11 @@ stripe = { version = "^11.3.0", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
 ffmpeg-python = { version = "^0.2.0", optional = true }
 pyyaml = { version = "^6.0.2", optional = true }
+openbb = { version = "^4.3.5", optional = true }
 unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
+pandas = { version = "^2.2.3", optional = true }
+tree-sitter-python = { version = "^0.23.6", optional = true }
+tree-sitter = { version = "^0.23.2", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -154,6 +160,7 @@ rag = [
 search_tools = [
     "duckduckgo-search",
     "wikipedia",
+    "linkup-sdk",
     "wolframalpha",
     "tavily-python",
 ]
@@ -190,6 +197,7 @@ tools = [
     "functools",
     "PyMuPDF",
     "wikipedia",
+    "linkup-sdk",
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
@@ -199,6 +207,7 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "rouge",
     "outlines",
     "e2b-code-interpreter",
     "firecrawl-py",
@@ -229,6 +238,10 @@ tools = [
     "yt-dlp",
     "ffmpeg-python",
     "pyyaml",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
+    "openbb",
 ]
 
 vector-databases = [
@@ -280,6 +293,7 @@ all = [
     "discord.py",
     "PyMuPDF",
     "wikipedia",
+    "linkup-sdk",
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
@@ -289,6 +303,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "rouge",
     "outlines",
     "e2b-code-interpreter",
     "firecrawl-py",
@@ -319,7 +334,10 @@ all = [
     "fastapi",
     "uvicorn",
     "stripe",
-    "unstructured",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
+    "openbb",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -352,7 +370,7 @@ all = [
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.4.1"
+ruff = "^0.7"
 mypy = "^1.5.1"
 toml = ">=0.10.2"
 pre-commit = "^3"
@@ -448,6 +466,7 @@ module = [
     "huggingface_hub.utils._errors",
     "huggingface_hub.errors",
     "wikipedia",
+    "linkup-sdk",
     "duckduckgo_search",
     "newspaper",
     "wolframalpha",
@@ -462,6 +481,8 @@ module = [
     "PyMuPDF",
     "fitz",
     "qdrant_client.*",
+    "unstructured.*",
+    "rouge",
     "e2b_code_interpreter",
     "firecrawl",
     "imageio",
@@ -500,5 +521,9 @@ module = [
     "notion-client",
     "ffmpeg",
     "yt_dlp",
+    "datasets",
+    "pandas",
+    "tree-sitter-python",
+    "tree-sitter",
 ]
 ignore_missing_imports = true
