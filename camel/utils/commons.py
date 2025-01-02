@@ -30,6 +30,7 @@ from typing import (
     Mapping,
     Optional,
     Set,
+    Tuple,
     Type,
     TypeVar,
     cast,
@@ -232,41 +233,79 @@ def is_module_available(module_name: str) -> bool:
         return False
 
 
-def api_keys_required(*required_keys: str) -> Callable[[F], F]:
-    r"""A decorator to check if the required API keys are
-    presented in the environment variables or as an instance attribute.
+def api_keys_required(
+    param_env_list: List[Tuple[Optional[str], str]],
+) -> Callable[[F], F]:
+    r"""A decorator to check if the required API keys are provided in the
+    environment variables or as function arguments.
 
     Args:
-        required_keys (str): The required API keys to be checked.
+        param_env_list (List[Tuple[Optional[str], str]]): A list of tuples
+            where each tuple contains a function argument name (as the first
+            element, or None) and the corresponding environment variable name
+            (as the second element) that holds the API key.
 
     Returns:
-        Callable[[F], F]: The original function with the added check
-            for required API keys.
+        Callable[[F], F]: The original function wrapped with the added check
+            for the required API keys.
 
     Raises:
-        ValueError: If any of the required API keys are missing in the
-            environment variables and the instance attribute.
+        ValueError: If any of the required API keys are missing, either
+            from the function arguments or environment variables.
 
     Example:
         ::
 
-            @api_keys_required('API_KEY_1', 'API_KEY_2')
-            def some_api_function():
-                # Function implementation...
+            @api_keys_required([
+                ('api_key_arg', 'API_KEY_1'),
+                ('another_key_arg', 'API_KEY_2'),
+                (None, 'API_KEY_3'),
+            ])
+            def some_api_function(api_key_arg=None, another_key_arg=None):
+                # Function implementation that requires API keys
     """
+    import inspect
 
     def decorator(func: F) -> F:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            missing_environment_keys = [
-                k for k in required_keys if k not in os.environ
-            ]
-            if (
-                not (args and getattr(args[0], '_api_key', None))
-                and missing_environment_keys
-            ):
+            signature = inspect.signature(func)
+            bound_arguments = signature.bind(*args, **kwargs)
+            bound_arguments.apply_defaults()
+            arguments = bound_arguments.arguments
+
+            missing_keys = []
+            for param_name, env_var_name in param_env_list:
+                if not isinstance(env_var_name, str):
+                    raise TypeError(
+                        f"Environment variable name must be a string, got"
+                        f" {type(env_var_name)}"
+                    )
+
+                value = None
+                if (
+                    param_name
+                ):  # If param_name is provided, check function argument first
+                    if not isinstance(param_name, str):
+                        raise TypeError(
+                            f"Parameter name must be a string, "
+                            f"got {type(param_name)}"
+                        )
+                    value = arguments.get(param_name)
+                    # If we found a valid value in arguments, continue to next
+                    # item
+                    if value:
+                        continue
+
+                # Check environment variable if no valid value found yet
+                value = os.environ.get(env_var_name)
+                if not value or value.strip() == "":
+                    missing_keys.append(env_var_name)
+
+            if missing_keys:
                 raise ValueError(
-                    f"Missing API keys: {', '.join(missing_environment_keys)}"
+                    "Missing or empty required API keys in "
+                    f"environment variables: {', '.join(missing_keys)}"
                 )
             return func(*args, **kwargs)
 

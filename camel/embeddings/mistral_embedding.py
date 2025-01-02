@@ -37,6 +37,11 @@ class MistralEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @api_keys_required(
+        [
+            ("api_key", 'MISTRAL_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: EmbeddingModelType = (EmbeddingModelType.MISTRAL_EMBED),
@@ -56,7 +61,6 @@ class MistralEmbedding(BaseEmbedding[str]):
         self._api_key = api_key or os.environ.get("MISTRAL_API_KEY")
         self._client = Mistral(api_key=self._api_key)
 
-    @api_keys_required("MISTRAL_API_KEY")
     def embed_list(
         self,
         objs: list[str],

@@ -51,6 +51,11 @@ class GroqModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "GROQ_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -89,7 +94,6 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    @api_keys_required("GROQ_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
