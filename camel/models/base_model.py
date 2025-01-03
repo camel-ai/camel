@@ -82,6 +82,16 @@ class BaseModelBackend(ABC):
         tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         pass
+    
+    # TODO: Add the async version of the run method
+    # @abstractmethod
+    def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        pass
 
     def run(
         self,
@@ -113,6 +123,36 @@ class BaseModelBackend(ABC):
         # If tools are empty, make it None
         tools = self.model_config_dict.get("tools", None) or tools or None
         return self._run(messages, response_format, tools)
+
+    async def arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs the query to the backend model asynchronously.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The response format
+                to use for the model. (default: :obj:`None`)
+            tools (Optional[List[Tool]]): The schema of tools to use for the
+                model for this request. Will override the tools specified in
+                the model configuration (but not change the configuration).
+                (default: :obj:`None`)
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        response_format = (
+            self.model_config_dict.get("response_format", None) or response_format
+        )
+        # If tools are empty, make it None
+        tools = self.model_config_dict.get("tools", None) or tools or None
+        return await self._arun(messages, response_format, tools)
 
     @abstractmethod
     def check_model_config(self):

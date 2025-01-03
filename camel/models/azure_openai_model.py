@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AzureOpenAI, Stream
+from openai import AzureOpenAI, Stream, AsyncAzureOpenAI
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -96,6 +96,15 @@ class AzureOpenAIModel(BaseModelBackend):
             max_retries=3,
         )
 
+        self._async_client = AsyncAzureOpenAI(
+            azure_endpoint=str(self._url),
+            azure_deployment=self.azure_deployment_name,
+            api_version=self.api_version,
+            api_key=self._api_key,
+            timeout=180,
+            max_retries=3,
+        )
+
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
@@ -126,6 +135,30 @@ class AzureOpenAIModel(BaseModelBackend):
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
         response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.azure_deployment_name,  # type:ignore[arg-type]
+            **self.model_config_dict,
+        )
+        return response
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of Azure OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        response = self._async_client.chat.completions.create(
             messages=messages,
             model=self.azure_deployment_name,  # type:ignore[arg-type]
             **self.model_config_dict,

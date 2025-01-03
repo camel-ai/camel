@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import OpenAI, Stream, AsyncOpenAI
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -68,6 +68,13 @@ class OpenAICompatibleModel(BaseModelBackend):
             base_url=self._url,
         )
 
+        self._async_client = AsyncOpenAI(
+            timeout=180,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
+        )
+
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -86,6 +93,30 @@ class OpenAICompatibleModel(BaseModelBackend):
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
         response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+        return response
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion in async mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        response = self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,

@@ -61,7 +61,7 @@ class AnthropicModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        from anthropic import Anthropic
+        from anthropic import Anthropic, AsyncAnthropic
 
         if model_config_dict is None:
             model_config_dict = AnthropicConfig().as_dict()
@@ -71,6 +71,7 @@ class AnthropicModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self.client = Anthropic(api_key=self._api_key, base_url=self._url)
+        self.async_client = AsyncAnthropic(api_key=self._api_key, base_url=self._url)
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
@@ -158,6 +159,38 @@ class AnthropicModel(BaseModelBackend):
 
         return response
 
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ):
+        r"""Run inference of Anthropic chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            ChatCompletion: Response in the OpenAI API format.
+        """
+        from anthropic import NOT_GIVEN
+
+        if messages[0]["role"] == "system":
+            sys_msg = str(messages.pop(0)["content"])
+        else:
+            sys_msg = NOT_GIVEN  # type: ignore[assignment]
+        response = await self.async_client.messages.create(
+            model=self.model_type,
+            system=sys_msg,
+            messages=messages,  # type: ignore[arg-type]
+            **self.model_config_dict,
+        )
+
+        # format response to openai format
+        response = self._convert_response_from_anthropic_to_openai(response)
+
+        return response
     def check_model_config(self):
         r"""Check whether the model configuration is valid for anthropic
         model backends.

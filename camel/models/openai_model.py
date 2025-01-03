@@ -15,7 +15,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import OpenAI, Stream, AsyncOpenAI
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -92,6 +92,12 @@ class OpenAIModel(BaseModelBackend):
             base_url=self._url,
             api_key=self._api_key,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=180,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
+        )
 
     def _sanitize_model_config(self) -> None:
         """Sanitize the model configuration for O1 models."""
@@ -150,6 +156,32 @@ class OpenAIModel(BaseModelBackend):
         else:
             return self._request_chat_completion(messages, tools)
 
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion in async mode.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        if response_format:
+            return await self._arequest_parse(messages, response_format, tools)
+        else:
+            return await self._arequest_chat_completion(messages, tools)
+
     def _request_chat_completion(
         self,
         messages: List[OpenAIMessage],
@@ -169,6 +201,25 @@ class OpenAIModel(BaseModelBackend):
             **request_config,
         )
 
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        request_config = self.model_config_dict.copy()
+
+        if tools is not None:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("strict", None)
+        request_config["tools"] = tools
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
     def _request_parse(
         self,
         messages: List[OpenAIMessage],
@@ -182,6 +233,24 @@ class OpenAIModel(BaseModelBackend):
         request_config["tools"] = tools
 
         return self._client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        request_config["tools"] = tools
+
+        return await self._async_client.beta.chat.completions.parse(
             messages=messages,
             model=self.model_type,
             **request_config,
