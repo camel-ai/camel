@@ -14,9 +14,11 @@
 from .base_reward_model import BaseRewardModel
 from .evaluator import Evaluator
 from .nemotron_model import NemotronRewardModel
+from .skywork_model import SkyworkRewardModel
 
 __all__ = [
     'BaseRewardModel',
     'NemotronRewardModel',
     'Evaluator',
+    'SkyworkRewardModel',
 ]
