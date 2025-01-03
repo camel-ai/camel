@@ -143,7 +143,7 @@ class SelfInstructPipeline:
             create a prompt for instruction generation.
 
         Returns:
-            str: A machine-generated instruction.
+            List: The prompt and a machine-generated instruction.
         """
 
         sampled_human_tasks = self.sample_human_tasks(
