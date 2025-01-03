@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List
 
-from .filter_function import FilterFunction
+from .filter_function import FilterFunction, RewardModelFilter
 from .filter_registry import FILTER_REGISTRY
 
 
@@ -53,10 +53,16 @@ class InstructionFilter:
         """
         self.filters.append(filter_function)
 
-    def filter(self, instruction: str, return_details: bool = False):
+    def filter(
+            self,
+            prompt: str,
+            instruction: str,
+            return_details: bool = False
+    ):
         r"""Check if the given instruction passes all filter functions.
 
         Args:
+            prompt (str): The prompt of generating the instruction.
             instruction (str): The instruction to evaluate.
             return_details (bool): If True, returns a tuple (bool, List[str])
                 where the list contains the names of filters that failed.
@@ -68,6 +74,8 @@ class InstructionFilter:
         """
         failed_filters = []
         for f in self.filters:
+            if isinstance(f, RewardModelFilter):
+                f.prompt = prompt
             if not f.apply(instruction):
                 failed_filters.append(type(f).__name__)
 

@@ -12,13 +12,11 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from camel.models.reward import BaseRewardModel
 import re
 from abc import ABC, abstractmethod
 from typing import List
-
 from rouge import Rouge
-
-from camel.models.reward import BaseRewardModel
 
 
 class FilterFunction(ABC):
@@ -172,7 +170,12 @@ class RewardModelFilter(FilterFunction):
             to pass the filter.
     """
 
-    def __init__(self, reward_model: BaseRewardModel, threshold: float = 0.5):
+    def __init__(
+            self,
+            reward_model: BaseRewardModel,
+            threshold: float = 0.5,
+    ):
+        self.prompt = ""
         self.reward_model = reward_model
         self.threshold = threshold
 
@@ -190,8 +193,9 @@ class RewardModelFilter(FilterFunction):
                 required score is not found in `scores`.
         """
 
-        messages = [{"role": "user", "content": instruction}]
-        scores = self.reward_model.evaluate(messages)
+        data = [{"role": "user", "content": self.prompt},
+                {"role": "assistant", "content": instruction}]
+        scores = self.reward_model.evaluate(data)
         score_types = self.reward_model.get_scores_types()
         if not score_types:
             raise ValueError("No score types available from the reward model.")
