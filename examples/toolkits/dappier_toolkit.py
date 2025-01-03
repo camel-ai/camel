@@ -21,6 +21,7 @@ real_time_data_response = DappierToolkit().search_real_time_data(
 
 print(real_time_data_response)
 """
+===============================================================================
 CAMEL-AI is pretty cool! It's the first LLM (Large Language Model) multi-agent 
 framework and an open-source community focused on exploring the scaling laws 
 of agents. 🌟
@@ -39,6 +40,7 @@ Here are some highlights:
 
 If you want to dive deeper, check out their website:
 [CAMEL-AI.org](https://www.camel-ai.org) 🚀!
+===============================================================================
 """
 
 # Use a different AI model which has access to real-time financial news.
@@ -48,7 +50,9 @@ real_time_data_response = DappierToolkit().search_real_time_data(
 )
 print(real_time_data_response)
 """
+===============================================================================
 The stock price for Google (GOOGL) on May 3rd, 2024, was $167.10.
+===============================================================================
 """
 
 # Example with ChatAgent using the Real Time Search.
@@ -64,8 +68,10 @@ response = agent.step(input_message=usr_msg, response_format=None)
 
 print(response.msgs[0].content)
 """
+===============================================================================
 The current temperature in Tokyo is 50°F (about 10°C). It's a bit chilly, 
 so you might want to grab a jacket! 🧥🌬️
+===============================================================================
 """
 
 ai_recommendations_response = DappierToolkit().get_ai_recommendations(
@@ -78,6 +84,7 @@ ai_recommendations_response = DappierToolkit().get_ai_recommendations(
 )
 print(ai_recommendations_response)
 """
+===============================================================================
 {'author': 'Andrew Buller-Russ', 
 'image_url': 'https://images.dappier.com/dm_01j0pb465keqmatq9k83dthx34/
 Syndication-Detroit-Free-Press-25087075_.jpg?width=428&height=321', 
@@ -133,4 +140,5 @@ ways with Adams comes as they focus on their playoff positioning for the
 upcoming game.', 
 'title': 'Detroit Lions cut bait with All-Pro ahead of Week 18 matchup with 
 Vikings'}
+===============================================================================
 """
