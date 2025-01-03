@@ -17,6 +17,7 @@ from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
+from .ragbench import RAGBenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
@@ -25,4 +26,5 @@ __all__ = [
     "NexusBenchmark",
     "APIBenchBenchmark",
     "APIBankBenchmark",
+    "RAGBenchBenchmark",
 ]
