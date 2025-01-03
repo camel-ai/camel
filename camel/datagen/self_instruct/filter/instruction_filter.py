@@ -54,10 +54,7 @@ class InstructionFilter:
         self.filters.append(filter_function)
 
     def filter(
-            self,
-            prompt: str,
-            instruction: str,
-            return_details: bool = False
+        self, prompt: str, instruction: str, return_details: bool = False
     ):
         r"""Check if the given instruction passes all filter functions.
 
