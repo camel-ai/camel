@@ -13,10 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-from camel.loaders import PandaReader
+import logging
+
 import pandas as pd
 
-import logging
+from camel.loaders import PandaReader
 
 logging.disable(logging.ERROR)
 
@@ -37,7 +38,18 @@ def main():
                 "Japan",
                 "China",
             ],
-            "sales": [5000, 3200, 2900, 4100, 2300, 2100, 2500, 2600, 4500, 7000],
+            "sales": [
+                5000,
+                3200,
+                2900,
+                4100,
+                2300,
+                2100,
+                2500,
+                2600,
+                4500,
+                7000,
+            ],
         }
     )
     doc = reader.load(sales_by_country)
@@ -46,5 +58,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-
