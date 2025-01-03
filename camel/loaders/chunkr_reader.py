@@ -40,7 +40,11 @@ class ChunkrReader:
         **kwargs (Any): Additional keyword arguments for request headers.
     """
 
-    @api_keys_required("CHUNKR_API_KEY")
+    @api_keys_required(
+        [
+            ("api_key", "CHUNKR_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         api_key: Optional[str] = None,

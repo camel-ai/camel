@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import ast
+import json
 from typing import Any, List
 
 from colorama import Fore
@@ -87,7 +87,7 @@ class SingleAgentWorker(Worker):
 
         print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
-        result_dict = ast.literal_eval(response.msg.content)
+        result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
 
         color = Fore.RED if task_result.failed else Fore.GREEN

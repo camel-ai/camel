@@ -13,8 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import ast
 import asyncio
+import json
 import logging
 from collections import deque
 from typing import Deque, Dict, List, Optional
@@ -251,7 +251,7 @@ class Workforce(BaseNode):
                 additional_info = "A Workforce node"
             elif isinstance(child, SingleAgentWorker):
                 additional_info = "tools: " + (
-                    ", ".join(child.worker.func_dict.keys())
+                    ", ".join(child.worker.tool_dict.keys())
                 )
             elif isinstance(child, RolePlayingWorker):
                 additional_info = "A Role playing node"
@@ -289,7 +289,7 @@ class Workforce(BaseNode):
         response = self.coordinator_agent.step(
             req, response_format=TaskAssignResult
         )
-        result_dict = ast.literal_eval(response.msg.content)
+        result_dict = json.loads(response.msg.content)
         task_assign_result = TaskAssignResult(**result_dict)
         return task_assign_result.assignee_id
 
@@ -320,7 +320,7 @@ class Workforce(BaseNode):
             content=prompt,
         )
         response = self.coordinator_agent.step(req, response_format=WorkerConf)
-        result_dict = ast.literal_eval(response.msg.content)
+        result_dict = json.loads(response.msg.content)
         new_node_conf = WorkerConf(**result_dict)
 
         new_agent = self._create_new_agent(
@@ -369,7 +369,7 @@ class Workforce(BaseNode):
             model_config_dict=model_config_dict,
         )
 
-        return ChatAgent(worker_sys_msg, model=model, tools=function_list)
+        return ChatAgent(worker_sys_msg, model=model, tools=function_list)  # type: ignore[arg-type]
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned

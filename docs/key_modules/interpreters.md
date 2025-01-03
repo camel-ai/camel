@@ -17,3 +17,7 @@ executed in an isolated environment.
 **To utilize this interpreter, you need to have Docker installed on your 
 system.** For more information on Docker installation, visit
 [Docker's official website](https://docs.docker.com/get-docker/).
+
+### 1.4. E2B Interpreter
+You could leverage the E2B sandbox to run the code. 
+[E2B official documentation](https://e2b.dev/docs)

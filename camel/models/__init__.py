@@ -16,6 +16,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
 from .deepseek_model import DeepSeekModel
+from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
@@ -31,6 +32,7 @@ from .openai_model import OpenAIModel
 from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
+from .sglang_model import SGLangModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
@@ -55,6 +57,7 @@ __all__ = [
     'NvidiaModel',
     'OllamaModel',
     'VLLMModel',
+    'SGLangModel',
     'GeminiModel',
     'OpenAICompatibleModel',
     'RekaModel',
@@ -64,4 +67,5 @@ __all__ = [
     'QwenModel',
     'ModelProcessingError',
     'DeepSeekModel',
+    'FishAudioModel',
 ]

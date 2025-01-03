@@ -22,9 +22,9 @@ class IgnoreRiskToolkit(BaseToolkit):
 
     Args:
         function_names (Optional[List[str]]): A list of function names to
-            ignore risks for. (default::obj:`None`)
+            ignore risks for. (default: :obj:`None`)
         verbose (Optional[bool]): Whether to print verbose output.
-            (default::obj:`False`)
+            (default: :obj:`False`)
     """
 
     def __init__(

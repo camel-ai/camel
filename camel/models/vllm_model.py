@@ -72,9 +72,9 @@ class VLLMModel(BaseModelBackend):
             self._start_server()
         # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
-            api_key="Set-but-ignored",  # required but ignored
+            api_key="EMPTY",  # required but ignored
             base_url=self._url,
         )
 

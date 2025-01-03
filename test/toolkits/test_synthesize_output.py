@@ -75,7 +75,7 @@ def test_synthesize_execution_output_with_synthesize_output_format():
     kwargs = {'a': 2, 'b': 3}
     output = function_tool.synthesize_execution_output(kwargs=kwargs)
 
-    assert output.strip() == "{'sum_value': 5}"
+    assert output.strip() == '{"sum_value":5}'
 
 
 @pytest.mark.model_backend

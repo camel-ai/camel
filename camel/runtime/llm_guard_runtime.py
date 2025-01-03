@@ -68,9 +68,9 @@ class LLMGuardRuntime(BaseRuntime):
     Arguments:
         prompt (str): The prompt to use for the language model. (default:
             :obj:`GUARDPROMPT`)
-        model (BaseModelBackend): The language model to use. (default::obj:
+        model (BaseModelBackend): The language model to use. (default: :obj:
             `None`)
-        verbose (bool): Whether to print verbose output. (default::obj:
+        verbose (bool): Whether to print verbose output. (default: :obj:
             `False`)
     """
 
@@ -114,7 +114,7 @@ class LLMGuardRuntime(BaseRuntime):
             funcs (FunctionTool or List[FunctionTool]): The function or
                 list of functions to add.
             threshold (int): The risk threshold for functions.
-                (default::obj:`2`)
+                (default: :obj:`2`)
 
         Returns:
             LLMGuardRuntime: The current runtime.

@@ -15,7 +15,7 @@ from pathlib import Path, PurePath
 from typing import Tuple
 from warnings import warn
 
-from camel.loaders import File
+from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
 
 
@@ -111,7 +111,7 @@ class GoogleCloudStorage(BaseObjectStorage):
             File: The object from the S3 bucket.
         """
         raw_bytes = self._client.get_blob(file_key).download_as_bytes()
-        return File.create_file_from_raw_bytes(raw_bytes, filename)
+        return create_file_from_raw_bytes(raw_bytes, filename)
 
     def _upload_file(
         self, local_file_path: Path, remote_file_key: str

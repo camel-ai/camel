@@ -36,9 +36,9 @@ class RemoteHttpRuntime(BaseRuntime):
 
     Args:
         host (str): The host of the remote server.
-        port (int): The port of the remote server. (default::obj: `8000`)
+        port (int): The port of the remote server. (default: :obj: `8000`)
         python_exec (str): The python executable to run the API server.
-            (default::obj: `python3`)
+            (default: :obj: `python3`)
     """
 
     def __init__(
@@ -90,9 +90,9 @@ class RemoteHttpRuntime(BaseRuntime):
                 list of functions to add.
             entrypoint (str): The entrypoint for the function.
             redirect_stdout (bool): Whether to return the stdout of
-                the function. (default::obj: `False`)
+                the function. (default: :obj: `False`)
             arguments (Optional[Dict[str, Any]]): The arguments for the
-                function. (default::obj: `None`)
+                function. (default: :obj: `None`)
 
         Returns:
             RemoteHttpRuntime: The current runtime.
@@ -162,7 +162,7 @@ class RemoteHttpRuntime(BaseRuntime):
         r"""Wait for the API Server to be ready.
 
         Args:
-            timeout (int): The number of seconds to wait. (default::obj: `10`)
+            timeout (int): The number of seconds to wait. (default: :obj: `10`)
 
         Returns:
             bool: Whether the API Server is ready.

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-import ast
+import json
 from typing import Dict, List, Optional
 
 from colorama import Fore
@@ -173,7 +173,7 @@ class RolePlayingWorker(Worker):
             content=prompt,
         )
         response = self.summarize_agent.step(req, response_format=TaskResult)
-        result_dict = ast.literal_eval(response.msg.content)
+        result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
         task.result = task_result.content
 

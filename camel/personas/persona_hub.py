@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import ast
+import json
 import re
 import uuid
 from functools import lru_cache
@@ -130,7 +130,7 @@ class PersonaHub:
                 text_to_persona_prompt_instruction,
                 response_format=PersonaResponse,  # type: ignore[arg-type]
             )
-            parsed_content = ast.literal_eval(response.msg.content)
+            parsed_content = json.loads(response.msg.content)
             persona.name = parsed_content["persona_name"]
             persona.description = parsed_content["persona_description"]
         except Exception as e:

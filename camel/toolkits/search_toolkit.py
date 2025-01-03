@@ -13,9 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Optional, TypeAlias, Union
+from typing import Any, Dict, List, Literal, Optional, Type, TypeAlias, Union
 
 import requests
+from pydantic import BaseModel
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -62,6 +63,82 @@ class SearchToolkit(BaseToolkit):
             result = f"An exception occurred during the search: {e}"
 
         return result
+
+    @dependencies_required("linkup")
+    @api_keys_required(
+        [
+            (None, "LINKUP_API_KEY"),
+        ]
+    )
+    def search_linkup(
+        self,
+        query: str,
+        depth: Literal["standard", "deep"] = "standard",
+        output_type: Literal[
+            "searchResults", "sourcedAnswer", "structured"
+        ] = "searchResults",
+        structured_output_schema: Union[Type[BaseModel], str, None] = None,
+    ) -> Dict[str, Any]:
+        r"""Search for a query in the Linkup API and return results in various
+        formats.
+
+        Args:
+            query (str): The search query.
+            depth (Literal["standard", "deep"]): The depth of the search.
+                "standard" for a straightforward search, "deep" for a more
+                comprehensive search.
+            output_type (Literal["searchResults", "sourcedAnswer",
+                "structured"]): The type of output:
+                - "searchResults" for raw search results,
+                - "sourcedAnswer" for an answer with supporting sources,
+                - "structured" for output based on a provided schema.
+            structured_output_schema (Union[Type[BaseModel], str, None]): If
+                `output_type` is "structured",specify the schema of the
+                output. Can be a Pydantic BaseModel or a JSON schema string.
+
+        Returns:
+            Dict[str, Any]: A dictionary representing the search result. The
+                structure depends on the `output_type`. If an error occurs,
+                returns an error message.
+        """
+        try:
+            from linkup import LinkupClient
+
+            # Initialize the Linkup client with the API key
+            LINKUP_API_KEY = os.getenv("LINKUP_API_KEY")
+            client = LinkupClient(api_key=LINKUP_API_KEY)
+
+            # Perform the search using the specified output_type
+            response = client.search(
+                query=query,
+                depth=depth,
+                output_type=output_type,
+                structured_output_schema=structured_output_schema,
+            )
+
+            if output_type == "searchResults":
+                results = [
+                    item.__dict__
+                    for item in response.__dict__.get('results', [])
+                ]
+                return {"results": results}
+
+            elif output_type == "sourcedAnswer":
+                answer = response.__dict__.get('answer', '')
+                sources = [
+                    item.__dict__
+                    for item in response.__dict__.get('sources', [])
+                ]
+                return {"answer": answer, "sources": sources}
+
+            elif output_type == "structured" and structured_output_schema:
+                return response.__dict__
+
+            else:
+                return {"error": f"Invalid output_type: {output_type}"}
+
+        except Exception as e:
+            return {"error": f"An unexpected error occurred: {e!s}"}
 
     @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
@@ -151,7 +228,11 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
-    @api_keys_required("BRAVE_API_KEY")
+    @api_keys_required(
+        [
+            (None, 'BRAVE_API_KEY'),
+        ]
+    )
     def search_brave(
         self,
         q: str,
@@ -181,7 +262,7 @@ class SearchToolkit(BaseToolkit):
             country (str): The search query country where results come from.
                 The country string is limited to 2 character country codes of
                 supported countries. For a list of supported values, see
-                Country Codes. (default::obj:`US `)
+                Country Codes. (default: :obj:`US `)
             search_lang (str): The search language preference. The 2 or more
                 character language code for which search results are provided.
                 For a list of possible values, see Language Codes.
@@ -297,7 +378,12 @@ class SearchToolkit(BaseToolkit):
         data = response.json()["web"]
         return data
 
-    @api_keys_required("GOOGLE_API_KEY", "SEARCH_ENGINE_ID")
+    @api_keys_required(
+        [
+            (None, 'GOOGLE_API_KEY'),
+            (None, 'SEARCH_ENGINE_ID'),
+        ]
+    )
     def search_google(
         self, query: str, num_result_pages: int = 5
     ) -> List[Dict[str, Any]]:
@@ -416,7 +502,7 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to send to Wolfram Alpha.
             is_detailed (bool): Whether to include additional details
                 including step by step information in the result.
-                (default::obj:`False`)
+                (default: :obj:`False`)
 
         Returns:
             Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
@@ -429,8 +515,7 @@ class SearchToolkit(BaseToolkit):
         if not WOLFRAMALPHA_APP_ID:
             raise ValueError(
                 "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: "
-                "`https://products.wolframalpha.com/api/`."
+                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
             )
 
         try:
@@ -618,6 +703,7 @@ class SearchToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.search_wiki),
+            FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
             FunctionTool(self.query_wolfram_alpha),

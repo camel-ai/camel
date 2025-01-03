@@ -33,7 +33,11 @@ class GoogleScholarToolkit(BaseToolkit):
     """
 
     def __init__(
-        self, author_identifier: str, is_author_name: bool = False
+        self,
+        author_identifier: str,
+        is_author_name: bool = False,
+        proxy_http: Optional[str] = None,
+        proxy_https: Optional[str] = None,
     ) -> None:
         r"""Initializes the GoogleScholarToolkit with the author's identifier.
 
@@ -42,8 +46,18 @@ class GoogleScholarToolkit(BaseToolkit):
                 of the author to search for.
             is_author_name (bool): Flag to indicate if the identifier is a
                 name. (default: :obj:`False`)
+            proxy_http ( Optional[str]): Proxy http address pass to pg.
+                SingleProxy. (default: :obj:`None`)
+            proxy_https ( Optional[str]): Proxy https address pass to pg.
+                SingleProxy. (default: :obj:`None`)
         """
-        from scholarly import scholarly
+        from scholarly import ProxyGenerator, scholarly
+
+        # Set Proxy is HTTP or HTTPS provided
+        if proxy_http or proxy_https:
+            pg = ProxyGenerator()
+            pg.SingleProxy(http=proxy_http, https=proxy_https)
+            scholarly.use_proxy(pg)
 
         self.scholarly = scholarly
         self.author_identifier = author_identifier

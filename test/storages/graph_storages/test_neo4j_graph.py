@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 
+import pytest
 from unstructured.documents.elements import Element
 
 from camel.storages import Neo4jGraph
@@ -28,9 +29,9 @@ from camel.storages.graph_storages.neo4j_graph import (
     REL_QUERY,
 )
 
-url = os.environ.get("NEO4J_URI", "default_url")
-username = os.environ.get("NEO4J_USERNAME", "default_username")
-password = os.environ.get("NEO4J_PASSWORD", "default_password")
+url = os.environ.get("NEO4J_URI", "Your_URI")
+username = os.environ.get("NEO4J_USERNAME", "Your_Username")
+password = os.environ.get("NEO4J_PASSWORD", "Your_Password")
 
 
 test_data = [
@@ -264,3 +265,54 @@ def test_neo4j_filtering_labels() -> None:
     # Assert both are empty
     assert graph.structured_schema["node_props"] == {}
     assert graph.structured_schema["relationships"] == []
+
+
+@pytest.mark.skip(reason="Skipping since need GDS installation")
+def test_random_walk_with_restarts() -> None:
+    r"""Test the random walk with restarts sampling algorithm."""
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Create sample graph
+    graph.query("""
+        CREATE (n1:Node {id: 1})
+        CREATE (n2:Node {id: 2})
+        CREATE (n3:Node {id: 3})
+        CREATE (n1)-[:REL_TYPE]->(n2)
+        CREATE (n2)-[:REL_TYPE]->(n3)
+    """)
+    # Run random walk with restarts
+    result = graph.random_walk_with_restarts(
+        graph_name="sample_graph",
+        sampling_ratio=0.5,
+        start_node_ids=[1],
+        restart_probability=0.15,
+    )
+    assert "graphName" in result
+    assert result["nodeCount"] > 0
+
+
+@pytest.mark.skip(reason="Skipping since need GDS installation")
+def test_common_neighbour_aware_random_walk() -> None:
+    r"""Test the common neighbour aware random walk sampling algorithm."""
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
+    # Delete all nodes in the graph
+    graph.query("MATCH (n) DETACH DELETE n")
+    # Create sample graph
+    graph.query("""
+        CREATE (n1:Node {id: 1})
+        CREATE (n2:Node {id: 2})
+        CREATE (n3:Node {id: 3})
+        CREATE (n1)-[:REL_TYPE]->(n2)
+        CREATE (n2)-[:REL_TYPE]->(n3)
+    """)
+    # Run common neighbour aware random walk
+    result = graph.common_neighbour_aware_random_walk(
+        graph_name="sample_graph", sampling_ratio=0.5, start_node_ids=[1]
+    )
+    assert "graphName" in result
+    assert result["nodeCount"] > 0

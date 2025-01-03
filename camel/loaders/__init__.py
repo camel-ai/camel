@@ -13,17 +13,21 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .apify_reader import Apify
-from .base_io import File
+from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
+from .panda_reader import PandaReader
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
     'File',
+    'create_file',
+    'create_file_from_raw_bytes',
     'UnstructuredIO',
     'JinaURLReader',
     'Firecrawl',
     'Apify',
     'ChunkrReader',
+    'PandaReader',
 ]

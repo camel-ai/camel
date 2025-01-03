@@ -23,6 +23,7 @@ from camel.loaders.base_io import (
     JsonFile,
     PdfFile,
     TxtFile,
+    create_file,
     strip_consecutive_newlines,
 )
 
@@ -140,8 +141,8 @@ def test_html_file():
     assert html_file.docs[0]["page_content"] == "Hello World"
 
 
-# Test the `read_file` function with each file type
-def test_read_file():
+# Test the `create_file` function with each file type
+def test_create_file():
     for ext, file_class in [
         ("docx", DocxFile),
         ("pdf", PdfFile),
@@ -152,7 +153,7 @@ def test_read_file():
         filename = f"test_hello.{ext}"
         with open(SAMPLE_ROOT / filename, "rb") as f:
             file = BytesIO(f.read())
-            file_obj = File.create_file(file, filename)
+            file_obj = create_file(file, filename)
 
         assert isinstance(file_obj, file_class)
         assert file_obj.name == filename
@@ -164,12 +165,13 @@ def test_read_file():
         )
 
 
-# Test that read_file raises a NotImplementedError for unsupported file types
-def test_read_file_not_implemented():
+# Test that `create_file` function raises a NotImplementedError
+# for unsupported file types
+def test_create_file_not_implemented():
     file = BytesIO(b"Hello World")
     filename = "test.unknown"
     with pytest.raises(NotImplementedError):
-        File.create_file(file, filename)
+        create_file(file, filename)
 
 
 # Test the File.copy() method

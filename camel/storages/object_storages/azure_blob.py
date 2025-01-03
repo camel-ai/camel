@@ -16,7 +16,7 @@ from pathlib import Path, PurePath
 from typing import Optional, Tuple
 from warnings import warn
 
-from camel.loaders import File
+from camel.loaders import File, create_file_from_raw_bytes
 from camel.storages.object_storages.base import BaseObjectStorage
 
 
@@ -123,7 +123,7 @@ class AzureBlobStorage(BaseObjectStorage):
             File: The object from the container.
         """
         raw_bytes = self._client.download_blob(file_key).readall()
-        file = File.create_file_from_raw_bytes(raw_bytes, filename)
+        file = create_file_from_raw_bytes(raw_bytes, filename)
         return file
 
     def _upload_file(

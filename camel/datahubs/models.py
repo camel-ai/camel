@@ -13,10 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class Record(BaseModel):
     id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
-    content: Dict[str, Any]
+    content: Optional[Dict[str, Any]] = None
+
+    model_config = ConfigDict(extra="allow")

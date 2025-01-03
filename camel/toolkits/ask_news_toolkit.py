@@ -228,7 +228,7 @@ class AskNewsToolkit(BaseToolkit):
                 return value. (default: :obj:`"string"`)
             method (Literal["nl", "kw"]): The search method, either "nl" for
                 natural language or "kw" for keyword search.
-                (default::obj:`"kw"`)
+                (default: :obj:`"kw"`)
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The Reddit search
@@ -523,7 +523,7 @@ class AsyncAskNewsToolkit(BaseToolkit):
                 return value. (default: :obj:"string")
             method (Literal["nl", "kw"]): The search method, either "nl" for
                 natural language or "kw" for keyword search.
-                (default::obj:"kw")
+                (default: :obj:"kw")
 
         Returns:
             Union[str, dict, Tuple[str, dict]]: The Reddit search

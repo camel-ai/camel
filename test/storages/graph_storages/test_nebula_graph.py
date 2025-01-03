@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 from unstructured.documents.elements import Element
 
@@ -106,7 +106,7 @@ class TestNebulaGraph(unittest.TestCase):
 
         self.graph.add_node(node_id, tag_name)
 
-        self.graph.ensure_tag_exists.assert_called_with(tag_name)
+        self.graph.ensure_tag_exists.assert_has_calls([call(tag_name, None)])
         insert_stmt = (
             f'INSERT VERTEX IF NOT EXISTS {tag_name}() VALUES "{node_id}":()'
         )
@@ -121,7 +121,7 @@ class TestNebulaGraph(unittest.TestCase):
 
         self.graph.ensure_tag_exists(tag_name)
 
-        create_tag_stmt = f'CREATE TAG IF NOT EXISTS {tag_name}()'
+        create_tag_stmt = f'CREATE TAG IF NOT EXISTS {tag_name} ()'
         self.graph.query.assert_called_with(create_tag_stmt)
 
     @patch('time.sleep', return_value=None)
@@ -145,7 +145,7 @@ class TestNebulaGraph(unittest.TestCase):
     def test_add_triplet(self):
         subj = 'node1'
         obj = 'node2'
-        rel = 'RELATES_TO'
+        rel = 'RELATESTO'
         self.graph.ensure_tag_exists = Mock()
         self.graph.ensure_edge_type_exists = Mock()
         self.graph.add_node = Mock()
@@ -153,13 +153,12 @@ class TestNebulaGraph(unittest.TestCase):
 
         self.graph.add_triplet(subj, obj, rel)
 
-        self.graph.ensure_tag_exists.assert_any_call(subj)
-        self.graph.ensure_tag_exists.assert_any_call(obj)
-        self.graph.ensure_edge_type_exists.assert_called_with(rel)
+        self.graph.ensure_tag_exists.assert_has_calls([call(subj), call(obj)])
+        self.graph.ensure_edge_type_exists.assert_has_calls([call(rel, None)])
         self.graph.add_node.assert_any_call(node_id=subj, tag_name=subj)
         self.graph.add_node.assert_any_call(node_id=obj, tag_name=obj)
         insert_stmt = (
-            f'INSERT EDGE IF NOT EXISTS {rel}() VALUES "{subj}"->"{obj}":();'
+            f'INSERT EDGE IF NOT EXISTS {rel}() VALUES "{subj}"->"{obj}":()'
         )
         self.graph.query.assert_called_with(insert_stmt)
 
@@ -401,24 +400,24 @@ class TestNebulaGraph(unittest.TestCase):
     def test_get_structured_schema(self):
         self.graph.get_node_properties = Mock(
             return_value=(
-                ['Node.prop'],
-                [{'labels': 'Node', 'properties': ['prop']}],
+                ['Person.name', 'Person.age'],
+                [{'labels': 'Person', 'properties': ['name', 'age']}],
             )
         )
         self.graph.get_relationship_properties = Mock(
             return_value=(
-                ['Rel.prop'],
-                [{'type': 'Rel', 'properties': ['prop']}],
+                ['KNOWS.since'],
+                [{'type': 'KNOWS', 'properties': ['since']}],
             )
         )
-        self.graph.get_relationship_types = Mock(return_value=['RELATES_TO'])
-        self.graph.get_indexes = Mock(return_value=['index1'])
+        self.graph.get_relationship_types = Mock(return_value=['KNOWS'])
+        self.graph.get_indexes = Mock(return_value=[])
         structured_schema = self.graph.get_structured_schema
         expected_schema = {
-            "node_props": {'Node': ['prop']},
-            "rel_props": {'Rel': ['prop']},
-            "relationships": ['RELATES_TO'],
-            "metadata": {"index": ['index1']},
+            "node_props": {"Person": ["name", "age"]},
+            "rel_props": {"KNOWS": ["since"]},
+            "relationships": ["KNOWS"],
+            "metadata": {"index": []},
         }
         self.assertEqual(structured_schema, expected_schema)
 
@@ -465,6 +464,64 @@ class TestNebulaGraph(unittest.TestCase):
             'node1', 'node2', 'RELATES_TO'
         )
 
+    def test_validate_time_label_valid(self):
+        valid_time = "2024-12-31T21:45:22"
+        result = self.graph._validate_time_label(valid_time)
+        self.assertEqual(result, valid_time)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_validate_time_label_none(self):
+        with self.assertRaises(ValueError):
+            self.graph._validate_time_label(None)
+
+    def test_add_triplet_with_time_label(self):
+        subj = 'node1'
+        obj = 'node2'
+        rel = 'RELATESTO'
+        time_label = '2024-12-31T21:45:22'
+
+        self.graph.ensure_tag_exists = Mock()
+        self.graph.ensure_edge_type_exists = Mock()
+        self.graph.add_node = Mock()
+        mock_result = Mock()
+        mock_result.is_succeeded.return_value = True
+        self.graph.query = Mock(return_value=mock_result)
+
+        self.graph.add_triplet(subj, obj, rel, time_label)
+
+        self.graph.ensure_tag_exists.assert_has_calls(
+            [call('node1'), call('node2')]
+        )
+        self.graph.ensure_edge_type_exists.assert_called_with(rel, time_label)
+        self.graph.add_node.assert_any_call(node_id=subj, tag_name=subj)
+        self.graph.add_node.assert_any_call(node_id=obj, tag_name=obj)
+
+        expected_stmt = (
+            f'INSERT EDGE IF NOT EXISTS {rel}(time_label) VALUES '
+            f'"{subj}"->"{obj}":("{time_label}")'
+        )
+        self.graph.query.assert_called_with(expected_stmt)
+
+    def test_add_triplet_with_invalid_time_label(self):
+        subj = 'node1'
+        obj = 'node2'
+        rel = 'RELATESTO'
+        invalid_time = '2024/12/31 21:45:22'  # wrong format
+
+        with self.assertRaises(ValueError) as context:
+            self.graph.add_triplet(subj, obj, rel, invalid_time)
+
+        self.assertIn("Invalid time label format", str(context.exception))
+
+    def test_ensure_tag_exists_with_time_label(self):
+        tag_name = 'Tag1'
+        time_label = '2024-12-31T21:45:22'
+
+        mock_result = Mock()
+        mock_result.is_succeeded.return_value = True
+        self.graph.query = Mock(return_value=mock_result)
+
+        self.graph.ensure_tag_exists(tag_name, time_label)
+
+        expected_stmt = f"""CREATE TAG IF NOT EXISTS {tag_name}
+            (time_label DATETIME DEFAULT {time_label})"""
+        self.graph.query.assert_called_with(expected_stmt)

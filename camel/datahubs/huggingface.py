@@ -35,7 +35,11 @@ class HuggingFaceDatasetManager(BaseDatasetManager):
             will be read from the environment variable `HUGGING_FACE_TOKEN`.
     """
 
-    @api_keys_required("HUGGING_FACE_TOKEN")
+    @api_keys_required(
+        [
+            ("token", "HUGGING_FACE_TOKEN"),
+        ]
+    )
     @dependencies_required('huggingface_hub')
     def __init__(self, token: Optional[str] = None):
         from huggingface_hub import HfApi
@@ -362,7 +366,13 @@ class HuggingFaceDatasetManager(BaseDatasetManager):
         with tempfile.NamedTemporaryFile(
             delete=False, mode="w", newline="", encoding="utf-8"
         ) as f:
-            json.dump([record.model_dump() for record in records], f)
+            json.dump(
+                [
+                    record.model_dump(exclude_defaults=True)
+                    for record in records
+                ],
+                f,
+            )
             temp_file_path = f.name
 
         try:

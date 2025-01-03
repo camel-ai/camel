@@ -61,35 +61,6 @@ def test_crawl_failure():
             assert 'Failed to crawl the URL' in str(e)
 
 
-def test_markdown_crawl_success():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
-        mock_app = MockFirecrawlApp.return_value
-        firecrawl = Firecrawl(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
-        url = 'https://example.com'
-        response = [{'markdown': 'Markdown content'}]
-        mock_app.crawl_url.return_value = response
-
-        result = firecrawl.markdown_crawl(url)
-        assert result == 'Markdown content'
-
-
-def test_markdown_crawl_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
-        mock_app = MockFirecrawlApp.return_value
-        firecrawl = Firecrawl(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
-        url = 'https://example.com'
-        mock_app.crawl_url.side_effect = Exception('Error')
-
-        try:
-            firecrawl.markdown_crawl(url)
-        except RuntimeError as e:
-            assert 'Failed to crawl the URL and retrieve markdown' in str(e)
-
-
 def test_check_crawl_job_success():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value

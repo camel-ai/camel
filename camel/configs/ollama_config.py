@@ -13,7 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Union
+from typing import Sequence, Type, Union
+
+from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -75,7 +77,7 @@ class OllamaConfig(BaseConfig):
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: Union[dict, NotGiven] = NOT_GIVEN
+    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
 
 
