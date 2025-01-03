@@ -20,15 +20,11 @@ from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
 
 __all__ = [
-    
     "BaseBenchmark",
-   
     "GAIABenchmark",
-   
     "DefaultGAIARetriever",
     "NexusBenchmark",
     "APIBenchBenchmark",
     "APIBankBenchmark",
-,
-    "RAGBenchBenchmark"
+    "RAGBenchBenchmark",
 ]

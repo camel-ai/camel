@@ -13,12 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import logging
-
-from camel.retrievers import AutoRetriever
-from typing import Callable, Dict, List, Literal, Optional
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
-from datasets import Dataset  # type: ignore[import]
+from datasets import (
+    Dataset,  # type: ignore[import]
+    load_dataset,
+)
 from ragas import evaluate  # type: ignore[import]
 from ragas.metrics import (  # type: ignore[import]
     context_relevancy,
@@ -28,10 +29,10 @@ from sklearn.metrics import roc_auc_score  # type: ignore[import]
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
-from camel.messages.base import BaseMessage
-from datasets import load_dataset
+from camel.retrievers import AutoRetriever
 
 logger = logging.getLogger(__name__)
+
 
 def annotate_dataset(
     dataset: Dataset,
@@ -51,6 +52,7 @@ def annotate_dataset(
         return example
 
     return dataset.map(process_example)
+
 
 class RagasFields:
     INPUT_CONTEXT = "contexts"
@@ -163,37 +165,42 @@ class RAGBenchBenchmark(BaseBenchmark):
     <https://huggingface.co/datasets/rungalileo/ragbench>.
 
     Args:
-        save_to (str): The file to save the results.
+        processes (int, optional): The number of processes to use for
+                parallel processing. (default: :obj:`1`)
         subset (str, optional): The subset to use.
             (default: :obj:`"hotpotqa"`)
         split (str, optional): The split to use.
             (default: :obj:`"test"`).
     """
+
     def __init__(
         self,
+        processes: int = 1,
         subset: str = "hotpotqa",
         split: str = "test",
     ):
         r"""Initialize the APIBench benchmark.
 
         Args:
-            save_to (str): The file to save the results.
+            processes (int, optional): The number of processes to use for
+                parallel processing. (default: :obj:`1`)
             subset (str, optional): The subset to use.
                 (default: :obj:`"hotpotqa"`)
             split (str, optional): The split to use.
                 (default: :obj:`"test"`).
         """
-        super().__init__("ragbench")
+        super().__init__("ragbench", "rag_bench", "", processes)
 
         self.subset = subset
         self.split = split
         self.dataset = None
 
-
     def download(self):
         r"""Download the APIBench dataset."""
 
-        self.dataset = load_dataset("rungalileo/ragbench", self.subset, split=self.split)
+        self.dataset = load_dataset(
+            "rungalileo/ragbench", self.subset, split=self.split
+        )
 
     def load(self, force_download: bool = False):
         r"""Load the RAGBench Benchmark dataset.
@@ -205,11 +212,11 @@ class RAGBenchBenchmark(BaseBenchmark):
             logger.info("Force downloading data.")
             self.download()
 
-    def run(
-            self, 
+    def run(  # type: ignore[override, return]
+        self,
+        agent: ChatAgent,
+        auto_retriever: AutoRetriever,
     ) -> Dict[str, Optional[float]]:
-        
-        auto_retriever = AutoRetriever()
         def context_call(example):
             retrieved_info = auto_retriever.run_vector_retriever(
                 query=example['question'],
@@ -220,29 +227,25 @@ class RAGBenchBenchmark(BaseBenchmark):
             )
             return [c['text'] for c in retrieved_info['Retrieved Context']]
 
-
         def answer_call(example):
             user_msg = str(example)
-            assistant_sys_msg = """You are a helpful assistant to answer question,
-                I will give you the Original Query and Retrieved Context,
-                answer the Original Query based on the Retrieved Context,
-                if you can't answer the question just say I don't know."""
-            agent = ChatAgent(assistant_sys_msg)
             assistant_response = agent.step(user_msg)
             return assistant_response.msg.content
 
         # Annotate the dataset
-        annotated_ds = annotate_dataset(self.dataset, context_call, answer_call)
+        annotated_ds = annotate_dataset(
+            self.dataset, context_call, answer_call
+        )
 
         evaluated_ds = ragas_evaluate_dataset(
             annotated_ds,
             contexts_field_name="contexts",
             answer_field_name="answer",
-            metrics_to_evaluate=["context_relevancy", "faithfulness"]
+            metrics_to_evaluate=["context_relevancy", "faithfulness"],
         )
 
         # Calculate metrics
-        # See https://arxiv.org/abs/2407.11005 for more details 
+        # See https://arxiv.org/abs/2407.11005 for more details
         # on the metrics, right now only context_relevancy and
         # faithfulness are supported
         calculated_metrics = ragas_calculate_metrics(
