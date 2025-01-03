@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from camel.configs import ANTHROPIC_API_PARAMS, AnthropicConfig
 from camel.messages import OpenAIMessage
@@ -35,7 +35,7 @@ class AnthropicModel(BaseModelBackend):
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into Anthropic.messages.create().  If
             :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
-            (default::obj:`None`)
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Anthropic service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Anthropic service.
@@ -45,6 +45,11 @@ class AnthropicModel(BaseModelBackend):
             will be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "ANTHROPIC_API_KEY"),
+        ]
+    )
     @dependencies_required('anthropic')
     def __init__(
         self,
@@ -94,21 +99,30 @@ class AnthropicModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = AnthropicTokenCounter()
+            self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
-    def count_tokens_from_prompt(self, prompt: str) -> int:
+    @dependencies_required('anthropic')
+    def count_tokens_from_prompt(
+        self, prompt: str, role: Literal["user", "assistant"]
+    ) -> int:
         r"""Count the number of tokens from a prompt.
 
         Args:
             prompt (str): The prompt string.
+            role (Literal["user", "assistant"]): The role of the message
+                sender, either "user" or "assistant".
 
         Returns:
             int: The number of tokens in the prompt.
         """
-        return self.client.count_tokens(prompt)
+        from anthropic.types.beta import BetaMessageParam
 
-    @api_keys_required("ANTHROPIC_API_KEY")
+        return self.client.beta.messages.count_tokens(
+            messages=[BetaMessageParam(content=prompt, role=role)],
+            model=self.model_type,
+        ).input_tokens
+
     def run(
         self,
         messages: List[OpenAIMessage],

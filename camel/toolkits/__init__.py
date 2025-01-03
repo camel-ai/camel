@@ -28,6 +28,7 @@ from .ask_news_toolkit import AskNewsToolkit, AsyncAskNewsToolkit
 from .linkedin_toolkit import LinkedInToolkit
 from .reddit_toolkit import RedditToolkit
 from .meshy_toolkit import MeshyToolkit
+from .openbb_toolkit import OpenBBToolkit
 
 from .base import BaseToolkit
 from .google_maps_toolkit import GoogleMapsToolkit
@@ -41,7 +42,9 @@ from .open_api_toolkit import OpenAPIToolkit
 from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
+from .stripe_toolkit import StripeToolkit
 from .video_toolkit import VideoDownloaderToolkit
+from .dappier_toolkit import DappierToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -70,5 +73,8 @@ __all__ = [
     'ArxivToolkit',
     'HumanToolkit',
     'VideoDownloaderToolkit',
+    'StripeToolkit',
     'MeshyToolkit',
+    'OpenBBToolkit',
+    'DappierToolkit',
 ]

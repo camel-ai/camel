@@ -53,6 +53,11 @@ class TogetherAIModel(BaseModelBackend):
             ModelType.GPT_4O_MINI)` will be used.
     """
 
+    @api_keys_required(
+        [
+            ("api_key", 'TOGETHER_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -72,13 +77,12 @@ class TogetherAIModel(BaseModelBackend):
         )
 
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
 
-    @api_keys_required("TOGETHER_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

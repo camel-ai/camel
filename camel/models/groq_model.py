@@ -51,6 +51,11 @@ class GroqModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "GROQ_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -63,13 +68,13 @@ class GroqModel(BaseModelBackend):
             model_config_dict = GroqConfig().as_dict()
         api_key = api_key or os.environ.get("GROQ_API_KEY")
         url = url or os.environ.get(
-            "GROQ_API_BASE_URL" or "https://api.groq.com/openai/v1"
+            "GROQ_API_BASE_URL", "https://api.groq.com/openai/v1"
         )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
@@ -89,7 +94,6 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    @api_keys_required("GROQ_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

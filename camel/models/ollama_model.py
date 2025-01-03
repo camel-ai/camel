@@ -70,7 +70,7 @@ class OllamaModel(BaseModelBackend):
             self._start_server()
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
@@ -134,6 +134,18 @@ class OllamaModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if self.model_config_dict.get("response_format"):
+            # stream is not supported in beta.chat.completions.parse
+            if "stream" in self.model_config_dict:
+                del self.model_config_dict["stream"]
+
+            response = self._client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **self.model_config_dict,
+            )
+
+            return self._to_chat_completion(response)
 
         response = self._client.chat.completions.create(
             messages=messages,

@@ -25,8 +25,8 @@ from typing import Any, Dict, List, Literal, Optional, Protocol, Union
 from tqdm import tqdm
 
 from camel.agents import ChatAgent
-from camel.benchmarks import BaseBenchmark
-from camel.messages.base import BaseMessage
+from camel.benchmarks.base import BaseBenchmark
+from camel.messages import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
 from camel.societies.workforce.worker import Worker
 from camel.societies.workforce.workforce import Workforce

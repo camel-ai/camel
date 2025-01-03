@@ -30,19 +30,22 @@ def test_hugging_face_tool_agent_initialization():
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")
 @pytest.mark.model_backend
 @pytest.mark.very_slow
-def test_hugging_face_tool_agent_step():
+def test_hugging_face_tool_agent_step(step_call_count=3):
     from PIL.PngImagePlugin import PngImageFile
 
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
-    try:
-        result = agent.step("Generate an image of a boat in the water")
-    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
-        print(
-            "Warning: caught an exception, ignoring it since "
-            f"it is a known issue of Huggingface ({ex!s})"
-        )
-        return
-    assert isinstance(result, PngImageFile)
+    for i in range(step_call_count):
+        try:
+            result = agent.step("Generate an image of a boat in the water")
+        except (binascii.Error, requests.exceptions.ConnectionError) as ex:
+            print(
+                "Warning: caught an exception, ignoring it since "
+                f"it is a known issue of Huggingface ({ex!s})"
+            )
+            return
+        assert isinstance(
+            result, PngImageFile
+        ), f"Error in calling round {i+1}"
 
 
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")

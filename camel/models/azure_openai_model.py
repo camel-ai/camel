@@ -24,7 +24,7 @@ from camel.types import (
     ChatCompletionChunk,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
 class AzureOpenAIModel(BaseModelBackend):
@@ -91,7 +91,7 @@ class AzureOpenAIModel(BaseModelBackend):
             azure_deployment=self.azure_deployment_name,
             api_version=self.api_version,
             api_key=self._api_key,
-            timeout=60,
+            timeout=180,
             max_retries=3,
         )
 
@@ -107,7 +107,6 @@ class AzureOpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_keys_required("AZURE_OPENAI_API_KEY", "AZURE_API_VERSION")
     def run(
         self,
         messages: List[OpenAIMessage],
