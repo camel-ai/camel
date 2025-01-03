@@ -61,23 +61,23 @@ class DappierToolkit(BaseToolkit):
             Access real-time financial news, stock prices, and trades from
             polygon.io, with AI-powered insights and up-to-the-minute updates.
 
-        Note:
-            Multiple AI model IDs are available, which can be found at:
-            https://marketplace.dappier.com/marketplace
-
         Args:
             query (str): The user-provided query. Examples include:
                 - "How is the weather today in Austin, TX?"
                 - "What is the latest news for Meta?"
                 - "What is the stock price for AAPL?"
             ai_model_id (str, optional): The AI model ID to use for the query.
-                Defaults to "am_01j06ytn18ejftedz6dyhz2b15". The AI model ID
-                always starts with the prefix "am_".
+                The AI model ID always starts with the prefix "am_".
+                (default: `am_01j06ytn18ejftedz6dyhz2b15`)
 
         Returns:
             str: The search result corresponding to the provided query and
                 AI model ID. This may include real time search data,
                 depending on the selected AI model.
+
+        Note:
+            Multiple AI model IDs are available, which can be found at:
+            https://marketplace.dappier.com/marketplace
         """
         try:
             response = self.dappier_client.search_real_time_data(
@@ -104,7 +104,7 @@ class DappierToolkit(BaseToolkit):
         ] = "most_recent",
     ) -> Union[List[Dict[str, str]], Dict[str, str]]:
         r"""Retrieve AI-powered recommendations based on the provided query
-            and data model.
+        and data model.
 
         This function fetches real-time AI-generated recommendations using the
         specified data model and search algorithm. The results include
@@ -120,35 +120,34 @@ class DappierToolkit(BaseToolkit):
             Real-time updates, analysis, and personalized content from top
             sources like The Mix, Snipdaily, Nerdable, and Familyproof.
 
-        Note:
-            Multiple data model IDs are available and can be found at:
-            https://marketplace.dappier.com/marketplace
-
         Args:
             query (str): The user query for retrieving recommendations.
             data_model_id (str, optional): The data model ID to use for
-            recommendations.
-                Defaults to "dm_01j0pb465keqmatq9k83dthx34". Data model IDs
-                always start with the prefix "dm_".
+                recommendations. Data model IDs always start with the prefix
+                "dm_". (default: :obj: `dm_01j0pb465keqmatq9k83dthx34`)
             similarity_top_k (int, optional): The number of top documents to
-                retrieve based on similarity. Defaults to 9.
+                retrieve based on similarity. (default: :obj: `9`)
             ref (Optional[str], optional): The site domain where AI
-                recommendations should be displayed. Defaults to None.
+                recommendations should be displayed. (default: :obj: `None`)
             num_articles_ref (int, optional): The minimum number of articles
-                to return from the specified reference domain (`ref`).
-                The remaining articles will come from other sites in the RAG
-                model. Defaults to 0.
+                to return from the specified reference domain (`ref`). The
+                remaining articles will come from other sites in the RAG
+                model. (default: :obj: `0`)
             search_algorithm (Literal[
                 "most_recent",
                 "semantic",
                 "most_recent_semantic",
-                "trending"
-            ], optional): The search algorithm to use for retrieving articles.
-                Defaults to "most_recent".
+                "trending",
+                ], optional): The search algorithm to use for retrieving
+                articles. (default: :obj: `most_recent`)
 
         Returns:
             List[Dict[str, str]]: A list of recommended articles or content
-            based on the specified parameters, query, and data model.
+                based on the specified parameters, query, and data model.
+
+        Note:
+            Multiple data model IDs are available and can be found at:
+            https://marketplace.dappier.com/marketplace
         """
         try:
             response = self.dappier_client.get_ai_recommendations(
@@ -185,11 +184,11 @@ class DappierToolkit(BaseToolkit):
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
-            in the toolkit.
+        in the toolkit.
 
         Returns:
             List[FunctionTool]: A list of FunctionTool objects representing
-            the functions in the toolkit.
+                the functions in the toolkit.
         """
         return [
             FunctionTool(self.search_real_time_data),
