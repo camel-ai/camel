@@ -57,6 +57,7 @@ class DiscordApp:
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
         installation_store: Optional[DiscordBaseInstallationStore] = None,
+        intents: Optional[discord.Intents] = None,
     ) -> None:
         r"""Initialize the DiscordApp instance by setting up the Discord client
         and event handlers.
@@ -77,6 +78,9 @@ class DiscordApp:
             installation_store (DiscordAsyncInstallationStore): The database
                 stores all information of all installations.
                 (default: :obj:`None`)
+            intents (discord.Intents): The Discord intents of this app.
+                (default: :obj:`None`)
+
         Raises:
             ValueError: If the `DISCORD_TOKEN` is not found in environment
                 variables.
@@ -91,8 +95,11 @@ class DiscordApp:
                 " here: `https://discord.com/developers/applications`."
             )
 
-        intents = discord.Intents.default()
-        intents.message_content = True
+        if not intents:
+            intents = discord.Intents.all()
+            intents.message_content = True
+            intents.guilds = True
+
         self._client = discord.Client(intents=intents)
 
         # Register event handlers
@@ -136,9 +143,11 @@ class DiscordApp:
         self, code: str
     ) -> Optional[str]:
         r"""Exchange the authorization code for an access token.
+
         Args:
             code (str): The authorization code received from Discord after
                 user authorization.
+
         Returns:
             Optional[str]: The access token if successful, otherwise None.
         """
@@ -167,8 +176,10 @@ class DiscordApp:
 
     async def get_user_info(self, access_token: str) -> Optional[dict]:
         r"""Retrieve user information using the access token.
+
         Args:
             access_token (str): The access token received from Discord.
+
         Returns:
             dict: The user information retrieved from Discord.
         """
@@ -285,9 +296,6 @@ class DiscordApp:
             refresh_token (str): The refresh token for the guild.
             expires_in: (int): The expiration time of the
                 access token.
-
-        Returns:
-            None
         """
         if not self.oauth_flow:
             logger.warning(
@@ -313,9 +321,6 @@ class DiscordApp:
         Args:
             guild (discord.Guild): The guild from which the bot is
                 being removed.
-
-        Returns:
-            None
         """
         if not self.oauth_flow:
             logger.warning(
