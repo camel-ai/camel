@@ -100,4 +100,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.CLAUDE_2_0)
+    main(model_type=ModelType.CLAUDE_3_5_SONNET)
