@@ -80,7 +80,8 @@ class FunctionCallingMessage(BaseMessage):
 
         Args:
             function_format (FunctionCallFormatter[ToolCall, ToolResponse],
-                optional): The function formatter to use. Defaults to None.
+                optional): The function formatter to use.
+                (default: :obj:`None`)
         """
 
         if function_format is None:

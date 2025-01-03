@@ -40,10 +40,10 @@ class RolePlayingWorker(Worker):
         user_role_name (str): The role name of the user agent.
         assistant_agent_kwargs (Optional[Dict], optional): The keyword
             arguments to initialize the assistant agent in the role playing,
-            like the model name, etc. Defaults to None.
+            like the model name, etc. (default: :obj:`None`)
         user_agent_kwargs (Optional[Dict], optional): The keyword arguments to
             initialize the user agent in the role playing, like the model name,
-            etc. Defaults to None.
+            etc. (default: :obj:`None`)
         chat_turn_limit (int, optional): The maximum number of chat turns in
             the role playing. Defaults to 3.
     """

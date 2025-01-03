@@ -30,6 +30,8 @@ class ZhipuAIConfig(BaseConfig):
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
             (default: :obj:`0.2`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         top_p (float, optional): An alternative to sampling with temperature,
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
@@ -57,7 +59,7 @@ class ZhipuAIConfig(BaseConfig):
             via {"type": "function", "function": {"name": "my_function"}}
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
-            are present.
+            are present. (default: :obj:`None`)
     """
 
     temperature: float = 0.2
