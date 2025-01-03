@@ -22,7 +22,6 @@ from datasets import Dataset  # type: ignore[import]
 from ragas import evaluate  # type: ignore[import]
 from ragas.metrics import (  # type: ignore[import]
     context_relevancy,
-    answer_relevancy,
     faithfulness,
 )
 from sklearn.metrics import roc_auc_score  # type: ignore[import]
@@ -39,7 +38,7 @@ def annotate_dataset(
     context_call: Optional[Callable[[Dict], List[str]]],
     answer_call: Optional[Callable[[Dict], str]],
 ) -> Dataset:
-    """
+    r"""
     Annotate the dataset by adding context and answers using the provided
     functions.
     """
@@ -62,7 +61,7 @@ class RagasFields:
 def rmse(
     input_trues: List[float], input_preds: List[float]
 ) -> Optional[float]:
-    """
+    r"""
     Calculate Root Mean Squared Error (RMSE) between input ground truth
     (`trues`) and predictions (`preds`)
     """
@@ -81,7 +80,7 @@ def rmse(
 
 
 def auroc(trues: List[bool], preds: List[float]) -> float:
-    """
+    r"""
     Calculate Area Under Reciever Operator Characteristic Curve (AUROC) between
      input ground truth (`trues`) and predictions (`preds`)
     """
@@ -127,7 +126,7 @@ def ragas_evaluate_dataset(
     answer_field_name: Optional[str],
     metrics_to_evaluate: Optional[List[str]] = None,
 ) -> Dict[str, float]:
-    """
+    r"""
     Evaluate the dataset using RAGAS metrics for context relevancy and
     faithfulness.
     """
@@ -162,19 +161,21 @@ def ragas_evaluate_dataset(
 class RAGBenchBenchmark(BaseBenchmark):
     r"""RAGBench Benchmark evaluates the Rag performance.
     <https://huggingface.co/datasets/rungalileo/ragbench>.
+
     Args:
-        data_dir (str): The directory to save the data.
         save_to (str): The file to save the results.
-        processes (int, optional): The number of processes to use.
-            (default: :obj:`1`)
+        subset (str, optional): The subset to use.
+            (default: :obj:`"hotpotqa"`)
+        split (str, optional): The split to use.
+            (default: :obj:`"test"`).
     """
     def __init__(
         self,
-        save_to: str,
         subset: str = "hotpotqa",
         split: str = "test",
     ):
         r"""Initialize the APIBench benchmark.
+
         Args:
             save_to (str): The file to save the results.
             subset (str, optional): The subset to use.
@@ -182,7 +183,7 @@ class RAGBenchBenchmark(BaseBenchmark):
             split (str, optional): The split to use.
                 (default: :obj:`"test"`).
         """
-        super().__init__("ragbench", save_to)
+        super().__init__("ragbench")
 
         self.subset = subset
         self.split = split
@@ -204,8 +205,9 @@ class RAGBenchBenchmark(BaseBenchmark):
             logger.info("Force downloading data.")
             self.download()
 
-    def run(self, agent: ChatAgent, on: Literal["train", "valid", "test"], randomize: bool = False,
-            subset: Optional[int] = None, *args, **kwargs) -> "BaseBenchmark":
+    def run(
+            self, 
+    ) -> Dict[str, Optional[float]]:
         
         auto_retriever = AutoRetriever()
         def context_call(example):
@@ -240,9 +242,13 @@ class RAGBenchBenchmark(BaseBenchmark):
         )
 
         # Calculate metrics
-        # See https://arxiv.org/abs/2407.11005 for more details on the metrics, right now only context_relevancy and faithfulness are supported
+        # See https://arxiv.org/abs/2407.11005 for more details 
+        # on the metrics, right now only context_relevancy and
+        # faithfulness are supported
         calculated_metrics = ragas_calculate_metrics(
             evaluated_ds,
             pred_context_relevance_field="context_relevancy",
             pred_faithfulness_field="faithfulness",
         )
+
+        return calculated_metrics
