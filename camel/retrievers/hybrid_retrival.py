@@ -113,7 +113,10 @@ class HybridRetriever:
         for rank, result in enumerate(
             vector_retriever_results['Retrieved Context'], start=1
         ):
-            text = result['text']
+            text = result.get('text', None)  # type: ignore[attr-defined]
+            if text is None:
+                raise KeyError("Each result must contain a 'text' key")
+
             if text not in text_to_id:
                 text_to_id[text] = current_id
                 id_to_info[current_id] = {'text': text, 'vector_rank': rank}
@@ -170,7 +173,9 @@ class HybridRetriever:
         vector_retriever_max_characters: int = 500,
         bm25_retriever_top_k: int = 50,
         return_detailed_info: bool = False,
-    ) -> dict[str, Sequence[Collection[str]]]:
+    ) -> Union[
+        dict[str, Sequence[Collection[str]]], dict[str, Sequence[str | float]]
+    ]:
         r"""Executes a hybrid retrieval query using both vector and BM25
         retrievers.
 
@@ -189,9 +194,10 @@ class HybridRetriever:
             return_detailed_info (bool): Return detailed info if True.
 
         Returns:
-            dict[str, Sequence[Collection[str]]]: By default, returns
-                only the text information. If `return_detailed_info` is
-                `True`, return detailed information including rrf scores.
+            dict[str, Sequence[Union[Collection[str], str, float]]]: By
+                default, returns only the text information. If
+                `return_detailed_info` is `True`, return detailed information
+                including rrf scores.
         """
         if top_k > max(vector_retriever_top_k, bm25_retriever_top_k):
             raise ValueError(
@@ -199,7 +205,7 @@ class HybridRetriever:
                 "maximum value among vector_retriever_top_k and "
                 "bm25_retriever_top_k."
             )
-        if vector_weight or bm25_weight < 0:
+        if vector_weight < 0 or bm25_weight < 0:
             raise ValueError(
                 "Neither `vector_weight` nor `bm25_weight` can be negative."
             )
