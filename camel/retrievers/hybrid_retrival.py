@@ -25,7 +25,6 @@ class HybridRetriever:
         self,
         content_input_path: str,
         auto_retriever: Optional[AutoRetriever] = None,
-        bm25_process_chunk_type: Optional[str] = "chunk_by_title",
     ) -> None:
         r"""Initializes a HybridRetriever that combines the functionalities of
         AutoRetriever and BM25Retriever.
@@ -35,9 +34,6 @@ class HybridRetriever:
                 BM25Retriever to process.
             auto_retriever (Optional[AutoRetriever], optional): An instance of
                 AutoRetriever. If None, a new instance is created.
-            bm25_process_chunk_type (Optional[str], optional): The type of
-                chunking to be used by BM25Retriever, defaults to
-                "chunk_by_title".
 
         Raises:
             ValueError: If the content_input_path is empty.
@@ -60,10 +56,7 @@ class HybridRetriever:
         self.auto_retriever = auto_retriever
 
         self.bm25_retriever = BM25Retriever()
-        self.bm25_retriever.process(
-            content_input_path=content_input_path,
-            chunk_type=bm25_process_chunk_type,
-        )
+        self.bm25_retriever.process(content_input_path=content_input_path)
 
     def _sort_rrf_scores(
         self,
@@ -170,7 +163,6 @@ class HybridRetriever:
         rank_smoothing_factor: int = 60,
         vector_retriever_top_k: int = 50,
         vector_retriever_similarity_threshold: float = 0.5,
-        vector_retriever_max_characters: int = 500,
         bm25_retriever_top_k: int = 50,
         return_detailed_info: bool = False,
     ) -> Union[
@@ -188,8 +180,6 @@ class HybridRetriever:
             vector_retriever_top_k (int): Top results from vector retriever.
             vector_retriever_similarity_threshold (float): Similarity
                 threshold for vector retriever.
-            vector_retriever_max_characters (int): Max characters from vector
-                retriever results.
             bm25_retriever_top_k (int): Top results from BM25 retriever.
             return_detailed_info (bool): Return detailed info if True.
 
@@ -215,7 +205,6 @@ class HybridRetriever:
             contents=self.content_input_path,
             top_k=vector_retriever_top_k,
             similarity_threshold=vector_retriever_similarity_threshold,
-            max_characters=vector_retriever_max_characters,
             return_detailed_info=True,
         )
         bm25_retriever_results = self.bm25_retriever.query(
