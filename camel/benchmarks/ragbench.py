@@ -127,7 +127,7 @@ def ragas_evaluate_dataset(
     contexts_field_name: Optional[str],
     answer_field_name: Optional[str],
     metrics_to_evaluate: Optional[List[str]] = None,
-) -> Dict[str, float]:
+) -> Dataset:
     r"""
     Evaluate the dataset using RAGAS metrics for context relevancy and
     faithfulness.
@@ -163,12 +163,17 @@ def ragas_evaluate_dataset(
 class RAGBenchBenchmark(BaseBenchmark):
     r"""RAGBench Benchmark evaluates the Rag performance.
     <https://huggingface.co/datasets/rungalileo/ragbench>.
+    Calculate metrics
+        See https://arxiv.org/abs/2407.11005 for more details
+        on the metrics, right now only context_relevancy and
+        faithfulness are supported
 
     Args:
         processes (int, optional): The number of processes to use for
                 parallel processing. (default: :obj:`1`)
         subset (str, optional): The subset to use.
-            (default: :obj:`"hotpotqa"`)
+            (default: :obj:`"hotpotqa"`), check the full list of
+            subsets(https://huggingface.co/datasets/rungalileo/ragbench)
         split (str, optional): The split to use.
             (default: :obj:`"test"`).
     """
@@ -244,10 +249,6 @@ class RAGBenchBenchmark(BaseBenchmark):
             metrics_to_evaluate=["context_relevancy", "faithfulness"],
         )
 
-        # Calculate metrics
-        # See https://arxiv.org/abs/2407.11005 for more details
-        # on the metrics, right now only context_relevancy and
-        # faithfulness are supported
         calculated_metrics = ragas_calculate_metrics(
             evaluated_ds,
             pred_context_relevance_field="context_relevancy",
