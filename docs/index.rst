@@ -80,6 +80,7 @@ Main Documentation
    cookbooks/agent_with_chunkr_for_pdf_parsing.ipynb
    cookbooks/cot_data_gen_upload_to_huggingface.ipynb
    cookbooks/cot_data_gen_sft_qwen_unsolth_upload_huggingface.ipynb
+   cookbooks/self-instruct.ipynb
 
 .. toctree::
    :maxdepth: 1
