@@ -28,9 +28,6 @@ from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
 from camel.messages import BaseMessage
 from camel.retrievers.auto_retriever import AutoRetriever
-from camel.societies.workforce.worker import Worker
-from camel.societies.workforce.workforce import Workforce
-from camel.tasks import Task
 
 logger = logging.getLogger(__name__)
 
@@ -274,84 +271,6 @@ class GAIABenchmark(BaseBenchmark):
 
         return self._generate_summary()
 
-    def run_workforce(  # type: ignore[override]
-        self,
-        workforce: Workforce,
-        on: Literal["train", "valid", "test"],
-        level: Union[int, List[int], Literal["all"]],
-        randomize: bool = False,
-        subset: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        r"""Run the benchmark.
-
-        Args:
-            workforce (Workforce): The workforce to run the benchmark.
-            on (Literal["valid", "test"]): The set to run the benchmark.
-            level (Union[int, List[int], Literal["all"]]): The level to run
-                the benchmark.
-            randomize (bool, optional): Whether to randomize the data.
-                (default: :obj:`False`)
-            subset (Optional[int], optional): The subset of data to run.
-                (default: :obj:`None`)
-
-        Returns:
-            Dict[str, Any]: The results of the benchmark.
-        """
-        # Validate inputs
-        if on not in ["valid", "test"]:
-            raise ValueError(
-                f"Invalid value for `on`: {on}, expected 'valid' or 'test'."
-            )
-
-        levels = (
-            [1, 2, 3]
-            if level == "all"
-            else [level]
-            if isinstance(level, int)
-            else level
-        )
-        if not all(
-            isinstance(level, int) and level in [1, 2, 3] for level in levels
-        ):
-            raise ValueError(
-                f"Invalid value for `level`: {level}, expected 1, 2, 3 "
-                "or 'all'."
-            )
-
-        logger.info(f"Running benchmark on {on} set at levels {levels}.")
-        datas = [data for data in self._data[on] if data["Level"] in levels]
-
-        # Shuffle and subset data if necessary
-        if randomize:
-            random.shuffle(datas)
-        if subset:
-            datas = datas[:subset]
-
-        logger.info(f"Number of tasks: {len(datas)}")
-
-        # Initialize results storage
-        self._results = []
-
-        # Process tasks
-        with open(self.save_to, "w") as f:
-            for task in tqdm(datas, desc="Running"):
-                if not self._prepare_task(task):
-                    continue
-
-                try:
-                    result = workforce.process_task(self._create_task(task))
-                    self._process_workforce_result(
-                        workforce, task, result, f, None
-                    )
-                except Exception as e:
-                    self._process_workforce_result(workforce, task, None, f, e)
-                    workforce._running = False
-                finally:
-                    workforce._running = False
-                    workforce.reset()
-
-        return self._generate_summary()
-
     def _prepare_task(self, task: Dict[str, Any]) -> bool:
         r"""Prepare the task by validating and enriching its data."""
         if task["file_name"]:
@@ -361,11 +280,11 @@ class GAIABenchmark(BaseBenchmark):
                     f"Skipping task because file not found: {file_path}"
                 )
                 return False
-            if file_path.suffix in ['.pdf', '.docx', '.doc', '.txt']:
+            if file_path.suffix in [".pdf", ".docx", ".doc", ".txt"]:
                 if not self.retriever.reset(task_id=task["task_id"]):
                     return False
                 retrieved_info = self.retriever.retrieve(
-                    query=task["Question"], contents=[task['file_name']]
+                    query=task["Question"], contents=[task["file_name"]]
                 )
                 retrieved_content = [
                     item["text"]
@@ -388,17 +307,6 @@ class GAIABenchmark(BaseBenchmark):
             content=task["Question"],
         )
 
-    def _create_task(self, task: Dict[str, Any]) -> Task:
-        r"""Create a user message from a task.
-
-        Args:
-            task (Dict[str, Any]): The task to create the message from.
-
-        Returns:
-            Task: The task created from the input.
-        """
-        return Task(id=str(task["task_id"]), content=task["Question"])
-
     def _process_result(
         self,
         agent: ChatAgent,
@@ -406,14 +314,7 @@ class GAIABenchmark(BaseBenchmark):
         result: Any,
         file_obj: Any,
     ) -> None:
-        r"""Process and store the result of a task.
-
-        Args:
-            agent (ChatAgent): The agent that processed the task.
-            task (Dict[str, Any]): The task that was processed.
-            result (Any): The result of processing the task.
-            file_obj (Any): The file object to write the results to.
-        """
+        r"""Process and store the result of a task."""
         model_answer = self.get_final_answer(result.msgs[0].content)
         final_answer = task["Final answer"]
         score = self.question_scorer(model_answer, final_answer)
@@ -429,66 +330,6 @@ class GAIABenchmark(BaseBenchmark):
             "error": None,
             "score": int(score),
             "history": agent.memory.get_context(),
-        }
-        self._results.append(result_data)
-        file_obj.write(json.dumps(result_data, indent=2) + "\n")
-        file_obj.flush()
-
-    def _process_workforce_result(
-        self,
-        workforce: Workforce,
-        task: Dict[str, Any],
-        result: Optional[Task],
-        file_obj: Any,
-        err: Optional[Exception],
-    ) -> None:
-        r"""Process and store the result of a task.
-
-        Args:
-            workforce (Workforce): The workforce that processed the task.
-            task (Dict[str, Any]): The task that was processed.
-            result (Optional[Task]): The result of processing the task.
-            file_obj (Any): The file object to write the results to.
-            err (Optional[Exception]): The error encountered during processing.
-        """
-        if err is None and result is not None:
-            model_answer = self.get_final_answer(str(result.result))
-            final_answer = task["Final answer"]
-            score = self.question_scorer(model_answer, final_answer)
-        else:
-            model_answer = "ERROR"
-            final_answer = task["Final answer"]
-            score = False
-        agents = [workforce.coordinator_agent, workforce.task_agent]
-        workers = [
-            agent for agent in workforce._children if isinstance(agent, Worker)
-        ]
-        agent_names = ["coordinator", "task"] + [
-            agent.node_id for agent in workers
-        ]
-        for worker in workers:
-            agents.append(worker.worker)  # type: ignore[attr-defined]
-
-        history = {}
-        tool_calls: Dict[str, Any] = {}
-
-        for agent, agent_name in zip(agents, agent_names):
-            history[agent_name] = agent.memory.get_context()[0]
-            tool_calls[agent_name] = []
-            for h in history[agent_name]:
-                if h.get("function_call", None):
-                    tool_calls[agent_name].append(h["function_call"])  # type: ignore[union-attr,typeddict-item]
-
-        result_data = {
-            "task_id": task["task_id"],
-            "question": task["Question"],
-            "level": task["Level"],
-            "model_answer": model_answer,
-            "ground_truth": final_answer,
-            "tool_calls": tool_calls,
-            "error": str(err) if err else None,
-            "score": int(score),
-            "history": history,
         }
         self._results.append(result_data)
         file_obj.write(json.dumps(result_data, indent=2) + "\n")

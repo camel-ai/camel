@@ -11,10 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import pandas as pd #type: ignore[import-untyped]
-from typing import Any, Dict, List, Tuple
 
-import pytest
+import pandas as pd  # type: ignore[import-untyped]
 
 from camel.loaders import PandaReader
 
@@ -57,6 +55,7 @@ def test_topk():
         "United Kingdom",
     ]
 
+
 def test_multi_rows():
     reader = PandaReader()
     sales_by_country = {
@@ -98,9 +97,12 @@ def test_multi_rows():
         ],
     }
     doc = reader.load(pd.DataFrame(sales_by_country))
-    resp: pd.DataFrame = doc.chat("Calculate the profit margin for each country.")
+    resp: pd.DataFrame = doc.chat(
+        "Calculate the profit margin for each country."
+    )
     assert "profit_margin" in resp.columns
     assert resp["profit_margin"].tolist()[0] == 20.0
+
 
 def test_load_from_url():
     reader = PandaReader()

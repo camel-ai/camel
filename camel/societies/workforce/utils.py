@@ -60,12 +60,12 @@ def check_if_running(running: bool) -> Callable:
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            # if self._running != running:
-            #     status = "not running" if running else "running"
-            #     raise RuntimeError(
-            #         f"The workforce is {status}. Cannot perform the "
-            #         f"operation {func.__name__}."
-            #     )
+            if self._running != running:
+                status = "not running" if running else "running"
+                raise RuntimeError(
+                    f"The workforce is {status}. Cannot perform the "
+                    f"operation {func.__name__}."
+                )
             return func(self, *args, **kwargs)
 
         return wrapper
