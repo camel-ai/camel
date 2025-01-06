@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import unittest
 
-from camel.synthetic_datagen.self_instruct import (
+from camel.datagen.self_instruct import (
     KeywordFilter,
     LengthFilter,
     NonEnglishFilter,

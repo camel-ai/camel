@@ -58,8 +58,17 @@ Here’s how you can contribute to writing cookbooks:
 - Template Usage: We have a [template](https://colab.research.google.com/drive/17SiWWjoK7l8Sy9FBsGKUHC6zuEsLt2yX?usp=sharing) for cookbook entries. Always use this template to ensure uniformity in style and structure.
 - Start in Colab: Begin writing your cookbook in Google Colab. Colab allows us to run interactive code and include explanations side-by-side, which is ideal for a practical, hands-on cookbook.
 - Correctness: Ensure that the **LLM-generated responses are correct**. Each recipe in the cookbook should be verified with real code execution, and the results must be accurate.
-- Clear and Concise Explanations: Provide clear explanations of the code, its purpose, and how it works. Make sure any complex logic or steps are well documented and explained in simple terms.
+- Clear and Concise Explanations: Provide clear explanations of the code, its purpose, and how it works. Make sure any complex logic or steps are well documented and explained in simple terms. Avoid installing all optional extras unless they are needed.
 - Interactive Elements: Whenever applicable, add interactive code cells in Colab that users can directly run and modify.
+
+##### 1.2. Developing cookbooks for in-progress features
+You can install the latest version of CAMEL from the main branch or a topic branch. This allows you to use the latest codebase, or in-progress features in your cookbook. 
+
+`!pip install "git+https://github.com/camel-ai/camel.git@master#egg=camel-ai[all]"` 
+
+Changing the branch and extras section (e.g. remove `#egg=camel-ai[all]`) will behave as expected.
+
+Remember to change to a release version before sharing the cookbook with the community for long-term stability. Also note that a topic branch will stop working if the branch is deleted.
 
 #### 2. Reviewing the Cookbook
 Once the initial draft of the cookbook is ready:
