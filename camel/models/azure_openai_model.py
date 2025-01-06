@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AzureOpenAI, Stream, AsyncAzureOpenAI
+from openai import AsyncAzureOpenAI, AzureOpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig

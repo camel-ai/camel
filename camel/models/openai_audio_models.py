@@ -14,7 +14,7 @@
 import os
 from typing import Any, List, Optional, Union
 
-from openai import OpenAI, _legacy_response, AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI, _legacy_response
 
 from camel.types import AudioModelType, VoiceType
 

@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream, AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
@@ -81,7 +81,7 @@ class DeepSeekModel(BaseModelBackend):
             api_key=self._api_key,
             base_url=self._url,
         )
-        
+
         self._async_client = AsyncOpenAI(
             timeout=180,
             max_retries=3,
@@ -150,6 +150,7 @@ class DeepSeekModel(BaseModelBackend):
             **self.model_config_dict,
         )
         return response
+
     def check_model_config(self):
         r"""Check whether the model configuration contains any
         unexpected arguments to DeepSeek API.

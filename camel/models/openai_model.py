@@ -15,7 +15,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream, AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig

@@ -71,7 +71,9 @@ class AnthropicModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self.client = Anthropic(api_key=self._api_key, base_url=self._url)
-        self.async_client = AsyncAnthropic(api_key=self._api_key, base_url=self._url)
+        self.async_client = AsyncAnthropic(
+            api_key=self._api_key, base_url=self._url
+        )
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
@@ -191,6 +193,7 @@ class AnthropicModel(BaseModelBackend):
         response = self._convert_response_from_anthropic_to_openai(response)
 
         return response
+
     def check_model_config(self):
         r"""Check whether the model configuration is valid for anthropic
         model backends.

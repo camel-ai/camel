@@ -82,7 +82,7 @@ class BaseModelBackend(ABC):
         tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         pass
-    
+
     # TODO: Add the async version of the run method
     # @abstractmethod
     def _arun(
@@ -148,7 +148,8 @@ class BaseModelBackend(ABC):
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
         response_format = (
-            self.model_config_dict.get("response_format", None) or response_format
+            self.model_config_dict.get("response_format", None)
+            or response_format
         )
         # If tools are empty, make it None
         tools = self.model_config_dict.get("tools", None) or tools or None
