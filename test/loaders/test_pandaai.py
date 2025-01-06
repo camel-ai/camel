@@ -108,3 +108,4 @@ def test_load_from_url():
     reader = PandaReader()
     url = "https://raw.githubusercontent.com/cs109/2014_data/master/countries.csv"
     doc = reader.load(url)
+    assert doc is not None
