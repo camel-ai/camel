@@ -2,34 +2,33 @@
 
 [[package]]
 name = "accelerate"
-version = "0.34.2"
+version = "0.25.0"
 description = "Accelerate"
 optional = true
 python-versions = ">=3.8.0"
 files = [
-    {file = "accelerate-0.34.2-py3-none-any.whl", hash = "sha256:d69159e2c4e4a473d14443b27d2d732929254e826b3ab4813b3785b5ac616c7c"},
-    {file = "accelerate-0.34.2.tar.gz", hash = "sha256:98c1ebe1f5a45c0a3af02dc60b5bb8b7d58d60c3326a326a06ce6d956b18ca5b"},
+    {file = "accelerate-0.25.0-py3-none-any.whl", hash = "sha256:c7bb817eb974bba0ff3ea1ba0f24d55afb86d50e3d4fe98d6922dc69cf2ccff1"},
+    {file = "accelerate-0.25.0.tar.gz", hash = "sha256:ecf55b0ab278a1dac8539dde0d276977aff04683f07ede73eaf02478538576a1"},
 ]
 
 [package.dependencies]
-huggingface-hub = ">=0.21.0"
-numpy = ">=1.17,<3.0.0"
+huggingface-hub = "*"
+numpy = ">=1.17"
 packaging = ">=20.0"
 psutil = "*"
 pyyaml = "*"
-safetensors = ">=0.4.3"
+safetensors = ">=0.3.1"
 torch = ">=1.10.0"
 
 [package.extras]
-deepspeed = ["deepspeed"]
-dev = ["bitsandbytes", "black (>=23.1,<24.0)", "datasets", "diffusers", "evaluate", "hf-doc-builder (>=0.3.0)", "parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist", "rich", "ruff (>=0.2.1,<0.3.0)", "scikit-learn", "scipy", "timm", "torchdata (>=0.8.0)", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
-quality = ["black (>=23.1,<24.0)", "hf-doc-builder (>=0.3.0)", "ruff (>=0.2.1,<0.3.0)"]
+dev = ["bitsandbytes", "black (>=23.1,<24.0)", "datasets", "deepspeed", "evaluate", "hf-doc-builder (>=0.3.0)", "parameterized", "pytest", "pytest-subtests", "pytest-xdist", "rich", "ruff (>=0.0.241)", "scikit-learn", "scipy", "timm", "tqdm", "transformers", "urllib3 (<2.0.0)"]
+quality = ["black (>=23.1,<24.0)", "hf-doc-builder (>=0.3.0)", "ruff (>=0.0.241)", "urllib3 (<2.0.0)"]
 rich = ["rich"]
 sagemaker = ["sagemaker"]
-test-dev = ["bitsandbytes", "datasets", "diffusers", "evaluate", "scikit-learn", "scipy", "timm", "torchdata (>=0.8.0)", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
-test-prod = ["parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist"]
+test-dev = ["bitsandbytes", "datasets", "deepspeed", "evaluate", "scikit-learn", "scipy", "timm", "tqdm", "transformers"]
+test-prod = ["parameterized", "pytest", "pytest-subtests", "pytest-xdist"]
 test-trackers = ["comet-ml", "dvclive", "tensorboard", "wandb"]
-testing = ["bitsandbytes", "datasets", "diffusers", "evaluate", "parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist", "scikit-learn", "scipy", "timm", "torchdata (>=0.8.0)", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
+testing = ["bitsandbytes", "datasets", "deepspeed", "evaluate", "parameterized", "pytest", "pytest-subtests", "pytest-xdist", "scikit-learn", "scipy", "timm", "tqdm", "transformers"]
 
 [[package]]
 name = "accessible-pygments"
@@ -804,13 +803,13 @@ css = ["tinycss2 (>=1.1.0,<1.5)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.93"
+version = "1.35.92"
 description = "Low-level, data-driven core of boto 3."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.93-py3-none-any.whl", hash = "sha256:47f7161000af6036f806449e3de12acdd3ec11aac7f5578e43e96241413a0f8f"},
-    {file = "botocore-1.35.93.tar.gz", hash = "sha256:b8d245a01e7d64c41edcf75a42be158df57b9518a83a3dbf5c7e4b8c2bc540cc"},
+    {file = "botocore-1.35.92-py3-none-any.whl", hash = "sha256:f94ae1e056a675bd67c8af98a6858d06e3927d974d6c712ed6e27bb1d11bee1d"},
+    {file = "botocore-1.35.92.tar.gz", hash = "sha256:caa7d5d857fed5b3d694b89c45f82b9f938f840e90a4eb7bf50aa65da2ba8f82"},
 ]
 
 [package.dependencies]
@@ -1687,18 +1686,18 @@ dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "jinja2 (>=3.0.3,<3.1.0)", "
 
 [[package]]
 name = "diffusers"
-version = "0.32.1"
+version = "0.25.1"
 description = "State-of-the-art diffusion in PyTorch and JAX."
 optional = true
 python-versions = ">=3.8.0"
 files = [
-    {file = "diffusers-0.32.1-py3-none-any.whl", hash = "sha256:ab2ed6efe9dd2364db55b94fae453ff149dc06693ec99702cadfbeeaaa00c9c1"},
-    {file = "diffusers-0.32.1.tar.gz", hash = "sha256:d48c19a4bce612d225f857e2e5d4f6ee003b88234af46b44c20119ee23f1568c"},
+    {file = "diffusers-0.25.1-py3-none-any.whl", hash = "sha256:23a1865a5a4f6685e9d7450ff6a4c45f37a0a0534c5cb3e81deff6e9ee43d4ad"},
+    {file = "diffusers-0.25.1.tar.gz", hash = "sha256:1aae411df4e8b6ae3d0ee8902a2af561ac7fa2e0d7656f105bfdf41d1bad4616"},
 ]
 
 [package.dependencies]
 filelock = "*"
-huggingface-hub = ">=0.23.2"
+huggingface-hub = ">=0.20.2"
 importlib-metadata = "*"
 numpy = "*"
 Pillow = "*"
@@ -1707,13 +1706,13 @@ requests = "*"
 safetensors = ">=0.3.1"
 
 [package.extras]
-dev = ["GitPython (<3.1.19)", "Jinja2", "accelerate (>=0.31.0)", "compel (==0.1.8)", "datasets", "flax (>=0.4.1)", "hf-doc-builder (>=0.3.0)", "invisible-watermark (>=0.2.0)", "isort (>=5.5.4)", "jax (>=0.4.1)", "jaxlib (>=0.4.1)", "k-diffusion (>=0.0.12)", "librosa", "parameterized", "peft (>=0.6.0)", "protobuf (>=3.20.3,<4)", "pytest", "pytest-timeout", "pytest-xdist", "requests-mock (==1.10.0)", "ruff (==0.1.5)", "safetensors (>=0.3.1)", "scipy", "sentencepiece (>=0.1.91,!=0.1.92)", "tensorboard", "torch (>=1.4)", "torchvision", "transformers (>=4.41.2)", "urllib3 (<=2.0.0)"]
+dev = ["GitPython (<3.1.19)", "Jinja2", "accelerate (>=0.11.0)", "compel (==0.1.8)", "datasets", "flax (>=0.4.1)", "hf-doc-builder (>=0.3.0)", "invisible-watermark (>=0.2.0)", "isort (>=5.5.4)", "jax (>=0.4.1)", "jaxlib (>=0.4.1)", "k-diffusion (>=0.0.12)", "librosa", "omegaconf", "parameterized", "peft (>=0.6.0)", "protobuf (>=3.20.3,<4)", "pytest", "pytest-timeout", "pytest-xdist", "requests-mock (==1.10.0)", "ruff (==0.1.5)", "safetensors (>=0.3.1)", "scipy", "sentencepiece (>=0.1.91,!=0.1.92)", "tensorboard", "torch (>=1.4)", "torchvision", "transformers (>=4.25.1)", "urllib3 (<=2.0.0)"]
 docs = ["hf-doc-builder (>=0.3.0)"]
 flax = ["flax (>=0.4.1)", "jax (>=0.4.1)", "jaxlib (>=0.4.1)"]
 quality = ["hf-doc-builder (>=0.3.0)", "isort (>=5.5.4)", "ruff (==0.1.5)", "urllib3 (<=2.0.0)"]
-test = ["GitPython (<3.1.19)", "Jinja2", "compel (==0.1.8)", "datasets", "invisible-watermark (>=0.2.0)", "k-diffusion (>=0.0.12)", "librosa", "parameterized", "pytest", "pytest-timeout", "pytest-xdist", "requests-mock (==1.10.0)", "safetensors (>=0.3.1)", "scipy", "sentencepiece (>=0.1.91,!=0.1.92)", "torchvision", "transformers (>=4.41.2)"]
-torch = ["accelerate (>=0.31.0)", "torch (>=1.4)"]
-training = ["Jinja2", "accelerate (>=0.31.0)", "datasets", "peft (>=0.6.0)", "protobuf (>=3.20.3,<4)", "tensorboard"]
+test = ["GitPython (<3.1.19)", "Jinja2", "compel (==0.1.8)", "datasets", "invisible-watermark (>=0.2.0)", "k-diffusion (>=0.0.12)", "librosa", "omegaconf", "parameterized", "pytest", "pytest-timeout", "pytest-xdist", "requests-mock (==1.10.0)", "safetensors (>=0.3.1)", "scipy", "sentencepiece (>=0.1.91,!=0.1.92)", "torchvision", "transformers (>=4.25.1)"]
+torch = ["accelerate (>=0.11.0)", "torch (>=1.4)"]
+training = ["Jinja2", "accelerate (>=0.11.0)", "datasets", "peft (>=0.6.0)", "protobuf (>=3.20.3,<4)", "tensorboard"]
 
 [[package]]
 name = "dill"
@@ -4302,13 +4301,13 @@ pydantic = "*"
 
 [[package]]
 name = "litellm"
-version = "1.57.0"
+version = "1.56.10"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.57.0-py3-none-any.whl", hash = "sha256:339aec6f3ecac2035bf6311aa8913ce587c9aca2dc7d72a63a210c659e9721ca"},
-    {file = "litellm-1.57.0.tar.gz", hash = "sha256:53a6f2bd9575823e102f7d18dde5cbd2d48eed027cecbb585f18a208605b34c5"},
+    {file = "litellm-1.56.10-py3-none-any.whl", hash = "sha256:0294fe455968abf9cc93270368eb6c89bae6ecb1f9de70d16cb193c54d847680"},
+    {file = "litellm-1.56.10.tar.gz", hash = "sha256:d89a6d994a0ea22c01a42225fd98c76fd67104ae2c6bc39b26f5426afab61d20"},
 ]
 
 [package.dependencies]
@@ -4595,13 +4594,13 @@ files = [
 
 [[package]]
 name = "marshmallow"
-version = "3.24.0"
+version = "3.23.3"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "marshmallow-3.24.0-py3-none-any.whl", hash = "sha256:459922b7a1fd3d29d5082ddcadfcea0efd98985030e71d3ef0dd8f44f406e41d"},
-    {file = "marshmallow-3.24.0.tar.gz", hash = "sha256:378572f727e52123d00de1bdd9b7ea7bed18bbfedc7f9bfbcddaf78925a8d602"},
+    {file = "marshmallow-3.23.3-py3-none-any.whl", hash = "sha256:20c0f8c613f68bcb45b2a0d3282e2f172575560170bf220d67aafb42717910e4"},
+    {file = "marshmallow-3.23.3.tar.gz", hash = "sha256:d586c8685ebdb80bf754e1f96e3f305aaf30951f1fc69175b977453633467e76"},
 ]
 
 [package.dependencies]
@@ -9234,13 +9233,13 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "ruamel-yaml"
-version = "0.18.10"
+version = "0.18.9"
 description = "ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation of comments, seq/map flow style, and map key order"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "ruamel.yaml-0.18.10-py3-none-any.whl", hash = "sha256:30f22513ab2301b3d2b577adc121c6471f28734d3d9728581245f1e76468b4f1"},
-    {file = "ruamel.yaml-0.18.10.tar.gz", hash = "sha256:20c86ab29ac2153f80a428e1254a8adf686d3383df04490514ca3b79a362db58"},
+    {file = "ruamel.yaml-0.18.9-py3-none-any.whl", hash = "sha256:c17d2a7ccf7fd2dd4b6d699111c37e94f12277a1db71e847ad7f3d19b8e3e9f4"},
+    {file = "ruamel.yaml-0.18.9.tar.gz", hash = "sha256:59d0f8b10c658bd55ecd107e334d4117d766a2b9cc8f5176afcdadcff6f84a5e"},
 ]
 
 [package.dependencies]
@@ -12184,22 +12183,21 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "cohere", "dappier", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "notion-client", "openapi-spec-validator", "openbb", "opencv-python", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "pyyaml", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "rouge", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
-encoders = ["sentence-transformers"]
-graph-storages = ["nebula3-python", "neo4j"]
-huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "torch", "transformers"]
-kv-stroages = ["redis"]
+all = ["PyMuPDF", "accelerate", "agentops", "anthropic", "apify_client", "arxiv", "arxiv2text", "asknews", "azure-storage-blob", "beautifulsoup4", "botocore", "cohere", "dappier", "datacommons", "datacommons_pandas", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "fish-audio-sdk", "google-cloud-storage", "google-generativeai", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "litellm", "mistralai", "nebula3-python", "neo4j", "newspaper3k", "notion-client", "openapi-spec-validator", "openbb", "opencv-python", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "redis", "reka-api", "requests_oauthlib", "rouge", "scholarly", "sentence-transformers", "sentencepiece", "sglang", "slack-bolt", "slack-sdk", "soundfile", "stripe", "tavily-python", "textblob", "torch", "torch", "transformers", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
+communication-tools = ["discord.py", "notion-client", "praw", "pyTelegramBotAPI", "pygithub", "slack-bolt", "slack-sdk"]
+data-tools = ["datacommons", "datacommons_pandas", "openbb", "pandas", "rouge", "stripe", "textblob"]
+dev-tools = ["agentops", "docker", "e2b-code-interpreter", "ipykernel", "jupyter_client", "tree-sitter", "tree-sitter-python"]
+document-tools = ["PyMuPDF", "beautifulsoup4", "docx2txt", "openapi-spec-validator", "pdfplumber", "prance", "unstructured"]
+huggingface = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "torch", "transformers"]
+media-tools = ["ffmpeg-python", "imageio", "pillow", "pydub", "yt-dlp"]
 model-platforms = ["anthropic", "cohere", "fish-audio-sdk", "google-generativeai", "litellm", "mistralai", "reka-api", "sglang"]
-object-storages = ["azure-storage-blob", "botocore", "google-cloud-storage"]
 rag = ["cohere", "nebula3-python", "neo4j", "pymilvus", "qdrant-client", "rank-bm25", "sentence-transformers", "unstructured"]
-retrievers = ["cohere", "rank-bm25"]
-runtime = ["docker"]
-search-tools = ["duckduckgo-search", "linkup-sdk", "tavily-python", "wikipedia", "wolframalpha"]
+research-tools = ["arxiv", "arxiv2text", "scholarly"]
+storage = ["azure-storage-blob", "botocore", "google-cloud-storage", "nebula3-python", "neo4j", "pymilvus", "qdrant-client", "redis"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "agentops", "apify_client", "arxiv", "arxiv2text", "asknews", "beautifulsoup4", "dappier", "datacommons", "datacommons_pandas", "discord.py", "docker", "docx2txt", "duckduckgo-search", "e2b-code-interpreter", "ffmpeg-python", "firecrawl-py", "googlemaps", "imageio", "ipykernel", "jupyter_client", "linkup-sdk", "newspaper3k", "notion-client", "openapi-spec-validator", "openbb", "outlines", "pandas", "pdfplumber", "pillow", "prance", "praw", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "pyyaml", "requests_oauthlib", "rouge", "scholarly", "slack-bolt", "slack-sdk", "stripe", "textblob", "tree-sitter", "tree-sitter-python", "unstructured", "wikipedia", "wolframalpha", "yt-dlp"]
-vector-databases = ["pymilvus", "qdrant-client"]
+web-tools = ["apify_client", "asknews", "dappier", "duckduckgo-search", "firecrawl-py", "googlemaps", "linkup-sdk", "newspaper3k", "pyowm", "requests_oauthlib", "tavily-python", "wikipedia", "wolframalpha"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "c1575d6d6523c920d266a0f0fc45ec5ad9dac70f1bd8fbc406e7454bef8ae1ef"
+content-hash = "820f09e5ded9149a980f3d7ac17fdff1c754c4094c506012c0c763930a7cfccb"
