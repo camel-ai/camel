@@ -12,39 +12,47 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import numpy as np
-from datasets import (
-    Dataset,  # type: ignore[import]
-    load_dataset,
-)
-from ragas import evaluate  # type: ignore[import]
-from ragas.metrics import (  # type: ignore[import]
-    context_relevancy,
-    faithfulness,
-)
-from sklearn.metrics import roc_auc_score  # type: ignore[import]
+from datasets import Dataset, load_dataset
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
+from camel.logger import get_logger
 from camel.retrievers import AutoRetriever
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
+
+class RagasFields:
+    r"""Constants for RAGAS evaluation field names."""
+
+    INPUT_CONTEXT = "contexts"
+    INPUT_QUESTION = "question"
+    INPUT_ANSWER = "answer"
 
 
 def annotate_dataset(
     dataset: Dataset,
-    context_call: Optional[Callable[[Dict], List[str]]],
-    answer_call: Optional[Callable[[Dict], str]],
+    context_call: Optional[Callable[[Dict[str, Any]], List[str]]],
+    answer_call: Optional[Callable[[Dict[str, Any]], str]],
 ) -> Dataset:
-    r"""
-    Annotate the dataset by adding context and answers using the provided
+    r"""Annotate the dataset by adding context and answers using the provided
     functions.
+
+    Args:
+        dataset (Dataset): The input dataset to annotate.
+        context_call (Optional[Callable[[Dict[str, Any]], List[str]]]):
+            Function to generate context for each example.
+        answer_call (Optional[Callable[[Dict[str, Any]], str]]): Function to
+            generate answer for each example.
+
+    Returns:
+        Dataset: The annotated dataset with added contexts and/or answers.
     """
 
-    def process_example(example: Dict) -> Dict:
+    def process_example(example: Dict[str, Any]) -> Dict[str, Any]:
         if context_call:
             example["contexts"] = context_call(example)
         if answer_call:
@@ -54,40 +62,58 @@ def annotate_dataset(
     return dataset.map(process_example)
 
 
-class RagasFields:
-    INPUT_CONTEXT = "contexts"
-    INPUT_QUESTOIN = "question"
-    INPUT_ANSWER = "answer"
-
-
 def rmse(
-    input_trues: List[float], input_preds: List[float]
+    input_trues: Sequence[float],
+    input_preds: Sequence[float],
 ) -> Optional[float]:
-    r"""
-    Calculate Root Mean Squared Error (RMSE) between input ground truth
-    (`trues`) and predictions (`preds`)
+    r"""Calculate Root Mean Squared Error (RMSE).
+
+    Args:
+        input_trues (Sequence[float]): Ground truth values.
+        input_preds (Sequence[float]): Predicted values.
+
+    Returns:
+        Optional[float]: RMSE value, or None if inputs have different lengths.
     """
     if len(input_trues) != len(input_preds):
+        logger.warning("Input lengths mismatch in RMSE calculation")
         return None
 
     trues = np.array(input_trues)
     preds = np.array(input_preds, dtype=float)
 
-    # Ignore Nulls in predictions
+    # Ignore NaN values in predictions
     eval_idx = ~np.isnan(preds)
+    if not np.any(eval_idx):
+        logger.warning("No valid predictions for RMSE calculation")
+        return None
+
     trues = trues[eval_idx]
     preds = preds[eval_idx]
 
-    return np.sqrt(np.mean((preds - trues) ** 2))
+    return float(np.sqrt(np.mean((preds - trues) ** 2)))
 
 
-def auroc(trues: List[bool], preds: List[float]) -> float:
-    r"""
-    Calculate Area Under Reciever Operator Characteristic Curve (AUROC) between
-     input ground truth (`trues`) and predictions (`preds`)
+def auroc(trues: Sequence[bool], preds: Sequence[float]) -> float:
+    r"""Calculate Area Under Receiver Operating Characteristic Curve (AUROC).
+
+    Args:
+        trues (Sequence[bool]): Ground truth binary values.
+        preds (Sequence[float]): Predicted probability values.
+
+    Returns:
+        float: AUROC score.
     """
+    from sklearn.metrics import roc_auc_score  # type: ignore[import-untyped]
+
     eval_idx = ~np.isnan(preds)
-    return roc_auc_score(trues[eval_idx], preds[eval_idx])
+    if not np.any(eval_idx):
+        logger.warning("No valid predictions for AUROC calculation")
+        return 0.5  # Return random classifier score
+
+    return float(
+        roc_auc_score(np.array(trues)[eval_idx], np.array(preds)[eval_idx])
+    )
 
 
 def ragas_calculate_metrics(
@@ -98,17 +124,40 @@ def ragas_calculate_metrics(
     ground_truth_context_relevance_field: str = "relevance_score",
     ground_truth_faithfulness_field: str = "adherence_score",
 ) -> Dict[str, Optional[float]]:
+    r"""Calculate RAGAS evaluation metrics.
+
+    Args:
+        dataset (Dataset): The dataset containing predictions and ground truth.
+        pred_context_relevance_field (Optional[str]): Field name for predicted
+            context relevance.
+        pred_faithfulness_field (Optional[str]): Field name for predicted
+            faithfulness.
+        metrics_to_evaluate (Optional[List[str]]): List of metrics to evaluate.
+        ground_truth_context_relevance_field (str): Field name for ground truth
+            relevance.
+        ground_truth_faithfulness_field (str): Field name for ground truth
+            adherence.
+
+    Returns:
+        Dict[str, Optional[float]]: Dictionary of calculated metrics.
+    """
+    metrics_to_evaluate = metrics_to_evaluate or [
+        "context_relevancy",
+        "faithfulness",
+    ]
     calculated_metrics: Dict[str, Optional[float]] = {}
-    if metrics_to_evaluate is None:
-        metrics_to_evaluate = ["context_relevancy", "faithfulness"]
-    if "context_relevancy" in metrics_to_evaluate:
+
+    if (
+        "context_relevancy" in metrics_to_evaluate
+        and pred_context_relevance_field
+    ):
         trues_relevance = dataset[ground_truth_context_relevance_field]
         preds_relevance = dataset[pred_context_relevance_field]
         calculated_metrics["relevance_rmse"] = rmse(
             trues_relevance, preds_relevance
         )
 
-    if "faithfulness" in metrics_to_evaluate:
+    if "faithfulness" in metrics_to_evaluate and pred_faithfulness_field:
         trues_hallucination = ~np.array(
             dataset[ground_truth_faithfulness_field]
         )
@@ -128,12 +177,29 @@ def ragas_evaluate_dataset(
     answer_field_name: Optional[str],
     metrics_to_evaluate: Optional[List[str]] = None,
 ) -> Dataset:
-    r"""
-    Evaluate the dataset using RAGAS metrics for context relevancy and
-    faithfulness.
+    r"""Evaluate the dataset using RAGAS metrics.
+
+    Args:
+        dataset (Dataset): Input dataset to evaluate.
+        contexts_field_name (Optional[str]): Field name containing contexts.
+        answer_field_name (Optional[str]): Field name containing answers.
+        metrics_to_evaluate (Optional[List[str]]): List of metrics to evaluate.
+
+    Returns:
+        Dataset: Dataset with added evaluation metrics.
     """
-    if metrics_to_evaluate is None:
-        metrics_to_evaluate = ["context_relevancy", "faithfulness"]
+    from ragas import evaluate
+    from ragas.metrics import (  # type: ignore[import-untyped]
+        context_relevancy,
+        faithfulness,
+    )
+
+    metrics_to_evaluate = metrics_to_evaluate or [
+        "context_relevancy",
+        "faithfulness",
+    ]
+
+    # Rename fields if necessary
     if (
         contexts_field_name
         and contexts_field_name != RagasFields.INPUT_CONTEXT
@@ -146,36 +212,28 @@ def ragas_evaluate_dataset(
             answer_field_name, RagasFields.INPUT_ANSWER
         )
 
-    # Evaluate the dataset with RAGAS
     metrics = []
     if "context_relevancy" in metrics_to_evaluate:
         metrics.append(context_relevancy)
     if "faithfulness" in metrics_to_evaluate:
         metrics.append(faithfulness)
-    ragas_result = evaluate(dataset, metrics=[context_relevancy, faithfulness])
 
-    ragas_df = ragas_result.to_pandas()
-    annotated_dataset = Dataset.from_pandas(ragas_df)
-
-    return annotated_dataset
+    ragas_result = evaluate(dataset, metrics=metrics)
+    return Dataset.from_pandas(ragas_result.to_pandas())
 
 
 class RAGBenchBenchmark(BaseBenchmark):
-    r"""RAGBench Benchmark evaluates the Rag performance.
-    <https://huggingface.co/datasets/rungalileo/ragbench>.
-    Calculate metrics
-        See https://arxiv.org/abs/2407.11005 for more details
-        on the metrics, right now only context_relevancy and
-        faithfulness are supported
+    r"""RAGBench Benchmark for evaluating RAG performance.
+
+    This benchmark uses the rungalileo/ragbench dataset to evaluate
+    retrieval-augmented generation (RAG) systems. It measures context
+    relevancy and faithfulness metrics as described in
+    https://arxiv.org/abs/2407.11005.
 
     Args:
-        processes (int, optional): The number of processes to use for
-                parallel processing. (default: :obj:`1`)
-        subset (str, optional): The subset to use.
-            (default: :obj:`"hotpotqa"`), check the full list of
-            subsets(https://huggingface.co/datasets/rungalileo/ragbench)
-        split (str, optional): The split to use.
-            (default: :obj:`"test"`).
+        processes (int, optional): Number of processes for parallel processing.
+        subset (str, optional): Dataset subset to use (e.g., "hotpotqa").
+        split (str, optional): Dataset split to use (e.g., "test").
     """
 
     def __init__(
@@ -183,38 +241,34 @@ class RAGBenchBenchmark(BaseBenchmark):
         processes: int = 1,
         subset: str = "hotpotqa",
         split: str = "test",
-    ):
-        r"""Initialize the APIBench benchmark.
-
-        Args:
-            processes (int, optional): The number of processes to use for
-                parallel processing. (default: :obj:`1`)
-            subset (str, optional): The subset to use.
-                (default: :obj:`"hotpotqa"`)
-            split (str, optional): The split to use.
-                (default: :obj:`"test"`).
-        """
+    ) -> None:
         super().__init__("ragbench", "rag_bench", "", processes)
-
         self.subset = subset
         self.split = split
-        self.dataset = None
+        self.dataset: Optional[Dataset] = None
 
     def download(self):
-        r"""Download the APIBench dataset."""
-
-        self.dataset = load_dataset(
-            "rungalileo/ragbench", self.subset, split=self.split
-        )
+        r"""Download the RAGBench dataset."""
+        try:
+            self.dataset = load_dataset(
+                "rungalileo/ragbench", self.subset, split=self.split
+            )
+        except Exception as e:
+            logger.error(f"Failed to download dataset: {e}")
+            raise
 
     def load(self, force_download: bool = False):
-        r"""Load the RAGBench Benchmark dataset.
+        r"""Load the RAGBench dataset.
+
         Args:
-            force_download (bool, optional): Whether to force
-                download the data. (default: :obj:`False`)
+            force_download (bool, optional): Whether to force download the
+                data.
         """
-        if force_download:
-            logger.info("Force downloading data.")
+        if force_download or self.dataset is None:
+            logger.info(
+                "%s dataset",
+                "Force downloading" if force_download else "Loading",
+            )
             self.download()
 
     def run(  # type: ignore[override, return]
@@ -222,6 +276,17 @@ class RAGBenchBenchmark(BaseBenchmark):
         agent: ChatAgent,
         auto_retriever: AutoRetriever,
     ) -> Dict[str, Optional[float]]:
+        r"""Run the benchmark evaluation.
+
+        Args:
+            agent (ChatAgent): Chat agent for generating answers.
+            auto_retriever (AutoRetriever): Retriever for finding relevant
+                contexts.
+
+        Returns:
+            Dict[str, Optional[float]]: Dictionary of evaluation metrics.
+        """
+
         def context_call(example):
             retrieved_info = auto_retriever.run_vector_retriever(
                 query=example['question'],
@@ -232,7 +297,7 @@ class RAGBenchBenchmark(BaseBenchmark):
             )
             return [c['text'] for c in retrieved_info['Retrieved Context']]
 
-        def answer_call(example):
+        def answer_call(example: Dict[str, Any]) -> str:
             user_msg = str(example)
             assistant_response = agent.step(user_msg)
             return assistant_response.msg.content
@@ -241,7 +306,6 @@ class RAGBenchBenchmark(BaseBenchmark):
         annotated_ds = annotate_dataset(
             self.dataset, context_call, answer_call
         )
-
         evaluated_ds = ragas_evaluate_dataset(
             annotated_ds,
             contexts_field_name="contexts",
@@ -249,10 +313,8 @@ class RAGBenchBenchmark(BaseBenchmark):
             metrics_to_evaluate=["context_relevancy", "faithfulness"],
         )
 
-        calculated_metrics = ragas_calculate_metrics(
+        return ragas_calculate_metrics(
             evaluated_ds,
             pred_context_relevance_field="context_relevancy",
             pred_faithfulness_field="faithfulness",
         )
-
-        return calculated_metrics
