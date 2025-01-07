@@ -12,6 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .discord_app import DiscordApp
+from .discord_rag_bot import (
+    DiscordRagBot,
+    RagBotAgent
+)
 from .slack.models import (
     SlackAppMentionEventBody,
     SlackAppMentionEventProfile,
@@ -24,6 +28,8 @@ from .telegram_bot import TelegramBot
 
 __all__ = [
     'DiscordApp',
+    'DiscordRagBot',
+    'RagBotAgent',
     'SlackApp',
     'SlackAppMentionEventBody',
     'SlackAppMentionEventProfile',
