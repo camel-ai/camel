@@ -29,6 +29,12 @@ class SkyworkRewardModel(BaseRewardModel):
             created.
         api_key (Optional[str], optional): Not used.
         url (Optional[str], optional): Not used.
+        device_map (Optional[str], optional): choose the device map, default
+            is "auto".
+        attn_implementation (Optional[str], optional): choose the attention
+            implementation, default is "flash_attention_2".
+        offload_folder (Optional[str], optional): choose the offload folder,
+            default is "offload".
     """
 
     def __init__(
@@ -36,16 +42,17 @@ class SkyworkRewardModel(BaseRewardModel):
         model_type: Union[ModelType, str],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        device_map: Optional[str] = "auto",
+        attn_implementation: Optional[str] = "flash_attention_2",
+        offload_folder: Optional[str] = "offload",
     ) -> None:
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
         super().__init__(model_type, api_key, url)
         self._client = AutoModelForSequenceClassification.from_pretrained(
             model_type,
             torch_dtype=torch.bfloat16,
-            device_map=device,
-            attn_implementation="flash_attention_2",
-            # device_map="auto",
-            # offload_folder="offload",
+            device_map=device_map,
+            attn_implementation=attn_implementation,
+            offload_folder=offload_folder,
             num_labels=1,
         )
         self._tokenizer = AutoTokenizer.from_pretrained(model_type)
@@ -70,7 +77,7 @@ class SkyworkRewardModel(BaseRewardModel):
 
     def get_scores_types(self) -> List[str]:
         r"""get the scores types
-        
+
         Returns:
             List[str]: list of scores types
         """
