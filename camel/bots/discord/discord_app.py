@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import logging
 import os
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional
@@ -21,6 +20,7 @@ import httpx
 from fastapi import FastAPI
 
 from camel.bots.discord.discord_installation import DiscordInstallation
+from camel.logger import get_logger
 from camel.utils import dependencies_required
 
 from .discord_store import DiscordBaseInstallationStore
@@ -28,8 +28,7 @@ from .discord_store import DiscordBaseInstallationStore
 if TYPE_CHECKING:
     from discord import Message
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 TOKEN_URL = "https://discord.com/api/oauth2/token"
 USER_URL = "https://discord.com/api/users/@me"
