@@ -81,19 +81,64 @@ To install the base CAMEL library:
 ```bash
 pip install camel-ai
 ```
-Some features require extra dependencies:
-- To install with all dependencies:
+
+CAMEL offers various optional features through extras. You can install them based on your needs:
+
+- To install with all dependencies (includes all features below):
     ```bash
     pip install 'camel-ai[all]'
     ```
-- To use the HuggingFace agents:
-    ```bash
-    pip install 'camel-ai[huggingface-agent]'
-    ```
-- To enable RAG or use agent memory:
-    ```bash
-    pip install 'camel-ai[tools]'
-    ```
+
+- For specific features:
+    - Model Platforms (OpenAI, Google, Mistral, Anthropic Claude, Cohere, etc.):
+        ```bash
+        pip install 'camel-ai[model_platforms]'
+        ```
+    - HuggingFace Ecosystem (Transformers, Diffusers, Accelerate, Datasets, PyTorch, etc.):
+        ```bash
+        pip install 'camel-ai[huggingface]'
+        ```
+    - RAG Components (Sentence Transformers, Qdrant, Milvus, BM25, etc.):
+        ```bash
+        pip install 'camel-ai[rag]'
+        ```
+    - Storage Solutions (Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3, etc.):
+        ```bash
+        pip install 'camel-ai[storage]'
+        ```
+    - Web Tools (DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API, etc.):
+        ```bash
+        pip install 'camel-ai[web_tools]'
+        ```
+    - Document Processing (PDF, Word, OpenAPI, BeautifulSoup, Unstructured, etc.):
+        ```bash
+        pip install 'camel-ai[document_tools]'
+        ```
+    - Media Processing (Image Processing, Audio Processing, YouTube Download, FFmpeg, etc.):
+        ```bash
+        pip install 'camel-ai[media_tools]'
+        ```
+    - Communication Platforms (Slack, Discord, Telegram, GitHub, Reddit, Notion, etc.):
+        ```bash
+        pip install 'camel-ai[communication_tools]'
+        ```
+    - Data Science & Analytics (Pandas, TextBlob, DataCommons, OpenBB, Stripe, etc.):
+        ```bash
+        pip install 'camel-ai[data_tools]'
+        ```
+    - Research Tools (arXiv, Google Scholar, etc.):
+        ```bash
+        pip install 'camel-ai[research_tools]'
+        ```
+    - Development Tools (Docker, Jupyter, Tree-sitter, Code Interpreter, etc.):
+        ```bash
+        pip install 'camel-ai[dev_tools]'
+        ```
+
+You can combine multiple extras by separating them with commas. For example, to set up a RAG system with document processing and web search:
+```bash
+pip install 'camel-ai[rag,web_tools,document_tools]'
+```
 
 ### From Source
 
