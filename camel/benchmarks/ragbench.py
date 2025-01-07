@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence
 
 import numpy as np
 from datasets import Dataset, load_dataset
@@ -239,8 +239,21 @@ class RAGBenchBenchmark(BaseBenchmark):
     def __init__(
         self,
         processes: int = 1,
-        subset: str = "hotpotqa",
-        split: str = "test",
+        subset: Literal[
+            "covidqa",
+            "cuad",
+            "delucionqa",
+            "emanual",
+            "expertqa",
+            "finqa",
+            "hagrid",
+            "hotpotqa",
+            "msmarco",
+            "pubmedqa",
+            "tatqa",
+            "techqa",
+        ] = "hotpotqa",
+        split: Literal["train", "test", "validation"] = "test",
     ) -> None:
         super().__init__("ragbench", "rag_bench", "", processes)
         self.subset = subset
