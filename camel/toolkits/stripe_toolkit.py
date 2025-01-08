@@ -247,7 +247,7 @@ class StripeToolkit(BaseToolkit):
         Returns:
             str: An error message string.
         """
-        from stripe.error import StripeError
+        from stripe import StripeError
 
         if isinstance(error, StripeError):
             message = error.user_message or str(error)
