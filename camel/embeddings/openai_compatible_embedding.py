@@ -32,6 +32,12 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         url (str): The url to the model service.
     """
 
+    @api_keys_required(
+        [
+            ("api_key", 'OPENAI_COMPATIBILIY_API_KEY'),
+            ("url", 'OPENAI_COMPATIBILIY_API_BASE_URL'),
+        ]
+    )
     def __init__(
         self,
         model_type: str,
@@ -46,13 +52,12 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         )
         self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
 
-    @api_keys_required("OPENAI_COMPATIBILIY_API_KEY")
     def embed_list(
         self,
         objs: list[str],

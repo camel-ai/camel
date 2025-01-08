@@ -70,6 +70,13 @@ jobs:
           ASKNEWS_CLIENT_SECRET: "${{ secrets.ASKNEWS_CLIENT_SECRET }}"
           CHUNKR_API_KEY: "${{ secrets.CHUNKR_API_KEY }}"
           MESHY_API_KEY: "${{ secrets.MESHY_API_KEY }}"
+          YI_API_KEY: "${{ secrets.YI_API_KEY }}"
+          TOGETHER_API_KEY: "${{ secrets.TOGETHER_API_KEY }}"
+          SAMBA_API_KEY: "${{ secrets.SAMBA_API_KEY }}"
+          QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
+          GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+          DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
+          DAPPIER_API_KEY: "${{ secrets.DAPPIER_API_KEY }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test

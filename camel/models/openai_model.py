@@ -21,6 +21,7 @@ from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
+    NOT_GIVEN,
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
@@ -51,6 +52,11 @@ class OpenAIModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "OPENAI_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -67,7 +73,7 @@ class OpenAIModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
@@ -85,7 +91,6 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_keys_required("OPENAI_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -103,7 +108,11 @@ class OpenAIModel(BaseModelBackend):
         """
         # o1-preview and o1-mini have Beta limitations
         # reference: https://platform.openai.com/docs/guides/reasoning
-        if self.model_type in [ModelType.O1_MINI, ModelType.O1_PREVIEW]:
+        if self.model_type in [
+            ModelType.O1,
+            ModelType.O1_MINI,
+            ModelType.O1_PREVIEW,
+        ]:
             warnings.warn(
                 "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
                 "which has certain limitations, reference: "
@@ -111,21 +120,20 @@ class OpenAIModel(BaseModelBackend):
                 UserWarning,
             )
 
-            # Remove system message that is not supported in o1 model.
-            messages = [msg for msg in messages if msg.get("role") != "system"]
-
             # Check and remove unsupported parameters and reset the fixed
             # parameters
-            unsupported_keys = ["stream", "tools", "tool_choice"]
+            unsupported_keys = [
+                "temperature",
+                "top_p",
+                "presence_penalty",
+                "frequency_penalty",
+                "logprobs",
+                "top_logprobs",
+                "logit_bias",
+            ]
             for key in unsupported_keys:
                 if key in self.model_config_dict:
                     del self.model_config_dict[key]
-
-            self.model_config_dict["temperature"] = 1.0
-            self.model_config_dict["top_p"] = 1.0
-            self.model_config_dict["n"] = 1
-            self.model_config_dict["presence_penalty"] = 0.0
-            self.model_config_dict["frequency_penalty"] = 0.0
 
         if self.model_config_dict.get("response_format"):
             # stream is not supported in beta.chat.completions.parse
@@ -139,6 +147,14 @@ class OpenAIModel(BaseModelBackend):
             )
 
             return self._to_chat_completion(response)
+
+        # Removing 'strict': True from the dictionary for
+        # client.chat.completions.create
+        if self.model_config_dict.get('tools') is not NOT_GIVEN:
+            for tool in self.model_config_dict.get('tools', []):
+                function_dict = tool.get('function', {})
+                if 'strict' in function_dict:
+                    del function_dict['strict']
 
         response = self._client.chat.completions.create(
             messages=messages,

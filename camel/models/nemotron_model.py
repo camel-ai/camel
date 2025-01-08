@@ -40,6 +40,11 @@ class NemotronModel(BaseModelBackend):
         Nemotron model doesn't support additional model config like OpenAI.
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "NVIDIA_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -52,13 +57,12 @@ class NemotronModel(BaseModelBackend):
         api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         super().__init__(model_type, {}, api_key, url)
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             base_url=self._url,
             api_key=self._api_key,
         )
 
-    @api_keys_required("NVIDIA_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
