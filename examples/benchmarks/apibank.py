@@ -12,14 +12,42 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from dotenv import load_dotenv
+
 from camel.agents import ChatAgent
 from camel.benchmarks import APIBankBenchmark
+from camel.benchmarks.apibank import Evaluator
 
+# Load environment variables from the .env file
+load_dotenv()
+
+
+# Set up the agent to be benchmarked
 agent = ChatAgent()
 
-benchmark = APIBankBenchmark(
-    data_dir="./APIBankDatasets", save_to="./APIBankResults.jsonl"
-)
-benchmark.download()
-results = benchmark.run(agent, "level-1", api_test_enabled=True)
-print(results)
+# Set up the APIBench Benchmark
+# Please note that the data_dir is predefined
+# for better import management of the tools
+benchmark = APIBankBenchmark(save_to="APIBankResults.jsonl")
+
+# Download the benchmark data
+# benchmark.download()
+
+# Set the subset to be benchmarked
+level = 'level-1'
+
+# Run the benchmark
+result = benchmark.run(agent, level, api_test_enabled=True, subset=10)
+
+# The following steps are only for demostration purposes,
+# they have been integrated into the run method of the benchmark.
+
+# Get the first example of the test data
+example_test = next(benchmark._data.items())
+evaluator = Evaluator(example_test)
+api_description = evaluator.get_api_description('ToolSearcher')
+print('\nAPI description for ToolSearcher:\n', api_description)
+
+# Print the final results
+print("Total:", result["total"])
+print("Correct:", result["correct"])

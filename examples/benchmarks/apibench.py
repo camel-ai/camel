@@ -15,10 +15,32 @@
 from camel.agents import ChatAgent
 from camel.benchmarks import APIBenchBenchmark
 
+# Set up the agent to be benchmarked
 agent = ChatAgent()
 
+# Set up the APIBench Benchmark
 benchmark = APIBenchBenchmark(
-    data_dir="./APIBenchDatasets", save_to="./APIBench.jsonl"
+    data_dir="APIBenchDatasets", save_to="APIBenchResults.jsonl"
 )
-result = benchmark.run(agent, 'torchhub')
-print(result)
+
+# Download the benchmark data
+benchmark.download()
+
+# Set the subset to be benchmarked
+subset_name = 'torchhub'
+
+# Run the benchmark
+result = benchmark.run(agent, subset_name, subset=10)
+
+# Please note that APIBench does not use 'real function call'
+# but instead includes API documentation in the questions
+# for the agent to refernce.
+# An example question including the API documentation is printed below.
+print(
+    "\nExample question including API documentation:\n",
+    benchmark._data['questions'][0]['text'],
+)
+
+print("Total:", result["total"])
+print("Correct:", result["correct"])
+print("Hallucination:", result["hallucination"])

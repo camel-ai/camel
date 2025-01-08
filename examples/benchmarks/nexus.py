@@ -14,12 +14,30 @@
 
 from camel.agents import ChatAgent
 from camel.benchmarks import NexusBenchmark
+from camel.benchmarks.nexus import construct_tool_descriptions
 
+# Set up the agent to be benchmarked
 agent = ChatAgent()
 
+# Set up the Nexusraven Function Calling Benchmark
 benchmark = NexusBenchmark(
-    data_dir="./NexusDatasets", save_to="./NexusResults.jsonl"
+    data_dir="NexusDatasets", save_to="NexusResults.jsonl"
 )
+
+# Download the benchmark data
 benchmark.download()
-results = benchmark.run(agent, "OTX")
-print(results)
+
+# Set the task (sub-dataset) to be benchmarked
+task = "OTX"
+
+# Please note that the following step is only for demostration purposes,
+# it has been integrated into the run method of the benchmark.
+# The tools fetched here are used to construct the prompt for the task,
+# which will be passed to the agent for response.
+tools = construct_tool_descriptions(task)
+print('\nTool descriptions for the task:\n', tools)
+
+# Run the benchmark
+result = benchmark.run(agent, task, subset=10)
+print("Total:", result["total"])
+print("Correct:", result["correct"])
