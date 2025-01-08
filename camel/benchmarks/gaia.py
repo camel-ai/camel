@@ -280,11 +280,11 @@ class GAIABenchmark(BaseBenchmark):
                     f"Skipping task because file not found: {file_path}"
                 )
                 return False
-            if file_path.suffix in ['.pdf', '.docx', '.doc', '.txt']:
+            if file_path.suffix in [".pdf", ".docx", ".doc", ".txt"]:
                 if not self.retriever.reset(task_id=task["task_id"]):
                     return False
                 retrieved_info = self.retriever.retrieve(
-                    query=task["Question"], contents=[task['file_name']]
+                    query=task["Question"], contents=[task["file_name"]]
                 )
                 retrieved_content = [
                     item["text"]
