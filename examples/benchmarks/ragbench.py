@@ -12,19 +12,18 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .apibank import APIBankBenchmark
-from .apibench import APIBenchBenchmark
-from .base import BaseBenchmark
-from .gaia import DefaultGAIARetriever, GAIABenchmark
-from .nexus import NexusBenchmark
-from .ragbench import RAGBenchBenchmark
+from camel.agents import ChatAgent
+from camel.benchmarks import RAGBenchBenchmark
+from camel.retrievers import AutoRetriever
 
-__all__ = [
-    "BaseBenchmark",
-    "GAIABenchmark",
-    "DefaultGAIARetriever",
-    "NexusBenchmark",
-    "APIBenchBenchmark",
-    "APIBankBenchmark",
-    "RAGBenchBenchmark",
-]
+assistant_sys_msg = """You are a helpful assistant to answer question,
+         I will give you the Original Query and Retrieved Context,
+        answer the Original Query based on the Retrieved Context,
+        if you can't answer the question just say I don't know."""
+agent = ChatAgent(assistant_sys_msg)
+auto_retriever = AutoRetriever()
+
+benchmark = RAGBenchBenchmark(subset="hotpotqa", split="test")
+benchmark.download()
+results = benchmark.run(agent, auto_retriever)
+print(results)
