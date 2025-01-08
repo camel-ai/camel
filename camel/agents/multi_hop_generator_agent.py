@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import textwrap
 from typing import Any
 
 from pydantic import ConfigDict
@@ -34,8 +35,8 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        system_text: str = """You are an expert at generating multi-hop 
-        question-answer pairs.
+        system_text: str = textwrap.dedent("""You are an expert at generating 
+        multi-hop question-answer pairs.
         For each context, you should:
         1. Identify multiple related facts or pieces of information
         2. Create questions that require reasoning across these multiple pieces
@@ -51,7 +52,7 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
         3. [Final reasoning step]
         Answer: [Final answer]
         Supporting Facts: [List of relevant text segments used]
-        """
+        """)
         self.system_message = BaseMessage.make_assistant_message(
             role_name='Assistant', content=system_text
         )

@@ -20,7 +20,7 @@ from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
 
 
 class ProcessorConfig(BaseModel):
-    """Data processing configuration class"""
+    r"""Data processing configuration class"""
 
     def __repr__(self):
         return "MultiHopGeneratorAgent()"
@@ -33,7 +33,7 @@ class ProcessorConfig(BaseModel):
     )
 
     seed: int = Field(  # Generate a random seed for reproducibility
-        default=random.randint(0, 1000),
+        default_factory=lambda: random.randint(0, 1000),
         description="Random seed for reproducibility",
     )
 
