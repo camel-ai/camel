@@ -40,7 +40,40 @@ print(
     "\nExample question including API documentation:\n",
     benchmark._data['questions'][0]['text'],
 )
+'''
+===============================================================================
+Example question including API documentation:
+  What is an API that can be used to classify sports activities in videos?\n
+ Use this API documentation for reference:  
+ {"domain": "Video Classification", "framework": "PyTorch", 
+ "functionality": "3D ResNet", "api_name": "slow_r50", 
+ "api_call": "torch.hub.load(repo_or_dir='facebookresearch/pytorchvideo', 
+ model='slow_r50', pretrained=True)", "api_arguments": {"pretrained": "True"}, 
+ "python_environment_requirements": ["torch", "json", "urllib", 
+ "pytorchvideo", 
+ "torchvision", "torchaudio", "torchtext", "torcharrow", "TorchData", 
+ "TorchRec", "TorchServe", "PyTorch on XLA Devices"], 
+ "example_code": ["import torch", 
+ "model = torch.hub.load('facebookresearch/pytorchvideo', 
+ 'slow_r50', pretrained=True)", 
+ "device = 'cpu'", "model = model.eval()", "model = model.to(device)"], 
+ "performance": {"dataset": "Kinetics 400", 
+ "accuracy": {"top_1": 74.58, "top_5": 91.63}, 
+ "Flops (G)": 54.52, "Params (M)": 32.45}, 
+ "description": "The 3D ResNet model is a Resnet-style video classification 
+ network pretrained on the Kinetics 400 dataset. It is based on the 
+ architecture from the paper 'SlowFast Networks for Video Recognition' 
+ by Christoph Feichtenhofer et al."}}
+===============================================================================
+'''
 
 print("Total:", result["total"])
 print("Correct:", result["correct"])
 print("Hallucination:", result["hallucination"])
+'''
+===============================================================================
+Total: 10
+Correct: 10
+Hallucination: 0
+===============================================================================
+'''
