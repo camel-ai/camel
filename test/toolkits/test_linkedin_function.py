@@ -113,3 +113,44 @@ def test_get_profile(linkedin_toolkit):
             'id': 'urn:li:person:test-id',
         }
         assert response == expected_report
+
+
+def test_get_articles(linkedin_toolkit):
+    author_id = "test-id"
+    # Mock the articles response
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "elements": [
+            {
+                "id": "urn:li:article:test-article-id",
+                "title": "Test Article Title",
+                "publishedAt": "2024-01-01T00:00:00Z",
+                "content": {
+                    "com.linkedin.publishing.HtmlContent": {
+                        "htmlText": "This is the article content."
+                    }
+                },
+                "displayImage": "https://example.com/image.jpg",
+            }
+        ]
+    }
+    mock_response.status_code = HTTPStatus.OK
+
+    # Mock the get request
+    with patch('requests.get') as mock_get:
+        mock_get.return_value = mock_response
+
+        response = linkedin_toolkit.get_articles(author_id=author_id)
+
+        expected_response = {
+            "articles": [
+                {
+                    "id": "urn:li:article:test-article-id",
+                    "title": "Test Article Title",
+                    "publishedAt": "2024-01-01T00:00:00Z",
+                    "content": "This is the article content.",
+                    "displayImage": "https://example.com/image.jpg",
+                }
+            ]
+        }
+        assert response == expected_response
