@@ -28,7 +28,7 @@ from typing import (
     Union,
 )
 
-from openai import Stream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel, ConfigDict
 
 from camel.agents.base import BaseAgent
@@ -105,7 +105,7 @@ class _ModelResponse(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    response: Union[ChatCompletion, Stream]
+    response: Union[ChatCompletion, Stream, AsyncStream]
     tool_call_request: Optional[_ToolCallRequest]
     output_messages: List[BaseMessage]
     finish_reasons: List[str]
@@ -639,7 +639,7 @@ class ChatAgent(BaseAgent):
 
         response = None
         try:
-            response = await self.model_backend.arun(
+            response = await self.model_backend.arun(  # type: ignore
                 openai_messages, response_format, self._get_full_tool_schemas()
             )
         except Exception as exc:
@@ -832,7 +832,7 @@ class ChatAgent(BaseAgent):
 
     async def _ahandle_stream_response(
         self,
-        response: Stream[ChatCompletionChunk],
+        response: AsyncStream[ChatCompletionChunk],
         prompt_tokens: int,
     ) -> _ModelResponse:
         r"""Process a stream response from the model and extract the necessary

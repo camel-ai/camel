@@ -241,7 +241,9 @@ class ModelManager:
 
         # Pass all messages to the selected model and get the response
         try:
-            response = await self.current_model.arun(messages, response_format, tools)
+            response = await self.current_model.arun(
+                messages, response_format, tools
+            )
         except Exception as exc:
             logger.error(f"Error processing with model: {self.current_model}")
             if self.scheduling_strategy == self.always_first:
