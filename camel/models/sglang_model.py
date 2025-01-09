@@ -16,7 +16,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import SGLANG_API_PARAMS, SGLangConfig
@@ -81,6 +81,12 @@ class SGLangModel(BaseModelBackend):
         if self._url:
             # Initialize the client if an existing URL is provided
             self._client = OpenAI(
+                timeout=180,
+                max_retries=3,
+                api_key="Set-but-ignored",  # required but ignored
+                base_url=self._url,
+            )
+            self._async_client = AsyncOpenAI(
                 timeout=180,
                 max_retries=3,
                 api_key="Set-but-ignored",  # required but ignored
@@ -178,6 +184,44 @@ class SGLangModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into SGLang model backend."
                 )
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+
+        # Ensure server is running
+        self._ensure_server_running()
+
+        with self._lock:
+            # Update last run time
+            self.last_run_time = time.time()
+
+        if self._client is None:
+            raise RuntimeError(
+                "Client is not initialized. Ensure the server is running."
+            )
+
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+
+        return response
 
     def _run(
         self,

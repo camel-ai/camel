@@ -207,6 +207,9 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
+    async def _arun(self) -> None:  # type: ignore[override]
+        raise NotImplementedError("Mistral does not support async inference.")
+
     def _run(
         self,
         messages: List[OpenAIMessage],

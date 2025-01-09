@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Coroutine, Dict, List, Optional, Type, Union
 
 from openai import Stream
 from pydantic import BaseModel
@@ -83,14 +83,15 @@ class BaseModelBackend(ABC):
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         pass
 
-    # TODO: Add the async version of the run method
-    # @abstractmethod
+    @abstractmethod
     def _arun(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Coroutine[
+        Any, Any, Union[ChatCompletion, Stream[ChatCompletionChunk]]
+    ]:
         pass
 
     def run(

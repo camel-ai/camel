@@ -75,6 +75,43 @@ class StubModel(BaseModelBackend):
             self._token_counter = StubTokenCounter()
         return self._token_counter
 
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Run fake inference by returning a fixed string.
+        All arguments are unused for the dummy model.
+
+        Returns:
+            Dict[str, Any]: Response in the OpenAI API format.
+        """
+        ARBITRARY_STRING = "Lorem Ipsum"
+        response: ChatCompletion = ChatCompletion(
+            id="stub_model_id",
+            model="stub",
+            object="chat.completion",
+            created=int(time.time()),
+            choices=[
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    message=ChatCompletionMessage(
+                        content=ARBITRARY_STRING,
+                        role="assistant",
+                    ),
+                    logprobs=None,
+                )
+            ],
+            usage=CompletionUsage(
+                completion_tokens=10,
+                prompt_tokens=10,
+                total_tokens=20,
+            ),
+        )
+        return response
+
     def _run(
         self,
         messages: List[OpenAIMessage],

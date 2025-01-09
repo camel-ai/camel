@@ -108,6 +108,9 @@ class LiteLLMModel(BaseModelBackend):
             self._token_counter = LiteLLMTokenCounter(self.model_type)
         return self._token_counter
 
+    async def _arun(self) -> None:  # type: ignore[override]
+        raise NotImplementedError
+
     def _run(
         self,
         messages: List[OpenAIMessage],

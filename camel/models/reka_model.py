@@ -72,7 +72,7 @@ class RekaModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        from reka.client import Reka
+        from reka.client import AsyncReka, Reka
 
         if model_config_dict is None:
             model_config_dict = RekaConfig().as_dict()
@@ -82,6 +82,9 @@ class RekaModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = Reka(api_key=self._api_key, base_url=self._url)
+        self._async_client = AsyncReka(
+            api_key=self._api_key, base_url=self._url
+        )
 
     def _convert_reka_to_openai_response(
         self, response: 'ChatResponse'
@@ -176,6 +179,47 @@ class RekaModel(BaseModelBackend):
                 model=ModelType.GPT_4O_MINI
             )
         return self._token_counter
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        r"""Runs inference of Mistral chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            ChatCompletion.
+        """
+        reka_messages = self._convert_openai_to_reka_messages(messages)
+
+        response = await self._async_client.chat.create(
+            messages=reka_messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+
+        openai_response = self._convert_reka_to_openai_response(response)
+
+        # Add AgentOps LLM Event tracking
+        if LLMEvent:
+            llm_event = LLMEvent(
+                thread_id=openai_response.id,
+                prompt=" ".join(
+                    [message.get("content") for message in messages]  # type: ignore[misc]
+                ),
+                prompt_tokens=openai_response.usage.input_tokens,  # type: ignore[union-attr]
+                completion=openai_response.choices[0].message.content,
+                completion_tokens=openai_response.usage.output_tokens,  # type: ignore[union-attr]
+                model=self.model_type,
+            )
+            record(llm_event)
+
+        return openai_response
 
     def _run(
         self,

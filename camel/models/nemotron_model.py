@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -63,6 +63,32 @@ class NemotronModel(BaseModelBackend):
             base_url=self._url,
             api_key=self._api_key,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=180,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
+        )
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        r"""Runs inference of OpenAI chat completion asynchronously.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list.
+
+        Returns:
+            ChatCompletion.
+        """
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+        )
+        return response
 
     def _run(
         self,

@@ -116,7 +116,7 @@ class OpenAICompatibleModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        response = self._async_client.chat.completions.create(
+        response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,

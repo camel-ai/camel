@@ -76,6 +76,12 @@ class OllamaModel(BaseModelBackend):
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
+        self._async_client = OpenAI(
+            timeout=180,
+            max_retries=3,
+            api_key="Set-but-ignored",  # required but ignored
+            base_url=self._url,
+        )
 
     def _start_server(self) -> None:
         r"""Starts the Ollama server in a subprocess."""
@@ -119,6 +125,43 @@ class OllamaModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into Ollama model backend."
                 )
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
+        """
+        if self.model_config_dict.get("response_format"):
+            # stream is not supported in beta.chat.completions.parse
+            if "stream" in self.model_config_dict:
+                del self.model_config_dict["stream"]
+
+            response = self._async_client.beta.chat.completions.parse(
+                messages=messages,
+                model=self.model_type,
+                **self.model_config_dict,
+            )
+
+            return self._to_chat_completion(response)
+
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+        return response
 
     def _run(
         self,
