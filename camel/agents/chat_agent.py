@@ -552,7 +552,7 @@ class ChatAgent(BaseAgent):
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
-            response = self._get_model_response(
+            response = await self._aget_model_response(
                 openai_messages, response_format, num_tokens
             )
 
@@ -628,6 +628,43 @@ class ChatAgent(BaseAgent):
             return self._handle_batch_response(response)
         else:
             return self._handle_stream_response(response, num_tokens)
+
+    async def _aget_model_response(
+        self,
+        openai_messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        num_tokens: int,
+    ) -> _ModelResponse:
+        r"""Internal function for agent step model response."""
+
+        response = None
+        try:
+            response = await self.model_backend.arun(
+                openai_messages, response_format, self._get_full_tool_schemas()
+            )
+        except Exception as exc:
+            logger.error(
+                f"An error occurred while running model "
+                f"{self.model_backend.model_type}, "
+                f"index: {self.model_backend.current_model_index}",
+                exc_info=exc,
+            )
+        if not response:
+            raise ModelProcessingError(
+                "Unable to process messages: none of the provided models "
+                "run succesfully."
+            )
+
+        logger.info(
+            f"Model {self.model_backend.model_type}, "
+            f"index {self.model_backend.current_model_index}, "
+            f"processed these messages: {openai_messages}"
+        )
+
+        if isinstance(response, ChatCompletion):
+            return self._handle_batch_response(response)
+        else:
+            return await self._ahandle_stream_response(response, num_tokens)
 
     def _step_get_info(
         self,
@@ -792,6 +829,59 @@ class ChatAgent(BaseAgent):
             return obj.dict()
         else:
             raise TypeError("The object is not a Pydantic model")
+
+    async def _ahandle_stream_response(
+        self,
+        response: Stream[ChatCompletionChunk],
+        prompt_tokens: int,
+    ) -> _ModelResponse:
+        r"""Process a stream response from the model and extract the necessary
+        information.
+
+        Args:
+            response (dict): Model response.
+            prompt_tokens (int): Number of input prompt tokens.
+
+        Returns:
+            _ModelResponse: a parsed model response.
+        """
+        content_dict: defaultdict = defaultdict(lambda: "")
+        finish_reasons_dict: defaultdict = defaultdict(lambda: "")
+        output_messages: List[BaseMessage] = []
+        response_id: str = ""
+        # All choices in one response share one role
+        async for chunk in response:
+            response_id = chunk.id
+            for choice in chunk.choices:
+                index = choice.index
+                delta = choice.delta
+                if delta.content is not None:
+                    # When response has not been stopped
+                    # Notice that only the first chunk_dict has the "role"
+                    content_dict[index] += delta.content
+                if choice.finish_reason:
+                    finish_reasons_dict[index] = choice.finish_reason
+                    chat_message = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=dict(),
+                        content=content_dict[index],
+                    )
+                    output_messages.append(chat_message)
+        finish_reasons = [
+            finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
+        ]
+        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
+
+        # TODO: Handle tool calls
+        return _ModelResponse(
+            response=response,
+            tool_call_request=None,
+            output_messages=output_messages,
+            finish_reasons=finish_reasons,
+            usage_dict=usage_dict,
+            response_id=response_id,
+        )
 
     def _handle_stream_response(
         self,
