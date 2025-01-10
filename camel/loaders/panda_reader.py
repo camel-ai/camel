@@ -36,65 +36,45 @@ class PandaReader:
                 api_token=os.getenv("OPENAI_API_KEY"),
             )
 
+        self.__LOADER = {
+            ".csv": self.read_csv,
+            ".xlsx": self.read_excel,
+            ".xls": self.read_excel,
+            ".json": self.read_json,
+            ".parquet": self.read_parquet,
+            ".sql": self.read_sql,
+            ".html": self.read_html,
+            ".feather": self.read_feather,
+            ".dta": self.read_stata,
+            ".sas": self.read_sas,
+            ".pkl": self.read_pickle,
+            ".h5": self.read_hdf,
+            ".orc": self.read_orc,
+        }
+
     def load(
         self, data: Union[DataFrame, str], *args: Any, **kwargs: Dict[str, Any]
     ) -> SmartDataframe:
+        r"""Loads a file or DataFrame and returns a SmartDataframe object.
+
+        args:
+            data (Union[DataFrame, str]): The data to load.
+            *args (Any): Additional positional arguments.
+            **kwargs (Dict[str, Any]): Additional keyword arguments.
+
+        Returns:
+            SmartDataframe: The SmartDataframe object.
+        """
         if isinstance(data, DataFrame):
             return SmartDataframe(data, config=self.config)
         file_path = str(data)
         path = Path(file_path)
         if not file_path.startswith("http") and not path.exists():
             raise FileNotFoundError(f"File {file_path} not found")
-        if path.suffix == ".csv":
+        if path.suffix in self.__LOADER:
             return SmartDataframe(
-                self.read_csv(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".xlsx" or path.suffix == ".xls":
-            return SmartDataframe(
-                self.read_excel(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".json":
-            return SmartDataframe(
-                self.read_json(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".parquet":
-            return SmartDataframe(
-                self.read_parquet(file_path, *args, **kwargs),
+                self.__LOADER[path.suffix](file_path, *args, **kwargs),  # type: ignore[operator]
                 config=self.config,
-            )
-        elif path.suffix == ".sql":
-            return SmartDataframe(
-                self.read_sql(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".html":
-            return SmartDataframe(
-                self.read_html(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".feather":
-            return SmartDataframe(
-                self.read_feather(file_path, *args, **kwargs),
-                config=self.config,
-            )
-        elif path.suffix == ".dta":
-            return SmartDataframe(
-                self.read_stata(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".sas":
-            return SmartDataframe(
-                self.read_sas(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".pkl":
-            return SmartDataframe(
-                self.read_pickle(file_path, *args, **kwargs),
-                config=self.config,
-            )
-        elif path.suffix == ".h5":
-            return SmartDataframe(
-                self.read_hdf(file_path, *args, **kwargs), config=self.config
-            )
-        elif path.suffix == ".orc":
-            return SmartDataframe(
-                self.read_orc(file_path, *args, **kwargs), config=self.config
             )
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")
@@ -112,7 +92,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.csv'):
+        if not file_path.endswith(".csv"):
             raise ValueError("Only CSV files are supported")
         return pd.read_csv(file_path, *args, **kwargs)
 
@@ -129,7 +109,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.xlsx') and not file_path.endswith('.xls'):
+        if not file_path.endswith(".xlsx") and not file_path.endswith(".xls"):
             raise ValueError("Only Excel files are supported")
         return pd.read_excel(file_path, *args, **kwargs)
 
@@ -146,7 +126,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.json'):
+        if not file_path.endswith(".json"):
             raise ValueError("Only JSON files are supported")
         return pd.read_json(file_path, *args, **kwargs)
 
@@ -163,7 +143,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.parquet'):
+        if not file_path.endswith(".parquet"):
             raise ValueError("Only Parquet files are supported")
         return pd.read_parquet(file_path, *args, **kwargs)
 
@@ -221,7 +201,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.html'):
+        if not file_path.endswith(".html"):
             raise ValueError("Only HTML files are supported")
         return pd.read_html(file_path, *args, **kwargs)
 
@@ -238,7 +218,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.feather'):
+        if not file_path.endswith(".feather"):
             raise ValueError("Only Feather files are supported")
         return pd.read_feather(file_path, *args, **kwargs)
 
@@ -255,7 +235,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.dta'):
+        if not file_path.endswith(".dta"):
             raise ValueError("Only Stata files are supported")
         return pd.read_stata(file_path, *args, **kwargs)
 
@@ -272,7 +252,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.sas'):
+        if not file_path.endswith(".sas"):
             raise ValueError("Only SAS files are supported")
         return pd.read_sas(file_path, *args, **kwargs)
 
@@ -289,7 +269,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.pkl'):
+        if not file_path.endswith(".pkl"):
             raise ValueError("Only Pickle files are supported")
         return pd.read_pickle(file_path, *args, **kwargs)
 
@@ -306,7 +286,7 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.h5'):
+        if not file_path.endswith(".h5"):
             raise ValueError("Only HDF files are supported")
         return pd.read_hdf(file_path, *args, **kwargs)
 
@@ -323,6 +303,6 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith('.orc'):
+        if not file_path.endswith(".orc"):
             raise ValueError("Only ORC files are supported")
         return pd.read_orc(file_path, *args, **kwargs)
