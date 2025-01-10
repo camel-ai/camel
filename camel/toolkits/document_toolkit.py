@@ -395,3 +395,40 @@ class DocumentToolkit(BaseToolkit):
         return [
             FunctionTool(self.ask_question_about_document),
         ]
+
+
+# @mengkang: unit tests for document toolkit
+if __name__ == "__main__":
+    import pytest
+    from camel.toolkits import DocumentToolkit
+
+    @pytest.fixture
+    def document_toolkit():
+        return DocumentToolkit()
+
+
+    def test_document_1(document_toolkit):
+
+        document_path = "https://en.wikipedia.org/wiki/Mercedes_Sosa"
+        question = "How many studio albums were published by Mercedes Sosa between 2000 and 2009 (included)? Please answer with only the number."
+
+        res = document_toolkit.ask_question_about_document(document_path, question)
+        assert res == "3"
+
+
+    def test_document_2(document_toolkit):
+
+        document_path = "https://www.youtube.com/watch?v=1htKBjuUWec"
+        question = "What is this location called in the official script for the episode? Give the setting exactly as it appears in the first scene heading."
+
+        res = document_toolkit.ask_question_about_document(document_path, question)
+        assert "THE CASTLE".lower() in res.lower()
+
+
+    def test_document_3(document_toolkit):
+
+        document_path = "https://en.wikipedia.org/wiki/Wikipedia:Featured_article_candidates/Giganotosaurus/archive1"
+        question = "Who nominated the only Featured Article on English Wikipedia about a dinosaur that was promoted in November 2016?"
+
+        res = document_toolkit.ask_question_about_document(document_path, question)
+        assert "FunkMonk".lower() in res.lower()
