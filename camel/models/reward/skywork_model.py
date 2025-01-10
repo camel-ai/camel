@@ -45,7 +45,11 @@ class SkyworkRewardModel(BaseRewardModel):
         attn_implementation: Optional[str] = "flash_attention_2",
         offload_folder: Optional[str] = "offload",
     ) -> None:
-        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+        from transformers import (
+            AutoModelForSequenceClassification,
+            AutoTokenizer,
+        )
+
         super().__init__(model_type, api_key, url)
         self._client = AutoModelForSequenceClassification.from_pretrained(
             model_type,
