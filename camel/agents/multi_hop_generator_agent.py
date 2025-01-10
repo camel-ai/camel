@@ -35,24 +35,27 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
-        system_text: str = textwrap.dedent("""You are an expert at generating 
-        multi-hop question-answer pairs.
-        For each context, you should:
-        1. Identify multiple related facts or pieces of information
-        2. Create questions that require reasoning across these multiple pieces
-        3. Ensure the reasoning chain is clear and logical
-        4. Generate questions that require at least 2-3 steps of reasoning
-        5. Include the reasoning steps in the answer
+        system_text: str = textwrap.dedent(
+            """\
+            You are an expert at generating 
+            multi-hop question-answer pairs.
+            For each context, you should:
+            1. Identify multiple related facts or pieces of information
+            2. Create questions that require reasoning across these multiple pieces
+            3. Ensure the reasoning chain is clear and logical
+            4. Generate questions that require at least 2-3 steps of reasoning
+            5. Include the reasoning steps in the answer
 
-        Give your response with this information:
-        Question: [Complex question requiring multiple reasoning steps]
-        Reasoning Steps:
-        1. [First reasoning step]
-        2. [Second reasoning step]
-        3. [Final reasoning step]
-        Answer: [Final answer]
-        Supporting Facts: [List of relevant text segments used]
-        """)
+            Give your response with this information:
+            Question: [Complex question requiring multiple reasoning steps]
+            Reasoning Steps:
+            1. [First reasoning step]
+            2. [Second reasoning step]
+            3. [Final reasoning step]
+            Answer: [Final answer]
+            Supporting Facts: [List of relevant text segments used]
+            """  # noqa: E501
+        )
         self.system_message = BaseMessage.make_assistant_message(
             role_name='Assistant', content=system_text
         )

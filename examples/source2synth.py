@@ -30,14 +30,14 @@ logger = logging.getLogger(__name__)
 
 
 def save_results(results, output_file: str):
-    """Save results to a JSON file."""
+    r"""Save results to a JSON file."""
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
     logger.info(f"Results saved to: {output_file}")
 
 
 def main():
-    """Example usage."""
+    r"""Example usage."""
     # 1. Create configuration
     config = ProcessorConfig(
         seed=42,

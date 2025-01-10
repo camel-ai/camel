@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 
 
 class UserDataProcessor:
-    """User Data Processor"""
+    r"""User Data Processor."""
 
     def __init__(self, config: Optional[ProcessorConfig] = None):
         self.config = config or ProcessorConfig()
@@ -41,7 +41,7 @@ class UserDataProcessor:
     def process_text(
         self, text: str, source: str = "user_input"
     ) -> List[Dict[str, Any]]:
-        """Process a single text"""
+        r"""Process a single text."""
         # Convert text to standard format
         raw_data = [
             {
@@ -63,7 +63,7 @@ class UserDataProcessor:
     def process_batch(
         self, texts: List[str], sources: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
-        """Process multiple texts in batch"""
+        r"""Process multiple texts in batch."""
         if sources is None:
             sources = ["user_input"] * len(texts)
         elif len(sources) != len(texts):
@@ -89,7 +89,7 @@ class UserDataProcessor:
 
 
 class ExampleConstructor:
-    """Example Constructor"""
+    r"""Example Constructor."""
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class ExampleConstructor:
     def construct_examples(
         self, raw_data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Construct training examples"""
+        r"""Construct training examples."""
         logger.info("Starting to construct training examples...")
         examples = []
 
@@ -135,7 +135,7 @@ class ExampleConstructor:
         return examples
 
     def _preprocess_text(self, text: str) -> str:
-        """Text preprocessing"""
+        r"""Text preprocessing."""
         if not isinstance(text, str):
             return ''
 
@@ -156,7 +156,7 @@ class ExampleConstructor:
         return text
 
     def _check_text_quality(self, text: str) -> bool:
-        """Check text quality"""
+        r"""Check text quality."""
         # 1. Basic quality check
         if text.count('.') < 2:  # Must have at least 2 sentences
             return False
@@ -171,7 +171,7 @@ class ExampleConstructor:
         return True
 
     def _extract_info_pairs(self, text: str) -> List[Dict[str, Sequence[str]]]:
-        """Extract information pairs and relationships"""
+        r"""Extract information pairs and relationships."""
         # Split into sentences
         sentences = [s.strip() for s in text.split('.') if s.strip()]
         info_pairs = []
@@ -200,7 +200,7 @@ class ExampleConstructor:
     def _generate_qa_pairs(
         self, info_pairs: List[Dict[str, Sequence[str]]]
     ) -> List[Dict[str, str]]:
-        """Generate multi-hop question-answer pairs"""
+        r"""Generate multi-hop question-answer pairs."""
         qa_pairs = []
 
         for pair in info_pairs:
@@ -219,7 +219,7 @@ class ExampleConstructor:
         return qa_pairs
 
     def _calculate_complexity(self, qa_pairs: List[Dict[str, Any]]) -> float:
-        """Calculate complexity of QA pairs"""
+        r"""Calculate complexity of QA pairs."""
         if not qa_pairs:
             return 0.0
 
@@ -256,7 +256,7 @@ class ExampleConstructor:
 
 
 class DataCurator:
-    """Data Manager"""
+    r"""Data Manager."""
 
     def __init__(self, config: ProcessorConfig):
         self.config = config
@@ -264,7 +264,7 @@ class DataCurator:
     def curate_dataset(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Dataset management"""
+        r"""Dataset management."""
         logger.info("Starting dataset management...")
 
         # 1. Quality filtering
@@ -296,7 +296,7 @@ class DataCurator:
     def _quality_filter(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Quality filtering"""
+        r"""Quality filtering."""
         filtered = []
 
         for example in examples:
@@ -314,7 +314,7 @@ class DataCurator:
         return filtered
 
     def _check_qa_quality(self, qa_pairs: List[Dict[str, str]]) -> bool:
-        """Check quality of QA pairs"""
+        r"""Check quality of QA pairs."""
         if not qa_pairs:
             return False
 
@@ -335,7 +335,7 @@ class DataCurator:
     def _complexity_filter(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Complexity filtering"""
+        r"""Complexity filtering."""
         return [
             example
             for example in examples
@@ -346,7 +346,7 @@ class DataCurator:
     def _remove_duplicates(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Remove duplicates"""
+        r"""Remove duplicates."""
         seen = set()
         unique_examples = []
 
@@ -366,7 +366,7 @@ class DataCurator:
     def _sample_dataset(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Sample to target dataset size"""
+        r"""Sample to target dataset size."""
         if len(examples) <= self.config.dataset_size:
             return examples
 

@@ -83,8 +83,7 @@ class AbstractProgrammableAgent(abc.ABC):
 
     @abc.abstractmethod
     def repair_state(self, requirement: ProgrammableAgentRequirement) -> None:
-        r"""
-        Repair the state of the agent.
+        r"""Repair the state of the agent.
 
         Agents may have other non-atomic interfaces, such as a user interface,
         or chat between other agents.
@@ -98,8 +97,7 @@ class AbstractProgrammableAgent(abc.ABC):
 def programmable_capability(
     func: Callable[..., ProgrammedAgentInstructionResult[T]],
 ) -> Callable[..., ProgrammedAgentInstructionResult[T]]:
-    r"""
-    Decorator for programmable agent capabilities.
+    r"""Decorator for programmable agent capabilities.
 
     Wraps a method to ensure it is executed atomically via the agent's
     run_atomic interface.
@@ -117,8 +115,7 @@ def programmable_capability(
 
 
 class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
-    r"""
-    A chat agent that can be programmed to perform specific tasks.
+    r"""A chat agent that can be programmed to perform specific tasks.
 
     Provides a default implementation of atomic execution using threading locks
     and basic state tracking for message roles. Implementing classes need to
