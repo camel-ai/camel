@@ -32,6 +32,11 @@ from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
 
+# Add current folder to sys.path to enable relative import
+current_folder = os.getcwd()
+if current_folder not in sys.path:
+    sys.path.append(current_folder)
+
 
 def process_messages(
     chat_history: List[Dict[str, Any]],

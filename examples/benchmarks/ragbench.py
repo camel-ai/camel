@@ -11,24 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .discord import DiscordApp
-from .slack.models import (
-    SlackAppMentionEventBody,
-    SlackAppMentionEventProfile,
-    SlackAuthProfile,
-    SlackEventBody,
-    SlackEventProfile,
-)
-from .slack.slack_app import SlackApp
-from .telegram_bot import TelegramBot
 
-__all__ = [
-    'DiscordApp',
-    'SlackApp',
-    'SlackAppMentionEventBody',
-    'SlackAppMentionEventProfile',
-    'SlackAuthProfile',
-    'SlackEventBody',
-    'SlackEventProfile',
-    'TelegramBot',
-]
+from camel.agents import ChatAgent
+from camel.benchmarks import RAGBenchBenchmark
+from camel.retrievers import AutoRetriever
+
+assistant_sys_msg = """You are a helpful assistant to answer question,
+         I will give you the Original Query and Retrieved Context,
+        answer the Original Query based on the Retrieved Context,
+        if you can't answer the question just say I don't know."""
+agent = ChatAgent(assistant_sys_msg)
+auto_retriever = AutoRetriever()
+
+benchmark = RAGBenchBenchmark(subset="hotpotqa", split="test")
+benchmark.download()
+results = benchmark.run(agent, auto_retriever)
+print(results)

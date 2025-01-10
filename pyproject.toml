@@ -72,6 +72,7 @@ sentence-transformers = { version = "^3.0.1", optional = true }
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
 rank-bm25 = { version = "^0.2.2", optional = true }
+ragas = { version = "<=0.1.6", optional = true }
 
 # Storage solutions
 neo4j = { version = "^5.18.0", optional = true }
@@ -123,6 +124,7 @@ praw = { version = "^7.7.1", optional = true }
 
 # Data science and analytics tools
 rouge = { version = "^1.0.1", optional = true }
+aiosqlite = { version = "^0.20.0", optional = true }
 textblob = { version = "^0.17.1", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
 datacommons_pandas = { version = "^0.0.3", optional = true }
@@ -221,6 +223,7 @@ data_tools = [
     "datacommons",
     "datacommons_pandas",
     "rouge",
+    "aiosqlite",
     "openbb",
     "stripe",
 ]
@@ -309,6 +312,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "rouge",
+    "aiosqlite",
     "outlines",
     "e2b-code-interpreter",
     "firecrawl-py",
@@ -361,6 +365,7 @@ all = [
     "google-cloud-storage",
     "botocore",
     "dappier",
+    "ragas",
 ]
 
 [tool.poetry.group.dev]
@@ -479,6 +484,7 @@ module = [
     "qdrant_client.*",
     "unstructured.*",
     "rouge",
+    "aiosqlite",
     "e2b_code_interpreter",
     "firecrawl",
     "imageio",
@@ -522,5 +528,6 @@ module = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
+    "ragas",
 ]
 ignore_missing_imports = true
