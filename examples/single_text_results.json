@@ -1,0 +1,91 @@
+[
+  {
+    "text": "The invention of transistors revolutionized electronics in the 1950s. \n        These tiny semiconductor devices enabled the development of smaller and more \n        efficient computers. The miniaturization of computers led to the creation of \n        personal computers in the 1980s, which transformed how people work and communicate. \n        This digital revolution eventually gave rise to the internet, connecting billions \n        of people worldwide. Today, this interconnected network powers artificial \n        intelligence systems that are reshaping various industries.",
+    "qa_pairs": [
+      {
+        "question": "How did the invention of transistors impact the development of personal computers?",
+        "reasoning_steps": [
+          {
+            "step": "Understand what transistors are and their role in electronics."
+          },
+          {
+            "step": "Recognize that transistors allowed for smaller and more efficient computers."
+          },
+          {
+            "step": "Identify that the miniaturization of computers in the 1980s led to the creation of personal computers."
+          },
+          {
+            "step": "Conclude that transistors were essential for the development of personal computers."
+          }
+        ],
+        "answer": "Transistors enabled the miniaturization of computers, which led to the creation of personal computers in the 1980s.",
+        "supporting_facts": [
+          "Transistors are semiconductor devices that revolutionized electronics.",
+          "The miniaturization of computers made them smaller and more efficient.",
+          "Personal computers emerged in the 1980s as a result of advancements in computer technology."
+        ],
+        "type": "multi_hop_qa"
+      },
+      {
+        "question": "What was the sequence of developments that led to the rise of the internet?",
+        "reasoning_steps": [
+          {
+            "step": "Identify the role of tiny semiconductor devices in computer development."
+          },
+          {
+            "step": "Recognize that these devices enabled the creation of smaller and more efficient computers."
+          },
+          {
+            "step": "Understand that the miniaturization of computers led to the development of personal computers in the 1980s."
+          },
+          {
+            "step": "Acknowledge that the rise of personal computers contributed to the digital revolution."
+          },
+          {
+            "step": "Conclude that the digital revolution eventually led to the creation of the internet."
+          }
+        ],
+        "answer": "The development of tiny semiconductor devices led to smaller computers, which resulted in personal computers and ultimately the rise of the internet.",
+        "supporting_facts": [
+          "Tiny semiconductor devices enabled smaller and more efficient computers.",
+          "The miniaturization of computers resulted in personal computers in the 1980s.",
+          "The digital revolution connected billions of people worldwide through the internet."
+        ],
+        "type": "multi_hop_qa"
+      },
+      {
+        "question": "How did the miniaturization of computers contribute to the development of artificial intelligence systems?",
+        "reasoning_steps": [
+          {
+            "step": "Understand that the miniaturization of computers led to the creation of personal computers."
+          },
+          {
+            "step": "Recognize that personal computers transformed how people work and communicate."
+          },
+          {
+            "step": "Identify that this transformation was part of a larger digital revolution."
+          },
+          {
+            "step": "Acknowledge that the digital revolution eventually led to the rise of the internet."
+          },
+          {
+            "step": "Conclude that the internet provides the infrastructure necessary for the development of artificial intelligence systems."
+          }
+        ],
+        "answer": "The miniaturization of computers enabled personal computers, which contributed to the digital revolution and the internet, providing the foundation for artificial intelligence systems.",
+        "supporting_facts": [
+          "Miniaturization of computers led to personal computers in the 1980s.",
+          "Personal computers transformed work and communication.",
+          "The digital revolution gave rise to the internet, connecting billions of people.",
+          "The internet powers artificial intelligence systems that reshape industries."
+        ],
+        "type": "multi_hop_qa"
+      }
+    ],
+    "metadata": {
+      "source": "technology_evolution",
+      "timestamp": "",
+      "complexity": 0.862
+    }
+  }
+]
