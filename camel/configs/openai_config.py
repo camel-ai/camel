@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel, Field
 
@@ -108,31 +108,6 @@ class ChatGPTConfig(BaseConfig):
     logit_bias: Dict = Field(default_factory=dict)
     user: str = ""
     tool_choice: Optional[Union[Dict[str, str], str]] = None
-
-    def as_dict(self) -> Dict[str, Any]:
-        r"""Convert the current configuration to a dictionary.
-
-        This method converts the current configuration object to a dictionary
-        representation, which can be used for serialization or other purposes.
-
-        Returns:
-            Dict[str, Any]: A dictionary representation of the current
-                configuration.
-        """
-        from camel.toolkits import FunctionTool
-
-        config_dict = self.model_dump()
-        if self.tools:
-            tools_schema = []
-            for tool in self.tools:
-                if not isinstance(tool, FunctionTool):
-                    raise ValueError(
-                        f"The tool {tool} should "
-                        "be an instance of `FunctionTool`."
-                    )
-                tools_schema.append(tool.get_openai_tool_schema())
-            config_dict["tools"] = tools_schema
-        return config_dict
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

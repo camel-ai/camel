@@ -193,7 +193,7 @@ class OpenAIModel(BaseModelBackend):
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
-        request_config["tools"] = tools
+            request_config["tools"] = tools
 
         return self._client.chat.completions.create(
             messages=messages,
@@ -212,7 +212,7 @@ class OpenAIModel(BaseModelBackend):
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
-        request_config["tools"] = tools
+            request_config["tools"] = tools
 
         return await self._async_client.chat.completions.create(
             messages=messages,
@@ -230,7 +230,8 @@ class OpenAIModel(BaseModelBackend):
 
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
-        request_config["tools"] = tools
+        if tools is not None:
+            request_config["tools"] = tools
 
         return self._client.beta.chat.completions.parse(
             messages=messages,
@@ -248,7 +249,8 @@ class OpenAIModel(BaseModelBackend):
 
         request_config["response_format"] = response_format
         request_config.pop("stream", None)
-        request_config["tools"] = tools
+        if tools is not None:
+            request_config["tools"] = tools
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,

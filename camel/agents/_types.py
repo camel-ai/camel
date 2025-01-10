@@ -1,9 +1,10 @@
 from typing import Any, Dict, List, Optional, Union
 
+from openai import AsyncStream, Stream
 from pydantic import BaseModel, ConfigDict
 
 from camel.messages import BaseMessage
-from camel.types import AsyncStream, ChatCompletion, Stream
+from camel.types import ChatCompletion
 
 
 class ToolCallRequest(BaseModel):
