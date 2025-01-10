@@ -14,7 +14,6 @@
 from typing import Dict, List, Optional, Union
 
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from camel.models.reward import BaseRewardModel
 from camel.types import ModelType
@@ -27,14 +26,14 @@ class SkyworkRewardModel(BaseRewardModel):
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created.
-        api_key (Optional[str], optional): Not used.
-        url (Optional[str], optional): Not used.
-        device_map (Optional[str], optional): choose the device map, default
-            is "auto".
+        api_key (Optional[str], optional): Not used. (default: :obj:`None`)
+        url (Optional[str], optional): Not used. (default: :obj:`None`)
+        device_map (Optional[str], optional): choose the device map.
+            (default: :obj:`auto`)
         attn_implementation (Optional[str], optional): choose the attention
-            implementation, default is "flash_attention_2".
-        offload_folder (Optional[str], optional): choose the offload folder,
-            default is "offload".
+            implementation. (default: :obj:`flash_attention_2`)
+        offload_folder (Optional[str], optional): choose the offload folder.
+            (default: :obj:`offload`)
     """
 
     def __init__(
@@ -46,6 +45,7 @@ class SkyworkRewardModel(BaseRewardModel):
         attn_implementation: Optional[str] = "flash_attention_2",
         offload_folder: Optional[str] = "offload",
     ) -> None:
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
         super().__init__(model_type, api_key, url)
         self._client = AutoModelForSequenceClassification.from_pretrained(
             model_type,
