@@ -149,6 +149,10 @@ class DiscordApp:
 
         Returns:
             Optional[str]: The access token if successful, otherwise None.
+
+        Raises:
+            ValueError: If OAuth configuration is incomplete or invalid.
+            httpx.RequestError: If there is a network issue during the request.
         """
         if not self.oauth_flow:
             logger.warning(
@@ -164,14 +168,20 @@ class DiscordApp:
             "redirect_uri": self.redirect_uri,
         }
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        async with httpx.AsyncClient() as client:
-            response = await client.post(TOKEN_URL, data=data, headers=headers)
-            if response.status_code != 200:
-                logger.error(f"Failed to exchange code: {response.text}")
-                return None
-            response_data = response.json()
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    TOKEN_URL, data=data, headers=headers
+                )
+                if response.status_code != 200:
+                    logger.error(f"Failed to exchange code: {response.text}")
+                    return None
+                response_data = response.json()
 
-            return response_data
+                return response_data
+        except (httpx.RequestError, ValueError) as e:
+            logger.error(f"Error during token fetch: {e}")
+            return None
 
     async def get_user_info(self, access_token: str) -> Optional[dict]:
         r"""Retrieve user information using the access token.
