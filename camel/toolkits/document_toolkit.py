@@ -16,7 +16,7 @@ from io import BytesIO
 from loguru import logger
 from bs4 import BeautifulSoup
 import asyncio
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 import os
 
 import nest_asyncio
@@ -73,7 +73,6 @@ class DocumentToolkit(BaseToolkit):
             # preprocess document first
 
             status, info = self._preprocess_document(document_path)
-            breakpoint()
             if status is False:
                 return info
             logger.debug(f"Extracted document content length: {len(info)}")
@@ -108,19 +107,14 @@ class DocumentToolkit(BaseToolkit):
                 return resp.choices[0].message.content
             
             else:
-                # the document is too long, use GraphRAG
+                # the document is too long, use RAG
                 kwargs = {
                     "plain_text": document_text,
                     "question": question
                 }
-                # res = asyncio.run(self._graph_rag_query(**kwargs))
-                # res = async_to_sync(self._graph_rag_query, **kwargs)
+
                 res = self._graph_rag_query(**kwargs)
 
-                # try:
-                #     res = await asyncio.to_thread(self._graph_rag_query, **kwargs)
-                # except Exception as e:
-                #     return f"An error occurred: {e}"
                 return res
 
     
@@ -258,6 +252,14 @@ class DocumentToolkit(BaseToolkit):
         Returns:
             str: The extracted content.
         """
+        def is_valid_url(url):
+            try:
+                result = urlparse(url)
+                return all([result.scheme, result.netloc])
+            except:
+                return False
+
+
         def _extract_title(soup):
             if soup.title:
                 return soup.title.string.strip()
@@ -280,7 +282,6 @@ class DocumentToolkit(BaseToolkit):
             for img in soup.find_all('img'):
                 src = img.get('src')
                 if src:
-                    # 转换为绝对URL
                     absolute_url = urljoin(base_url, src)
                     if is_valid_url(absolute_url):
                         images.append(absolute_url)
@@ -397,7 +398,7 @@ class DocumentToolkit(BaseToolkit):
         ]
 
 
-# @mengkang: unit tests for document toolkit
+# simple test cases for document_toolkit
 if __name__ == "__main__":
     import pytest
     from camel.toolkits import DocumentToolkit
@@ -418,7 +419,7 @@ if __name__ == "__main__":
 
     def test_document_2(document_toolkit):
 
-        document_path = "https://www.youtube.com/watch?v=1htKBjuUWec"
+        document_path = "https://www.bbc.co.uk/writers/documents/doctor-who-s9-ep11-heaven-sent-steven-moffat.pdf"
         question = "What is this location called in the official script for the episode? Give the setting exactly as it appears in the first scene heading."
 
         res = document_toolkit.ask_question_about_document(document_path, question)

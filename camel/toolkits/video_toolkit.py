@@ -16,8 +16,11 @@ import io
 import logging
 import re
 import tempfile
+import os
+import subprocess
 from pathlib import Path
 from typing import List, Optional
+from .audio_toolkit import AudioToolkit
 
 from PIL import Image
 
@@ -25,7 +28,14 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+from loguru import logger
+from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor
+from qwen_vl_utils import process_vision_info
+import cv2
+from loguru import logger
+from datetime import datetime
+from retry import retry
 
 
 def _standardize_url(url: str) -> str:
@@ -41,33 +51,7 @@ def _standardize_url(url: str) -> str:
     return url
 
 
-def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
-    r"""Capture a screenshot from a video file at a specific timestamp.
-
-    Args:
-        video_file (str): The path to the video file.
-        timestamp (float): The time in seconds from which to capture the
-          screenshot.
-
-    Returns:
-        Image.Image: The captured screenshot in the form of Image.Image.
-    """
-    import ffmpeg
-
-    try:
-        out, _ = (
-            ffmpeg.input(video_file, ss=timestamp)
-            .filter('scale', 320, -1)
-            .output('pipe:', vframes=1, format='image2', vcodec='png')
-            .run(capture_stdout=True, capture_stderr=True)
-        )
-    except ffmpeg.Error as e:
-        raise RuntimeError(f"Failed to capture screenshot: {e.stderr}")
-
-    return Image.open(io.BytesIO(out))
-
-
-class VideoDownloaderToolkit(BaseToolkit):
+class VideoToolkit(BaseToolkit):
     r"""A class for downloading videos and optionally splitting them into
     chunks.
 
@@ -78,6 +62,7 @@ class VideoDownloaderToolkit(BaseToolkit):
             (default: :obj:`None`)
         cookies_path (Optional[str], optional): The path to the cookies file
             for the video service in Netscape format. (default: :obj:`None`)
+        cache_dir (Optional[str], optional): The directory to cache the model.
     """
 
     @dependencies_required("yt_dlp", "ffmpeg")
@@ -85,9 +70,13 @@ class VideoDownloaderToolkit(BaseToolkit):
         self,
         download_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
+        cache_dir: Optional[str] = None,
     ) -> None:
         self._cleanup = download_directory is None
         self._cookies_path = cookies_path
+        self._audio_toolkit = AudioToolkit(cache_dir=cache_dir)
+
+        download_directory = "tmp/"
 
         self._download_directory = Path(
             download_directory or tempfile.mkdtemp()
@@ -104,19 +93,77 @@ class VideoDownloaderToolkit(BaseToolkit):
                 f"Error creating directory {self._download_directory}: {e}"
             )
 
-        logger.info(f"Video will be downloaded to {self._download_directory}")
+        logger.info(f"Video will be downloaded into {self._download_directory}")
 
-    def __del__(self) -> None:
-        r"""Deconstructor for the VideoDownloaderToolkit class.
+        # initialize model for video understanding
+        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+            "Qwen/Qwen2-VL-7B-Instruct", 
+            attn_implementation="flash_attention_2",
+            torch_dtype="auto", 
+            device_map="auto",
+            cache_dir=cache_dir
+        )
+        self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-7B-Instruct", cache_dir=cache_dir)
 
-        Cleans up the downloaded video if they are stored in a temporary
-        directory.
+    
+    def _ask_vllm(self, video_path: str, question: str) -> str:
+        r"""Ask a question about the video using VLLM.
+
+        Args:
+            video_path (str): The path to the video file.
+            question (str): The question to ask about the video.
+        
+        Returns:
+            str: The answer to the question.
         """
-        import shutil
+        prompt = f"{question} Please answer the question based on the video content and give your reason. If you think you cannot answer the question based on the vision information, please give your reason (e.g. audio is required)."
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "video",
+                        "video": video_path,
+                        "max_pixels": 512*28*28,
+                        "fps": 2,
+                    },
+                    {
+                        "type": "text", 
+                        "text": prompt
+                    },
+                ],
+            }
+        ]
 
-        if self._cleanup:
-            shutil.rmtree(self._download_directory, ignore_errors=True)
+        text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
 
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to("cuda")
+
+        generated_ids = self.model.generate(**inputs, max_new_tokens=512)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        return output_text[0]
+
+
+    def _get_formatted_time(self) -> str:
+        import time
+        return time.strftime("%m%d-%H%M")
+
+    @retry()
     def _download_video(self, url: str) -> str:
         r"""Download the video and optionally split it into chunks.
 
@@ -128,10 +175,17 @@ class VideoDownloaderToolkit(BaseToolkit):
         """
         import yt_dlp
 
-        video_template = self._download_directory / "%(title)s.%(ext)s"
+        # Get the current time and format it as 'YYYYMMDDHHMM'
+        current_time = datetime.now().strftime("%Y%m%d%H%M")
+        # get title of the video
+
+
+        # Define the custom file name using the current time
+        video_template = self._download_directory / f"{current_time}.%(ext)s"
+
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
-            'outtmpl': str(video_template),
+            'outtmpl': str(video_template),  # Use the formatted current time as file name
             'force_generic_extractor': True,
             'cookiefile': self._cookies_path,
         }
@@ -141,61 +195,76 @@ class VideoDownloaderToolkit(BaseToolkit):
                 # Download the video and get the filename
                 logger.info(f"Downloading video from {url}...")
                 info = ydl.extract_info(url, download=True)
-                return ydl.prepare_filename(info)
+                # Prepare the filename after download
+                filename = ydl.prepare_filename(info)
+                return filename  # Return the custom file path
         except yt_dlp.utils.DownloadError as e:
             raise RuntimeError(f"Failed to download video from {url}: {e}")
 
-    def get_video_bytes(
-        self,
-        video_url: str,
-    ) -> bytes:
-        r"""Download video by the URL, and return the content in bytes.
+
+    def _extract_audio_from_video(self, video_file_path: str) -> str:
+        r"""Extract audio from video and convert it to text.
 
         Args:
-            video_url (str): The URL of the video to download.
+            video_file_path (str): The path to the video file.
 
         Returns:
-            bytes: The video file content in bytes.
+            str: The extracted text from the audio of the video.
         """
-        url = _standardize_url(video_url)
-        video_file = self._download_video(url)
 
-        with open(video_file, 'rb') as f:
-            video_bytes = f.read()
+        file_name = os.path.basename(video_file_path).split(".")[0]
+        output_file_path = f"tmp/{file_name}.mp3"
 
-        return video_bytes
+        if os.path.exists(output_file_path):
+            os.remove(output_file_path)
+        
+        # cmd = f'ffmpeg -i "{video_file_path}" -vn -acodec pcm_s16le -ar 44100 -ab 160k -ac 2 "{output_file_path}"'
+        cmd = f'ffmpeg -i "{video_file_path}" -vn -acodec libmp3lame -ar 44100 -ab 160k -ac 2 "{output_file_path}"'
 
-    def get_video_screenshots(
-        self, video_url: str, amount: int
-    ) -> List[Image.Image]:
-        r"""Capture screenshots from the video at specified timestamps or by
-        dividing the video into equal parts if an integer is provided.
+        subprocess.call(cmd, shell=True)
+
+        return output_file_path
+    
+
+    def ask_question_about_video(self, video_path: str, question: str) -> str:
+        r"""Ask a question about the video.
 
         Args:
-            video_url (str): The URL of the video to take screenshots.
-            amount (int): the amount of evenly split screenshots to capture.
-
+            video_path (str): The path to the video file. It can be a local file or a URL.
+            question (str): The question to ask about the video.
+        
         Returns:
-            List[Image.Image]: A list of screenshots as Image.Image.
+            str: The answer to the question.
         """
-        import ffmpeg
 
-        url = _standardize_url(video_url)
-        video_file = self._download_video(url)
+        # use asr and video understanding model to answer the question
+        from urllib.parse import urlparse
+        parsed_url = urlparse(video_path)
+        is_url = all([parsed_url.scheme, parsed_url.netloc])
+        
+        if is_url:
+            video_path = self._download_video(video_path)
+        
+        audio_file_path = self._extract_audio_from_video(video_path)
+        
+        vision_answer = self._ask_vllm(video_path, question)
+        audio_answer = self._audio_toolkit.ask_question_about_audio(audio_file_path, question)
 
-        # Get the video length
-        try:
-            probe = ffmpeg.probe(video_file)
-            video_length = float(probe['format']['duration'])
-        except ffmpeg.Error as e:
-            raise RuntimeError(f"Failed to determine video length: {e.stderr}")
+        return_text = f"""
+            Here is the answer from the vision model:
+            ```
+            {vision_answer}
+            ```
+            Here is the answer from the audio model:
+            ```
+            {audio_answer}
+            ```
+            Please note that the vision model can only process visual information, and the audio model can only process audio information.
+            Thus, You need to decide whether the questions you ask should focus on the visual model or the extracted audio text information, and make final answer by yourself.
+        """
+        logger.debug(f"Answer to the question: {return_text}")
+        return return_text
 
-        interval = video_length / (amount + 1)
-        timestamps = [i * interval for i in range(1, amount + 1)]
-
-        images = [_capture_screenshot(video_file, ts) for ts in timestamps]
-
-        return images
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
@@ -206,6 +275,6 @@ class VideoDownloaderToolkit(BaseToolkit):
                 the functions in the toolkit.
         """
         return [
-            FunctionTool(self.get_video_bytes),
-            FunctionTool(self.get_video_screenshots),
+            FunctionTool(self.ask_question_about_video),
+            # FunctionTool(self._ask_vllm),
         ]
