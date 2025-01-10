@@ -77,6 +77,7 @@ jobs:
           GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
           DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
           DAPPIER_API_KEY: "${{ secrets.DAPPIER_API_KEY }}"
+          DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test
