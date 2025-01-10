@@ -1,1 +1,0 @@
-# The initial idea is to use instructmodel to generate initial good and bad response data, then use rewardmodel to filter, and finally output filtered data
