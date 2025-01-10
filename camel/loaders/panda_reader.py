@@ -12,13 +12,41 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore[import-untyped]
 from pandas import DataFrame
 from pandasai import SmartDataframe  # type: ignore[import-untyped]
 from pandasai.llm import OpenAI  # type: ignore[import-untyped]
+
+
+def check_suffix(valid_suffixs: List[str]) -> Callable:
+    r"""A decorator to check the file suffix of a given file path.
+
+    Args:
+        valid_suffix (str): The required file suffix.
+
+    Returns:
+        Callable: The decorator function.
+    """
+
+    def decorator(func: Callable):
+        @wraps(func)
+        def wrapper(
+            self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
+        ) -> DataFrame:
+            suffix = Path(file_path).suffix
+            if suffix not in valid_suffixs:
+                raise ValueError(
+                    f"Only {', '.join(valid_suffixs)} files are supported"
+                )
+            return func(self, file_path, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class PandaReader:
@@ -79,6 +107,7 @@ class PandaReader:
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")
 
+    @check_suffix([".csv"])
     def read_csv(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -92,10 +121,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".csv"):
-            raise ValueError("Only CSV files are supported")
         return pd.read_csv(file_path, *args, **kwargs)
 
+    @check_suffix([".xlsx", ".xls"])
     def read_excel(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -109,10 +137,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".xlsx") and not file_path.endswith(".xls"):
-            raise ValueError("Only Excel files are supported")
         return pd.read_excel(file_path, *args, **kwargs)
 
+    @check_suffix([".json"])
     def read_json(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -126,10 +153,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".json"):
-            raise ValueError("Only JSON files are supported")
         return pd.read_json(file_path, *args, **kwargs)
 
+    @check_suffix([".parquet"])
     def read_parquet(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -143,8 +169,6 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".parquet"):
-            raise ValueError("Only Parquet files are supported")
         return pd.read_parquet(file_path, *args, **kwargs)
 
     def read_sql(self, *args: Any, **kwargs: Dict[str, Any]) -> DataFrame:
@@ -188,6 +212,7 @@ class PandaReader:
         """
         return pd.read_clipboard(*args, **kwargs)
 
+    @check_suffix([".html"])
     def read_html(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -201,10 +226,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".html"):
-            raise ValueError("Only HTML files are supported")
         return pd.read_html(file_path, *args, **kwargs)
 
+    @check_suffix([".feather"])
     def read_feather(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -218,10 +242,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".feather"):
-            raise ValueError("Only Feather files are supported")
         return pd.read_feather(file_path, *args, **kwargs)
 
+    @check_suffix([".dta"])
     def read_stata(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -235,10 +258,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".dta"):
-            raise ValueError("Only Stata files are supported")
         return pd.read_stata(file_path, *args, **kwargs)
 
+    @check_suffix([".sas"])
     def read_sas(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -252,10 +274,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".sas"):
-            raise ValueError("Only SAS files are supported")
         return pd.read_sas(file_path, *args, **kwargs)
 
+    @check_suffix([".pkl"])
     def read_pickle(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -269,10 +290,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".pkl"):
-            raise ValueError("Only Pickle files are supported")
         return pd.read_pickle(file_path, *args, **kwargs)
 
+    @check_suffix([".h5"])
     def read_hdf(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -286,10 +306,9 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".h5"):
-            raise ValueError("Only HDF files are supported")
         return pd.read_hdf(file_path, *args, **kwargs)
 
+    @check_suffix([".orc"])
     def read_orc(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
     ) -> DataFrame:
@@ -303,6 +322,4 @@ class PandaReader:
         Returns:
             DataFrame: The DataFrame object.
         """
-        if not file_path.endswith(".orc"):
-            raise ValueError("Only ORC files are supported")
         return pd.read_orc(file_path, *args, **kwargs)
