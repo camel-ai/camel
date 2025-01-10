@@ -29,8 +29,16 @@ from typing import (
 )
 
 from openai import AsyncStream, Stream
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
+from camel.agents._types import ModelResponse, ToolCallRequest
+from camel.agents._utils import (
+    convert_to_function_tool,
+    convert_to_schema,
+    get_info_dict,
+    handle_logprobs,
+    safe_model_dump,
+)
 from camel.agents.base import BaseAgent
 from camel.memories import (
     AgentMemory,
@@ -50,12 +58,12 @@ from camel.toolkits import FunctionTool
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
-    Choice,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
 )
+from camel.types.agents import ToolCallingRecord
 from camel.utils import get_model_encoding
 
 if TYPE_CHECKING:
@@ -74,149 +82,6 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
-
-
-def _convert_to_function_tool(
-    tool: Union[FunctionTool, Callable],
-) -> FunctionTool:
-    return tool if isinstance(tool, FunctionTool) else FunctionTool(tool)
-
-
-def _convert_to_schema(
-    tool: Union[FunctionTool, Callable, Dict[str, Any]],
-) -> Dict[str, Any]:
-    if isinstance(tool, FunctionTool):
-        return tool.get_openai_tool_schema()
-    elif callable(tool):
-        return FunctionTool(tool).get_openai_tool_schema()
-    else:
-        return tool
-
-
-def _safe_model_dump(obj) -> Dict[str, Any]:
-    r"""Safely dump a Pydantic model to a dictionary.
-
-    This method attempts to use the `model_dump` method if available,
-    otherwise it falls back to the `dict` method.
-    """
-    # Check if the `model_dump` method exists (Pydantic v2)
-    if hasattr(obj, "model_dump"):
-        return obj.model_dump()
-    # Fallback to `dict()` method (Pydantic v1)
-    elif hasattr(obj, "dict"):
-        return obj.dict()
-    else:
-        raise TypeError("The object is not a Pydantic model")
-
-
-def _get_info_dict(
-    session_id: Optional[str],
-    usage: Optional[Dict[str, int]],
-    termination_reasons: List[str],
-    num_tokens: int,
-    tool_calls: List[ToolCallingRecord],
-) -> Dict[str, Any]:
-    r"""Returns a dictionary containing information about the chat session.
-
-    Args:
-        session_id (str, optional): The ID of the chat session.
-        usage (Dict[str, int], optional): Information about the usage of
-            the LLM.
-        termination_reasons (List[str]): The reasons for the termination
-            of the chat session.
-        num_tokens (int): The number of tokens used in the chat session.
-        tool_calls (List[FunctionCallingRecord]): The list of function
-            calling records, containing the information of called tools.
-
-    Returns:
-        Dict[str, Any]: The chat session information.
-    """
-    return {
-        "id": session_id,
-        "usage": usage,
-        "termination_reasons": termination_reasons,
-        "num_tokens": num_tokens,
-        "tool_calls": tool_calls,
-    }
-
-
-def _handle_logprobs(choice: Choice) -> Optional[List[Dict[str, Any]]]:
-    # Process log probabilities, append to the message meta information
-    if choice.logprobs is None:
-        return None
-
-    tokens_logprobs = choice.logprobs.content
-
-    if tokens_logprobs is None:
-        return None
-
-    # Extract and structure logprob information
-    return [
-        {
-            "token": token_logprob.token,
-            "logprob": token_logprob.logprob,
-            "top_logprobs": [
-                (top_logprob.token, top_logprob.logprob)
-                for top_logprob in token_logprob.top_logprobs
-            ],
-        }
-        for token_logprob in tokens_logprobs
-    ]
-
-
-class _ToolCallRequest(BaseModel):
-    r"""The request for tool calling."""
-
-    func_name: str
-    args: Dict[str, Any]
-
-
-class _ModelResponse(BaseModel):
-    r"""The response from the model."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    response: Union[ChatCompletion, Stream, AsyncStream]
-    tool_call_request: Optional[_ToolCallRequest]
-    output_messages: List[BaseMessage]
-    finish_reasons: List[str]
-    usage_dict: Dict[str, Any]
-    response_id: str
-
-
-class ToolCallingRecord(BaseModel):
-    r"""Historical records of functions called in the conversation.
-
-    Attributes:
-        func_name (str): The name of the function being called.
-        args (Dict[str, Any]): The dictionary of arguments passed to
-            the function.
-        result (Any): The execution result of calling this function.
-    """
-
-    func_name: str
-    args: Dict[str, Any]
-    result: Any
-
-    def __str__(self) -> str:
-        r"""Overridden version of the string function.
-
-        Returns:
-            str: Modified string to represent the function calling.
-        """
-        return (
-            f"Function Execution: {self.func_name}\n"
-            f"\tArgs: {self.args}\n"
-            f"\tResult: {self.result}"
-        )
-
-    def as_dict(self) -> Dict[str, Any]:
-        r"""Returns the function calling record as a dictionary.
-
-        Returns:
-            dict[str, Any]: The function calling record as a dictionary.
-        """
-        return self.model_dump()
 
 
 @track_agent(name="ChatAgent")
@@ -319,14 +184,14 @@ class ChatAgent(BaseAgent):
         self._internal_tools = {
             tool.get_function_name(): tool
             for tool in [
-                _convert_to_function_tool(tool) for tool in (tools or [])
+                convert_to_function_tool(tool) for tool in (tools or [])
             ]
         }
 
         self._external_tool_schemas = {
             tool_schema["name"]: tool_schema
             for tool_schema in [
-                _convert_to_schema(tool) for tool in (external_tools or [])
+                convert_to_schema(tool) for tool in (external_tools or [])
             ]
         }
 
@@ -365,13 +230,13 @@ class ChatAgent(BaseAgent):
 
     def add_tool(self, tool: Union[FunctionTool, Callable]) -> None:
         r"""Add a tool to the agent."""
-        new_tool = _convert_to_function_tool(tool)
+        new_tool = convert_to_function_tool(tool)
         self._internal_tools[new_tool.get_function_name()] = new_tool
 
     def add_external_tool(
         self, tool: Union[FunctionTool, Callable, Dict[str, Any]]
     ) -> None:
-        new_tool_schema = _convert_to_schema(tool)
+        new_tool_schema = convert_to_schema(tool)
         self._external_tool_schemas[new_tool_schema["name"]] = new_tool_schema
 
     def remove_tool(self, tool_name: str) -> bool:
@@ -584,7 +449,7 @@ class ChatAgent(BaseAgent):
 
     def _parse_chatagent_response(
         self,
-        response: _ModelResponse,
+        response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
         num_tokens: int,
     ) -> ChatAgentResponse:
@@ -619,7 +484,7 @@ class ChatAgent(BaseAgent):
         openai_messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]],
         num_tokens: int,
-    ) -> _ModelResponse:
+    ) -> ModelResponse:
         r"""Internal function for agent step model response."""
 
         response = None
@@ -656,7 +521,7 @@ class ChatAgent(BaseAgent):
         openai_messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]],
         num_tokens: int,
-    ) -> _ModelResponse:
+    ) -> ModelResponse:
         r"""Internal function for agent step model response."""
 
         response = None
@@ -744,7 +609,7 @@ class ChatAgent(BaseAgent):
         if self.terminated and termination_reason is not None:
             finish_reasons = [termination_reason] * len(finish_reasons)
 
-        return _get_info_dict(
+        return get_info_dict(
             response_id,
             usage_dict,
             finish_reasons,
@@ -754,7 +619,7 @@ class ChatAgent(BaseAgent):
 
     def _handle_batch_response(
         self, response: ChatCompletion
-    ) -> _ModelResponse:
+    ) -> ModelResponse:
         r"""Process a batch response from the model and extract the necessary
         information.
 
@@ -767,7 +632,7 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
             meta_dict = {}
-            if logprobs_info := _handle_logprobs(choice):
+            if logprobs_info := handle_logprobs(choice):
                 meta_dict["logprobs_info"] = logprobs_info
 
             chat_message = BaseMessage(
@@ -786,17 +651,15 @@ class ChatAgent(BaseAgent):
 
         usage = {}
         if response.usage is not None:
-            usage = _safe_model_dump(response.usage)
+            usage = safe_model_dump(response.usage)
 
-        tool_call_request: Optional[_ToolCallRequest] = None
+        tool_call_request: Optional[ToolCallRequest] = None
         if tool_calls := response.choices[0].message.tool_calls:
             func_name = tool_calls[0].function.name
             args = json.loads(tool_calls[0].function.arguments)
-            tool_call_request = _ToolCallRequest(
-                func_name=func_name, args=args
-            )
+            tool_call_request = ToolCallRequest(func_name=func_name, args=args)
 
-        return _ModelResponse(
+        return ModelResponse(
             response=response,
             tool_call_request=tool_call_request,
             output_messages=output_messages,
@@ -809,7 +672,7 @@ class ChatAgent(BaseAgent):
         self,
         response: Stream[ChatCompletionChunk],
         prompt_tokens: int,
-    ) -> _ModelResponse:
+    ) -> ModelResponse:
         r"""Process a stream response from the model and extract the necessary
         information.
 
@@ -836,7 +699,7 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
 
         # TODO: Handle tool calls
-        return _ModelResponse(
+        return ModelResponse(
             response=response,
             tool_call_request=None,
             output_messages=output_messages,
@@ -849,7 +712,7 @@ class ChatAgent(BaseAgent):
         self,
         response: AsyncStream[ChatCompletionChunk],
         prompt_tokens: int,
-    ) -> _ModelResponse:
+    ) -> ModelResponse:
         r"""Process a stream response from the model and extract the necessary
         information.
 
@@ -876,7 +739,7 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
 
         # TODO: Handle tool calls
-        return _ModelResponse(
+        return ModelResponse(
             response=response,
             tool_call_request=None,
             output_messages=output_messages,
@@ -885,18 +748,14 @@ class ChatAgent(BaseAgent):
             response_id=response_id,
         )
 
-    def _handle_choice_chunk(
+    def _handle_chunk(
         self,
         chunk: ChatCompletionChunk,
         content_dict: defaultdict,
         finish_reasons_dict: defaultdict,
         output_messages: List[BaseMessage],
-    ) -> Optional[BaseMessage]:
-        r"""Handle a chunk of the model response.
-
-        Returns:
-            Optional[BaseMessage]: The message if the response is finished.
-        """
+    ) -> None:
+        r"""Handle a chunk of the model response."""
         for choice in chunk.choices:
             index = choice.index
             delta = choice.delta
@@ -936,7 +795,7 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = True
 
-        info = _get_info_dict(
+        info = get_info_dict(
             None,
             None,
             [termination_reason],
@@ -952,7 +811,7 @@ class ChatAgent(BaseAgent):
 
     def _execute_tool(
         self,
-        tool_call_request: _ToolCallRequest,
+        tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
         r"""Execute the tool with arguments following the model's response.
 
@@ -973,7 +832,7 @@ class ChatAgent(BaseAgent):
 
     async def _aexecute_tool(
         self,
-        tool_call_request: _ToolCallRequest,
+        tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
         r"""Execute the async tool with arguments following the model's
         response.
