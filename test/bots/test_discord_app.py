@@ -21,12 +21,12 @@ from camel.bots import DiscordApp
 class TestDiscordApp(unittest.TestCase):
     def setUp(self):
         # Set environment variables to simulate the token
-        os.environ['DISCORD_TOKEN'] = 'fake_token'
+        os.environ['DISCORD_BOT_TOKEN'] = 'fake_token'
 
     def tearDown(self):
         # Clear the environment variable after the test
-        if 'DISCORD_TOKEN' in os.environ:
-            del os.environ['DISCORD_TOKEN']
+        if 'DISCORD_BOT_TOKEN' in os.environ:
+            del os.environ['DISCORD_BOT_TOKEN']
 
     @patch('discord.Client')
     def test_init_with_token_from_env(self, mock_discord_client):
@@ -46,7 +46,7 @@ class TestDiscordApp(unittest.TestCase):
     @patch('discord.Client')
     def test_init_raises_value_error_without_token(self, mock_discord_client):
         # Test that ValueError is raised if no token is set
-        del os.environ['DISCORD_TOKEN']  # Remove the environment variable
+        del os.environ['DISCORD_BOT_TOKEN']  # Remove the environment variable
         with self.assertRaises(ValueError):
             DiscordApp()
 
