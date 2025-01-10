@@ -14,12 +14,13 @@
 import os
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
-import pandas as pd  # type: ignore[import-untyped]
-from pandas import DataFrame
-from pandasai import SmartDataframe  # type: ignore[import-untyped]
-from pandasai.llm import OpenAI  # type: ignore[import-untyped]
+import pandas as pd
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+    from pandasai import SmartDataframe
 
 
 def check_suffix(valid_suffixs: List[str]) -> Callable:
@@ -36,7 +37,7 @@ def check_suffix(valid_suffixs: List[str]) -> Callable:
         @wraps(func)
         def wrapper(
             self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-        ) -> DataFrame:
+        ) -> "DataFrame":
             suffix = Path(file_path).suffix
             if suffix not in valid_suffixs:
                 raise ValueError(
@@ -54,9 +55,14 @@ class PandaReader:
         r"""Initializes the PandaReader class.
 
         Args:
-            config (Optional[Dict[str, Any]], optional):
-                The configuration dictionary. (default: :obj:`None`)
+            config (Optional[Dict[str, Any]], optional): The configuration
+                dictionary that can include LLM API settings for LLM-based
+                processing. If not provided, it will use OpenAI with the API
+                key from the OPENAI_API_KEY environment variable. You can
+                customize the LLM configuration by providing a 'llm' key in
+                the config dictionary. (default: :obj:`None`)
         """
+        from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
         self.config = config or {}
         if "llm" not in self.config:
@@ -81,8 +87,11 @@ class PandaReader:
         }
 
     def load(
-        self, data: Union[DataFrame, str], *args: Any, **kwargs: Dict[str, Any]
-    ) -> SmartDataframe:
+        self,
+        data: Union["DataFrame", str],
+        *args: Any,
+        **kwargs: Dict[str, Any],
+    ) -> "SmartDataframe":
         r"""Loads a file or DataFrame and returns a SmartDataframe object.
 
         args:
@@ -93,6 +102,9 @@ class PandaReader:
         Returns:
             SmartDataframe: The SmartDataframe object.
         """
+        from pandas import DataFrame
+        from pandasai import SmartDataframe
+
         if isinstance(data, DataFrame):
             return SmartDataframe(data, config=self.config)
         file_path = str(data)
@@ -110,7 +122,7 @@ class PandaReader:
     @check_suffix([".csv"])
     def read_csv(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a CSV file and returns a DataFrame.
 
         Args:
@@ -126,7 +138,7 @@ class PandaReader:
     @check_suffix([".xlsx", ".xls"])
     def read_excel(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads an Excel file and returns a DataFrame.
 
         Args:
@@ -142,7 +154,7 @@ class PandaReader:
     @check_suffix([".json"])
     def read_json(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a JSON file and returns a DataFrame.
 
         Args:
@@ -158,7 +170,7 @@ class PandaReader:
     @check_suffix([".parquet"])
     def read_parquet(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a Parquet file and returns a DataFrame.
 
         Args:
@@ -171,7 +183,7 @@ class PandaReader:
         """
         return pd.read_parquet(file_path, *args, **kwargs)
 
-    def read_sql(self, *args: Any, **kwargs: Dict[str, Any]) -> DataFrame:
+    def read_sql(self, *args: Any, **kwargs: Dict[str, Any]) -> "DataFrame":
         r"""Reads a SQL file and returns a DataFrame.
 
         Args:
@@ -185,7 +197,7 @@ class PandaReader:
 
     def read_table(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a table and returns a DataFrame.
 
         Args:
@@ -200,7 +212,7 @@ class PandaReader:
 
     def read_clipboard(
         self, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a clipboard and returns a DataFrame.
 
         Args:
@@ -215,7 +227,7 @@ class PandaReader:
     @check_suffix([".html"])
     def read_html(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads an HTML file and returns a DataFrame.
 
         Args:
@@ -231,7 +243,7 @@ class PandaReader:
     @check_suffix([".feather"])
     def read_feather(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a Feather file and returns a DataFrame.
 
         Args:
@@ -247,7 +259,7 @@ class PandaReader:
     @check_suffix([".dta"])
     def read_stata(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a Stata file and returns a DataFrame.
 
         Args:
@@ -263,7 +275,7 @@ class PandaReader:
     @check_suffix([".sas"])
     def read_sas(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a SAS file and returns a DataFrame.
 
         Args:
@@ -279,7 +291,7 @@ class PandaReader:
     @check_suffix([".pkl"])
     def read_pickle(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads a Pickle file and returns a DataFrame.
 
         Args:
@@ -295,7 +307,7 @@ class PandaReader:
     @check_suffix([".h5"])
     def read_hdf(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads an HDF file and returns a DataFrame.
 
         Args:
@@ -311,7 +323,7 @@ class PandaReader:
     @check_suffix([".orc"])
     def read_orc(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
-    ) -> DataFrame:
+    ) -> "DataFrame":
         r"""Reads an ORC file and returns a DataFrame.
 
         Args:
