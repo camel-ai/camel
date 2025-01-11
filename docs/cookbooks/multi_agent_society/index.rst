@@ -11,6 +11,6 @@ Multi-agent Society
 .. toctree::
    :maxdepth: 1
 
-   develop_trading_bot_with_roleplaying
+   agents_society
    workforce_judge_committee
    task_generation
