@@ -140,67 +140,6 @@ You can combine multiple extras by separating them with commas. For example, to 
 pip install 'camel-ai[rag,web_tools,document_tools]'
 ```
 
-### From Source
-
-Install `CAMEL` from source with poetry (Recommended):
-```sh
-# Make sure your python version is later than 3.10
-# You can use pyenv to manage multiple python versions in your system
-
-# Clone github repo
-git clone https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# If you didn't install poetry before
-pip install poetry  # (Optional)
-
-# We suggest using python 3.10
-poetry env use python3.10  # (Optional)
-
-# Activate CAMEL virtual environment
-poetry shell
-
-# Install the base CAMEL library
-# It takes about 90 seconds
-poetry install
-
-# Install CAMEL with all dependencies
-poetry install -E all # (Optional)
-
-# Exit the virtual environment
-exit
-```
-
-> [!TIP]
-> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You can try running:
-> ```sh
-> poetry install --no-cache
-> ```
-
-
-Install `CAMEL` from source with conda and pip:
-```sh
-# Create a conda virtual environment
-conda create --name camel python=3.10
-
-# Activate CAMEL conda environment
-conda activate camel
-
-# Clone github repo
-git clone -b v0.2.16 https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# Install CAMEL from source
-pip install -e .
-
-# Or if you want to use all other extra packages
-pip install -e .[all] # (Optional)
-```
-
 ### From Docker
 
 Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
