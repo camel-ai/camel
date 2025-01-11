@@ -227,7 +227,7 @@ The [complete documentation](https://camel-ai.github.io/camel/) pages for the CA
 Explore different types of agents, their roles, and their applications.
 
 - **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)**
-- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)**
+- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_develop_trading_bot_with_roleplaying.html)**
 - **[Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)**
 - **[Critic Agents](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)**
 
@@ -257,15 +257,11 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | Cookbook | Description |
 |:---|:---|
 | **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
-| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
-| **[Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html)** | Advanced configurations for agent societies. |
-| **[Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html)** | Benchmarking models for performance. |
+| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_develop_trading_bot_with_roleplaying.html)** | Learn to build a collaborative society of agents. |
 | **[Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html)** | Best practices for message handling in agents. |
 | **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
 | **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html)** | Implementing memory systems in agents. |
 | **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
-| **[Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html)** | Techniques for effective prompt creation. |
-| **[Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html)** | Automating task generation for agents. |
 | **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html)** | Leveraging knowledge graphs with RAG. |
 | **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
 | **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |

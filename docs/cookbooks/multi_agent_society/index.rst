@@ -1,4 +1,4 @@
-Society and Workforce
+Multi-agent Society
 ===================
 
 .. raw:: html
@@ -11,6 +11,6 @@ Society and Workforce
 .. toctree::
    :maxdepth: 1
 
-   ../agents_society
-   ../workforce_judge_committee
-   ../task_generation
+   develop_trading_bot_with_roleplaying
+   workforce_judge_committee
+   task_generation

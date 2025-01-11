@@ -54,10 +54,10 @@ Main Documentation
 
    cookbooks/basic_concepts/index
    cookbooks/advanced_features/index
-   cookbooks/society_workforce/index
-   cookbooks/data_processing/index
+   cookbooks/multi_agent_society/index
    cookbooks/model_training/index
    cookbooks/applications/index
+   cookbooks/data_processing/index
 
 .. toctree::
    :maxdepth: 1
