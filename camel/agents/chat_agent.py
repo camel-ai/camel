@@ -94,11 +94,13 @@ class FunctionCallingRecord(BaseModel):
         args (Dict[str, Any]): The dictionary of arguments passed to
             the function.
         result (Any): The execution result of calling this function.
+        tool_call_id (str): The ID of the tool call, if available.
     """
 
     func_name: str
     args: Dict[str, Any]
     result: Any
+    tool_call_id: str
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.
@@ -1384,6 +1386,7 @@ class ChatAgent(BaseAgent):
 
         tool = self.tool_dict[func_name]
         result = tool(**args)
+        tool_call_id = choice.message.tool_calls[0].id
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1392,6 +1395,7 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             args=args,
+            tool_call_id=tool_call_id,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1400,11 +1404,12 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             result=result,
+            tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = FunctionCallingRecord(
-            func_name=func_name, args=args, result=result
+            func_name=func_name, args=args, result=result, tool_call_id=tool_call_id
         )
         return assist_msg, func_msg, func_record
 

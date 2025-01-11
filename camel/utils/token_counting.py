@@ -150,37 +150,38 @@ class OpenAITokenCounter(BaseTokenCounter):
                     )
                 else:
                     for item in value:
-                        if item["type"] == "text":
-                            num_tokens += len(
-                                self.encoding.encode(
-                                    str(
-                                        item["text"],
-                                    ),
-                                    disallowed_special=(),
+                        if isinstance(item, dict) and "type" in item:
+                            if item["type"] == "text":
+                                num_tokens += len(
+                                    self.encoding.encode(
+                                        str(
+                                            item["text"],
+                                        ),
+                                        disallowed_special=(),
+                                    )
                                 )
-                            )
-                        elif item["type"] == "image_url":
-                            image_str: str = item["image_url"]["url"]
-                            detail = item["image_url"]["detail"]
+                            elif item["type"] == "image_url":
+                                image_str: str = item["image_url"]["url"]
+                                detail = item["image_url"]["detail"]
 
-                            image_prefix_format = "data:image/{};base64,"
-                            image_prefix: Optional[str] = None
-                            for image_type in list(OpenAIImageType):
-                                # Find the correct image format
-                                image_prefix = image_prefix_format.format(
-                                    image_type.value
+                                image_prefix_format = "data:image/{};base64,"
+                                image_prefix: Optional[str] = None
+                                for image_type in list(OpenAIImageType):
+                                    # Find the correct image format
+                                    image_prefix = image_prefix_format.format(
+                                        image_type.value
+                                    )
+                                    if image_prefix in image_str:
+                                        break
+                                assert isinstance(image_prefix, str)
+                                encoded_image = image_str.split(image_prefix)[1]
+                                image_bytes = BytesIO(
+                                    base64.b64decode(encoded_image)
                                 )
-                                if image_prefix in image_str:
-                                    break
-                            assert isinstance(image_prefix, str)
-                            encoded_image = image_str.split(image_prefix)[1]
-                            image_bytes = BytesIO(
-                                base64.b64decode(encoded_image)
-                            )
-                            image = Image.open(image_bytes)
-                            num_tokens += self._count_tokens_from_image(
-                                image, OpenAIVisionDetailType(detail)
-                            )
+                                image = Image.open(image_bytes)
+                                num_tokens += self._count_tokens_from_image(
+                                    image, OpenAIVisionDetailType(detail)
+                                )
                 if key == "name":
                     num_tokens += self.tokens_per_name
 

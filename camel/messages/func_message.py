@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+import json
+from typing import Any, Dict, List, Optional
 
 from camel.messages import (
     BaseMessage,
@@ -44,11 +45,14 @@ class FunctionCallingMessage(BaseMessage):
             function. (default: :obj:`None`)
         result (Optional[Any]): The result of function execution.
             (default: :obj:`None`)
+        tool_call_id (Optional[str]): The ID of the tool call, if available.
+            (default: :obj:`None`)
     """
 
     func_name: Optional[str] = None
     args: Optional[Dict] = None
     result: Optional[Any] = None
+    tool_call_id: Optional[str] = None
 
     def to_openai_message(
         self,
@@ -123,10 +127,14 @@ class FunctionCallingMessage(BaseMessage):
         msg_dict: OpenAIAssistantMessage = {
             "role": "assistant",
             "content": self.content,
-            "function_call": {
-                "name": self.func_name,
-                "arguments": str(self.args),
-            },
+            "tool_calls": [{
+                "id": self.tool_call_id,
+                "type": "function",
+                "function": {
+                    "name": self.func_name,
+                    "arguments": json.dumps(self.args)
+                }
+            }]
         }
 
         return msg_dict
@@ -145,11 +153,20 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = {"result": {str(self.result)}}
-        msg_dict: OpenAIFunctionMessage = {
-            "role": "function",
-            "name": self.func_name,
-            "content": f'{result_content}',
-        }
+        result_content = json.dumps(self.result)
+        
+        if hasattr(self, 'tool_call_id') and self.tool_call_id:
+            msg_dict: OpenAIFunctionMessage = {
+                "role": "tool",
+                "name": self.func_name,
+                "content": result_content,
+                "tool_call_id": self.tool_call_id,
+            }
+        else:
+            msg_dict: OpenAIFunctionMessage = {
+                "role": "function",
+                "name": self.func_name,
+                "content": result_content
+            }
 
         return msg_dict
