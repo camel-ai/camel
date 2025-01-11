@@ -25,7 +25,7 @@ from typing import (
     Union,
 )
 
-from openai import Stream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -222,7 +222,7 @@ class ModelManager:
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Process a list of messages by selecting a model based on
             the scheduling strategy.
             Sends the entire list of messages to the selected model,
@@ -233,9 +233,9 @@ class ModelManager:
                 history in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
         self.current_model = self.scheduling_strategy()
 

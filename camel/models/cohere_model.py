@@ -69,7 +69,7 @@ class CohereModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = cohere.ClientV2(api_key=self._api_key)
-        self._async_client = cohere.AsyncClientV2(api_key=self._api)
+        self._async_client = cohere.AsyncClientV2(api_key=self._api_key)
 
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
         if response.usage and response.usage.tokens:

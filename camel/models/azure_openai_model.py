@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncAzureOpenAI, AzureOpenAI, Stream
+from openai import AsyncAzureOpenAI, AsyncStream, AzureOpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -146,7 +146,7 @@ class AzureOpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
@@ -154,9 +154,9 @@ class AzureOpenAIModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
         response = await self._async_client.chat.completions.create(
             messages=messages,

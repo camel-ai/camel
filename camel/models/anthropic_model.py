@@ -145,7 +145,7 @@ class AnthropicModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ):
+    ) -> ChatCompletion:
         r"""Run inference of Anthropic chat completion.
 
         Args:

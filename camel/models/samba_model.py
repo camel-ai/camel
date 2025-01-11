@@ -18,7 +18,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Type, Union
 
 import httpx
-from openai import AsyncOpenAI, OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import (
@@ -160,7 +160,7 @@ class SambaModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Runs SambaNova's service.
 
         Args:
@@ -168,9 +168,9 @@ class SambaModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
         if "tools" in self.model_config_dict:
             del self.model_config_dict["tools"]
@@ -435,7 +435,7 @@ class SambaModel(BaseModelBackend):
 
     async def _arun_streaming(
         self, messages: List[OpenAIMessage]
-    ) -> Stream[ChatCompletionChunk]:
+    ) -> AsyncStream[ChatCompletionChunk]:
         r"""Handles streaming inference with SambaNova's API.
 
         Args:
@@ -443,7 +443,7 @@ class SambaModel(BaseModelBackend):
                 chat history in OpenAI API format.
 
         Returns:
-            Stream[ChatCompletionChunk]: A generator yielding
+            AsyncStream[ChatCompletionChunk]: A generator yielding
                 `ChatCompletionChunk` objects as they are received from the
                 API.
 

@@ -15,7 +15,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import YI_API_PARAMS, YiConfig
@@ -93,7 +93,7 @@ class YiModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Runs inference of Yi chat completion.
 
         Args:
@@ -101,9 +101,9 @@ class YiModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
         response = await self._async_client.chat.completions.create(
             messages=messages,

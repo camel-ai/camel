@@ -14,7 +14,7 @@
 import time
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import Stream
+from openai import AsyncStream, Stream
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -80,12 +80,13 @@ class StubModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.
 
         Returns:
-            Dict[str, Any]: Response in the OpenAI API format.
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                The response from the dummy model.
         """
         ARBITRARY_STRING = "Lorem Ipsum"
         response: ChatCompletion = ChatCompletion(

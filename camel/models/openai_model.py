@@ -15,7 +15,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncOpenAI, OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
@@ -161,7 +161,7 @@ class OpenAIModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
         Args:
@@ -173,9 +173,9 @@ class OpenAIModel(BaseModelBackend):
                 use for the request.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
         if response_format:
             return await self._arequest_parse(messages, response_format, tools)
@@ -205,7 +205,7 @@ class OpenAIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         tools: Optional[List[Dict[str, Any]]],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self.model_config_dict.copy()
 
         if tools is not None:

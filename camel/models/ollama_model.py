@@ -15,7 +15,7 @@ import os
 import subprocess
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
@@ -76,7 +76,7 @@ class OllamaModel(BaseModelBackend):
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
-        self._async_client = OpenAI(
+        self._async_client = AsyncOpenAI(
             timeout=180,
             max_retries=3,
             api_key="Set-but-ignored",  # required but ignored
@@ -131,7 +131,7 @@ class OllamaModel(BaseModelBackend):
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -139,16 +139,16 @@ class OllamaModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
         if self.model_config_dict.get("response_format"):
             # stream is not supported in beta.chat.completions.parse
             if "stream" in self.model_config_dict:
                 del self.model_config_dict["stream"]
 
-            response = self._async_client.beta.chat.completions.parse(
+            response = await self._async_client.beta.chat.completions.parse(
                 messages=messages,
                 model=self.model_type,
                 **self.model_config_dict,
