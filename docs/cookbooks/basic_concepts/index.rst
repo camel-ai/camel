@@ -1,6 +1,12 @@
 Basic Concepts
 =============
 
+.. raw:: html
+
+   <div class="prev-next-nav">
+     <a class="right-nav" href="../applications/index.html">Applications →</a>
+   </div>
+
 .. toctree::
    :maxdepth: 1
 
