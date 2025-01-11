@@ -26,18 +26,24 @@ def _configure_library_logging():
 
     if not logging.root.handlers and not _logger.handlers:
         logging.basicConfig(
-            level=os.environ.get('LOGLEVEL', 'INFO').upper(),
+            level=os.environ.get('CAMEL_LOGGING_LEVEL', 'WARNING').upper(),
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             stream=sys.stdout,
         )
         logging.setLoggerClass(logging.Logger)
-        _logger.info("CAMEL library logging has been configured.")
+        _logger.info(
+            f"CAMEL library logging has been configured "
+            f"(level: {_logger.getEffectiveLevel()}). "
+            f"To change level, use set_log_level() or "
+            "set CAMEL_LOGGING_LEVEL env var. To disable logging, "
+            "set CAMEL_LOGGING_DISABLED=true or use disable_logging()"
+        )
     else:
         _logger.debug("Existing logger configuration found, using that.")
 
 
 def disable_logging():
-    r"""Disable all logging for the Camel library.
+    r"""Disable all logging for the CAMEL library.
 
     This function sets the log level to a value higher than CRITICAL,
     effectively disabling all log messages, and adds a NullHandler to
@@ -55,7 +61,7 @@ def disable_logging():
 
 
 def enable_logging():
-    r"""Enable logging for the Camel library.
+    r"""Enable logging for the CAMEL library.
 
     This function re-enables logging if it was previously disabled,
     and configures the library logging using the default settings.
@@ -67,7 +73,7 @@ def enable_logging():
 
 
 def set_log_level(level):
-    r"""Set the logging level for the Camel library.
+    r"""Set the logging level for the CAMEL library.
 
     Args:
         level (Union[str, int]): The logging level to set. This can be a string

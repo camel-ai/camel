@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -106,27 +106,6 @@ class AnthropicModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
-
-    @dependencies_required('anthropic')
-    def count_tokens_from_prompt(
-        self, prompt: str, role: Literal["user", "assistant"]
-    ) -> int:
-        r"""Count the number of tokens from a prompt.
-
-        Args:
-            prompt (str): The prompt string.
-            role (Literal["user", "assistant"]): The role of the message
-                sender, either "user" or "assistant".
-
-        Returns:
-            int: The number of tokens in the prompt.
-        """
-        from anthropic.types.beta import BetaMessageParam
-
-        return self.client.beta.messages.count_tokens(
-            messages=[BetaMessageParam(content=prompt, role=role)],
-            model=self.model_type,
-        ).input_tokens
 
     def _run(
         self,

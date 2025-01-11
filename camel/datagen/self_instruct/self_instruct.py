@@ -136,14 +136,14 @@ class SelfInstructPipeline:
 
         return random.sample(self.machine_tasks, count)
 
-    def generate_machine_instruction(self) -> str:
+    def generate_machine_instruction(self) -> List:
         r"""Generate a machine instruction using the agent.
 
         Combines human and machine tasks based on the configured ratio to
             create a prompt for instruction generation.
 
         Returns:
-            str: A machine-generated instruction.
+            List: The prompt and a machine-generated instruction.
         """
 
         sampled_human_tasks = self.sample_human_tasks(
@@ -176,7 +176,7 @@ class SelfInstructPipeline:
             for line in response.msgs[0].content.split("\n")
             if line.strip()
         ]
-        return generated_tasks[0]
+        return [prompt, generated_tasks[0]]
 
     def identify_instruction(self, instruction: str) -> bool:
         r"""Determine if the given instruction is a classification task.
@@ -371,8 +371,8 @@ class SelfInstructPipeline:
             for f in self.instruction_filter.filters:
                 if isinstance(f, RougeSimilarityFilter):
                     f.existing_instructions = existing_instructions
-            instruction = self.generate_machine_instruction()
-            if self.instruction_filter.filter(instruction):
+            prompt, instruction = self.generate_machine_instruction()
+            if self.instruction_filter.filter(prompt, instruction):
                 instruction_dict = {
                     "id": f"machine_task_{len(self.machine_tasks) + 1}",
                     "instruction": instruction,

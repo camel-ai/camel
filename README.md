@@ -81,19 +81,64 @@ To install the base CAMEL library:
 ```bash
 pip install camel-ai
 ```
-Some features require extra dependencies:
-- To install with all dependencies:
+
+CAMEL offers various optional features through extras. You can install them based on your needs:
+
+- To install with all dependencies (includes all features below):
     ```bash
     pip install 'camel-ai[all]'
     ```
-- To use the HuggingFace agents:
-    ```bash
-    pip install 'camel-ai[huggingface-agent]'
-    ```
-- To enable RAG or use agent memory:
-    ```bash
-    pip install 'camel-ai[tools]'
-    ```
+
+- For specific features:
+    - Model Platforms (OpenAI, Google, Mistral, Anthropic Claude, Cohere, etc.):
+        ```bash
+        pip install 'camel-ai[model_platforms]'
+        ```
+    - HuggingFace Ecosystem (Transformers, Diffusers, Accelerate, Datasets, PyTorch, etc.):
+        ```bash
+        pip install 'camel-ai[huggingface]'
+        ```
+    - RAG Components (Sentence Transformers, Qdrant, Milvus, BM25, etc.):
+        ```bash
+        pip install 'camel-ai[rag]'
+        ```
+    - Storage Solutions (Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3, etc.):
+        ```bash
+        pip install 'camel-ai[storage]'
+        ```
+    - Web Tools (DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API, etc.):
+        ```bash
+        pip install 'camel-ai[web_tools]'
+        ```
+    - Document Processing (PDF, Word, OpenAPI, BeautifulSoup, Unstructured, etc.):
+        ```bash
+        pip install 'camel-ai[document_tools]'
+        ```
+    - Media Processing (Image Processing, Audio Processing, YouTube Download, FFmpeg, etc.):
+        ```bash
+        pip install 'camel-ai[media_tools]'
+        ```
+    - Communication Platforms (Slack, Discord, Telegram, GitHub, Reddit, Notion, etc.):
+        ```bash
+        pip install 'camel-ai[communication_tools]'
+        ```
+    - Data Science & Analytics (Pandas, TextBlob, DataCommons, OpenBB, Stripe, etc.):
+        ```bash
+        pip install 'camel-ai[data_tools]'
+        ```
+    - Research Tools (arXiv, Google Scholar, etc.):
+        ```bash
+        pip install 'camel-ai[research_tools]'
+        ```
+    - Development Tools (Docker, Jupyter, Tree-sitter, Code Interpreter, etc.):
+        ```bash
+        pip install 'camel-ai[dev_tools]'
+        ```
+
+You can combine multiple extras by separating them with commas. For example, to set up a RAG system with document processing and web search:
+```bash
+pip install 'camel-ai[rag,web_tools,document_tools]'
+```
 
 ### From Source
 
@@ -144,7 +189,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.2.15a0 https://github.com/camel-ai/camel.git
+git clone -b v0.2.16 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -325,8 +370,8 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_with_agentic_RAG.html)** |  Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 | **[Create AI Agents that work with your PDFs using Chunkr & Mistral AI](https://docs.camel-ai.org/cookbooks/agent_with_chunkr_for_pdf_parsing.html)** | Learn how to create AI agents that work with your PDFs using Chunkr and Mistral AI. |
 | **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_gen_with_real_function_calls_and_hermes_format.html)** |  Explore how to generate data with real function calls and the Hermes format. |
-| **[CoT data Generation with CAMEL and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/CoTdatagen_with_CAMEL_And_Upload_Data_To_Huggingface.html)** | Uncover how to generate O1 data with CAMEL and seamlessly upload it to Huggingface. |
-| **[CoTdatagen with CAMEL And Sft Qwen With Unsolth And Upload Data And Model To Huggingface](https://docs.camel-ai.org/cookbooks/CoTdatagen_with_CAMEL_And_Sft_Qwen_With_Unsolth_And_Upload_Data_And_Model_To_Huggingface.html)** | Discover how to generate O1 data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
+| **[CoT Data Generation and Upload Data to Huggingface](https://docs.camel-ai.org/cookbooks/cot_data_gen_upload_to_huggingface.html)** | Uncover how to generate CoT data with CAMEL and seamlessly upload it to Huggingface. |
+| **[CoT Data Generation and SFT Qwen with Unsolth, Uploading Data and Model to Hugging Face](https://docs.camel-ai.org/cookbooks/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
 | **[Customer Service Discord Bot with Agentic RAG supports local model deployment](https://docs.camel-ai.org/cookbooks/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG which supports local deployment. |
 
 ## Utilize Various LLMs as Backends
