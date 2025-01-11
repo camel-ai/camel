@@ -48,38 +48,16 @@ Main Documentation
    key_modules/workforce.md
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Cookbooks
    :name: cookbooks
 
-   cookbooks/create_your_first_agent.ipynb
-   cookbooks/create_your_first_agents_society.ipynb
-   cookbooks/agents_society.ipynb
-   cookbooks/model_speed_comparison.ipynb
-   cookbooks/agents_message.ipynb
-   cookbooks/agents_with_tools.ipynb
-   cookbooks/agents_with_tools_from_Composio.ipynb
-   cookbooks/agents_with_memory.ipynb
-   cookbooks/agents_with_rag.ipynb
-   cookbooks/agents_prompting.ipynb
-   cookbooks/task_generation.ipynb
-   cookbooks/knowledge_graph.ipynb
-   cookbooks/roleplaying_scraper.ipynb
-   cookbooks/video_analysis.ipynb
-   cookbooks/agents_tracking.ipynb
-   cookbooks/workforce_judge_committee.ipynb
-   cookbooks/ingest_data_from_websites_with_Firecrawl.ipynb
-   cookbooks/sft_data_generation_and_unsloth_finetuning.ipynb
-   cookbooks/sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.ipynb
-   cookbooks/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.ipynb
-   cookbooks/sft_data_generation_and_unsloth_finetuning_tinyllama.ipynb
-   cookbooks/customer_service_Discord_bot_with_agentic_RAG.ipynb
-   cookbooks/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.ipynb
-   cookbooks/customer_service_Discord_bot_using_local_model_with_agentic_RAG.ipynb
-   cookbooks/data_gen_with_real_function_calls_and_hermes_format.ipynb
-   cookbooks/agent_with_chunkr_for_pdf_parsing.ipynb
-   cookbooks/cot_data_gen_upload_to_huggingface.ipynb
-   cookbooks/cot_data_gen_sft_qwen_unsolth_upload_huggingface.ipynb
+   cookbooks/basic_concepts/index
+   cookbooks/advanced_features/index
+   cookbooks/society_workforce/index
+   cookbooks/data_processing/index
+   cookbooks/model_training/index
+   cookbooks/applications/index
 
 .. toctree::
    :maxdepth: 1
