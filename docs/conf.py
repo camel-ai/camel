@@ -38,7 +38,6 @@ html_favicon = (
 
 source_suffix = ['.rst', '.md']
 
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
@@ -60,12 +59,26 @@ html_theme_options = {
         "text": f"CAMEL {release}",
         "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
         "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
-    }
+    },
+    "show_toc_level": 2,
+    "show_nav_level": 2,
+    "navigation_with_keys": True,
+    "toc_title": "On this page",
+    "show_navbar_depth": 2,
+    "repository_url": "https://github.com/camel-ai/camel",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True,
 }
+
+html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 nbsphinx_execute = 'never'
 nbsphinx_allow_errors = True
 nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
 .. raw:: html
 
     <style>
