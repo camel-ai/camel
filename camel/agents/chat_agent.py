@@ -1409,7 +1409,10 @@ class ChatAgent(BaseAgent):
 
         # Record information about this function call
         func_record = FunctionCallingRecord(
-            func_name=func_name, args=args, result=result, tool_call_id=tool_call_id
+            func_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
         )
         return assist_msg, func_msg, func_record
 
@@ -1453,6 +1456,7 @@ class ChatAgent(BaseAgent):
         args = json.loads(choice.message.tool_calls[0].function.arguments)
         tool = self.tool_dict[func_name]
         result = await tool(**args)
+        tool_call_id = choice.message.tool_calls[0].id
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1461,6 +1465,7 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             args=args,
+            tool_call_id=tool_call_id,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1469,11 +1474,15 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             result=result,
+            tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = FunctionCallingRecord(
-            func_name=func_name, args=args, result=result
+            func_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
         )
         return assist_msg, func_msg, func_record
 

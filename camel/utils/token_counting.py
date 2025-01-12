@@ -174,7 +174,9 @@ class OpenAITokenCounter(BaseTokenCounter):
                                     if image_prefix in image_str:
                                         break
                                 assert isinstance(image_prefix, str)
-                                encoded_image = image_str.split(image_prefix)[1]
+                                encoded_image = image_str.split(image_prefix)[
+                                    1
+                                ]
                                 image_bytes = BytesIO(
                                     base64.b64decode(encoded_image)
                                 )
