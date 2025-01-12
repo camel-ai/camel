@@ -82,123 +82,29 @@ To install the base CAMEL library:
 pip install camel-ai
 ```
 
-CAMEL offers various optional features through extras. You can install them based on your needs:
+> **Note**: Some features may not work without their required dependencies. Install `camel-ai[all]` to ensure all dependencies are available, or install specific extras based on the features you need.
 
-- To install with all dependencies (includes all features below):
-    ```bash
-    pip install 'camel-ai[all]'
-    ```
-
-- For specific features:
-    - Model Platforms (OpenAI, Google, Mistral, Anthropic Claude, Cohere, etc.):
-        ```bash
-        pip install 'camel-ai[model_platforms]'
-        ```
-    - HuggingFace Ecosystem (Transformers, Diffusers, Accelerate, Datasets, PyTorch, etc.):
-        ```bash
-        pip install 'camel-ai[huggingface]'
-        ```
-    - RAG Components (Sentence Transformers, Qdrant, Milvus, BM25, etc.):
-        ```bash
-        pip install 'camel-ai[rag]'
-        ```
-    - Storage Solutions (Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3, etc.):
-        ```bash
-        pip install 'camel-ai[storage]'
-        ```
-    - Web Tools (DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API, etc.):
-        ```bash
-        pip install 'camel-ai[web_tools]'
-        ```
-    - Document Processing (PDF, Word, OpenAPI, BeautifulSoup, Unstructured, etc.):
-        ```bash
-        pip install 'camel-ai[document_tools]'
-        ```
-    - Media Processing (Image Processing, Audio Processing, YouTube Download, FFmpeg, etc.):
-        ```bash
-        pip install 'camel-ai[media_tools]'
-        ```
-    - Communication Platforms (Slack, Discord, Telegram, GitHub, Reddit, Notion, etc.):
-        ```bash
-        pip install 'camel-ai[communication_tools]'
-        ```
-    - Data Science & Analytics (Pandas, TextBlob, DataCommons, OpenBB, Stripe, etc.):
-        ```bash
-        pip install 'camel-ai[data_tools]'
-        ```
-    - Research Tools (arXiv, Google Scholar, etc.):
-        ```bash
-        pip install 'camel-ai[research_tools]'
-        ```
-    - Development Tools (Docker, Jupyter, Tree-sitter, Code Interpreter, etc.):
-        ```bash
-        pip install 'camel-ai[dev_tools]'
-        ```
-
-You can combine multiple extras by separating them with commas. For example, to set up a RAG system with document processing and web search:
 ```bash
-pip install 'camel-ai[rag,web_tools,document_tools]'
+pip install 'camel-ai[all]'  # Replace with options below
 ```
 
-### From Source
+Available extras:
+- `all`: Includes all features below
+- `model_platforms`: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.
+- `huggingface`: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.
+- `rag`: Sentence Transformers, Qdrant, Milvus, BM25 etc.
+- `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3  etc.
+- `web_tools`: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.
+- `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
+- `media_tools`: Image Processing, Audio Processing, YouTube Download, FFmpeg etc.
+- `communication_tools`: Slack, Discord, Telegram, GitHub, Reddit, Notion etc.
+- `data_tools`: Pandas, TextBlob, DataCommons, OpenBB, Stripe etc.
+- `research_tools`: arXiv, Google Scholar etc.
+- `dev_tools`: Docker, Jupyter, Tree-sitter, Code Interpreter etc.
 
-Install `CAMEL` from source with poetry (Recommended):
-```sh
-# Make sure your python version is later than 3.10
-# You can use pyenv to manage multiple python versions in your system
-
-# Clone github repo
-git clone https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# If you didn't install poetry before
-pip install poetry  # (Optional)
-
-# We suggest using python 3.10
-poetry env use python3.10  # (Optional)
-
-# Activate CAMEL virtual environment
-poetry shell
-
-# Install the base CAMEL library
-# It takes about 90 seconds
-poetry install
-
-# Install CAMEL with all dependencies
-poetry install -E all # (Optional)
-
-# Exit the virtual environment
-exit
-```
-
-> [!TIP]
-> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You can try running:
-> ```sh
-> poetry install --no-cache
-> ```
-
-
-Install `CAMEL` from source with conda and pip:
-```sh
-# Create a conda virtual environment
-conda create --name camel python=3.10
-
-# Activate CAMEL conda environment
-conda activate camel
-
-# Clone github repo
-git clone -b v0.2.16 https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# Install CAMEL from source
-pip install -e .
-
-# Or if you want to use all other extra packages
-pip install -e .[all] # (Optional)
+Multiple extras can be combined using commas:
+```bash
+pip install 'camel-ai[rag,web_tools,document_tools]'  # Example: RAG system with web search and document processing
 ```
 
 ### From Docker
@@ -321,7 +227,7 @@ The [complete documentation](https://camel-ai.github.io/camel/) pages for the CA
 Explore different types of agents, their roles, and their applications.
 
 - **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)**
-- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)**
+- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_develop_trading_bot_with_roleplaying.html)**
 - **[Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)**
 - **[Critic Agents](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)**
 
@@ -351,15 +257,11 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | Cookbook | Description |
 |:---|:---|
 | **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
-| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
-| **[Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html)** | Advanced configurations for agent societies. |
-| **[Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html)** | Benchmarking models for performance. |
+| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_develop_trading_bot_with_roleplaying.html)** | Learn to build a collaborative society of agents. |
 | **[Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html)** | Best practices for message handling in agents. |
 | **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
 | **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html)** | Implementing memory systems in agents. |
 | **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
-| **[Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html)** | Techniques for effective prompt creation. |
-| **[Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html)** | Automating task generation for agents. |
 | **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html)** | Leveraging knowledge graphs with RAG. |
 | **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
 | **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |
