@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Any, Dict, List
+import json
+from typing import Dict, List
 
 import pytest
 
@@ -68,18 +69,17 @@ def test_assistant_func_message(
     assert assistant_func_call_message.func_name == "add"
     assert assistant_func_call_message.args == {"a": "1", "b": "2"}
 
-    msg_dict: Dict[str, Any]
-    msg_dict = {
-        "role": "assistant",
-        "content": content,
-        "function_call": {
-            "name": "add",
-            "arguments": str({"a": "1", "b": "2"}),
-        },
-    }
-    assert (
-        assistant_func_call_message.to_openai_assistant_message() == msg_dict
+    result = assistant_func_call_message.to_openai_assistant_message()
+    assert result["role"] == "assistant"
+    assert result["content"] == content
+    assert len(result["tool_calls"]) == 1  # type: ignore[arg-type]
+    tool_call = result["tool_calls"][0]  # type: ignore[index]
+    assert tool_call["type"] == "function"
+    assert tool_call["function"]["name"] == "add"
+    assert tool_call["function"]["arguments"] == json.dumps(
+        {"a": "1", "b": "2"}
     )
+    assert isinstance(tool_call["id"], str)
 
 
 def test_function_func_message(
@@ -88,11 +88,10 @@ def test_function_func_message(
     assert function_result_message.func_name == "add"
     assert function_result_message.result == 3
 
-    result_content = {"result": {str(3)}}
     msg_dict: Dict[str, str] = {
         "role": "function",
         "name": "add",
-        "content": f'{result_content}',
+        "content": json.dumps(3),
     }
     assert function_result_message.to_openai_function_message() == msg_dict
 
@@ -103,7 +102,7 @@ def test_assistant_func_message_to_openai_function_message(
     expected_msg_dict: Dict[str, str] = {
         "role": "function",
         "name": "add",
-        "content": "{'result': {'None'}}",
+        "content": json.dumps(None),
     }
 
     assert (

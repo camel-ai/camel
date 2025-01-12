@@ -40,9 +40,10 @@ OpenAIAssistantMessage = Union[
     ChatCompletionToolMessageParam,
 ]
 OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = (
-    ChatCompletionFunctionMessageParam | ChatCompletionToolMessageParam
-)
+OpenAIFunctionMessage = Union[
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionToolMessageParam,
+]
 OpenAIToolMessageParam = ChatCompletionToolMessageParam
 OpenAIMessage = ChatCompletionMessageParam
 

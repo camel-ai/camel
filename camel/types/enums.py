@@ -161,7 +161,14 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def support_native_tool_calling(self) -> bool:
         return any(
-            [self.is_openai, self.is_gemini, self.is_mistral, self.is_qwen]
+            [
+                self.is_openai,
+                self.is_gemini,
+                self.is_mistral,
+                self.is_qwen,
+                self.is_deepseek,
+                self.is_cohere,
+            ]
         )
 
     @property
