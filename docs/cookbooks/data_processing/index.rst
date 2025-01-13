@@ -14,3 +14,4 @@ Data Processing and Analysis
    video_analysis
    agent_with_chunkr_for_pdf_parsing
    ingest_data_from_websites_with_Firecrawl
+   synthetic_dataevaluation&filter_with_reward_model
