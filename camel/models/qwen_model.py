@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from camel.configs import QWEN_API_PARAMS, QwenConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.models._utils import get_prompt_with_response_format
+from camel.models._utils import try_modify_message_with_format
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -149,14 +149,7 @@ class QwenModel(BaseModelBackend):
         tools: Optional[List[Dict[str, Any]]],
     ) -> Dict[str, Any]:
         request_config = self.model_config_dict.copy()
-        user_message = messages[-1]
-
-        if not isinstance(user_message["content"], str):
-            raise ValueError("Only text messages are supported")
-
-        user_message["content"] = get_prompt_with_response_format(
-            response_format, user_message["content"]
-        )
+        try_modify_message_with_format(messages[-1], response_format)
         if tools:
             request_config["tools"] = tools
         elif response_format:

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
+from camel.toolkits import WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
@@ -28,10 +29,10 @@ class ResponseFormat(BaseModel):
     fahrenheit: str
 
 
-agent = ChatAgent(model=model)
+agent = ChatAgent(model=model, tools=[WeatherToolkit().get_weather_data])
 
 resp = agent.step(
-    "At what tempreature does water boil?",
+    "What's the temperature in Beijing?",
     response_format=ResponseFormat,
 )
 print(resp.msg.content)

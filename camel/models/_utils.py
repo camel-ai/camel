@@ -16,37 +16,38 @@ from typing import Optional, Type
 
 from pydantic import BaseModel
 
+from camel.messages import OpenAIMessage
 
-def get_prompt_with_response_format(
+
+def try_modify_message_with_format(
+    message: OpenAIMessage,
     response_format: Optional[Type[BaseModel]],
-    user_message: str,
-) -> str:
-    """
-    This function generates a prompt based on the provided Pydantic model and
-    user message.
+) -> None:
+    r"""Modifies the content of the message to include the instruction of using
+    the response format.
+
+    The message will not be modified in the following cases:
+    - response_format is None
+    - message content is not a string
 
     Args:
         response_format (Optional[Type[BaseModel]]): The Pydantic model class.
-        user_message (str): The user message to be used in the prompt.
-
-    Returns:
-        str: A prompt string for the LLM.
+        message (OpenAIMessage): The message to be modified.
     """
     if response_format is None:
-        return user_message
+        return
+
+    if not isinstance(message["content"], str):
+        return
 
     json_schema = response_format.model_json_schema()
     updated_prompt = textwrap.dedent(
         f"""\
-        Given the user message, please generate a JSON response adhering 
-        to the following JSON schema:
-        {json_schema}
-        Make sure the JSON response is valid and matches the EXACT structure 
-        defined in the schema. Your result should only be a valid json 
-        object, without any other text or comments.
+        {message["content"]}
         
-        Following is the original user message:
-        {user_message}
-        """
+        Please generate a JSON response adhering to the following JSON schema:
+        {json_schema}
+        Make sure the JSON response is valid and matches the EXACT structure defined in the schema. Your result should only be a valid json object, without any other text or comments.
+        """  # noqa: E501
     )
-    return updated_prompt
+    message["content"] = updated_prompt
