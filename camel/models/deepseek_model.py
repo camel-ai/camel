@@ -50,6 +50,11 @@ class DeepSeekModel(BaseModelBackend):
         https://api-docs.deepseek.com/
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "DEEPSEEK_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -70,7 +75,7 @@ class DeepSeekModel(BaseModelBackend):
         )
 
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
@@ -90,7 +95,6 @@ class DeepSeekModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required("DEEPSEEK_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

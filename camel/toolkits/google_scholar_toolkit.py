@@ -36,6 +36,7 @@ class GoogleScholarToolkit(BaseToolkit):
         self,
         author_identifier: str,
         is_author_name: bool = False,
+        use_free_proxies: bool = False,
         proxy_http: Optional[str] = None,
         proxy_https: Optional[str] = None,
     ) -> None:
@@ -46,12 +47,20 @@ class GoogleScholarToolkit(BaseToolkit):
                 of the author to search for.
             is_author_name (bool): Flag to indicate if the identifier is a
                 name. (default: :obj:`False`)
+            use_free_proxies (bool): Whether to use Free Proxies.
+                (default: :obj:`False`)
             proxy_http ( Optional[str]): Proxy http address pass to pg.
                 SingleProxy. (default: :obj:`None`)
             proxy_https ( Optional[str]): Proxy https address pass to pg.
                 SingleProxy. (default: :obj:`None`)
         """
         from scholarly import ProxyGenerator, scholarly
+
+        # Set Free Proxies is needed
+        if use_free_proxies:
+            pg = ProxyGenerator()
+            pg.FreeProxies()
+            scholarly.use_proxy(pg)
 
         # Set Proxy is HTTP or HTTPS provided
         if proxy_http or proxy_https:

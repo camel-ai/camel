@@ -70,7 +70,7 @@ class OllamaModel(BaseModelBackend):
             self._start_server()
         # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,

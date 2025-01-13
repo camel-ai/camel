@@ -47,13 +47,17 @@ class NemotronRewardModel(BaseRewardModel):
         api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         super().__init__(model_type, api_key, url)
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             base_url=self.url,
             api_key=self.api_key,
         )
 
-    @api_keys_required("NVIDIA_API_KEY")
+    @api_keys_required(
+        [
+            (None, "NVIDIA_API_KEY"),
+        ]
+    )
     def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages using the Nemotron model.
 

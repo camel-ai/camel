@@ -39,6 +39,11 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         RuntimeError: If an unsupported model type is specified.
     """
 
+    @api_keys_required(
+        [
+            ("api_key", 'OPENAI_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: EmbeddingModelType = (
@@ -56,9 +61,8 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             assert isinstance(dimensions, int)
             self.output_dim = dimensions
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.client = OpenAI(timeout=60, max_retries=3, api_key=self._api_key)
+        self.client = OpenAI(timeout=180, max_retries=3, api_key=self._api_key)
 
-    @api_keys_required("OPENAI_API_KEY")
     def embed_list(
         self,
         objs: list[str],

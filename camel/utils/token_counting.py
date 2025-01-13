@@ -63,6 +63,7 @@ def get_model_encoding(value_for_tiktoken: str):
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
         if value_for_tiktoken in [
+            ModelType.O1.value,
             ModelType.O1_MINI.value,
             ModelType.O1_PREVIEW.value,
         ]:
@@ -252,11 +253,11 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        from anthropic.types.beta import BetaMessageParam
+        from anthropic.types import MessageParam
 
-        return self.client.beta.messages.count_tokens(
+        return self.client.messages.count_tokens(
             messages=[
-                BetaMessageParam(
+                MessageParam(
                     content=str(msg["content"]),
                     role="user" if msg["role"] == "user" else "assistant",
                 )
