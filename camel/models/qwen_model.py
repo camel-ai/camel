@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from camel.configs import QWEN_API_PARAMS, QwenConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import get_prompt_with_response_format
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -148,25 +149,21 @@ class QwenModel(BaseModelBackend):
         tools: Optional[List[Dict[str, Any]]],
     ) -> Dict[str, Any]:
         request_config = self.model_config_dict.copy()
+        user_message = messages[-1]
 
+        if not isinstance(user_message["content"], str):
+            raise ValueError("Only text messages are supported")
+
+        user_message["content"] = get_prompt_with_response_format(
+            response_format, user_message["content"]
+        )
         if tools:
             request_config["tools"] = tools
+        elif response_format:
+            # Improve stability with native response format support
+            # This config will be unstable if being used with tools
+            request_config["response_format"] = {"type": "json_object"}
 
-        if response_format is None:
-            return request_config
-
-        # get all keys of the response_format
-        response_format_keys = response_format.model_fields.keys()
-        additional_prompt = (
-            "The response should be in JSON format with the following keys: "
-            f"{', '.join(response_format_keys)}."
-        )
-        user_message = messages[-1]
-        user_message["content"] = (
-            f"{user_message['content']}\n{additional_prompt}"
-        )
-
-        request_config["response_format"] = {"type": "json_object"}
         return request_config
 
     @property

@@ -169,9 +169,7 @@ class AnthropicModel(BaseModelBackend):
         )
 
         # format response to openai format
-        response = self._convert_response_from_anthropic_to_openai(response)
-
-        return response
+        return self._convert_response_from_anthropic_to_openai(response)
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for anthropic
