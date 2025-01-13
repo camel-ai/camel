@@ -26,7 +26,6 @@ from apps.agents.agents import (
 )
 
 
-@pytest.mark.skip(reason="Skipping this test temporarily")
 def test_construct_blocks():
     blocks = construct_blocks(None)
     assert isinstance(blocks, gr.Blocks)
