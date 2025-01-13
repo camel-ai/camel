@@ -379,9 +379,9 @@ class ChatAgent(BaseAgent):
 
             break
 
-        self._log_final_output(response.output_messages)
+        self._record_final_output(response.output_messages)
 
-        return self._parse_chatagent_response(
+        return self._convert_to_chatagent_response(
             response, tool_call_records, num_tokens
         )
 
@@ -441,13 +441,13 @@ class ChatAgent(BaseAgent):
 
             break
 
-        self._log_final_output(response.output_messages)
+        self._record_final_output(response.output_messages)
 
-        return self._parse_chatagent_response(
+        return self._convert_to_chatagent_response(
             response, tool_call_records, num_tokens
         )
 
-    def _parse_chatagent_response(
+    def _convert_to_chatagent_response(
         self,
         response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
@@ -469,7 +469,7 @@ class ChatAgent(BaseAgent):
             info=info,
         )
 
-    def _log_final_output(self, output_messages: List[BaseMessage]) -> None:
+    def _record_final_output(self, output_messages: List[BaseMessage]) -> None:
         r"""Log final messages or warnings about multiple responses."""
         if len(output_messages) == 1:
             self.record_message(output_messages[0])

@@ -151,6 +151,9 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
         if response_format:
             return self._request_parse(messages, response_format, tools)
         else:
@@ -177,6 +180,9 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
         if response_format:
             return await self._arequest_parse(messages, response_format, tools)
         else:
@@ -189,7 +195,7 @@ class OpenAIModel(BaseModelBackend):
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         request_config = self.model_config_dict.copy()
 
-        if tools is not None:
+        if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
@@ -208,7 +214,7 @@ class OpenAIModel(BaseModelBackend):
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self.model_config_dict.copy()
 
-        if tools is not None:
+        if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)

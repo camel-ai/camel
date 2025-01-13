@@ -117,12 +117,7 @@ class BaseModelBackend(ABC):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        response_format = (
-            self.model_config_dict.get("response_format", None)
-            or response_format
-        )
-        # If tools are empty, make it None
-        tools = self.model_config_dict.get("tools", None) or tools or None
+        tools = tools or self.model_config_dict.get("tools", None)
         return self._run(messages, response_format, tools)
 
     async def arun(

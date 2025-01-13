@@ -116,8 +116,8 @@ class QwenModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Qwen chat completion.
 
@@ -130,12 +130,44 @@ class QwenModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
         return response
+
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+
+        if response_format is None:
+            return request_config
+
+        # get all keys of the response_format
+        response_format_keys = response_format.model_fields.keys()
+        additional_prompt = (
+            "The response should be in JSON format with the following keys: "
+            f"{', '.join(response_format_keys)}."
+        )
+        user_message = messages[-1]
+        user_message["content"] = (
+            f"{user_message['content']}\n{additional_prompt}"
+        )
+
+        request_config["response_format"] = {"type": "json_object"}
+        return request_config
 
     @property
     def token_counter(self) -> BaseTokenCounter:
