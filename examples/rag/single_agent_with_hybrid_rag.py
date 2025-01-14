@@ -22,8 +22,9 @@ def single_agent(query: str) -> str:
         answer the Original Query based on the Retrieved Context,
         if you can't answer the question just say I don't know."""
 
-    hybrid_retriever = HybridRetriever(
-        content_input_path="https://en.wikipedia.org/wiki/King_Abdullah_University_of_Science_and_Technology",
+    hybrid_retriever = HybridRetriever()
+    hybrid_retriever.process(
+        content_input_path="https://en.wikipedia.org/wiki/King_Abdullah_University_of_Science_and_Technology"
     )
 
     retrieved_info = hybrid_retriever.query(
@@ -43,3 +44,15 @@ def single_agent(query: str) -> str:
 
 
 print(single_agent("What is it like to be a visiting student at KAUST?"))
+'''
+===============================================================================
+Being a visiting student at KAUST involves participating in the Visiting
+Student Program (VS), which is designed for 3rd or 4th year undergraduate
+or master's students. This program allows students to work directly with KAUST
+faculty members for a duration that can range from a few days to several
+months. Accepted students typically receive a monthly stipend, and their
+accommodation, health insurance, and travel costs are covered. This support
+makes the experience financially manageable and allows students to focus on
+their research and learning during their time at KAUST.
+===============================================================================
+'''

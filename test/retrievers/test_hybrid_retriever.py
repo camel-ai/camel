@@ -22,27 +22,29 @@ from camel.retrievers.hybrid_retrival import HybridRetriever
 
 @pytest.fixture
 def mock_hybrid_retriever(monkeypatch):
+    mock_element = UnstructuredIO.create_element_from_text(text='mock element')
     monkeypatch.setattr(os.path, 'exists', MagicMock(return_value=True))
     monkeypatch.setattr(
-        UnstructuredIO, 'parse_file_or_url', MagicMock(return_value=None)
+        UnstructuredIO,
+        'parse_file_or_url',
+        MagicMock(return_value=[mock_element]),
     )
     # Create an instance of HybridRetriever
-    hybrid_retriever = HybridRetriever(content_input_path="https://mock.com")
+    hybrid_retriever = HybridRetriever()
+    hybrid_retriever.process(content_input_path="https://mock.com")
     # Mock bm25_retriever.query
-    hybrid_retriever.bm25_retriever.query = MagicMock(
+    hybrid_retriever.bm25.query = MagicMock(
         return_value=[
             {'text': 'Document 2', 'similarity score': 0.7},
             {'text': 'Document 3', 'similarity score': 0.6},
         ]
     )
     # Mock auto_retriever.run_vector_retriever
-    hybrid_retriever.auto_retriever.run_vector_retriever = MagicMock(
-        return_value={
-            'Retrieved Context': [
-                {'text': 'Document 1', 'similarity score': 0.9},
-                {'text': 'Document 2', 'similarity score': 0.8},
-            ]
-        }
+    hybrid_retriever.vr.query = MagicMock(
+        return_value=[
+            {'text': 'Document 1', 'similarity score': 0.9},
+            {'text': 'Document 2', 'similarity score': 0.8},
+        ]
     )
     return hybrid_retriever
 

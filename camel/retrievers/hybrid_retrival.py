@@ -15,16 +15,16 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
-from camel.embeddings import OpenAIEmbedding
-from camel.retrievers import AutoRetriever, BM25Retriever
-from camel.types import EmbeddingModelType, StorageType
+from camel.embeddings import BaseEmbedding
+from camel.retrievers import BaseRetriever, BM25Retriever, VectorRetriever
+from camel.storages import BaseVectorStorage
 
 
-class HybridRetriever:
+class HybridRetriever(BaseRetriever):
     def __init__(
         self,
-        content_input_path: str,
-        auto_retriever: Optional[AutoRetriever] = None,
+        embedding_model: Optional[BaseEmbedding] = None,
+        vector_storage: Optional[BaseVectorStorage] = None,
     ) -> None:
         r"""Initializes a HybridRetriever that combines the functionalities of
         AutoRetriever and BM25Retriever.
@@ -38,25 +38,16 @@ class HybridRetriever:
         Raises:
             ValueError: If the content_input_path is empty.
         """
+        self.vr = VectorRetriever(embedding_model, vector_storage)
+        self.bm25 = BM25Retriever()
+
+    def process(self, content_input_path: str) -> None:
         if not content_input_path:
             raise ValueError("content_input_path cannot be empty.")
 
         self.content_input_path = content_input_path
-        if auto_retriever is None:
-            embedding_instance = OpenAIEmbedding(
-                model_type=EmbeddingModelType.TEXT_EMBEDDING_3_LARGE
-            )
-
-            auto_retriever = AutoRetriever(
-                vector_storage_local_path="vector_storage/",
-                storage_type=StorageType.QDRANT,
-                embedding_model=embedding_instance,
-            )
-
-        self.auto_retriever = auto_retriever
-
-        self.bm25_retriever = BM25Retriever()
-        self.bm25_retriever.process(content_input_path=content_input_path)
+        self.vr.process(content=self.content_input_path)
+        self.bm25.process(content_input_path=self.content_input_path)
 
     def _sort_rrf_scores(
         self,
@@ -103,9 +94,7 @@ class HybridRetriever:
         current_id = 1
 
         # Iterate over vector_retriever_results
-        for rank, result in enumerate(
-            vector_retriever_results['Retrieved Context'], start=1
-        ):
+        for rank, result in enumerate(vector_retriever_results, start=1):
             text = result.get('text', None)  # type: ignore[attr-defined]
             if text is None:
                 raise KeyError("Each result must contain a 'text' key")
@@ -200,14 +189,20 @@ class HybridRetriever:
                 "Neither `vector_weight` nor `bm25_weight` can be negative."
             )
 
-        vector_retriever_results = self.auto_retriever.run_vector_retriever(
+        vr_raw_results = self.vr.query(
             query=query,
-            contents=self.content_input_path,
             top_k=vector_retriever_top_k,
             similarity_threshold=vector_retriever_similarity_threshold,
-            return_detailed_info=True,
         )
-        bm25_retriever_results = self.bm25_retriever.query(
+        # if the number of results is less than top_k, return all results
+        with_score = [
+            info for info in vr_raw_results if 'similarity score' in info
+        ]
+        vector_retriever_results = sorted(
+            with_score, key=lambda x: x['similarity score'], reverse=True
+        )
+
+        bm25_retriever_results = self.bm25.query(
             query=query,
             top_k=bm25_retriever_top_k,
         )
