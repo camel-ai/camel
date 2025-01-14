@@ -55,6 +55,8 @@ jobs:
         QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
         GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
         DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
+        DAPPIER_API_KEY: "${{ secrets.DAPPIER_API_KEY }}"
+        DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -99,6 +101,8 @@ jobs:
         QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
         GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
         DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
+        DAPPIER_API_KEY: "${{ secrets.DAPPIER_API_KEY }}"
+        DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -143,4 +147,6 @@ jobs:
         QWEN_API_KEY: "${{ secrets.QWEN_API_KEY }}"
         GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
         DEEPSEEK_API_KEY: "${{ secrets.DEEPSEEK_API_KEY }}"
+        DAPPIER_API_KEY: "${{ secrets.DAPPIER_API_KEY }}"
+        DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
       run: poetry run pytest --very-slow-test-only test/
