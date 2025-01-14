@@ -269,22 +269,20 @@ class SelfInstructTemplates:
     '''
 
     input_first_template_for_gen = '''You will be given a task, 
-    Please generate at most two example instances illustrating how to 
+    Your job is to generate at most two example instances demonstrating how to 
     perform this task. For each instance:
-    - If the task requires input (as an actual instance of the task), 
-    provide it. if the task itself can be answered without an instance, 
-    skip the input.
-    - Then provide the correct output.
+    - If the task requires input (as an actual example of the task), provide it.
+    - If the task can be answered directly without requiring input, omit the input section.
     
-    Do not provide any additional commentary, explanations, or more than two instances. Just show the instances in the following format:
-        
-        Example 1
-        [Input if necessary]
-        Output: [oldest person]
-        
-        Example 2
-        [Input if necessary]
-        Output: [oldest person]
+    Example 1
+    Input: [Provide input here if needed, otherwise omit this section]
+    Output: [Provide the correct output]
+    
+    Example 2
+    Input: [Provide input here if needed, otherwise omit this section]
+    Output: [Provide the correct output]
+
+    Do not include any additional commentary, explanations, or more than two instances.
         
     Below are some examples:
 
