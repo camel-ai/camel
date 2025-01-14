@@ -29,24 +29,28 @@ from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
 
+
+# Mapping of dataset names to file names
+# 'Oracle' retriver used here which means all the full
+# API documentation will be included in the prompt
 dataset_mapping = {
     "huggingface": {
         "api": "huggingface_api.jsonl",
         "eval": "huggingface_eval.json",
         "train": "huggingface_train.json",
-        "questions": "questions_huggingface_0_shot.jsonl",
+        "questions": "questions_huggingface_oracle.jsonl",
     },
     "tensorflowhub": {
         "api": "tensorflowhub_api.jsonl",
         "eval": "tensorflow_eval.json",
         "train": "tensorflow_train.json",
-        "questions": "questions_tensorflowhub_0_shot.jsonl",
+        "questions": "questions_tensorflowhub_oracle.jsonl",
     },
     "torchhub": {
         "api": "torchhub_api.jsonl",
         "eval": "torchhub_eval.json",
         "train": "torchhub_train.json",
-        "questions": "questions_torchhub_0_shot.jsonl",
+        "questions": "questions_torchhub_oracle.jsonl",
     },
 }
 
@@ -173,7 +177,7 @@ class APIBenchBenchmark(BaseBenchmark):
         )
 
         repo = "ShishirPatil/gorilla"
-        subdir = "eval/eval-data/questions"
+        subdir = "/gorilla/eval/eval-data/questions"
         data_dir = self.data_dir
 
         download_github_subdirectory(repo, subdir, data_dir)
