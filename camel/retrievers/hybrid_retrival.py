@@ -26,22 +26,29 @@ class HybridRetriever(BaseRetriever):
         embedding_model: Optional[BaseEmbedding] = None,
         vector_storage: Optional[BaseVectorStorage] = None,
     ) -> None:
-        r"""Initializes a HybridRetriever that combines the functionalities of
-        AutoRetriever and BM25Retriever.
+        r"""Initializes the HybridRetriever with optional embedding model and
+        vector storage.
 
         Args:
-            content_input_path (str): The path to the input content for the
-                BM25Retriever to process.
-            auto_retriever (Optional[AutoRetriever], optional): An instance of
-                AutoRetriever. If None, a new instance is created.
-
-        Raises:
-            ValueError: If the content_input_path is empty.
+            embedding_model (Optional[BaseEmbedding]): An optional embedding
+                model used by the VectorRetriever. Defaults to None.
+            vector_storage (Optional[BaseVectorStorage]): An optional vector
+                storage used by the VectorRetriever. Defaults to None.
         """
         self.vr = VectorRetriever(embedding_model, vector_storage)
         self.bm25 = BM25Retriever()
 
     def process(self, content_input_path: str) -> None:
+        r"""Processes the content input path for both vector and BM25
+        retrievers.
+
+        Args:
+            content_input_path (str): File path or URL of the content to be
+                processed.
+
+        Raises:
+            ValueError: If the content_input_path is empty.
+        """
         if not content_input_path:
             raise ValueError("content_input_path cannot be empty.")
 
@@ -51,7 +58,7 @@ class HybridRetriever(BaseRetriever):
 
     def _sort_rrf_scores(
         self,
-        vector_retriever_results: dict[str, Sequence[Collection[str]]],
+        vector_retriever_results: List[Dict[str, Any]],
         bm25_retriever_results: List[Dict[str, Any]],
         top_k: int,
         vector_weight: float,
@@ -62,9 +69,9 @@ class HybridRetriever(BaseRetriever):
         Reciprocal Rank Fusion (RRF).
 
         Args:
-            vector_retriever_results: A dictionary containing the results from
-                the vector retriever, where the key 'Retrieved Context' maps
-                to a sequence of collections with 'text' entries.
+            vector_retriever_results: A list of dictionaries containing the
+                results from the vector retriever, where each dictionary
+                contains a 'text' entry.
             bm25_retriever_results: A list of dictionaries containing the
                 results from the BM25 retriever, where each dictionary
                 contains a 'text' entry.
@@ -155,7 +162,8 @@ class HybridRetriever(BaseRetriever):
         bm25_retriever_top_k: int = 50,
         return_detailed_info: bool = False,
     ) -> Union[
-        dict[str, Sequence[Collection[str]]], dict[str, Sequence[str | float]]
+        dict[str, Sequence[Collection[str]]],
+        dict[str, Sequence[Union[str, float]]],
     ]:
         r"""Executes a hybrid retrieval query using both vector and BM25
         retrievers.
@@ -173,8 +181,10 @@ class HybridRetriever(BaseRetriever):
             return_detailed_info (bool): Return detailed info if True.
 
         Returns:
-            dict[str, Sequence[Union[Collection[str], str, float]]]: By
-                default, returns only the text information. If
+            Union[
+                dict[str, Sequence[Collection[str]]],
+                dict[str, Sequence[Union[str, float]]]
+            ]: By default, returns only the text information. If
                 `return_detailed_info` is `True`, return detailed information
                 including rrf scores.
         """
@@ -189,7 +199,7 @@ class HybridRetriever(BaseRetriever):
                 "Neither `vector_weight` nor `bm25_weight` can be negative."
             )
 
-        vr_raw_results = self.vr.query(
+        vr_raw_results: List[Dict[str, Any]] = self.vr.query(
             query=query,
             top_k=vector_retriever_top_k,
             similarity_threshold=vector_retriever_similarity_threshold,
@@ -216,18 +226,11 @@ class HybridRetriever(BaseRetriever):
             rank_smoothing_factor,
         )
 
-        detailed_info = {
+        retrieved_info = {
             "Original Query": query,
-            "Retrieved Context": all_retrieved_info,
+            "Retrieved Context": (
+                all_retrieved_info if return_detailed_info
+                else [item['text'] for item in all_retrieved_info]
+            ),
         }
-
-        text_retrieved_info = [item['text'] for item in all_retrieved_info]
-
-        text_info = {
-            "Original Query": query,
-            "Retrieved Context": text_retrieved_info,
-        }
-        if return_detailed_info:
-            return detailed_info
-        else:
-            return text_info
+        return retrieved_info

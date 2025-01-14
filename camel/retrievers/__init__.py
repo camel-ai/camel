@@ -11,12 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# ruff: noqa: I001
 from .auto_retriever import AutoRetriever
 from .base import BaseRetriever
 from .bm25_retriever import BM25Retriever
 from .cohere_rerank_retriever import CohereRerankRetriever
-from .hybrid_retrival import HybridRetriever
 from .vector_retriever import VectorRetriever
+from .hybrid_retrival import HybridRetriever
 
 __all__ = [
     'BaseRetriever',
