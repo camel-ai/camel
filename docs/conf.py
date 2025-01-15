@@ -44,6 +44,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'myst_parser',
     'nbsphinx',
+    'sphinxext.rediraffe',
 ]
 
 templates_path = ['_templates']
@@ -88,3 +89,31 @@ nbsphinx_prolog = r"""
     }
     </style>
 """
+
+rediraffe_redirects = {
+    "cookbooks/create_your_first_agent": "cookbooks/basic_concepts/create_your_first_agent",  # noqa: E501
+    "cookbooks/create_your_first_agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",  # noqa: E501
+    "cookbooks/embodied_agents": "cookbooks/advanced_features/embodied_agents",
+    "cookbooks/critic_agents_and_tree_search": "cookbooks/advanced_features/critic_agents_and_tree_search",  # noqa: E501
+    "cookbooks/agents_society": "cookbooks/basic_concepts/create_your_first_agents_society",  # noqa: E501
+    "cookbooks/model_speed_comparison": "cookbooks/model_training/model_speed_comparison",  # noqa: E501
+    "cookbooks/agents_message": "cookbooks/basic_concepts/agents_message",
+    "cookbooks/agents_with_tools": "cookbooks/advanced_features/agents_with_tools",  # noqa: E501
+    "cookbooks/agents_with_memory": "cookbooks/advanced_features/agents_with_memory",  # noqa: E501
+    "cookbooks/agents_with_rag": "cookbooks/advanced_features/agents_with_rag",
+    "cookbooks/agents_prompting": "cookbooks/basic_concepts/agents_prompting",
+    "cookbooks/task_generation": "cookbooks/model_training/task_generation",
+    "cookbooks/knowledge_graph": "cookbooks/advanced_features/agents_with_graph_rag",  # noqa: E501
+    "cookbooks/roleplaying_scraper": "cookbooks/applications/roleplaying_scraper",  # noqa: E501
+    "cookbooks/video_analysis": "cookbooks/data_processing/video_analysis",
+    "cookbooks/agents_tracking": "cookbooks/advanced_features/agents_tracking",
+    "cookbooks/workforce_judge_committee": "cookbooks/multi_agent_society/workforce_judge_committee",  # noqa: E501
+    "cookbooks/ingest_data_from_websites_with_Firecrawl": "cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl",  # noqa: E501
+    "cookbooks/sft_data_generation_and_unsloth_finetuning": "cookbooks/model_training/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B",  # noqa: E501
+    "cookbooks/customer_service_Discord_bot_with_agentic_RAG": "cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG",  # noqa: E501
+    "cookbooks/agent_with_chunkr_for_pdf_parsing": "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",  # noqa: E501
+    "cookbooks/data_gen_with_real_function_calls_and_hermes_format": "cookbooks/model_training/data_gen_with_real_function_calls_and_hermes_format",  # noqa: E501
+    "cookbooks/cot_data_gen_upload_to_huggingface": "cookbooks/model_training/cot_data_gen_upload_to_huggingface",  # noqa: E501
+    "cookbooks/cot_data_gen_sft_qwen_unsolth_upload_huggingface": "cookbooks/model_training/cot_data_gen_sft_qwen_unsolth_upload_huggingface",  # noqa: E501
+    "cookbooks/customer_service_Discord_bot_using_local_model_with_agentic_RAG": "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",  # noqa: E501
+}
