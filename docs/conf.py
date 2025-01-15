@@ -114,7 +114,6 @@ rediraffe_redirects = {
     "cookbooks/customer_service_Discord_bot_with_agentic_RAG": "cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG",
     "cookbooks/agent_with_chunkr_for_pdf_parsing": "cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing",
     "cookbooks/data_gen_with_real_function_calls_and_hermes_format": "cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format",
-    "cookbooks/cot_data_gen_upload_to_huggingface": "cookbooks/data_generation/cot_data_gen_upload_to_huggingface",
     "cookbooks/cot_data_gen_sft_qwen_unsolth_upload_huggingface": "cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface",
     "cookbooks/customer_service_Discord_bot_using_local_model_with_agentic_RAG": "cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG",
 }
