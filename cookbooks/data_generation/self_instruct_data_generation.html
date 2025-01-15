@@ -1,0 +1,1272 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Self-instruct Data Generation Using Qwen &#8212; CAMEL 0.2.16 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=a3416100" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=3c972f42" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=4e5ace54"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'cookbooks/data_generation/self_instruct_data_generation';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="CoT Data Generation and SFT Qwen With Unsloth" href="cot_data_gen_sft_qwen_unsolth_upload_huggingface.html" />
+    <link rel="prev" title="Data Gen with Real Function Calls and Hermes Format" href="data_gen_with_real_function_calls_and_hermes_format.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-light" alt=""/>
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">CAMEL 0.2.16</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/setup.html">API Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/messages.html">Message</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/memory.html">Memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/tools.html">Tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/prompts.html">Prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/tasks.html">Task</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/society.html">Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/retrievers.html">Retrievers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../key_modules/workforce.html">Workforce</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Cookbooks</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../basic_concepts/index.html">Basic Concepts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/create_your_first_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/create_your_first_agents_society.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/agents_message.html">Message Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/agents_prompting.html">Prompting Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basic_concepts/model_speed_comparison.html">Model Speed Comparison Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../advanced_features/index.html">Advanced Features</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_tools.html">Tools Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_tools_from_Composio.html">Using Tools from Composio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_memory.html">Memory Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_rag.html">RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_with_graph_rag.html">Graph RAG Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/agents_tracking.html">Track CAMEL Agents with AgentOps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../advanced_features/embodied_agents.html">Embodied Agents</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../multi_agent_society/index.html">Multi-agent Society</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../multi_agent_society/agents_society.html">Develop Trading Bot with Role Playing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi_agent_society/workforce_judge_committee.html">Create A Hackathon Judge Committee with Workforce</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi_agent_society/task_generation.html">Task Generation Cookbook</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Model Training and Fine-tuning</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="sft_data_generation_and_unsloth_finetuning_mistral_7b_instruct.html">Agenetic SFT Data generation with CAMEL and finetuning Mistral models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html">Agenetic Data generation with CAMEL and finetuning Qwen models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="sft_data_generation_and_unsloth_finetuning_tinyllama.html">Agenetic SFT Data generation with CAMEL and finetuning Meta models with Unsloth</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="data_gen_with_real_function_calls_and_hermes_format.html">Data Gen with Real Function Calls and Hermes Format</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Self-instruct Data Generation Using Qwen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cot_data_gen_sft_qwen_unsolth_upload_huggingface.html">CoT Data Generation and SFT Qwen With Unsloth</a></li>
+
+
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../applications/index.html">Applications</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../applications/roleplaying_scraper.html">Role-Playing Scraper for Report &amp; Knowledge Graph Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/dynamic_travel_planner.html">Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/customer_service_Discord_bot_with_agentic_RAG.html">Customer Service Discord Bot with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html">Customer Service Discord Bot Using SambaNova with Agentic RAG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html">Customer Service Discord Bot Using Local Models with Agentic RAG</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../data_processing/index.html">Data Processing and Analysis</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/video_analysis.html">Video Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/agent_with_chunkr_for_pdf_parsing.html">Create AI Agents that work with your PDFs using Chunkr &amp; Mistral AI</a></li>
+
+<li class="toctree-l2"><a class="reference internal" href="../data_processing/ingest_data_from_websites_with_Firecrawl.html">3 ways to ingest data from websites with Firecrawl</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">camel</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../camel.html">camel package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.agents.html">camel.agents package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.agents.tool_agents.html">camel.agents.tool_agents package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.configs.html">camel.configs package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.embeddings.html">camel.embeddings package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.interpreters.html">camel.interpreters package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.loaders.html">camel.loaders package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.memories.html">camel.memories package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.memories.blocks.html">camel.memories.blocks package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.memories.context_creators.html">camel.memories.context_creators package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.messages.html">camel.messages package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.models.html">camel.models package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.prompts.html">camel.prompts package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.responses.html">camel.responses package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.retrievers.html">camel.retrievers package</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.societies.html">camel.societies package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.societies.workforce.html">camel.societies.workforce package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../camel.storages.html">camel.storages package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.graph_storages.html">camel.storages.graph_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.key_value_storages.html">camel.storages.key_value_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.object_storages.html">camel.storages.object_storages package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../camel.storages.vectordb_storages.html">camel.storages.vectordb_storages package</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.tasks.html">camel.tasks package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.terminators.html">camel.terminators package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.toolkits.html">camel.toolkits package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.types.html">camel.types package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.utils.html">camel.utils package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/edit/main/cookbooks/data_generation/self_instruct_data_generation.ipynb" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/camel-ai/camel/issues/new?title=Issue%20on%20page%20%2Fcookbooks/data_generation/self_instruct_data_generation.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/cookbooks/data_generation/self_instruct_data_generation.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Self-instruct Data Generation Using Qwen</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> On this page </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Installation-and-Setup">Installation and Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Basic-Agent-Setup">Basic Agent Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Basic-Pipeline-Setup">Basic Pipeline Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Filter-functions">Filter functions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Length-Filter">Length Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Keyword-Filter">Keyword Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Punctuation-Filter">Punctuation Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Non-English-Filter">Non-English Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ROUGE-Similarity-Filter">ROUGE Similarity Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Custom-Filter-Function">Custom Filter Function</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Instruction-Filter">Instruction Filter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Pipeline-Setup-with-Custom-InstructionFilter">Pipeline Setup with Custom <code class="docutils literal notranslate"><span class="pre">InstructionFilter</span></code></a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <style>
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    display: none;
+}
+</style><section id="Self-instruct-Data-Generation-Using-Qwen">
+<h1>Self-instruct Data Generation Using Qwen<a class="headerlink" href="#Self-instruct-Data-Generation-Using-Qwen" title="Link to this heading">#</a></h1>
+<div class="align-center"><p><img alt="703bebb876d74a98b5d0d77ec3e175d1" class="no-scaled-link" src="https://i.postimg.cc/KzQ5rfBC/button.png" style="width: 150px;" /> <img alt="93b3848055464aaeb1e85525cacc1211" class="no-scaled-link" src="https://i.postimg.cc/L4wPdG9N/join-2.png" style="width: 150px;" /></p>
+<p>⭐ Star us on <a class="reference external" href="https://github.com/camel-ai/camel">Github</a>, join our <a class="reference external" href="https://discord.camel-ai.org">Discord</a> or follow our <a class="reference external" href="https://x.com/camelaiorg">X</a></p>
+</div><p>The self-instruct pipeline is a technique for automatically generating instructions for large language models (LLMs). Manually creating these datasets can be time-consuming and expensive. The self-instruct pipeline provides a way to automate this process and generate large numbers of instructions quickly and efficiently.</p>
+<section id="Installation-and-Setup">
+<h2>Installation and Setup<a class="headerlink" href="#Installation-and-Setup" title="Link to this heading">#</a></h2>
+<p>First, install the CAMEL package with all its dependencies</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;git+https://github.com/camel-ai/camel.git@c7bd39c898cb8d3bd434acd4219c3cb4f5f85ae2#egg=camel-ai[all]&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>If you don’t have a Qwen API key, you can obtain one by following these steps:</p>
+<p>Visit the Alibaba Cloud Model Studio Console (<a class="reference external" href="https://www.alibabacloud.com/en?_p_lc=1">https://www.alibabacloud.com/en?_p_lc=1</a>) and follow the on-screen instructions to activate the model services.</p>
+<p>In the upper-right corner of the console, click on your account name and select API-KEY.</p>
+<p>On the API Key management page, click on the Create API Key button to generate a new key.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">getpass</span><span class="w"> </span><span class="kn">import</span> <span class="n">getpass</span>
+
+<span class="n">qwen_api_key</span> <span class="o">=</span> <span class="n">getpass</span><span class="p">(</span><span class="s1">&#39;Enter your Qwen API key: &#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;QWEN_API_KEY&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qwen_api_key</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Enter your Qwen API key: ··········
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.configs</span><span class="w"> </span><span class="kn">import</span> <span class="n">QwenConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelPlatformType</span><span class="p">,</span> <span class="n">ModelType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseMessage</span>
+
+<span class="n">qwen_model</span> <span class="o">=</span> <span class="n">ModelFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model_platform</span><span class="o">=</span><span class="n">ModelPlatformType</span><span class="o">.</span><span class="n">QWEN</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">QWEN_TURBO</span><span class="p">,</span>
+    <span class="n">model_config_dict</span><span class="o">=</span><span class="n">QwenConfig</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Basic-Agent-Setup">
+<h2>Basic Agent Setup<a class="headerlink" href="#Basic-Agent-Setup" title="Link to this heading">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatAgent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">SelfInstructPipeline</span>
+
+<span class="n">agent</span> <span class="o">=</span> <span class="n">ChatAgent</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">qwen_model</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Basic-Pipeline-Setup">
+<h2>Basic Pipeline Setup<a class="headerlink" href="#Basic-Pipeline-Setup" title="Link to this heading">#</a></h2>
+<p>The pipeline works by starting with a small set of seed (human-written) instructions and then using an LLM to generate new instructions based on those seeds.</p>
+<ul class="simple">
+<li><p>The seed instructions are typically stored in a JSON Lines (JSONL) file. Each line in the file represents a single instruction in JSON format.</p></li>
+<li><p>Like the seed file, the output is also stored in JSONL format, making it easy to parse and use for further tasks, such as training or fine-tuning language models.</p></li>
+</ul>
+<p>Please replace <code class="docutils literal notranslate"><span class="pre">seed_path</span></code> with the path to your seed file, and replace <code class="docutils literal notranslate"><span class="pre">data_output_path</span></code> with your desired output location.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="c1"># Create directory for local data</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;local_data&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Update the URL to the raw file content</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/camel-ai/camel/master/examples/synthetic_datagen/self_instruct/seed_tasks.jsonl&quot;</span>
+
+<span class="c1"># Fetch the raw file</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;local_data/seed_tasks.jsonl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">seed_path</span> <span class="o">=</span> <span class="s1">&#39;local_data/seed_tasks.jsonl&#39;</span>
+<span class="n">data_output_path</span> <span class="o">=</span> <span class="s1">&#39;data_output.json&#39;</span>
+</pre></div>
+</div>
+</div>
+<p>The cell below shows some example instructions in the seed file. All seed files should follow this format.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;local_data/seed_tasks.jsonl&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">9</span><span class="p">:</span>
+                <span class="k">break</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#34;id&#34;: &#34;seed_task_0&#34;, &#34;name&#34;: &#34;breakfast_suggestion&#34;, &#34;instruction&#34;: &#34;Is there anything I can eat for a breakfast that doesn&#39;t include eggs, yet includes protein, and has roughly 700-1000 calories?&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;&#34;, &#34;output&#34;: &#34;Yes, you can have 1 oatmeal banana protein shake and 4 strips of bacon. The oatmeal banana protein shake may contain 1/2 cup oatmeal, 60 grams whey protein powder, 1/2 medium banana, 1tbsp flaxseed oil and 1/2 cup watter, totalling about 550 calories. The 4 strips of bacon contains about 200 calories.&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_1&#34;, &#34;name&#34;: &#34;antonym_relation&#34;, &#34;instruction&#34;: &#34;What is the relation between the given pairs?&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;Night : Day :: Right : Left&#34;, &#34;output&#34;: &#34;The relation between the given pairs is that they are opposites.&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_2&#34;, &#34;name&#34;: &#34;one_sentence_description&#34;, &#34;instruction&#34;: &#34;Generate a one-sentence description for each of the following people.&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;- Brack Obama\n- Elon Musk\n- Taylor Swift&#34;, &#34;output&#34;: &#34;- Barack Hussein Obama II is an American politician who served as the 44th president of the United States from 2009 to 2017.\n- Elon Musk is the founder, CEO, and chief engineer of SpaceX; angel investor, CEO and product architect of Tesla, Inc.; founder of The Boring Company; co-founder of Neuralink and OpenAI; president of the Musk Foundation; and owner and CEO of Twitter, Inc.\n- Taylor Alison Swift is an American singer-songwriter.&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_3&#34;, &#34;name&#34;: &#34;harmful_stereotype_example&#34;, &#34;instruction&#34;: &#34;Describe a situation in which the given stereotype can harm you.&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;\&#34;All Asians are smart!\&#34;&#34;, &#34;output&#34;: &#34;Imagine you&#39;re a small child of Asian descent. You hear your whole life how \&#34;all Asians are smart,\&#34; but you know that does not feel like it&#39;s true for you. You have a hard time in school. Reading is difficult. Math is impossible. Everyone around you seems to pressure you because you are supposed to be \&#34;smart.\&#34; Every time you do not bring home that \&#34;A\&#34; assignment, you feel like a failure. Like you alone missed out on the gene that makes \&#34;all Asians smart.\&#34;\nAs educational opportunities like scholarships and colleges close their door on you, your future looks bleak. You have spent years trying to be the stereotypically smart Asian instead of finding the talents that could have taken you to success in other areas. As you can see, although the stereotype doesn&#39;t sound like a bad thing at first, it can put a lot of weight on the people who do not fit into it.&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_4&#34;, &#34;name&#34;: &#34;email_subject_generation&#34;, &#34;instruction&#34;: &#34;Generate an appropriate subjective title for the following email:&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;Hi [person name],\n\nI&#39;m writing to ask you if you are happy to be a panelist of our workshop on multimodality at CVPR. The workshop will be held on June 20, 2023. \n\nBest,\n[my name]&#34;, &#34;output&#34;: &#34;Invitition to be a panelist for CVPR 2023 workshop on Multimodality&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_5&#34;, &#34;name&#34;: &#34;interview_question_answering&#34;, &#34;instruction&#34;: &#34;How do you answer this question in a job interview?&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;What do you think about when you are alone in a car?&#34;, &#34;output&#34;: &#34;If it is in the evening, I typically think about what good I have accomplished that day, and if it is in the morning, I think about how I can be my best that day. I also try to practice gratitude and live in the present moment while I&#39;m driving to avoid distractions.&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_6&#34;, &#34;name&#34;: &#34;new_year&#39;s_resolutions&#34;, &#34;instruction&#34;: &#34;Brainstorm a list of possible New Year&#39;s resolutions.&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;&#34;, &#34;output&#34;: &#34;- Lose weight\n- Exercise more\n- Eat healthier\n- Quit smoking\n- Drink less alcohol\n- Spend less money\n- Save more money\n- Get out of debt\n- Take a trip\n- Volunteer more\n- Spend more time with family and friends\n- Read more\n- Start a hobby\n- Get organized\n- Simplify your life\n- Meditate or pray more\n- Get a new job\n- Move to a new city\n- Make new friends\n- Go back to school\n- Learn a new language\n- Start a business&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_7&#34;, &#34;name&#34;: &#34;idiom_meaning&#34;, &#34;instruction&#34;: &#34;Explain the following idiom to me, and try to give me some examples.&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;black sheep&#34;, &#34;output&#34;: &#34;Meaning: An outcast. Someone who doesn\u2019t fit in with the rest of the crowd. They take pride in being different. Thinks for themselves and doesn\u2019t care what no one else has to say. They tend to ride their own wave and are usually loners because no one understands them, but its okay because they like it that way.\nExample: He\u2019s the black sheep of the family.&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_8&#34;, &#34;name&#34;: &#34;english_haiku_generation&#34;, &#34;instruction&#34;: &#34;Generate a haiku using the following word:&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;summer&#34;, &#34;output&#34;: &#34;The chill, worming in\nShock, pleasure, bursting within\nSummer tongue awakes&#34;}], &#34;is_classification&#34;: false}
+{&#34;id&#34;: &#34;seed_task_9&#34;, &#34;name&#34;: &#34;movie_recommendation&#34;, &#34;instruction&#34;: &#34;Recommend a movie for me to watch during the weekend and explain the reason.&#34;, &#34;instances&#34;: [{&#34;input&#34;: &#34;&#34;, &#34;output&#34;: &#34;I would recommend the movie \&#34;The Shawshank Redemption\&#34; because it is an excellent movie that is both moving and inspiring. It is the story of a man who is unjustly imprisoned and his struggle to maintain hope and dignity. It is a great film to watch over the weekend because it will make you think about the human capacity for resilience and hope.&#34;}], &#34;is_classification&#34;: false}
+</pre></div></div>
+</div>
+<p>The self-instruct pipeline works iteratively. In each round:</p>
+<ol class="arabic simple">
+<li><p>It selects a certain number of human-written instructions (<code class="docutils literal notranslate"><span class="pre">num_human_sample</span></code>) from the <code class="docutils literal notranslate"><span class="pre">seed_path</span></code>.</p></li>
+<li><p>It selects a certain number of machine-generated instructions (<code class="docutils literal notranslate"><span class="pre">num_machine_sample</span></code>) from previous rounds.</p></li>
+<li><p>It uses these selected instructions to guide the language model in generating new instructions.</p></li>
+<li><p>These new instructions are added to the pool of machine-generated instructions, and the process repeats until the desired number of instructions is generated.</p></li>
+</ol>
+<p>The <code class="docutils literal notranslate"><span class="pre">human_to_machine_ratio</span></code> helps control the balance between human guidance and the model’s creativity throughout this process. By adjusting this ratio, you can influence the quality and diversity of the generated instructions.</p>
+<p>Feel free to alter <code class="docutils literal notranslate"><span class="pre">num_human_sample</span></code> and <code class="docutils literal notranslate"><span class="pre">num_machine_sample</span></code>, which both will be passed into <code class="docutils literal notranslate"><span class="pre">human_to_machine_ratio</span></code> later</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">num_human_sample</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">num_machine_sample</span> <span class="o">=</span> <span class="mi">2</span>
+</pre></div>
+</div>
+</div>
+<p>Please replace <code class="docutils literal notranslate"><span class="pre">target_num_instructions</span></code> with the number of machine instructions you want to generate</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">target_num_instructions</span> <span class="o">=</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</div>
+<p>Pass everything to our pipeline.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">SelfInstructPipeline</span><span class="p">(</span>
+    <span class="n">agent</span><span class="o">=</span><span class="n">agent</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">seed_path</span><span class="p">,</span>
+    <span class="n">num_machine_instructions</span><span class="o">=</span><span class="n">target_num_instructions</span><span class="p">,</span>
+    <span class="n">data_output_path</span><span class="o">=</span><span class="n">data_output_path</span><span class="p">,</span>
+    <span class="n">human_to_machine_ratio</span><span class="o">=</span><span class="p">(</span><span class="n">num_human_sample</span><span class="p">,</span> <span class="n">num_machine_sample</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Try generating it! You will see the generated data file being created at your desired location!</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Pretty print the generated data content</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data_output_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[
+    {
+        &#34;id&#34;: &#34;machine_task_1&#34;,
+        &#34;instruction&#34;: &#34;Design a simple logo that represents both unity and diversity for a community organization.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;A circular logo with a pattern composed of different colored puzzle pieces fitting together perfectly, symbolizing unity and diversity within the community.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;An emblem featuring a tree with leaves of various shapes and colors, signifying growth, inclusion, and unity among diverse members of the community.&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_2&#34;,
+        &#34;instruction&#34;: &#34;Create a step-by-step guide explaining how to perform a specific magic trick.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;1. Begin by showing the audience a regular deck of cards.\n2. Shuffle the deck and ask a volunteer from the audience to draw a card and remember it.\n3. Have the volunteer place the card back into the deck without showing anyone.\n4. Shuffle the deck again and spread the cards face down on the table.\n5. Slowly reveal each card, until you find the selected card.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;1. Ask a participant to choose a coin and hold it in their closed hand.\n2. Cover the participant&#39;s hand with a cloth.\n3. While covered, secretly switch the coin with a duplicate coin.\n4. Lift the cloth to reveal the coin has seemingly disappeared and then reappeared elsewhere.&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_3&#34;,
+        &#34;instruction&#34;: &#34;Write a short story that incorporates the given three random words as key elements.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;[\&#34;mystery\&#34;, \&#34;river\&#34;, \&#34;midnight\&#34;&#34;,
+                &#34;output&#34;: &#34;Late one \&#34;midnight\&#34; under the glow of a full moon, Sarah found herself drawn to the mysterious \&#34;river\&#34; that flowed near her cottage. Legend had it that the river held many \&#34;mysteries\&#34; within its depths. As she approached the water&#39;s edge, she noticed a faint light flickering across the water. Her curiosity piqued, she ventured forth, only to discover an old boat half-submerged in the river. Determined to uncover the secrets it held, she spent hours exploring the boat and the riverbank, until the first light of dawn broke the darkness.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;[\&#34;castle\&#34;, \&#34;dragon\&#34;, \&#34;princess\&#34;&#34;,
+                &#34;output&#34;: &#34;In a faraway kingdom, Princess Amelia lived in a grand \&#34;castle\&#34; atop a hill. One day, a fearsome \&#34;dragon\&#34; began terrorizing the nearby villages. The king offered half his kingdom and Amelia&#39;s hand in marriage to whoever could slay the beast. Many knights tried and failed, but a humble farmer&#39;s son named Thomas succeeded. Instead of claiming the reward, he asked only for passage to the castle. There, he and Amelia discovered a shared love for adventure and soon embarked on a quest together, with the \&#34;dragon\&#34; as their guide, leaving behind the life of luxury in the \&#34;castle\&#34;.&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_4&#34;,
+        &#34;instruction&#34;: &#34;Explain the cultural significance of a traditional dance in a few paragraphs.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;The Flamenco dance, originating from the Andalusian region of Spain, holds deep cultural significance. It is a passionate and expressive art form that combines singing, guitar playing, dancing, and handclaps. Flamenco embodies the spirit of Andalusia, reflecting the region&#39;s history of diverse cultural influences including Roman, Jewish, Moorish, and Christian traditions. This dance form often conveys intense emotions such as sorrow, joy, and longing, mirroring the struggles and triumphs of the Andalusian people throughout history. Flamenco is not just a dance; it is a means of storytelling, preserving the collective memory and identity of the Andalusian community.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;The Haka, a traditional war dance of the M\u0101ori people of New Zealand, is a powerful display of strength, unity, and cultural pride. Originally performed by warriors before a battle to intimidate opponents and boost morale, today it is performed on various occasions such as weddings, funerals, and sporting events. The Haka involves rhythmic stamping, aggressive facial expressions, and synchronized movements, making it a visually striking performance. It serves as a way to honor ancestors, express grief, and celebrate achievements, reinforcing the M\u0101ori community&#39;s connection to their heritage and each other.&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_5&#34;,
+        &#34;instruction&#34;: &#34;Compose a poem that captures the essence of a serene countryside landscape.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;In the quiet valley where the river flows,\nGolden fields sway gently in the breeze.\nMountains stand guard, in eternal repose,\nWhile wildflowers dance beneath whispering trees.\n\nThe sun sets slow, painting skies anew,\nA canvas vast, in hues of pink and gold.\nUnder the stars, the night whispers true,\nOf peace that the waking world can&#39;t hold.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;Beneath the wide and open sky so blue,\nA lone barn stands against the green.\nThe lazy brook meanders through,\nIts waters clear, its banks unseen.\n\nBirdsong fills the air with sweet refrain,\nAs shadows lengthen, cool and long.\nIn this tranquil scene, no pain,\nJust nature&#39;s calm, a soothing song.\n\nThe gentle rustle of the leaves above,\nA soft caress from the summer wind.\nHere, worries fade, and cares dissolve,\nIn this serene and peaceful bind.&#34;
+            }
+        ]
+    }
+]
+</pre></div></div>
+</div>
+</section>
+<section id="Filter-functions">
+<h2>Filter functions<a class="headerlink" href="#Filter-functions" title="Link to this heading">#</a></h2>
+<p>Newly generated instructions undergo filtering and evaluation before being added to the results. Only those meeting predefined standards are included. CAMEL provides some filter functions that can be passed in the self-instruct pipeline. Additionally, we also supports custom filters for tailored evaluation! Filter functions return <code class="docutils literal notranslate"><span class="pre">True</span></code> if the instruction is valid, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</p>
+<section id="Length-Filter">
+<h3>Length Filter<a class="headerlink" href="#Length-Filter" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">LengthFilter</span></code> filters out all the instructions which has a length less than <code class="docutils literal notranslate"><span class="pre">min_len</span></code> or greater than <code class="docutils literal notranslate"><span class="pre">max_len</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">LengthFilter</span>
+
+<span class="n">length_filter</span> <span class="o">=</span> <span class="n">LengthFilter</span><span class="p">(</span><span class="n">min_len</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+
+<span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Sort the numbers in ascending order.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Calculate the sum.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Create a report that details the monthly expenses and savings in a spreadsheet.&quot;</span>
+<span class="p">]</span>
+
+<span class="n">filtered_instructions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instr</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span> <span class="k">if</span> <span class="n">length_filter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">instr</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">filtered_instructions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Sort the numbers in ascending order.&#39;, &#39;Create a report that details the monthly expenses and savings in a spreadsheet.&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Keyword-Filter">
+<h3>Keyword Filter<a class="headerlink" href="#Keyword-Filter" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">KeywordFilter</span></code> filters instructions that contain specific undesirable keyword.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeywordFilter</span>
+
+<span class="n">keyword_filter</span> <span class="o">=</span> <span class="n">KeywordFilter</span><span class="p">(</span><span class="n">keywords</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ban&quot;</span><span class="p">,</span> <span class="s2">&quot;prohibit&quot;</span><span class="p">,</span> <span class="s2">&quot;forbid&quot;</span><span class="p">])</span>
+
+<span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Ban the use of plastic bags.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Encourage recycling programs.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Prohibit smoking in public areas.&quot;</span>
+<span class="p">]</span>
+
+<span class="n">filtered_instructions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instr</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span> <span class="k">if</span> <span class="n">keyword_filter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">instr</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">filtered_instructions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Encourage recycling programs.&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Punctuation-Filter">
+<h3>Punctuation Filter<a class="headerlink" href="#Punctuation-Filter" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">PunctuationFilter</span></code> filters instructions that begin with a non-alphanumeric character.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">PunctuationFilter</span>
+
+<span class="n">punctuation_filter</span> <span class="o">=</span> <span class="n">PunctuationFilter</span><span class="p">()</span>
+
+<span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Sort the data by category.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;#Analyze the trends over time.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;*Create a summary of results.&quot;</span>
+<span class="p">]</span>
+
+<span class="n">filtered_instructions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instr</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span> <span class="k">if</span> <span class="n">punctuation_filter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">instr</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">filtered_instructions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Sort the data by category.&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Non-English-Filter">
+<h3>Non-English Filter<a class="headerlink" href="#Non-English-Filter" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">NonEnglishFilter</span></code> filters instructions that do not begin with English letters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">NonEnglishFilter</span>
+
+<span class="n">non_english_filter</span> <span class="o">=</span> <span class="n">NonEnglishFilter</span><span class="p">()</span>
+
+<span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Analyze the performance metrics.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;计算结果的统计数据.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Test the new algorithm.&quot;</span>
+<span class="p">]</span>
+
+<span class="n">filtered_instructions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instr</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span> <span class="k">if</span> <span class="n">non_english_filter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">instr</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">filtered_instructions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Analyze the performance metrics.&#39;, &#39;Test the new algorithm.&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="ROUGE-Similarity-Filter">
+<h3>ROUGE Similarity Filter<a class="headerlink" href="#ROUGE-Similarity-Filter" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">RougeSimilarityFilter</span></code> filters instructions that are too similar to existing instructions based on ROUGE scores.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">RougeSimilarityFilter</span>
+
+<span class="n">existing_instructions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Summarize the article.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Write a brief overview of the text.&quot;</span>
+<span class="p">]</span>
+
+<span class="n">similarity_filter</span> <span class="o">=</span> <span class="n">RougeSimilarityFilter</span><span class="p">(</span><span class="n">existing_instructions</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">instructions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Summarize the content.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Create a summary for the text.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Provide an analysis of the text.&quot;</span>
+<span class="p">]</span>
+
+<span class="n">filtered_instructions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instr</span> <span class="k">for</span> <span class="n">instr</span> <span class="ow">in</span> <span class="n">instructions</span> <span class="k">if</span> <span class="n">similarity_filter</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">instr</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">filtered_instructions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;Create a summary for the text.&#39;, &#39;Provide an analysis of the text.&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Custom-Filter-Function">
+<h3>Custom Filter Function<a class="headerlink" href="#Custom-Filter-Function" title="Link to this heading">#</a></h3>
+<p>Additionaly, you could implement your own filter function.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilterFunction</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomFilter</span><span class="p">(</span><span class="n">FilterFunction</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="c1"># apply your logic here</span>
+        <span class="n">logic</span> <span class="o">=</span> <span class="o">...</span>
+        <span class="k">return</span> <span class="n">logic</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Instruction-Filter">
+<h2>Instruction Filter<a class="headerlink" href="#Instruction-Filter" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">InstructionFilter</span></code> manages all filter functions. And we can use a custom InstructionFilter to initialize the pipeline</p>
+<p>Start by adding filter functions you want and configure them.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">filter_config</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s2">&quot;length&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min_len&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;max_len&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+  <span class="s2">&quot;keyword&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">]},</span>
+  <span class="s2">&quot;non_english&quot;</span><span class="p">:</span> <span class="p">{},</span>
+  <span class="s2">&quot;rouge_similarity&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;existing_instructions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Some existing instructions&quot;</span><span class="p">],</span>
+      <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mf">0.6</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>Then, initialize an <code class="docutils literal notranslate"><span class="pre">InstructionFilter</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">camel.datagen.self_instruct</span><span class="w"> </span><span class="kn">import</span> <span class="n">InstructionFilter</span>
+<span class="n">filters</span> <span class="o">=</span> <span class="n">InstructionFilter</span><span class="p">(</span><span class="n">filter_config</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Pipeline-Setup-with-Custom-InstructionFilter">
+<h2>Pipeline Setup with Custom <code class="docutils literal notranslate"><span class="pre">InstructionFilter</span></code><a class="headerlink" href="#Pipeline-Setup-with-Custom-InstructionFilter" title="Link to this heading">#</a></h2>
+<p>CAMEL has some default filter functions inside the pipeline, but you can also choose your own!</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">SelfInstructPipeline</span><span class="p">(</span>
+    <span class="n">agent</span><span class="o">=</span><span class="n">agent</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">seed_path</span><span class="p">,</span>
+    <span class="n">num_machine_instructions</span><span class="o">=</span><span class="n">target_num_instructions</span><span class="p">,</span>
+    <span class="n">data_output_path</span><span class="o">=</span><span class="n">data_output_path</span><span class="p">,</span>
+    <span class="n">human_to_machine_ratio</span><span class="o">=</span><span class="p">(</span><span class="n">num_human_sample</span><span class="p">,</span> <span class="n">num_machine_sample</span><span class="p">),</span>
+    <span class="n">instruction_filter</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>    <span class="c1"># pass in your InstructionFilter</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Or if you want to use the default function filters, but different configuration, you can also just pass in the filter configuration</p>
+<p>Finally, generate!</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Pretty print the generated data content</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data_output_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[
+    {
+        &#34;id&#34;: &#34;machine_task_1&#34;,
+        &#34;instruction&#34;: &#34;Create a crossword puzzle with clues related to famous scientists and their discoveries.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;Across:\n1. Scientist known for the theory of relativity (6) - Einstein\n5. Unit of frequency, named after a German physicist (7) - Hertz\n\nDown:\n1. Father of genetics, studied pea plants (7) - Mendel\n2. Invented the telephone, Scottish-born (8) - Bell&#34;
+            },
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;Across:\n1. Proposed the heliocentric model of the solar system (6) - Copernicus\n4. Formulated the laws of motion and universal gravitation (8) - Newton\n\nDown:\n1. Discovered the structure of DNA, worked with Watson (6) - Crick\n2. Proposed the theory of evolution by natural selection (9) - Darwin&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_2&#34;,
+        &#34;instruction&#34;: &#34;Design a workout plan tailored to someone with a specific fitness goal, such as weight loss or muscle gain.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;Fitness Goal - Weight Loss&#34;,
+                &#34;output&#34;: &#34;1. Monday: Cardio (30 min jog) and Light Weights\n2. Tuesday: Yoga (60 min session)\n3. Wednesday: HIIT (30 min session)\n4. Thursday: Swimming (30 min)\n5. Friday: Cycling (45 min session)\n6. Saturday: Rest or Light Activity (Walk, Stretch)\n7. Sunday: Rest or Light Activity (Walk, Stretch)&#34;
+            },
+            {
+                &#34;input&#34;: &#34;Fitness Goal - Muscle Gain&#34;,
+                &#34;output&#34;: &#34;1. Monday: Chest and Triceps\n2. Tuesday: Back and Biceps\n3. Wednesday: Rest or Light Activity (Stretching)\n4. Thursday: Legs\n5. Friday: Shoulders and Abs\n6. Saturday: Full Body Circuit Training\n7. Sunday: Rest or Light Activity (Stretching)&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_3&#34;,
+        &#34;instruction&#34;: &#34;Compose a short story that incorporates the given three random words as key elements.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;[\&#34;river\&#34;, \&#34;midnight\&#34;, \&#34;mystery\&#34;]&#34;,
+                &#34;output&#34;: &#34;At midnight, the river seemed to whisper secrets as thick fog enveloped its banks. Along its shore, Sarah stood, her heart pounding with the thrill of the mystery that awaited her. Legend had it that the river held many mysteries within its depths, and tonight, she planned to uncover them. As she approached the water&#39;s edge, she noticed a faint light flickering across the water. Her curiosity piqued, she ventured forth, only to discover an old boat half-submerged in the river. Determined to unveil the secrets it held, she spent hours exploring the boat and the riverbank, until the first light of dawn broke the darkness.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;[\&#34;castle\&#34;, \&#34;dragon\&#34;, \&#34;princess\&#34;]&#34;,
+                &#34;output&#34;: &#34;In a faraway kingdom, Princess Amelia lived in a grand castle atop a hill. One day, a fearsome dragon began terrorizing the nearby villages. The king offered half his kingdom and Amelia&#39;s hand in marriage to whoever could slay the beast. Many knights tried and failed, but a humble farmer&#39;s son named Thomas succeeded. Instead of claiming the reward, he asked only for passage to the castle. There, he and Amelia discovered a shared love for adventure and soon embarked on a quest together, with the dragon as their guide, leaving behind the life of luxury in the castle.&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_4&#34;,
+        &#34;instruction&#34;: &#34;Generate a list of potential names for a new restaurant, focusing on themes of nature and sustainability.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;- Green Haven\n- Eco Eats\n- Nature&#39;s Nook\n- Sustainable Spoon\n- Leafy Lounge&#34;
+            },
+            {
+                &#34;input&#34;: &#34;&#34;,
+                &#34;output&#34;: &#34;- The Verdant Table\n- Organic Oasis\n- Farm to Fork Feast\n- Earthy Eateria\n- Clean Cuisine Corner&#34;
+            }
+        ]
+    },
+    {
+        &#34;id&#34;: &#34;machine_task_5&#34;,
+        &#34;instruction&#34;: &#34;Design a logo for a local business that reflects its industry and values.&#34;,
+        &#34;is_classification&#34;: false,
+        &#34;instances&#34;: [
+            {
+                &#34;input&#34;: &#34;Business - \&#34;Green Garden Cafe\&#34;, Industry - \&#34;Caf\u00e9\&#34;, Values - \&#34;Sustainability, Community\&#34;&#34;,
+                &#34;output&#34;: &#34;A green leaf intertwined with a coffee cup, symbolizing the caf\u00e9&#39;s commitment to sustainability. Underneath, the words \&#34;Green Garden Cafe\&#34; in a friendly, inviting font, with a small icon of people gathered around a table to represent community.&#34;
+            },
+            {
+                &#34;input&#34;: &#34;Business - \&#34;Tech Innovators Inc.\&#34;, Industry - \&#34;Technology\&#34;, Values - \&#34;Innovation, Leadership, Cutting-edge\&#34;&#34;,
+                &#34;output&#34;: &#34;A modern, sleek design featuring a lightbulb made up of interconnected circuit boards, symbolizing innovation and cutting-edge technology. The words \&#34;Tech Innovators Inc.\&#34; in bold, contemporary font underneath, with a small icon of a leader&#39;s profile to represent leadership.&#34;
+            }
+        ]
+    }
+]
+</pre></div></div>
+</div>
+<p>That’s everything: Got questions about 🐫 CAMEL-AI? Join us on <a class="reference external" href="https://discord.camel-ai.org">Discord</a>! Whether you want to share feedback, explore the latest in multi-agent systems, get support, or connect with others on exciting projects, we’d love to have you in the community! 🤝</p>
+<p>Check out some of our other work:</p>
+<ol class="arabic simple">
+<li><p>🐫 Creating Your First CAMEL Agent <a class="reference external" href="https://docs.camel-ai.org/cookbooks/create_your_first_agent.html">free Colab</a></p></li>
+<li><p>Graph RAG Cookbook <a class="reference external" href="https://colab.research.google.com/drive/1uZKQSuu0qW6ukkuSv9TukLB9bVaS1H0U?usp=sharing">free Colab</a></p></li>
+<li><p>🧑‍⚖️ Create A Hackathon Judge Committee with Workforce <a class="reference external" href="https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing">free Colab</a></p></li>
+<li><p>🔥 3 ways to ingest data from websites with Firecrawl &amp; CAMEL <a class="reference external" href="https://colab.research.google.com/drive/1lOmM3VmgR1hLwDKdeLGFve_75RFW0R9I?usp=sharing">free Colab</a></p></li>
+<li><p>🦥 Agentic SFT Data Generation with CAMEL and Mistral Models, Fine-Tuned with Unsloth <a class="reference external" href="https://colab.research.google.com/drive/1lYgArBw7ARVPSpdwgKLYnp_NEXiNDOd-?usp=sharingg">free Colab</a></p></li>
+</ol>
+<p>Thanks from everyone at 🐫 CAMEL-AI</p>
+<div class="align-center"><p><img alt="fa1b318e23344e2e95e4ae74b7f9197e" class="no-scaled-link" src="https://i.postimg.cc/KzQ5rfBC/button.png" style="width: 150px;" /> <img alt="cd6a81089d9c4c4e9648783a915c5f79" class="no-scaled-link" src="https://i.postimg.cc/L4wPdG9N/join-2.png" style="width: 150px;" /></p>
+<p>⭐ Star us on <a class="reference external" href="https://github.com/camel-ai/camel">Github</a>, join our <a class="reference external" href="https://discord.camel-ai.org">Discord</a> or follow our <a class="reference external" href="https://x.com/camelaiorg">X</a></p>
+</div></section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="data_gen_with_real_function_calls_and_hermes_format.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Data Gen with Real Function Calls and Hermes Format</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="cot_data_gen_sft_qwen_unsolth_upload_huggingface.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">CoT Data Generation and SFT Qwen With Unsloth</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Installation-and-Setup">Installation and Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Basic-Agent-Setup">Basic Agent Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Basic-Pipeline-Setup">Basic Pipeline Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Filter-functions">Filter functions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Length-Filter">Length Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Keyword-Filter">Keyword Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Punctuation-Filter">Punctuation Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Non-English-Filter">Non-English Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ROUGE-Similarity-Filter">ROUGE Similarity Filter</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Custom-Filter-Function">Custom Filter Function</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Instruction-Filter">Instruction Filter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Pipeline-Setup-with-Custom-InstructionFilter">Pipeline Setup with Custom <code class="docutils literal notranslate"><span class="pre">InstructionFilter</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
