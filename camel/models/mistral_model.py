@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from mistralai.models import (
@@ -205,9 +207,14 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
-    def run(
+    async def _arun(self) -> None:  # type: ignore[override]
+        raise NotImplementedError("Mistral does not support async inference.")
+
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 

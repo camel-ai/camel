@@ -13,10 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import ClassVar, Optional, Union
+from typing import Dict, List, Optional, Union
+
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class QwenConfig(BaseConfig):
@@ -52,16 +53,16 @@ class QwenConfig(BaseConfig):
             keeping other parameters unchanged, the model is likely to return
             the same result.
             (default: :obj:`None`)
-        stop (str or list, optional): Using the stop parameter, the model will
-            automatically stop generating text when it is about to include the
-            specified string or token_id. You can use the stop parameter to
-            control the output of the model by passing sensitive words.
-            (default: :obj:`None`)
-        tools (list, optional): Specifies an array of tools that the model can
+        stop (Union[str, List], optional): Using the stop parameter, the model
+            will automatically stop generating text when it is about to
+            include the specified string or token_id. You can use the stop
+            parameter to control the output of the model by passing sensitive
+            words. (default: :obj:`None`)
+        tools (List, optional): Specifies an array of tools that the model can
             call. It can contain one or more tool objects. During a function
             call process, the model will select one tool from the array.
             (default: :obj:`None`)
-        extra_body (dict, optional): Additional parameters to be sent to the
+        extra_body (Dict, optional): Additional parameters to be sent to the
             Qwen API. If you want to enable internet search, you can set this
             parameter to `{"enable_search": True}`.
             (default: :obj:`{"enable_search": False}`)
@@ -74,11 +75,11 @@ class QwenConfig(BaseConfig):
     temperature: float = 0.3
     top_p: float = 0.9
     presence_penalty: float = 0.0
-    response_format: ClassVar[dict] = {"type": "text"}
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    response_format: Dict = Field(default_factory=lambda: {"type": "text"})
+    max_tokens: Optional[int] = None
     seed: Optional[int] = None
-    stop: Optional[Union[str, list]] = None
-    extra_body: ClassVar[dict] = {"enable_search": False}
+    stop: Optional[Union[str, List]] = None
+    extra_body: Dict = Field(default_factory=lambda: {"enable_search": False})
 
     def __init__(self, include_usage: bool = True, **kwargs):
         super().__init__(**kwargs)
