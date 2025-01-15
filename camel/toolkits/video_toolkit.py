@@ -19,11 +19,16 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional
 
+import ffmpeg
 from PIL import Image
+from qwen_vl_utils import process_vision_info  # type: ignore[import]
+from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.utils import dependencies_required
+
+from .audio_toolkit import AudioToolkit
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +72,7 @@ def _capture_screenshot(video_file: str, timestamp: float) -> Image.Image:
     return Image.open(io.BytesIO(out))
 
 
-class VideoDownloaderToolkit(BaseToolkit):
+class VideoToolkit(BaseToolkit):
     r"""A class for downloading videos and optionally splitting them into
     chunks.
 
@@ -85,9 +90,11 @@ class VideoDownloaderToolkit(BaseToolkit):
         self,
         download_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
+        cache_dir: Optional[str] = None,
     ) -> None:
         self._cleanup = download_directory is None
         self._cookies_path = cookies_path
+        self._audio_toolkit = AudioToolkit(cache_dir=cache_dir)
 
         self._download_directory = Path(
             download_directory or tempfile.mkdtemp()
@@ -105,6 +112,20 @@ class VideoDownloaderToolkit(BaseToolkit):
             )
 
         logger.info(f"Video will be downloaded to {self._download_directory}")
+
+        # Initialize model for video understanding
+        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+            "Qwen/Qwen2-VL-7B-Instruct",
+            # attn_implementation="flash_attention_2",
+            torch_dtype="auto",
+            device_map="auto",
+            cache_dir=cache_dir,
+        )
+
+        # Set processor for video understanding.
+        self.processor = AutoProcessor.from_pretrained(
+            "Qwen/Qwen2-VL-7B-Instruct", cache_dir=cache_dir
+        )
 
     def __del__(self) -> None:
         r"""Deconstructor for the VideoDownloaderToolkit class.
@@ -132,7 +153,8 @@ class VideoDownloaderToolkit(BaseToolkit):
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': str(video_template),
-            'force_generic_extractor': True,
+            'http_headers': {'User-Agent': 'Mozilla/5.0'},
+            #'force_generic_extractor': True,
             'cookiefile': self._cookies_path,
         }
 
@@ -144,6 +166,20 @@ class VideoDownloaderToolkit(BaseToolkit):
                 return ydl.prepare_filename(info)
         except yt_dlp.utils.DownloadError as e:
             raise RuntimeError(f"Failed to download video from {url}: {e}")
+
+    def _extract_audio_from_video(
+        self, video_path: str, output_format: str = "mp3"
+    ) -> str:
+        output_path = video_path.rsplit('.', 1)[0] + f".{output_format}"
+        try:
+            (
+                ffmpeg.input(video_path)
+                .output(output_path, vn=None, acodec="libmp3lame")
+                .run()
+            )
+            return output_path
+        except ffmpeg.Error as e:
+            raise RuntimeError(f"FFmpeg-Python failed: {e}")
 
     def get_video_bytes(
         self,
@@ -197,6 +233,109 @@ class VideoDownloaderToolkit(BaseToolkit):
 
         return images
 
+    def _ask_vllm(self, video_path: str, question: str) -> str:
+        r"""Ask a question about the video using VLLM.
+
+        Args:
+            video_path (str): The path to the video file.
+            question (str): The question to ask about the video.
+
+        Returns:
+            str: The answer to the question.
+        """
+        video_qa_prompt = f"{question} Please answer the question based on \
+            the video content and give your reason. If you think you cannot \
+            answer the question based on the vision information, please give \
+            your reason (e.g. audio is required)."
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "video",
+                        "video": video_path,
+                        "max_pixels": 560 * 360,
+                        "fps": 1,
+                    },
+                    {"type": "text", "text": video_qa_prompt},
+                ],
+            }
+        ]
+
+        text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to("cuda")
+
+        generated_ids = self.model.generate(**inputs, max_new_tokens=512)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :]
+            for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+        logger.info(output_text)
+        return output_text
+
+    def ask_question_about_video(self, video_path: str, question: str) -> str:
+        r"""Ask a question about the video.
+
+        Args:
+            video_path (str): The path to the video file.
+                It can be a local file or a URL.
+            question (str): The question to ask about the video.
+
+        Returns:
+            str: The answer to the question.
+        """
+
+        # use asr and video understanding model to answer the question
+        from urllib.parse import urlparse
+
+        parsed_url = urlparse(video_path)
+        is_url = all([parsed_url.scheme, parsed_url.netloc])
+
+        if is_url:
+            video_path = self._download_video(video_path)
+
+        audio_path = self._extract_audio_from_video(video_path)
+
+        vision_answer = self._ask_vllm(video_path, question)
+        audio_answer = self._audio_toolkit.ask_question_about_audio(
+            audio_path, question
+        )
+
+        return_text = f"""
+            Here is the answer from the vision model:
+            ```
+            {vision_answer}
+            ```
+            Here is the answer from the audio model:
+            ```
+            {audio_answer}
+            ```
+            Please note that the vision model can only process visual \
+            information, and the audio model can only process audio \
+            information.
+            Thus, You need to decide whether the questions you ask should \
+            focus on the visual model or the extracted audio text information,\
+            and make final answer by yourself.
+        """
+        logger.debug(f"Answer to the question: {return_text}")
+        return return_text
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -206,45 +345,7 @@ class VideoDownloaderToolkit(BaseToolkit):
                 the functions in the toolkit.
         """
         return [
+            FunctionTool(self.ask_question_about_video),
             FunctionTool(self.get_video_bytes),
             FunctionTool(self.get_video_screenshots),
         ]
-
-
-
-# @mengkang: Unit Test for video toolkit 
-if __name__ == "__main__":
-    import pytest
-    from camel.toolkits import VideoToolkit
-
-
-    @pytest.fixture
-    def video_toolkit():
-        return VideoToolkit()
-
-
-    def test_video_1(video_toolkit):
-
-        video_path = "https://www.youtube.com/watch?v=L1vXCYZAYYM"
-        question = "what is the highest number of bird species to be on camera simultaneously? Please answer with only the number."
-
-        res = video_toolkit.ask_question_about_video(video_path, question)
-        assert res == "3"
-
-
-    def test_video_2(video_toolkit):
-
-        video_path = "https://www.youtube.com/watch?v=1htKBjuUWec"
-        question = "What does Teal'c say in response to the question \"Isn't that hot?\" Please answer with the exact words or phrase."
-
-        res = video_toolkit.ask_question_about_video(video_path, question)
-        assert "extremely" in res.lower()
-
-
-    def test_video_3(video_toolkit):
-
-        video_path = "https://www.youtube.com/watch?v=2Njmx-UuU3M"
-        question = "What species of bird is featured in the video? Please answer with exactly the name of the species without any additional text."
-
-        res = video_toolkit.ask_question_about_video(video_path, question)
-        assert res.lower == "rockhopper penguin"

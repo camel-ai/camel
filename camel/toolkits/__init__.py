@@ -43,7 +43,7 @@ from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
-from .video_toolkit import VideoDownloaderToolkit
+from .video_toolkit import VideoToolkit
 from .dappier_toolkit import DappierToolkit
 
 __all__ = [
@@ -72,7 +72,7 @@ __all__ = [
     'NotionToolkit',
     'ArxivToolkit',
     'HumanToolkit',
-    'VideoDownloaderToolkit',
+    'VideoToolkit',
     'StripeToolkit',
     'MeshyToolkit',
     'OpenBBToolkit',
