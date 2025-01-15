@@ -2,7 +2,7 @@
 
    <div class="prev-next-nav">
      <a class="left-nav" href="../basic_concepts/index.html">← Basic Concepts</a>
-     <a class="right-nav" href="../model_training/index.html">Model Training →</a>
+     <a class="right-nav" href="../data_generation/index.html">Model Training →</a>
    </div>
 
 Applications
