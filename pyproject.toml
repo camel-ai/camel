@@ -400,6 +400,7 @@ sphinx_book_theme = "*"
 docutils = "<0.20.0"
 myst-parser = "*"
 nbsphinx = "*"
+sphinxext-rediraffe = "^0.2.7"
 
 [tool.ruff]
 line-length = 79
