@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2024, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.2.14'
+release = '0.2.16'
 
 html_favicon = (
     'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
@@ -37,7 +37,6 @@ html_favicon = (
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 source_suffix = ['.rst', '.md']
-
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -60,12 +59,26 @@ html_theme_options = {
         "text": f"CAMEL {release}",
         "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
         "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
-    }
+    },
+    "show_toc_level": 2,
+    "show_nav_level": 2,
+    "navigation_with_keys": True,
+    "toc_title": "On this page",
+    "show_navbar_depth": 2,
+    "repository_url": "https://github.com/camel-ai/camel",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True,
 }
+
+html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 nbsphinx_execute = 'never'
 nbsphinx_allow_errors = True
 nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
 .. raw:: html
 
     <style>
