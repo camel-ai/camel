@@ -11,11 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from typing import Union
+
 from camel.types import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
+    ChatCompletionToolMessageParam,
     ChatCompletionUserMessageParam,
 )
 
@@ -32,9 +35,16 @@ from .conversion.sharegpt.function_call_formatter import (
 )
 
 OpenAISystemMessage = ChatCompletionSystemMessageParam
-OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
+OpenAIAssistantMessage = Union[
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionToolMessageParam,
+]
 OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
+OpenAIFunctionMessage = Union[
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionToolMessageParam,
+]
+OpenAIToolMessageParam = ChatCompletionToolMessageParam
 OpenAIMessage = ChatCompletionMessageParam
 
 
@@ -45,6 +55,7 @@ __all__ = [
     'OpenAISystemMessage',
     'OpenAIAssistantMessage',
     'OpenAIUserMessage',
+    'OpenAIToolMessageParam',
     'OpenAIFunctionMessage',
     'OpenAIMessage',
     'FunctionCallFormatter',

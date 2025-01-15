@@ -16,6 +16,9 @@ from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_assistant_message_param import (
     ChatCompletionAssistantMessageParam,
 )
+from openai.types.chat.chat_completion_tool_message_param import (
+    ChatCompletionToolMessageParam,
+)
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion_function_message_param import (
     ChatCompletionFunctionMessageParam,
@@ -33,6 +36,7 @@ from openai.types.chat.chat_completion_user_message_param import (
 from openai.types.completion_usage import CompletionUsage
 from openai.types.chat import ParsedChatCompletion
 from openai._types import NOT_GIVEN, NotGiven
+from openai.types.chat import ChatCompletionMessageToolCall
 
 Choice = Choice
 ChatCompletion = ChatCompletion
@@ -42,7 +46,9 @@ ChatCompletionMessageParam = ChatCompletionMessageParam
 ChatCompletionSystemMessageParam = ChatCompletionSystemMessageParam
 ChatCompletionUserMessageParam = ChatCompletionUserMessageParam
 ChatCompletionAssistantMessageParam = ChatCompletionAssistantMessageParam
+ChatCompletionToolMessageParam = ChatCompletionToolMessageParam
 ChatCompletionFunctionMessageParam = ChatCompletionFunctionMessageParam
+ChatCompletionMessageToolCall = ChatCompletionMessageToolCall
 CompletionUsage = CompletionUsage
 NOT_GIVEN = NOT_GIVEN
 NotGiven = NotGiven

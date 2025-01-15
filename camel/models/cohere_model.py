@@ -228,6 +228,14 @@ class CohereModel(BaseModelBackend):
 
         cohere_messages = self._to_cohere_chatmessage(messages)
 
+        # Removing 'strict': True from the dictionary for
+        # cohere client
+        if self.model_config_dict.get('tools') is not None:
+            for tool in self.model_config_dict.get('tools', []):
+                function_dict = tool.get('function', {})
+                if 'strict' in function_dict:
+                    del function_dict['strict']
+
         try:
             response = self._client.chat(
                 messages=cohere_messages,
