@@ -70,6 +70,7 @@ class SlackApp:
         redirect_uri_path: str = "/slack/oauth_redirect",
         installation_store: Optional[AsyncInstallationStore] = None,
         socket_mode: bool = False,
+        oauth_model: Optional[str] = False,
     ) -> None:
         r"""Initializes the SlackApp instance by setting up the Slack Bolt app
         and configuring event handlers and OAuth settings.
@@ -113,6 +114,7 @@ class SlackApp:
         )
         self.custom_handler: Optional[Callable[[str], str]] = None
         self.socket_mode: bool = socket_mode
+        self.oauth_model: Optional[str] = oauth_model
         self._handler: Optional[
             Union[AsyncSlackRequestHandler, AsyncSocketModeHandler]
         ] = None
@@ -130,6 +132,7 @@ class SlackApp:
                     "variables must be set. Get it here: "
                     "`https://api.slack.com/apps`."
                 )
+        self._installation_store = installation_store
         self._app = self._initialize_app(
             installation_store=installation_store,
             redirect_uri_path=redirect_uri_path,
@@ -148,7 +151,8 @@ class SlackApp:
         from slack_bolt.app.async_app import AsyncApp
         from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 
-        if self.client_id and self.client_secret and self.scopes:
+        if self.oauth_model:
+            print("OAuth model is enabled.")
             return AsyncApp(
                 oauth_settings=AsyncOAuthSettings(
                     client_id=self.client_id,
@@ -262,7 +266,12 @@ class SlackApp:
             say (AsyncSay): A function to send a response back to the channel.
         """
         await context.ack()
-
+        if self._installation_store:
+            bot = await self._installation_store.async_find_bot(
+                team_id= context.team_id, enterprise_id= context.enterprise_id)
+            token = bot.bot_token
+        else:
+            token = self.token
         event_profile = SlackAppMentionEventProfile(**event)
         event_body = SlackAppMentionEventBody(**body)
         logger.info(f"app_mention, context: {context}")
@@ -272,7 +281,7 @@ class SlackApp:
         logger.info(f"app_mention, say: {say}")
         if self.custom_handler:
             response = self.custom_handler(event_profile, event_body)
-            await say(response)
+            await say(text=response, token=token)
 
     async def on_message(
         self,
@@ -298,6 +307,12 @@ class SlackApp:
             return
         event_profile = SlackEventProfile(**event)
         event_body = SlackEventBody(**body)
+        if self._installation_store:
+            bot = await self._installation_store.async_find_bot(
+                team_id= context.team_id, enterprise_id= context.enterprise_id)
+            token = bot.bot_token
+        else:
+            token = self.token
         logger.info(f"on_message, context: {context}")
         logger.info(f"on_message, client: {client}")
         logger.info(f"on_message, event_profile: {event_profile}")
@@ -306,7 +321,7 @@ class SlackApp:
         logger.info(f"Received message: {event_profile.text}")
         if self.custom_handler:
             response = self.custom_handler(event_profile, event_body)
-            await say(response)
+            await say(text=response, token=token)
 
     def mention_me(
         self, context: "AsyncBoltContext", body: SlackEventBody
