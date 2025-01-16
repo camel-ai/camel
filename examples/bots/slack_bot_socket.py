@@ -13,6 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
+import os
+import re
 
 from camel.agents import ChatAgent
 from camel.bots.slack.slack_app import SlackApp
@@ -21,8 +23,8 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 slack_bot = SlackApp(
-    token="please input your slack token",
-    app_token="please input your slack app token",
+    token=os.getenv("SLACK_TOKEN"),
+    app_token=os.getenv("SLACK_APP_TOKEN"),
     socket_mode=True,
 )
 
@@ -37,12 +39,23 @@ agent = ChatAgent(
     model=o1_model,
 )
 
-
-def custom_handler(message: str) -> str:
+def custom_handler(profile, event) -> str:
+    message = profile.text
+    print(message)
+    message = re.sub(r'<@[\w\d]+>', '', message).strip()
+    print(message)
     response = agent.step(message)
     return response.msg.content
 
 
 slack_bot.set_custom_handler(custom_handler)
+async def main():
+    try:
+        await slack_bot.start()
+    except KeyboardInterrupt:
+        print("Received Ctrl+C, stopping the bot...")
+        await slack_bot.stop()
+    finally:
+        await slack_bot.stop()
 
-asyncio.run(slack_bot.start())
+asyncio.run(main())
