@@ -24,7 +24,7 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 slack_bot = SlackApp(
-    token=os.getenv("SLACK_API_TOKEN"),
+    token=os.getenv("SLACK_TOKEN"),
     app_token=os.getenv("SLACK_APP_TOKEN"),
     socket_mode=True,
 )
