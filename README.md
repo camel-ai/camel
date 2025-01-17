@@ -270,13 +270,14 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)** | Leveraging knowledge graphs with RAG. |
 | **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
 
-### Model Training & Data Generation
+### Data Generation & Model Training
 | Cookbook | Description |
 |:---|:---|
 | **[Data Generation with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
 | **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)** | Explore how to generate data with real function calls and the Hermes format. |
 | **[Self-instruct Data Generation](https://docs.camel-ai.org/cookbooks/data_generation/self_instruct_data_generation.html)** | Explore comprehensive guidelines and best practices for generating self-instructional data, enabling robust model training and improved performance. |
 | **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
+| **[Agentic Data Generation, Evaluation & Filtering with Reward Models](https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model.html)** | Discover methods for generating, evaluating, and filtering agentic data using reward models to enhance the quality and efficiency of your synthetic data pipelines. |
 
 ### Multi-Agent Systems & Applications
 | Cookbook | Description |
