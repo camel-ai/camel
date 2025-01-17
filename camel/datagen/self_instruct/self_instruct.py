@@ -365,13 +365,13 @@ class SelfInstructPipeline:
         and instances.
         """
         while len(self.machine_tasks) < self.num_machine_instructions:
+            prompt, instruction = self.generate_machine_instruction()
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
             ] + [t["instruction"] for t in self.machine_tasks]
             for f in self.instruction_filter.filters:
                 if isinstance(f, RougeSimilarityFilter):
                     f.existing_instructions = existing_instructions
-            prompt, instruction = self.generate_machine_instruction()
             if self.instruction_filter.filter(prompt, instruction):
                 instruction_dict = {
                     "id": f"machine_task_{len(self.machine_tasks) + 1}",
