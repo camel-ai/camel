@@ -13,6 +13,7 @@ Advanced Features
 
    agents_with_tools
    agents_with_tools_from_Composio
+   agents_with_human_in_loop_and_tool_approval
    agents_with_memory
    agents_with_rag
    agents_with_graph_rag
