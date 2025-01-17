@@ -465,7 +465,7 @@ class Evaluator:
         # Place holder for import as the import
         # only works after the files have been downloaded
         try:
-            from api_bank.tool_manager import (  # type: ignore[import-untyped]
+            from api_bank.tool_manager import (  # type: ignore[import-not-found]
                 ToolManager,
             )
         except Exception as e:
@@ -496,7 +496,7 @@ class Evaluator:
 
     def evaluate(self, sample_id, model_output):
         try:
-            from api_bank.api_call_extraction import (  # type: ignore[import-untyped]
+            from api_bank.api_call_extraction import (  # type: ignore[import-not-found]
                 parse_api_call,
             )
         except Exception as e:
