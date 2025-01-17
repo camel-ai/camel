@@ -15,7 +15,6 @@
 import asyncio
 import os
 import re
-import os
 
 from camel.agents import ChatAgent
 from camel.bots.slack.slack_app import SlackApp
