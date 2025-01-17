@@ -22,6 +22,7 @@ from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.model_scope_model import ModelScopeModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -89,6 +90,8 @@ class ModelFactory:
             model_class = VLLMModel
         elif model_platform.is_sglang:
             model_class = SGLangModel
+        elif model_platform.is_modelscope:
+            model_class = ModelScopeModel
         elif model_platform.is_openai_compatible_model:
             model_class = OpenAICompatibleModel
         elif model_platform.is_samba:

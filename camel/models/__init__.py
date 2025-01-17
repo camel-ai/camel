@@ -23,6 +23,7 @@ from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
+from .model_scope_model import ModelScopeModel
 from .nemotron_model import NemotronModel
 from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
@@ -68,4 +69,5 @@ __all__ = [
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
+    'ModelScopeModel',
 ]
