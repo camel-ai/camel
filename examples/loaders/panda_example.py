@@ -13,14 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-import logging
-
 import pandas as pd
 
 from camel.loaders import PandaReader
-
-logging.disable(logging.ERROR)
-
 
 reader = PandaReader()
 sales_by_country = pd.DataFrame(
