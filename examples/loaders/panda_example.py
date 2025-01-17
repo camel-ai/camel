@@ -22,39 +22,45 @@ from camel.loaders import PandaReader
 logging.disable(logging.ERROR)
 
 
-def main():
-    reader = PandaReader()
-    sales_by_country = pd.DataFrame(
-        {
-            "country": [
-                "United States",
-                "United Kingdom",
-                "France",
-                "Germany",
-                "Italy",
-                "Spain",
-                "Canada",
-                "Australia",
-                "Japan",
-                "China",
-            ],
-            "sales": [
-                5000,
-                3200,
-                2900,
-                4100,
-                2300,
-                2100,
-                2500,
-                2600,
-                4500,
-                7000,
-            ],
-        }
-    )
-    doc = reader.load(sales_by_country)
-    print(doc.chat("Which are the top 5 countries by sales?"))
+reader = PandaReader()
+sales_by_country = pd.DataFrame(
+    {
+        "country": [
+            "United States",
+            "United Kingdom",
+            "France",
+            "Germany",
+            "Italy",
+            "Spain",
+            "Canada",
+            "Australia",
+            "Japan",
+            "China",
+        ],
+        "sales": [
+            5000,
+            3200,
+            2900,
+            4100,
+            2300,
+            2100,
+            2500,
+            2600,
+            4500,
+            7000,
+        ],
+    }
+)
+doc = reader.load(sales_by_country)
+print(doc.chat("Which are the top 5 countries by sales?"))
 
-
-if __name__ == "__main__":
-    main()
+'''
+===============================================================================
+          country  sales
+9           China   7000
+0   United States   5000
+8           Japan   4500
+3         Germany   4100
+1  United Kingdom   3200
+===============================================================================
+'''
