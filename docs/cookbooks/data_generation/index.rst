@@ -17,3 +17,4 @@ Model Training and Fine-tuning
    data_gen_with_real_function_calls_and_hermes_format
    self_instruct_data_generation
    cot_data_gen_sft_qwen_unsolth_upload_huggingface
+   synthetic_dataevaluation&filter_with_reward_model
