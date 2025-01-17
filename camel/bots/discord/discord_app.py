@@ -21,7 +21,7 @@ from fastapi import FastAPI
 
 from camel.bots.discord.discord_installation import DiscordInstallation
 from camel.logger import get_logger
-from camel.utils import dependencies_required
+from camel.utils import api_keys_required, dependencies_required
 
 from .discord_store import DiscordBaseInstallationStore
 
@@ -48,6 +48,11 @@ class DiscordApp:
     """
 
     @dependencies_required('discord')
+    @api_keys_required(
+        [
+            ("token", "DISCORD_BOT_TOKEN"),
+        ]
+    )
     def __init__(
         self,
         channel_ids: Optional[List[int]] = None,
@@ -81,18 +86,12 @@ class DiscordApp:
                 (default: :obj:`None`)
 
         Raises:
-            ValueError: If the `DISCORD_TOKEN` is not found in environment
+            ValueError: If the `DISCORD_BOT_TOKEN` is not found in environment
                 variables.
         """
         self.token = token or os.getenv("DISCORD_BOT_TOKEN")
         self.channel_ids = channel_ids
         self.installation_store = installation_store
-
-        if not self.token:
-            raise ValueError(
-                "`DISCORD_TOKEN` not defined. Get it"
-                " here: `https://discord.com/developers/applications`."
-            )
 
         if not intents:
             intents = discord.Intents.all()

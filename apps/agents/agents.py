@@ -563,36 +563,39 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
         lambda v: gr.update(visible=v), task_specifier_cb, ts_word_limit_nb
     )
 
+    def start_chain():
+        state = cleanup_on_launch(session_state.value)
+        state, specified_task, task_prompt, chat, progress = (
+            role_playing_start(
+                state,
+                society_dd.value,
+                assistant_ta.value,
+                user_ta.value,
+                original_task_ta.value,
+                num_messages_sl.value,
+                task_specifier_cb.value,
+                ts_word_limit_nb.value,
+                language_ta.value,
+            )
+        )
+        state, chat, progress = role_playing_chat_init(state)
+        return (
+            state,
+            specified_task,
+            task_prompt,
+            chat,
+            progress,
+        )
+
     start_bn.click(
-        cleanup_on_launch,
-        session_state,
-        [session_state, chatbot, start_bn],
-        queue=False,
-    ).then(
-        role_playing_start,
-        [
-            session_state,
-            society_dd,
-            assistant_ta,
-            user_ta,
-            original_task_ta,
-            num_messages_sl,
-            task_specifier_cb,
-            ts_word_limit_nb,
-            language_ta,
-        ],
-        [
+        fn=start_chain,
+        outputs=[
             session_state,
             specified_task_ta,
             task_prompt_ta,
             chatbot,
             progress_sl,
         ],
-        queue=False,
-    ).then(
-        role_playing_chat_init,
-        session_state,
-        [session_state, chatbot, progress_sl],
         queue=False,
     )
 
