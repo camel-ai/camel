@@ -23,8 +23,6 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 slack_bot = SlackApp(
-    token=os.getenv("SLACK_TOKEN"),
-    app_token=os.getenv("SLACK_APP_TOKEN"),
     socket_mode=True,
 )
 
@@ -47,8 +45,8 @@ def custom_handler(profile, event) -> str:
     response = agent.step(message)
     return response.msg.content
 
-
 slack_bot.set_custom_handler(custom_handler)
+
 async def main():
     try:
         await slack_bot.start()
