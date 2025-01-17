@@ -15,6 +15,7 @@
 import asyncio
 import os
 import re
+import os
 
 from camel.agents import ChatAgent
 from camel.bots.slack.slack_app import SlackApp
@@ -23,6 +24,8 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 slack_bot = SlackApp(
+    token=os.getenv("SLACK_API_TOKEN"),
+    app_token=os.getenv("SLACK_APP_TOKEN"),
     socket_mode=True,
 )
 
