@@ -36,7 +36,11 @@ class StripeToolkit(BaseToolkit):
         logger (Logger): a logger to write logs.
     """
 
-    @api_keys_required("STRIPE_API_KEY")
+    @api_keys_required(
+        [
+            (None, "STRIPE_API_KEY"),
+        ]
+    )
     def __init__(self, retries: int = 3):
         r"""Initializes the StripeToolkit with the specified number of
         retries.

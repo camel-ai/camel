@@ -53,7 +53,11 @@ class NemotronRewardModel(BaseRewardModel):
             api_key=self.api_key,
         )
 
-    @api_keys_required("NVIDIA_API_KEY")
+    @api_keys_required(
+        [
+            (None, "NVIDIA_API_KEY"),
+        ]
+    )
     def evaluate(self, messages: List[Dict[str, str]]) -> Dict[str, float]:
         r"""Evaluate the messages using the Nemotron model.
 

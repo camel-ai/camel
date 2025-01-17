@@ -53,6 +53,11 @@ class OpenAISchemaConverter(BaseConverter):
 
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "OPENAI_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: ModelType = ModelType.GPT_4O_MINI,
@@ -69,7 +74,6 @@ class OpenAISchemaConverter(BaseConverter):
         )._client
         super().__init__()
 
-    @api_keys_required("OPENAI_API_KEY")
     def convert(  # type: ignore[override]
         self,
         content: str,
