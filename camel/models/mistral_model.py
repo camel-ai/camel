@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 from camel.configs import MISTRAL_API_PARAMS, MistralConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -213,24 +214,31 @@ class MistralModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
     ) -> ChatCompletion:
         r"""Runs inference of Mistral chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response for this query.
+            tools (Optional[List[Dict[str, Any]]]): The tools to use for this
+                query.
 
         Returns:
-            ChatCompletion.
+            ChatCompletion: The response from the model.
         """
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
         mistral_messages = self._to_mistral_chatmessage(messages)
 
         response = self._client.chat.complete(
             messages=mistral_messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
 
         openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
@@ -250,6 +258,24 @@ class MistralModel(BaseModelBackend):
             record(llm_event)
 
         return openai_response
+
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        # TODO: very unstable if tools and response_format are both used
+        request_config = self.model_config_dict.copy()
+        try_modify_message_with_format(messages[-1], response_format)
+        if tools:
+            request_config["tools"] = tools
+        elif response_format:
+            # Improve stability with native response format support
+            # This config will not be allowed if used with tools
+            request_config["response_format"] = {"type": "json_object"}
+
+        return request_config
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any

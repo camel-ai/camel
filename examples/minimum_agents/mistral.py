@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
@@ -19,8 +20,8 @@ from camel.toolkits import WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN_TURBO,
+    model_platform=ModelPlatformType.MISTRAL,
+    model_type=ModelType.MISTRAL_8B,
 )
 
 
@@ -32,14 +33,12 @@ class ResponseFormat(BaseModel):
 agent = ChatAgent(model=model, tools=[WeatherToolkit().get_weather_data])
 
 resp = agent.step(
-    "What's the temperature in Beijing?",
+    "What's the temperature in New York?",
     response_format=ResponseFormat,
 )
+
+
 print(resp.msg.content)
 
-
-# resp = agent.step(
-#     "Format your last response.",
-#     response_format=ResponseFormat,
-# )
-# print(resp.msg.content)
+for message in agent.chat_history:
+    print(f"{message['role']}: {message['content']}")

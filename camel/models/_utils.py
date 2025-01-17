@@ -29,6 +29,7 @@ def try_modify_message_with_format(
     The message will not be modified in the following cases:
     - response_format is None
     - message content is not a string
+    - message role is assistant
 
     Args:
         response_format (Optional[Type[BaseModel]]): The Pydantic model class.
@@ -38,6 +39,9 @@ def try_modify_message_with_format(
         return
 
     if not isinstance(message["content"], str):
+        return
+
+    if message["role"] == "assistant":
         return
 
     json_schema = response_format.model_json_schema()

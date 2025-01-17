@@ -385,6 +385,11 @@ class ChatAgent(BaseAgent):
             response, tool_call_records, num_tokens
         )
 
+    @property
+    def chat_history(self) -> List[OpenAIMessage]:
+        openai_messages, _ = self.memory.get_context()
+        return openai_messages
+
     async def astep(
         self,
         input_message: Union[BaseMessage, str],
