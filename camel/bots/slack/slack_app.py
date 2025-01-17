@@ -60,7 +60,7 @@ class SlackApp:
     @dependencies_required('slack_bolt')
     def __init__(
         self,
-        token: str,
+        token: Optional[str] = None,
         app_token: Optional[str] = None,
         scopes: Optional[str] = None,
         signing_secret: Optional[str] = None,
@@ -99,7 +99,7 @@ class SlackApp:
             AsyncSlackRequestHandler,
         )
 
-        self.token = token
+        self.token = token or os.getenv("SLACK_TOKEN")
         self.scopes: Optional[str] = scopes or os.getenv("SLACK_SCOPES")
         self.signing_secret: Optional[str] = signing_secret or os.getenv(
             "SLACK_SIGNING_SECRET"
@@ -197,8 +197,7 @@ class SlackApp:
         self._app.event("message")(self.on_message)
 
     async def start(self) -> None:
-        r"""Starts the Slack Bolt app asynchronously.
-        """
+        r"""Starts the Slack Bolt app asynchronously."""
         from slack_bolt.adapter.socket_mode.async_handler import (
             AsyncSocketModeHandler,
         )
@@ -342,6 +341,8 @@ class SlackApp:
             context (AsyncBoltContext): The Slack Bolt context for the event.
         Returns:
             str: The bot token.
+        Raises:
+            ValueError: If the bot token is unavailable and self.token is
         """
         from slack_sdk.oauth.installation_store import Bot
 
@@ -351,4 +352,8 @@ class SlackApp:
             )
             if bot is not None and bot.bot_token is not None:
                 return bot.bot_token
+        if self.token is None:
+            raise ValueError(
+                "Bot token is unavailable, and self.token is None."
+            )
         return self.token

@@ -37,6 +37,7 @@ agent = ChatAgent(
     model=o1_model,
 )
 
+
 def custom_handler(profile, event) -> str:
     message = profile.text
     print(message)
@@ -45,7 +46,9 @@ def custom_handler(profile, event) -> str:
     response = agent.step(message)
     return response.msg.content
 
+
 slack_bot.set_custom_handler(custom_handler)
+
 
 async def main():
     try:
@@ -55,5 +58,6 @@ async def main():
         await slack_bot.stop()
     finally:
         await slack_bot.stop()
+
 
 asyncio.run(main())
