@@ -269,6 +269,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
 | **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)** | Leveraging knowledge graphs with RAG. |
 | **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
+| **[Agents with Human-in-loop and Tool Approval from HumanLayer](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html)** | Implementing human oversight and tool approval within agent workflows using HumanLayer. |
 
 ### Data Generation & Model Training
 | Cookbook | Description |
