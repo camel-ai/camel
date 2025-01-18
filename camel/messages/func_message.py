@@ -141,12 +141,13 @@ class FunctionCallingMessage(BaseMessage):
         }
 
     def to_openai_tool_message(self) -> OpenAIToolMessageParam:
-        r"""Converts the message to an :obj:`OpenAIMessage` object
-        with the role being "function".
+        r"""Converts the message to an :obj:`OpenAIToolMessageParam` object
+        with the role being "tool".
 
         Returns:
-            OpenAIMessage: The converted :obj:`OpenAIMessage` object
-                with its role being "function".
+            OpenAIToolMessageParam: The converted
+                :obj:`OpenAIToolMessageParam` object with its role being
+                "tool".
         """
         if not self.func_name:
             raise ValueError(
@@ -156,15 +157,8 @@ class FunctionCallingMessage(BaseMessage):
 
         result_content = json.dumps(self.result)
 
-        if self.tool_call_id:
-            return {
-                "role": "tool",
-                "content": result_content,
-                "tool_call_id": self.tool_call_id,
-            }
-
         return {
-            "role": "function",
-            "name": self.func_name,
-            "content": f'{result_content}',
+            "role": "tool",
+            "content": result_content,
+            "tool_call_id": self.tool_call_id or str(uuid4()),
         }
