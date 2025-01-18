@@ -826,7 +826,7 @@ class ChatAgent(BaseAgent):
             return True
 
         if self.model_type.support_native_tool_calling:
-            return response.choices[0].message.tool_calls is None
+            return not response.choices[0].message.tool_calls
 
         return "</function>" not in str(
             response.choices[0].message.content or ""
