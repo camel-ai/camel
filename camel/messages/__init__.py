@@ -15,7 +15,6 @@ from typing import Union
 
 from camel.types import (
     ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionToolMessageParam,
@@ -40,10 +39,8 @@ OpenAIAssistantMessage = Union[
     ChatCompletionToolMessageParam,
 ]
 OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = Union[
-    ChatCompletionFunctionMessageParam,
-    ChatCompletionToolMessageParam,
-]
+OpenAIFunctionMessage = ChatCompletionToolMessageParam
+
 OpenAIToolMessageParam = ChatCompletionToolMessageParam
 OpenAIMessage = ChatCompletionMessageParam
 
