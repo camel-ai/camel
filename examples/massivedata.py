@@ -11,21 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from camel.datagen.massivedata import parse_sources
+from camel.loaders.uio import parse_sources
 
 sources = [
-        "https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/self_instruct_data_generation.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html#",
-      
+    "https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html",
+    "https://docs.camel-ai.org/cookbooks/data_generation/self_instruct_data_generation.html",
+    "https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html",
+    "https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html",
+    "https://docs.camel-ai.org/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html#",
 ]
 # Example with custom chunk size and overlap
 chunks = parse_sources(sources, chunk_size=10000, overlap=1)
 print(f"Successfully parsed {len(chunks)} chunks")
 
 for i, chunk in enumerate(chunks):
-        print(f"Chunk {i+1}:")
-        print(chunk)
-        print("\n" + "-" * 80)
+    print(f"Chunk {i+1}:")
+    print(chunk)
+    print("\n" + "-" * 80)
