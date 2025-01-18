@@ -13,9 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .cotdatagen import CoTDataGenerator
+from .massivedata.uio import parse_sources
 from .self_instruct import SelfInstructPipeline
 
 __all__ = [
     "CoTDataGenerator",
     "SelfInstructPipeline",
+    "parse_sources",
 ]
