@@ -255,6 +255,7 @@ class SlackApp:
             say (AsyncSay): A function to send a response back to the channel.
         """
         await context.ack()
+        thread_ts = None
         token = await self._get_bot_token(context)
         event_profile = SlackAppMentionEventProfile(**event)
         event_body = SlackAppMentionEventBody(**body)
@@ -267,8 +268,13 @@ class SlackApp:
             "mention", self._custom_handlers.get('default')
         )
         if handler:
-            response = handler(event_profile, event_body)
-            await say(text=response, token=token)
+            result = handler(event_profile, event_body)
+            if isinstance(result, tuple):
+                response, thread_ts = result
+            else:
+                response = result
+                thread_ts = None
+            await say(text=response, token=token, thread_ts=thread_ts)
 
     async def on_message(
         self,
@@ -305,8 +311,13 @@ class SlackApp:
             "message", self._custom_handlers.get('default')
         )
         if handler:
-            response = handler(event_profile, event_body)
-            await say(text=response, token=token)
+            result = handler(event_profile, event_body)
+            if isinstance(result, tuple):
+                response, thread_ts = result
+            else:
+                response = result
+                thread_ts = None
+            await say(text=response, token=token, thread_ts=thread_ts)
 
     def mention_me(
         self, context: "AsyncBoltContext", body: SlackEventBody
@@ -368,7 +379,11 @@ class SlackApp:
 
         Args:
             handler (Callable[[SlackEventProfile, SlackEventBody], Any]):
-                The handler function.
+                The handler function. You can use this to customize the
+                behavior of the Slack app for different message types. The
+                handler function should accept two arguments: the event profile
+                and the event body and return the response message or a tuple
+                containing the response message and the thread_ts.
             message_type (Optional[str]): The specific message type to handle
                 (e.g., 'mention', 'message', etc.).
                 Defaults to 'default' if not specified.
