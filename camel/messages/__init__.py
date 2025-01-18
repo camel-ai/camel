@@ -39,9 +39,8 @@ OpenAIAssistantMessage = Union[
     ChatCompletionToolMessageParam,
 ]
 OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = ChatCompletionToolMessageParam
-
 OpenAIToolMessageParam = ChatCompletionToolMessageParam
+
 OpenAIMessage = ChatCompletionMessageParam
 
 
@@ -53,7 +52,7 @@ __all__ = [
     'OpenAIAssistantMessage',
     'OpenAIUserMessage',
     'OpenAIToolMessageParam',
-    'OpenAIFunctionMessage',
+    'OpenAIToolMessageParam',
     'OpenAIMessage',
     'FunctionCallFormatter',
     'HermesFunctionFormatter',

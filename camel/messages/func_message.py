@@ -20,8 +20,8 @@ from camel.messages import (
     BaseMessage,
     HermesFunctionFormatter,
     OpenAIAssistantMessage,
-    OpenAIFunctionMessage,
     OpenAIMessage,
+    OpenAIToolMessageParam,
 )
 from camel.messages.conversion import (
     ShareGPTMessage,
@@ -140,7 +140,7 @@ class FunctionCallingMessage(BaseMessage):
             ],
         }
 
-    def to_openai_function_message(self) -> OpenAIFunctionMessage:
+    def to_openai_function_message(self) -> OpenAIToolMessageParam:
         r"""Converts the message to an :obj:`OpenAIMessage` object
         with the role being "function".
 
