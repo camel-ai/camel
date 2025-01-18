@@ -55,7 +55,7 @@ Main Documentation
    cookbooks/basic_concepts/index
    cookbooks/advanced_features/index
    cookbooks/multi_agent_society/index
-   cookbooks/model_training/index
+   cookbooks/data_generation/index
    cookbooks/applications/index
    cookbooks/data_processing/index
 

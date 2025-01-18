@@ -17,8 +17,9 @@ from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
-from .uio import parse_sources
+from .panda_reader import PandaReader
 from .unstructured_io import UnstructuredIO
+from .uio import parse_sources
 
 __all__ = [
     'File',
@@ -29,5 +30,6 @@ __all__ = [
     'Firecrawl',
     'Apify',
     'ChunkrReader',
+    'PandaReader',
     'parse_sources',
 ]
