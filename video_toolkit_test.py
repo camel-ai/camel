@@ -59,5 +59,5 @@ if __name__ == "__main__":
     question = "what is the highest number of bird species to be on camera \
         simultaneously? Please answer with only the number."
 
-    res = test_toolkit.ask_question_about_video(video_path, question)
-    print(res)
+    answer = test_toolkit.ask_question_about_video(video_path, question)
+    print(answer)

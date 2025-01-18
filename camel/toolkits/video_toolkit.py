@@ -16,21 +16,69 @@ import io
 import logging
 import re
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Optional
 
 import ffmpeg
 from PIL import Image
-from qwen_vl_utils import process_vision_info  # type: ignore[import]
-from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 
+from camel.agents import ChatAgent
+from camel.configs import QwenConfig
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
 from .audio_toolkit import AudioToolkit
 
 logger = logging.getLogger(__name__)
+
+VIDEO_QA_PROMPT = """
+Using the provided visual description and audio transcription from the same \
+video, answer the following question(s) concisely. 
+
+- **Visual Description**: {visual_description}  
+- **Audio Transcription**: {audio_transcription}  
+
+Provide a clear and concise response by combining relevant details from both \
+the visual and audio content. If additional context is required, specify what \
+is missing.
+
+Question:
+{question}
+"""
+
+AUDIO_TRANSCRIPTION_PROMPT = """Transcribe the following audio into clear and \
+accurate text. \
+Ensure proper grammar, punctuation, and formatting to maintain readability. \
+Indicate speaker changes if possible and denote inaudible sections with \
+'[inaudible]' or '[unintelligible]'. If the audio contains background noises \
+or music, include brief notes in brackets only if relevant. Do not summarize \
+or omit any spoken content."""
+
+VIDEO_SUMMARISATION_PROMPT = """You are a video analysis assistant. I will \
+provide you with frames from a video segment. Your task is to analyze these \
+frames and provide a concise, structured description of the video.
+
+Focus on the following points:
+
+1. **Scene/Environment**: Briefly describe the setting (e.g., indoor/outdoor, \
+notable background details).
+2. **People/Characters**: Note the number of people, their appearance \
+(clothing, age, gender, features), and actions.
+3. **Objects/Items**: Mention significant objects and their use or position.
+4. **Actions/Activities**: Summarize key actions and interactions between \
+people or objects.
+5. **On-Screen Text/Clues**: Extract visible text (e.g., signs, captions) and \
+describe symbols or logos.
+6. **Changes Over Time**: Highlight any progression or changes in the scene.
+7. **Summary**: Provide a brief synthesis of key observations, focusing on \
+notable or unusual elements.
+
+Keep your response concise while covering the key details."""
 
 
 def _standardize_url(url: str) -> str:
@@ -94,7 +142,6 @@ class VideoToolkit(BaseToolkit):
     ) -> None:
         self._cleanup = download_directory is None
         self._cookies_path = cookies_path
-        self._audio_toolkit = AudioToolkit(cache_dir=cache_dir)
 
         self._download_directory = Path(
             download_directory or tempfile.mkdtemp()
@@ -113,19 +160,17 @@ class VideoToolkit(BaseToolkit):
 
         logger.info(f"Video will be downloaded to {self._download_directory}")
 
-        # Initialize model for video understanding
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            "Qwen/Qwen2-VL-7B-Instruct",
-            # attn_implementation="flash_attention_2",
-            torch_dtype="auto",
-            device_map="auto",
-            cache_dir=cache_dir,
+        # Set model and ChatAgent for video understanding
+        self.vl_model = ModelFactory.create(
+            model_platform=ModelPlatformType.QWEN,
+            model_type=ModelType.QWEN_VL_MAX,
+            model_config_dict=QwenConfig(temperature=0.2).as_dict(),
+        )
+        self.vl_agent = ChatAgent(
+            model=self.vl_model, output_language="English"
         )
 
-        # Set processor for video understanding.
-        self.processor = AutoProcessor.from_pretrained(
-            "Qwen/Qwen2-VL-7B-Instruct", cache_dir=cache_dir
-        )
+        self.qa_agent = ChatAgent()
 
     def __del__(self) -> None:
         r"""Deconstructor for the VideoDownloaderToolkit class.
@@ -154,7 +199,7 @@ class VideoToolkit(BaseToolkit):
             'format': 'bestvideo+bestaudio/best',
             'outtmpl': str(video_template),
             'http_headers': {'User-Agent': 'Mozilla/5.0'},
-            #'force_generic_extractor': True,
+            'force_generic_extractor': True,
             'cookiefile': self._cookies_path,
         }
 
@@ -183,7 +228,7 @@ class VideoToolkit(BaseToolkit):
 
     def get_video_bytes(
         self,
-        video_url: str,
+        video_path: str,
     ) -> bytes:
         r"""Download video by the URL, and return the content in bytes.
 
@@ -193,16 +238,14 @@ class VideoToolkit(BaseToolkit):
         Returns:
             bytes: The video file content in bytes.
         """
-        url = _standardize_url(video_url)
-        video_file = self._download_video(url)
 
-        with open(video_file, 'rb') as f:
+        with open(video_path, 'rb') as f:
             video_bytes = f.read()
 
         return video_bytes
 
     def get_video_screenshots(
-        self, video_url: str, amount: int
+        self, video_file: str, amount: int
     ) -> List[Image.Image]:
         r"""Capture screenshots from the video at specified timestamps or by
         dividing the video into equal parts if an integer is provided.
@@ -214,10 +257,6 @@ class VideoToolkit(BaseToolkit):
         Returns:
             List[Image.Image]: A list of screenshots as Image.Image.
         """
-        import ffmpeg
-
-        url = _standardize_url(video_url)
-        video_file = self._download_video(url)
 
         # Get the video length
         try:
@@ -233,61 +272,73 @@ class VideoToolkit(BaseToolkit):
 
         return images
 
-    def _ask_vllm(self, video_path: str, question: str) -> str:
-        r"""Ask a question about the video using VLLM.
+    def _describe_video_segment(self, images: List[Image.Image]) -> str:
+        r"""Ask a question about the video using VLLM."""
 
-        Args:
-            video_path (str): The path to the video file.
-            question (str): The question to ask about the video.
-
-        Returns:
-            str: The answer to the question.
-        """
-        video_qa_prompt = f"{question} Please answer the question based on \
-            the video content and give your reason. If you think you cannot \
-            answer the question based on the vision information, please give \
-            your reason (e.g. audio is required)."
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "video",
-                        "video": video_path,
-                        "max_pixels": 560 * 360,
-                        "fps": 1,
-                    },
-                    {"type": "text", "text": video_qa_prompt},
-                ],
-            }
-        ]
-
-        text = self.processor.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+        msg = BaseMessage.make_user_message(
+            role_name="User",
+            content=VIDEO_SUMMARISATION_PROMPT,
+            image_list=images,
         )
-        image_inputs, video_inputs = process_vision_info(messages)
 
-        inputs = self.processor(
-            text=[text],
-            images=image_inputs,
-            videos=video_inputs,
-            padding=True,
-            return_tensors="pt",
-        )
-        inputs = inputs.to("cuda")
+        response = self.vl_agent.step(msg)
+        segment_description = response.msgs[0].content
+        return segment_description
 
-        generated_ids = self.model.generate(**inputs, max_new_tokens=512)
-        generated_ids_trimmed = [
-            out_ids[len(in_ids) :]
-            for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-        ]
-        output_text = self.processor.batch_decode(
-            generated_ids_trimmed,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=False,
+    def _transcribe_video(
+        self,
+        video_path: str,
+        frames_per_second: int = 1,
+        segment_size: int = 25,
+    ) -> str:
+        r"""Transcribe the visual information of the video."""
+
+        probe = ffmpeg.probe(video_path)
+        video_length = float(probe['format']['duration'])
+        number_of_frames = int(video_length * frames_per_second)
+
+        images = self.get_video_screenshots(video_path, number_of_frames)
+        total_frames = len(images)
+
+        def process_segment(start: int):
+            r"""Process a single segment."""
+            segment_frames = images[start : start + segment_size]
+            if not segment_frames:
+                return None
+
+            segment_start_time = start / frames_per_second
+            segment_end_time = min(
+                (start + segment_size) / frames_per_second, video_length
+            )
+            description = self._describe_video_segment(segment_frames)
+            segment_info = f"Segment {start // segment_size + 1} \
+                ({segment_start_time:.2f}-{segment_end_time:.2f}s):"
+            return f"{segment_info}\n{description}"
+
+        # Use ThreadPoolExecutor to process segments in parallel
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(process_segment, start)
+                for start in range(0, total_frames, segment_size)
+            ]
+            descriptions = [
+                future.result() for future in futures if future.result()
+            ]
+
+        # Combine all segment descriptions into a full transcription
+        full_transcription = "\n\n".join(descriptions)
+        print("Visual transcription: " + full_transcription)
+        return full_transcription
+
+    def _transcribe_audio(self, audio_path: str) -> str:
+        r"""Transcribe the audio of the video."""
+
+        audio_toolkit = AudioToolkit()
+        audio_transcript = audio_toolkit.ask_question_about_audio(
+            audio_path, AUDIO_TRANSCRIPTION_PROMPT
         )
-        logger.info(output_text)
-        return output_text
+        print("Audio transcription: " + audio_transcript)
+        return audio_transcript
 
     def ask_question_about_video(self, video_path: str, question: str) -> str:
         r"""Ask a question about the video.
@@ -309,32 +360,21 @@ class VideoToolkit(BaseToolkit):
 
         if is_url:
             video_path = self._download_video(video_path)
-
         audio_path = self._extract_audio_from_video(video_path)
 
-        vision_answer = self._ask_vllm(video_path, question)
-        audio_answer = self._audio_toolkit.ask_question_about_audio(
-            audio_path, question
+        video_transcript = self._transcribe_video(video_path)
+        audio_transcript = self._transcribe_audio(audio_path)
+
+        prompt = VIDEO_QA_PROMPT.format(
+            visual_description=video_transcript,
+            audio_transcription=audio_transcript,
+            question=question,
         )
 
-        return_text = f"""
-            Here is the answer from the vision model:
-            ```
-            {vision_answer}
-            ```
-            Here is the answer from the audio model:
-            ```
-            {audio_answer}
-            ```
-            Please note that the vision model can only process visual \
-            information, and the audio model can only process audio \
-            information.
-            Thus, You need to decide whether the questions you ask should \
-            focus on the visual model or the extracted audio text information,\
-            and make final answer by yourself.
-        """
-        logger.debug(f"Answer to the question: {return_text}")
-        return return_text
+        response = self.qa_agent.step(prompt)
+        answer = response.msgs[0].content
+
+        return answer
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
