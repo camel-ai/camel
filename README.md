@@ -52,7 +52,7 @@ Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org
 
 1. Comprehensive Customization and Collaboration:
 
-    - Integrates over 20 advanced model platforms (e.g., commercial models like OpenAI, open-source models such as Llama3, and self-deployment frameworks like Ollama.).
+    - Integrates over 20 advanced model platforms (e.g., commercial models like OpenAI, open-source models such as Llama3, and self-deployment frameworks like Ollama).
 
     - Supports extensive external tools (e.g., Search, Twitter, Github, Google Maps, Reddit, Slack utilities).
     - Includes memory and prompt components for deep customization.
@@ -109,7 +109,7 @@ pip install 'camel-ai[rag,web_tools,document_tools]'  # Example: RAG system with
 
 ### From Docker
 
-Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
+Detailed guidance can be found [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
 
 ## Quick Start
 
@@ -135,7 +135,7 @@ export DEFAULT_MODEL_TYPE=<your preferred model>  # e.g., gpt-3.5-turbo, gpt-4o-
 ```bash
 # Export your OpenAI API key
 export OPENAI_API_KEY=<insert your OpenAI API key>
-OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
+OPENAI_API_BASE_URL=<insert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 **For Windows Command Prompt:**
@@ -143,7 +143,7 @@ OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an Op
 ```cmd
 REM export your OpenAI API key
 set OPENAI_API_KEY=<insert your OpenAI API key>
-set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
+set OPENAI_API_BASE_URL=<insert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 **For Windows PowerShell:**
@@ -151,7 +151,7 @@ set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize a
 ```powershell
 # Export your OpenAI API key
 $env:OPENAI_API_KEY="<insert your OpenAI API key>"
-$env:OPENAI_API_BASE_URL="<inert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
+$env:OPENAI_API_BASE_URL="<insert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
