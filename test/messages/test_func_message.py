@@ -93,10 +93,10 @@ def test_function_func_message(
         "name": "add",
         "content": json.dumps(3),
     }
-    assert function_result_message.to_openai_function_message() == msg_dict
+    assert function_result_message.to_openai_tool_message() == msg_dict
 
 
-def test_assistant_func_message_to_openai_function_message(
+def test_assistant_func_message_to_openai_tool_message(
     assistant_func_call_message: FunctionCallingMessage,
 ):
     expected_msg_dict: Dict[str, str] = {
@@ -106,7 +106,7 @@ def test_assistant_func_message_to_openai_function_message(
     }
 
     assert (
-        assistant_func_call_message.to_openai_function_message()
+        assistant_func_call_message.to_openai_tool_message()
         == expected_msg_dict
     )
 

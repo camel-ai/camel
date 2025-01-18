@@ -52,7 +52,6 @@ __all__ = [
     'OpenAIAssistantMessage',
     'OpenAIUserMessage',
     'OpenAIToolMessageParam',
-    'OpenAIToolMessageParam',
     'OpenAIMessage',
     'FunctionCallFormatter',
     'HermesFunctionFormatter',

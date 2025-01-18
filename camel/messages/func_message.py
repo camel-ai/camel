@@ -71,7 +71,7 @@ class FunctionCallingMessage(BaseMessage):
         if role_at_backend == OpenAIBackendRole.ASSISTANT:
             return self.to_openai_assistant_message()
         elif role_at_backend == OpenAIBackendRole.FUNCTION:
-            return self.to_openai_function_message()
+            return self.to_openai_tool_message()
         else:
             raise ValueError(f"Unsupported role: {role_at_backend}.")
 
@@ -140,7 +140,7 @@ class FunctionCallingMessage(BaseMessage):
             ],
         }
 
-    def to_openai_function_message(self) -> OpenAIToolMessageParam:
+    def to_openai_tool_message(self) -> OpenAIToolMessageParam:
         r"""Converts the message to an :obj:`OpenAIMessage` object
         with the role being "function".
 
