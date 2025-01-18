@@ -92,6 +92,9 @@ class SlackApp:
                 url: https://api.slack.com/apps/
             oauth_mode (bool): A flag to enable OAuth mode for the Slack app.
         """
+        from slack_bolt.adapter.socket_mode.async_handler import (
+            AsyncSocketModeHandler,
+        )
         from slack_bolt.adapter.starlette.async_handler import (
             AsyncSlackRequestHandler,
         )
@@ -110,12 +113,14 @@ class SlackApp:
         self.app_token: Optional[str] = app_token or os.getenv(
             "SLACK_APP_TOKEN"
         )
-        self.custom_handler: Optional[
-            Callable[[SlackEventProfile, SlackEventBody], Any]
-        ] = None
         self.socket_mode: bool = socket_mode
         self.oauth_mode: bool = oauth_mode
-        self.handlers: Dict[str, Callable[[SlackEventProfile, SlackEventBody], Any]] = {}
+        self._custom_handlers: Dict[
+            str, Callable[[SlackEventProfile, SlackEventBody], Any]
+        ] = {}
+        self._handler: Optional[
+            Union[AsyncSlackRequestHandler, AsyncSocketModeHandler]
+        ] = None
         if not self.socket_mode:
             if not all([self.token, self.signing_secret]):
                 raise ValueError(
@@ -198,8 +203,13 @@ class SlackApp:
         )
 
         if self.socket_mode:
-            self._handler = AsyncSocketModeHandler(self._app, self.app_token)
-            await self._handler.start_async()
+            if isinstance(self._handler, AsyncSocketModeHandler):
+                await self._handler.start_async()
+            else:
+                self._handler = AsyncSocketModeHandler(
+                    self._app, self.app_token
+                )
+                await self._handler.start_async()
         else:
             logger.info(
                 "please use `start()` instead of `run()` for HTTP server."
@@ -253,7 +263,9 @@ class SlackApp:
         logger.info(f"app_mention, event_profile: {event_profile}")
         logger.info(f"app_mention, event_body: {event_body}")
         logger.info(f"app_mention, say: {say}")
-        handler = self.handlers.get("mention", self.handlers.get('default'))
+        handler = self._custom_handlers.get(
+            "mention", self._custom_handlers.get('default')
+        )
         if handler:
             response = handler(event_profile, event_body)
             await say(text=response, token=token)
@@ -289,11 +301,13 @@ class SlackApp:
         logger.info(f"on_message, event_body: {event_body}")
         logger.info(f"on_message, say: {say}")
         logger.info(f"Received message: {event_profile.text}")
-        handler = self.handlers.get("message", self.handlers.get('default'))
+        handler = self._custom_handlers.get(
+            "message", self._custom_handlers.get('default')
+        )
         if handler:
             response = handler(event_profile, event_body)
             await say(text=response, token=token)
-        
+
     def mention_me(
         self, context: "AsyncBoltContext", body: SlackEventBody
     ) -> bool:
@@ -343,20 +357,23 @@ class SlackApp:
                 "Bot token is unavailable, and self.token is None."
             )
         return self.token
-    
+
     def set_custom_handler(
-            self, 
-            handler: Callable[[SlackEventProfile, SlackEventBody], Any], 
-            message_type: Optional[str] = 'default') -> None:
-        r"""Sets a custom message handler for the Slack app for specific message types.
+        self,
+        handler: Callable[[SlackEventProfile, SlackEventBody], Any],
+        message_type: Optional[str] = 'default',
+    ) -> None:
+        r"""Sets a custom message handler for the Slack app for specific
+                message types.
 
         Args:
-            handler (Callable[[SlackEventProfile, SlackEventBody], Any]): 
+            handler (Callable[[SlackEventProfile, SlackEventBody], Any]):
                 The handler function.
-            message_type (Optional[str]): The specific message type to handle 
-                (e.g., 'mention', 'message', etc.). 
+            message_type (Optional[str]): The specific message type to handle
+                (e.g., 'mention', 'message', etc.).
                 Defaults to 'default' if not specified.
 
         Returns: None
         """
-        self.handlers[message_type] = handler
+        message_type = message_type or 'default'
+        self._custom_handlers[message_type] = handler
