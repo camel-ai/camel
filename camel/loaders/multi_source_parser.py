@@ -11,20 +11,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import Dict, List, Optional, Tuple
 
 from .unstructured_io import UnstructuredIO
 
+logger = logging.getLogger(__name__)
+
+default_clean_options: List[Tuple[str, Dict]] = [
+    ('replace_unicode_quotes', {}),
+    ('clean_dashes', {}),
+    ('clean_non_ascii_chars', {}),
+    ('clean_extra_whitespace', {}),
+]
+
 
 class MultiSourceParser:
-    def __init__(self):
+    def __init__(
+        self, clean_options: Optional[List[Tuple]] = default_clean_options
+    ):
         r"""A class for parsing and
         processing multiple text sources in parallel.
 
         Args:
-            uio (UnstructuredIO): An instance of UnstructuredIO
-            for parsing files and URLs.
             clean_options (List[Tuple]): A list of text cleaning options to be
                 applied to the parsed text. Default options include:
                 - Replacing unicode quotes
@@ -33,12 +44,15 @@ class MultiSourceParser:
                 - Cleaning extra whitespace
         """
         self.uio = UnstructuredIO()
-        self.clean_options = [
-            ('replace_unicode_quotes', {}),
-            ('clean_dashes', {}),
-            ('clean_non_ascii_chars', {}),
-            ('clean_extra_whitespace', {}),
-        ]
+        if clean_options:
+            self.clean_options = clean_options
+        else:
+            self.clean_options = [
+                ('replace_unicode_quotes', {}),
+                ('clean_dashes', {}),
+                ('clean_non_ascii_chars', {}),
+                ('clean_extra_whitespace', {}),
+            ]
 
     def parse_multiple_sources(
         self,
@@ -86,13 +100,18 @@ class MultiSourceParser:
                         all_elements.extend(elements)
                     else:
                         source = futures[future]
-                        print(f"Warning: No elements extracted from {source}")
+                        logger.warning(
+                            f": No elements extracted from {source}"
+                        )
                 except Exception as e:
                     source = futures[future]
-                    print(f"Error processing {source}: {e!s}")
+                    logger.error(f"Error processing {source}: {e!s}")
 
         if not all_elements:
-            print("No elements were successfully parsed from any sources")
+            logger.warning(
+                "No elements were successfully parsed from any\
+            sources"
+            )
             return []
 
         # Chunk the elements
@@ -151,25 +170,7 @@ def parse_sources(
     """
     parser = MultiSourceParser()
     return parser.parse_multiple_sources(
-        sources,
+        sources=sources,
         chunk_size=chunk_size,
         overlap=overlap,
     )
-
-
-# Example usage with line profiling
-if __name__ == "__main__":
-    sources = [
-        "https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/self_instruct_data_generation.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html",
-        "https://docs.camel-ai.org/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html#",
-    ]
-
-    chunks = parse_sources(sources)
-    # Print chunks (optional)
-    for i, chunk in enumerate(chunks):
-        print(f"Chunk {i+1}:")
-        print(chunk)
-        print("\n" + "-" * 80)
