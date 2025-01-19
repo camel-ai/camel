@@ -142,6 +142,12 @@ class ModelType(UnifiedModelType, Enum):
     # DeepSeek models
     DEEPSEEK_CHAT = "deepseek-chat"
 
+    # InternLM models
+    INTERNLM3_LATEST = "internlm3-latest"
+    INTERNLM3_8B_INSTRUCT = "internlm3-8b-instruct"
+    INTERNLM2_5_LATEST = "internlm2.5-latest"
+    INTERNLM2_PRO_CHAT = "internlm2-pro-chat"
+
     def __str__(self):
         return self.value
 
@@ -161,7 +167,15 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def support_native_tool_calling(self) -> bool:
         return any(
-            [self.is_openai, self.is_gemini, self.is_mistral, self.is_qwen]
+            [
+                self.is_openai,
+                self.is_gemini,
+                self.is_mistral,
+                self.is_qwen,
+                self.is_deepseek,
+                self.is_cohere,
+                self.is_internlm,
+            ]
         )
 
     @property
@@ -354,6 +368,15 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_internlm(self) -> bool:
+        return self in {
+            ModelType.INTERNLM3_LATEST,
+            ModelType.INTERNLM3_8B_INSTRUCT,
+            ModelType.INTERNLM2_5_LATEST,
+            ModelType.INTERNLM2_PRO_CHAT,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -411,6 +434,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.INTERNLM3_8B_INSTRUCT,
+            ModelType.INTERNLM3_LATEST,
+            ModelType.INTERNLM2_5_LATEST,
+            ModelType.INTERNLM2_PRO_CHAT,
         }:
             return 32_768
         elif self in {
@@ -634,6 +661,7 @@ class ModelPlatformType(Enum):
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     SGLANG = "sglang"
+    INTERNLM = "internlm"
 
     @property
     def is_openai(self) -> bool:
@@ -735,6 +763,11 @@ class ModelPlatformType(Enum):
     def is_deepseek(self) -> bool:
         r"""Returns whether this platform is DeepSeek."""
         return self is ModelPlatformType.DEEPSEEK
+
+    @property
+    def is_internlm(self) -> bool:
+        r"""Returns whether this platform is InternLM."""
+        return self is ModelPlatformType.INTERNLM
 
 
 class AudioModelType(Enum):

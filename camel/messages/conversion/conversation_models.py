@@ -69,6 +69,11 @@ class ShareGPTConversation(RootModel):
         for i in range(1, len(messages)):
             curr, prev = messages[i], messages[i - 1]
 
+            print("@@@@")
+            print(curr)
+            print(prev)
+            print("@@@@")
+
             if curr.from_ == "tool":
                 if prev.from_ != "gpt" or "<tool_call>" not in prev.value:
                     raise ValueError(

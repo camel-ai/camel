@@ -62,7 +62,8 @@ print(collector.convert())
 
 # ruff: noqa: E501
 """
-{'instruction': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game "Portal" was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included "Half-Life 2" and its episodes. It was later released as a standalone game on April 9, 2008, for PC and Xbox 360.'}
-{'instruction': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': "The video game Portal was released on October 10, 2007, as part of the game bundle 'The Orange Box.' It was later released as a standalone game on April 9, 2008, for PC and Xbox 360."}
-{'instruction': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game "Portal" was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included "Half-Life 2" and its episodes. It was later released as a standalone game on April 9, 2008, for PC and Xbox 360.'}
+{'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by Valve Corporation and is part of the game bundle known as "The Orange Box," which also included "Half-Life 2" and its episodes.'}
+2025-01-19 19:26:09,140 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+{'instruction': 'You are a helpful assistant When is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by Valve Corporation and is part of the game bundle known as "The Orange Box," which also included "Half-Life 2" and its episodes.'}
+{'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by 
 """
