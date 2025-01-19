@@ -129,7 +129,7 @@ class FunctionCallingMessage(BaseMessage):
             "content": self.content or "",
             "tool_calls": [
                 {
-                    "id": self.tool_call_id or "",
+                    "id": self.tool_call_id or "null",
                     "type": "function",
                     "function": {
                         "name": self.func_name,
@@ -159,5 +159,5 @@ class FunctionCallingMessage(BaseMessage):
         return {
             "role": "tool",
             "content": result_content,
-            "tool_call_id": self.tool_call_id or "",
+            "tool_call_id": self.tool_call_id or "null",
         }
