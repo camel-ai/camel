@@ -174,6 +174,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_qwen,
                 self.is_deepseek,
                 self.is_cohere,
+                self.is_internlm,
             ]
         )
 
