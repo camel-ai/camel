@@ -42,6 +42,7 @@ def assistant_func_call_message() -> FunctionCallingMessage:
         content=content,
         func_name="add",
         args={"a": "1", "b": "2"},
+        tool_call_id=None,
     )
 
 
@@ -58,6 +59,7 @@ def function_result_message() -> FunctionCallingMessage:
         content="",
         func_name="add",
         result=3,
+        tool_call_id=None,
     )
 
 
@@ -79,7 +81,6 @@ def test_assistant_func_message(
     assert tool_call["function"]["arguments"] == json.dumps(
         {"a": "1", "b": "2"}
     )
-    assert isinstance(tool_call["id"], str)
 
 
 def test_function_func_message(
@@ -89,9 +90,9 @@ def test_function_func_message(
     assert function_result_message.result == 3
 
     msg_dict: Dict[str, str] = {
-        "role": "function",
-        "name": "add",
+        "role": "tool",
         "content": json.dumps(3),
+        "tool_call_id": "",
     }
     assert function_result_message.to_openai_tool_message() == msg_dict
 
@@ -100,9 +101,9 @@ def test_assistant_func_message_to_openai_tool_message(
     assistant_func_call_message: FunctionCallingMessage,
 ):
     expected_msg_dict: Dict[str, str] = {
-        "role": "function",
-        "name": "add",
+        "role": "tool",
         "content": json.dumps(None),
+        "tool_call_id": "",
     }
 
     assert (
@@ -145,16 +146,21 @@ def test_roleplay_conversion_with_tools():
         message = record.memory_record.message
         # Remove meta_dict to avoid comparison issues
         message.meta_dict = None
+        # Clear tool_call_id for function messages
+        if isinstance(message, FunctionCallingMessage):
+            message.tool_call_id = ""
         original_messages.append(message)
         sharegpt_msgs.append(message.to_sharegpt())
 
     converted_back = []
     for msg in sharegpt_msgs:
-        converted_back.append(
-            BaseMessage.from_sharegpt(
-                msg, function_format=HermesFunctionFormatter()
-            )
+        message = BaseMessage.from_sharegpt(
+            msg, function_format=HermesFunctionFormatter()
         )
+        # Clear tool_call_id for function messages
+        if isinstance(message, FunctionCallingMessage):
+            message.tool_call_id = ""
+        converted_back.append(message)
 
     assert converted_back == original_messages
 

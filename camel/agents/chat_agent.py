@@ -111,7 +111,7 @@ class FunctionCallingRecord(BaseModel):
         return (
             f"Function Execution: {self.func_name}\n"
             f"\tArgs: {self.args}\n"
-            f"\tResult: {self.result}"
+            f"\tResult: {self.result}\n"
         )
 
     def as_dict(self) -> dict[str, Any]:

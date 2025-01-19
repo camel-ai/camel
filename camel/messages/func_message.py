@@ -14,7 +14,6 @@
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from uuid import uuid4
 
 from camel.messages import (
     BaseMessage,
@@ -130,7 +129,7 @@ class FunctionCallingMessage(BaseMessage):
             "content": self.content or "",
             "tool_calls": [
                 {
-                    "id": self.tool_call_id or str(uuid4()),
+                    "id": self.tool_call_id or "",
                     "type": "function",
                     "function": {
                         "name": self.func_name,
@@ -160,5 +159,5 @@ class FunctionCallingMessage(BaseMessage):
         return {
             "role": "tool",
             "content": result_content,
-            "tool_call_id": self.tool_call_id or str(uuid4()),
+            "tool_call_id": self.tool_call_id or "",
         }
