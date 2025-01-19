@@ -32,6 +32,7 @@ python = ">=3.10,<3.13"
 numpy = "^1"
 openai = "^1.58.1"
 tiktoken = "^0.7.0"
+tzlocal = "^5.2"
 colorama = "^0.4.0"
 jsonschema = "^4"
 protobuf = "^4"
@@ -152,6 +153,7 @@ pyyaml = { version = "^6.0.2", optional = true }
 pytest = { version = "^7", optional = true }
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
+tzlocal = { version = "^5.2", optional = true}
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -458,6 +460,7 @@ module = [
     "_pytest.config",
     "_pytest.nodes",
     "numpy",
+    "tzlocal",
     "torch",
     "sqlalchemy",
     "google.cloud.sql.connector",

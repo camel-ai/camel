@@ -17,6 +17,14 @@ from typing import cast
 
 from camel.types.unified_model_type import UnifiedModelType
 
+class MessageType(Enum):
+    PASS = "pass"
+    REQUEST = "request"
+    NEGOTIATION = "negotiation"
+    ACTION = "action"
+    ERROR = "error"
+    DEFAULT = "default"
+
 
 class RoleType(Enum):
     ASSISTANT = "assistant"

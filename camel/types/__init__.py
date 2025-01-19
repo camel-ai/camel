@@ -22,6 +22,7 @@ from .enums import (
     OpenAIVisionDetailType,
     OpenAPIName,
     RoleType,
+    MessageType,
     StorageType,
     TaskType,
     TerminationMode,
@@ -47,6 +48,7 @@ from .unified_model_type import UnifiedModelType
 
 __all__ = [
     'RoleType',
+    'MessageType',
     'ModelType',
     'TaskType',
     'TerminationMode',

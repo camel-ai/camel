@@ -15,7 +15,9 @@ import base64
 import io
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from uuid import uuid4
+
 
 import numpy as np
 from PIL import Image
@@ -30,6 +32,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.messages.conversion import ShareGPTMessage
+from camel.messages.acl_parameter import ACLParameter, Content, Sender
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
@@ -39,71 +42,81 @@ from camel.types import (
 )
 from camel.utils import Constants
 
-
 @dataclass
 class BaseMessage:
     r"""Base class for message objects used in CAMEL chat system.
 
     Args:
         role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either :obj:`RoleType.
-            ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
+        role_type (RoleType): The type of role, either `RoleType.ASSISTANT` 
+            or `RoleType.USER`.
+        meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
             for the message.
-        content (str): The content of the message.
-        video_bytes (Optional[bytes]): Optional bytes of a video associated
-            with the message. (default: :obj:`None`)
-        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the message. (default: :obj:`None`)
-        image_detail (Literal["auto", "low", "high"]): Detail level of the
-            images associated with the message. (default: :obj:`auto`)
-        video_detail (Literal["auto", "low", "high"]): Detail level of the
-            videos associated with the message. (default: :obj:`low`)
-        parsed: Optional[Union[Type[BaseModel], dict]]: Optional object which
-            is parsed from the content. (default: :obj:`None`)
+        content (Union[str, Content]): Represents the content of a message,
+            which can include text, images, videos, and audio.
+        acl_parameter (Optional[ACLParameter]): Access control parameter
+            associated with the message, defining sender details.
+        parsed (Optional[Union[Type[BaseModel], dict]]): An optional parsed
+            object extracted from the content.
+        message_id (UUID4): A unique identifier for the message, generated
+            automatically and not set by the user.
     """
 
-    role_name: str
-    role_type: RoleType
-    meta_dict: Optional[Dict[str, Any]]
-    content: str
+    def __init__(
+        self,
+        role_name: str,
+        role_type: RoleType,
+        content: Union[str, Content],
+        acl_parameter: Optional[ACLParameter] = None,
+        meta_dict: Optional[Dict[str, Any]] = None,
+        parsed: Optional[Union[BaseModel, dict]] = None,
+        message_id: Optional[str] = None,
+    ):
+        self.role_name = role_name
+        self.role_type = role_type
+        self.content = content
+        self.acl_parameter = acl_parameter
+        self.meta_dict = meta_dict
+        self.parsed = parsed
+        self.message_id = message_id or str(uuid4())
+    
+        """Post-initialization logic for the BaseMessage class.
 
-    video_bytes: Optional[bytes] = None
-    image_list: Optional[List[Image.Image]] = None
-    image_detail: Literal["auto", "low", "high"] = "auto"
-    video_detail: Literal["auto", "low", "high"] = "low"
-    parsed: Optional[Union[Type[BaseModel], dict]] = None
+        - Ensures `content` is properly wrapped as a `Content` object.
+        - Initializes `acl_parameter` with a default sender if not specified.
+        """
+        if isinstance(self.content, str):
+            self.content = Content(text=self.content)
+        
+        if self.acl_parameter is None:
+            self.acl_parameter = ACLParameter(
+                sender=Sender(name=self.role_name, role_type=self.role_type)
+            )
+        else:
+            self.acl_parameter.sender = Sender(name=self.role_name, 
+                                               role_type=self.role_type)
 
     @classmethod
     def make_user_message(
         cls,
         role_name: str,
-        content: str,
+        content: Union[str, Content],
         meta_dict: Optional[Dict[str, str]] = None,
-        video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.AUTO,
-        video_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.LOW,
+        acl_parameter: Optional[ACLParameter] = None,
+        parsed: Optional[Union[Type[BaseModel], dict]] = None,
     ) -> "BaseMessage":
         r"""Create a new user message.
 
         Args:
             role_name (str): The name of the user role.
-            content (str): The content of the message.
-            meta_dict (Optional[Dict[str, str]]): Additional metadata
+            content (Union[str, Content]): The content of the message, which 
+                can be plain text or a `Content` object.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata 
                 dictionary for the message.
-            video_bytes (Optional[bytes]): Optional bytes of a video
-                associated with the message.
-            image_list (Optional[List[Image.Image]]): Optional list of PIL
-                Image objects associated with the message.
-            image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
-                the images associated with the message.
-            video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
-                the videos associated with the message.
+            acl_parameter (Optional[ACLParameter]): Access control parameter 
+                for the message, defining sender details and permissions.
+            parsed (Optional[Union[Type[BaseModel], dict]]): Optional parsed 
+                object extracted from the message content.
 
         Returns:
             BaseMessage: The new user message.
@@ -113,42 +126,31 @@ class BaseMessage:
             RoleType.USER,
             meta_dict,
             content,
-            video_bytes,
-            image_list,
-            OpenAIVisionDetailType(image_detail).value,
-            OpenAIVisionDetailType(video_detail).value,
+            acl_parameter,
+            parsed,
         )
 
     @classmethod
     def make_assistant_message(
         cls,
         role_name: str,
-        content: str,
+        content: Union[str, Content],
         meta_dict: Optional[Dict[str, str]] = None,
-        video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.AUTO,
-        video_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.LOW,
+        acl_parameter: Optional[ACLParameter] = None,
+        parsed: Optional[Union[Type[BaseModel], dict]] = None,
     ) -> "BaseMessage":
         r"""Create a new assistant message.
 
         Args:
             role_name (str): The name of the assistant role.
-            content (str): The content of the message.
-            meta_dict (Optional[Dict[str, str]]): Additional metadata
+            content (Union[str, Content]): The content of the message, which 
+                can be plain text or a `Content` object.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata 
                 dictionary for the message.
-            video_bytes (Optional[bytes]): Optional bytes of a video
-                associated with the message.
-            image_list (Optional[List[Image.Image]]): Optional list of PIL
-                Image objects associated with the message.
-            image_detail (Union[OpenAIVisionDetailType, str]): Detail level of
-                the images associated with the message.
-            video_detail (Union[OpenAIVisionDetailType, str]): Detail level of
-                the videos associated with the message.
+            acl_parameter (Optional[ACLParameter]): Access control parameter 
+                for the message, defining sender details and permissions.
+            parsed (Optional[Union[Type[BaseModel], dict]]): Optional parsed 
+                object extracted from the message content.
 
         Returns:
             BaseMessage: The new assistant message.
@@ -158,10 +160,8 @@ class BaseMessage:
             RoleType.ASSISTANT,
             meta_dict,
             content,
-            video_bytes,
-            image_list,
-            OpenAIVisionDetailType(image_detail).value,
-            OpenAIVisionDetailType(video_detail).value,
+            acl_parameter,
+            parsed,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -193,7 +193,7 @@ class BaseMessage:
         if isinstance(other, BaseMessage):
             combined_content = self.content.__add__(other.content)
         elif isinstance(other, str):
-            combined_content = self.content.__add__(other)
+            combined_content = self.content.text.__add__(other)
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
@@ -211,7 +211,7 @@ class BaseMessage:
             Union[BaseMessage, Any]: The result of the multiplication.
         """
         if isinstance(other, int):
-            multiplied_content = self.content.__mul__(other)
+            multiplied_content = self.content * other
             return self.create_new_instance(multiplied_content)
         else:
             raise TypeError(
@@ -225,7 +225,8 @@ class BaseMessage:
         Returns:
             int: The length of the content.
         """
-        return len(self.content)
+        return len(self.content.text) if isinstance(self.content, Content) \
+            else len(self.content)
 
     def __contains__(self, item: str) -> bool:
         r"""Contains operator override for :obj:`BaseMessage`.
@@ -237,7 +238,7 @@ class BaseMessage:
             bool: :obj:`True` if the item is contained in the content,
                 :obj:`False` otherwise.
         """
-        return item in self.content
+        return item in self.content.text
 
     def extract_text_and_code_prompts(
         self,
@@ -252,7 +253,7 @@ class BaseMessage:
         text_prompts: List[TextPrompt] = []
         code_prompts: List[CodePrompt] = []
 
-        lines = self.content.split("\n")
+        lines = self.content.text.split("\n")
         idx = 0
         start_idx = 0
         while idx < len(lines):
@@ -408,7 +409,7 @@ class BaseMessage:
             OpenAISystemMessage: The converted :obj:`OpenAISystemMessage`
                 object.
         """
-        return {"role": "system", "content": self.content}
+        return {"role": "system", "content": self.content.text}
 
     def to_openai_user_message(self) -> OpenAIUserMessage:
         r"""Converts the message to an :obj:`OpenAIUserMessage` object.
@@ -420,11 +421,11 @@ class BaseMessage:
         hybird_content.append(
             {
                 "type": "text",
-                "text": self.content,
+                "text": self.content.text,
             }
         )
-        if self.image_list and len(self.image_list) > 0:
-            for image in self.image_list:
+        if self.content.image_list and len(self.content.image_list) > 0:
+            for image in self.content.image_list:
                 if image.format is None:
                     raise ValueError(
                         f"Image's `format` is `None`, please "
@@ -450,19 +451,19 @@ class BaseMessage:
                         "type": "image_url",
                         "image_url": {
                             "url": f"{image_prefix}{encoded_image}",
-                            "detail": self.image_detail,
+                            "detail": self.content.image_detail,
                         },
                     }
                 )
 
-        if self.video_bytes:
+        if self.content.video_bytes:
             import imageio.v3 as iio
 
             base64Frames: List[str] = []
             frame_count = 0
             # read video bytes
             video = iio.imiter(
-                self.video_bytes, plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV
+                self.content.video_bytes, plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV
             )
 
             for frame in video:
@@ -500,7 +501,7 @@ class BaseMessage:
                     "type": "image_url",
                     "image_url": {
                         "url": f"data:image/jpeg;base64,{encoded_image}",
-                        "detail": self.video_detail,
+                        "detail": self.content.video_detail,
                     },
                 }
 
@@ -515,7 +516,7 @@ class BaseMessage:
         else:
             return {
                 "role": "user",
-                "content": self.content,
+                "content": self.content.text,
             }
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
@@ -525,7 +526,7 @@ class BaseMessage:
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
-        return {"role": "assistant", "content": self.content}
+        return {"role": "assistant", "content": self.content.text}
 
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.
@@ -537,5 +538,5 @@ class BaseMessage:
             "role_name": self.role_name,
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
-            "content": self.content,
+            "content": self.content.text,
         }

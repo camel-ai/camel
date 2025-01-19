@@ -39,6 +39,8 @@ from urllib.parse import urlparse
 
 import pydantic
 import requests
+from datetime import datetime
+from tzlocal import get_localzone
 from pydantic import BaseModel
 
 from camel.types import TaskType
@@ -62,6 +64,28 @@ def print_text_animated(text, delay: float = 0.02, end: str = ""):
         print(char, end=end, flush=True)
         time.sleep(delay)
 
+
+def get_local_time() -> str:
+    r"""Returns the current local time, formatted with timezone information.
+
+    This function fetches the current system time and adjusts it to the local 
+    timezone based on the machine's configuration. It then returns the time 
+    formatted as a string including the date, time, and timezone.
+
+    Returns:
+        str: The current local time in the format 'YYYY-MM-DD HH:MM:SS 
+        TimeZoneOffset'(e.g., '2025-01-14 12:45:30 PST-0800').
+    """
+    # Get the current system time
+    now = datetime.now()
+    # Get the local timezone of the system
+    local_timezone = get_localzone()
+    # Adjust the current time to the local timezone
+    now_with_tz = now.astimezone(local_timezone)
+    # Format the adjusted time into a string
+    local_time = now_with_tz.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+    # Return the formatted local time
+    return local_time
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
     r"""Given a string template containing curly braces {}, return a set of
