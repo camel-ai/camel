@@ -18,6 +18,16 @@ class WebToolkit(BaseToolkit):
     This class provides methods for interacting with websites by writing direct JavaScript code via tools like Stagehand.
     """
 
+    def __init__(
+        self,
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+    ):
+        self.model_platform = model_platform
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
+
     def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
         r"""
         Single entry point that:
@@ -55,9 +65,9 @@ class WebToolkit(BaseToolkit):
         Internal method for generating Stagehand code.
         """
         model = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+            model_platform=self.model_platform,
+            model_type=self.model_type,
+            model_config_dict=self.model_config_dict,
         )
 
         # A system message to instruct how to generate Stagehand code
