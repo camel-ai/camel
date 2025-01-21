@@ -25,7 +25,7 @@ export DEEPSEEK_API_KEY=""
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEEPSEEK,
     model_type=ModelType.DEEPSEEK_REASONER,
-    model_config_dict=DeepSeekConfig(temperature=1.3).as_dict(),
+    model_config_dict=DeepSeekConfig(temperature=0.2).as_dict(),
 )
 
 # Define system message
@@ -34,16 +34,26 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents."""
+user_msg = """How many Rs are there in the word 'strawberry'?"""
 
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello CAMEL AI! It's great to hear about your open-source community dedicated
-to the study of autonomous and communicative agents. If you have any
-questions or need assistance, feel free to ask!
+The word 'strawberry' is spelled **S-T-R-A-W-B-E-R-R-Y**. Breaking it down:
+
+1. **S**  
+2. **T**  
+3. **R** (first R)  
+4. **A**  
+5. **W**  
+6. **B**  
+7. **E**  
+8. **R** (second R)  
+9. **R** (third R)  
+10. **Y**  
+
+There are **3 Rs** in the word 'strawberry'.
 ===============================================================================
 '''
