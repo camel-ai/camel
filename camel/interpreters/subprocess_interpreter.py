@@ -76,20 +76,10 @@ class SubprocessInterpreter(BaseInterpreter):
         require_confirm: bool = True,
         print_stdout: bool = False,
         print_stderr: bool = True,
-        node_path: str = "/usr/local/lib/node_modules",
-        env: Dict[str, str] = None,
     ) -> None:
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
-
-        # Set up environment variables
-        self.env = os.environ.copy()  # Start with the current environment
-        if node_path:
-            print(f"Changing node path from {self.env['NODE_PATH']}\nTo {node_path}")
-            self.env["NODE_PATH"] = node_path  # Add NODE_PATH for Node.js
-        if env:
-            self.env.update(env)
 
     def run_file(
         self,
@@ -119,7 +109,7 @@ class SubprocessInterpreter(BaseInterpreter):
         )
 
         proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.env
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         stdout, stderr = proc.communicate()
         if self.print_stdout and stdout:
