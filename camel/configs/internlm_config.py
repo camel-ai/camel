@@ -27,7 +27,7 @@ class InternLMConfig(BaseConfig):
             (default: :obj:`False`)
         temperature (float, optional): Controls the diversity and focus of
             the generated results. Lower values make the output more focused,
-            while higher values make it more diverse. (default: :obj:`0.3`)
+            while higher values make it more diverse. (default: :obj:`0.8`)
         top_p (float, optional): Controls the diversity and focus of the
             generated results. Higher values make the output more diverse,
             while lower values make it more focused. (default: :obj:`0.9`)
