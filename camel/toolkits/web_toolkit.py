@@ -7,7 +7,7 @@ from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, ModelType, RoleType
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.interpreters.subprocess_interpreter import SubprocessInterpreter
@@ -72,9 +72,11 @@ class WebToolkit(BaseToolkit):
 
         # A system message to instruct how to generate Stagehand code
         agent = ChatAgent(
-            BaseMessage.make_assistant_message(
-                "Stagehand Agent",
-                "You are an intelligent assistant that searches the web to answer the given question.",
+            BaseMessage(
+                role_name="Stagehand Agent",
+                role_type=RoleType.ASSISTANT,
+                meta_dict=None,
+                content="You are an intelligent assistant that searches the web to answer the given question.",
             ),
             model,
         )
@@ -249,7 +251,7 @@ class WebToolkit(BaseToolkit):
     Please produce the Stagehand JavaScript snippet now, following all of the above guidelines, always ending with the final extraction snippet for `updated_state`.
     """
 
-        response = agent.step(BaseMessage.make_user_message("User", stagehand_prompt))
+        response = agent.step(BaseMessage(role_name="User", role_type=RoleType.USER, meta_dict=None, content=stagehand_prompt))
         if response and response.msgs:
             return response.msgs[-1].content.strip()
         else:
