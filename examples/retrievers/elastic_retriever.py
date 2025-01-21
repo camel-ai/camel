@@ -11,18 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .auto_retriever import AutoRetriever
-from .base import BaseRetriever
-from .bm25_retriever import BM25Retriever
-from .cohere_rerank_retriever import CohereRerankRetriever
-from .elastic_retriever import ElasticRetriever
-from .vector_retriever import VectorRetriever
+from camel.retrievers import ElasticRetriever
 
-__all__ = [
-    'BaseRetriever',
-    'VectorRetriever',
-    'AutoRetriever',
-    'BM25Retriever',
-    'CohereRerankRetriever',
-    'ElasticRetriever',
-]
+retriever = ElasticRetriever(
+    host="https://localhost:9200",
+    index_name="camel",
+    auth_kwargs={
+        "http_auth": ("user", "password"),
+        "ca_certs": "http_ca.crt",
+    },
+    create_index=False,
+)
+
+retriever.process("https://docs.camel-ai.org/key_modules/retrievers.html", meta_data={
+    "title": "Retrievers",
+})
+
+query = "What is retriever?"
+
+results = retriever.retrieve(query)
+for result in results:
+    print(result)
