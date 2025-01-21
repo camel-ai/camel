@@ -122,12 +122,12 @@ class BaseMessage:
             BaseMessage: The new user message.
         """
         return cls(
-            role_name,
-            RoleType.USER,
-            meta_dict,
-            content,
-            acl_parameter,
-            parsed,
+            role_name = role_name,
+            role_type = RoleType.USER,
+            meta_dict = meta_dict,
+            content = content,
+            acl_parameter = acl_parameter,
+            parsed = parsed,
         )
 
     @classmethod
@@ -156,12 +156,12 @@ class BaseMessage:
             BaseMessage: The new assistant message.
         """
         return cls(
-            role_name,
-            RoleType.ASSISTANT,
-            meta_dict,
-            content,
-            acl_parameter,
-            parsed,
+            role_name = role_name,
+            role_type = RoleType.ASSISTANT,
+            meta_dict = meta_dict,
+            content = content,
+            acl_parameter = acl_parameter,
+            parsed = parsed,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
