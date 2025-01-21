@@ -13,8 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-
 from camel.loaders import UnstructuredIO
 from camel.retrievers import BaseRetriever
 from camel.utils import dependencies_required
@@ -26,7 +24,7 @@ class ElasticRetriever(BaseRetriever):
     r"""An Elasticsearch retriever for retrieving relevant information using a
     query-based approach.
     Default similarity model is BM25.
-    
+
     Attributes:
         host (str): The host URL of the Elasticsearch server.
         index_name (str): The name of the index in Elasticsearch.
@@ -34,7 +32,7 @@ class ElasticRetriever(BaseRetriever):
         es (Elasticsearch): An instance of the Elasticsearch client.
         unstructured_modules (UnstructuredIO): A module for parsing files and
             URLs and chunking content based on specified parameters.
-    
+
     """
 
     @dependencies_required("elasticsearch")
@@ -47,7 +45,7 @@ class ElasticRetriever(BaseRetriever):
         index_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         r"""Initializes the ElasticRetriever.
-        
+
         Args:
             host (str): The host URL of the Elasticsearch server.
             index_name (str): The name of the index in Elasticsearch.
@@ -57,7 +55,7 @@ class ElasticRetriever(BaseRetriever):
                 Elasticsearch. Defaults to True.
             index_kwargs (Dict[str, Any], optional): Optional index settings
                 and mappings. Defaults to None.
-                
+
         Raises:
             ValueError: If the connection to Elasticsearch fails.
         """
@@ -136,7 +134,6 @@ class ElasticRetriever(BaseRetriever):
             ]
             bulk(self.es, actions)
 
-
     def query(
         self,
         query: str,
@@ -157,14 +154,10 @@ class ElasticRetriever(BaseRetriever):
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
         if self.bm25 is None or not self.chunks:
-            raise ValueError("BM25 model is not initialized. Call `process` first.")
+            raise ValueError(
+                "BM25 model is not initialized. Call `process` first."
+            )
 
-        body = {
-            "query": {
-                "match": {
-                    "text": query
-                }
-            }
-        }
+        body = {"query": {"match": {"text": query}}}
         res = self.es.search(index=self.index_name, body=body, size=top_k)
         return res["hits"]["hits"]

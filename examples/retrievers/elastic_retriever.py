@@ -23,9 +23,12 @@ retriever = ElasticRetriever(
     create_index=False,
 )
 
-retriever.process("https://docs.camel-ai.org/key_modules/retrievers.html", meta_data={
-    "title": "Retrievers",
-})
+retriever.process(
+    "https://docs.camel-ai.org/key_modules/retrievers.html",
+    meta_data={
+        "title": "Retrievers",
+    },
+)
 
 query = "What is retriever?"
 
