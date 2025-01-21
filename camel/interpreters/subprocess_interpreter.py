@@ -1,6 +1,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# You may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -23,6 +23,7 @@ from colorama import Fore
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
+import os 
 
 logger = get_logger(__name__)
 
@@ -32,7 +33,7 @@ class SubprocessInterpreter(BaseInterpreter):
     strings in a subprocess.
 
     This class handles the execution of code in different scripting languages
-    (currently Python and Bash) within a subprocess, capturing their
+    (currently Python, Bash, and Node.js) within a subprocess, capturing their
     stdout and stderr streams, and allowing user checking before executing code
     strings.
 
@@ -48,11 +49,13 @@ class SubprocessInterpreter(BaseInterpreter):
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
+        "node": "node {file_name}",
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
+        "node": "js",
     }
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
@@ -63,6 +66,9 @@ class SubprocessInterpreter(BaseInterpreter):
         "shell": "bash",
         "bash": "bash",
         "sh": "bash",
+        "node": "node",
+        "javascript": "node",
+        "js": "node",
     }
 
     def __init__(
@@ -70,10 +76,20 @@ class SubprocessInterpreter(BaseInterpreter):
         require_confirm: bool = True,
         print_stdout: bool = False,
         print_stderr: bool = True,
+        node_path: str = "/usr/local/lib/node_modules",
+        env: Dict[str, str] = None,
     ) -> None:
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
+        
+        # Set up environment variables
+        self.env = os.environ.copy()  # Start with the current environment
+        if node_path:
+            print(f"Changing node path from {self.env['NODE_PATH']}\nTo {node_path}")
+            self.env["NODE_PATH"] = node_path  # Add NODE_PATH for Node.js
+        if env:
+            self.env.update(env)
 
     def run_file(
         self,
@@ -85,7 +101,7 @@ class SubprocessInterpreter(BaseInterpreter):
         Args:
             file (Path): The path object of the file to run.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
+                'bash', 'node').
 
         Returns:
             str: A string containing the captured stdout and stderr of the
@@ -103,8 +119,9 @@ class SubprocessInterpreter(BaseInterpreter):
                 file_name=str(file)
             )
         )
+        
         proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.env
         )
         stdout, stderr = proc.communicate()
         if self.print_stdout and stdout:
@@ -130,7 +147,7 @@ class SubprocessInterpreter(BaseInterpreter):
         Args:
             code (str): The code string to execute.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
+                'bash', 'node').
 
         Returns:
             str: A string containing the captured stdout and stderr of the
@@ -142,7 +159,6 @@ class SubprocessInterpreter(BaseInterpreter):
         """
         code_type = self._check_code_type(code_type)
 
-        # Print code for security checking
         if self.require_confirm:
             logger.info(
                 f"The following {code_type} code will run on your "
@@ -158,12 +174,13 @@ class SubprocessInterpreter(BaseInterpreter):
                         "This choice stops the current operation and any "
                         "further code execution."
                     )
+
         temp_file_path = self._create_temp_file(
             code=code, extension=self._CODE_EXTENSION_MAPPING[code_type]
         )
 
         result = self.run_file(temp_file_path, code_type)
-
+        print(f"temp_file_path: {temp_file_path}")
         temp_file_path.unlink()
         return result
 

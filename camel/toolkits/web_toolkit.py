@@ -10,7 +10,7 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
-
+from camel.interpreters.subprocess_interpreter import SubprocessInterpreter
 
 class WebToolkit(BaseToolkit):
     r"""A class representing a toolkit for web use.
@@ -98,7 +98,7 @@ class WebToolkit(BaseToolkit):
     - Extract structured information using `await page.extract()` with instructions like "Get the module details".
     - Extract structured information using `await page.extract()` with instructions like "Get the module details".
     - Use `observe()` to get actionable suggestions from the current page:
-    ```javascript
+    
     const actions = await page.observe();
     console.log("Possible actions:", actions);
 
@@ -112,7 +112,7 @@ class WebToolkit(BaseToolkit):
     - extract() must always use instruction, never action.
     - The `extract` function requires a `schema` that defines the expected structure of the extracted data. 
       For example, if you are extracting module details, the schema should specify the fields and types, such as: 
-       ```javascript
+       
        const data = await page.extract({{
            instruction: "extract the title, description, and link of the quickstart",
            schema: z.object({{
@@ -143,7 +143,9 @@ class WebToolkit(BaseToolkit):
     - Do NOT combine multiple actions into one instruction—each action must be atomic.
     - Keep the script concise, and use no more than one action per line.
     - Avoid any advanced planning—just deliver direct, concrete instructions based on the task.
-    - Do not include backticks or a "javascript" label in your response. Just return the plain JavaScript code.
+    - IMPORTANT:
+        - ```javascript is NOT allowed in your response, even in the beginning.
+        - Do not include backticks or a "javascript" label in your response. Just return the plain JavaScript code.
     - First go to the link in the state.
     - If the url is google.com, then search for the term you want.
     - Add a small wait ight after searching on Google, do something like
@@ -217,7 +219,7 @@ class WebToolkit(BaseToolkit):
         }}
         }}
 
-        The the calling agent will provide you feedback on what to inlcude in the 'updated_state'. At the end of your snippet, always do the final extraction to fill these fields. For example:
+        The the calling agent will provide you feedback on what to inlcude in the 'updated_state'. At the end of your snippet, always do the final extraction to fill these fields in a variable called 'updated_state'. For example:
 
         const updated_state = {{
         status: "success",
@@ -258,19 +260,17 @@ class WebToolkit(BaseToolkit):
         Internal method that executes the Stagehand code under Node.js and returns
         the final JSON line from stdout.
         """
-        script_path = "stagehand_script.js"
 
         # Wrap the user snippet with Stagehand environment
         wrapper_code = f"""
 const {{ Stagehand }} = require('@browserbasehq/stagehand');
-const chalk = require('chalk');
 const z = require('zod');
 
 (async () => {{
     const stagehand = new Stagehand({{ headless: false }});
     await stagehand.init();
     const page = stagehand.page;
-    console.log(chalk.blue("Starting Stagehand automation..."));
+    console.log("Starting Stagehand automation...");
     try {{
         // Insert the generated snippet
         {js_code}
@@ -286,39 +286,22 @@ const z = require('zod');
         }}));
     }} finally {{
         await stagehand.close();
-        console.log(chalk.green("Stagehand session closed."));
+        console.log("Stagehand session closed.");
     }}
 }})();
 """
 
-        # Write to temporary file
-        with open(script_path, "w") as f:
-            f.write(wrapper_code)
 
         # Run the script in Node.js
-        process = subprocess.Popen(
-            ["node", script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        output_lines = []
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-            print(line.strip())
-            output_lines.append(line.strip())
-
-        process.wait()
+        node_process = SubprocessInterpreter(require_confirm=True, print_stdout=True, print_stderr=True)
+        
+        exec_result = node_process.run(wrapper_code, "node")
 
         # Return the second-last line or fallback to last line
-        if len(output_lines) >= 2:
-            return output_lines[-2]
-        elif output_lines:
-            return output_lines[-1]
-        return "Failure: No output from Node.js script."
+        if exec_result.startswith("(stderr"):
+            return "Failure: No output from Node.js script."
+
+        return exec_result
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
