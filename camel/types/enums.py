@@ -141,7 +141,7 @@ class ModelType(UnifiedModelType, Enum):
 
     # DeepSeek models
     DEEPSEEK_CHAT = "deepseek-chat"
-
+    DEEPSEEK_REASONER = "deepseek-reasoner"
     # InternLM models
     INTERNLM3_LATEST = "internlm3-latest"
     INTERNLM3_8B_INSTRUCT = "internlm3-8b-instruct"
@@ -365,6 +365,7 @@ class ModelType(UnifiedModelType, Enum):
     def is_deepseek(self) -> bool:
         return self in {
             ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
         }
 
     @property
@@ -443,6 +444,7 @@ class ModelType(UnifiedModelType, Enum):
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
         }:
             return 64_000
         elif self in {

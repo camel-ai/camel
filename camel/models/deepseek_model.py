@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -110,6 +111,33 @@ class DeepSeekModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # deepseek reasoner has limitations
+        # reference: https://api-docs.deepseek.com/guides/reasoning_model#api-parameters
+        if self.model_type in [
+            ModelType.DEEPSEEK_REASONER,
+        ]:
+            warnings.warn(
+                "Warning: You are using an DeepSeek Reasoner model, "
+                "which has certain limitations, reference: "
+                "`https://api-docs.deepseek.com/guides/reasoning_model#api-parameters`.",
+                UserWarning,
+            )
+
+            # Check and remove unsupported parameters and reset the fixed
+            # parameters
+            unsupported_keys = [
+                "temperature",
+                "top_p",
+                "presence_penalty",
+                "frequency_penalty",
+                "logprobs",
+                "top_logprobs",
+                "tools",
+            ]
+            for key in unsupported_keys:
+                if key in self.model_config_dict:
+                    del self.model_config_dict[key]
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
