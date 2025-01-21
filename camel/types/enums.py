@@ -54,6 +54,19 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_GEMMA_7B_IT = "gemma-7b-it"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # TogetherAI platform models support tool calling
+    TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_1_405B = "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_3_70B = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    TOGETHER_MIXTRAL_8_7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    TOGETHER_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.1"
+
+    # SambaNova Cloud platform models support tool calling
+    SAMBA_LLAMA_3_1_8B = "Meta-Llama-3.1-8B-Instruct"
+    SAMBA_LLAMA_3_1_70B = "Meta-Llama-3.1-70B-Instruct"
+    SAMBA_LLAMA_3_1_405B = "Meta-Llama-3.1-405B-Instruct"
+
     STUB = "stub"
 
     # Legacy anthropic models
@@ -141,6 +154,12 @@ class ModelType(UnifiedModelType, Enum):
 
     # DeepSeek models
     DEEPSEEK_CHAT = "deepseek-chat"
+    DEEPSEEK_REASONER = "deepseek-reasoner"
+    # InternLM models
+    INTERNLM3_LATEST = "internlm3-latest"
+    INTERNLM3_8B_INSTRUCT = "internlm3-8b-instruct"
+    INTERNLM2_5_LATEST = "internlm2.5-latest"
+    INTERNLM2_PRO_CHAT = "internlm2-pro-chat"
 
     def __str__(self):
         return self.value
@@ -161,7 +180,17 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def support_native_tool_calling(self) -> bool:
         return any(
-            [self.is_openai, self.is_gemini, self.is_mistral, self.is_qwen]
+            [
+                self.is_openai,
+                self.is_gemini,
+                self.is_mistral,
+                self.is_qwen,
+                self.is_deepseek,
+                self.is_cohere,
+                self.is_internlm,
+                self.is_together,
+                self.is_sambanova,
+            ]
         )
 
     @property
@@ -232,6 +261,27 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this type of models is served by Together AI."""
+        return self in {
+            ModelType.TOGETHER_LLAMA_3_1_405B,
+            ModelType.TOGETHER_LLAMA_3_1_70B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_MISTRAL_7B,
+            ModelType.TOGETHER_MIXTRAL_8_7B,
+        }
+
+    @property
+    def is_sambanova(self) -> bool:
+        r"""Returns whether this type of models is served by SambaNova AI."""
+        return self in {
+            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }
 
     @property
@@ -351,6 +401,16 @@ class ModelType(UnifiedModelType, Enum):
     def is_deepseek(self) -> bool:
         return self in {
             ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
+        }
+
+    @property
+    def is_internlm(self) -> bool:
+        return self in {
+            ModelType.INTERNLM3_LATEST,
+            ModelType.INTERNLM3_8B_INSTRUCT,
+            ModelType.INTERNLM2_5_LATEST,
+            ModelType.INTERNLM2_PRO_CHAT,
         }
 
     @property
@@ -386,6 +446,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
             ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.TOGETHER_MISTRAL_7B,
         }:
             return 8_192
         elif self in {
@@ -396,6 +457,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_VISION,
             ModelType.YI_SPARK,
             ModelType.YI_LARGE_RAG,
+            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }:
             return 16_384
         elif self in {
@@ -411,11 +474,17 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.INTERNLM3_8B_INSTRUCT,
+            ModelType.INTERNLM3_LATEST,
+            ModelType.INTERNLM2_5_LATEST,
+            ModelType.INTERNLM2_PRO_CHAT,
+            ModelType.TOGETHER_MIXTRAL_8_7B,
         }:
             return 32_768
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
         }:
             return 64_000
         elif self in {
@@ -448,6 +517,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
             ModelType.GROQ_LLAMA_3_3_70B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
         }:
             return 128_000
         elif self in {
@@ -457,6 +527,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.TOGETHER_LLAMA_3_1_8B,
+            ModelType.TOGETHER_LLAMA_3_1_70B,
+            ModelType.TOGETHER_LLAMA_3_1_405B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
         }:
             return 131_072
         elif self in {
@@ -634,6 +708,7 @@ class ModelPlatformType(Enum):
     NVIDIA = "nvidia"
     DEEPSEEK = "deepseek"
     SGLANG = "sglang"
+    INTERNLM = "internlm"
 
     @property
     def is_openai(self) -> bool:
@@ -735,6 +810,11 @@ class ModelPlatformType(Enum):
     def is_deepseek(self) -> bool:
         r"""Returns whether this platform is DeepSeek."""
         return self is ModelPlatformType.DEEPSEEK
+
+    @property
+    def is_internlm(self) -> bool:
+        r"""Returns whether this platform is InternLM."""
+        return self is ModelPlatformType.INTERNLM
 
 
 class AudioModelType(Enum):

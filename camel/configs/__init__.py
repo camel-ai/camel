@@ -17,6 +17,7 @@ from .cohere_config import COHERE_API_PARAMS, CohereConfig
 from .deepseek_config import DEEPSEEK_API_PARAMS, DeepSeekConfig
 from .gemini_config import Gemini_API_PARAMS, GeminiConfig
 from .groq_config import GROQ_API_PARAMS, GroqConfig
+from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
@@ -76,4 +77,6 @@ __all__ = [
     'QWEN_API_PARAMS',
     'DeepSeekConfig',
     'DEEPSEEK_API_PARAMS',
+    'InternLMConfig',
+    'INTERNLM_API_PARAMS',
 ]
