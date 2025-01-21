@@ -13,9 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-from typing import Any, ClassVar, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
 from typing_extensions import Self
 
 from camel.agents import ChatAgent
@@ -55,22 +54,22 @@ DEFAULT_CONVERTER_PROMPTS = """
 """
 
 
-class ConversationItem(BaseModel):
-    from_: Literal["human", "gpt", "function_call", "observation"]
-    value: str
+# class ConversationItem(BaseModel):
+#     from_: Literal["human", "gpt", "function_call", "observation"]
+#     value: str
+#
+#     class Config:
+#         fields: ClassVar[Dict[str, str]] = {"from_": "from"}
+#         extra = "forbid"
 
-    class Config:
-        fields: ClassVar[Dict[str, str]] = {"from_": "from"}
-        extra = "forbid"
 
-
-class ShareGPTData(BaseModel):
-    system: str
-    tools: str
-    conversations: List[ConversationItem]
-
-    class Config:
-        extra = "forbid"
+# class ShareGPTData(BaseModel):
+#     system: str
+#     tools: str
+#     conversations: List[ConversationItem]
+#
+#     class Config:
+#         extra = "forbid"
 
 
 class ShareGPTDataCollector(BaseDataCollector):
