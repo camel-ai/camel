@@ -12,6 +12,7 @@ from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.interpreters.subprocess_interpreter import SubprocessInterpreter
 
+
 class WebToolkit(BaseToolkit):
     r"""A class representing a toolkit for web use.
 
@@ -251,7 +252,14 @@ class WebToolkit(BaseToolkit):
     Please produce the Stagehand JavaScript snippet now, following all of the above guidelines, always ending with the final extraction snippet for `updated_state`.
     """
 
-        response = agent.step(BaseMessage(role_name="User", role_type=RoleType.USER, meta_dict=None, content=stagehand_prompt))
+        response = agent.step(
+            BaseMessage(
+                role_name="User",
+                role_type=RoleType.USER,
+                meta_dict=None,
+                content=stagehand_prompt,
+            )
+        )
         if response and response.msgs:
             return response.msgs[-1].content.strip()
         else:
@@ -293,10 +301,11 @@ const z = require('zod');
 }})();
 """
 
-
         # Run the script in Node.js
-        node_process = SubprocessInterpreter(require_confirm=True, print_stdout=True, print_stderr=True)
-        
+        node_process = SubprocessInterpreter(
+            require_confirm=True, print_stdout=True, print_stderr=True
+        )
+
         exec_result = node_process.run(wrapper_code, "node")
 
         # Return the second-last line or fallback to last line

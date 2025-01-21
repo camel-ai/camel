@@ -23,7 +23,7 @@ from colorama import Fore
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
-import os 
+import os
 
 logger = get_logger(__name__)
 
@@ -82,7 +82,7 @@ class SubprocessInterpreter(BaseInterpreter):
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
-        
+
         # Set up environment variables
         self.env = os.environ.copy()  # Start with the current environment
         if node_path:
@@ -115,11 +115,9 @@ class SubprocessInterpreter(BaseInterpreter):
             raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
         cmd = shlex.split(
-            self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                file_name=str(file)
-            )
+            self._CODE_EXECUTE_CMD_MAPPING[code_type].format(file_name=str(file))
         )
-        
+
         proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.env
         )
@@ -161,8 +159,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
         if self.require_confirm:
             logger.info(
-                f"The following {code_type} code will run on your "
-                "computer: {code}"
+                f"The following {code_type} code will run on your " "computer: {code}"
             )
             while True:
                 choice = input("Running code? [Y/n]:").lower()
@@ -180,7 +177,7 @@ class SubprocessInterpreter(BaseInterpreter):
         )
 
         result = self.run_file(temp_file_path, code_type)
-        print(f"temp_file_path: {temp_file_path}")
+
         temp_file_path.unlink()
         return result
 
@@ -207,6 +204,4 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError(
-            "SubprocessInterpreter doesn't support " "`action_space`."
-        )
+        raise RuntimeError("SubprocessInterpreter doesn't support " "`action_space`.")
