@@ -127,16 +127,22 @@ class InternalPythonInterpreter(BaseInterpreter):
                 f"{', '.join(self._CODE_TYPES)}."
             )
         if self.unsafe_mode:
-            try:
-                result = str(eval(code, self.action_space))
-            except SyntaxError:
-                import contextlib
-                import io
+            import contextlib
+            import io
 
-                output_buffer = io.StringIO()
-                with contextlib.redirect_stdout(output_buffer):
-                    exec(code, self.action_space)
-                result = output_buffer.getvalue()
+            # Try to execute first and capture stdout
+            output_buffer = io.StringIO()
+            with contextlib.redirect_stdout(output_buffer):
+                exec(code, self.action_space)
+            result = output_buffer.getvalue()
+
+            # If no output was captured, try to evaluate the code
+            if not result:
+                try:
+                    result = str(eval(code, self.action_space))
+                except (SyntaxError, NameError):
+                    result = ""  # If eval fails, return empty string
+
             return result
         else:
             return str(self.execute(code))
