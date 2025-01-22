@@ -143,6 +143,45 @@ class DeepSeekModel(BaseModelBackend):
             model=self.model_type,
             **self.model_config_dict,
         )
+
+        # Temporary solution to handle the case where
+        # deepseek returns a reasoning_content
+        if (
+            self.model_type
+            in [
+                ModelType.DEEPSEEK_REASONER,
+            ]
+            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
+            == "true"
+        ):
+            reasoning_content = response.choices[0].message.reasoning_content
+            combined_content = (
+                response.choices[0].message.content
+                + "\n\nBELOW IS THE REASONING CONTENT:\n\n"
+                + (reasoning_content if reasoning_content else "")
+            )
+
+            response = ChatCompletion.construct(
+                id=response.id,
+                choices=[
+                    dict(
+                        index=response.choices[0].index,
+                        message={
+                            "role": response.choices[0].message.role,
+                            "content": combined_content,
+                            "tool_calls": None,
+                        },
+                        finish_reason=response.choices[0].finish_reason
+                        if response.choices[0].finish_reason
+                        else None,
+                    )
+                ],
+                created=response.created,
+                model=response.model,
+                object="chat.completion",
+                usage=response.usage,
+            )
+
         return response
 
     def check_model_config(self):
