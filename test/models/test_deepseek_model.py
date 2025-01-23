@@ -27,6 +27,7 @@ from camel.utils import OpenAITokenCounter
     "model_type",
     [
         ModelType.DEEPSEEK_CHAT,
+        ModelType.DEEPSEEK_REASONER,
     ],
 )
 def test_deepseek_model(model_type):
@@ -44,6 +45,7 @@ def test_deepseek_model(model_type):
     "model_type",
     [
         ModelType.DEEPSEEK_CHAT,
+        ModelType.DEEPSEEK_REASONER,
     ],
 )
 def test_deepseek_model_create(model_type: ModelType):

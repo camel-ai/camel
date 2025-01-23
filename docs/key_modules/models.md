@@ -68,6 +68,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen2.5-32b-instruct | N |
 | Qwen | qwen2.5-14b-instruct | N |
 | DeepSeek | deepseek-chat | N |
+| DeepSeek | deepseek-reasoner | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
