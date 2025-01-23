@@ -12,14 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from dataclasses import asdict
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.types import OpenAIBackendRole
+from camel.types import OpenAIBackendRole, RoleType
+from camel.messages.acl_parameter import Content 
 
 
 class MemoryRecord(BaseModel):
@@ -61,7 +61,11 @@ class MemoryRecord(BaseModel):
         message_cls = cls._MESSAGE_TYPES[record_dict["message"]["__class__"]]
         kwargs: Dict = record_dict["message"].copy()
         kwargs.pop("__class__")
-        reconstructed_message = message_cls(**kwargs)
+        role_name = kwargs['role_name']
+        role_type = RoleType(kwargs['role_type'].lower())
+        content = Content.model_validate_json(kwargs['content'])
+  
+        reconstructed_message = BaseMessage(role_name, role_type, content)
         return cls(
             uuid=UUID(record_dict["uuid"]),
             message=reconstructed_message,
@@ -73,12 +77,14 @@ class MemoryRecord(BaseModel):
         r"""Convert the :obj:`MemoryRecord` to a dict for serialization
         purposes.
         """
+        message_dict = {}
+        message_dict = {
+            "__class__": self.message.__class__.__name__,
+        }
+        message_dict.update(self.message.to_dict())
         return {
             "uuid": str(self.uuid),
-            "message": {
-                "__class__": self.message.__class__.__name__,
-                **asdict(self.message),
-            },
+            "message": message_dict,
             "role_at_backend": self.role_at_backend,
             "extra_info": self.extra_info,
         }

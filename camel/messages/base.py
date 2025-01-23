@@ -14,9 +14,9 @@
 import base64
 import io
 import re
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from uuid import uuid4
+from dataclasses import asdict
 
 
 import numpy as np
@@ -37,12 +37,10 @@ from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
     OpenAIImageType,
-    OpenAIVisionDetailType,
     RoleType,
 )
 from camel.utils import Constants
 
-@dataclass
 class BaseMessage:
     r"""Base class for message objects used in CAMEL chat system.
 
@@ -538,5 +536,6 @@ class BaseMessage:
             "role_name": self.role_name,
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
-            "content": self.content.text,
+            "content": self.content.model_dump_json(),
+            "acl_parameter": self.acl_parameter.model_dump_json(),
         }
