@@ -94,11 +94,13 @@ class FunctionCallingRecord(BaseModel):
         args (Dict[str, Any]): The dictionary of arguments passed to
             the function.
         result (Any): The execution result of calling this function.
+        tool_call_id (str): The ID of the tool call, if available.
     """
 
     func_name: str
     args: Dict[str, Any]
     result: Any
+    tool_call_id: str
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.
@@ -109,7 +111,7 @@ class FunctionCallingRecord(BaseModel):
         return (
             f"Function Execution: {self.func_name}\n"
             f"\tArgs: {self.args}\n"
-            f"\tResult: {self.result}"
+            f"\tResult: {self.result}\n"
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -577,13 +579,18 @@ class ChatAgent(BaseAgent):
             )
 
         self.original_model_dict = self.model_backend.model_config_dict
-        if response_format and self.model_type in {"gpt-4o", "gpt-4o-mini"}:
+        model_response_format_modified = False
+        if (
+            response_format
+            and self.model_type.support_native_structured_output
+        ):
             self.model_backend.model_config_dict = (
                 self.original_model_dict.copy()
             )
             self.model_backend.model_config_dict["response_format"] = (
                 response_format
             )
+            model_response_format_modified = True
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -602,7 +609,12 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        return self._handle_step(response_format, self.single_iteration)
+        try:
+            return self._handle_step(response_format, self.single_iteration)
+        finally:
+            if model_response_format_modified:
+                # Reset model config back to original state
+                self.model_backend.model_config_dict = self.original_model_dict
 
     def _inject_tool_prompt(self) -> None:
         r"""Generate and add the tool prompt to memory."""
@@ -1384,6 +1396,7 @@ class ChatAgent(BaseAgent):
 
         tool = self.tool_dict[func_name]
         result = tool(**args)
+        tool_call_id = choice.message.tool_calls[0].id
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1392,6 +1405,7 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             args=args,
+            tool_call_id=tool_call_id,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1400,11 +1414,15 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             result=result,
+            tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = FunctionCallingRecord(
-            func_name=func_name, args=args, result=result
+            func_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
         )
         return assist_msg, func_msg, func_record
 
@@ -1448,6 +1466,7 @@ class ChatAgent(BaseAgent):
         args = json.loads(choice.message.tool_calls[0].function.arguments)
         tool = self.tool_dict[func_name]
         result = await tool(**args)
+        tool_call_id = choice.message.tool_calls[0].id
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1456,6 +1475,7 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             args=args,
+            tool_call_id=tool_call_id,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -1464,11 +1484,15 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             result=result,
+            tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = FunctionCallingRecord(
-            func_name=func_name, args=args, result=result
+            func_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
         )
         return assist_msg, func_msg, func_record
 
