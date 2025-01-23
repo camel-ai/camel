@@ -73,7 +73,8 @@ class InternalPythonInterpreter(BaseInterpreter):
             module and its submodule or function name are separated by a period
             (:obj:`.`). (default: :obj:`None`)
         unsafe_mode (bool, optional): If `True`, the interpreter runs the code
-            by `eval()` without any security check. (default: :obj:`False`)
+            by `eval()` or `exec()` without any security check.
+            (default: :obj:`False`)
         raise_error (bool, optional): Raise error if the interpreter fails.
             (default: :obj:`False`)
     """
@@ -102,9 +103,9 @@ class InternalPythonInterpreter(BaseInterpreter):
         type is supported, and then executes the code. If `unsafe_mode` is
         set to `False`, the code is executed in a controlled environment using
         the `execute` method. If `unsafe_mode` is `True`, the code is executed
-        using `eval()` with the action space as the global context. An
-        `InterpreterError` is raised if the code type is unsupported or if any
-        runtime error occurs during execution.
+        using `eval()` or `exec()` with the action space as the global context.
+        An `InterpreterError` is raised if the code type is unsupported or if
+        any runtime error occurs during execution.
 
         Args:
             code (str): The python code to be executed.
@@ -125,10 +126,26 @@ class InternalPythonInterpreter(BaseInterpreter):
                 f"`{self.__class__.__name__}` only supports "
                 f"{', '.join(self._CODE_TYPES)}."
             )
-        if not self.unsafe_mode:
-            return str(self.execute(code))
+        if self.unsafe_mode:
+            import contextlib
+            import io
+
+            # Try to execute first and capture stdout
+            output_buffer = io.StringIO()
+            with contextlib.redirect_stdout(output_buffer):
+                exec(code, self.action_space)
+            result = output_buffer.getvalue()
+
+            # If no output was captured, try to evaluate the code
+            if not result:
+                try:
+                    result = str(eval(code, self.action_space))
+                except (SyntaxError, NameError):
+                    result = ""  # If eval fails, return empty string
+
+            return result
         else:
-            return str(eval(code, self.action_space))
+            return str(self.execute(code))
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter."""

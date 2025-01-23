@@ -97,8 +97,17 @@ class GeminiModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # Process messages to ensure no empty content, it's not accepeted by
+        # Gemini
+        processed_messages = []
+        for msg in messages:
+            msg_copy = msg.copy()
+            if 'content' in msg_copy and msg_copy['content'] == '':
+                msg_copy['content'] = 'null'
+            processed_messages.append(msg_copy)
+
         response = self._client.chat.completions.create(
-            messages=messages,
+            messages=processed_messages,
             model=self.model_type,
             **self.model_config_dict,
         )
