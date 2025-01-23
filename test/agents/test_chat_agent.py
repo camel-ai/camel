@@ -30,7 +30,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import FunctionCallingRecord
+from camel.agents.chat_agent import ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -857,7 +857,7 @@ def test_tool_calling_sync(step_call_count=3):
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
 
-        tool_calls: List[FunctionCallingRecord] = [
+        tool_calls: List[ToolCallingRecord] = [
             call for call in agent_response.info['tool_calls']
         ]
 

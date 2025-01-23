@@ -86,7 +86,7 @@ except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 
-class FunctionCallingRecord(BaseModel):
+class ToolCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
     Attributes:
@@ -489,7 +489,7 @@ class ChatAgent(BaseAgent):
         usage: Optional[Dict[str, int]],
         termination_reasons: List[str],
         num_tokens: int,
-        tool_calls: List[FunctionCallingRecord],
+        tool_calls: List[ToolCallingRecord],
         external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
@@ -501,7 +501,7 @@ class ChatAgent(BaseAgent):
             termination_reasons (List[str]): The reasons for the termination
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
-            tool_calls (List[FunctionCallingRecord]): The list of function
+            tool_calls (List[ToolCallingRecord]): The list of function
                 calling records, containing the information of called tools.
             external_tool_request
                 (Optional[ChatCompletionMessageToolCall], optional):
@@ -645,7 +645,7 @@ class ChatAgent(BaseAgent):
             )
 
         # Record function calls made during the session
-        tool_call_records: List[FunctionCallingRecord] = []
+        tool_call_records: List[ToolCallingRecord] = []
 
         external_tool_request = None
 
@@ -885,7 +885,7 @@ class ChatAgent(BaseAgent):
 
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        tool_call_records: List[FunctionCallingRecord] = []
+        tool_call_records: List[ToolCallingRecord] = []
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -970,7 +970,7 @@ class ChatAgent(BaseAgent):
 
     def _step_tool_call_and_update(
         self, response: ChatCompletion
-    ) -> FunctionCallingRecord:
+    ) -> ToolCallingRecord:
         r"""Processes a function call within the chat completion response,
         records the function call in the provided list of tool calls and
         updates the memory of the current agent.
@@ -980,7 +980,7 @@ class ChatAgent(BaseAgent):
                 completion.
 
         Returns:
-            FunctionCallingRecord: The record of calling the function.
+            ToolCallingRecord: The record of calling the function.
         """
 
         # Perform function calling
@@ -996,7 +996,7 @@ class ChatAgent(BaseAgent):
 
     async def _step_tool_call_and_update_async(
         self, response: ChatCompletion
-    ) -> FunctionCallingRecord:
+    ) -> ToolCallingRecord:
         (
             func_assistant_msg,
             func_result_msg,
@@ -1015,7 +1015,7 @@ class ChatAgent(BaseAgent):
         List[str],
         Dict[str, int],
         str,
-        FunctionCallingRecord,
+        ToolCallingRecord,
         int,
     ]:
         r"""Internal function of structuring the output of the agent based on
@@ -1027,7 +1027,7 @@ class ChatAgent(BaseAgent):
 
         Returns:
             Tuple[List[BaseMessage], List[str], Dict[str, int], str,
-                FunctionCallingRecord, int]:
+                ToolCallingRecord, int]:
                 A tuple containing the output messages, finish reasons, usage
                 dictionary, response ID, function calling record, and number of
                 tokens.
@@ -1141,7 +1141,7 @@ class ChatAgent(BaseAgent):
         finish_reasons: List[str],
         usage_dict: Dict[str, int],
         response_id: str,
-        tool_calls: List[FunctionCallingRecord],
+        tool_calls: List[ToolCallingRecord],
         num_tokens: int,
         external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
@@ -1160,7 +1160,7 @@ class ChatAgent(BaseAgent):
             usage_dict (Dict[str, int]): Dictionary containing token usage
                 information.
             response_id (str): The ID of the response from the model.
-            tool_calls (List[FunctionCallingRecord]): Records of function calls
+            tool_calls (List[ToolCallingRecord]): Records of function calls
                 made during this step.
             num_tokens (int): The number of tokens used in this step.
             external_tool_request (Optional[ChatCompletionMessageToolCall]):
@@ -1335,7 +1335,7 @@ class ChatAgent(BaseAgent):
     def _step_token_exceed(
         self,
         num_tokens: int,
-        tool_calls: List[FunctionCallingRecord],
+        tool_calls: List[ToolCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
@@ -1343,7 +1343,7 @@ class ChatAgent(BaseAgent):
 
         Args:
             num_tokens (int): Number of tokens in the messages.
-            tool_calls (List[FunctionCallingRecord]): List of information
+            tool_calls (List[ToolCallingRecord]): List of information
                 objects of functions called in the current step.
             termination_reason (str): String of termination reason.
 
@@ -1372,7 +1372,7 @@ class ChatAgent(BaseAgent):
         self,
         response: ChatCompletion,
     ) -> Tuple[
-        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
+        FunctionCallingMessage, FunctionCallingMessage, ToolCallingRecord
     ]:
         r"""Execute the function with arguments following the model's response.
 
@@ -1418,7 +1418,7 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FunctionCallingRecord(
+        func_record = ToolCallingRecord(
             func_name=func_name,
             args=args,
             result=result,
@@ -1442,7 +1442,7 @@ class ChatAgent(BaseAgent):
         self,
         response: ChatCompletion,
     ) -> Tuple[
-        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
+        FunctionCallingMessage, FunctionCallingMessage, ToolCallingRecord
     ]:
         r"""Execute the async function with arguments following the model's
         response.
@@ -1488,7 +1488,7 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FunctionCallingRecord(
+        func_record = ToolCallingRecord(
             func_name=func_name,
             args=args,
             result=result,
