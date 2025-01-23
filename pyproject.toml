@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.16"
+version = "0.2.18"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -32,7 +32,7 @@ python = ">=3.10,<3.13"
 numpy = "^1"
 openai = "^1.58.1"
 tiktoken = "^0.7.0"
-colorama = "^0.4.0"
+colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
@@ -40,7 +40,7 @@ docstring-parser = "^0.15"
 pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
-pandoc = "^2.0.0"
+pandoc = "*"
 httpx = ">=0.23.0,<0.27.3"
 
 # Model platforms
@@ -56,7 +56,7 @@ sglang = { version = "^0.4.0", optional = true }
 # Huggingface ecosystem
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0.25.0", optional = true }
-accelerate = { version = "^0.25.0", optional = true }
+accelerate = { version = "^0.26.0", optional = true }
 datasets = { version = "^3", optional = true }
 torch = [
     { version = "^2", optional = true, markers = "platform_system != 'Darwin' or platform_machine == 'arm64'" },
@@ -72,6 +72,7 @@ sentence-transformers = { version = "^3.0.1", optional = true }
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
 rank-bm25 = { version = "^0.2.2", optional = true }
+ragas = { version = "<=0.1.6", optional = true }
 
 # Storage solutions
 neo4j = { version = "^5.18.0", optional = true }
@@ -89,9 +90,10 @@ pdfplumber = { version = "^0.11.0", optional = true }
 unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
+pandasai = { version = "^2.3.0", optional = true }
 
 # Media processing tools
-pillow = "^11.0.0"
+pillow = ">=10.1.0,<11.0.0"
 imageio = { extras = ["pyav"], version = "^2.34.2", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 yt-dlp = { version = "^2024.11.4", optional = true }
@@ -123,10 +125,11 @@ praw = { version = "^7.7.1", optional = true }
 
 # Data science and analytics tools
 rouge = { version = "^1.0.1", optional = true }
+aiosqlite = { version = "^0.20.0", optional = true }
 textblob = { version = "^0.17.1", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
 datacommons_pandas = { version = "^0.0.3", optional = true }
-pandas = { version = "^2.2.3", optional = true }
+pandas = { version = "^1.5.3", optional = true }
 openbb = { version = "^4.3.5", optional = true }
 stripe = { version = "^11.3.0", optional = true }
 
@@ -163,7 +166,8 @@ rag = [
     "nebula3-python",
     "rank-bm25",
     "cohere",
-    "unstructured"
+    "unstructured",
+    "pandasai",
 ]
 
 # Web and API tools
@@ -190,6 +194,7 @@ document_tools = [
     "PyMuPDF",
     "pdfplumber",
     "unstructured",
+    "pandasai",
     "prance",
     "openapi-spec-validator",
 ]
@@ -221,6 +226,7 @@ data_tools = [
     "datacommons",
     "datacommons_pandas",
     "rouge",
+    "aiosqlite",
     "openbb",
     "stripe",
 ]
@@ -298,6 +304,7 @@ all = [
     "PyMuPDF",
     "pdfplumber",
     "unstructured",
+    "pandasai",
     "wikipedia",
     "linkup-sdk",
     "duckduckgo-search",
@@ -309,6 +316,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "rouge",
+    "aiosqlite",
     "outlines",
     "e2b-code-interpreter",
     "firecrawl-py",
@@ -361,6 +369,7 @@ all = [
     "google-cloud-storage",
     "botocore",
     "dappier",
+    "ragas",
 ]
 
 [tool.poetry.group.dev]
@@ -395,6 +404,7 @@ sphinx_book_theme = "*"
 docutils = "<0.20.0"
 myst-parser = "*"
 nbsphinx = "*"
+sphinxext-rediraffe = "^0.2.7"
 
 [tool.ruff]
 line-length = 79
@@ -479,6 +489,7 @@ module = [
     "qdrant_client.*",
     "unstructured.*",
     "rouge",
+    "aiosqlite",
     "e2b_code_interpreter",
     "firecrawl",
     "imageio",
@@ -522,5 +533,7 @@ module = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
+    "ragas",
+    "pandasai",
 ]
 ignore_missing_imports = true

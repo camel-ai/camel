@@ -68,9 +68,14 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen2.5-32b-instruct | N |
 | Qwen | qwen2.5-14b-instruct | N |
 | DeepSeek | deepseek-chat | N |
+| DeepSeek | deepseek-reasoner | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
+| InternLM | internlm3-latest | N |
+| InternLM | internlm3-8b-instruct | N |
+| InternLM | internlm2.5-latest	| N |
+| InternLM | internlm2-pro-chat	| N |
 | Reka | reka-core | Y |
 | Reka | reka-flash | Y |
 | Reka | reka-edge | Y |
