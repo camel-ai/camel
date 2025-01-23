@@ -34,30 +34,37 @@ def test_video_1(video_toolkit):
     assert res == "3"
 
 
-# def test_video_2(video_toolkit):
+def test_video_2(video_toolkit):
+    video_path = "https://www.youtube.com/watch?v=1htKBjuUWec"
+    question = "What does Teal'c say in response to the question \
+    \"Isn't that hot?\" Please answer with the exact words or phrase."
 
-#     video_path = "https://www.youtube.com/watch?v=1htKBjuUWec"
-#     question = "What does Teal'c say in response to the question \
-#     \"Isn't that hot?\" Please answer with the exact words or phrase."
-
-#     res = video_toolkit.ask_question_about_video(video_path, question)
-#     assert "extremely" in res.lower()
+    res = video_toolkit.ask_question_about_video(video_path, question)
+    assert "extremely" in res.lower()
 
 
-# def test_video_3(video_toolkit):
+def test_video_3(video_toolkit):
+    video_path = "https://www.youtube.com/watch?v=2Njmx-UuU3M"
+    question = "What species of bird is featured in the video? Please answer\
+    with exactly the name of the species without any additional text."
 
-#     video_path = "https://www.youtube.com/watch?v=2Njmx-UuU3M"
-#     question = "What species of bird is featured in the video? Please answer\
-#     with exactly the name of the species without any additional text."
+    res = video_toolkit.ask_question_about_video(video_path, question)
+    assert res.lower == "rockhopper penguin"
 
-#     res = video_toolkit.ask_question_about_video(video_path, question)
-#     assert res.lower == "rockhopper penguin"
 
 if __name__ == "__main__":
     test_toolkit = VideoToolkit(download_directory="test_media")
-    video_path = "https://www.youtube.com/watch?v=L1vXCYZAYYM"
-    question = "what is the highest number of bird species to be on camera \
-        simultaneously? Please answer with only the number."
+    # video_path = "https://www.youtube.com/watch?v=L1vXCYZAYYM"
+    # question = "what is the highest number of bird species to be on camera \
+    #     simultaneously? Please answer with only the number."
+
+    # video_path = "https://www.youtube.com/watch?v=1htKBjuUWec"
+    # question = "What does Teal'c say in response to the question \
+    # \"Isn't that hot?\" Please answer with the exact words or phrase."
+
+    video_path = "https://www.youtube.com/watch?v=2Njmx-UuU3M"
+    question = "What species of bird is featured in the video? Please answer\
+    with exactly the name of the species without any additional text."
 
     answer = test_toolkit.ask_question_about_video(video_path, question)
-    print(answer)
+    print(f"\nThe final answer is: {answer}")

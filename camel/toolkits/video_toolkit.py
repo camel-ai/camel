@@ -24,7 +24,6 @@ import ffmpeg
 from PIL import Image
 
 from camel.agents import ChatAgent
-from camel.configs import QwenConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits.base import BaseToolkit
@@ -59,23 +58,23 @@ Indicate speaker changes if possible and denote inaudible sections with \
 or music, include brief notes in brackets only if relevant. Do not summarize \
 or omit any spoken content."""
 
-VIDEO_SUMMARISATION_PROMPT = """You are a video analysis assistant. I will \
-provide you with frames from a video segment. Your task is to analyze these \
+VIDEO_SUMMARISATION_PROMPT = """You are a video analysis assistant. I will 
+provide you with frames from a video segment. Your task is to analyze these 
 frames and provide a concise, structured description of the video.
 
 Focus on the following points:
 
-1. **Scene/Environment**: Briefly describe the setting (e.g., indoor/outdoor, \
+1. **Scene/Environment**: Briefly describe the setting (e.g., indoor/outdoor, 
 notable background details).
-2. **People/Characters**: Note the number of people, their appearance \
+2. **People/Characters**: Note the number of people, their appearance 
 (clothing, age, gender, features), and actions.
 3. **Objects/Items**: Mention significant objects and their use or position.
-4. **Actions/Activities**: Summarize key actions and interactions between \
+4. **Actions/Activities**: Summarize key actions and interactions between 
 people or objects.
-5. **On-Screen Text/Clues**: Extract visible text (e.g., signs, captions) and \
+5. **On-Screen Text/Clues**: Extract visible text (e.g., signs, captions) and 
 describe symbols or logos.
 6. **Changes Over Time**: Highlight any progression or changes in the scene.
-7. **Summary**: Provide a brief synthesis of key observations, focusing on \
+7. **Summary**: Provide a brief synthesis of key observations, focusing on 
 notable or unusual elements.
 
 Keep your response concise while covering the key details."""
@@ -162,9 +161,8 @@ class VideoToolkit(BaseToolkit):
 
         # Set model and ChatAgent for video understanding
         self.vl_model = ModelFactory.create(
-            model_platform=ModelPlatformType.QWEN,
-            model_type=ModelType.QWEN_VL_MAX,
-            model_config_dict=QwenConfig(temperature=0.2).as_dict(),
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
         )
         self.vl_agent = ChatAgent(
             model=self.vl_model, output_language="English"
@@ -272,7 +270,10 @@ class VideoToolkit(BaseToolkit):
 
         return images
 
-    def _describe_video_segment(self, images: List[Image.Image]) -> str:
+    def _describe_video_segment(
+        self,
+        images: List[Image.Image],
+    ) -> str:
         r"""Ask a question about the video using VLLM."""
 
         msg = BaseMessage.make_user_message(
@@ -289,7 +290,7 @@ class VideoToolkit(BaseToolkit):
         self,
         video_path: str,
         frames_per_second: int = 1,
-        segment_size: int = 25,
+        segment_size: int = 100,
     ) -> str:
         r"""Transcribe the visual information of the video."""
 
@@ -337,7 +338,7 @@ class VideoToolkit(BaseToolkit):
         audio_transcript = audio_toolkit.ask_question_about_audio(
             audio_path, AUDIO_TRANSCRIPTION_PROMPT
         )
-        print("Audio transcription: " + audio_transcript)
+        print("\nAudio transcription: " + audio_transcript)
         return audio_transcript
 
     def ask_question_about_video(self, video_path: str, question: str) -> str:
