@@ -13,6 +13,5 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .star_pipeline import STaRPipeline
-from .templates import STaRTemplates
 
-__all__ = ['STaRPipeline', 'STaRTemplates']
+__all__ = ['STaRPipeline']

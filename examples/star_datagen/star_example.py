@@ -43,6 +43,13 @@ def main():
 
     agent = ChatAgent(system_message)
 
+    # Initialize reward model (optional)
+
+    # reward_model = NemotronRewardModel(
+    #     model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+    #     url="https://integrate.api.nvidia.com/v1",
+    # )
+
     # Create and run pipeline
     pipeline = STaRPipeline(
         agent=agent,
@@ -50,6 +57,7 @@ def main():
         output_path=output_path,
         max_iterations=3,
         score_threshold=0.9,
+        # reward_model=reward_model   # To use a reward model
     )
 
     pipeline.generate()
