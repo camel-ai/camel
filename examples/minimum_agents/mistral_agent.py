@@ -30,7 +30,11 @@ class ResponseFormat(BaseModel):
     fahrenheit: str
 
 
-agent = ChatAgent(model=model, tools=[WeatherToolkit().get_weather_data])
+agent = ChatAgent(
+    "You are a helpful assistant.",
+    model=model,
+    tools=[WeatherToolkit().get_weather_data],
+)
 
 resp = agent.step(
     "What's the temperature in New York?",
@@ -39,6 +43,6 @@ resp = agent.step(
 
 
 print(resp.msg.content)
-
+print(resp.msg.parsed)
 for message in agent.chat_history:
     print(f"{message['role']}: {message['content']}")

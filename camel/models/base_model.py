@@ -117,7 +117,12 @@ class BaseModelBackend(ABC):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        tools = tools or self.model_config_dict.get("tools", None)
+        # None -> use default tools
+        if tools is None:
+            tools = self.model_config_dict.get("tools", None)
+        # Empty -> use no tools
+        elif not tools:
+            tools = None
         return self._run(messages, response_format, tools)
 
     async def arun(
@@ -143,8 +148,10 @@ class BaseModelBackend(ABC):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-        # If tools are empty, make it None
-        tools = tools or self.model_config_dict.get("tools", None)
+        if tools is None:
+            tools = self.model_config_dict.get("tools", None)
+        elif not tools:
+            tools = None
         return await self._arun(messages, response_format, tools)
 
     @abstractmethod

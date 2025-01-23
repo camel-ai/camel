@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import textwrap
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -28,8 +29,11 @@ from typing import (
     Union,
 )
 
-from openai import AsyncStream, Stream
-from pydantic import BaseModel
+from openai import (
+    AsyncStream,
+    Stream,
+)
+from pydantic import BaseModel, ValidationError
 
 from camel.agents._types import ModelResponse, ToolCallRequest
 from camel.agents._utils import (
@@ -53,6 +57,7 @@ from camel.models import (
     ModelManager,
     ModelProcessingError,
 )
+from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
 from camel.toolkits import FunctionTool
 from camel.types import (
@@ -82,6 +87,17 @@ try:
         raise ImportError
 except (ImportError, AttributeError):
     from camel.utils import track_agent
+
+
+SIMPLE_FORMAT_PROMPT = TextPrompt(
+    textwrap.dedent(
+        """\
+        Please format the following content:
+        
+        {content}
+        """
+    )
+)
 
 
 @track_agent(name="ChatAgent")
@@ -323,6 +339,71 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
+    def _try_format_message(
+        self, message: BaseMessage, response_format: Type[BaseModel]
+    ) -> None:
+        r"""Try to format the message if needed."""
+        if message.parsed:
+            return
+
+        try:
+            message.parsed = response_format.model_validate_json(
+                message.content
+            )
+        except ValidationError:
+            logger.warning(f"Failed to parse response: {message.content}")
+
+    def _format_response_if_needed(
+        self,
+        response: ModelResponse,
+        response_format: Optional[Type[BaseModel]],
+    ) -> None:
+        r"""Format the response if needed.
+
+        This function won't format the response under the following cases:
+        1. The response format is None (not provided)
+        2. The response is empty
+        """
+        if response_format is None:
+            return
+
+        for message in response.output_messages:
+            self._try_format_message(message, response_format)
+            if message.parsed:
+                continue
+
+            prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
+            openai_message: OpenAIMessage = {"role": "user", "content": prompt}
+            # Explicitly set the tools to empty list to avoid calling tools
+            response = self._get_model_response(
+                [openai_message], response_format, [], 0
+            )
+            message.content = response.output_messages[0].content
+            self._try_format_message(message, response_format)
+
+    async def _aformat_response_if_needed(
+        self,
+        response: ModelResponse,
+        response_format: Optional[Type[BaseModel]],
+    ) -> None:
+        r"""Format the response if needed."""
+
+        if response_format is None:
+            return
+
+        for message in response.output_messages:
+            self._try_format_message(message, response_format)
+            if message.parsed:
+                continue
+
+            prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
+            openai_message: OpenAIMessage = {"role": "user", "content": prompt}
+            response = await self._aget_model_response(
+                [openai_message], response_format, [], 0
+            )
+            message.content = response.output_messages[0].content
+            self._try_format_message(message, response_format)
+
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -365,7 +446,10 @@ class ChatAgent(BaseAgent):
                 )
             # Get response from model backend
             response = self._get_model_response(
-                openai_messages, response_format, num_tokens
+                openai_messages,
+                response_format,
+                self._get_full_tool_schemas(),
+                num_tokens,
             )
 
             if self.single_iteration:
@@ -379,6 +463,7 @@ class ChatAgent(BaseAgent):
 
             break
 
+        self._format_response_if_needed(response, response_format)
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
@@ -433,7 +518,10 @@ class ChatAgent(BaseAgent):
                 )
 
             response = await self._aget_model_response(
-                openai_messages, response_format, num_tokens
+                openai_messages,
+                response_format,
+                self._get_full_tool_schemas(),
+                num_tokens,
             )
 
             if self.single_iteration:
@@ -446,6 +534,7 @@ class ChatAgent(BaseAgent):
 
             break
 
+        await self._aformat_response_if_needed(response, response_format)
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
@@ -488,6 +577,7 @@ class ChatAgent(BaseAgent):
         self,
         openai_messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]],
+        tool_schemas: Optional[List[Dict[str, Any]]],
         num_tokens: int,
     ) -> ModelResponse:
         r"""Internal function for agent step model response."""
@@ -495,7 +585,7 @@ class ChatAgent(BaseAgent):
         response = None
         try:
             response = self.model_backend.run(
-                openai_messages, response_format, self._get_full_tool_schemas()
+                openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
             logger.error(
@@ -525,6 +615,7 @@ class ChatAgent(BaseAgent):
         self,
         openai_messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]],
+        tool_schemas: Optional[List[Dict[str, Any]]],
         num_tokens: int,
     ) -> ModelResponse:
         r"""Internal function for agent step model response."""
@@ -532,7 +623,7 @@ class ChatAgent(BaseAgent):
         response = None
         try:
             response = await self.model_backend.arun(
-                openai_messages, response_format, self._get_full_tool_schemas()
+                openai_messages, response_format, tool_schemas or None
             )
         except Exception as exc:
             logger.error(

@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 from camel.configs import COHERE_API_PARAMS, CohereConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -218,6 +219,26 @@ class CohereModel(BaseModelBackend):
             )
         return self._token_counter
 
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        request_config = self.model_config_dict.copy()
+        try_modify_message_with_format(messages[-1], response_format)
+        if tools:
+            for tool in tools:
+                function_dict = tool.get('function', {})
+                function_dict.pop("strict", None)
+            request_config["tools"] = tools
+        elif response_format:
+            # Improve stability with native response format support
+            # This config will be ignored if used with tools
+            request_config["response_format"] = {"type": "json_object"}
+
+        return request_config
+
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -234,13 +255,17 @@ class CohereModel(BaseModelBackend):
         """
         from cohere.core.api_error import ApiError
 
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
         cohere_messages = self._to_cohere_chatmessage(messages)
 
         try:
             response = self._client.chat(
                 messages=cohere_messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
         except ApiError as e:
             logging.error(f"Cohere API Error: {e.status_code}")
@@ -284,13 +309,17 @@ class CohereModel(BaseModelBackend):
         """
         from cohere.core.api_error import ApiError
 
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
         cohere_messages = self._to_cohere_chatmessage(messages)
 
         try:
             response = await self._async_client.chat(
                 messages=cohere_messages,
                 model=self.model_type,
-                **self.model_config_dict,
+                **request_config,
             )
         except ApiError as e:
             logging.error(f"Cohere API Error: {e.status_code}")

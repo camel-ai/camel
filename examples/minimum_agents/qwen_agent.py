@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import json
 
 from pydantic import BaseModel
 
@@ -38,5 +37,4 @@ resp = agent.step(
     response_format=ResponseFormat,
 )
 
-
-print(ResponseFormat(**json.loads(resp.msg.content)))
+print(resp.msg.parsed)
