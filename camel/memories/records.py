@@ -63,7 +63,7 @@ class MemoryRecord(BaseModel):
         kwargs.pop("__class__")
         role_name = kwargs['role_name']
         role_type = RoleType(kwargs['role_type'].lower())
-        content = Content.model_validate_json(kwargs['content'])
+        content = Content(text=kwargs['content'])
   
         reconstructed_message = BaseMessage(role_name, role_type, content)
         return cls(

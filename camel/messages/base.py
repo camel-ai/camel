@@ -16,7 +16,6 @@ import io
 import re
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from uuid import uuid4
-from dataclasses import asdict
 
 
 import numpy as np
@@ -225,6 +224,14 @@ class BaseMessage:
         """
         return len(self.content.text) if isinstance(self.content, Content) \
             else len(self.content)
+    
+    def __str__(self) -> str:
+        r"""Overridden version of the string function.
+
+        Returns:
+            str: Modified string to represent the message content text.
+        """
+        return self.content.text
 
     def __contains__(self, item: str) -> bool:
         r"""Contains operator override for :obj:`BaseMessage`.
@@ -536,6 +543,6 @@ class BaseMessage:
             "role_name": self.role_name,
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
-            "content": self.content.model_dump_json(),
+            "content": self.content.text,
             "acl_parameter": self.acl_parameter.model_dump_json(),
         }

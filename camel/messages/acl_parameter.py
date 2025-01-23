@@ -96,6 +96,15 @@ class Content(BaseModel):
     """List of URLs pointing to audio content."""
     audio_url: Optional[List[str]] = Field(default_factory=list)
 
+    def __str__(self) -> str:
+        r"""Overridden version of the string function.
+
+        Returns:
+            str: Modified string to represent the content text.
+        """
+        return self.text
+
+
 class ACLParameter(BaseModel):
     r"""Represents the parameters for an ACL (Agent Communication Language) message.
     
