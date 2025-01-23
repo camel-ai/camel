@@ -20,8 +20,8 @@ from camel.toolkits import WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.COHERE,
-    model_type=ModelType.COHERE_COMMAND_R,
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_1_5_FLASH,
 )
 
 

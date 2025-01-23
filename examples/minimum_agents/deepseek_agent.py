@@ -16,28 +16,26 @@ from pydantic import BaseModel
 
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.toolkits import WeatherToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.COHERE,
-    model_type=ModelType.COHERE_COMMAND_R,
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_CHAT,
 )
 
 
 class ResponseFormat(BaseModel):
-    max_temp: str
-    min_temp: str
+    content: str
+    fun_level: int
 
 
 agent = ChatAgent(
     "You are a helpful assistant.",
     model=model,
-    tools=[WeatherToolkit().get_weather_data],
 )
 
 resp = agent.step(
-    "What's the temperature in New York today?",
+    "Tell me a joke.",
     response_format=ResponseFormat,
 )
 

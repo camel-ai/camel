@@ -26,8 +26,8 @@ model = ModelFactory.create(
 
 
 class ResponseFormat(BaseModel):
-    celsius: str
-    fahrenheit: str
+    max_temp: str
+    min_temp: str
 
 
 agent = ChatAgent(
@@ -37,12 +37,8 @@ agent = ChatAgent(
 )
 
 resp = agent.step(
-    "What's the temperature in New York?",
+    "What's the temperature in New York today?",
     response_format=ResponseFormat,
 )
 
-
-print(resp.msg.content)
 print(resp.msg.parsed)
-for message in agent.chat_history:
-    print(f"{message['role']}: {message['content']}")

@@ -26,14 +26,18 @@ model = ModelFactory.create(
 
 
 class ResponseFormat(BaseModel):
-    celsius: str
-    fahrenheit: str
+    max_temp: str
+    min_temp: str
 
 
-agent = ChatAgent(model=model, tools=[WeatherToolkit().get_weather_data])
+agent = ChatAgent(
+    "You are a helpful assistant.",
+    model=model,
+    tools=[WeatherToolkit().get_weather_data],
+)
 
 resp = agent.step(
-    "What's the temperature in Beijing?",
+    "What's the temperature in New York today?",
     response_format=ResponseFormat,
 )
 

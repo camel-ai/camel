@@ -341,17 +341,23 @@ class ChatAgent(BaseAgent):
 
     def _try_format_message(
         self, message: BaseMessage, response_format: Type[BaseModel]
-    ) -> None:
-        r"""Try to format the message if needed."""
+    ) -> bool:
+        r"""Try to format the message if needed.
+
+        Returns:
+            bool: Whether the message is formatted successfully (or no format
+                is needed).
+        """
         if message.parsed:
-            return
+            return True
 
         try:
             message.parsed = response_format.model_validate_json(
                 message.content
             )
+            return True
         except ValidationError:
-            logger.warning(f"Failed to parse response: {message.content}")
+            return False
 
     def _format_response_if_needed(
         self,
@@ -368,8 +374,7 @@ class ChatAgent(BaseAgent):
             return
 
         for message in response.output_messages:
-            self._try_format_message(message, response_format)
-            if message.parsed:
+            if self._try_format_message(message, response_format):
                 continue
 
             prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
@@ -379,7 +384,8 @@ class ChatAgent(BaseAgent):
                 [openai_message], response_format, [], 0
             )
             message.content = response.output_messages[0].content
-            self._try_format_message(message, response_format)
+            if not self._try_format_message(message, response_format):
+                logger.warning(f"Failed to parse response: {message.content}")
 
     async def _aformat_response_if_needed(
         self,
@@ -761,7 +767,7 @@ class ChatAgent(BaseAgent):
             output_messages=output_messages,
             finish_reasons=finish_reasons,
             usage_dict=usage,
-            response_id=response.id,
+            response_id=response.id or "",
         )
 
     def _handle_stream_response(

@@ -265,14 +265,11 @@ class MistralModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]],
     ) -> Dict[str, Any]:
-        # TODO: very unstable if tools and response_format are both used
         request_config = self.model_config_dict.copy()
-        try_modify_message_with_format(messages[-1], response_format)
         if tools:
             request_config["tools"] = tools
         elif response_format:
-            # Improve stability with native response format support
-            # This config will not be allowed if used with tools
+            try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
 
         return request_config
