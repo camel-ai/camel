@@ -15,14 +15,14 @@
 import pytest
 from dotenv import load_dotenv
 
-from camel.toolkits import VideoToolkit
+from camel.toolkits import VideoAnalysisToolkit
 
 load_dotenv()
 
 
 @pytest.fixture
 def video_toolkit():
-    return VideoToolkit()
+    return VideoAnalysisToolkit()
 
 
 def test_video_1(video_toolkit):
@@ -53,7 +53,7 @@ def test_video_3(video_toolkit):
 
 
 if __name__ == "__main__":
-    test_toolkit = VideoToolkit(download_directory="test_media")
+    test_toolkit = VideoAnalysisToolkit(download_directory="test_media")
     # video_path = "https://www.youtube.com/watch?v=L1vXCYZAYYM"
     # question = "what is the highest number of bird species to be on camera \
     #     simultaneously? Please answer with only the number."

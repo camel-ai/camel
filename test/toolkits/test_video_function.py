@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
-from camel.toolkits import VideoToolkit
+from camel.toolkits import VideoDownloaderToolkit
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def mock_downloader():
 
         mock_ffmpeg_probe.return_value = {'format': {'duration': 10}}
 
-        yield VideoToolkit()
+        yield VideoDownloaderToolkit()
 
 
 def test_video_bytes_download(mock_downloader):
