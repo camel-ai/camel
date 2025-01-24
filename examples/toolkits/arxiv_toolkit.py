@@ -14,15 +14,12 @@
 
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import ArxivToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling opertor', content='You are a helpful assistant'
-)
+sys_msg = "You are a helpful assistant"
 
 # Set model config
 tools = ArxivToolkit().get_tools()
@@ -45,10 +42,7 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""Search paper 'attention is all you need' for me""",
-)
+usr_msg = "Search paper 'attention is all you need' for me"
 
 # Get response information
 response = camel_agent.step(usr_msg)
@@ -74,11 +68,8 @@ performance ove...
 
 
 # Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""Download paper "attention is all you need" for me to my 
-    local path '/Users/enrei/Desktop/camel0826/camel/examples/tool_call'""",
-)
+usr_msg = """Download paper "attention is all you need" for me to my 
+    local path '/Users/enrei/Desktop/camel0826/camel/examples/tool_call'"""
 
 # Get response information
 response = camel_agent.step(usr_msg)
