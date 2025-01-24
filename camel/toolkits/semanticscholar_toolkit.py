@@ -8,21 +8,31 @@ import requests
 import json
 
 class SemanticScholarToolkit(BaseToolkit):
-    """A toolkit for interacting with the Semantic Scholar API to fetch paper and author data."""
+    """A toolkit for interacting with the Semantic Scholar
+     API to fetch paper and author data."""
 
     def __init__(self):
         """Initializes the SemanticScholarToolkit."""
         self.base_url = "https://api.semanticscholar.org/graph/v1"
 
-    def fetch_paper_data_title(self, paperTitle: str, fields: str = "title,abstract,authors,year,citationCount,publicationTypes,publicationDate,openAccessPdf") -> dict:
-        r"""Fetches a SINGLE paper from the Semantic Scholar API based on a paper title.
+    def fetch_paper_data_title(
+        self, 
+        paperTitle: str, 
+        fields: str = """title,abstract,authors,year,citationCount,
+        publicationTypes,publicationDate,openAccessPdf""") -> dict:
+
+        r"""Fetches a SINGLE paper from the Semantic Scholar 
+        API based on a paper title.
 
         Args:
             paperTitle (str): The title of the paper to fetch.
-            fields (str): A comma-separated list of fields to include in the response (default includes title, abstract, authors, year, citation count, publicationTypes, publicationDate, openAccessPdf).
+            fields (str): A comma-separated list of fields to include 
+            in the response (default includes title, abstract, authors, year, 
+            citation count, publicationTypes, publicationDate, openAccessPdf).
 
         Returns:
-            dict: The response data from the API or error information if the request fails.
+            dict: The response data from the API or error 
+            information if the request fails.
         """
         url = f"{self.base_url}/paper/search"
         query_params = {
@@ -33,14 +43,22 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code {response.status_code}", "message": response.text}
+            return {"error": f"Request failed with status code {response.status_code}", 
+            "message": response.text}
 
-    def fetch_paper_data_id(self, paperID: str, fields: str = "title,abstract,authors,year,citationCount,publicationTypes,publicationDate,openAccessPdf") -> dict:
+    def fetch_paper_data_id(
+        self, 
+        paperID: str, 
+        fields: str = """title,abstract,authors,year,citationCount,
+        publicationTypes,publicationDate,openAccessPdf""") -> dict:
+
         r"""Fetches a SINGLE paper from the Semantic Scholar API based on a paper ID.
 
         Args:
             paperID (str): The ID of the paper to fetch.
-            fields (str): A comma-separated list of fields to include in the response (default includes title, abstract, authors, year, citation count, publicationTypes, publicationDate, openAccessPdf).
+            fields (str): A comma-separated list of fields to 
+            include in the response (default includes title, abstract, 
+            authors, year, citation count, publicationTypes, publicationDate, openAccessPdf).
 
         Returns:
             dict: The response data from the API or error information if the request fails.
@@ -51,32 +69,46 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code {response.status_code}", "message": response.text}
+            return {"error": f"Request failed with status code {response.status_code}",
+            "message": response.text}
 
-    def fetch_bulk_paper_data(self, query: str, year: str = "2023-", fields: str = "title,url,publicationTypes,publicationDate,openAccessPdf") -> dict:
-        r"""Fetches MULTIPLE papers at once from the Semantic Scholar API based on a related topic.
+    def fetch_bulk_paper_data(
+        self, query: str, 
+        year: str = "2023-", 
+        fields: str = """title,url,publicationTypes,
+        publicationDate,openAccessPdf""") -> dict:
+
+        r"""Fetches MULTIPLE papers at once from the Semantic Scholar
+         API based on a related topic.
 
         Args:
             query (str): 
-                The text query to match against the paper's title and abstract. All terms are stemmed.
-                Semantic Scholar's paper bulk search supports various operators for advanced filtering and precise specification in the search query.
+                The text query to match against the paper's title and abstract. 
+                All terms are stemmed.
+                Semantic Scholar's paper bulk search supports various operators 
+                for advanced filtering and precise specification in the search query.
                 All terms in the query are matched against the paper's title and abstract. 
 
-                For example, you can use the following operators and techniques to construct your query:
+                For example, you can use the following operators and techniques to 
+                construct your query:
 
                 Example 1:
                     ((cloud computing) | virtualization) +security -privacy
-                    This will match papers whose title or abstract contains "cloud" and "computing", 
-                    or contains the word "virtualization". The papers must also include the term "security" 
+                    This will match papers whose title or abstract contains "cloud" 
+                    and "computing", or contains the word "virtualization". 
+                    The papers must also include the term "security" 
                     but exclude papers that contain the word "privacy".
 
-                See the Semantic Scholar API documentation for a full list of supported operators.
+                See the Semantic Scholar API documentation for a full list
+                of supported operators.
 
             year (str): The year filter for papers (default is "2023-").
-            fields (str): The fields to include in the response (e.g., 'title,url,publicationTypes,publicationDate,openAccessPdf').
+            fields (str): The fields to include in the response 
+            (e.g., 'title,url,publicationTypes,publicationDate,openAccessPdf').
 
         Returns:
-            dict: The response data from the API or error information if the request fails.
+            dict: The response data from the API or 
+            error information if the request fails.
         """
         url = f"{self.base_url}/paper/search/bulk"
         query_params = {
@@ -88,16 +120,32 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code {response.status_code}", "message": response.text}
+            return {"error": f"Request failed with status code {response.status_code}", 
+            "message": response.text}
 
-    def fetch_recommended_papers(self, positive_paper_ids: List[str], negative_paper_ids: List[str], fields: str = "title,url,citationCount,authors,publicationTypes,publicationDate,openAccessPdf", limit: int = 500) -> dict:
-        r"""Fetches recommended papers from the Semantic Scholar API based on the positive and negative paper IDs.
+    def fetch_recommended_papers(
+        self, 
+        positive_paper_ids: List[str], 
+        negative_paper_ids: List[str], 
+        fields: str = """title,url,citationCount,authors,
+        publicationTypes,publicationDate,openAccessPdf""", 
+        limit: int = 500) -> dict:
+        r"""Fetches recommended papers from the Semantic Scholar 
+        API based on the positive and negative paper IDs.
 
         Args:
-            positive_paper_ids (list): A list of paper IDs (as strings) that are positively correlated to the recommendation.
-            negative_paper_ids (list): A list of paper IDs (as strings) that are negatively correlated to the recommendation.
-            fields (str): The fields to include in the response (e.g., 'title,url,citationCount,authors,publicationTypes,publicationDate,openAccessPdf').
-            limit (int): The maximum number of recommended papers to return. Default is 500.
+            positive_paper_ids (list): A list of paper IDs (as strings) 
+            that are positively correlated to the recommendation.
+
+            negative_paper_ids (list): A list of paper IDs (as strings) 
+            that are negatively correlated to the recommendation.
+
+            fields (str): The fields to include in the response 
+            (e.g., 'title,url,citationCount,authors,publicationTypes,
+            publicationDate,openAccessPdf').
+
+            limit (int): The maximum number of recommended papers to return. 
+            Default is 500.
 
         Returns:
             dict: A dictionary containing recommended papers sorted by citation count.
@@ -119,17 +167,27 @@ class SemanticScholarToolkit(BaseToolkit):
                 json.dump(papers, output)
             return papers
         else:
-            return {"error": f"Request failed with status code {response.status_code}", "message": response.text}
+            return {"error": f"Request failed with status code {response.status_code}", 
+            "message": response.text}
 
-    def fetch_author_data(self, ids: List[str], fields: str = "name,url,paperCount,hIndex,papers") -> dict:
-        r"""Fetches author information from the Semantic Scholar API based on author IDs.
+    def fetch_author_data(
+        self, 
+        ids: List[str], 
+        fields: str = "name,url,paperCount,hIndex,papers") -> dict:
+        r"""Fetches author information from the Semantic Scholar
+         API based on author IDs.
 
         Args:
-            ids (list): A list of author IDs (as strings) to fetch data for.
-            fields (str): A comma-separated list of fields to include in the response (default includes name, URL, paper count, hIndex, and papers).
+            ids (list): A list of author IDs (as strings)
+            to fetch data for.
+            
+            fields (str): A comma-separated list of fields
+            to include in the response (default includes name,
+            URL, paper count, hIndex, and papers).
 
         Returns:
-            dict: The response data from the API or error information if the request fails.
+            dict: The response data from the API or 
+            error information if the request fails.
         """
         url = f"{self.base_url}/author/batch"
         query_params = {"fields": fields}
