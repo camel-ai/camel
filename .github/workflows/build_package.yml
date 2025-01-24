@@ -79,6 +79,7 @@ jobs:
           DAPPIER_API_KEY: "${{ secrets.DAPPIER_API_KEY }}"
           DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
           INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
+          JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test
