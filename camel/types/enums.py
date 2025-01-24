@@ -567,6 +567,11 @@ class EmbeddingModelType(Enum):
     TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
     TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
 
+    JINA_EMBEDDINGS_V3 = "jina-embeddings-v3"
+    JINA_CLIP_V2 = "jina-clip-v2"
+    JINA_COLBERT_V2 = "jina-colbert-v2"
+    JINA_EMBEDDINGS_V2_BASE_CODE = "jina-embeddings-v2-base-code"
+
     MISTRAL_EMBED = "mistral-embed"
 
     @property
@@ -576,6 +581,16 @@ class EmbeddingModelType(Enum):
             EmbeddingModelType.TEXT_EMBEDDING_ADA_2,
             EmbeddingModelType.TEXT_EMBEDDING_3_SMALL,
             EmbeddingModelType.TEXT_EMBEDDING_3_LARGE,
+        }
+
+    @property
+    def is_jina(self) -> bool:
+        r"""Returns whether this type of models is an Jina model."""
+        return self in {
+            EmbeddingModelType.JINA_EMBEDDINGS_V3,
+            EmbeddingModelType.JINA_CLIP_V2,
+            EmbeddingModelType.JINA_COLBERT_V2,
+            EmbeddingModelType.JINA_EMBEDDINGS_V2_BASE_CODE,
         }
 
     @property
@@ -589,7 +604,20 @@ class EmbeddingModelType(Enum):
 
     @property
     def output_dim(self) -> int:
-        if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
+        if self in {
+            EmbeddingModelType.JINA_COLBERT_V2,
+        }:
+            return 128
+        elif self in {
+            EmbeddingModelType.JINA_EMBEDDINGS_V2_BASE_CODE,
+        }:
+            return 768
+        elif self in {
+            EmbeddingModelType.JINA_EMBEDDINGS_V3,
+            EmbeddingModelType.JINA_CLIP_V2,
+        }:
+            return 1024
+        elif self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
         elif self is EmbeddingModelType.TEXT_EMBEDDING_3_SMALL:
             return 1536
