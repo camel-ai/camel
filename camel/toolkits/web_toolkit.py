@@ -11,83 +11,16 @@ from camel.types import ModelPlatformType, ModelType, RoleType
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.interpreters.subprocess_interpreter import SubprocessInterpreter
+from camel.prompts import TextPrompt
 
-
-class WebToolkit(BaseToolkit):
-    r"""A class representing a toolkit for web use.
-
-    This class provides methods for interacting with websites by writing direct JavaScript code via tools like Stagehand.
+class StagehandPrompts:
     """
-
-    def __init__(
-        self,
-        model_platform=ModelPlatformType.DEFAULT,
-        model_type=ModelType.DEFAULT,
-        model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
-        headless_mode=True
-    ):
-        self.model_platform = model_platform
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        self.headless_mode = headless_mode
-        
-        self.model = ModelFactory.create(
-            model_platform=self.model_platform,
-            model_type=self.model_type,
-            model_config_dict=self.model_config_dict,
-        )
-
-        # A system message to instruct how to generate Stagehand code
-        self.agent = ChatAgent(
-            BaseMessage(
-                role_name="Stagehand Agent",
-                role_type=RoleType.ASSISTANT,
-                meta_dict=None,
-                content="You are an intelligent assistant that searches the web to answer the given question.",
-            ),
-            self.model,
-        )
-        
-        
-
-    def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
-        r"""Single entry point that:
-         1) Generates Stagehand JavaScript code to interact with the web
-         2) Executes it under Node.js
-         3) Returns the final JSON result
-
-        Args:
-            task_prompt (str): Description of the task to automate.
-
-        Returns:
-            Dict[str, Any]: JSON result from the Stagehand script, or an error.
-        """
-
-        # Generate Stagehand code
-        js_code = self._generate_stagehand_code(task_prompt)
-
-        # Run code in Node, capture JSON
-        result_str = self._run_stagehand_script_in_node(js_code)
-
-        # Attempt to parse JSON
-        try:
-            return json.loads(result_str)
-        except json.JSONDecodeError:
-            return {
-                "status": "error",
-                "message": f"No valid JSON output. Last script line:\n{result_str}",
-            }
-
-    #
-    # Internals
-    #
-    def _generate_stagehand_code(self, high_level_task: str) -> str:
-        r"""
-        Internal method for generating Stagehand code.
-        """
-
-        # The prompt with guidelines for Stagehand snippet generation
-        stagehand_prompt = f"""You an assistant that helps in writing a JavaScript snippet for a web automation task using Stagehand. that acts as a low level plan for getting the information for the high level task of {high_level_task}
+    A centralized class for Stagehand-related prompts, leveraging TextPrompt for better modularity and reuse.
+    """
+    
+    def __init__(self, high_level_task: str):
+        self.high_level_task = high_level_task
+        self.stagehand_prompt = TextPrompt(f"""You an assistant that helps in writing a JavaScript snippet for a web automation task using Stagehand. that acts as a low level plan for getting the information for the high level task of {high_level_task}
     The snippet must only contain Stagehand action commands (no imports, setup, or wrapping function).
     For example:
     - `await page.goto("https://www.example.com/");`
@@ -254,7 +187,88 @@ class WebToolkit(BaseToolkit):
     That should be two lines: one for the click, one for the fill.
 
     Please produce the Stagehand JavaScript snippet now, following all of the above guidelines, always ending with the final extraction snippet for `updated_state`.
+    """)
+
+class WebToolkit(BaseToolkit):
+    r"""A class representing a toolkit for web use.
+
+    This class provides methods for interacting with websites by writing direct JavaScript code via tools like Stagehand.
     """
+
+    def __init__(
+        self,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
+        model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+        headless_mode=True
+    ):
+        self.model_platform = model_platform
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
+        self.headless_mode = headless_mode
+        
+        self.model = ModelFactory.create(
+            model_platform=self.model_platform,
+            model_type=self.model_type,
+            model_config_dict=self.model_config_dict,
+        )
+
+        # A system message to instruct how to generate Stagehand code
+        self.agent = ChatAgent(
+            BaseMessage(
+                role_name="Stagehand Agent",
+                role_type=RoleType.ASSISTANT,
+                meta_dict=None,
+                content="You are an intelligent assistant that searches the web to answer the given question.",
+            ),
+            self.model,
+        )
+        
+        
+    def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
+        r"""Single entry point that:
+         1) Generates Stagehand JavaScript code to interact with the web
+         2) Executes it under Node.js
+         3) Returns the final JSON result
+
+        Args:
+            task_prompt (str): Description of the task to automate.
+
+        Returns:
+            Dict[str, Any]: JSON result from the Stagehand script, or an error.
+        """
+
+        # Generate Stagehand code
+        js_code = self._generate_stagehand_code(task_prompt)
+
+        # Run code in Node, capture JSON
+        result_str = self._run_stagehand_script_in_node(js_code)
+
+        # Attempt to parse JSON
+        try:
+            return json.loads(result_str)
+        except json.JSONDecodeError:
+            return {
+                "status": "error",
+                "message": f"No valid JSON output. Last script line:\n{result_str}",
+            }
+
+    #
+    # Internals
+    #
+    def _generate_stagehand_code(self, high_level_task: str) -> str:
+        r"""
+        Internal method for generating Stagehand code.
+        
+        Args:
+            high_level_task (str): Description of the task to automate.
+
+        Returns:
+            str: The generated JavaScript code.
+        """
+
+        # The prompt with guidelines for Stagehand snippet generation
+        stagehand_prompt = StagehandPrompts(high_level_task).stagehand_prompt
 
         response = self.agent.step(input_message=stagehand_prompt)
         
@@ -267,6 +281,12 @@ class WebToolkit(BaseToolkit):
         r"""
         Internal method that executes the Stagehand code under Node.js and returns
         the final JSON line from stdout.
+        
+        Args:
+            js_code (str): The JavaScript code to execute.
+
+        Returns:
+            str: The final output of the script or an error message.
         """
 
         # Wrap the user snippet with Stagehand environment
