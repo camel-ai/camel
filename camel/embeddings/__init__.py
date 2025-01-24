@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseEmbedding
+from .jina_embedding import JinaEmbedding
 from .mistral_embedding import MistralEmbedding
 from .openai_compatible_embedding import OpenAICompatibleEmbedding
 from .openai_embedding import OpenAIEmbedding
@@ -25,4 +26,5 @@ __all__ = [
     "VisionLanguageEmbedding",
     "MistralEmbedding",
     "OpenAICompatibleEmbedding",
+    "JinaEmbedding",
 ]
