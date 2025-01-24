@@ -35,6 +35,8 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             Jina AI. (default: :obj:`None`)
         dimensions (Optional[int], optional): The dimension of the output
             embeddings. (default: :obj:`None`)
+        embedding_type (Optional[str], optional): The type of embedding to use.
+            (default: :obj:`None`)
         task (Optional[str], optional): The type of task for text embeddings.
             Options: retrieval.query, retrieval.passage, text-matching,
             classification, separation. (default: :obj:`None`)
@@ -120,7 +122,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             else:
                 raise ValueError(
                     f"Input type {type(obj)} is not supported. "
-                    "Must be either str or PIL.Image"
+                    "Must be either str or PIL.Image."
                 )
 
         data = {
