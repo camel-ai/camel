@@ -50,6 +50,7 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         model_type: EmbeddingModelType = EmbeddingModelType.JINA_EMBEDDINGS_V3,
         api_key: Optional[str] = None,
         dimensions: Optional[int] = None,
+        embedding_type: Optional[str] = None,
         task: Optional[str] = None,
         late_chunking: bool = False,
         normalized: bool = False,
@@ -63,10 +64,10 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if dimensions is None:
             self.output_dim = model_type.output_dim
         else:
-            assert isinstance(dimensions, int)
             self.output_dim = dimensions
         self._api_key = api_key or os.environ.get("JINA_API_KEY")
 
+        self.embedding_type = embedding_type
         self.task = task
         self.late_chunking = late_chunking
         self.normalized = normalized
@@ -87,7 +88,8 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         Args:
             objs (list[Union[str, Image.Image]]): The texts or images for which
                 to generate the embeddings.
-            **kwargs (Any): Extra kwargs passed to the embedding API.
+            **kwargs (Any): Extra kwargs passed to the embedding API. Not used
+                in this implementation.
 
         Returns:
             list[list[float]]: A list that represents the generated embedding
@@ -127,6 +129,8 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             "embedding_type": "float",
         }
 
+        if self.embedding_type is not None:
+            data["embedding_type"] = self.embedding_type
         if self.task is not None:
             data["task"] = self.task
         if self.late_chunking:
