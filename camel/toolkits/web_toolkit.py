@@ -326,7 +326,6 @@ const z = require('zod');
 
         exec_result = node_process.run(wrapper_code, "node")
 
-        # Return the second-last line or fallback to last line
         if exec_result.startswith("(stderr"):
             return "Failure: No output from Node.js script."
 
