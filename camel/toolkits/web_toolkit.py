@@ -30,10 +30,28 @@ class WebToolkit(BaseToolkit):
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self.headless_mode = headless_mode
+        
+        self.model = ModelFactory.create(
+            model_platform=self.model_platform,
+            model_type=self.model_type,
+            model_config_dict=self.model_config_dict,
+        )
+
+        # A system message to instruct how to generate Stagehand code
+        self.agent = ChatAgent(
+            BaseMessage(
+                role_name="Stagehand Agent",
+                role_type=RoleType.ASSISTANT,
+                meta_dict=None,
+                content="You are an intelligent assistant that searches the web to answer the given question.",
+            ),
+            self.model,
+        )
+        
+        
 
     def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
-        r"""
-        Single entry point that:
+        r"""Single entry point that:
          1) Generates Stagehand JavaScript code to interact with the web
          2) Executes it under Node.js
          3) Returns the final JSON result
@@ -67,22 +85,6 @@ class WebToolkit(BaseToolkit):
         r"""
         Internal method for generating Stagehand code.
         """
-        model = ModelFactory.create(
-            model_platform=self.model_platform,
-            model_type=self.model_type,
-            model_config_dict=self.model_config_dict,
-        )
-
-        # A system message to instruct how to generate Stagehand code
-        agent = ChatAgent(
-            BaseMessage(
-                role_name="Stagehand Agent",
-                role_type=RoleType.ASSISTANT,
-                meta_dict=None,
-                content="You are an intelligent assistant that searches the web to answer the given question.",
-            ),
-            model,
-        )
 
         # The prompt with guidelines for Stagehand snippet generation
         stagehand_prompt = f"""You an assistant that helps in writing a JavaScript snippet for a web automation task using Stagehand. that acts as a low level plan for getting the information for the high level task of {high_level_task}
@@ -254,7 +256,7 @@ class WebToolkit(BaseToolkit):
     Please produce the Stagehand JavaScript snippet now, following all of the above guidelines, always ending with the final extraction snippet for `updated_state`.
     """
 
-        response = agent.step(
+        response = self.agent.step(
             BaseMessage(
                 role_name="User",
                 role_type=RoleType.USER,
