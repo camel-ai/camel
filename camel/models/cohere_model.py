@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import ast
 import json
 import logging
@@ -43,6 +43,11 @@ except (ImportError, AttributeError):
 class CohereModel(BaseModelBackend):
     r"""Cohere API in a unified BaseModelBackend interface."""
 
+    @api_keys_required(
+        [
+            ("api_key", 'COHERE_API_KEY'),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -210,7 +215,6 @@ class CohereModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required("COHERE_API_KEY")
     def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
         r"""Runs inference of Cohere chat completion.
 
@@ -223,6 +227,14 @@ class CohereModel(BaseModelBackend):
         from cohere.core.api_error import ApiError
 
         cohere_messages = self._to_cohere_chatmessage(messages)
+
+        # Removing 'strict': True from the dictionary for
+        # cohere client
+        if self.model_config_dict.get('tools') is not None:
+            for tool in self.model_config_dict.get('tools', []):
+                function_dict = tool.get('function', {})
+                if 'strict' in function_dict:
+                    del function_dict['strict']
 
         try:
             response = self._client.chat(

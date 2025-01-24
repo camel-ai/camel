@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from PIL import Image
 
+from camel.logger import get_logger
 from camel.types import (
     ModelType,
     OpenAIImageType,
@@ -44,6 +45,8 @@ SQUARE_PIXELS = 512
 SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
 
+logger = get_logger(__name__)
+
 
 def get_model_encoding(value_for_tiktoken: str):
     r"""Get model encoding from tiktoken.
@@ -60,12 +63,13 @@ def get_model_encoding(value_for_tiktoken: str):
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
         if value_for_tiktoken in [
+            ModelType.O1.value,
             ModelType.O1_MINI.value,
             ModelType.O1_PREVIEW.value,
         ]:
             encoding = tiktoken.get_encoding("o200k_base")
         else:
-            print("Model not found. Using cl100k_base encoding.")
+            logger.info("Model not found. Using cl100k_base encoding.")
             encoding = tiktoken.get_encoding("cl100k_base")
     return encoding
 
@@ -141,12 +145,19 @@ class OpenAITokenCounter(BaseTokenCounter):
             num_tokens += self.tokens_per_message
             for key, value in message.items():
                 if not isinstance(value, list):
-                    num_tokens += len(self.encoding.encode(str(value)))
+                    num_tokens += len(
+                        self.encoding.encode(str(value), disallowed_special=())
+                    )
                 else:
                     for item in value:
                         if item["type"] == "text":
                             num_tokens += len(
-                                self.encoding.encode(str(item["text"]))
+                                self.encoding.encode(
+                                    str(
+                                        item["text"],
+                                    ),
+                                    disallowed_special=(),
+                                )
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
@@ -219,13 +230,18 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 class AnthropicTokenCounter(BaseTokenCounter):
     @dependencies_required('anthropic')
-    def __init__(self):
-        r"""Constructor for the token counter for Anthropic models."""
+    def __init__(self, model: str):
+        r"""Constructor for the token counter for Anthropic models.
+
+        Args:
+            model (str): The name of the Anthropic model being used.
+        """
         from anthropic import Anthropic
 
         self.client = Anthropic()
-        self.tokenizer = self.client.get_tokenizer()
+        self.model = model
 
+    @dependencies_required('anthropic')
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
         loaded tokenizer specific for this type of model.
@@ -237,11 +253,18 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        num_tokens = 0
-        for message in messages:
-            content = str(message["content"])
-            num_tokens += self.client.count_tokens(content)
-        return num_tokens
+        from anthropic.types import MessageParam
+
+        return self.client.messages.count_tokens(
+            messages=[
+                MessageParam(
+                    content=str(msg["content"]),
+                    role="user" if msg["role"] == "user" else "assistant",
+                )
+                for msg in messages
+            ],
+            model=self.model,
+        ).input_tokens
 
 
 class GeminiTokenCounter(BaseTokenCounter):
@@ -357,7 +380,7 @@ class MistralTokenCounter(BaseTokenCounter):
                 ModelType.MISTRAL_CODESTRAL,
                 ModelType.MISTRAL_CODESTRAL_MAMBA,
             }
-            else self.model_type.value
+            else self.model_type
         )
 
         self.tokenizer = MistralTokenizer.from_model(model_name)
@@ -400,7 +423,7 @@ class MistralTokenCounter(BaseTokenCounter):
         )
 
         mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
-            model=self.model_type.value,
+            model=self.model_type,
             messages=[openai_msg],
         )
 

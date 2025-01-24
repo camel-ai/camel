@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, Dict, List, Optional, Union
 
@@ -51,6 +51,11 @@ class GroqModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "GROQ_API_KEY"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -63,13 +68,13 @@ class GroqModel(BaseModelBackend):
             model_config_dict = GroqConfig().as_dict()
         api_key = api_key or os.environ.get("GROQ_API_KEY")
         url = url or os.environ.get(
-            "GROQ_API_BASE_URL" or "https://api.groq.com/openai/v1"
+            "GROQ_API_BASE_URL", "https://api.groq.com/openai/v1"
         )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = OpenAI(
-            timeout=60,
+            timeout=180,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
@@ -89,7 +94,6 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    @api_keys_required("GROQ_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

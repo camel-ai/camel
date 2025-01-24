@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
@@ -59,6 +59,11 @@ class MistralModel(BaseModelBackend):
             be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "MISTRAL_API_KEY"),
+        ]
+    )
     @dependencies_required('mistralai')
     def __init__(
         self,
@@ -142,18 +147,25 @@ class MistralModel(BaseModelBackend):
         new_messages = []
         for msg in messages:
             tool_id = uuid.uuid4().hex[:9]
-            tool_call_id = uuid.uuid4().hex[:9]
+            tool_call_id = msg.get("tool_call_id") or uuid.uuid4().hex[:9]
 
             role = msg.get("role")
-            function_call = msg.get("function_call")
+            tool_calls = msg.get("tool_calls")
             content = msg.get("content")
 
             mistral_function_call = None
-            if function_call:
-                mistral_function_call = FunctionCall(
-                    name=function_call.get("name"),  # type: ignore[attr-defined]
-                    arguments=function_call.get("arguments"),  # type: ignore[attr-defined]
+            if tool_calls:
+                # Ensure tool_calls is treated as a list
+                tool_calls_list = (
+                    tool_calls
+                    if isinstance(tool_calls, list)
+                    else [tool_calls]
                 )
+                for tool_call in tool_calls_list:
+                    mistral_function_call = FunctionCall(
+                        name=tool_call["function"].get("name"),  # type: ignore[attr-defined]
+                        arguments=tool_call["function"].get("arguments"),  # type: ignore[attr-defined]
+                    )
 
             tool_calls = None
             if mistral_function_call:
@@ -173,7 +185,7 @@ class MistralModel(BaseModelBackend):
                 new_messages.append(
                     ToolMessage(
                         content=content,  # type: ignore[arg-type]
-                        tool_call_id=tool_call_id,
+                        tool_call_id=tool_call_id,  # type: ignore[arg-type]
                         name=msg.get("name"),  # type: ignore[arg-type]
                     )
                 )
@@ -200,7 +212,6 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
-    @api_keys_required("MISTRAL_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

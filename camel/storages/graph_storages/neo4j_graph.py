@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
 import os
 from hashlib import md5
@@ -583,3 +583,141 @@ class Neo4jGraph(BaseGraphStorage):
                     ]
                 },
             )
+
+    def random_walk_with_restarts(
+        self,
+        graph_name: str,
+        sampling_ratio: float,
+        start_node_ids: List[int],
+        restart_probability: float = 0.1,
+        node_label_stratification: bool = False,
+        relationship_weight_property: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Runs the Random Walk with Restarts (RWR) sampling algorithm.
+
+        Args:
+            graph_name (str): The name of the original graph in the graph
+                catalog.
+            sampling_ratio (float): The fraction of nodes in the original
+                graph to be sampled.
+            start_node_ids (List[int]): IDs of the initial set of nodes of the
+                original graph from which the sampling random walks will start.
+            restart_probability (float, optional): The probability that a
+                sampling random walk restarts from one of the start nodes.
+                Defaults to `0.1`.
+            node_label_stratification (bool, optional): If true, preserves the
+                node label distribution of the original graph. Defaults to
+                `False`.
+            relationship_weight_property (Optional[str], optional): Name of
+                the relationship property to use as weights. If unspecified,
+                the algorithm runs unweighted. Defaults to `None`.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the results of the RWR sampling.
+        """
+        from neo4j.exceptions import ClientError, CypherSyntaxError
+
+        try:
+            self.query(query="CALL gds.version() YIELD version RETURN version")
+        except ClientError:
+            raise ValueError(
+                "Graph Data Science (GDS) library is not installed or not"
+                " available. Reference: https://neo4j.com/docs/graph-data-science/current/installation/"
+            )
+
+        query = """
+        CALL gds.graph.sample.rwr($graphName, $fromGraphName, {
+            samplingRatio: $samplingRatio,
+            startNodes: $startNodes,
+            restartProbability: $restartProbability,
+            nodeLabelStratification: $nodeLabelStratification,
+            relationshipWeightProperty: $relationshipWeightProperty
+        })
+        YIELD graphName, fromGraphName, nodeCount, 
+        relationshipCount, startNodeCount, projectMillis
+        RETURN graphName, fromGraphName, nodeCount, 
+        relationshipCount, startNodeCount, projectMillis
+        """
+
+        params = {
+            "graphName": f"{graph_name}_sampled",
+            "fromGraphName": graph_name,
+            "samplingRatio": sampling_ratio,
+            "startNodes": start_node_ids,
+            "restartProbability": restart_probability,
+            "nodeLabelStratification": node_label_stratification,
+            "relationshipWeightProperty": relationship_weight_property,
+        }
+
+        try:
+            result = self.query(query, params)
+            return result[0] if result else {}
+        except CypherSyntaxError as e:
+            raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+
+    def common_neighbour_aware_random_walk(
+        self,
+        graph_name: str,
+        sampling_ratio: float,
+        start_node_ids: List[int],
+        node_label_stratification: bool = False,
+        relationship_weight_property: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        r"""Runs the Common Neighbour Aware Random Walk (CNARW) sampling
+        algorithm.
+
+        Args:
+            graph_name (str): The name of the original graph in the graph
+                catalog.
+            sampling_ratio (float): The fraction of nodes in the original
+                graph to be sampled.
+            start_node_ids (List[int]): IDs of the initial set of nodes of the
+                original graph from which the sampling random walks will start.
+            node_label_stratification (bool, optional): If true, preserves the
+                node label distribution of the original graph. Defaults to
+                `False`.
+            relationship_weight_property (Optional[str], optional): Name of
+                the relationship property to use as weights. If unspecified,
+                the algorithm runs unweighted. Defaults to `None`.
+
+        Returns:
+            Dict[str, Any]: A dictionary with the results of the CNARW
+                sampling.
+        """
+        from neo4j.exceptions import ClientError, CypherSyntaxError
+
+        try:
+            self.query(query="CALL gds.version() YIELD version RETURN version")
+        except ClientError:
+            raise ValueError(
+                "Graph Data Science (GDS) library is not installed or not"
+                " available. Reference: https://neo4j.com/docs/graph-data-science/current/installation/"
+            )
+
+        query = """
+        CALL gds.graph.sample.cnarw($graphName, $fromGraphName, {
+            samplingRatio: $samplingRatio,
+            startNodes: $startNodes,
+            nodeLabelStratification: $nodeLabelStratification,
+            relationshipWeightProperty: $relationshipWeightProperty
+        })
+        YIELD graphName, fromGraphName, nodeCount, 
+        relationshipCount, startNodeCount, projectMillis
+        RETURN graphName, fromGraphName, nodeCount, 
+        relationshipCount, startNodeCount, projectMillis
+        """
+
+        params = {
+            "graphName": f"{graph_name}_sampled_cnarw",
+            "fromGraphName": graph_name,
+            "samplingRatio": sampling_ratio,
+            "startNodes": start_node_ids,
+            "nodeLabelStratification": node_label_stratification,
+            "relationshipWeightProperty": relationship_weight_property,
+        }
+
+        try:
+            result = self.query(query, params)
+            return result[0] if result else {}
+        except CypherSyntaxError as e:
+            raise ValueError(f"Generated Cypher Statement is not valid\n{e}")

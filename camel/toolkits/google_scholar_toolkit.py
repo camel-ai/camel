@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
 from typing import Any, Dict, List, Optional
 
@@ -33,7 +33,12 @@ class GoogleScholarToolkit(BaseToolkit):
     """
 
     def __init__(
-        self, author_identifier: str, is_author_name: bool = False
+        self,
+        author_identifier: str,
+        is_author_name: bool = False,
+        use_free_proxies: bool = False,
+        proxy_http: Optional[str] = None,
+        proxy_https: Optional[str] = None,
     ) -> None:
         r"""Initializes the GoogleScholarToolkit with the author's identifier.
 
@@ -42,8 +47,26 @@ class GoogleScholarToolkit(BaseToolkit):
                 of the author to search for.
             is_author_name (bool): Flag to indicate if the identifier is a
                 name. (default: :obj:`False`)
+            use_free_proxies (bool): Whether to use Free Proxies.
+                (default: :obj:`False`)
+            proxy_http ( Optional[str]): Proxy http address pass to pg.
+                SingleProxy. (default: :obj:`None`)
+            proxy_https ( Optional[str]): Proxy https address pass to pg.
+                SingleProxy. (default: :obj:`None`)
         """
-        from scholarly import scholarly
+        from scholarly import ProxyGenerator, scholarly
+
+        # Set Free Proxies is needed
+        if use_free_proxies:
+            pg = ProxyGenerator()
+            pg.FreeProxies()
+            scholarly.use_proxy(pg)
+
+        # Set Proxy is HTTP or HTTPS provided
+        if proxy_http or proxy_https:
+            pg = ProxyGenerator()
+            pg.SingleProxy(http=proxy_http, https=proxy_https)
+            scholarly.use_proxy(pg)
 
         self.scholarly = scholarly
         self.author_identifier = author_identifier

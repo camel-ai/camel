@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from enum import Enum, EnumMeta
 from typing import cast
@@ -34,6 +34,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    O1 = "o1"
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
 
@@ -41,14 +42,30 @@ class ModelType(UnifiedModelType, Enum):
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
+    # Groq platform models
     GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
     GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
     GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_3_70B = "llama-3.3-70b-versatile"
+    GROQ_LLAMA_3_3_70B_PREVIEW = "llama-3.3-70b-specdec"
     GROQ_LLAMA_3_8B = "llama3-8b-8192"
     GROQ_LLAMA_3_70B = "llama3-70b-8192"
     GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
     GROQ_GEMMA_7B_IT = "gemma-7b-it"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
+
+    # TogetherAI platform models support tool calling
+    TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_1_405B = "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_3_70B = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    TOGETHER_MIXTRAL_8_7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    TOGETHER_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.1"
+
+    # SambaNova Cloud platform models support tool calling
+    SAMBA_LLAMA_3_1_8B = "Meta-Llama-3.1-8B-Instruct"
+    SAMBA_LLAMA_3_1_70B = "Meta-Llama-3.1-70B-Instruct"
+    SAMBA_LLAMA_3_1_405B = "Meta-Llama-3.1-405B-Instruct"
 
     STUB = "stub"
 
@@ -59,13 +76,25 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
     # Claude3 models
-    CLAUDE_3_OPUS = "claude-3-opus-20240229"
+    CLAUDE_3_OPUS = "claude-3-opus-latest"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
-    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
+    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
+    CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
 
     # Nvidia models
-    NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
+    NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
+    NVIDIA_NEMOTRON_340B_REWARD = "nvidia/nemotron-4-340b-reward"
+    NVIDIA_YI_LARGE = "01-ai/yi-large"
+    NVIDIA_MISTRAL_LARGE = "mistralai/mistral-large"
+    NVIDIA_MIXTRAL_8X7B = "mistralai/mixtral-8x7b-instruct"
+    NVIDIA_LLAMA3_70B = "meta/llama3-70b"
+    NVIDIA_LLAMA3_1_8B_INSTRUCT = "meta/llama-3.1-8b-instruct"
+    NVIDIA_LLAMA3_1_70B_INSTRUCT = "meta/llama-3.1-70b-instruct"
+    NVIDIA_LLAMA3_1_405B_INSTRUCT = "meta/llama-3.1-405b-instruct"
+    NVIDIA_LLAMA3_2_1B_INSTRUCT = "meta/llama-3.2-1b-instruct"
+    NVIDIA_LLAMA3_2_3B_INSTRUCT = "meta/llama-3.2-3b-instruct"
+    NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
@@ -110,6 +139,7 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
+    QWEN_QWQ_32B = "qwq-32b-preview"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -121,6 +151,15 @@ class ModelType(UnifiedModelType, Enum):
     YI_SPARK = "yi-spark"
     YI_LARGE_RAG = "yi-large-rag"
     YI_LARGE_FC = "yi-large-fc"
+
+    # DeepSeek models
+    DEEPSEEK_CHAT = "deepseek-chat"
+    DEEPSEEK_REASONER = "deepseek-reasoner"
+    # InternLM models
+    INTERNLM3_LATEST = "internlm3-latest"
+    INTERNLM3_8B_INSTRUCT = "internlm3-8b-instruct"
+    INTERNLM2_5_LATEST = "internlm2.5-latest"
+    INTERNLM2_PRO_CHAT = "internlm2-pro-chat"
 
     def __str__(self):
         return self.value
@@ -135,8 +174,24 @@ class ModelType(UnifiedModelType, Enum):
         return "gpt-4o-mini"
 
     @property
+    def support_native_structured_output(self) -> bool:
+        return self.is_openai
+
+    @property
     def support_native_tool_calling(self) -> bool:
-        return any([self.is_openai, self.is_gemini, self.is_mistral])
+        return any(
+            [
+                self.is_openai,
+                self.is_gemini,
+                self.is_mistral,
+                self.is_qwen,
+                self.is_deepseek,
+                self.is_cohere,
+                self.is_internlm,
+                self.is_together,
+                self.is_sambanova,
+            ]
+        )
 
     @property
     def is_openai(self) -> bool:
@@ -147,6 +202,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
+            ModelType.O1,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
         }
@@ -161,6 +217,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
         }
 
     @property
@@ -187,6 +244,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.CLAUDE_3_5_HAIKU,
         }
 
     @property
@@ -196,11 +254,34 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_3_70B,
+            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this type of models is served by Together AI."""
+        return self in {
+            ModelType.TOGETHER_LLAMA_3_1_405B,
+            ModelType.TOGETHER_LLAMA_3_1_70B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_MISTRAL_7B,
+            ModelType.TOGETHER_MIXTRAL_8_7B,
+        }
+
+    @property
+    def is_sambanova(self) -> bool:
+        r"""Returns whether this type of models is served by SambaNova AI."""
+        return self in {
+            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }
 
     @property
@@ -221,13 +302,20 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_nvidia(self) -> bool:
-        r"""Returns whether this type of models is Nvidia-released model.
-
-        Returns:
-            bool: Whether this type of models is nvidia.
-        """
+        r"""Returns whether this type of models is a NVIDIA model."""
         return self in {
-            ModelType.NEMOTRON_4_REWARD,
+            ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
+            ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+            ModelType.NVIDIA_YI_LARGE,
+            ModelType.NVIDIA_MISTRAL_LARGE,
+            ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.NVIDIA_LLAMA3_1_8B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_70B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
         }
 
     @property
@@ -306,6 +394,23 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
+            ModelType.QWEN_QWQ_32B,
+        }
+
+    @property
+    def is_deepseek(self) -> bool:
+        return self in {
+            ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
+        }
+
+    @property
+    def is_internlm(self) -> bool:
+        return self in {
+            ModelType.INTERNLM3_LATEST,
+            ModelType.INTERNLM3_8B_INSTRUCT,
+            ModelType.INTERNLM2_5_LATEST,
+            ModelType.INTERNLM2_PRO_CHAT,
         }
 
     @property
@@ -318,7 +423,6 @@ class ModelType(UnifiedModelType, Enum):
         if self is ModelType.GLM_4V:
             return 1024
         elif self in {
-            ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
             ModelType.REKA_CORE,
             ModelType.REKA_EDGE,
@@ -327,17 +431,22 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.COHERE_COMMAND,
             ModelType.COHERE_COMMAND_LIGHT,
+            ModelType.NVIDIA_NEMOTRON_340B_INSTRUCT,
+            ModelType.NVIDIA_NEMOTRON_340B_REWARD,
         }:
             return 4_096
         elif self in {
             ModelType.GPT_4,
             ModelType.GROQ_LLAMA_3_8B,
             ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_LLAMA_3_3_70B_PREVIEW,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
+            ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.TOGETHER_MISTRAL_7B,
         }:
             return 8_192
         elif self in {
@@ -348,6 +457,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_VISION,
             ModelType.YI_SPARK,
             ModelType.YI_LARGE_RAG,
+            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }:
             return 16_384
         elif self in {
@@ -359,9 +470,22 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE_FC,
             ModelType.QWEN_MAX,
             ModelType.QWEN_VL_MAX,
+            ModelType.NVIDIA_YI_LARGE,
+            ModelType.NVIDIA_MISTRAL_LARGE,
+            ModelType.NVIDIA_MIXTRAL_8X7B,
+            ModelType.QWEN_QWQ_32B,
+            ModelType.INTERNLM3_8B_INSTRUCT,
+            ModelType.INTERNLM3_LATEST,
+            ModelType.INTERNLM2_5_LATEST,
+            ModelType.INTERNLM2_PRO_CHAT,
+            ModelType.TOGETHER_MIXTRAL_8_7B,
         }:
             return 32_768
-        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+        elif self in {
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
+        }:
             return 64_000
         elif self in {
             ModelType.CLAUDE_2_0,
@@ -386,6 +510,14 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.COHERE_COMMAND_R,
             ModelType.COHERE_COMMAND_R_PLUS,
             ModelType.COHERE_COMMAND_NIGHTLY,
+            ModelType.NVIDIA_LLAMA3_1_8B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_70B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_1_405B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_1B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
+            ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
+            ModelType.GROQ_LLAMA_3_3_70B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
         }:
             return 128_000
         elif self in {
@@ -395,14 +527,20 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.TOGETHER_LLAMA_3_1_8B,
+            ModelType.TOGETHER_LLAMA_3_1_70B,
+            ModelType.TOGETHER_LLAMA_3_1_405B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
         }:
             return 131_072
         elif self in {
+            ModelType.O1,
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+            ModelType.CLAUDE_3_5_HAIKU,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
@@ -567,6 +705,10 @@ class ModelPlatformType(Enum):
     COHERE = "cohere"
     YI = "lingyiwanwu"
     QWEN = "tongyi-qianwen"
+    NVIDIA = "nvidia"
+    DEEPSEEK = "deepseek"
+    SGLANG = "sglang"
+    INTERNLM = "internlm"
     AWS_BEDROCK = "aws-bedrock"
 
     @property
@@ -598,6 +740,11 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_sglang(self) -> bool:
+        r"""Returns whether this platform is sglang."""
+        return self is ModelPlatformType.SGLANG
 
     @property
     def is_together(self) -> bool:
@@ -656,6 +803,21 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.QWEN
 
     @property
+    def is_nvidia(self) -> bool:
+        r"""Returns whether this platform is Nvidia."""
+        return self is ModelPlatformType.NVIDIA
+
+    @property
+    def is_deepseek(self) -> bool:
+        r"""Returns whether this platform is DeepSeek."""
+        return self is ModelPlatformType.DEEPSEEK
+
+    @property
+    def is_internlm(self) -> bool:
+        r"""Returns whether this platform is InternLM."""
+        return self is ModelPlatformType.INTERNLM
+
+    @property
     def is_aws_bedrock(self) -> bool:
         r"""Returns whether this platform is AWS Bedrock."""
         return self is ModelPlatformType.AWS_BEDROCK
@@ -701,3 +863,9 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class HuggingFaceRepoType(str, Enum):
+    DATASET = "dataset"
+    MODEL = "model"
+    SPACE = "space"

@@ -9,8 +9,8 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 - Chinese speakers: [here](https://calendly.com/sisi-qu/welcome-to-camel-onboarding-meeting?month=2024-05)
 
 ### Developer Meeting Time & Link 💻
-- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/aWfgSTh5?event=1288737688794435634)
-- Chinese Speakers: Mondays at 9 PM UTC+8. Join via Zoom: [Meeting Link](https://kaust.zoom.us/j/94271505221)
+- English speakers: Mondays at 5 PM GMT+1. Join via Discord: [Meeting Link](https://discord.gg/FFe4nB8MJj?event=1313319275708289034)
+- Chinese Speakers: Mondays at 9 PM UTC+8. Join via TecentMeeting: [Meeting Link](https://meeting.tencent.com/dm/057wap1eeCSY)
 
 ### Our Communication Channels 💬
 - **Discord:** [Join here](https://discord.camel-ai.org/)
@@ -44,6 +44,57 @@ Ensuring excellent documentation and thorough testing is absolutely crucial. Her
   - Add a demo script in the `examples` directory.
  
 We're a small team focused on building great things. If you have something in mind that you'd like to add or modify, opening a pull request is the ideal way to catch our attention. 🚀
+
+### Contributing to the Cookbook Writing 📚
+
+We are excited that you want to contribute to our cookbook! The CAMEL cookbook is an essential resource for users, and we want to make sure that it remains high-quality, accurate, and helpful.
+
+We use Google Colab as the primary platform for writing and reviewing our cookbooks, and we have a specific [template](https://colab.research.google.com/drive/17SiWWjoK7l8Sy9FBsGKUHC6zuEsLt2yX?usp=sharing) that contributors should follow to maintain consistency. Please feel free to share any suggestions for improvements or additions to the template.
+
+Here’s how you can contribute to writing cookbooks:
+
+#### 1. Writing the Cookbook
+
+- Template Usage: We have a [template](https://colab.research.google.com/drive/17SiWWjoK7l8Sy9FBsGKUHC6zuEsLt2yX?usp=sharing) for cookbook entries. Always use this template to ensure uniformity in style and structure.
+- Start in Colab: Begin writing your cookbook in Google Colab. Colab allows us to run interactive code and include explanations side-by-side, which is ideal for a practical, hands-on cookbook.
+- Correctness: Ensure that the **LLM-generated responses are correct**. Each recipe in the cookbook should be verified with real code execution, and the results must be accurate.
+- Clear and Concise Explanations: Provide clear explanations of the code, its purpose, and how it works. Make sure any complex logic or steps are well documented and explained in simple terms. Avoid installing all optional extras unless they are needed.
+- Interactive Elements: Whenever applicable, add interactive code cells in Colab that users can directly run and modify.
+
+##### 1.2. Developing cookbooks for in-progress features
+You can install the latest version of CAMEL from the main branch or a topic branch. This allows you to use the latest codebase, or in-progress features in your cookbook. 
+
+`!pip install "git+https://github.com/camel-ai/camel.git@master#egg=camel-ai[all]"` 
+
+Changing the branch and extras section (e.g. remove `#egg=camel-ai[all]`) will behave as expected.
+
+Remember to change to a release version before sharing the cookbook with the community for long-term stability. Also note that a topic branch will stop working if the branch is deleted.
+
+#### 2. Reviewing the Cookbook
+Once the initial draft of the cookbook is ready:
+
+- Review in Colab: The review process for cookbooks is done in Colab. We will leave comments and suggestions directly in the Colab document. Reviewers will focus on:
+ - Accuracy: Ensure that the code is correct, performs the expected tasks, and generates the intended results.
+ - Clarity: Check that the explanations are clear, detailed, and easy to understand.
+ - Structure: Ensure that the flow of the cookbook is logical and easy to follow, with a step-by-step approach.
+ - Formatting: Verify that the formatting follows the template guidelines (e.g., headers, code blocks, comments).
+ - Feedback Process: If there are issues or suggestions for improvement, the reviewer will leave comments directly in the Colab notebook. The contributor should address these comments and update the Colab file accordingly.
+
+#### 3. Submitting the Cookbook
+When the Colab cookbook is ready for integration:
+
+- Download the Cookbook: Once the Colab notebook is finalized and reviewed, download the notebook as a .ipynb file.
+- Create a Pull Request: Open a pull request to add the cookbook to the docs folder of the repository. This pull request will include the downloadable .ipynb file and also include any necessary documentation or references to integrate the cookbook into the main docs.
+
+#### 4. Principles to Follow
+To ensure that the cookbook meets the highest standards, please keep the following principles in mind:
+
+- High Quality: Every cookbook entry must be of high quality. This includes accurate code, well-written explanations, and comprehensive tests (if applicable).
+- LLM-Generated Responses: If you use a large language model (LLM) to generate part of the cookbook content, ensure that the responses are correct and validated with real-world examples. Do not include any code that is incorrect or doesn't work as expected.
+- Reproducibility: Ensure that all code in the cookbook is reproducible. Any user following the steps should be able to get the same results by running the code on their own machine.
+- Accessibility: Make sure the content is accessible to a wide range of users, from beginners to advanced users. Provide context where necessary and define technical terms.
+
+By following these guidelines, you'll help us maintain a high-quality, helpful, and engaging cookbook for the CAMEL community. Thank you for contributing to this valuable resource! 🌟
 
 ### Contributing to Code Reviews 🔍
 This part outlines the guidelines and best practices for conducting code reviews in CAMEL. The aim is to ensure that all contributions are of high quality, align with the project's goals, and are consistent with our coding standards.
@@ -92,6 +143,76 @@ This part outlines the guidelines and best practices for conducting code reviews
 - Rushed Reviews: Avoid rushing through reviews. Taking the time to thoroughly review code is critical to maintaining quality.
 
 Code reviews are an essential part of maintaining the quality and integrity of our open source project. By following these guidelines, we can ensure that CAMEL remains robust, secure, and easy to maintain, while also fostering a collaborative and welcoming community.
+
+### Guideline for Writing Docstrings
+
+This guideline will help you write clear, concise, and structured docstrings for contributing to `CAMEL`.
+
+#### 1. Use the Triple-Quoted String with `r"""` (Raw String)
+Begin the docstring with `r"""` to indicate a raw docstring. This prevents any issues with special characters and ensures consistent formatting, especially in documentation tools like Sphinx.
+
+#### 2. Provide a Brief Class or Method Description
+- Start with a concise summary of the purpose and functionality.
+- Keep each line under `79` characters.
+- The summary should start on the first line without a linebreak.
+
+Example:
+```python
+r"""Class for managing conversations of CAMEL Chat Agents.
+"""
+```
+
+#### 3. Document Parameters in the Args Section
+- Use an `Args`: section for documenting constructor or function parameters.
+- Maintain the `79`-character limit for each line, and indent continuation lines by 4 spaces.
+- Follow this structure:
+  - Parameter Name: Match the function signature.
+  - Type: Include the type (e.g., `int`, `str`, custom types like `BaseModelBackend`).
+  - Description: Provide a brief explanation of the parameter's role.
+  - Default Value: Use (`default: :obj:<default_value>`) to indicate default values.
+
+Example:
+```markdown
+Args:
+    system_message (BaseMessage): The system message for initializing 
+        the agent's conversation context.
+    model (BaseModelBackend, optional): The model backend to use for 
+        response generation. Defaults to :obj:`OpenAIModel` with 
+        `GPT_4O_MINI`. (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
+```
+
+### Principles 🛡️
+
+#### Naming Principle: Avoid Abbreviations in Naming
+
+- Abbreviations can lead to ambiguity, especially since variable names and code in CAMEL are directly used by agents.
+- Use clear, descriptive names that convey meaning without requiring additional explanation. This improves both human readability and the agent's ability to interpret the code.
+
+Examples:
+
+- Bad: msg_win_sz
+- Good: message_window_size
+
+By adhering to this principle, we ensure that CAMEL remains accessible and unambiguous for both developers and AI agents.
+
+#### Logging Principle: Use `logger` Instead of `print`
+
+Avoid using `print` for output. Use Python's `logging` module (`logger`) to ensure consistent, configurable, and professional logging.
+
+Examples:
+
+- Bad: 
+  ```python
+  print("Process started")
+  print(f"User input: {user_input}")
+  ```
+- Good: 
+  ```python
+  Args:
+  logger.info("Process started")
+  logger.debug(f"User input: {user_input}")
+  ```
+
 
 ### Board Item Create Workflow 🛠️
 At CAMEL, we manage our project through a structured workflow that ensures efficiency and clarity in our development process. Our workflow includes stages for issue creation and pull requests (PRs), sprint planning, and reviews.

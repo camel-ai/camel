@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .commons import (
     AgentOpsMeta,
@@ -19,8 +19,10 @@ from .commons import (
     check_server_running,
     create_chunks,
     dependencies_required,
+    download_github_subdirectory,
     download_tasks,
     func_string_to_callable,
+    generate_prompt_for_structured_output,
     get_first_int,
     get_prompt_template_key_words,
     get_pydantic_major_version,
@@ -36,6 +38,7 @@ from .commons import (
     track_agent,
 )
 from .constants import Constants
+from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
@@ -47,33 +50,36 @@ from .token_counting import (
 )
 
 __all__ = [
-    'print_text_animated',
-    'get_prompt_template_key_words',
-    'get_first_int',
-    'download_tasks',
-    'get_task_list',
-    'check_server_running',
-    'AnthropicTokenCounter',
-    'get_system_information',
-    'to_pascal',
-    'get_model_encoding',
-    'BaseTokenCounter',
-    'OpenAITokenCounter',
-    'LiteLLMTokenCounter',
-    'Constants',
-    'text_extract_from_web',
-    'create_chunks',
-    'dependencies_required',
-    'api_keys_required',
-    'is_docker_running',
-    'GeminiTokenCounter',
-    'MistralTokenCounter',
-    'get_pydantic_major_version',
-    'get_pydantic_object_schema',
-    'func_string_to_callable',
-    'json_to_function_code',
-    'agentops_decorator',
-    'AgentOpsMeta',
-    'track_agent',
-    'handle_http_error',
+    "print_text_animated",
+    "get_prompt_template_key_words",
+    "get_first_int",
+    "download_tasks",
+    "get_task_list",
+    "check_server_running",
+    "AnthropicTokenCounter",
+    "get_system_information",
+    "to_pascal",
+    "get_model_encoding",
+    "BaseTokenCounter",
+    "OpenAITokenCounter",
+    "LiteLLMTokenCounter",
+    "Constants",
+    "text_extract_from_web",
+    "create_chunks",
+    "dependencies_required",
+    "api_keys_required",
+    "is_docker_running",
+    "GeminiTokenCounter",
+    "MistralTokenCounter",
+    "get_pydantic_major_version",
+    "get_pydantic_object_schema",
+    "func_string_to_callable",
+    "json_to_function_code",
+    "agentops_decorator",
+    "AgentOpsMeta",
+    "track_agent",
+    "handle_http_error",
+    "get_pydantic_model",
+    "download_github_subdirectory",
+    "generate_prompt_for_structured_output",
 ]

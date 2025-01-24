@@ -1,21 +1,22 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Optional, Type, TypeAlias, Union
 
 import requests
+from pydantic import BaseModel
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -26,7 +27,7 @@ class SearchToolkit(BaseToolkit):
     r"""A class representing a toolkit for web search.
 
     This class provides methods for searching information on the web using
-    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha.
+    search engines like Google, DuckDuckGo, Wikipedia and Wolfram Alpha, Brave.
     """
 
     @dependencies_required("wikipedia")
@@ -62,6 +63,82 @@ class SearchToolkit(BaseToolkit):
             result = f"An exception occurred during the search: {e}"
 
         return result
+
+    @dependencies_required("linkup")
+    @api_keys_required(
+        [
+            (None, "LINKUP_API_KEY"),
+        ]
+    )
+    def search_linkup(
+        self,
+        query: str,
+        depth: Literal["standard", "deep"] = "standard",
+        output_type: Literal[
+            "searchResults", "sourcedAnswer", "structured"
+        ] = "searchResults",
+        structured_output_schema: Union[Type[BaseModel], str, None] = None,
+    ) -> Dict[str, Any]:
+        r"""Search for a query in the Linkup API and return results in various
+        formats.
+
+        Args:
+            query (str): The search query.
+            depth (Literal["standard", "deep"]): The depth of the search.
+                "standard" for a straightforward search, "deep" for a more
+                comprehensive search.
+            output_type (Literal["searchResults", "sourcedAnswer",
+                "structured"]): The type of output:
+                - "searchResults" for raw search results,
+                - "sourcedAnswer" for an answer with supporting sources,
+                - "structured" for output based on a provided schema.
+            structured_output_schema (Union[Type[BaseModel], str, None]): If
+                `output_type` is "structured",specify the schema of the
+                output. Can be a Pydantic BaseModel or a JSON schema string.
+
+        Returns:
+            Dict[str, Any]: A dictionary representing the search result. The
+                structure depends on the `output_type`. If an error occurs,
+                returns an error message.
+        """
+        try:
+            from linkup import LinkupClient
+
+            # Initialize the Linkup client with the API key
+            LINKUP_API_KEY = os.getenv("LINKUP_API_KEY")
+            client = LinkupClient(api_key=LINKUP_API_KEY)
+
+            # Perform the search using the specified output_type
+            response = client.search(
+                query=query,
+                depth=depth,
+                output_type=output_type,
+                structured_output_schema=structured_output_schema,
+            )
+
+            if output_type == "searchResults":
+                results = [
+                    item.__dict__
+                    for item in response.__dict__.get('results', [])
+                ]
+                return {"results": results}
+
+            elif output_type == "sourcedAnswer":
+                answer = response.__dict__.get('answer', '')
+                sources = [
+                    item.__dict__
+                    for item in response.__dict__.get('sources', [])
+                ]
+                return {"answer": answer, "sources": sources}
+
+            elif output_type == "structured" and structured_output_schema:
+                return response.__dict__
+
+            else:
+                return {"error": f"Invalid output_type: {output_type}"}
+
+        except Exception as e:
+            return {"error": f"An unexpected error occurred: {e!s}"}
 
     @dependencies_required("duckduckgo_search")
     def search_duckduckgo(
@@ -151,7 +228,162 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
-    @api_keys_required("GOOGLE_API_KEY", "SEARCH_ENGINE_ID")
+    @api_keys_required(
+        [
+            (None, 'BRAVE_API_KEY'),
+        ]
+    )
+    def search_brave(
+        self,
+        q: str,
+        country: str = "US",
+        search_lang: str = "en",
+        ui_lang: str = "en-US",
+        count: int = 20,
+        offset: int = 0,
+        safesearch: str = "moderate",
+        freshness: Optional[str] = None,
+        text_decorations: bool = True,
+        spellcheck: bool = True,
+        result_filter: Optional[str] = None,
+        goggles_id: Optional[str] = None,
+        units: Optional[str] = None,
+        extra_snippets: Optional[bool] = None,
+        summary: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        r"""This function queries the Brave search engine API and returns a
+        dictionary, representing a search result.
+        See https://api.search.brave.com/app/documentation/web-search/query
+        for more details.
+
+        Args:
+            q (str): The user's search query term. Query cannot be empty.
+                Maximum of 400 characters and 50 words in the query.
+            country (str): The search query country where results come from.
+                The country string is limited to 2 character country codes of
+                supported countries. For a list of supported values, see
+                Country Codes. (default: :obj:`US `)
+            search_lang (str): The search language preference. The 2 or more
+                character language code for which search results are provided.
+                For a list of possible values, see Language Codes.
+            ui_lang (str): User interface language preferred in response.
+                Usually of the format '<language_code>-<country_code>'. For
+                more, see RFC 9110. For a list of supported values, see UI
+                Language Codes.
+            count (int): The number of search results returned in response.
+                The maximum is 20. The actual number delivered may be less than
+                requested. Combine this parameter with offset to paginate
+                search results.
+            offset (int): The zero based offset that indicates number of search
+                results per page (count) to skip before returning the result.
+                The maximum is 9. The actual number delivered may be less than
+                requested based on the query. In order to paginate results use
+                this parameter together with count. For example, if your user
+                interface displays 20 search results per page, set count to 20
+                and offset to 0 to show the first page of results. To get
+                subsequent pages, increment offset by 1 (e.g. 0, 1, 2). The
+                results may overlap across multiple pages.
+            safesearch (str): Filters search results for adult content.
+                The following values are supported:
+                - 'off': No filtering is done.
+                - 'moderate': Filters explicit content, like images and videos,
+                    but allows adult domains in the search results.
+                - 'strict': Drops all adult content from search results.
+            freshness (Optional[str]): Filters search results by when they were
+                discovered:
+                - 'pd': Discovered within the last 24 hours.
+                - 'pw': Discovered within the last 7 Days.
+                - 'pm': Discovered within the last 31 Days.
+                - 'py': Discovered within the last 365 Days.
+                - 'YYYY-MM-DDtoYYYY-MM-DD': Timeframe is also supported by
+                    specifying the date range e.g. '2022-04-01to2022-07-30'.
+            text_decorations (bool): Whether display strings (e.g. result
+                snippets) should include decoration markers (e.g. highlighting
+                characters).
+            spellcheck (bool): Whether to spellcheck provided query. If the
+                spellchecker is enabled, the modified query is always used for
+                search. The modified query can be found in altered key from the
+                query response model.
+            result_filter (Optional[str]): A comma delimited string of result
+                types to include in the search response. Not specifying this
+                parameter will return back all result types in search response
+                where data is available and a plan with the corresponding
+                option is subscribed. The response always includes query and
+                type to identify any query modifications and response type
+                respectively. Available result filter values are:
+                - 'discussions'
+                - 'faq'
+                - 'infobox'
+                - 'news'
+                - 'query'
+                - 'summarizer'
+                - 'videos'
+                - 'web'
+                - 'locations'
+            goggles_id (Optional[str]): Goggles act as a custom re-ranking on
+                top of Brave's search index. For more details, refer to the
+                Goggles repository.
+            units (Optional[str]): The measurement units. If not provided,
+                units are derived from search country. Possible values are:
+                - 'metric': The standardized measurement system
+                - 'imperial': The British Imperial system of units.
+            extra_snippets (Optional[bool]): A snippet is an excerpt from a
+                page you get as a result of the query, and extra_snippets
+                allow you to get up to 5 additional, alternative excerpts. Only
+                available under Free AI, Base AI, Pro AI, Base Data, Pro Data
+                and Custom plans.
+            summary (Optional[bool]): This parameter enables summary key
+                generation in web search results. This is required for
+                summarizer to be enabled.
+
+        Returns:
+            Dict[str, Any]: A dictionary representing a search result.
+        """
+
+        import requests
+
+        BRAVE_API_KEY = os.getenv("BRAVE_API_KEY")
+
+        url = "https://api.search.brave.com/res/v1/web/search"
+        headers = {
+            "Content-Type": "application/json",
+            "X-BCP-APIV": "1.0",
+            "X-Subscription-Token": BRAVE_API_KEY,
+        }
+
+        ParamsType: TypeAlias = Dict[
+            str,
+            Union[str, int, float, List[Union[str, int, float]], None],
+        ]
+
+        params: ParamsType = {
+            "q": q,
+            "country": country,
+            "search_lang": search_lang,
+            "ui_lang": ui_lang,
+            "count": count,
+            "offset": offset,
+            "safesearch": safesearch,
+            "freshness": freshness,
+            "text_decorations": text_decorations,
+            "spellcheck": spellcheck,
+            "result_filter": result_filter,
+            "goggles_id": goggles_id,
+            "units": units,
+            "extra_snippets": extra_snippets,
+            "summary": summary,
+        }
+
+        response = requests.get(url, headers=headers, params=params)
+        data = response.json()["web"]
+        return data
+
+    @api_keys_required(
+        [
+            (None, 'GOOGLE_API_KEY'),
+            (None, 'SEARCH_ENGINE_ID'),
+        ]
+    )
     def search_google(
         self, query: str, num_result_pages: int = 5
     ) -> List[Dict[str, Any]]:
@@ -219,6 +451,11 @@ class SearchToolkit(BaseToolkit):
 
                 # Iterate over 10 results found
                 for i, search_item in enumerate(search_items, start=1):
+                    # Check metatags are present
+                    if "pagemap" not in search_item:
+                        continue
+                    if "metatags" not in search_item["pagemap"]:
+                        continue
                     if (
                         "og:description"
                         in search_item["pagemap"]["metatags"][0]
@@ -265,7 +502,7 @@ class SearchToolkit(BaseToolkit):
             query (str): The query to send to Wolfram Alpha.
             is_detailed (bool): Whether to include additional details
                 including step by step information in the result.
-                (default::obj:`False`)
+                (default: :obj:`False`)
 
         Returns:
             Union[str, Dict[str, Any]]: The result from Wolfram Alpha.
@@ -274,12 +511,11 @@ class SearchToolkit(BaseToolkit):
         """
         import wolframalpha
 
-        WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
+        WOLFRAMALPHA_APP_ID = os.environ.get("WOLFRAMALPHA_APP_ID")
         if not WOLFRAMALPHA_APP_ID:
             raise ValueError(
                 "`WOLFRAMALPHA_APP_ID` not found in environment "
-                "variables. Get `WOLFRAMALPHA_APP_ID` here: "
-                "`https://products.wolframalpha.com/api/`."
+                "variables. Get `WOLFRAMALPHA_APP_ID` here: `https://products.wolframalpha.com/api/`."
             )
 
         try:
@@ -315,20 +551,20 @@ class SearchToolkit(BaseToolkit):
         """
 
         # Extract the original query
-        query = result.get('@inputstring', '')
+        query = result.get("@inputstring", "")
 
         # Initialize a dictionary to hold structured output
         output = {"query": query, "pod_info": [], "final_answer": None}
 
         # Loop through each pod to extract the details
-        for pod in result.get('pod', []):
+        for pod in result.get("pod", []):
             # Handle the case where subpod might be a list
-            subpod_data = pod.get('subpod', {})
+            subpod_data = pod.get("subpod", {})
             if isinstance(subpod_data, list):
                 # If it's a list, get the first item for 'plaintext' and 'img'
                 description, image_url = next(
                     (
-                        (data['plaintext'], data['img'])
+                        (data["plaintext"], data["img"])
                         for data in subpod_data
                         if "plaintext" in data and "img" in data
                     ),
@@ -336,11 +572,11 @@ class SearchToolkit(BaseToolkit):
                 )
             else:
                 # Otherwise, handle it as a dictionary
-                description = subpod_data.get('plaintext', '')
-                image_url = subpod_data.get('img', {}).get('@src', '')
+                description = subpod_data.get("plaintext", "")
+                image_url = subpod_data.get("img", {}).get("@src", "")
 
             pod_info = {
-                "title": pod.get('@title', ''),
+                "title": pod.get("@title", ""),
                 "description": description,
                 "image_url": image_url,
             }
@@ -349,7 +585,7 @@ class SearchToolkit(BaseToolkit):
             output["pod_info"].append(pod_info)
 
             # Get final answer
-            if pod.get('@primary', False):
+            if pod.get("@primary", False):
                 output["final_answer"] = description
 
         return output
@@ -373,10 +609,10 @@ class SearchToolkit(BaseToolkit):
 
         # Set up the query parameters
         params = {
-            'appid': app_id,
-            'input': query,
-            'podstate': ['Result__Step-by-step solution', 'Show all steps'],
-            'format': 'plaintext',
+            "appid": app_id,
+            "input": query,
+            "podstate": ["Result__Step-by-step solution", "Show all steps"],
+            "format": "plaintext",
         }
 
         # Send the request
@@ -388,16 +624,16 @@ class SearchToolkit(BaseToolkit):
         # Find all subpods within the 'Results' pod
         for subpod in root.findall(".//pod[@title='Results']//subpod"):
             # Check if the subpod has the desired stepbystepcontenttype
-            content_type = subpod.find('stepbystepcontenttype')
+            content_type = subpod.find("stepbystepcontenttype")
             if content_type is not None and content_type.text in [
-                'SBSStep',
-                'SBSHintStep',
+                "SBSStep",
+                "SBSHintStep",
             ]:
-                plaintext = subpod.find('plaintext')
+                plaintext = subpod.find("plaintext")
                 if plaintext is not None and plaintext.text:
                     step_text = plaintext.text.strip()
                     cleaned_step = step_text.replace(
-                        'Hint: |', ''
+                        "Hint: |", ""
                     ).strip()  # Remove 'Hint: |' if present
                     steps.append(cleaned_step)
 
@@ -467,8 +703,10 @@ class SearchToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.search_wiki),
+            FunctionTool(self.search_linkup),
             FunctionTool(self.search_google),
             FunctionTool(self.search_duckduckgo),
             FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
+            FunctionTool(self.search_brave),
         ]

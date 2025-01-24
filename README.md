@@ -52,7 +52,7 @@ Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org
 
 1. Comprehensive Customization and Collaboration:
 
-    - Integrates over 20 advanced model platforms (e.g., commercial models like OpenAI, open-source models such as Llama3, and self-deployment frameworks like Ollama.).
+    - Integrates over 20 advanced model platforms (e.g., commercial models like OpenAI, open-source models such as Llama3, and self-deployment frameworks like Ollama).
 
     - Supports extensive external tools (e.g., Search, Twitter, Github, Google Maps, Reddit, Slack utilities).
     - Includes memory and prompt components for deep customization.
@@ -81,92 +81,44 @@ To install the base CAMEL library:
 ```bash
 pip install camel-ai
 ```
-Some features require extra dependencies:
-- To install with all dependencies:
-    ```bash
-    pip install 'camel-ai[all]'
-    ```
-- To use the HuggingFace agents:
-    ```bash
-    pip install 'camel-ai[huggingface-agent]'
-    ```
-- To enable RAG or use agent memory:
-    ```bash
-    pip install 'camel-ai[tools]'
-    ```
 
-### From Source
+> **Note**: Some features may not work without their required dependencies. Install `camel-ai[all]` to ensure all dependencies are available, or install specific extras based on the features you need.
 
-Install `CAMEL` from source with poetry (Recommended):
-```sh
-# Make sure your python version is later than 3.10
-# You can use pyenv to manage multiple python versions in your system
-
-# Clone github repo
-git clone https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# If you didn't install poetry before
-pip install poetry  # (Optional)
-
-# We suggest using python 3.10
-poetry env use python3.10  # (Optional)
-
-# Activate CAMEL virtual environment
-poetry shell
-
-# Install the base CAMEL library
-# It takes about 90 seconds
-poetry install
-
-# Install CAMEL with all dependencies
-poetry install -E all # (Optional)
-
-# Exit the virtual environment
-exit
+```bash
+pip install 'camel-ai[all]'  # Replace with options below
 ```
 
-> [!TIP]
-> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You can try running:
-> ```sh
-> poetry install --no-cache
-> ```
+Available extras:
+- `all`: Includes all features below
+- `model_platforms`: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.
+- `huggingface`: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.
+- `rag`: Sentence Transformers, Qdrant, Milvus, BM25 etc.
+- `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3  etc.
+- `web_tools`: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.
+- `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
+- `media_tools`: Image Processing, Audio Processing, YouTube Download, FFmpeg etc.
+- `communication_tools`: Slack, Discord, Telegram, GitHub, Reddit, Notion etc.
+- `data_tools`: Pandas, TextBlob, DataCommons, OpenBB, Stripe etc.
+- `research_tools`: arXiv, Google Scholar etc.
+- `dev_tools`: Docker, Jupyter, Tree-sitter, Code Interpreter etc.
 
-
-Install `CAMEL` from source with conda and pip:
-```sh
-# Create a conda virtual environment
-conda create --name camel python=3.10
-
-# Activate CAMEL conda environment
-conda activate camel
-
-# Clone github repo
-git clone -b v0.2.9 https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# Install CAMEL from source
-pip install -e .
-
-# Or if you want to use all other extra packages
-pip install -e .[all] # (Optional)
+Multiple extras can be combined using commas:
+```bash
+pip install 'camel-ai[rag,web_tools,document_tools]'  # Example: RAG system with web search and document processing
 ```
 
 ### From Docker
 
-Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
+Detailed guidance can be found [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
 
 ## Quick Start
 
 By default, the agent uses the `ModelType.DEFAULT` model from the `ModelPlatformType.DEFAULT`. You can configure the default model platform and model type using environment variables. If these are not set, the agent will fall back to the default settings:
 
-- `ModelPlatformType.DEFAULT = "openai"`
-
-- `ModelType.DEFAULT = "gpt-4o-mini"`
+```bash
+ModelPlatformType.DEFAULT = "openai"
+ModelType.DEFAULT = "gpt-4o-mini"
+```
 
 ### Setting Default Model Platform and Model Type (Optional)
 
@@ -183,7 +135,7 @@ export DEFAULT_MODEL_TYPE=<your preferred model>  # e.g., gpt-3.5-turbo, gpt-4o-
 ```bash
 # Export your OpenAI API key
 export OPENAI_API_KEY=<insert your OpenAI API key>
-OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
+OPENAI_API_BASE_URL=<insert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 **For Windows Command Prompt:**
@@ -191,7 +143,7 @@ OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an Op
 ```cmd
 REM export your OpenAI API key
 set OPENAI_API_KEY=<insert your OpenAI API key>
-set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
+set OPENAI_API_BASE_URL=<insert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 **For Windows PowerShell:**
@@ -199,7 +151,7 @@ set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize a
 ```powershell
 # Export your OpenAI API key
 $env:OPENAI_API_KEY="<insert your OpenAI API key>"
-$env:OPENAI_API_BASE_URL="<inert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
+$env:OPENAI_API_BASE_URL="<insert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
@@ -274,10 +226,10 @@ The [complete documentation](https://camel-ai.github.io/camel/) pages for the CA
 ### Agents
 Explore different types of agents, their roles, and their applications.
 
-- **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)**
-- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)**
-- **[Embodied Agents](https://docs.camel-ai.org/cookbooks/embodied_agents.html)**
-- **[Critic Agents](https://docs.camel-ai.org/cookbooks/critic_agents_and_tree_search.html)**
+- **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
+- **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)**
+- **[Embodied Agents](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents.html)**
+- **[Critic Agents](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search.html)**
 
 ---
 
@@ -302,23 +254,50 @@ Core components and utilities to build, operate, and enhance CAMEL-AI agents and
 ### Cookbooks
 Practical guides and tutorials for implementing specific functionalities in CAMEL-AI agents and societies.
 
+### Basic Concepts
 | Cookbook | Description |
 |:---|:---|
-| **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
-| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
-| **[Society Cookbook](https://docs.camel-ai.org/cookbooks/agents_society.html)** | Advanced configurations for agent societies. |
-| **[Model Speed Comparison Cookbook](https://docs.camel-ai.org/cookbooks/model_speed_comparison.html)** | Benchmarking models for performance. |
-| **[Message Cookbook](https://docs.camel-ai.org/cookbooks/agents_message.html)** | Best practices for message handling in agents. |
-| **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
-| **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_memory.html)** | Implementing memory systems in agents. |
-| **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
-| **[Prompting Cookbook](https://docs.camel-ai.org/cookbooks/agents_prompting.html)** | Techniques for effective prompt creation. |
-| **[Task Generation Cookbook](https://docs.camel-ai.org/cookbooks/task_generation.html)** | Automating task generation for agents. |
-| **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/knowledge_graph.html)** | Leveraging knowledge graphs with RAG. |
-| **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
-| **[Video Analysis](https://docs.camel-ai.org/cookbooks/video_analysis.html)** | Techniques for agents in video data analysis. |
-| **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
-| **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
+| **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)** | A step-by-step guide to building your first agent. |
+| **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)** | Learn to build a collaborative society of agents. |
+| **[Message Cookbook](https://docs.camel-ai.org/cookbooks/basic_concepts/agents_message.html)** | Best practices for message handling in agents. |
+
+### Advanced Features
+| Cookbook | Description |
+|:---|:---|
+| **[Tools Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_tools.html)** | Integrating tools for enhanced functionality. |
+| **[Memory Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_memory.html)** | Implementing memory systems in agents. |
+| **[RAG Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_rag.html)** | Recipes for Retrieval-Augmented Generation. |
+| **[Graph RAG Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)** | Leveraging knowledge graphs with RAG. |
+| **[Track CAMEL Agents with AgentOps](https://docs.camel-ai.org/cookbooks/advanced_features/agents_tracking.html)** | Tools for tracking and managing agents in operations. |
+| **[Agents with Human-in-loop and Tool Approval from HumanLayer](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html)** | Implementing human oversight and tool approval within agent workflows using HumanLayer. |
+
+### Data Generation & Model Training
+| Cookbook | Description |
+|:---|:---|
+| **[Data Generation with CAMEL and Finetuning with Unsloth](https://docs.camel-ai.org/cookbooks/data_generation/sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B.html)** | Learn how to generate data with CAMEL and fine-tune models effectively with Unsloth. |
+| **[Data Gen with Real Function Calls and Hermes Format](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)** | Explore how to generate data with real function calls and the Hermes format. |
+| **[Self-instruct Data Generation](https://docs.camel-ai.org/cookbooks/data_generation/self_instruct_data_generation.html)** | Explore comprehensive guidelines and best practices for generating self-instructional data, enabling robust model training and improved performance. |
+| **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
+| **[Agentic Data Generation, Evaluation & Filtering with Reward Models](https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model.html)** | Discover methods for generating, evaluating, and filtering agentic data using reward models to enhance the quality and efficiency of your synthetic data pipelines. |
+| **[Data Model Generation and Structured Output with Qwen Model](https://docs.camel-ai.org/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html)** |Learn how to generate data models and structured outputs using the Qwen Model for improved data representation.|
+
+
+### Multi-Agent Systems & Applications
+| Cookbook | Description |
+|:---|:---|
+| **[Role-Playing Scraper for Report & Knowledge Graph Generation](https://docs.camel-ai.org/cookbooks/applications/roleplaying_scraper.html)** | Create role-playing agents for data scraping and reporting. |
+| **[Create A Hackathon Judge Committee with Workforce](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)** | Building a team of agents for collaborative judging. |
+| **[Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier](https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html)** | Explore an innovative approach to travel planning, blending AI-driven role-playing and real-time data for seamless experiences. |
+| **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG. |
+| **[Customer Service Discord Bot with Local Model](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG which supports local deployment. |
+| **[Customer Service Discord Bot for Finance with OpenBB](https://docs.camel-ai.org/cookbooks/applications/finance_discord_bot.html)**| Learn how to build a sipmle yet powerful financial data assistant Discord bot using OpenBB tools. |
+
+### Data Processing
+| Cookbook | Description |
+|:---|:---|
+| **[Video Analysis](https://docs.camel-ai.org/cookbooks/data_processing/video_analysis.html)** | Techniques for agents in video data analysis. |
+| **[3 Ways to Ingest Data from Websites with Firecrawl](https://docs.camel-ai.org/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html)** | Explore three methods for extracting and processing data from websites using Firecrawl. |
+| **[Create AI Agents that work with your PDFs](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html)** | Learn how to create AI agents that work with your PDFs using Chunkr and Mistral AI. |
 
 ## Utilize Various LLMs as Backends
 
@@ -346,6 +325,10 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 We implemented amazing research ideas from other works for you to build, compare and customize your agents. If you use any of these modules, please kindly cite the original works:
 - `TaskCreationAgent`, `TaskPrioritizationAgent` and `BabyAGI` from *Nakajima et al.*: [Task-Driven Autonomous Agent](https://yoheinakajima.com/task-driven-autonomous-agent-utilizing-gpt-4-pinecone-and-langchain-for-diverse-applications/). [[Example](https://github.com/camel-ai/camel/blob/master/examples/ai_society/babyagi_playing.py)]
 
+- `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
+
+- `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
 ## Other Research Works Based on Camel
 - [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?
 
@@ -356,10 +339,10 @@ We implemented amazing research ideas from other works for you to build, compare
 We warmly invite you to use CAMEL for your impactful research.
 
 ## News
-📢 Added the Workforce module to the 🐫 CAMEL framework! For more details, see the [post](https://x.com/CamelAIOrg/status/1851682063830720912). (Oct 31, 2024)
-- Added subprocess support for Ollama and vLLM models. (Oct, 29, 2024)
-- Integrated Firecrawl's Map into the 🐫 CAMEL framework. (Oct, 22, 2024)
-- Integrated Nvidia's Llama-3.1-Nemotron-70b-Instruct! (Oct, 17, 2024)
+📢 Added support for Qwen models, Deepseek models to the 🐫 CAMEL framework!. (Nov 28, 2024)
+- Integrate SGLang into the 🐫 CAMEL framework. (Dec, 13, 2024)
+- Integrated Reward Model into the 🐫 CAMEL framework. (Dec, 13, 2024)
+- Added GAIA Benchmark! (Dec, 09, 2024)
 - ...
 - Released AI Society and Code dataset (April 2, 2023)
 - Initial release of `CAMEL` python library (March 21, 2023)

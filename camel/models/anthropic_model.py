@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from typing import Any, Dict, List, Optional, Union
 
@@ -35,7 +35,7 @@ class AnthropicModel(BaseModelBackend):
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into Anthropic.messages.create().  If
             :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
-            (default::obj:`None`)
+            (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Anthropic service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Anthropic service.
@@ -45,6 +45,11 @@ class AnthropicModel(BaseModelBackend):
             will be used. (default: :obj:`None`)
     """
 
+    @api_keys_required(
+        [
+            ("api_key", "ANTHROPIC_API_KEY"),
+        ]
+    )
     @dependencies_required('anthropic')
     def __init__(
         self,
@@ -94,21 +99,9 @@ class AnthropicModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = AnthropicTokenCounter()
+            self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
-    def count_tokens_from_prompt(self, prompt: str) -> int:
-        r"""Count the number of tokens from a prompt.
-
-        Args:
-            prompt (str): The prompt string.
-
-        Returns:
-            int: The number of tokens in the prompt.
-        """
-        return self.client.count_tokens(prompt)
-
-    @api_keys_required("ANTHROPIC_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

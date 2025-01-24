@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List
 from unittest.mock import patch
@@ -59,35 +59,6 @@ def test_crawl_failure():
             firecrawl.crawl(url)
         except RuntimeError as e:
             assert 'Failed to crawl the URL' in str(e)
-
-
-def test_markdown_crawl_success():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
-        mock_app = MockFirecrawlApp.return_value
-        firecrawl = Firecrawl(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
-        url = 'https://example.com'
-        response = [{'markdown': 'Markdown content'}]
-        mock_app.crawl_url.return_value = response
-
-        result = firecrawl.markdown_crawl(url)
-        assert result == 'Markdown content'
-
-
-def test_markdown_crawl_failure():
-    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
-        mock_app = MockFirecrawlApp.return_value
-        firecrawl = Firecrawl(
-            api_key='test_api_key', api_url='https://api.test.com'
-        )
-        url = 'https://example.com'
-        mock_app.crawl_url.side_effect = Exception('Error')
-
-        try:
-            firecrawl.markdown_crawl(url)
-        except RuntimeError as e:
-            assert 'Failed to crawl the URL and retrieve markdown' in str(e)
 
 
 def test_check_crawl_job_success():

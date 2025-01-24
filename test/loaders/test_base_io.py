@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from io import BytesIO
 from pathlib import Path
 
@@ -23,6 +23,7 @@ from camel.loaders.base_io import (
     JsonFile,
     PdfFile,
     TxtFile,
+    create_file,
     strip_consecutive_newlines,
 )
 
@@ -140,8 +141,8 @@ def test_html_file():
     assert html_file.docs[0]["page_content"] == "Hello World"
 
 
-# Test the `read_file` function with each file type
-def test_read_file():
+# Test the `create_file` function with each file type
+def test_create_file():
     for ext, file_class in [
         ("docx", DocxFile),
         ("pdf", PdfFile),
@@ -152,7 +153,7 @@ def test_read_file():
         filename = f"test_hello.{ext}"
         with open(SAMPLE_ROOT / filename, "rb") as f:
             file = BytesIO(f.read())
-            file_obj = File.create_file(file, filename)
+            file_obj = create_file(file, filename)
 
         assert isinstance(file_obj, file_class)
         assert file_obj.name == filename
@@ -164,12 +165,13 @@ def test_read_file():
         )
 
 
-# Test that read_file raises a NotImplementedError for unsupported file types
-def test_read_file_not_implemented():
+# Test that `create_file` function raises a NotImplementedError
+# for unsupported file types
+def test_create_file_not_implemented():
     file = BytesIO(b"Hello World")
     filename = "test.unknown"
     with pytest.raises(NotImplementedError):
-        File.create_file(file, filename)
+        create_file(file, filename)
 
 
 # Test the File.copy() method

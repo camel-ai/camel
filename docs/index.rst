@@ -5,7 +5,7 @@
 
 Welcome to CAMEL's documentation!
 =================================
-| We design **practical** artificial general intelligence.
+| **Finding the Scaling Law of Agents: The First and the Best Multi-Agent Framework.**
 
 | **CAMEL** emerges as the earliest `LLM-based multi-agent framework <https://arxiv.org/pdf/2303.17760.pdf>`_, and is now a generic framework to build and use LLM-based agents for real-world task solving. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
@@ -48,26 +48,16 @@ Main Documentation
    key_modules/workforce.md
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Cookbooks
    :name: cookbooks
 
-   cookbooks/create_your_first_agent.ipynb
-   cookbooks/create_your_first_agents_society.ipynb
-   cookbooks/agents_society.ipynb
-   cookbooks/model_speed_comparison.ipynb
-   cookbooks/agents_message.ipynb
-   cookbooks/agents_with_tools.ipynb
-   cookbooks/agents_with_tools_from_Composio.ipynb
-   cookbooks/agents_with_memory.ipynb
-   cookbooks/agents_with_rag.ipynb
-   cookbooks/agents_prompting.ipynb
-   cookbooks/task_generation.ipynb
-   cookbooks/knowledge_graph.ipynb
-   cookbooks/roleplaying_scraper.ipynb
-   cookbooks/video_analysis.ipynb
-   cookbooks/agents_tracking.ipynb
-   cookbooks/workforce_judge_committee.ipynb
+   cookbooks/basic_concepts/index
+   cookbooks/advanced_features/index
+   cookbooks/multi_agent_society/index
+   cookbooks/data_generation/index
+   cookbooks/applications/index
+   cookbooks/data_processing/index
 
 .. toctree::
    :maxdepth: 1

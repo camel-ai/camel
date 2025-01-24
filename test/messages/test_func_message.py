@@ -1,17 +1,18 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
+from typing import Dict, List
 
 import pytest
 
@@ -41,6 +42,7 @@ def assistant_func_call_message() -> FunctionCallingMessage:
         content=content,
         func_name="add",
         args={"a": "1", "b": "2"},
+        tool_call_id=None,
     )
 
 
@@ -57,6 +59,7 @@ def function_result_message() -> FunctionCallingMessage:
         content="",
         func_name="add",
         result=3,
+        tool_call_id=None,
     )
 
 
@@ -68,17 +71,15 @@ def test_assistant_func_message(
     assert assistant_func_call_message.func_name == "add"
     assert assistant_func_call_message.args == {"a": "1", "b": "2"}
 
-    msg_dict: Dict[str, Any]
-    msg_dict = {
-        "role": "assistant",
-        "content": content,
-        "function_call": {
-            "name": "add",
-            "arguments": str({"a": "1", "b": "2"}),
-        },
-    }
-    assert (
-        assistant_func_call_message.to_openai_assistant_message() == msg_dict
+    result = assistant_func_call_message.to_openai_assistant_message()
+    assert result["role"] == "assistant"
+    assert result["content"] == content
+    assert len(result["tool_calls"]) == 1  # type: ignore[arg-type]
+    tool_call = result["tool_calls"][0]  # type: ignore[index]
+    assert tool_call["type"] == "function"
+    assert tool_call["function"]["name"] == "add"
+    assert tool_call["function"]["arguments"] == json.dumps(
+        {"a": "1", "b": "2"}
     )
 
 
@@ -88,26 +89,25 @@ def test_function_func_message(
     assert function_result_message.func_name == "add"
     assert function_result_message.result == 3
 
-    result_content = {"result": {str(3)}}
     msg_dict: Dict[str, str] = {
-        "role": "function",
-        "name": "add",
-        "content": f'{result_content}',
+        "role": "tool",
+        "content": json.dumps(3),
+        "tool_call_id": "null",
     }
-    assert function_result_message.to_openai_function_message() == msg_dict
+    assert function_result_message.to_openai_tool_message() == msg_dict
 
 
-def test_assistant_func_message_to_openai_function_message(
+def test_assistant_func_message_to_openai_tool_message(
     assistant_func_call_message: FunctionCallingMessage,
 ):
     expected_msg_dict: Dict[str, str] = {
-        "role": "function",
-        "name": "add",
-        "content": "{'result': {'None'}}",
+        "role": "tool",
+        "content": json.dumps(None),
+        "tool_call_id": "null",
     }
 
     assert (
-        assistant_func_call_message.to_openai_function_message()
+        assistant_func_call_message.to_openai_tool_message()
         == expected_msg_dict
     )
 
@@ -146,16 +146,21 @@ def test_roleplay_conversion_with_tools():
         message = record.memory_record.message
         # Remove meta_dict to avoid comparison issues
         message.meta_dict = None
+        # Clear tool_call_id for function messages
+        if isinstance(message, FunctionCallingMessage):
+            message.tool_call_id = ""
         original_messages.append(message)
         sharegpt_msgs.append(message.to_sharegpt())
 
     converted_back = []
     for msg in sharegpt_msgs:
-        converted_back.append(
-            BaseMessage.from_sharegpt(
-                msg, function_format=HermesFunctionFormatter()
-            )
+        message = BaseMessage.from_sharegpt(
+            msg, function_format=HermesFunctionFormatter()
         )
+        # Clear tool_call_id for function messages
+        if isinstance(message, FunctionCallingMessage):
+            message.tool_call_id = ""
+        converted_back.append(message)
 
     assert converted_back == original_messages
 

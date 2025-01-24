@@ -1,16 +1,16 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 from unittest import mock
 from unittest.mock import MagicMock, Mock, patch
@@ -323,3 +323,82 @@ def test_get_wolframalpha_step_by_step_solution(mock_get):
     assert (
         result == expected_steps
     ), f"Expected {expected_steps}, but got {result}"
+
+
+class MockSearchResult:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
+def test_search_linkup_search_results(search_toolkit):
+    with patch('linkup.LinkupClient') as mock_client:
+        mock_instance = mock_client.return_value
+        mock_result = MockSearchResult(
+            title='Test Title', url='http://test.com'
+        )
+        mock_response = MockSearchResult(results=[mock_result])
+        mock_instance.search.return_value = mock_response
+
+        with patch.dict(os.environ, {'LINKUP_API_KEY': 'test_key'}):
+            result = search_toolkit.search_linkup(
+                query="test query", output_type="searchResults"
+            )
+
+        assert result == {
+            'results': [{'title': 'Test Title', 'url': 'http://test.com'}]
+        }
+        mock_instance.search.assert_called_once_with(
+            query="test query",
+            depth="standard",
+            output_type="searchResults",
+            structured_output_schema=None,
+        )
+
+
+def test_search_linkup_sourced_answer(search_toolkit):
+    with patch('linkup.LinkupClient') as mock_client:
+        mock_instance = mock_client.return_value
+        mock_source = MockSearchResult(
+            title='Source Title', url='http://source.com'
+        )
+        mock_response = MockSearchResult(
+            answer='Test answer', sources=[mock_source]
+        )
+        mock_instance.search.return_value = mock_response
+
+        with patch.dict(os.environ, {'LINKUP_API_KEY': 'test_key'}):
+            result = search_toolkit.search_linkup(
+                query="test query", output_type="sourcedAnswer"
+            )
+
+        assert result == {
+            'answer': 'Test answer',
+            'sources': [{'title': 'Source Title', 'url': 'http://source.com'}],
+        }
+
+
+def test_search_linkup_structured_output(search_toolkit):
+    with patch('linkup.LinkupClient') as mock_client:
+        mock_instance = mock_client.return_value
+        mock_response = MockSearchResult(structured_data={'key': 'value'})
+        mock_instance.search.return_value = mock_response
+
+        with patch.dict(os.environ, {'LINKUP_API_KEY': 'test_key'}):
+            result = search_toolkit.search_linkup(
+                query="test query",
+                output_type="structured",
+                structured_output_schema="test_schema",
+            )
+
+        assert result == {'structured_data': {'key': 'value'}}
+
+
+def test_search_linkup_error(search_toolkit):
+    with patch('linkup.LinkupClient') as mock_client:
+        mock_instance = mock_client.return_value
+        mock_instance.search.side_effect = Exception("Test error")
+
+        with patch.dict(os.environ, {'LINKUP_API_KEY': 'test_key'}):
+            result = search_toolkit.search_linkup(query="test query")
+
+        assert result == {"error": "An unexpected error occurred: Test error"}

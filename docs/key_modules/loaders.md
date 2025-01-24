@@ -33,15 +33,14 @@ This module is designed to read files of various formats, extract their contents
 
 ```python
 from io import BytesIO
-from camel.loaders import read_file
+from camel.loaders import create_file_from_raw_bytes
 
 # Read a pdf file from disk
 with open("test.pdf", "rb") as file:
-    file_content = BytesIO(file.read())
-    file_content.name = "test.pdf"
+    file_content = file.read()
 
-# Use the read_file function to create an object based on the file extension
-file_obj = read_file(file_content)
+# Use the create_file function to create an object based on the file extension
+file_obj = create_file_from_raw_bytes(file_content, "test.pdf")
 
 # Once you have the File object, you can access its content
 print(file_obj.docs[0]["page_content"])
@@ -53,6 +52,9 @@ To get started with the `Unstructured IO` module, you first need to import the m
 
 Utilize `parse_file_or_url` to load and parse unstructured data from a file or URL
 ```python
+from camel.loaders import UnstructuredIO
+
+uio = UnstructuredIO()
 # Set example url
 example_url = (
     "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
@@ -93,7 +95,7 @@ print(cleaned_text)
 Utilize `extract_data_from_text` to do text extraction operation
 ```python
 # Set example email to extract
-example_email_text = ("Contact me at example@email.com.")
+example_email_text = "Contact me at example@email.com."
 
 extracted_text = uio.extract_data_from_text(text=example_email_text,
 extract_type="extract_email_address")
@@ -133,12 +135,14 @@ print(staged_element)
 ```markdown
 >>> {'rows': [{'data': {'type': 'UncategorizedText', 'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5', 'text': 'CNN\n        \xa0—'}, 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.cnn.com/2023/01/30/sport/empire-state-building-green-philadelphia-eagles-spt-intl/index.html', 'emphasized_text_contents': ['CNN'], 'emphasized_text_tags': ['span']}}, ...
 ```
-This is a basic guide to get you started with the `Unstructured IO` module. For more advanced usage, refer to the specific method documentation and the [Unstructured IO Documentation](https://unstructured-io.github.io/unstructured/).
+This is a basic guide to get you started with the `Unstructured IO` module. For more advanced usage, refer to the specific method documentation and the [Unstructured IO Documentation](https://docs.unstructured.io).
 
 ### 3.3. Using `Apify Reader`
 
 Initialize the client, set up the required actors and parameters.
 ```python
+from camel.loaders import Apify
+
 apify = Apify()
 
 run_input = {
@@ -336,14 +340,14 @@ response = jina_reader.read_content("https://docs.camel-ai.org/")
 print(response)
 ```
 ```markdown
->>>Welcome to CAMEL’s documentation! — CAMEL 0.2.9 documentation
+>>>Welcome to CAMEL’s documentation! — CAMEL 0.2.18 documentation
 ===============
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 
 Back to top Ctrl+K
 
- [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.9](https://docs.camel-ai.org/#)
+ [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.18](https://docs.camel-ai.org/#)
 
 Search Ctrl+K
 
