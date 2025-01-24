@@ -12,11 +12,12 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import re
+
 from camel.agents import ChatAgent
 from camel.configs import DeepSeekConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-import re
 
 """
 please set the below os environment:
@@ -40,6 +41,7 @@ user_msg = """Please explain in detail how the output sequence of transformer be
 # Get response information
 response = camel_agent.step(user_msg)
 
+
 def extract_original_response(content):
     # Split the content at the marker
     parts = content.split("BELOW IS THE REASONING CONTENT:")
@@ -47,19 +49,26 @@ def extract_original_response(content):
         return parts[0].strip()
     return ""
 
+
 # Extract original response
 original_response = extract_original_response(response.msgs[0].content)
 print("Original Response:")
 print(original_response)
 
 # Extract reasoning content using regex
-reasoning_pattern = r"BELOW IS THE REASONING CONTENT:(.*?)(?=BELOW IS THE FINAL ANSWER:|$)"
-reasoning_match = re.search(reasoning_pattern, response.msgs[0].content, re.DOTALL)
-reasoning_response = reasoning_match.group(1).strip() if reasoning_match else ""
+reasoning_pattern = (
+    r"BELOW IS THE REASONING CONTENT:(.*?)(?=BELOW IS THE FINAL ANSWER:|$)"
+)
+reasoning_match = re.search(
+    reasoning_pattern, response.msgs[0].content, re.DOTALL
+)
+reasoning_response = (
+    reasoning_match.group(1).strip() if reasoning_match else ""
+)
 
 print("Reasoning Response:")
 print(reasoning_response)
-
+# ruff: noqa: E501,RUF001
 """
 
 Original Response:
