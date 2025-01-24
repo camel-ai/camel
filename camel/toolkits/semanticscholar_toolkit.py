@@ -43,7 +43,8 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code {response.status_code}", 
+            return {"error": f"Request failed with status code 
+            {response.status_code}", 
             "message": response.text}
 
     def fetch_paper_data_id(
@@ -52,16 +53,19 @@ class SemanticScholarToolkit(BaseToolkit):
         fields: str = """title,abstract,authors,year,citationCount,
         publicationTypes,publicationDate,openAccessPdf""") -> dict:
 
-        r"""Fetches a SINGLE paper from the Semantic Scholar API based on a paper ID.
+        r"""Fetches a SINGLE paper from the Semantic Scholar
+         API based on a paper ID.
 
         Args:
             paperID (str): The ID of the paper to fetch.
             fields (str): A comma-separated list of fields to 
             include in the response (default includes title, abstract, 
-            authors, year, citation count, publicationTypes, publicationDate, openAccessPdf).
+            authors, year, citation count, publicationTypes, 
+            publicationDate, openAccessPdf).
 
         Returns:
-            dict: The response data from the API or error information if the request fails.
+            dict: The response data from the API or error information
+            if the request fails.
         """
         url = f"{self.base_url}/paper/{paperID}"
         query_params = {"fields": fields}
@@ -69,7 +73,8 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code {response.status_code}",
+            return {"error": f"Request failed with status code
+            {response.status_code}",
             "message": response.text}
 
     def fetch_bulk_paper_data(
@@ -83,21 +88,25 @@ class SemanticScholarToolkit(BaseToolkit):
 
         Args:
             query (str): 
-                The text query to match against the paper's title and abstract. 
-                All terms are stemmed.
-                Semantic Scholar's paper bulk search supports various operators 
-                for advanced filtering and precise specification in the search query.
-                All terms in the query are matched against the paper's title and abstract. 
+                The text query to match against the paper's title
+                and abstract. All terms are stemmed.Semantic 
+                Scholar's paper bulk search supports various 
+                operators for advanced filtering and precise
+                specification in the search query.All terms in
+                the query are matched against the paper's title
+                 and abstract. 
 
-                For example, you can use the following operators and techniques to 
-                construct your query:
+                For example, you can use the following operators
+                and techniques to construct your query:
 
                 Example 1:
-                    ((cloud computing) | virtualization) +security -privacy
-                    This will match papers whose title or abstract contains "cloud" 
-                    and "computing", or contains the word "virtualization". 
-                    The papers must also include the term "security" 
-                    but exclude papers that contain the word "privacy".
+                    ((cloud computing) | virtualization)
+                    +security -privacy This will match papers 
+                    whose title or abstract contains "cloud" 
+                    and "computing", or contains the word 
+                    "virtualization". The papers must also 
+                    include the term "security" but exclude
+                    papers that contain the word "privacy".
 
                 See the Semantic Scholar API documentation for a full list
                 of supported operators.
@@ -120,7 +129,8 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code {response.status_code}", 
+            return {"error": f"Request failed with status code
+            {response.status_code}", 
             "message": response.text}
 
     def fetch_recommended_papers(
@@ -148,7 +158,8 @@ class SemanticScholarToolkit(BaseToolkit):
             Default is 500.
 
         Returns:
-            dict: A dictionary containing recommended papers sorted by citation count.
+            dict: A dictionary containing recommended
+            papers sorted by citation count.
         """
         url = "https://api.semanticscholar.org/recommendations/v1/papers"
         query_params = {
@@ -167,7 +178,8 @@ class SemanticScholarToolkit(BaseToolkit):
                 json.dump(papers, output)
             return papers
         else:
-            return {"error": f"Request failed with status code {response.status_code}", 
+            return {"error": f"Request failed with status code
+            {response.status_code}", 
             "message": response.text}
 
     def fetch_author_data(
