@@ -41,49 +41,6 @@ class ProblemResult(BaseModel):
 
 
 class STaRPipeline:
-    # Templates for generating reasoning, evaluation and improving them.
-    REASONING_TEMPLATE = """Let's solve this step by step:
-Problem: {problem}
-1. First, let's understand what we're asked
-2. Let's break this down into parts
-3. Let's solve each part systematically
-4. Finally, let's verify our solution
-
-Please show your complete reasoning process."""
-
-    EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and 
-provide scores and feedback in valid JSON format.
-
-Problem: {problem}
-
-Reasoning Trace:
-{trace}
-
-Evaluate for:
-1. Correctness (Is each step logically sound?)
-2. Clarity (Is the explanation clear and well-structured?)
-3. Completeness (Are all necessary steps included?)
-
-Respond ONLY with a JSON object in this exact format:
-{{
-    "correctness": <score between 0 and 1>,
-    "clarity": <score between 0 and 1>,
-    "completeness": <score between 0 and 1>,
-    "feedback": "<specific feedback for improvement>"
-}}"""
-
-    IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an 
-improved reasoning trace:
-Problem: {problem}
-
-Previous Trace:
-{trace}
-
-Feedback:
-{feedback}
-
-Generate a new, improved reasoning trace that addresses the feedback."""
-
     r"""Pipeline for generating self-taught reasoning traces
         using the STaR methodology.
 
@@ -215,7 +172,13 @@ Generate a new, improved reasoning trace that addresses the feedback."""
             response = self.agent.step(prompt, response_format=TraceEvaluation)
             if response.msg.parsed is None:
                 raise AttributeError("Failed to parse evaluation response")
-            return response.msg.parsed.model_dump()
+            # Convert dict to TraceEvaluation if needed
+            if isinstance(response.msg.parsed, dict):
+                evaluation = TraceEvaluation(**response.msg.parsed)
+            else:
+                evaluation = response.msg.parsed
+
+            return evaluation.model_dump()
 
     def improve_trace(self, problem: str, trace: str, feedback: str) -> str:
         r"""Generate improved reasoning trace based on feedback.
@@ -297,3 +260,46 @@ Generate a new, improved reasoning trace that addresses the feedback."""
         if self.output_path:
             with open(self.output_path, 'w') as f:
                 json.dump(self.reasoning_traces, f, indent=2)
+
+    # Templates for generating reasoning, evaluation and improving them.
+    REASONING_TEMPLATE = """Let's solve this step by step:
+Problem: {problem}
+1. First, let's understand what we're asked
+2. Let's break this down into parts
+3. Let's solve each part systematically
+4. Finally, let's verify our solution
+
+Please show your complete reasoning process."""
+
+    EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and 
+provide scores and feedback in valid JSON format.
+
+Problem: {problem}
+
+Reasoning Trace:
+{trace}
+
+Evaluate for:
+1. Correctness (Is each step logically sound?)
+2. Clarity (Is the explanation clear and well-structured?)
+3. Completeness (Are all necessary steps included?)
+
+Respond ONLY with a JSON object in this exact format:
+{{
+    "correctness": <score between 0 and 1>,
+    "clarity": <score between 0 and 1>,
+    "completeness": <score between 0 and 1>,
+    "feedback": "<specific feedback for improvement>"
+}}"""
+
+    IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an 
+improved reasoning trace:
+Problem: {problem}
+
+Previous Trace:
+{trace}
+
+Feedback:
+{feedback}
+
+Generate a new, improved reasoning trace that addresses the feedback."""
