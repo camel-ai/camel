@@ -11,3 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from datasets import load_dataset
+import pandas as pd
+
+# Load dataset
+dataset = load_dataset("AI-MO/aimo-validation-aime")
+
+# Convert the training set to a pandas DataFrame
+df = pd.DataFrame(dataset['train'])
+
+# Extract the 'problem' and 'answer' columns
+problems_answers = df[['problem', 'answer']]
+
+# Print results
+print("\n=== Dataset Statistics ===")
+print(f"Total samples: {len(problems_answers)}")
+print("\n=== First 5 samples ===")
+pd.set_option('display.max_colwidth', 100)  # Set display width
+print(problems_answers.head())
+
+# Save to CSV file (optional)
+problems_answers.to_csv('problems_answers.csv', index=False, encoding='utf-8')
+print("\nData has been saved to problems_answers.csv")
