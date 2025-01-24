@@ -24,10 +24,12 @@ class WebToolkit(BaseToolkit):
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+        headless_mode=True
     ):
         self.model_platform = model_platform
         self.model_type = model_type
         self.model_config_dict = model_config_dict
+        self.headless_mode = headless_mode
 
     def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
         r"""
@@ -277,7 +279,7 @@ const {{ Stagehand }} = require('@browserbasehq/stagehand');
 const z = require('zod');
 
 (async () => {{
-    const stagehand = new Stagehand({{ headless: false }});
+    const stagehand = new Stagehand({{ headless: {"true" if self.headless_mode else "false"} }});
     await stagehand.init();
     const page = stagehand.page;
     console.log("Starting Stagehand automation...");
