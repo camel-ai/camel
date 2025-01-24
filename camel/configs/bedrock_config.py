@@ -24,14 +24,12 @@ class BedrockConfig(BaseConfig):
         maxTokens (int, optional): The maximum number of tokens.
         temperatue (float, optional): Controls the randomness of the output.
         top_p (float, optional): Use nucleus sampling.
-        top_k (int, optional): Use top-k sampling.
         tool_choice (Union[dict[str, str], str], optional): The tool choice.
     """
 
     max_tokens: Optional[int] = 400
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 0.7
-    top_k: Optional[int] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
 
 

@@ -18,8 +18,9 @@ from camel.types import ModelPlatformType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AWS_BEDROCK,
     model_type="meta.llama3-70b-instruct-v1:0",
+    url="http://Bedroc-Proxy-tiH6vmIQUSu7-2398599.eu-west-2.elb.amazonaws.com/api/v1",
+    api_key="123",
 )
-# sys_msg = "You are a helpful assistant."
 
 camel_agent = ChatAgent(model=model)
 

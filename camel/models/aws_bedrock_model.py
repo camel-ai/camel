@@ -15,6 +15,8 @@ import os
 import time
 from typing import Any, Dict, List, Optional, Union
 
+from openai import OpenAI
+
 from camel.configs import BEDROCK_API_PARAMS, BedrockConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
@@ -53,46 +55,33 @@ class AWSBedrockModel(BaseModelBackend):
     References:
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
-
-    @dependencies_required('boto3')
+    @api_keys_required(
+        [
+            ("url", "BEDROCK_API_BASE_URL"),
+        ]
+    )
     def __init__(
         self,
         model_type: Union[ModelType, str],
         model_config_dict: Optional[Dict[str, Any]] = None,
-        secret_access_key: Optional[str] = None,
-        access_key_id: Optional[str] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
-        region_name: Optional[str] = "eu-west-2",
     ) -> None:
-        import boto3
-
         if model_config_dict is None:
-            self.model_config_dict = BedrockConfig().as_dict()
+            model_config_dict = BedrockConfig().as_dict()
+        api_key = api_key or os.environ.get("BEDROCK_API_KEY")
+        url = url or os.environ.get(
+            "BEDROCK_API_BASE_URL",
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        secret_access_key = secret_access_key or os.environ.get(
-            "AWS_SECRET_ACCESS_KEY"
-        )
-        access_key_id = access_key_id or os.environ.get("AWS_ACCESS_KEY_ID")
-        self.model_config_dict.setdefault('max_tokens', 400)
-        self.toolconfig = {}
-        self.model_config = {}
-        self.model_config['maxTokens'] = self.model_config_dict.get(
-            'max_tokens', 400
-        )
-        self.model_config['topP'] = self.model_config_dict.get('top_p', 0.7)
-
-        tool_choice = self.model_config_dict.get('tool_choice', None)
-        if tool_choice is not None:
-            self.toolconfig['toolChoice'] = tool_choice
-        self.client = boto3.client(
-            service_name='bedrock-runtime',
-            region_name=region_name,
-            aws_access_key_id=access_key_id,
-            aws_secret_access_key=secret_access_key,
+        self._client = OpenAI(
+            timeout=180,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
         )
 
     @property
@@ -102,7 +91,6 @@ class AWSBedrockModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    @api_keys_required("AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID")
     def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
         r"""Runs the query to the backend model.
 
@@ -113,128 +101,23 @@ class AWSBedrockModel(BaseModelBackend):
         Returns:
             ChatCompletion: The response object in OpenAI's format.
         """
-        try:
-            system_messages = [
-                msg for msg in messages if msg["role"] == "system"
-            ]
-            messages = [msg for msg in messages if msg["role"] != "system"]
-            system_prompt = (
-                [{"text": system_messages[0]["content"]}]
-                if system_messages
-                else None
-            )
-            tools = self.model_config_dict.get('tools', None)
-            if tools is not None:
-                self.toolconfig['tools'] = self.transform_tool(tools)
-            request_params = {
-                'modelId': self.model_type,
-                'messages': self._to_aws_bedrock_msg(messages),
-                'inferenceConfig': self.model_config,
-            }
-            if system_prompt:
-                request_params['system'] = system_prompt
-            if self.toolconfig:
-                request_params['toolConfig'] = self.toolconfig
-            if 'top_k' in self.model_config_dict:
-                request_params['additionalModelRequestFields'] = {
-                    'top_k': self.model_config_dict['top_k'],
-                }
-            response = self.client.converse(**request_params)
-            return self._to_openai_response(response)
-        except Exception as e:
-            raise ValueError(f"Error in AWS Bedrock API: {e}")
-
-    def _to_aws_bedrock_msg(
-        self, message: List[OpenAIMessage]
-    ) -> List[Dict[str, Any]]:
-        r"""Converts a message from OpenAI format to the AWS Bedrock format.
-
-        Args:
-            message (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            List[Dict[str, Any]]: Message list with the chat history in AWS
-                Bedrock API format.
-        """
-        bedrock_messages = []
-        for msg in message:
-            if msg["role"] not in ['assistant', 'user']:
-                raise ValueError(f"Invalid role '{msg['role']}' in message.")
-            role = 'assistant' if msg["role"] == 'assistant' else 'user'
-            bedrock_messages.append(
-                {
-                    "role": role,
-                    "content": [{"text": msg["content"]}],
-                }
-            )
-        return bedrock_messages
-
-    def _to_openai_response(self, response: Dict) -> ChatCompletion:
-        r"""Converts a response from the AWS Bedrock format to the OpenAI
-            format.
-
-        Args:
-            response (Dict[str, Any]): The response object from AWS Bedrock.
-
-        Returns:
-            ChatCompletion: The response object in OpenAI's format.
-        """
-        return ChatCompletion.construct(
-            id=response["ResponseMetadata"]["RequestId"],
-            object='chat.completion',
-            created=int(time.time()),
+        response = self._client.chat.completions.create(
+            messages=messages,
             model=self.model_type,
-            choices=[
-                {
-                    "index": 0,
-                    "message": {
-                        "role": response['output']['message']['role'],
-                        "content": response['output']['message']['content'][0][
-                            'text'
-                        ],
-                    },
-                    "finish_reason": response['stopReason'],
-                }
-            ],
-            usage={
-                'prompt_tokens': response['usage']['inputTokens'],
-                'completion_tokens': response['usage']['outputTokens'],
-                'total_tokens': response['usage']['totalTokens'],
-            },
+            **self.model_config_dict,
         )
-
-    def transform_tool(self, tools: List) -> List:
-        r"""Transforms a tool name to the AWS Bedrock format.
-
-        Args:
-            tools (List): List of tools.
+        return response
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
 
         Returns:
-            List: List of tools in the AWS Bedrock format.
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
         """
-        transform_tools = []
-        for tool in tools:
-            tool_func = tool["function"]
-            tool_func_params = tool_func["parameters"]
-
-            transform_tools.append(
-                {
-                    "toolSpec": {
-                        "name": tool_func["name"],
-                        "description": tool_func["description"],
-                        "inputSchema": {
-                            "json": {
-                                "type": tool_func_params["type"],
-                                "properties": tool_func_params["properties"],
-                                "required": tool_func_params["required"],
-                            }
-                        },
-                    }
-                }
-            )
-        return transform_tools
-
+        if not self._token_counter:
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
+        return self._token_counter
     def check_model_config(self):
         r"""Check whether the input model configuration contains unexpected
         arguments.
