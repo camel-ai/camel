@@ -21,8 +21,8 @@ class WebToolkit(BaseToolkit):
 
     def __init__(
         self,
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
         headless_mode=True
     ):
