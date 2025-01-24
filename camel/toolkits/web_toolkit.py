@@ -256,14 +256,8 @@ class WebToolkit(BaseToolkit):
     Please produce the Stagehand JavaScript snippet now, following all of the above guidelines, always ending with the final extraction snippet for `updated_state`.
     """
 
-        response = self.agent.step(
-            BaseMessage(
-                role_name="User",
-                role_type=RoleType.USER,
-                meta_dict=None,
-                content=stagehand_prompt,
-            )
-        )
+        response = self.agent.step(input_message=stagehand_prompt)
+        
         if response and response.msgs:
             return response.msgs[-1].content.strip()
         else:
