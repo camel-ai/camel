@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List 
 import requests  
 import json
+from typing import List 
 
 from camel.toolkits import FunctionTool  
 from camel.toolkits.base import BaseToolkit
