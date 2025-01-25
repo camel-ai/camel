@@ -44,7 +44,8 @@ class SemanticScholarToolkit(BaseToolkit):
             return response.json()
         else:
             return {
-                "error": f"Request failed with status code {response.status_code}",
+                "error":
+                f"Request failed with status code {response.status_code}",
                 "message": response.text}
 
     def fetch_paper_data_id(
@@ -74,7 +75,8 @@ class SemanticScholarToolkit(BaseToolkit):
             return response.json()
         else:
             return {
-                "error": f"Request failed with status code {response.status_code}",
+                "error": 
+                f"Request failed with status code {response.status_code}",
                 "message": response.text}
 
     def fetch_bulk_paper_data(
@@ -118,7 +120,8 @@ class SemanticScholarToolkit(BaseToolkit):
             return response.json()
         else:
             return {
-                "error": f"Request failed with status code {response.status_code}", 
+                "error": 
+                f"Request failed with status code {response.status_code}", 
                 "message": response.text}
 
     def fetch_recommended_papers(
@@ -179,7 +182,8 @@ class SemanticScholarToolkit(BaseToolkit):
                     
             else:
                 return {
-                    "error": f"Request failed with status code {response.status_code}"}
+                    "error": 
+                    f"Request failed with status code {response.status_code}"}
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
 
