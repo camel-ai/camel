@@ -43,9 +43,9 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code 
-            {response.status_code}", 
-            "message": response.text}
+            return {
+                "error": f"Request failed with status code {response.status_code}",
+                "message": response.text}
 
     def fetch_paper_data_id(
         self, 
@@ -73,9 +73,9 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code
-            {response.status_code}",
-            "message": response.text}
+            return {
+                "error": f"Request failed with status code {response.status_code}",
+                "message": response.text}
 
     def fetch_bulk_paper_data(
         self, query: str, 
@@ -85,20 +85,12 @@ class SemanticScholarToolkit(BaseToolkit):
 
         r"""Fetches MULTIPLE papers at once from the Semantic Scholar
          API based on a related topic.
-
         Args:
             query (str): 
                 The text query to match against the paper's title
-                and abstract. All terms are stemmed.Semantic 
-                Scholar's paper bulk search supports various 
-                operators for advanced filtering and precise
-                specification in the search query.All terms in
-                the query are matched against the paper's title
-                 and abstract. 
-
+                and abstract. 
                 For example, you can use the following operators
                 and techniques to construct your query:
-
                 Example 1:
                     ((cloud computing) | virtualization)
                     +security -privacy This will match papers 
@@ -106,15 +98,11 @@ class SemanticScholarToolkit(BaseToolkit):
                     and "computing", or contains the word 
                     "virtualization". The papers must also 
                     include the term "security" but exclude
-                    papers that contain the word "privacy".
-
-                See the Semantic Scholar API documentation for a full list
-                of supported operators.
-
+                    papers that contain the word "privacy".    
             year (str): The year filter for papers (default is "2023-").
             fields (str): The fields to include in the response 
-            (e.g., 'title,url,publicationTypes,publicationDate,openAccessPdf').
-
+            (e.g., 'title,url,publicationTypes,publicationDate,
+            openAccessPdf').
         Returns:
             dict: The response data from the API or 
             error information if the request fails.
@@ -129,9 +117,9 @@ class SemanticScholarToolkit(BaseToolkit):
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Request failed with status code
-            {response.status_code}", 
-            "message": response.text}
+            return {
+                "error": f"Request failed with status code {response.status_code}", 
+                "message": response.text}
 
     def fetch_recommended_papers(
         self, 
@@ -139,7 +127,8 @@ class SemanticScholarToolkit(BaseToolkit):
         negative_paper_ids: List[str], 
         fields: str = """title,url,citationCount,authors,
         publicationTypes,publicationDate,openAccessPdf""", 
-        limit: int = 500) -> dict:
+        limit: int = 500, 
+        save_to_file: bool = False) -> dict:
         r"""Fetches recommended papers from the Semantic Scholar 
         API based on the positive and negative paper IDs.
 
@@ -157,9 +146,12 @@ class SemanticScholarToolkit(BaseToolkit):
             limit (int): The maximum number of recommended papers to return. 
             Default is 500.
 
+            save_to_file (bool): If True, saves the response data to a file 
+            (default is False).
+
         Returns:
-            dict: A dictionary containing recommended
-            papers sorted by citation count.
+            dict: A dictionary containing recommended papers sorted by
+            citation count.
         """
         url = "https://api.semanticscholar.org/recommendations/v1/papers"
         query_params = {
@@ -170,36 +162,49 @@ class SemanticScholarToolkit(BaseToolkit):
             "positivePaperIds": positive_paper_ids,
             "negativePaperIds": negative_paper_ids
         }
-        response = requests.post(url, params=query_params, json=data)
-        if response.status_code == 200:
-            papers = response.json().get("recommendedPapers", [])
-            papers.sort(key=lambda paper: paper["citationCount"], reverse=True)
-            with open('recommended_papers_sorted.json', 'w') as output:
-                json.dump(papers, output)
-            return papers
-        else:
-            return {"error": f"Request failed with status code
-            {response.status_code}", 
-            "message": response.text}
+        
+        try:
+            response = requests.post(url, params=query_params, json=data)
+            response.raise_for_status()
+            
+            if response.status_code == 200:
+                
+                papers = response.json()
+                
+                # Optionally save the data to a file
+                if save_to_file:
+                    with open('recommended_papers.json', 'w') as output:
+                        json.dump(papers, output)
+                return papers
+                    
+            else:
+                return {
+                    "error": f"Request failed with status code {response.status_code}"}
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}
 
     def fetch_author_data(
         self, 
         ids: List[str], 
-        fields: str = "name,url,paperCount,hIndex,papers") -> dict:
+        fields: str = "name,url,paperCount,hIndex,papers", 
+        save_to_file: bool = False) -> dict:
         r"""Fetches author information from the Semantic Scholar
-         API based on author IDs.
+        API based on author IDs.
 
         Args:
-            ids (list): A list of author IDs (as strings)
-            to fetch data for.
-            
-            fields (str): A comma-separated list of fields
-            to include in the response (default includes name,
-            URL, paper count, hIndex, and papers).
-
+            ids (list): A list of author IDs (as strings) to fetch
+            data for.
+    
+            fields (str): A comma-separated list of fields to include
+            in the response (default includes name, URL, paper count,
+            hIndex, and papers).
+    
+            save_to_file (bool): If True, saves the response data to
+            a file (default is False).
+    
         Returns:
-            dict: The response data from the API or 
-            error information if the request fails.
+            dict: The response data from the API or error information if
+            the request fails.
         """
         url = f"{self.base_url}/author/batch"
         query_params = {"fields": fields}
@@ -208,11 +213,16 @@ class SemanticScholarToolkit(BaseToolkit):
             response = requests.post(url, params=query_params, json=data)
             response.raise_for_status()
             response_data = response.json()
-            with open('author_information.json', 'w') as output:
-                json.dump(response_data, output)
+            
+            # Optionally save the data to a file
+            if save_to_file:
+                with open('author_information.json', 'w') as output:
+                    json.dump(response_data, output)
+            
             return response_data
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
+
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
