@@ -129,13 +129,13 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("factor_expression", e)
 
-    def solve_linear_system(self, equations: list, variables: list) -> str:
+    def solve_linear_system(self, equations: List[str], variables: List[str]) -> str:
         r"""Solves a system of linear equations.
 
         Args:
-            equations (list): A list of strings representing the linear
+            equations (List[str]): A list of strings representing the linear
                 equations to be solved.
-            variables (list): A list of strings representing the variables
+            variables (List[str]): A list of strings representing the variables
                 involved in the equations.
 
         Returns:
@@ -162,13 +162,14 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("solve_linear_system", e)
 
-    def solve_nonlinear_system(self, equations: list, variables: list) -> str:
+    def solve_nonlinear_system(self, sympy_equations: List[str], variables: List[str]) -> str:
         r"""Solves a system of nonlinear equations.
 
         Args:
-            equations (list): A list of strings representing the nonlinear
-                equations to be solved.
-            variables (list): A list of strings representing the variables
+            sympy_equations (List[str]): A list of strings representing the nonlinear
+                equations to be solved. The equation to solve, must be compatible with SymPy, provided as a string.
+
+            variables (List[str]): A list of strings representing the variables
                 involved in the equations.
 
         Returns:
@@ -186,10 +187,10 @@ class SymPyToolkit(BaseToolkit):
         """
         try:
             self.logger.info(
-                f"""Solving nonlinear system: {equations}
+                f"""Solving nonlinear system: {sympy_equations}
                 with variables: {variables}"""
             )
-            eqs = [sp.sympify(eq) for eq in equations]
+            eqs = [sp.sympify(eq) for eq in sympy_equations]
             vars = sp.symbols(variables)
             solution = sp.nonlinsolve(eqs, vars)
             return json.dumps({"result": [str(sol) for sol in solution]})
@@ -230,11 +231,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("solve_univariate_inequality", e)
 
-    def reduce_inequalities(self, inequalities: list) -> str:
+    def reduce_inequalities(self, inequalities: List[str]) -> str:
         r"""Reduces a system of inequalities.
 
         Args:
-            inequalities (list): A list of strings representing the
+            inequalities (List[str]): A list of strings representing the
                 inequalities to be reduced.
 
         Returns:
@@ -355,12 +356,12 @@ class SymPyToolkit(BaseToolkit):
             return self.handle_exception("polynomial_coefficients", e)
 
     def solve_equation(
-        self, equation: str, variable: Optional[str] = None
+        self, sympy_equation: str, variable: Optional[str] = None
     ) -> str:
         r"""Solves an equation for a specific variable.
 
         Args:
-            equation (str): The equation to solve, provided as a string.
+            sympy_equation(str): The equation to solve, must be compatible with SymPy, provided as a string.
             variable (str, optional): The variable to solve for. If not
                 specified, the function will use the default variable.
 
@@ -378,8 +379,8 @@ class SymPyToolkit(BaseToolkit):
             variable = (
                 sp.symbols(variable) if variable else self.default_variable
             )
-            self.logger.info(f"Solving equation: {equation} for {variable}")
-            eq = sp.sympify(equation)
+            self.logger.info(f"Solving equation: {sympy_equation} for {variable}")
+            eq = sp.sympify(sympy_equation)
             solutions = sp.solve(eq, variable)
             return json.dumps({"result": [str(sol) for sol in solutions]})
         except Exception as e:
@@ -691,11 +692,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("check_continuity", e)
 
-    def compute_determinant(self, matrix: list) -> str:
+    def compute_determinant(self, matrix: List[List[float]]) -> str:
         r"""Computes the determinant of a matrix.
 
         Args:
-            matrix (list): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list representing the matrix for
                 which the determinant is to be computed.
 
         Returns:
@@ -717,11 +718,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_determinant", e)
 
-    def compute_inverse(self, matrix: list) -> str:
+    def compute_inverse(self, matrix: List[List[float]]) -> str:
         r"""Computes the inverse of a matrix.
 
         Args:
-            matrix (list): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list representing the matrix for
                 which the inverse is to be computed.
 
         Returns:
@@ -743,11 +744,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_inverse", e)
 
-    def compute_eigenvalues(self, matrix: list) -> str:
+    def compute_eigenvalues(self, matrix: List[List[float]]) -> str:
         r"""Computes the eigenvalues of a matrix.
 
         Args:
-            matrix (list): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list representing the matrix for
                 which the eigenvalues are to be computed.
 
         Returns:
@@ -773,11 +774,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_eigenvalues", e)
 
-    def compute_eigenvectors(self, matrix: list) -> str:
+    def compute_eigenvectors(self, matrix: List[List[float]]) -> str:
         r"""Computes the eigenvectors of a matrix.
 
         Args:
-            matrix (list): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list representing the matrix for
                 which the eigenvectors are to be computed.
 
         Returns:
@@ -814,11 +815,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_eigenvectors", e)
 
-    def compute_nullspace(self, matrix: list) -> str:
+    def compute_nullspace(self, matrix: List[List[float]]) -> str:
         r"""Computes the null space of a matrix.
 
         Args:
-            matrix (list): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list representing the matrix for
                 which the null space is to be computed.
 
         Returns:
@@ -842,11 +843,11 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_nullspace", e)
 
-    def compute_rank(self, matrix: list) -> str:
+    def compute_rank(self, matrix: List[List[float]]) -> str:
         r"""Computes the rank of a matrix.
 
         Args:
-            matrix (list): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list representing the matrix for
                 which the rank is to be computed.
 
         Returns:
