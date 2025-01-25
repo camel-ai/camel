@@ -26,7 +26,7 @@ from camel.toolkits.function_tool import FunctionTool
 logger = logging.getLogger(__name__)
 
 
-class AudioToolkit(BaseToolkit):
+class AudioAnalysisToolkit(BaseToolkit):
     r"""A class representing a toolkit for audio operations.
 
     This class provides methods for processing and understanding audio data.
@@ -61,9 +61,9 @@ class AudioToolkit(BaseToolkit):
         encoded_string = None
 
         if is_url:
-            response = requests.get(audio_path)
-            response.raise_for_status()
-            audio_data = response.content
+            res = requests.get(audio_path)
+            res.raise_for_status()
+            audio_data = res.content
             encoded_string = base64.b64encode(audio_data).decode('utf-8')
         else:
             with open(audio_path, "rb") as audio_file:
@@ -101,7 +101,7 @@ class AudioToolkit(BaseToolkit):
             ],
         )  # type: ignore[misc]
 
-        response = completion.choices[0].message.content  # type: ignore[assignment]
+        response: str = str(completion.choices[0].message.content)
         logger.debug(f"Response: {response}")
         return str(response)
 

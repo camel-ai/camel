@@ -16,9 +16,6 @@ import logging
 from typing import List
 from urllib.parse import urlparse
 
-import openai
-from retry import retry
-
 from camel.models import OpenAIModel
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -27,7 +24,7 @@ from camel.types import ModelType
 logger = logging.getLogger(__name__)
 
 
-class ImageToolkit(BaseToolkit):
+class ImageAnalysisToolkit(BaseToolkit):
     r"""A class representing a toolkit for image comprehension operations.
 
     This class provides methods for understanding images, such as identifying
@@ -38,8 +35,7 @@ class ImageToolkit(BaseToolkit):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
 
-    @retry((openai.APITimeoutError, openai.APIConnectionError))
-    def ask_image_by_path(self, question: str, image_path: str) -> str:
+    def ask_question_about_image(self, question: str, image_path: str) -> str:
         r"""Ask a question about the image based on the image path.
 
         Args:
@@ -97,5 +93,5 @@ class ImageToolkit(BaseToolkit):
                 functions in the toolkit.
         """
         return [
-            FunctionTool(self.ask_image_by_path),
+            FunctionTool(self.ask_question_about_image),
         ]

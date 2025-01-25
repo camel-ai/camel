@@ -43,6 +43,8 @@ from .retrieval_toolkit import RetrievalToolkit
 from .notion_toolkit import NotionToolkit
 from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
+from .audio_analysis_toolkit import AudioAnalysisToolkit
+from .image_analysis_toolkit import ImageAnalysisToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
 from .video_downloader_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
@@ -74,6 +76,8 @@ __all__ = [
     'ArxivToolkit',
     'HumanToolkit',
     'VideoDownloaderToolkit',
+    'AudioAnalysisToolkit',
+    'ImageAnalysisToolkit',
     'VideoAnalysisToolkit',
     'StripeToolkit',
     'MeshyToolkit',

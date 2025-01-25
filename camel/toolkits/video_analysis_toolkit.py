@@ -18,8 +18,17 @@ from pathlib import Path
 from typing import List, Optional
 
 import ffmpeg
+from PIL import Image
+from scenedetect import (  # type: ignore[import-untyped]
+    SceneManager,
+    VideoManager,
+)
+from scenedetect.detectors import (  # type: ignore[import-untyped]
+    ContentDetector,
+)
 
 from camel.agents import ChatAgent
+from camel.configs import QwenConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
@@ -27,36 +36,59 @@ from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import dependencies_required
 
-from .video_downloader_toolkit import VideoDownloaderToolkit
+from .video_downloader_toolkit import (
+    VideoDownloaderToolkit,
+    _capture_screenshot,
+)
 
 logger = logging.getLogger(__name__)
 
 VIDEO_QA_PROMPT = """
-Using the provided frames from a video and audio transcription from the same \
-video, answer the following question(s) concisely. 
+Analyze the provided video frames and corresponding audio transcription to \
+answer the given question(s) thoroughly and accurately.
 
-**Audio Transcription**: {audio_transcription}  
+Instructions:
+    1. Visual Analysis:
+        - Examine the video frames to identify visible entities.
+        - Differentiate objects, species, or features based on key attributes \
+such as size, color, shape, texture, or behavior.
+        - Note significant groupings, interactions, or contextual patterns \
+relevant to the analysis.
 
-Provide a clear and concise response by combining relevant details from both \
-the visual and audio content. If additional context is required, specify what \
-is missing.
+    2. Audio Integration:
+        - Use the audio transcription to complement or clarify your visual \
+observations.
+        - Identify names, descriptions, or contextual hints in the \
+transcription that help confirm or refine your visual analysis.
 
-Question:
+    3. Detailed Reasoning and Justification:
+        - Provide a brief explanation of how you identified and distinguished \
+each species or object.
+        - Highlight specific features or contextual clues that informed \
+your reasoning.
+
+    4. Comprehensive Answer:
+        - Specify the total number of distinct species or object types \
+identified in the video.
+        - Describe the defining characteristics and any supporting evidence \
+from the video and transcription.
+
+    5. Important Considerations:
+        - Pay close attention to subtle differences that could distinguish \
+similar-looking species or objects 
+          (e.g., juveniles vs. adults, closely related species).
+        - Provide concise yet complete explanations to ensure clarity.
+
+**Audio Transcription:**
+{audio_transcription}
+
+**Question:**
 {question}
 """
 
-AUDIO_TRANSCRIPTION_PROMPT = """Transcribe the following audio into clear and \
-accurate text. \
-Ensure proper grammar, punctuation, and formatting to maintain readability. \
-Indicate speaker changes if possible and denote inaudible sections with \
-'[inaudible]' or '[unintelligible]'. If the audio contains background noises \
-or music, include brief notes in brackets only if relevant. Do not summarize \
-or omit any spoken content."""
-
 
 class VideoAnalysisToolkit(BaseToolkit):
-    r"""A class for downloading videos and optionally splitting them into
-    chunks.
+    r"""A class for analysing videos with vision-language model.
 
     Args:
         download_directory (Optional[str], optional): The directory where the
@@ -93,11 +125,12 @@ class VideoAnalysisToolkit(BaseToolkit):
 
         logger.info(f"Video will be downloaded to {self._download_directory}")
 
-        # Set model and ChatAgent for video understanding
         self.vl_model = ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
+            model_platform=ModelPlatformType.QWEN,
+            model_type=ModelType.QWEN_VL_MAX,
+            model_config_dict=QwenConfig(temperature=0.2).as_dict(),
         )
+
         self.vl_agent = ChatAgent(
             model=self.vl_model, output_language="English"
         )
@@ -106,6 +139,16 @@ class VideoAnalysisToolkit(BaseToolkit):
     def _extract_audio_from_video(
         self, video_path: str, output_format: str = "mp3"
     ) -> str:
+        r"""Extract audio from the video.
+
+        Args:
+            video_path (str): The path to the video file.
+            output_format (str): The format of the audio file to be saved.
+                (default: :obj:`"mp3"`)
+
+        Returns:
+            str: The path to the audio file."""
+
         output_path = video_path.rsplit('.', 1)[0] + f".{output_format}"
         try:
             (
@@ -122,13 +165,59 @@ class VideoAnalysisToolkit(BaseToolkit):
         audio_transcript = self.audio_models.speech_to_text(audio_path)
         return audio_transcript
 
-    def ask_question_about_video(self, video_path: str, question: str) -> str:
+    def _extract_keyframes(
+        self, video_path: str, num_frames: int, threshold: float = 25.0
+    ) -> List[Image.Image]:
+        r"""Extract keyframes from a video based on scene changes
+        and return them as PIL.Image.Image objects.
+
+        Args:
+            video_path (str): Path to the video file.
+            num_frames (int): Number of keyframes to extract.
+            threshold (float): The threshold value for scene change detection.
+
+        Returns:
+            list: A list of PIL.Image.Image objects representing
+                the extracted keyframes.
+        """
+        video_manager = VideoManager([video_path])
+        scene_manager = SceneManager()
+        scene_manager.add_detector(ContentDetector(threshold=threshold))
+
+        video_manager.set_duration()
+        video_manager.start()
+        scene_manager.detect_scenes(video_manager)
+
+        scenes = scene_manager.get_scene_list()
+        keyframes: List[Image.Image] = []
+
+        for start_time, _ in scenes:
+            if len(keyframes) >= num_frames:
+                break
+            frame = _capture_screenshot(video_path, start_time)
+            keyframes.append(frame)
+
+        print(len(keyframes))
+        return keyframes
+
+    def ask_question_about_video(
+        self,
+        video_path: str,
+        question: str,
+        num_frames: int = 28,
+        # 28 is the maximum number of frames
+        # that can be displayed in a single message for
+        # the Qwen-VL-Max model
+    ) -> str:
         r"""Ask a question about the video.
 
         Args:
             video_path (str): The path to the video file.
                 It can be a local file or a URL.
             question (str): The question to ask about the video.
+            num_frames (int): The number of frames to extract from the video.
+                To be adjusted based on the length of the video.
+                (default: :obj:`28`)
 
         Returns:
             str: The answer to the question.
@@ -145,10 +234,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             )
         audio_path = self._extract_audio_from_video(video_path)
 
-        total_frames = 100
-        video_frames = self.video_downloader_toolkit.get_video_screenshots(
-            video_path, total_frames
-        )
+        video_frames = self._extract_keyframes(video_path, num_frames)
 
         audio_transcript = self._transcribe_audio(audio_path)
 
@@ -156,6 +242,8 @@ class VideoAnalysisToolkit(BaseToolkit):
             audio_transcription=audio_transcript,
             question=question,
         )
+
+        print(prompt)
 
         msg = BaseMessage.make_user_message(
             role_name="User",

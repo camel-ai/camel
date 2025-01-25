@@ -48,7 +48,7 @@ def mock_downloader():
 
 def test_video_bytes_download(mock_downloader):
     video_bytes = mock_downloader.get_video_bytes(
-        video_url="https://test_video.mp4",
+        video_path="https://test_video.mp4",
     )
     assert len(video_bytes) > 0
     assert video_bytes == b"test"
