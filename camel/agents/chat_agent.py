@@ -758,8 +758,11 @@ class ChatAgent(BaseAgent):
         tool_call_request: Optional[ToolCallRequest] = None
         if tool_calls := response.choices[0].message.tool_calls:
             func_name = tool_calls[0].function.name
+            tool_call_id = tool_calls[0].id
             args = json.loads(tool_calls[0].function.arguments)
-            tool_call_request = ToolCallRequest(func_name=func_name, args=args)
+            tool_call_request = ToolCallRequest(
+                func_name=func_name, args=args, tool_call_id=tool_call_id
+            )
 
         return ModelResponse(
             response=response,
@@ -926,38 +929,33 @@ class ChatAgent(BaseAgent):
         """
         func_name = tool_call_request.func_name
         args = tool_call_request.args
-
+        tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
         result = tool(**args)
 
-        return self._record_tool_calling(func_name, args, result)
+        return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     async def _aexecute_tool(
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
-        r"""Execute the async tool with arguments following the model's
-        response.
-
-        Args:
-            tool_call_request (_ToolCallRequest): The tool call request.
-
-        Returns:
-            FunctionCallingRecord: A struct for logging information about this
-                function call.
-        """
         func_name = tool_call_request.func_name
         args = tool_call_request.args
+        tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
         if tool.is_async:
             result = await tool(**args)
         else:
             result = tool(**args)
 
-        return self._record_tool_calling(func_name, args, result)
+        return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
-        self, func_name: str, args: Dict[str, Any], result: Any
+        self,
+        func_name: str,
+        args: Dict[str, Any],
+        result: Any,
+        tool_call_id: str,
     ):
         r"""Record the tool calling information in the memory, and return the
         tool calling record.
@@ -969,6 +967,7 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             args=args,
+            tool_call_id=tool_call_id,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -977,14 +976,18 @@ class ChatAgent(BaseAgent):
             content="",
             func_name=func_name,
             result=result,
+            tool_call_id=tool_call_id,
         )
 
         self.update_memory(assist_msg, OpenAIBackendRole.ASSISTANT)
         self.update_memory(func_msg, OpenAIBackendRole.FUNCTION)
 
-        # Record information about this function call
+        # Record information about this tool call
         tool_record = ToolCallingRecord(
-            func_name=func_name, args=args, result=result
+            func_name=func_name,
+            args=args,
+            result=result,
+            tool_call_id=tool_call_id,
         )
 
         return tool_record

@@ -17,35 +17,36 @@ from pydantic import BaseModel
 
 
 class ToolCallingRecord(BaseModel):
-    r"""Historical records of functions called in the conversation.
+    r"""Historical records of tools called in the conversation.
 
     Attributes:
-        func_name (str): The name of the function being called.
-        args (Dict[str, Any]): The dictionary of arguments passed to
-            the function.
-        result (Any): The execution result of calling this function.
+        func_name (str): The name of the tool being called.
+        args (Dict[str, Any]): The dictionary of arguments passed to the tool.
+        result (Any): The execution result of calling this tool.
+        tool_call_id (str): The ID of the tool call, if available.
     """
 
     func_name: str
     args: Dict[str, Any]
     result: Any
+    tool_call_id: str
 
     def __str__(self) -> str:
         r"""Overridden version of the string function.
 
         Returns:
-            str: Modified string to represent the function calling.
+            str: Modified string to represent the tool calling.
         """
         return (
-            f"Function Execution: {self.func_name}\n"
+            f"Tool Execution: {self.func_name}\n"
             f"\tArgs: {self.args}\n"
-            f"\tResult: {self.result}"
+            f"\tResult: {self.result}\n"
         )
 
-    def as_dict(self) -> Dict[str, Any]:
-        r"""Returns the function calling record as a dictionary.
+    def as_dict(self) -> dict[str, Any]:
+        r"""Returns the tool calling record as a dictionary.
 
         Returns:
-            dict[str, Any]: The function calling record as a dictionary.
+            dict[str, Any]: The tool calling record as a dictionary.
         """
         return self.model_dump()

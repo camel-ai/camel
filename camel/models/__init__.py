@@ -19,6 +19,7 @@ from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
+from .internlm_model import InternLMModel
 from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
@@ -68,4 +69,5 @@ __all__ = [
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
+    'InternLMModel',
 ]

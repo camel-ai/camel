@@ -193,7 +193,7 @@ def get_info_dict(
         termination_reasons (List[str]): The reasons for the termination
             of the chat session.
         num_tokens (int): The number of tokens used in the chat session.
-        tool_calls (List[FunctionCallingRecord]): The list of function
+        tool_calls (List[ToolCallingRecord]): The list of function
             calling records, containing the information of called tools.
 
     Returns:

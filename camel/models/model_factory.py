@@ -20,6 +20,7 @@ from camel.models.cohere_model import CohereModel
 from camel.models.deepseek_model import DeepSeekModel
 from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
+from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
 from camel.models.nvidia_model import NvidiaModel
@@ -124,6 +125,8 @@ class ModelFactory:
             model_class = QwenModel
         elif model_platform.is_deepseek:
             model_class = DeepSeekModel
+        elif model_platform.is_internlm and model_type.is_internlm:
+            model_class = InternLMModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 

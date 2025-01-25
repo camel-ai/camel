@@ -22,11 +22,13 @@ if TYPE_CHECKING:
         Messages,
     )
 
+from openai import AsyncStream
+
 from camel.configs import MISTRAL_API_PARAMS, MistralConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.models._utils import try_modify_message_with_format
-from camel.types import ChatCompletion, ModelType
+from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -150,18 +152,25 @@ class MistralModel(BaseModelBackend):
         new_messages = []
         for msg in messages:
             tool_id = uuid.uuid4().hex[:9]
-            tool_call_id = uuid.uuid4().hex[:9]
+            tool_call_id = msg.get("tool_call_id") or uuid.uuid4().hex[:9]
 
             role = msg.get("role")
-            function_call = msg.get("function_call")
+            tool_calls = msg.get("tool_calls")
             content = msg.get("content")
 
             mistral_function_call = None
-            if function_call:
-                mistral_function_call = FunctionCall(
-                    name=function_call.get("name"),  # type: ignore[attr-defined]
-                    arguments=function_call.get("arguments"),  # type: ignore[attr-defined]
+            if tool_calls:
+                # Ensure tool_calls is treated as a list
+                tool_calls_list = (
+                    tool_calls
+                    if isinstance(tool_calls, list)
+                    else [tool_calls]
                 )
+                for tool_call in tool_calls_list:
+                    mistral_function_call = FunctionCall(
+                        name=tool_call["function"].get("name"),  # type: ignore[attr-defined]
+                        arguments=tool_call["function"].get("arguments"),  # type: ignore[attr-defined]
+                    )
 
             tool_calls = None
             if mistral_function_call:
@@ -181,7 +190,7 @@ class MistralModel(BaseModelBackend):
                 new_messages.append(
                     ToolMessage(
                         content=content,  # type: ignore[arg-type]
-                        tool_call_id=tool_call_id,
+                        tool_call_id=tool_call_id,  # type: ignore[arg-type]
                         name=msg.get("name"),  # type: ignore[arg-type]
                     )
                 )
@@ -208,7 +217,12 @@ class MistralModel(BaseModelBackend):
             )
         return self._token_counter
 
-    async def _arun(self) -> None:  # type: ignore[override]
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         raise NotImplementedError("Mistral does not support async inference.")
 
     def _run(

@@ -25,6 +25,7 @@ class ToolCallRequest(BaseModel):
 
     func_name: str
     args: Dict[str, Any]
+    tool_call_id: str
 
 
 class ModelResponse(BaseModel):

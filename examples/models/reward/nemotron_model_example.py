@@ -47,8 +47,8 @@ Types:  ['helpfulness', 'correctness', 'coherence', 'complexity', 'verbosity']
 ===============================================================================
 '''
 
-threshoids = {"helpfulness": 1.5, "correctness": 1.5}
-is_acceptable = evaluator.filter_data(messages, threshoids)
+thresholds = {"helpfulness": 1.5, "correctness": 1.5}
+is_acceptable = evaluator.filter_data(messages, thresholds)
 print("Is acceptable: ", is_acceptable)
 '''
 ===============================================================================

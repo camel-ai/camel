@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
@@ -28,6 +29,16 @@ from camel.types import (
     ModelType,
 )
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+
+REASONSER_UNSUPPORTED_PARAMS = [
+    "temperature",
+    "top_p",
+    "presence_penalty",
+    "frequency_penalty",
+    "logprobs",
+    "top_logprobs",
+    "tools",
+]
 
 
 class DeepSeekModel(BaseModelBackend):
@@ -120,6 +131,22 @@ class DeepSeekModel(BaseModelBackend):
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
 
+        if self.model_type in [
+            ModelType.DEEPSEEK_REASONER,
+        ]:
+            warnings.warn(
+                "Warning: You are using an DeepSeek Reasoner model, "
+                "which has certain limitations, reference: "
+                "`https://api-docs.deepseek.com/guides/reasoning_model"
+                "#api-parameters`.",
+                UserWarning,
+            )
+            request_config = {
+                key: value
+                for key, value in request_config.items()
+                if key not in REASONSER_UNSUPPORTED_PARAMS
+            }
+
         return request_config
 
     def _run(
@@ -174,6 +201,45 @@ class DeepSeekModel(BaseModelBackend):
             model=self.model_type,
             **request_config,
         )
+
+        # Temporary solution to handle the case where
+        # deepseek returns a reasoning_content
+        if (
+            self.model_type
+            in [
+                ModelType.DEEPSEEK_REASONER,
+            ]
+            and os.environ.get("GET_REASONING_CONTENT", "false").lower()
+            == "true"
+        ):
+            reasoning_content = response.choices[0].message.reasoning_content
+            combined_content = (
+                response.choices[0].message.content
+                + "\n\nBELOW IS THE REASONING CONTENT:\n\n"
+                + (reasoning_content if reasoning_content else "")
+            )
+
+            response = ChatCompletion.construct(
+                id=response.id,
+                choices=[
+                    dict(
+                        index=response.choices[0].index,
+                        message={
+                            "role": response.choices[0].message.role,
+                            "content": combined_content,
+                            "tool_calls": None,
+                        },
+                        finish_reason=response.choices[0].finish_reason
+                        if response.choices[0].finish_reason
+                        else None,
+                    )
+                ],
+                created=response.created,
+                model=response.model,
+                object="chat.completion",
+                usage=response.usage,
+            )
+
         return response
 
     def check_model_config(self):

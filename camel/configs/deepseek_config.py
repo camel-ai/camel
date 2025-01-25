@@ -29,7 +29,7 @@ class DeepSeekConfig(BaseConfig):
         temperature (float, optional): Sampling temperature to use, between
             :obj:`0` and :obj:`2`. Higher values make the output more random,
             while lower values make it more focused and deterministic.
-            (default: :obj:`0.2`)
+            (default: :obj:`1.0`)
         top_p (float, optional): Controls the diversity and focus of the
             generated results. Higher values make the output more diverse,
             while lower values make it more focused. (default: :obj:`1.0`)
@@ -85,7 +85,7 @@ class DeepSeekConfig(BaseConfig):
             :obj:`True`)
     """
 
-    temperature: float = 0.2  # deepseek default: 1.0
+    temperature: float = 1.0  # deepseek default: 1.0
     top_p: float = 1.0
     stream: bool = False
     stop: Optional[Union[str, Sequence[str]]] = None

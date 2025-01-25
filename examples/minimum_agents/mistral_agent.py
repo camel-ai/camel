@@ -15,9 +15,9 @@
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
-from camel.models import ModelFactory
+from camel.models import ModelFactory, ModelPlatformType
 from camel.toolkits import WeatherToolkit
-from camel.types import ModelPlatformType, ModelType
+from camel.types import ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MISTRAL,

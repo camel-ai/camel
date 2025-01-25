@@ -89,6 +89,18 @@ class GeminiModel(BaseModelBackend):
             base_url=self._url,
         )
 
+    def _process_messages(self, messages) -> List[OpenAIMessage]:
+        r"""Process the messages for Gemini API to ensure no empty content,
+        which is not accepeted by Gemini.
+        """
+        processed_messages = []
+        for msg in messages:
+            msg_copy = msg.copy()
+            if 'content' in msg_copy and msg_copy['content'] == '':
+                msg_copy['content'] = 'null'
+            processed_messages.append(msg_copy)
+        return processed_messages
+
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -113,6 +125,7 @@ class GeminiModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+        messages = self._process_messages(messages)
         if response_format:
             return self._request_parse(messages, response_format)
         else:
@@ -142,6 +155,7 @@ class GeminiModel(BaseModelBackend):
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
+        messages = self._process_messages(messages)
         if response_format:
             return await self._arequest_parse(messages, response_format)
         else:
