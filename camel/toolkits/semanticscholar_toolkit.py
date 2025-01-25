@@ -55,7 +55,9 @@ class SemanticScholarToolkit(BaseToolkit):
             return response.json()
         else:
             return {
-                "error": f"Request failed with status code {response.status_code}",
+                "error": (
+                    f"Request failed with status code {response.status_code}"
+                ),
                 "message": response.text,
             }
 
@@ -86,7 +88,9 @@ class SemanticScholarToolkit(BaseToolkit):
             return response.json()
         else:
             return {
-                "error": f"Request failed with status code {response.status_code}",
+                "error": (
+                    f"Request failed with status code {response.status_code}"
+                ),
                 "message": response.text,
             }
 
@@ -128,7 +132,9 @@ class SemanticScholarToolkit(BaseToolkit):
             return response.json()
         else:
             return {
-                "error": f"Request failed with status code {response.status_code}",
+                "error": (
+                    f"Request failed with status code {response.status_code}"
+                ),
                 "message": response.text,
             }
 
@@ -187,7 +193,8 @@ class SemanticScholarToolkit(BaseToolkit):
 
             else:
                 return {
-                    "error": f"Request failed with status code {response.status_code}"
+                    "error": "Request failed with status code "
+                    f"{response.status_code}"
                 }
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
