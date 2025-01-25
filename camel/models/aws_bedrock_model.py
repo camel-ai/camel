@@ -1,18 +1,17 @@
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# Licensed under the Apache License, Version 2.0 (the “License”);
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an “AS IS” BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import time
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI
@@ -25,7 +24,6 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     api_keys_required,
-    dependencies_required,
 )
 
 
@@ -39,22 +37,18 @@ class AWSBedrockModel(BaseModelBackend):
             that will be fed into:obj:`openai.ChatCompletion.create()`.
             If:obj:`None`, :obj:`BedrockConfig().as_dict()` will be used.
             (default: :obj:`None`)
-        secret_access_key (Optional[str], optional): The secret access key for
-            authenticating with the AWS Bedrock service. (default: :obj:`None`)
-        access_key_id (Optional[str], optional): The access key ID for
-            authenticating with the AWS Bedrock service. (default: :obj:`None`)
-        api_key (Optional[str], optional): This parameter is not used.
-        url (Optional[str], optional): This parameter is not used.
+        api_key (Optional[str], optional): The API key for authenticating with
+            the AWS Bedrock service. (default: :obj:`None`)
+        url (Optional[str], optional): The url to the AWS Bedrock service.
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
             ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
-        region_name (Optional[str], optional): The region name for the AWS
-            Bedrock service. (default: :obj:`"eu-west-2"`)
 
     References:
         https://docs.aws.amazon.com/bedrock/latest/APIReference/welcome.html
     """
+
     @api_keys_required(
         [
             ("url", "BEDROCK_API_BASE_URL"),
@@ -84,13 +78,6 @@ class AWSBedrockModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Token counter for the model."""
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
-
     def run(self, messages: List[OpenAIMessage]) -> ChatCompletion:
         r"""Runs the query to the backend model.
 
@@ -107,6 +94,7 @@ class AWSBedrockModel(BaseModelBackend):
             **self.model_config_dict,
         )
         return response
+
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
@@ -118,6 +106,7 @@ class AWSBedrockModel(BaseModelBackend):
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
+
     def check_model_config(self):
         r"""Check whether the input model configuration contains unexpected
         arguments.
