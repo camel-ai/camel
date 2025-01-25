@@ -1,6 +1,3 @@
-import os
-from typing import List, Optional, cast
-
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
