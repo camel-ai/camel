@@ -28,6 +28,7 @@ from camel.bots.slack.models import (
 from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
+    from slack_bolt.app.async_app import AsyncApp
     from slack_bolt.context.async_context import AsyncBoltContext
     from slack_bolt.context.say.async_say import AsyncSay
     from slack_sdk.web.async_client import AsyncWebClient
@@ -40,7 +41,7 @@ class SlackApp:
     r"""Represents a Slack app that is powered by a Slack Bolt `AsyncApp`.
     This class is responsible for initializing and managing the Slack
     application by setting up event handlers, running the app server, runting
-    socket mode client, and handling events such as messages and mentions 
+    socket mode client, and handling events such as messages and mentions
     from Slack.
     """
 
@@ -64,20 +65,23 @@ class SlackApp:
         Args:
         oauth_token (str): Slack API token for authentication.
         app_token (str, optional): Slack app token for authentication.
+            (default: :obj:`None`)
         scopes (str, optional): Slack app scopes for permissions.
+            (default: :obj:`None`)
         signing_secret (str, optional): Signing secret for verifying Slack
-            requests.
-        client_id (str, optional): Slack app client ID.
+            requests. (default: :obj:`None`)
+        client_id (str, optional): Slack app client ID. (default: :obj:`None`)
         client_secret (str, optional): Slack app client secret.
-        redirect_uri_path (str, optional): The URI path for OAuth redirect. 
-            (default: :str:"/slack/oauth_redirect")
+            (default: :obj:`None`)
+        redirect_uri_path (str, optional): The URI path for OAuth redirect.
+            (default: :str:`/slack/oauth_redirect`)
         installation_store (AsyncInstallationStore, optional): The installation
-            store for handling OAuth installations.
+            store for handling OAuth installations. (default: :obj:`None`)
         socket_mode (bool): A flag to enable socket mode for the Slack app
-            (default: :bool:False).
+            (default: :bool:`False`).
         oauth_mode (bool): A flag to enable OAuth mode for the Slack app
-            (default: :bool:False).
-        
+            (default: :bool:`False`).
+
         Raises:
             ValueError: If the `SLACK_OAUTH_TOKEN` and other required
                 parameters are not provided.
@@ -140,18 +144,19 @@ class SlackApp:
         self,
         installation_store: Optional[AsyncInstallationStore] = None,
         redirect_uri_path: str = "/slack/oauth_redirect",
-    ) -> Any:
+    ) -> 'AsyncApp':
         r"""Initializes the Slack Bolt app with the given installation store
         and OAuth settings.
 
         Args:
             installation_store (AsyncInstallationStore, optional): The
                 installation store for handling OAuth installations.
+                (default: :obj:`None`)
             redirect_uri_path (str): The URI path for handling OAuth redirects
-                (default: :str:"/slack/oauth_redirect").
+                (default: :str:`/slack/oauth_redirect`).
 
         Returns:
-            Any: The initialized Slack Bolt app.
+            AsyncApp: The initialized Slack Bolt app.
         """
         from slack_bolt.app.async_app import AsyncApp
         from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
@@ -176,7 +181,7 @@ class SlackApp:
                 token=self.oauth_token,
             )
 
-    def setup_handlers(self) -> None:
+    def setup_handlers(self):
         r"""Sets up the event handlers for Slack events, such as `app_mention`
         and `message`.
 
@@ -186,7 +191,7 @@ class SlackApp:
         self._app.event("app_mention")(self.app_mention)
         self._app.event("message")(self.on_message)
 
-    async def start(self) -> None:
+    async def start(self):
         r"""Starts the Slack Bolt app asynchronously."""
         from slack_bolt.adapter.socket_mode.async_handler import (
             AsyncSocketModeHandler,
@@ -211,16 +216,17 @@ class SlackApp:
         port: int = 3000,
         path: str = "/slack/events",
         host: Optional[str] = None,
-    ) -> None:
+    ):
         r"""Starts the Slack Bolt app server to listen for incoming Slack
         events.
 
         Args:
             port (int): The port on which the server should run.
-                (default: :int:3000).
+                (default: :int:`3000`).
             path (str): The endpoint path for receiving Slack events.
-                (default: :str:/slack/events).
+                (default: :str:`/slack/events`).
             host (str, optional): The hostname to bind the server.
+                (default: :obj:`None`)
         """
         self._app.start(port=port, path=path, host=host)
 
@@ -231,7 +237,7 @@ class SlackApp:
         event: Dict[str, Any],
         body: Dict[str, Any],
         say: "AsyncSay",
-    ) -> None:
+    ):
         r"""Event handler for `app_mention` events.
 
         This method is triggered when someone mentions the app in Slack.
@@ -272,7 +278,7 @@ class SlackApp:
         event: Dict[str, Any],
         body: Dict[str, Any],
         say: "AsyncSay",
-    ) -> None:
+    ):
         r"""Event handler for `message` events.
 
         This method is triggered when the app receives a message in Slack.
@@ -325,7 +331,7 @@ class SlackApp:
         mention = f"<@{bot_user_id}>"
         return mention in message
 
-    async def stop(self) -> None:
+    async def stop(self):
         r"""Stops the Slack Bolt app asynchronously."""
         from slack_bolt.adapter.socket_mode.async_handler import (
             AsyncSocketModeHandler,
@@ -373,11 +379,11 @@ class SlackApp:
                 handler function should accept two arguments: the event profile
                 and the event body and return the response message or a tuple
                 containing the response message and the thread_ts.
-            message_type (Optional[str]): The specific message type to handle
-                (e.g., 'mention', 'message', etc.).
-                Defaults to 'default' if not specified.
+            message_type (str, optional): The specific message type to handle
+                (e.g., 'mention', 'message', etc.). (default: :str:`default`)
 
-        Returns: None
+        Returns:
+            None
         """
         message_type = message_type or 'default'
         self._custom_handlers[message_type] = handler
