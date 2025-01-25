@@ -28,7 +28,7 @@ class SymPyToolkit(BaseToolkit):
     and Linear Algebra
     """
 
-    def __init__(self, default_variable: str = 'x', log_level=logging.INFO):
+    def __init__(self, default_variable: str = "x", log_level=logging.INFO):
         r"""
         Initializes the toolkit with a default variable and logging.
 
@@ -42,7 +42,7 @@ class SymPyToolkit(BaseToolkit):
         self.logger.setLevel(log_level)
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(levelname)s - %(message)s"
         )
         handler.setFormatter(formatter)
         if not self.logger.handlers:
@@ -129,7 +129,9 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("factor_expression", e)
 
-    def solve_linear_system(self, equations: List[str], variables: List[str]) -> str:
+    def solve_linear_system(
+        self, equations: List[str], variables: List[str]
+    ) -> str:
         r"""Solves a system of linear equations.
 
         Args:
@@ -162,7 +164,9 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("solve_linear_system", e)
 
-    def solve_nonlinear_system(self, sympy_equations: List[str], variables: List[str]) -> str:
+    def solve_nonlinear_system(
+        self, sympy_equations: List[str], variables: List[str]
+    ) -> str:
         r"""Solves a system of nonlinear equations.
 
         Args:
@@ -379,7 +383,9 @@ class SymPyToolkit(BaseToolkit):
             variable = (
                 sp.symbols(variable) if variable else self.default_variable
             )
-            self.logger.info(f"Solving equation: {sympy_equation} for {variable}")
+            self.logger.info(
+                f"Solving equation: {sympy_equation} for {variable}"
+            )
             eq = sp.sympify(sympy_equation)
             solutions = sp.solve(eq, variable)
             return json.dumps({"result": [str(sol) for sol in solutions]})
@@ -576,7 +582,7 @@ class SymPyToolkit(BaseToolkit):
         expression: str,
         variable: str,
         point: float,
-        direction: str = 'both',
+        direction: str = "both",
     ) -> str:
         r"""Computes the limit of an expression as a variable approaches
         a point.
@@ -684,8 +690,8 @@ class SymPyToolkit(BaseToolkit):
             )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
-            left_limit = sp.limit(expr, var, point, dir='-')
-            right_limit = sp.limit(expr, var, point, dir='+')
+            left_limit = sp.limit(expr, var, point, dir="-")
+            right_limit = sp.limit(expr, var, point, dir="+")
             value_at_point = expr.subs(var, point)
             is_continuous = left_limit == right_limit == value_at_point
             return json.dumps({"result": str(is_continuous)})
