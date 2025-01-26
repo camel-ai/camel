@@ -26,6 +26,16 @@ T = TypeVar('T')
 
 
 class ProgrammableAgentRequirement(Enum):
+    r"""Requirements for programmable agent state.
+
+    Defines the possible requirements that can be used to repair the state
+    of a programmable agent.
+
+    Attributes:
+        LAST_MESSAGE_NOT_USER (str): Requires that the last message in the
+            conversation was not from the user.
+    """
+
     LAST_MESSAGE_NOT_USER = "LAST_MESSAGE_NOT_USER"
 
 
@@ -34,6 +44,11 @@ class ProgrammedAgentInstructionResult(BaseModel, Generic[T]):
 
     Contains the messages exchanged during execution and the computed value.
     The value type is specified by the generic type parameter T.
+
+    Attributes:
+        user_message (BaseMessage): The message sent by the user.
+        agent_message (BaseMessage): The message sent by the agent.
+        value (T): The computed result value of type T.
     """
 
     user_message: BaseMessage
@@ -48,8 +63,7 @@ class AbstractProgrammableAgent(abc.ABC):
 
     A programmable agent is an agent that can be programmed to perform a
     specific function or task. This class defines the interface for a
-    programmable
-    agent.
+    programmable agent.
 
     These methods should be implemented in order to ensure the agent supports
     the necessary guarantees to enable a programming interface while
@@ -68,16 +82,15 @@ class AbstractProgrammableAgent(abc.ABC):
         An atomic operation is an operation that is guaranteed to
         be executed without interruption by any other operation.
 
-        If the operation fails or times out the agents state should be
-        unchanged.
+        Args:
+            callback (Callable[[], ProgrammedAgentInstructionResult[T]]): The
+                operation to execute atomically.
 
-        If an operation is already in progress, this method should throw an
-        exception. (It is up to the caller to do any queuing)
+        Returns:
+            ProgrammedAgentInstructionResult[T]: The result of the operation.
 
-        If the agent is in a state where it can perform the operation,
-        it must leave the agent in a state where it can perform the
-        operation again. Though if state changes in successful operation
-        improve its ability to perform the operation, it should keep them.
+        Raises:
+            RuntimeError: If an operation is already in progress.
         """
         raise NotImplementedError
 
@@ -86,10 +99,13 @@ class AbstractProgrammableAgent(abc.ABC):
         r"""Repair the state of the agent.
 
         Agents may have other non-atomic interfaces, such as a user interface,
-        or chat between other agents.
+        or chat between other agents. This method should restore the agent to
+        a state where it can perform operations according to the specified
+        requirement.
 
-        This method should restore the agent to a state where it can perform
-        operations according to the specified requirement.
+        Args:
+            requirement (ProgrammableAgentRequirement): The requirement to
+                repair the state for.
         """
         raise NotImplementedError
 
@@ -99,10 +115,16 @@ def programmable_capability(
 ) -> Callable[..., ProgrammedAgentInstructionResult[T]]:
     r"""Decorator for programmable agent capabilities.
 
-    Wraps a method to ensure it is executed atomically via the agent's
-    run_atomic interface.
-    The decorated method must return a ProgrammedAgentInstructionResult with
-    appropriate type parameter.
+    This decorator ensures that the decorated method is executed atomically
+    and maintains the agent's state guarantees.
+
+    Args:
+        func (Callable[..., ProgrammedAgentInstructionResult[T]]): The method
+            to decorate.
+
+    Returns:
+        Callable[..., ProgrammedAgentInstructionResult[T]]: The decorated
+            method that ensures atomic execution.
     """
 
     @wraps(func)
@@ -120,9 +142,20 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
     Provides a default implementation of atomic execution using threading locks
     and basic state tracking for message roles. Implementing classes need to
     provide specific repair logic for their use cases.
+
+    Attributes:
+        _operation_lock (threading.Lock): Lock for ensuring atomic operations.
+        _last_message_role (Optional[str]): Role of the last message in the
+            conversation.
     """
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
+        r"""Initialize the ProgrammableChatAgent.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments to pass to parent
+                class.
+        """
         super().__init__(**kwargs)
         self._operation_lock = threading.Lock()
         self._last_message_role: Optional[str] = None
@@ -130,6 +163,20 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
     def run_atomic(
         self, callback: Callable[[], ProgrammedAgentInstructionResult[T]]
     ) -> ProgrammedAgentInstructionResult[T]:
+        r"""Run an atomic operation on the agent.
+
+        Ensures thread-safe execution of the callback function by using a lock.
+
+        Args:
+            callback (Callable[[], ProgrammedAgentInstructionResult[T]]): The
+                operation to execute atomically.
+
+        Returns:
+            ProgrammedAgentInstructionResult[T]: The result of the operation.
+
+        Raises:
+            RuntimeError: If an operation is already in progress.
+        """
         if not self._operation_lock.acquire(blocking=False):
             raise RuntimeError("Operation already in progress")
 
@@ -141,6 +188,14 @@ class ProgrammableChatAgent(ChatAgent, AbstractProgrammableAgent):
             self._operation_lock.release()
 
     def repair_state(self, requirement: ProgrammableAgentRequirement) -> None:
+        r"""Repair the state of the agent.
+
+        Implements basic state repair for message role requirements.
+
+        Args:
+            requirement (ProgrammableAgentRequirement): The requirement to
+                repair the state for.
+        """
         if requirement == ProgrammableAgentRequirement.LAST_MESSAGE_NOT_USER:
             if self._last_message_role == "user":
                 raise NotImplementedError(
