@@ -87,17 +87,17 @@ except (ImportError, AttributeError):
 
 
 class ToolCallingRecord(BaseModel):
-    r"""Historical records of functions called in the conversation.
+    r"""Historical records of tools called in the conversation.
 
     Attributes:
-        func_name (str): The name of the function being called.
+        tool_name (str): The name of the tool being called.
         args (Dict[str, Any]): The dictionary of arguments passed to
-            the function.
-        result (Any): The execution result of calling this function.
+            the tools.
+        result (Any): The execution result of calling this tool.
         tool_call_id (str): The ID of the tool call, if available.
     """
 
-    func_name: str
+    tool_name: str
     args: Dict[str, Any]
     result: Any
     tool_call_id: str
@@ -106,10 +106,10 @@ class ToolCallingRecord(BaseModel):
         r"""Overridden version of the string function.
 
         Returns:
-            str: Modified string to represent the function calling.
+            str: Modified string to represent the tool calling.
         """
         return (
-            f"Function Execution: {self.func_name}\n"
+            f"Tool Execution: {self.tool_name}\n"
             f"\tArgs: {self.args}\n"
             f"\tResult: {self.result}\n"
         )
@@ -1389,12 +1389,12 @@ class ChatAgent(BaseAgent):
         choice = response.choices[0]
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool call is None")
-        func_name = choice.message.tool_calls[0].function.name
+        tool_name = choice.message.tool_calls[0].function.name
 
         arguments_str = choice.message.tool_calls[0].function.arguments
         args = self._safe_json_loads(arguments_str)
 
-        tool = self.tool_dict[func_name]
+        tool = self.tool_dict[tool_name]
         result = tool(**args)
         tool_call_id = choice.message.tool_calls[0].id
 
@@ -1403,7 +1403,7 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=func_name,
+            func_name=tool_name,
             args=args,
             tool_call_id=tool_call_id,
         )
@@ -1412,14 +1412,14 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=func_name,
+            func_name=tool_name,
             result=result,
             tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = ToolCallingRecord(
-            func_name=func_name,
+            tool_name=tool_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
@@ -1461,10 +1461,10 @@ class ChatAgent(BaseAgent):
         choice = response.choices[0]
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool call is None")
-        func_name = choice.message.tool_calls[0].function.name
+        tool_name = choice.message.tool_calls[0].function.name
 
         args = json.loads(choice.message.tool_calls[0].function.arguments)
-        tool = self.tool_dict[func_name]
+        tool = self.tool_dict[tool_name]
         result = await tool(**args)
         tool_call_id = choice.message.tool_calls[0].id
 
@@ -1473,7 +1473,7 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=func_name,
+            func_name=tool_name,
             args=args,
             tool_call_id=tool_call_id,
         )
@@ -1482,14 +1482,14 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=func_name,
+            func_name=tool_name,
             result=result,
             tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = ToolCallingRecord(
-            func_name=func_name,
+            tool_name=tool_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
