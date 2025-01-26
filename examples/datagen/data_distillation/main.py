@@ -73,6 +73,7 @@ def generate_ai_response(problem, solver_agent):
         str: The AI-generated response to the math problem.
     """
     response = solver_agent.step(f"Please solve the following math problem:\n{problem}")
+    solver_agent.reset()
     return response.msgs[0].content
 
 def check_answer_consistency(ai_answer, standard_answer, checker_agent):
