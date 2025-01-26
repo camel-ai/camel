@@ -283,7 +283,7 @@ def generate_docstring(
 
     # Get the response containing the generated docstring
     response = docstring_assistant.step(user_msg)
-    return response.msg.content
+    return response.msg.content.text
 
 
 class FunctionTool:
@@ -741,7 +741,7 @@ class FunctionTool:
             response_format=self.synthesize_output_format,
         )
 
-        return response.msg.content
+        return response.msg.content.text
 
     @property
     def parameters(self) -> Dict[str, Any]:

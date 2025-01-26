@@ -20,6 +20,9 @@ from camel.types import (
 )
 from camel.utils import get_local_time
 from PIL import Image
+import base64
+from io import BytesIO
+
 
 class Sender(BaseModel):
     r"""Represents the sender of a message in the system.
@@ -104,7 +107,49 @@ class Content(BaseModel):
         """
         return self.text
 
+    def to_dict(self, *args, **kwargs):
+        """Custom serialization for non-JSON-compatible fields."""
+        content_dict = super().model_dump(*args, **kwargs)
+        
+        # Serialize image_list to base64 strings
+        if self.image_list:
+            content_dict["image_list"] = [
+                base64.b64encode(self._image_to_bytes(image)).decode("utf-8")
+                for image in self.image_list
+            ]
+        
+        # Serialize video_bytes to base64 string
+        if self.video_bytes:
+            content_dict["video_bytes"] = base64.b64encode(self.video_bytes).decode("utf-8")
+        
+        return content_dict
 
+    @staticmethod
+    def _image_to_bytes(image: Image.Image) -> bytes:
+        """Convert a PIL image to bytes."""
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        return buffer.getvalue()
+
+    @staticmethod
+    def _bytes_to_image(data: bytes) -> Image.Image:
+        """Convert bytes to a PIL image."""
+        return Image.open(BytesIO(data))
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """Custom deserialization for non-JSON-compatible fields."""
+        if "image_list" in data and isinstance(data["image_list"], list):
+            data["image_list"] = [
+                cls._bytes_to_image(base64.b64decode(image_str))
+                for image_str in data["image_list"]
+            ]
+        
+        if "video_bytes" in data and isinstance(data["video_bytes"], str):
+            data["video_bytes"] = base64.b64decode(data["video_bytes"])
+        
+        return cls(**data)
+    
 class ACLParameter(BaseModel):
     r"""Represents the parameters for an ACL (Agent Communication Language) message.
     

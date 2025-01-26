@@ -289,7 +289,7 @@ class Workforce(BaseNode):
         response = self.coordinator_agent.step(
             req, response_format=TaskAssignResult
         )
-        result_dict = json.loads(response.msg.content)
+        result_dict = json.loads(response.msg.content.text)
         task_assign_result = TaskAssignResult(**result_dict)
         return task_assign_result.assignee_id
 
@@ -320,7 +320,7 @@ class Workforce(BaseNode):
             content=prompt,
         )
         response = self.coordinator_agent.step(req, response_format=WorkerConf)
-        result_dict = json.loads(response.msg.content)
+        result_dict = json.loads(response.msg.content.text)
         new_node_conf = WorkerConf(**result_dict)
 
         new_agent = self._create_new_agent(

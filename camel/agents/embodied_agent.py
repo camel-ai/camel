@@ -166,7 +166,7 @@ class EmbodiedAgent(ChatAgent):
                     self.logger_color + f"> Explanation:\n{explanations[-1]}"
                 )
 
-        content = response.msg.content
+        content = response.msg.content.text
 
         if codes is not None:
             try:

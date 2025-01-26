@@ -143,7 +143,7 @@ class BotAgent:
             role_name="User", content=user_raw_msg
         )
         assistant_response = self._agent.step(user_msg)
-        return assistant_response.msg.content
+        return assistant_response.msg.content.text
 
 
 class DiscordBot(DiscordApp):

@@ -543,6 +543,6 @@ class BaseMessage:
             "role_name": self.role_name,
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
-            "content": self.content.text,
+            "content": self.content.to_dict() if self.content.image_list else self.content.text,
             "acl_parameter": self.acl_parameter.model_dump_json(),
         }

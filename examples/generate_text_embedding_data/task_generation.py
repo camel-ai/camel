@@ -50,7 +50,7 @@ def main() -> None:
     for _ in range(num_generate):
         agent.reset()
         assistant_response = agent.step(user_msg)
-        assistant_content = assistant_response.msg.content
+        assistant_content = assistant_response.msg.content.text
         # Split tasks string to a list of tasks:
         tasks = assistant_content.split("\n")
         # Remove the start token such as "1. ":

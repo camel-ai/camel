@@ -126,7 +126,7 @@ class CriticAgent(ChatAgent):
             if self.verbose:
                 print_text_animated(
                     self.logger_color + "\n> Critic response: "
-                    f"\x1b[3m{critic_msg.content}\x1b[0m\n"
+                    f"\x1b[3m{critic_msg.content.text}\x1b[0m\n"
                 )
             choice = self.parse_critic(critic_msg)
 
@@ -159,7 +159,7 @@ class CriticAgent(ChatAgent):
             Optional[str]: The critic's choice as a string, or None if the
                 message could not be parsed.
         """
-        choice = str(get_first_int(critic_msg.content))
+        choice = str(get_first_int(critic_msg.content.text))
         return choice
 
     def reduce_step(

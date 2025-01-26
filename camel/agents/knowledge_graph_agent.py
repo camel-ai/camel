@@ -171,7 +171,7 @@ class KnowledgeGraphAgent(ChatAgent):
 
         response = self.step(input_message=knowledge_graph_generation_msg)
 
-        content = response.msg.content
+        content = response.msg.content.text
 
         if parse_graph_elements:
             content = self._parse_graph_elements(content)

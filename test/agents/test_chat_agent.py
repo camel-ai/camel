@@ -219,7 +219,7 @@ def test_chat_agent_step_with_structure_response(step_call_count=3):
 
     for i in range(step_call_count):
         response = assistant.step(user_msg, response_format=JokeResponse)
-        response_content_json = json.loads(response.msg.content)
+        response_content_json = json.loads(response.msg.content.text)
         joke_response_keys = set(
             JokeResponse.model_json_schema()["properties"].keys()
         )
@@ -359,7 +359,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
 
     for i in range(step_call_count):
         response = external_tool_agent.step(usr_msg)
-        assert not response.msg.content
+        assert not response.msg.content.text
 
         external_tool_request = response.info["external_tool_request"]
         assert (
@@ -601,7 +601,7 @@ def test_chat_agent_stream_output(step_call_count=3):
         stream_assistant_response = stream_assistant.step(user_msg)
 
         for msg in stream_assistant_response.msgs:
-            assert len(msg.content) > 0, f"Error in calling round {i+1}"
+            assert len(msg.content.text) > 0, f"Error in calling round {i+1}"
 
         stream_usage = stream_assistant_response.info["usage"]
         assert (

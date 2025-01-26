@@ -35,7 +35,7 @@ def generate_meta_data(meta_data: str, num: int = 50, model=None):
         content=prompt,
     )
     assistant_response = agent.step(user_msg)
-    print(assistant_response.msg.content)
+    print(assistant_response.msg.content.text)
 
 
 def main(model=None):

@@ -79,4 +79,4 @@ class TelegramBot:
         )
         assistant_response = self.chat_agent.step(user_msg)
 
-        self.bot.reply_to(message, assistant_response.msg.content)
+        self.bot.reply_to(message, assistant_response.msg.content.text)
