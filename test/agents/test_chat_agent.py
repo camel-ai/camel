@@ -863,7 +863,7 @@ def test_tool_calling_sync(step_call_count=3):
 
         assert len(tool_calls) > 0, f"Error in calling round {i+1}"
         assert str(tool_calls[0]).startswith(
-            "Function Execution"
+            "Tool Execution"
         ), f"Error in calling round {i+1}"
         assert (
             tool_calls[0].tool_name == "multiply"
@@ -1074,7 +1074,7 @@ async def test_tool_calling_async(step_call_count=3):
 
         assert tool_calls, f"Error in calling round {i+1}"
         assert str(tool_calls[0]).startswith(
-            "Function Execution"
+            "Tool Execution"
         ), f"Error in calling round {i+1}"
 
         assert (
