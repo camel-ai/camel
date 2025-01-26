@@ -12,12 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 import os
 
 from camel.agents import ChatAgent
 from camel.datagen.star import STaRPipeline
-from camel.messages import BaseMessage
-from camel.types import RoleType
+from camel.models.reward import NemotronRewardModel
+from camel.types import ModelType
 
 
 def main():
@@ -25,12 +26,13 @@ def main():
     problems_path = os.path.join(current_dir, 'input_problems.json')
     output_path = os.path.join(current_dir, 'star_output.json')
 
+    # Load problems from JSON file
+    with open(problems_path, 'r') as f:
+        problems_data = json.load(f)
+        problems = problems_data.get('problems', [])
+
     # Initialize agent
-    system_message = BaseMessage(
-        role_name="Self-Taught Reasoner",
-        role_type=RoleType.ASSISTANT,
-        meta_dict={},
-        content="""You are an expert mathematical reasoner who excels at 
+    system_message = """You are an expert mathematical reasoner who excels at 
         solving problems step by step.
         For each problem:
         1. First understand what's being asked
@@ -38,30 +40,38 @@ def main():
         3. Solve each part systematically
         4. Verify your solution
         5. Explain your reasoning clearly
-        Always show your work and explain your thinking process.""",
-    )
+        Always show your work and explain your thinking process."""
 
     agent = ChatAgent(system_message)
 
     # Initialize reward model (optional)
+    reward_model = NemotronRewardModel(
+        model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+        url="https://integrate.api.nvidia.com/v1",
+        api_key=os.environ.get("NVIDIA_API_KEY"),
+    )
 
-    # reward_model = NemotronRewardModel(
-    #     model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
-    #     url="https://integrate.api.nvidia.com/v1",
-    # )
+    # Set score thresholds for different dimensions (optional)
+    score_threshold = {
+        "correctness": 1.6,
+        "coherence": 3,
+    }
+    # Or use a single threshold for all dimensions:
+    # score_threshold = 0.9
 
     # Create and run pipeline
     pipeline = STaRPipeline(
         agent=agent,
-        problems_path=problems_path,
+        problems=problems,  # Pass problems list directly
         output_path=output_path,
-        max_iterations=3,
-        score_threshold=0.9,
-        # reward_model=reward_model   # To use a reward model
+        max_iterations=1,
+        score_threshold=score_threshold,
+        reward_model=reward_model,  # To use a reward model (optional)
     )
 
-    pipeline.generate()
-    print(f"\nResults saved to: {output_path}")
+    results = pipeline.generate()
+    print(f"\nProcessed {len(results)} problems")
+    print(f"Results saved to: {output_path}")
 
 
 if __name__ == "__main__":
