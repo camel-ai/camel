@@ -54,6 +54,19 @@ class ModelType(UnifiedModelType, Enum):
     GROQ_GEMMA_7B_IT = "gemma-7b-it"
     GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
+    # TogetherAI platform models support tool calling
+    TOGETHER_LLAMA_3_1_8B = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_1_70B = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_1_405B = "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
+    TOGETHER_LLAMA_3_3_70B = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    TOGETHER_MIXTRAL_8_7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    TOGETHER_MISTRAL_7B = "mistralai/Mistral-7B-Instruct-v0.1"
+
+    # SambaNova Cloud platform models support tool calling
+    SAMBA_LLAMA_3_1_8B = "Meta-Llama-3.1-8B-Instruct"
+    SAMBA_LLAMA_3_1_70B = "Meta-Llama-3.1-70B-Instruct"
+    SAMBA_LLAMA_3_1_405B = "Meta-Llama-3.1-405B-Instruct"
+
     STUB = "stub"
 
     # Legacy anthropic models
@@ -141,7 +154,7 @@ class ModelType(UnifiedModelType, Enum):
 
     # DeepSeek models
     DEEPSEEK_CHAT = "deepseek-chat"
-
+    DEEPSEEK_REASONER = "deepseek-reasoner"
     # InternLM models
     INTERNLM3_LATEST = "internlm3-latest"
     INTERNLM3_8B_INSTRUCT = "internlm3-8b-instruct"
@@ -167,7 +180,17 @@ class ModelType(UnifiedModelType, Enum):
     @property
     def support_native_tool_calling(self) -> bool:
         return any(
-            [self.is_openai, self.is_gemini, self.is_mistral, self.is_qwen]
+            [
+                self.is_openai,
+                self.is_gemini,
+                self.is_mistral,
+                self.is_qwen,
+                self.is_deepseek,
+                self.is_cohere,
+                self.is_internlm,
+                self.is_together,
+                self.is_sambanova,
+            ]
         )
 
     @property
@@ -238,6 +261,27 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GROQ_MIXTRAL_8_7B,
             ModelType.GROQ_GEMMA_7B_IT,
             ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this type of models is served by Together AI."""
+        return self in {
+            ModelType.TOGETHER_LLAMA_3_1_405B,
+            ModelType.TOGETHER_LLAMA_3_1_70B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
+            ModelType.TOGETHER_MISTRAL_7B,
+            ModelType.TOGETHER_MIXTRAL_8_7B,
+        }
+
+    @property
+    def is_sambanova(self) -> bool:
+        r"""Returns whether this type of models is served by SambaNova AI."""
+        return self in {
+            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }
 
     @property
@@ -357,6 +401,7 @@ class ModelType(UnifiedModelType, Enum):
     def is_deepseek(self) -> bool:
         return self in {
             ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
         }
 
     @property
@@ -401,6 +446,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_4,
             ModelType.QWEN_VL_PLUS,
             ModelType.NVIDIA_LLAMA3_70B,
+            ModelType.TOGETHER_MISTRAL_7B,
         }:
             return 8_192
         elif self in {
@@ -411,6 +457,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_VISION,
             ModelType.YI_SPARK,
             ModelType.YI_LARGE_RAG,
+            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }:
             return 16_384
         elif self in {
@@ -430,11 +478,13 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.INTERNLM3_LATEST,
             ModelType.INTERNLM2_5_LATEST,
             ModelType.INTERNLM2_PRO_CHAT,
+            ModelType.TOGETHER_MIXTRAL_8_7B,
         }:
             return 32_768
         elif self in {
             ModelType.MISTRAL_MIXTRAL_8x22B,
             ModelType.DEEPSEEK_CHAT,
+            ModelType.DEEPSEEK_REASONER,
         }:
             return 64_000
         elif self in {
@@ -467,6 +517,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_2_3B_INSTRUCT,
             ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
             ModelType.GROQ_LLAMA_3_3_70B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
         }:
             return 128_000
         elif self in {
@@ -476,6 +527,10 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_PLUS,
             ModelType.QWEN_TURBO,
             ModelType.QWEN_CODER_TURBO,
+            ModelType.TOGETHER_LLAMA_3_1_8B,
+            ModelType.TOGETHER_LLAMA_3_1_70B,
+            ModelType.TOGETHER_LLAMA_3_1_405B,
+            ModelType.TOGETHER_LLAMA_3_3_70B,
         }:
             return 131_072
         elif self in {
@@ -512,6 +567,11 @@ class EmbeddingModelType(Enum):
     TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
     TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
 
+    JINA_EMBEDDINGS_V3 = "jina-embeddings-v3"
+    JINA_CLIP_V2 = "jina-clip-v2"
+    JINA_COLBERT_V2 = "jina-colbert-v2"
+    JINA_EMBEDDINGS_V2_BASE_CODE = "jina-embeddings-v2-base-code"
+
     MISTRAL_EMBED = "mistral-embed"
 
     @property
@@ -521,6 +581,16 @@ class EmbeddingModelType(Enum):
             EmbeddingModelType.TEXT_EMBEDDING_ADA_2,
             EmbeddingModelType.TEXT_EMBEDDING_3_SMALL,
             EmbeddingModelType.TEXT_EMBEDDING_3_LARGE,
+        }
+
+    @property
+    def is_jina(self) -> bool:
+        r"""Returns whether this type of models is an Jina model."""
+        return self in {
+            EmbeddingModelType.JINA_EMBEDDINGS_V3,
+            EmbeddingModelType.JINA_CLIP_V2,
+            EmbeddingModelType.JINA_COLBERT_V2,
+            EmbeddingModelType.JINA_EMBEDDINGS_V2_BASE_CODE,
         }
 
     @property
@@ -534,7 +604,20 @@ class EmbeddingModelType(Enum):
 
     @property
     def output_dim(self) -> int:
-        if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
+        if self in {
+            EmbeddingModelType.JINA_COLBERT_V2,
+        }:
+            return 128
+        elif self in {
+            EmbeddingModelType.JINA_EMBEDDINGS_V2_BASE_CODE,
+        }:
+            return 768
+        elif self in {
+            EmbeddingModelType.JINA_EMBEDDINGS_V3,
+            EmbeddingModelType.JINA_CLIP_V2,
+        }:
+            return 1024
+        elif self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
         elif self is EmbeddingModelType.TEXT_EMBEDDING_3_SMALL:
             return 1536
