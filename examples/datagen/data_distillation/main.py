@@ -93,6 +93,7 @@ Standard answer: {standard_answer}
 AI response: {ai_answer}"""
     
     response = checker_agent.step(prompt)
+    checker_agent.reset()
     result = response.msgs[0].content.strip()
     
     return result == "consistent"
