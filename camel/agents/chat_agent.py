@@ -579,13 +579,18 @@ class ChatAgent(BaseAgent):
             )
 
         self.original_model_dict = self.model_backend.model_config_dict
-        if response_format and self.model_type in {"gpt-4o", "gpt-4o-mini"}:
+        model_response_format_modified = False
+        if (
+            response_format
+            and self.model_type.support_native_structured_output
+        ):
             self.model_backend.model_config_dict = (
                 self.original_model_dict.copy()
             )
             self.model_backend.model_config_dict["response_format"] = (
                 response_format
             )
+            model_response_format_modified = True
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
@@ -604,7 +609,12 @@ class ChatAgent(BaseAgent):
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        return self._handle_step(response_format, self.single_iteration)
+        try:
+            return self._handle_step(response_format, self.single_iteration)
+        finally:
+            if model_response_format_modified:
+                # Reset model config back to original state
+                self.model_backend.model_config_dict = self.original_model_dict
 
     def _inject_tool_prompt(self) -> None:
         r"""Generate and add the tool prompt to memory."""

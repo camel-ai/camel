@@ -290,6 +290,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Dynamic Travel Planner Role-Playing: Multi-Agent System with Real-Time Insights Powered by Dappier](https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html)** | Explore an innovative approach to travel planning, blending AI-driven role-playing and real-time data for seamless experiences. |
 | **[Customer Service Discord Bot with Agentic RAG](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_SambaNova_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG. |
 | **[Customer Service Discord Bot with Local Model](https://docs.camel-ai.org/cookbooks/applications/customer_service_Discord_bot_using_local_model_with_agentic_RAG.html)** | Learn how to build a robust customer service bot for Discord using Agentic RAG which supports local deployment. |
+| **[Customer Service Discord Bot for Finance with OpenBB](https://docs.camel-ai.org/cookbooks/applications/finance_discord_bot.html)**| Learn how to build a sipmle yet powerful financial data assistant Discord bot using OpenBB tools. |
 
 ### Data Processing
 | Cookbook | Description |
@@ -327,6 +328,8 @@ We implemented amazing research ideas from other works for you to build, compare
 - `PersonaHub` from *Tao Ge et al.*: [Scaling Synthetic Data Creation with 1,000,000,000 Personas](https://arxiv.org/pdf/2406.20094). [[Example](https://github.com/camel-ai/camel/blob/master/examples/personas/personas_generation.py)]
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
+
+- `Source2Synth` from *Alisia Lupidi et al.*: [Source2Synth: Synthetic Data Generation and Curation Grounded in Real Data Sources](https://arxiv.org/abs/2409.08239). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/source2synth.py)]
 
 ## Other Research Works Based on Camel
 - [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?
