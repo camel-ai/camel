@@ -113,6 +113,7 @@ apify_client = { version = "^1.8.1", optional = true }
 tavily-python = { version = "^0.5.0", optional = true }
 asknews = { version = "^0.7.54", optional = true }
 dappier = { version = "^0.3.3", optional = true }
+sympy = { version = "^1.13.3", optional = true }
 
 # Communication platform tools
 slack-sdk = { version = "^3.27.2", optional = true }
@@ -185,6 +186,7 @@ web_tools = [
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
+    "sympy",
 ]
 
 # Document processing tools
@@ -310,6 +312,7 @@ all = [
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
+    "sympy",
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
@@ -535,5 +538,6 @@ module = [
     "tree-sitter",
     "ragas",
     "pandasai",
+    "sympy",
 ]
 ignore_missing_imports = true
