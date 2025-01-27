@@ -78,5 +78,5 @@ __all__ = [
     'MeshyToolkit',
     'OpenBBToolkit',
     'DappierToolkit',
-    'WebToolkit'
+    'WebToolkit',
 ]
