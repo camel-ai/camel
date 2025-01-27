@@ -12,10 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from camel.toolkits.web_toolkit import WebToolkit
 from camel.agents import ChatAgent
-from camel.toolkits.function_tool import FunctionTool
 from camel.models import ModelFactory
+from camel.toolkits.function_tool import FunctionTool
+from camel.toolkits.web_toolkit import WebToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Initialize the toolkit
