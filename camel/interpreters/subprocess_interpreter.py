@@ -23,7 +23,6 @@ from colorama import Fore
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
 from camel.logger import get_logger
-import os
 
 logger = get_logger(__name__)
 
@@ -149,7 +148,8 @@ class SubprocessInterpreter(BaseInterpreter):
 
         if self.require_confirm:
             logger.info(
-                f"The following {code_type} code will run on your " "computer: {code}"
+                f"""The following {code_type} code will run on your
+                computer: {code}"""
             )
             while True:
                 choice = input("Running code? [Y/n]:").lower()
