@@ -13,10 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Literal, Optional, Type, TypeAlias, Union
+from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
 import requests
-from pydantic import BaseModel
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -77,7 +76,7 @@ class SearchToolkit(BaseToolkit):
         output_type: Literal[
             "searchResults", "sourcedAnswer", "structured"
         ] = "searchResults",
-        structured_output_schema: Union[Type[BaseModel], str, None] = None,
+        structured_output_schema: Optional[str] = None,
     ) -> Dict[str, Any]:
         r"""Search for a query in the Linkup API and return results in various
         formats.
@@ -92,9 +91,9 @@ class SearchToolkit(BaseToolkit):
                 - "searchResults" for raw search results,
                 - "sourcedAnswer" for an answer with supporting sources,
                 - "structured" for output based on a provided schema.
-            structured_output_schema (Union[Type[BaseModel], str, None]): If
-                `output_type` is "structured",specify the schema of the
-                output. Can be a Pydantic BaseModel or a JSON schema string.
+            structured_output_schema (Optional[str]): If `output_type` is
+                "structured", specify the schema of the output. Must be a
+                string representing a valid object JSON schema.
 
         Returns:
             Dict[str, Any]: A dictionary representing the search result. The

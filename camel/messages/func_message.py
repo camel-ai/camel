@@ -154,10 +154,10 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = json.dumps(self.result)
+        result_content = str(self.result)
 
         return {
             "role": "tool",
-            "content": result_content,
+            "content": f"{result_content}",
             "tool_call_id": self.tool_call_id or "null",
         }
