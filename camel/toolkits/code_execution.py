@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from typing import List, Literal, Optional, Union
 
 from camel.interpreters import (
@@ -35,8 +36,8 @@ class CodeExecutionToolkit(BaseToolkit):
             by `eval()` without any security check. (default: :obj:`False`)
         import_white_list ( Optional[List[str]]): A list of allowed imports.
             (default: :obj:`None`)
-        require_confirm (bool): Whether to require confirmation before executing code.
-            (default: :obj:`False`)
+        require_confirm (bool): Whether to require confirmation before
+            executing code. (default: :obj:`False`)
     """
 
     def __init__(
@@ -92,20 +93,43 @@ class CodeExecutionToolkit(BaseToolkit):
                 f"The sandbox type `{sandbox}` is not supported."
             )
 
-    def execute_code(self, code: str) -> str:
+    def execute_code(self, code: str, timer: int = -1) -> str:
         r"""Execute a given code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
+            timer (int):  The number of seconds to wait for the result if the
+                future isn't done. If the code execution exceeds the timeout,
+                the code execution will be terminated and the result will be
+                returned as "Timed out". If the timer is set to -1, the code
+                execution will not be timed out. (default: :obj:`-1`)
 
         Returns:
             str: The text output from the Code Interpreter tool call.
         """
-        output = self.interpreter.run(code, "python")
-        # ruff: noqa: E501
-        content = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n{output}"
+
+        def run_interpreter():
+            return self.interpreter.run(code, "python")
+
+        if timer > 0:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(run_interpreter)
+                try:
+                    output = future.result(timeout=timer)
+                except TimeoutError:
+                    output = "Timed out, execution terminated."
+        else:
+            output = self.interpreter.run(code, "python")
+
+        # Format the output content
+        content = (
+            f"Executed the code below:\n```py\n{code}\n```\n"
+            f"> Executed Results:\n{output}"
+        )
+
         if self.verbose:
             print(content)
+
         return content
 
     def get_tools(self) -> List[FunctionTool]:
