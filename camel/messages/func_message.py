@@ -158,6 +158,6 @@ class FunctionCallingMessage(BaseMessage):
 
         return {
             "role": "tool",
-            "content": f"{result_content}",
+            "content": result_content,
             "tool_call_id": self.tool_call_id or "null",
         }
