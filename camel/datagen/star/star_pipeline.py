@@ -322,6 +322,36 @@ class STaRPipeline:
         response = self.reason_agent.step(prompt)
         return response.msg.content
 
+    def validate_problem_format(self, problem: Dict) -> None:
+        r"""Validate that a problem dictionary has the required format.
+
+        Args:
+            problem (Dict): Problem dictionary to validate.
+
+        Raises:
+            ValueError: If the problem format is invalid.
+        """
+        if not isinstance(problem, dict):
+            raise ValueError("Problem must be a dictionary.")
+
+        # Check required problem field
+        if "problem" not in problem:
+            raise ValueError("Problem dictionary must contain 'problem' key.")
+        if not isinstance(problem["problem"], str):
+            raise ValueError("Problem 'problem' field must be a string.")
+
+        # Optional fields validation
+        optional_fields = {"id": str, "type": str, "solution": str}
+
+        for field, expected_type in optional_fields.items():
+            if field in problem and not isinstance(
+                problem[field], expected_type
+            ):
+                raise ValueError(
+                    f"Problem '{field}' must be of "
+                    f"type {expected_type.__name__} if present."
+                )
+
     def process_problem(
         self, problem: Dict, rationalization: bool = False
     ) -> ProblemResult:
@@ -334,11 +364,12 @@ class STaRPipeline:
 
         Returns:
             ProblemResult: Results with final trace and history.
+
+        Raises:
+            ValueError: If the problem format is invalid.
         """
-        if "problem" not in problem:
-            raise ValueError(
-                "Each problem dictionary must contain a 'problem' key."
-            )
+        # Validate problem format before processing
+        self.validate_problem_format(problem)
 
         problem_text = problem["problem"]
         solution_text = problem.get("solution", "")

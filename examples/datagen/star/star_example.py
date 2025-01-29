@@ -28,8 +28,7 @@ def main():
 
     # Load problems from JSON file
     with open(problems_path, 'r') as f:
-        problems_data = json.load(f)
-        problems = problems_data.get('problems', [])
+        problems = json.load(f)
 
     # Initialize agent
     reason_agent_system_message = """You are a struggling student who finds 
