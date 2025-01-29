@@ -10,16 +10,15 @@
 
 [![Colab][colab-image]][colab-url]
 [![Hugging Face][huggingface-image]][huggingface-url]
-[![Slack][slack-image]][slack-url]
 [![Discord][discord-image]][discord-url]
 [![Wechat][wechat-image]][wechat-url]
-[![Twitter][twitter-image]][twitter-url]
+[![X][x-image]][x-url]
 
 
 
 <p style="line-height: 1.5;"> 🐫 CAMEL is an open-source community dedicated to finding the scaling laws of agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.</p>
 
-Join us ([*Discord*](https://discord.camel-ai.org/), [*WeChat*](https://ghli.org/camel/wechat.png) or [*Slack*](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ)) in pushing the boundaries of finding the scaling laws of agents.
+Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents.
 
 
 </div>
@@ -444,5 +443,6 @@ For more information please contact camel.ai.team@gmail.com.
 [discord-image]: https://img.shields.io/badge/Discord-CAMEL--AI-7289da?logo=discord&logoColor=white&color=7289da
 [wechat-url]: https://ghli.org/camel/wechat.png
 [wechat-image]: https://img.shields.io/badge/WeChat-CamelAIOrg-brightgreen?logo=wechat&logoColor=white
-[twitter-url]: https://twitter.com/CamelAIOrg
+[x-url]: https://x.com/CamelAIOrg
+[x-image]: https://img.shields.io/twitter/follow/CamelAIOrg?style=social
 [twitter-image]: https://img.shields.io/twitter/follow/CamelAIOrg?style=social&color=brightgreen&logo=twitter
