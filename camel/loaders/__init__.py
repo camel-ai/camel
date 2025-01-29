@@ -13,6 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .apify_reader import Apify
+from .autoconvert_dataformat import (
+    generate_mapping_rules,
+    load_json,
+    load_multiple_json,
+    save_json,
+    transform_data,
+)
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
@@ -30,4 +37,9 @@ __all__ = [
     'Apify',
     'ChunkrReader',
     'PandaReader',
+    'load_json',
+    'load_multiple_json',
+    'generate_mapping_rules',
+    'transform_data',
+    'save_json',
 ]
