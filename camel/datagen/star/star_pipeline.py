@@ -18,7 +18,10 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.models.reward import BaseRewardModel, Evaluator
+
+logger = get_logger(__name__)
 
 
 class AgentTraceEvaluation(BaseModel):
@@ -64,7 +67,9 @@ class STaRPipeline:
     4. Iterative refinement
 
     Args:
-        agent (ChatAgent): The chat agent used for generating and improving
+        reason_agent (ChatAgent): The chat agent used for generating and
+            improving reasoning traces.
+        evaluate_agent (ChatAgent): The chat agent used for evaluating
             reasoning traces.
         problems (List[Dict]): List of problem dictionaries to process.
         max_iterations (int, optional): Max iterations.
@@ -85,17 +90,21 @@ class STaRPipeline:
 
     def __init__(
         self,
-        agent: ChatAgent,
+        reason_agent: ChatAgent,
+        evaluate_agent: ChatAgent,
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
+        few_shot_examples: Optional[str] = None,
     ):
         r"""Initialize the STaR pipeline.
 
         Args:
-            agent (ChatAgent): The chat agent used for generating and improving
+            reason_agent (ChatAgent): The chat agent used for generating and
+                improving reasoning traces.
+            evaluate_agent (ChatAgent): The chat agent used for evaluating
                 reasoning traces.
             problems (List[Dict]): List of problem dictionaries to process.
             max_iterations (int, optional): Max Iterations
@@ -113,8 +122,11 @@ class STaRPipeline:
             output_path (str, optional): Output path for saving traces. If
                 `None`, results will only be returned without saving to file.
                 (default: :obj:`None`)
+            few_shot_examples (str, optional): Examples to use for few-shot
+                generation. (default: :obj:`None`)
         """
-        self.agent = agent
+        self.reason_agent = reason_agent
+        self.evaluate_agent = evaluate_agent
         self.problems = problems
         self.output_path = output_path
         self.max_iterations = max_iterations
@@ -124,6 +136,7 @@ class STaRPipeline:
             Evaluator(reward_model=reward_model) if reward_model else None
         )
         self.reasoning_traces: List[Dict[str, Any]] = []
+        self.few_shot_examples = few_shot_examples
 
     def _check_score_threshold(self, scores: Dict[str, float]) -> bool:
         r"""Check if scores meet the threshold requirements.
@@ -201,17 +214,28 @@ class STaRPipeline:
         Returns:
             str: Generated reasoning trace.
         """
-        self.agent.reset()
-        prompt = self.REASONING_TEMPLATE.format(problem=problem)
-        response = self.agent.step(prompt)
+        self.reason_agent.reset()
+        few_shot_examples = (
+            f"Examples: {self.few_shot_examples}"
+            if self.few_shot_examples
+            else ""
+        )
+        prompt = self.REASONING_TEMPLATE.format(
+            problem=problem, few_shot_examples=few_shot_examples
+        )
+        response = self.reason_agent.step(prompt)
         return response.msg.content
 
-    def evaluate_trace(self, problem: str, trace: str) -> Dict[str, Any]:
+    def evaluate_trace(
+        self, problem: str, trace: str, solution: Optional[str] = None
+    ) -> Dict[str, Any]:
         r"""Evaluate the quality of a reasoning trace.
 
         Args:
             problem (str): The original problem text to evaluate against.
             trace (str): The reasoning trace to evaluate.
+            solution (Optional[str]): The solution to the problem, if provided.
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: Evaluation results containing:
@@ -226,7 +250,7 @@ class STaRPipeline:
                 For reward model evaluation, the scores will depend on
                 the model's evaluation dimensions.
         """
-        self.agent.reset()
+        self.evaluate_agent.reset()
         if self.evaluator:
             # Use reward model evaluation
             messages = [
@@ -253,10 +277,11 @@ class STaRPipeline:
             return {**scores, "feedback": self._generate_feedback(scores)}
         else:
             # Fallback to original Agent self-evaluation
+            solution_text = f"Solution: {solution}" if solution else ""
             prompt = self.EVALUATION_TEMPLATE.format(
-                problem=problem, trace=trace
+                problem=problem, trace=trace, solution=solution_text
             )
-            response = self.agent.step(
+            response = self.evaluate_agent.step(
                 prompt, response_format=AgentTraceEvaluation
             )
             if response.msg.parsed is None:
@@ -269,29 +294,45 @@ class STaRPipeline:
 
             return evaluation.model_dump()
 
-    def improve_trace(self, problem: str, trace: str, feedback: str) -> str:
+    def improve_trace(
+        self,
+        problem: str,
+        trace: str,
+        feedback: str,
+        solution: Optional[str] = None,
+    ) -> str:
         r"""Generate improved reasoning trace based on feedback.
 
         Args:
             problem (str): The original problem text.
             trace (str): The current reasoning trace.
             feedback (str): Feedback for improving the trace.
+            solution (Optional[str]): The solution to the problem, if provided.
+                (default: :obj:`None`)
 
         Returns:
             str: Improved reasoning trace.
         """
-        self.agent.reset()
+        self.reason_agent.reset()
+        solution_text = f"Solution: {solution}" if solution else ""
         prompt = self.IMPROVEMENT_TEMPLATE.format(
-            problem=problem, trace=trace, feedback=feedback
+            problem=problem,
+            trace=trace,
+            feedback=feedback,
+            solution=solution_text,
         )
-        response = self.agent.step(prompt)
+        response = self.reason_agent.step(prompt)
         return response.msg.content
 
-    def process_problem(self, problem: Dict) -> ProblemResult:
+    def process_problem(
+        self, problem: Dict, rationalization: bool = False
+    ) -> ProblemResult:
         r"""Process a single problem through the STaR pipeline.
 
         Args:
             problem (Dict): Problem dictionary containing the problem text.
+            rationalization (bool, optional): Whether to use rationalization.
+                (default: :obj:`False`)
 
         Returns:
             ProblemResult: Results with final trace and history.
@@ -302,6 +343,7 @@ class STaRPipeline:
             )
 
         problem_text = problem["problem"]
+        solution_text = problem.get("solution", "")
         current_trace = self.generate_reasoning_trace(problem_text)
         improvement_history = []
 
@@ -314,7 +356,7 @@ class STaRPipeline:
             if self.evaluator:
                 improvement_history.append(
                     TraceIteration(
-                        iteration=iteration,
+                        iteration=iteration + 1,
                         trace=current_trace,
                         evaluation=RewardTraceEvaluation(**eval_dict),
                     )
@@ -322,7 +364,7 @@ class STaRPipeline:
             else:
                 improvement_history.append(
                     TraceIteration(
-                        iteration=iteration,
+                        iteration=iteration + 1,
                         trace=current_trace,
                         evaluation=AgentTraceEvaluation(
                             **scores, feedback=eval_dict["feedback"]
@@ -335,9 +377,17 @@ class STaRPipeline:
                 break
 
             # Generate improved trace
-            current_trace = self.improve_trace(
-                problem_text, current_trace, eval_dict["feedback"]
-            )
+            if rationalization:
+                current_trace = self.improve_trace(
+                    problem_text,
+                    current_trace,
+                    eval_dict["feedback"],
+                    solution_text,
+                )
+            else:
+                current_trace = self.improve_trace(
+                    problem_text, current_trace, eval_dict["feedback"]
+                )
 
         return ProblemResult(
             problem=problem_text,
@@ -345,18 +395,28 @@ class STaRPipeline:
             improvement_history=improvement_history,
         )
 
-    def generate(self) -> List[Dict[str, Any]]:
+    def generate(self, rationalization: bool = False) -> List[Dict[str, Any]]:
         r"""Execute the STaR pipeline on all problems.
 
         Process problems and return results. If output_path is specified,
         also save results to file.
 
+        Args:
+            rationalization (bool, optional): Whether to use rationalization.
+                (default: :obj:`False`)
+
         Returns:
             List[Dict[str, Any]]: List of processed results
         """
-        for problem in self.problems:
-            result = self.process_problem(problem)
+        # Pre-allocate results list
+        self.reasoning_traces = []
+
+        # Process problems sequentially with progress tracking
+        total_problems = len(self.problems)
+        for i, problem in enumerate(self.problems, 1):
+            result = self.process_problem(problem, rationalization)
             self.reasoning_traces.append(result.model_dump())
+            logger.info(f"Processed problem {i}/{total_problems}")
 
         if self.output_path:
             with open(self.output_path, 'w') as f:
@@ -372,12 +432,16 @@ Problem: {problem}
 3. Let's solve each part systematically
 4. Finally, let's verify our solution
 
+{few_shot_examples}
+
 Please show your complete reasoning process."""
 
     EVALUATION_TEMPLATE = """Please evaluate this reasoning trace and 
 provide scores and feedback in valid JSON format.
 
 Problem: {problem}
+
+{solution}
 
 Reasoning Trace:
 {trace}
@@ -398,6 +462,8 @@ Respond ONLY with a JSON object in this exact format:
     IMPROVEMENT_TEMPLATE = """Based on this feedback, generate an 
 improved reasoning trace:
 Problem: {problem}
+
+{solution}
 
 Previous Trace:
 {trace}

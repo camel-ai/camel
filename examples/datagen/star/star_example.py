@@ -16,9 +16,9 @@ import json
 import os
 
 from camel.agents import ChatAgent
-from camel.datagen.star import STaRPipeline
-from camel.models.reward import NemotronRewardModel
-from camel.types import ModelType
+from camel.datagen import STaRPipeline
+
+# from camel.models.reward import NemotronRewardModel
 
 
 def main():
@@ -32,41 +32,39 @@ def main():
         problems = problems_data.get('problems', [])
 
     # Initialize agent
-    system_message = """You are an expert mathematical reasoner who excels at 
-        solving problems step by step.
-        For each problem:
-        1. First understand what's being asked
-        2. Break down the problem into parts
-        3. Solve each part systematically
-        4. Verify your solution
-        5. Explain your reasoning clearly
-        Always show your work and explain your thinking process."""
-
-    agent = ChatAgent(system_message)
+    reason_agent_system_message = """You are a struggling student who finds 
+    solving math problems challenging. Your reasoning process is often flawed 
+    or lacks clarity when explaining your answers to others."""
+    evaluate_agent_system_message = """You are a highly critical teacher who 
+    evaluates the student's answers with a meticulous and demanding approach.
+    """
+    reason_agent = ChatAgent(reason_agent_system_message)
+    evaluate_agent = ChatAgent(evaluate_agent_system_message)
 
     # Initialize reward model (optional)
-    reward_model = NemotronRewardModel(
-        model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
-        url="https://integrate.api.nvidia.com/v1",
-        api_key=os.environ.get("NVIDIA_API_KEY"),
-    )
+    # reward_model = NemotronRewardModel(
+    #     model_type=ModelType.NVIDIA_NEMOTRON_340B_REWARD,
+    #     url="https://integrate.api.nvidia.com/v1",
+    #     api_key=os.environ.get("NVIDIA_API_KEY"),
+    # )
 
-    # Set score thresholds for different dimensions (optional)
-    score_threshold = {
-        "correctness": 1.6,
-        "coherence": 3,
-    }
+    # # Set score thresholds for different dimensions (optional)
+    # score_threshold = {
+    #     "correctness": 1.6,
+    #     "coherence": 3,
+    # }
     # Or use a single threshold for all dimensions:
-    # score_threshold = 0.9
+    score_threshold = 0.95
 
     # Create and run pipeline
     pipeline = STaRPipeline(
-        agent=agent,
+        reason_agent=reason_agent,
+        evaluate_agent=evaluate_agent,
         problems=problems,  # Pass problems list directly
         output_path=output_path,
-        max_iterations=1,
+        max_iterations=3,
         score_threshold=score_threshold,
-        reward_model=reward_model,  # To use a reward model (optional)
+        # reward_model=reward_model,  # To use a reward model (optional)
     )
 
     results = pipeline.generate()

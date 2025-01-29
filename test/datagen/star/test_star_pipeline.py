@@ -16,7 +16,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from camel.agents import ChatAgent
-from camel.datagen.star import STaRPipeline
+from camel.datagen import STaRPipeline
 from camel.datagen.star.star_pipeline import (
     ProblemResult,
     TraceIteration,
@@ -26,9 +26,21 @@ from camel.models.reward import BaseRewardModel
 
 class TestSTaRPipeline(unittest.TestCase):
     def setUp(self):
-        self.mock_agent = MagicMock(spec=ChatAgent)
-        self.mock_agent.step.return_value = MagicMock(
+        self.mock_reason_agent = MagicMock(spec=ChatAgent)
+        self.mock_reason_agent.step.return_value = MagicMock(
             msg=MagicMock(content="Mock reasoning trace")
+        )
+
+        self.mock_evaluate_agent = MagicMock(spec=ChatAgent)
+        self.mock_evaluate_agent.step.return_value = MagicMock(
+            msg=MagicMock(
+                parsed={
+                    "correctness": 0.8,
+                    "clarity": 0.9,
+                    "completeness": 0.85,
+                    "feedback": "Good explanation",
+                }
+            )
         )
 
         self.test_problems = [
@@ -45,7 +57,8 @@ class TestSTaRPipeline(unittest.TestCase):
 
     def test_pipeline_initialization(self):
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
         )
         self.assertEqual(len(pipeline.problems), 1)
@@ -53,18 +66,30 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertEqual(pipeline.score_threshold, 0.7)
         self.assertIsNone(pipeline.reward_model)
         self.assertIsNone(pipeline.evaluator)
+        self.assertIsNone(pipeline.few_shot_examples)
+
+    def test_pipeline_initialization_with_few_shot(self):
+        few_shot = "Example: 2 + 2 = 4"
+        pipeline = STaRPipeline(
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
+            problems=self.test_problems,
+            few_shot_examples=few_shot,
+        )
+        self.assertEqual(pipeline.few_shot_examples, few_shot)
 
     def test_generate_reasoning_trace(self):
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
         )
         trace = pipeline.generate_reasoning_trace(
             self.test_problems[0]["problem"]
         )
         self.assertEqual(trace, "Mock reasoning trace")
-        self.mock_agent.reset.assert_called_once()
-        self.mock_agent.step.assert_called_once()
+        self.mock_reason_agent.reset.assert_called_once()
+        self.mock_reason_agent.step.assert_called_once()
 
     def test_agent_evaluate_trace(self):
         evaluation_response = {
@@ -73,12 +98,13 @@ class TestSTaRPipeline(unittest.TestCase):
             "completeness": 0.85,
             "feedback": "Good explanation, but could be more detailed",
         }
-        self.mock_agent.step.return_value = MagicMock(
+        self.mock_evaluate_agent.step.return_value = MagicMock(
             msg=MagicMock(parsed=evaluation_response)
         )
 
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
         )
 
@@ -102,7 +128,8 @@ class TestSTaRPipeline(unittest.TestCase):
         mock_evaluator.evaluate.return_value = 0.85
 
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
             reward_model=mock_reward_model,
         )
@@ -127,7 +154,8 @@ class TestSTaRPipeline(unittest.TestCase):
         }
 
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
             reward_model=mock_reward_model,
         )
@@ -146,12 +174,13 @@ class TestSTaRPipeline(unittest.TestCase):
 
     def test_improve_trace(self):
         improved_trace = "Improved reasoning with more details"
-        self.mock_agent.step.return_value = MagicMock(
+        self.mock_reason_agent.step.return_value = MagicMock(
             msg=MagicMock(content=improved_trace)
         )
 
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
         )
 
@@ -162,14 +191,16 @@ class TestSTaRPipeline(unittest.TestCase):
         )
 
         self.assertEqual(result, improved_trace)
-        self.mock_agent.reset.assert_called_once()
-        self.mock_agent.step.assert_called_once()
+        self.mock_reason_agent.reset.assert_called_once()
+        self.mock_reason_agent.step.assert_called_once()
 
     def test_process_problem(self):
         # Mock responses for the process_problem pipeline
-        mock_responses = [
+        mock_reason_responses = [
             # Initial reasoning trace
             MagicMock(msg=MagicMock(content="Initial reasoning trace")),
+        ]
+        mock_evaluate_responses = [
             # Evaluation response
             MagicMock(
                 msg=MagicMock(
@@ -182,10 +213,12 @@ class TestSTaRPipeline(unittest.TestCase):
                 )
             ),
         ]
-        self.mock_agent.step.side_effect = mock_responses
+        self.mock_reason_agent.step.side_effect = mock_reason_responses
+        self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
 
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
         )
 
@@ -197,12 +230,67 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertEqual(len(result.improvement_history), 1)
         self.assertIsInstance(result.improvement_history[0], TraceIteration)
 
+    def test_process_problem_with_rationalization(self):
+        # Mock responses for the process_problem pipeline with rationalization
+        mock_reason_responses = [
+            # Initial reasoning trace
+            MagicMock(msg=MagicMock(content="Initial reasoning trace")),
+            # Improved trace after rationalization
+            MagicMock(msg=MagicMock(content="Improved reasoning trace")),
+        ]
+        mock_evaluate_responses = [
+            # First evaluation
+            MagicMock(
+                msg=MagicMock(
+                    parsed={
+                        "correctness": 0.6,
+                        "clarity": 0.5,
+                        "completeness": 0.6,
+                        "feedback": "Needs improvement",
+                    }
+                )
+            ),
+            # Second evaluation after improvement
+            MagicMock(
+                msg=MagicMock(
+                    parsed={
+                        "correctness": 0.9,
+                        "clarity": 0.9,
+                        "completeness": 0.9,
+                        "feedback": "Much better",
+                    }
+                )
+            ),
+        ]
+        self.mock_reason_agent.step.side_effect = mock_reason_responses
+        self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
+
+        pipeline = STaRPipeline(
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
+            problems=self.test_problems,
+            score_threshold=0.8,  # Set high threshold to trigger improvement
+        )
+
+        result = pipeline.process_problem(
+            self.test_problems[0], rationalization=True
+        )
+
+        self.assertIsInstance(result, ProblemResult)
+        self.assertEqual(result.problem, self.test_problems[0]["problem"])
+        self.assertEqual(result.final_trace, "Improved reasoning trace")
+        self.assertEqual(len(result.improvement_history), 2)
+        self.assertIsInstance(result.improvement_history[0], TraceIteration)
+        self.assertIsInstance(result.improvement_history[1], TraceIteration)
+
     @patch("json.dump")
     def test_generate_with_output(self, mock_dump):
         # Mock responses for the full pipeline
-        mock_responses = [
+        mock_reason_responses = [
             # Initial reasoning trace
             MagicMock(msg=MagicMock(content="Initial reasoning trace")),
+        ]
+        mock_evaluate_responses = [
             # Evaluation response
             MagicMock(
                 msg=MagicMock(
@@ -215,10 +303,12 @@ class TestSTaRPipeline(unittest.TestCase):
                 )
             ),
         ]
-        self.mock_agent.step.side_effect = mock_responses
+        self.mock_reason_agent.step.side_effect = mock_reason_responses
+        self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
 
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
             output_path="test_output.json",
         )
@@ -241,7 +331,8 @@ class TestSTaRPipeline(unittest.TestCase):
     def test_invalid_problem_format(self):
         invalid_problem = {"id": "problem_0", "type": "arithmetic"}
         pipeline = STaRPipeline(
-            agent=self.mock_agent,
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
             problems=[invalid_problem],
         )
 

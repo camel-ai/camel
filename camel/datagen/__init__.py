@@ -14,8 +14,10 @@
 
 from .cotdatagen import CoTDataGenerator
 from .self_instruct import SelfInstructPipeline
+from .star import STaRPipeline
 
 __all__ = [
     "CoTDataGenerator",
     "SelfInstructPipeline",
+    "STaRPipeline",
 ]
