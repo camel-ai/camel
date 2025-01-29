@@ -1,0 +1,26 @@
+[
+    {
+        "id": "problem_0",
+        "problem": "Prove that for any positive integer n, if n² is even, then n is even. Show all steps and explain why each step is valid.",
+        "type": "mathematical_proof",
+        "solution": "n is even"
+    },
+    {
+        "id": "problem_1",
+        "problem": "A cylindrical water tank has a radius of 3 meters and a height of 4 meters. If water is flowing into the tank at a rate of 2 cubic meters per minute, and simultaneously draining at a rate of 1 cubic meter per minute, how long will it take for the tank to fill up completely? Use π = 3.14 and show all calculations.",
+        "type": "word_problem",
+        "solution": "37.68 minutes"
+    },
+    {
+        "id": "problem_2",
+        "problem": "Find all values of x that satisfy the equation: |x - 2| + |x + 1| = 7. Show your reasoning and verify all solutions.",
+        "type": "algebra",
+        "solution": "x = -4 or x = 4"
+    },
+    {
+        "id": "problem_3",
+        "problem": "In how many ways can 8 different books be arranged on a shelf if 3 specific books must always be kept together (but can be arranged in any order among themselves)? Explain your approach and verify the answer.",
+        "type": "combinatorics",
+        "solution": "720"
+    }
+]
