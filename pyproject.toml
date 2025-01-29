@@ -535,5 +535,6 @@ module = [
     "tree-sitter",
     "ragas",
     "pandasai",
+    "sklearn.metrics.pairwise",
 ]
 ignore_missing_imports = true

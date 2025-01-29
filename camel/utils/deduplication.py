@@ -149,7 +149,7 @@ def deduplicate_internally(
         embeddings = embedding_instance.embed_list(texts)
     else:
         # Use pre-supplied embeddings.
-        if len(embeddings) != len(texts):
+        if embeddings and len(embeddings) != len(texts):
             raise ValueError(
                 "The length of 'embeddings' does not match the length "
                 "of 'texts'."
@@ -183,6 +183,8 @@ def deduplicate_internally(
     # Get the actual unique ids and embeddings.
     unique_ids = []
     unique_embeddings_dict = {}
+
+    assert embeddings, "embeddings must be valid"
 
     for i, (_, emb) in enumerate(zip(texts, embeddings)):
         if i not in duplicate_to_target_map:
