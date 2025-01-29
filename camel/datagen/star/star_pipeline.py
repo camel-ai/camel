@@ -72,8 +72,7 @@ class STaRPipeline:
         evaluate_agent (ChatAgent): The chat agent used for evaluating
             reasoning traces.
         problems (List[Dict]): List of problem dictionaries to process.
-        max_iterations (int, optional): Max iterations.
-            (default: :obj:`3`)
+        max_iterations (int, optional): Max iterations. (default: :obj:`3`)
         score_threshold (Union[float, Dict[str, float]], optional): Quality
             threshold. Can be either a single float value applied to all score,
             or a dictionary mapping score dimensions to their thresholds. For
@@ -81,9 +80,9 @@ class STaRPipeline:
             model and threshold for a dimension is not specified, will use the
             default value 0.7. (default: :obj:`0.7`)
         reward_model (BaseRewardModel, optional): Model used for evaluating
-            reasoning traces. If None, uses Agent self-evaluation.
+            reasoning traces. If `None`, uses Agent self-evaluation.
             (default: :obj:`None`)
-        output_path (str, optional): Output path for saving traces. If None,
+        output_path (str, optional): Output path for saving traces. If `None`,
             results will only be returned without saving to file.
             (default: :obj:`None`)
     """
@@ -107,8 +106,7 @@ class STaRPipeline:
             evaluate_agent (ChatAgent): The chat agent used for evaluating
                 reasoning traces.
             problems (List[Dict]): List of problem dictionaries to process.
-            max_iterations (int, optional): Max Iterations
-                (default: :obj:`3`)
+            max_iterations (int, optional): Max iterations. (default: :obj:`3`)
             score_threshold (Union[float, Dict[str, float]], optional):
                 Quality threshold. Can be either a single float value applied
                 to average score, or a dictionary mapping score dimensions to
@@ -117,7 +115,7 @@ class STaRPipeline:
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
-                reasoning traces. If None, uses Agent self-evaluation.
+                reasoning traces. If `None`, uses Agent self-evaluation.
                 (default: :obj:`None`)
             output_path (str, optional): Output path for saving traces. If
                 `None`, results will only be returned without saving to file.
