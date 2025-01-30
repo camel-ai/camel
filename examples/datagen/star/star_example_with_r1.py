@@ -17,7 +17,22 @@ import os
 import time
 
 from camel.agents import ChatAgent
+from camel.configs import DeepSeekConfig
 from camel.datagen import STaRPipeline
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+"""
+please set the below os environment:
+export DEEPSEEK_API_KEY=""
+export GET_REASONING_CONTENT="true"
+"""
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_REASONER,
+    model_config_dict=DeepSeekConfig(temperature=0.2).as_dict(),
+)
 
 # from camel.models.reward import NemotronRewardModel
 
@@ -26,8 +41,8 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'math_500_dataset.json')
-    output_path = os.path.join(current_dir, 'star_output.json')
+    problems_path = os.path.join(current_dir, 'input_problems.json')
+    output_path = os.path.join(current_dir, 'star_r1_output.json')
 
     # Load problems from JSON file
     with open(problems_path, 'r') as f:
@@ -39,8 +54,10 @@ def main():
     evaluate_agent_system_message = """You are a highly critical teacher who 
     evaluates the student's answers with a meticulous and demanding approach.
     """
-    reason_agent = ChatAgent(reason_agent_system_message)
-    evaluate_agent = ChatAgent(evaluate_agent_system_message)
+    reason_agent = ChatAgent(
+        system_message=reason_agent_system_message, model=model
+    )
+    evaluate_agent = ChatAgent(system_message=evaluate_agent_system_message)
 
     # Initialize reward model (optional)
     # reward_model = NemotronRewardModel(
@@ -63,7 +80,7 @@ def main():
         evaluate_agent=evaluate_agent,
         problems=problems,  # Pass problems list directly
         output_path=output_path,
-        max_iterations=3,
+        max_iterations=0,
         score_threshold=score_threshold,
         # reward_model=reward_model,  # To use a reward model (optional)
     )

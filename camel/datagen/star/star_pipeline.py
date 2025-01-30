@@ -60,7 +60,10 @@ class ProblemResult(BaseModel):
     problem: str
     solution: Optional[str] = None
     final_trace: str
-    success: bool = False  # Tracks if problem meets evaluation standards
+    evaluate_success: bool = (
+        False  # Tracks if problem meets evaluation standards
+    )
+    boxed_answer_success: bool = False
     improvement_history: List[TraceIteration]
 
 
@@ -530,6 +533,30 @@ class STaRPipeline:
                     f"type {expected_type.__name__} if present."
                 )
 
+    def _check_boxed_answers(self, solution: str, trace: str) -> bool:
+        r"""Check if the boxed answer in the trace matches the solution.
+
+        Args:
+            solution (str): The problem solution string.
+            trace (str): The reasoning trace string.
+
+        Returns:
+            bool: True if boxed answers match, False otherwise
+        """
+        import re
+
+        # Extract content within \boxed{...}
+        solution_match = re.search(r'\\boxed{(.*?)}', solution, re.DOTALL)
+        trace_match = re.search(r'\\boxed{(.*?)}', trace, re.DOTALL)
+
+        if solution_match and trace_match:
+            # Clean up whitespace and normalize content
+            solution_answer = solution_match.group(1).strip()
+            trace_answer = trace_match.group(1).strip()
+            return solution_answer == trace_answer
+
+        return False
+
     def process_problem(
         self, problem: Dict, rationalization: bool = False
     ) -> ProblemResult:
@@ -618,13 +645,18 @@ class STaRPipeline:
                     problem_text, current_trace, eval_dict["feedback"]
                 )
 
+        boxed_answer_success = self._check_boxed_answers(
+            problem.get("solution", ""), current_trace
+        )
+
         return ProblemResult(
             id=problem.get("id", ""),
             type=problem.get("type", ""),
             problem=problem_text,
             solution=problem.get("solution", ""),
             final_trace=current_trace,
-            success=self._check_score_threshold(scores),
+            evaluate_success=self._check_score_threshold(scores),
+            boxed_answer_success=boxed_answer_success,
             improvement_history=improvement_history,
         )
 
