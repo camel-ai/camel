@@ -79,7 +79,7 @@ class WhatsAppToolkit(BaseToolkit):
         }
 
         try:
-            response = requests.get(url=url, headers=headers, json=data)
+            response = requests.post(url=url, headers=headers, json=data)
             response.raise_for_status()
             return response.json()
         except Exception as e:
