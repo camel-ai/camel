@@ -20,7 +20,7 @@ from camel.toolkits import VideoAnalysisToolkit
 load_dotenv()
 
 
-@pytest.fixtures
+@pytest.fixture
 def video_toolkit():
     return VideoAnalysisToolkit()
 

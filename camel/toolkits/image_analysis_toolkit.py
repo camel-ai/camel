@@ -31,7 +31,11 @@ class ImageAnalysisToolkit(BaseToolkit):
     objects, text in images.
     """
 
-    def _encode_image(self, image_path):
+    def _encode_image(self, image_path: str):
+        r"""Encode an image by its image path.
+
+        Arg:
+            image_path (str): The path to the image file."""
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
 

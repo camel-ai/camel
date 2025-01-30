@@ -97,7 +97,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             (default: :obj:`None`)
     """
 
-    @dependencies_required("ffmpeg")
+    @dependencies_required("ffmpeg, scenedetect")
     def __init__(
         self,
         download_directory: Optional[str] = None,
