@@ -72,9 +72,9 @@ class MoonshotModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
         self._client = OpenAI(
+            api_key=self._api_key,
             timeout=180,
             max_retries=3,
-            api_key=self._api_key,
             base_url=self._url,
         )
 
