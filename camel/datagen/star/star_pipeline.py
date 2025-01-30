@@ -580,6 +580,7 @@ class STaRPipeline:
         solution_text = problem.get("solution", "")
         current_trace = self.generate_reasoning_trace(problem_text)
         improvement_history = []
+        scores = {}
 
         # Create batches for parallel evaluation
         batch_problems = []

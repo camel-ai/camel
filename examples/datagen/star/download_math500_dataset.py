@@ -23,8 +23,8 @@ def download_huggingface_dataset():
         # Load the dataset using the datasets library
         dataset = load_dataset("HuggingFaceH4/MATH-500", split="test")
 
-        # Get the first 20 items
-        data = dataset.select(range(20))
+        # Get the first 500 items
+        data = dataset.select(range(500))
 
         # Print the first item to see its structure
         print("Dataset structure:")
