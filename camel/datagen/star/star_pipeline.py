@@ -522,7 +522,7 @@ class STaRPipeline:
             raise ValueError("Problem 'problem' field must be a string.")
 
         # Optional fields validation
-        optional_fields = {"id": (str, int), "type": str, "solution": str}
+        optional_fields = {"id": (str, int, type(None)), "type": str, "solution": str}
 
         for field, expected_type in optional_fields.items():
             if field in problem and not isinstance(

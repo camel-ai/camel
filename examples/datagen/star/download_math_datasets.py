@@ -121,7 +121,7 @@ def download_amc23_dataset():
                 "id": item.get('id', ''),
                 "problem": item.get('question', ''),
                 "type": "zwhe99/amc23",  # All problems are from AMC23
-                "solution": f"\\boxed{{{item.get('answer', '')}}}",
+                "solution": f"\\boxed{{{item.get('answer', '').strip('$')}}}",
                 "answer": item.get('answer', None)
             }
             formatted_data.append(formatted_item)
@@ -143,7 +143,102 @@ def download_amc23_dataset():
         return None
 
 
+def download_gaokao2023_dataset():
+    try:
+        # Direct API endpoint for the dataset
+        url = "https://datasets-server.huggingface.co/rows?dataset=MARIO-Math-Reasoning%2FGaokao2023-Math-En&config=default&split=train&offset=0&length=100"
+        response = requests.get(url)
+        
+        if not response.ok:
+            raise Exception(f"Failed to fetch data: {response.status_code}")
+            
+        data = response.json()
+        
+        # Convert to the desired format
+        formatted_data = []
+        for row in data.get('rows', []):
+            item = row.get('row', {})
+            formatted_item = {
+                "id": item.get('id', ''),
+                "problem": item.get('question', ''),
+                "type": "MARIO-Math-Reasoning/Gaokao2023",  # All problems are from Gaokao 2023
+                "solution": f"\\boxed{{{item.get('answer', '').strip('$')}}}",
+                "answer": item.get('answer', None)
+            }
+            formatted_data.append(formatted_item)
+
+        # Create output directory if it doesn't exist
+        output_dir = Path("examples/datagen/star")
+        output_dir.mkdir(exist_ok=True)
+
+        # Save to JSON file
+        output_file = output_dir / "gaokao2023_dataset.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(formatted_data, f, indent=4, ensure_ascii=False)
+
+        print(f"Successfully downloaded and saved Gaokao2023 data to {output_file}")
+        return formatted_data
+
+    except Exception as e:
+        print(f"Error downloading Gaokao2023 dataset: {e}")
+        return None
+
+
+def download_gsm8k_dataset():
+    try:
+        # Direct API endpoint for the dataset
+        url = "https://datasets-server.huggingface.co/rows?dataset=openai%2Fgsm8k&config=main&split=train&offset=0&length=100"
+        response = requests.get(url)
+        
+        if not response.ok:
+            raise Exception(f"Failed to fetch data: {response.status_code}")
+            
+        data = response.json()
+        
+        # Convert to the desired format
+        formatted_data = []
+        for row in data.get('rows', []):
+            item = row.get('row', {})
+            # Extract the final answer from the solution
+            solution = item.get('answer', '')
+            answer = None
+            if solution:
+                # GSM8K solutions typically end with "#### number"
+                import re
+                match = re.search(r'####\s*(\d+)', solution)
+                if match:
+                    number = match.group(1)
+                    # Replace the "#### number" with "\boxed{number}"
+                    solution = re.sub(r'####\s*\d+', f'\\\\boxed{{{number}}}', solution)
+
+            formatted_item = {
+                "id": None,  # GSM8K doesn't provide IDs
+                "problem": item.get('question', ''),
+                "type": "openai/gsm8k",  # All problems are from GSM8K
+                "solution": solution,  # Use the modified solution with \boxed
+            }
+            formatted_data.append(formatted_item)
+
+        # Create output directory if it doesn't exist
+        output_dir = Path("examples/datagen/star")
+        output_dir.mkdir(exist_ok=True)
+
+        # Save to JSON file
+        output_file = output_dir / "gsm8k_dataset.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(formatted_data, f, indent=4, ensure_ascii=False)
+
+        print(f"Successfully downloaded and saved GSM8K data to {output_file}")
+        return formatted_data
+
+    except Exception as e:
+        print(f"Error downloading GSM8K dataset: {e}")
+        return None
+
+
 if __name__ == "__main__":
     # download_huggingface_dataset()
     # download_aime24_dataset()
-    download_amc23_dataset()
+    # download_amc23_dataset()
+    # download_gaokao2023_dataset()
+    download_gsm8k_dataset()
