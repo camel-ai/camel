@@ -159,6 +159,11 @@ class STaRPipeline:
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
         self.batch_processor = BatchProcessor(max_workers, batch_size)
+        
+        # Initialize output file with empty results if path is specified
+        if self.output_path:
+            with open(self.output_path, 'w') as f:
+                json.dump({'traces': []}, f, indent=2)
 
     async def _batch_process_problems(
         self, problems: List[Dict], rationalization: bool
@@ -650,7 +655,7 @@ class STaRPipeline:
             problem.get("solution", ""), current_trace
         )
 
-        return ProblemResult(
+        result = ProblemResult(
             id=problem.get("id", ""),
             type=problem.get("type", ""),
             problem=problem_text,
@@ -660,6 +665,24 @@ class STaRPipeline:
             boxed_answer_success=boxed_answer_success,
             improvement_history=improvement_history,
         )
+
+        # Write result to file immediately if output path is specified
+        if self.output_path:
+            try:
+                # Read existing results
+                with open(self.output_path, 'r') as f:
+                    data = json.load(f)
+                
+                # Append new result
+                data['traces'].append(result.model_dump())
+                
+                # Write back all results
+                with open(self.output_path, 'w') as f:
+                    json.dump(data, f, indent=2)
+            except Exception as e:
+                logger.error(f"Error writing result to file: {e}")
+
+        return result
 
     def generate(self, rationalization: bool = False) -> List[Dict[str, Any]]:
         r"""Execute the STaR pipeline on all problems.
@@ -689,11 +712,6 @@ class STaRPipeline:
             loop.close()
 
         self.reasoning_traces = [result.model_dump() for result in results]
-
-        if self.output_path:
-            with open(self.output_path, 'w') as f:
-                json.dump({'traces': self.reasoning_traces}, f, indent=2)
-
         return self.reasoning_traces
 
     # Templates for generating reasoning, evaluation and improving them.
