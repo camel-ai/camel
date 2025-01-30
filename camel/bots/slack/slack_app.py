@@ -38,13 +38,33 @@ logger = logging.getLogger(__name__)
 
 
 class SlackApp:
-    r"""Represents a Slack app that is powered by a Slack Bolt `AsyncApp`.
-    This class is responsible for initializing and managing the Slack
-    application by setting up event handlers, running the app server, runting
-    socket mode client, and handling events such as messages and mentions
-    from Slack.
-    """
+    r"""Initializes the SlackApp instance by setting up the Slack Bolt app
+        and configuring event handlers and OAuth settings.
 
+    Args:
+    oauth_token (str): Slack API token for authentication.
+    app_token (str, optional): Slack app token for authentication.
+        (default: :obj:`None`)
+    scopes (str, optional): Slack app scopes for permissions.
+        (default: :obj:`None`)
+    signing_secret (str, optional): Signing secret for verifying Slack
+        requests. (default: :obj:`None`)
+    client_id (str, optional): Slack app client ID. (default: :obj:`None`)
+    client_secret (str, optional): Slack app client secret.
+        (default: :obj:`None`)
+    redirect_uri_path (str, optional): The URI path for OAuth redirect.
+        (default: :str:`/slack/oauth_redirect`)
+    installation_store (AsyncInstallationStore, optional): The installation
+        store for handling OAuth installations. (default: :obj:`None`)
+    socket_mode (bool): A flag to enable socket mode for the Slack app
+        (default: :bool:`False`).
+    oauth_mode (bool): A flag to enable OAuth mode for the Slack app
+        (default: :bool:`False`).
+
+    Raises:
+        ValueError: If the `SLACK_OAUTH_TOKEN` and other required
+            parameters are not provided.
+    """
     @dependencies_required('slack_bolt')
     def __init__(
         self,
@@ -59,33 +79,6 @@ class SlackApp:
         socket_mode: bool = False,
         oauth_mode: bool = False,
     ) -> None:
-        r"""Initializes the SlackApp instance by setting up the Slack Bolt app
-        and configuring event handlers and OAuth settings.
-
-        Args:
-        oauth_token (str): Slack API token for authentication.
-        app_token (str, optional): Slack app token for authentication.
-            (default: :obj:`None`)
-        scopes (str, optional): Slack app scopes for permissions.
-            (default: :obj:`None`)
-        signing_secret (str, optional): Signing secret for verifying Slack
-            requests. (default: :obj:`None`)
-        client_id (str, optional): Slack app client ID. (default: :obj:`None`)
-        client_secret (str, optional): Slack app client secret.
-            (default: :obj:`None`)
-        redirect_uri_path (str, optional): The URI path for OAuth redirect.
-            (default: :str:`/slack/oauth_redirect`)
-        installation_store (AsyncInstallationStore, optional): The installation
-            store for handling OAuth installations. (default: :obj:`None`)
-        socket_mode (bool): A flag to enable socket mode for the Slack app
-            (default: :bool:`False`).
-        oauth_mode (bool): A flag to enable OAuth mode for the Slack app
-            (default: :bool:`False`).
-
-        Raises:
-            ValueError: If the `SLACK_OAUTH_TOKEN` and other required
-                parameters are not provided.
-        """
         from slack_bolt.adapter.socket_mode.async_handler import (
             AsyncSocketModeHandler,
         )
