@@ -159,7 +159,7 @@ class STaRPipeline:
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
         self.batch_processor = BatchProcessor(max_workers, batch_size)
-        
+
         # Initialize output file with empty results if path is specified
         if self.output_path:
             with open(self.output_path, 'w') as f:
@@ -527,15 +527,24 @@ class STaRPipeline:
             raise ValueError("Problem 'problem' field must be a string.")
 
         # Optional fields validation
-        optional_fields = {"id": (str, int, type(None)), "type": str, "solution": str}
+        optional_fields: dict[str, type | tuple[type, ...]] = {
+            "id": (str, int, type(None)),
+            "type": str,
+            "solution": str,
+        }
 
         for field, expected_type in optional_fields.items():
             if field in problem and not isinstance(
                 problem[field], expected_type
             ):
+                type_name = (
+                    expected_type.__name__
+                    if hasattr(expected_type, '__name__')
+                    else str(expected_type)
+                )
                 raise ValueError(
                     f"Problem '{field}' must be of "
-                    f"type {expected_type.__name__} if present."
+                    f"type {type_name} if present."
                 )
 
     def _check_boxed_answers(self, solution: str, trace: str) -> bool:
@@ -672,10 +681,10 @@ class STaRPipeline:
                 # Read existing results
                 with open(self.output_path, 'r') as f:
                     data = json.load(f)
-                
+
                 # Append new result
                 data['traces'].append(result.model_dump())
-                
+
                 # Write back all results
                 with open(self.output_path, 'w') as f:
                     json.dump(data, f, indent=2)

@@ -17,7 +17,6 @@ import os
 import time
 
 from camel.agents import ChatAgent
-from camel.configs import DeepSeekConfig
 from camel.datagen import STaRPipeline
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
@@ -30,7 +29,8 @@ export GET_REASONING_CONTENT="true"
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEEPSEEK,
-    model_type=ModelType.DEEPSEEK_REASONER)
+    model_type=ModelType.DEEPSEEK_REASONER,
+)
 
 # from camel.models.reward import NemotronRewardModel
 

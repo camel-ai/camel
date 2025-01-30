@@ -248,11 +248,17 @@ class TestSTaRPipeline(unittest.TestCase):
         scores = {"correctness": 0.7, "clarity": 0.6, "completeness": 0.9}
         self.assertFalse(pipeline._check_score_threshold(scores))
 
+    @patch("builtins.open")
     @patch("json.dump")
-    def test_generate_with_output(self, mock_dump):
-        # Mock responses for the full pipeline
+    @patch("json.load")
+    def test_generate_with_output(self, mock_load, mock_dump, mock_open):
+        mock_load.return_value = {"traces": []}
+        mock_open.return_value.__enter__ = mock_open
+        mock_open.return_value.__exit__ = MagicMock()
+
         mock_reason_responses = [
             MagicMock(msg=MagicMock(content="Initial reasoning trace")),
+            MagicMock(msg=MagicMock(content="Improved reasoning trace")),
         ]
         mock_evaluate_responses = [
             MagicMock(
@@ -265,6 +271,16 @@ class TestSTaRPipeline(unittest.TestCase):
                     }
                 )
             ),
+            MagicMock(
+                msg=MagicMock(
+                    parsed={
+                        "correctness": 0.98,
+                        "clarity": 0.95,
+                        "completeness": 0.98,
+                        "feedback": "Perfect explanation",
+                    }
+                )
+            ),
         ]
         self.mock_reason_agent.step.side_effect = mock_reason_responses
         self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
@@ -274,6 +290,8 @@ class TestSTaRPipeline(unittest.TestCase):
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
             output_path="test_output.json",
+            max_iterations=1,
+            score_threshold=0.99,
         )
 
         results = pipeline.generate()
@@ -287,9 +305,35 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertIn("improvement_history", result)
 
         # Verify output was written
-        mock_dump.assert_called_once()
-        args = mock_dump.call_args[0]
-        self.assertEqual(args[0], {"traces": results})
+        mock_dump.assert_called()
+        args = mock_dump.call_args_list[-1][0]  # Get last call args
+        expected_result = {
+            "traces": [
+                {
+                    "id": "problem_0",
+                    "type": "arithmetic",
+                    "problem": "If John has 5 apples and gives 2 to Mary, "
+                    "how many does he have left?",
+                    "solution": "3",
+                    "final_trace": "Improved reasoning trace",
+                    "evaluate_success": False,
+                    "boxed_answer_success": False,
+                    "improvement_history": [
+                        {
+                            "iteration": 1,
+                            "trace": "Initial reasoning trace",
+                            "evaluation": {
+                                "correctness": 0.95,
+                                "clarity": 0.9,
+                                "completeness": 0.95,
+                                "feedback": "Excellent explanation",
+                            },
+                        }
+                    ],
+                }
+            ]
+        }
+        self.assertEqual(args[0], expected_result)
 
     def test_invalid_problem_format(self):
         test_cases = [
@@ -299,8 +343,9 @@ class TestSTaRPipeline(unittest.TestCase):
             ),
             ({"problem": 123}, "Problem 'problem' field must be a string."),
             (
-                {"problem": "test", "id": 123},
-                "Problem 'id' must be of type str if present.",
+                {"problem": "test", "id": []},
+                "Problem 'id' must be of type (<class 'str'>, <class 'int'>"
+                ", <class 'NoneType'>) if present.",
             ),
             (
                 {"problem": "test", "type": 123},

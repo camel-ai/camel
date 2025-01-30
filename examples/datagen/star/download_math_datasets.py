@@ -14,11 +14,12 @@
 
 import json
 from pathlib import Path
+
 import requests
 from datasets import load_dataset
 
 
-def download_huggingface_dataset():
+def download_math500_dataset():
     try:
         # Load the dataset using the datasets library
         dataset = load_dataset("HuggingFaceH4/MATH-500", split="test")
@@ -36,7 +37,8 @@ def download_huggingface_dataset():
             formatted_item = {
                 "id": item['unique_id'],
                 "problem": item['problem'],
-                "type": f"HuggingFaceH4/MATH-500\n"+item['subject'],  # Include subject as type
+                "type": "HuggingFaceH4/MATH-500\n"
+                + item['subject'],  # Include subject as type
                 "solution": item['solution'],
                 "level": item['level'],
             }
@@ -64,12 +66,12 @@ def download_aime24_dataset():
         # Direct API endpoint for the dataset
         url = "https://datasets-server.huggingface.co/rows?dataset=HuggingFaceH4%2Faime_2024&config=default&split=train&offset=0&length=100"
         response = requests.get(url)
-        
+
         if not response.ok:
             raise Exception(f"Failed to fetch data: {response.status_code}")
-            
+
         data = response.json()
-        
+
         # Convert to the desired format
         formatted_data = []
         for row in data.get('rows', []):
@@ -77,11 +79,11 @@ def download_aime24_dataset():
             formatted_item = {
                 "id": item.get('id', ''),
                 "problem": item.get('problem', ''),
-                "type": "HuggingFaceH4/aime_2024",  # All problems are from AIME
+                "type": "HuggingFaceH4/aime_2024",
                 "solution": item.get('solution', ''),
                 "answer": item.get('answer', None),
                 "url": item.get('url', ''),
-                "year": item.get('year', '')
+                "year": item.get('year', ''),
             }
             formatted_data.append(formatted_item)
 
@@ -94,7 +96,9 @@ def download_aime24_dataset():
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(formatted_data, f, indent=4, ensure_ascii=False)
 
-        print(f"Successfully downloaded and saved AIME24 data to {output_file}")
+        print(
+            f"Successfully downloaded and saved AIME24 data to {output_file}"
+        )
         return formatted_data
 
     except Exception as e:
@@ -107,12 +111,12 @@ def download_amc23_dataset():
         # Direct API endpoint for the dataset
         url = "https://datasets-server.huggingface.co/rows?dataset=zwhe99%2Famc23&config=default&split=test&offset=0&length=100"
         response = requests.get(url)
-        
+
         if not response.ok:
             raise Exception(f"Failed to fetch data: {response.status_code}")
-            
+
         data = response.json()
-        
+
         # Convert to the desired format
         formatted_data = []
         for row in data.get('rows', []):
@@ -122,7 +126,7 @@ def download_amc23_dataset():
                 "problem": item.get('question', ''),
                 "type": "zwhe99/amc23",  # All problems are from AMC23
                 "solution": f"\\boxed{{{item.get('answer', '').strip('$')}}}",
-                "answer": item.get('answer', None)
+                "answer": item.get('answer', None),
             }
             formatted_data.append(formatted_item)
 
@@ -148,12 +152,12 @@ def download_gaokao2023_dataset():
         # Direct API endpoint for the dataset
         url = "https://datasets-server.huggingface.co/rows?dataset=MARIO-Math-Reasoning%2FGaokao2023-Math-En&config=default&split=train&offset=0&length=100"
         response = requests.get(url)
-        
+
         if not response.ok:
             raise Exception(f"Failed to fetch data: {response.status_code}")
-            
+
         data = response.json()
-        
+
         # Convert to the desired format
         formatted_data = []
         for row in data.get('rows', []):
@@ -161,9 +165,9 @@ def download_gaokao2023_dataset():
             formatted_item = {
                 "id": item.get('id', ''),
                 "problem": item.get('question', ''),
-                "type": "MARIO-Math-Reasoning/Gaokao2023",  # All problems are from Gaokao 2023
+                "type": "MARIO-Math-Reasoning/Gaokao2023",
                 "solution": f"\\boxed{{{item.get('answer', '').strip('$')}}}",
-                "answer": item.get('answer', None)
+                "answer": item.get('answer', None),
             }
             formatted_data.append(formatted_item)
 
@@ -176,7 +180,10 @@ def download_gaokao2023_dataset():
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(formatted_data, f, indent=4, ensure_ascii=False)
 
-        print(f"Successfully downloaded and saved Gaokao2023 data to {output_file}")
+        print(
+            f"Successfully downloaded and saved Gaokao2023 data "
+            f"to {output_file}"
+        )
         return formatted_data
 
     except Exception as e:
@@ -189,27 +196,29 @@ def download_gsm8k_dataset():
         # Direct API endpoint for the dataset
         url = "https://datasets-server.huggingface.co/rows?dataset=openai%2Fgsm8k&config=main&split=train&offset=0&length=100"
         response = requests.get(url)
-        
+
         if not response.ok:
             raise Exception(f"Failed to fetch data: {response.status_code}")
-            
+
         data = response.json()
-        
+
         # Convert to the desired format
         formatted_data = []
         for row in data.get('rows', []):
             item = row.get('row', {})
             # Extract the final answer from the solution
             solution = item.get('answer', '')
-            answer = None
             if solution:
                 # GSM8K solutions typically end with "#### number"
                 import re
+
                 match = re.search(r'####\s*(\d+)', solution)
                 if match:
                     number = match.group(1)
                     # Replace the "#### number" with "\boxed{number}"
-                    solution = re.sub(r'####\s*\d+', f'\\\\boxed{{{number}}}', solution)
+                    solution = re.sub(
+                        r'####\s*\d+', f'\\\\boxed{{{number}}}', solution
+                    )
 
             formatted_item = {
                 "id": None,  # GSM8K doesn't provide IDs
@@ -237,7 +246,7 @@ def download_gsm8k_dataset():
 
 
 if __name__ == "__main__":
-    # download_huggingface_dataset()
+    # download_math500_dataset()
     # download_aime24_dataset()
     # download_amc23_dataset()
     # download_gaokao2023_dataset()
