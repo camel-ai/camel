@@ -41,7 +41,7 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'input_problems.json')
+    problems_path = os.path.join(current_dir, 'math_500_dataset.json')
     output_path = os.path.join(current_dir, 'star_r1_output.json')
 
     # Load problems from JSON file
