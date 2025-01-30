@@ -16,8 +16,6 @@ from typing import Optional
 
 from camel.configs.base_config import BaseConfig
 
-# ... existing code ...
-
 
 class MoonshotConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
