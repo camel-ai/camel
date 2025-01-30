@@ -42,6 +42,7 @@ eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
 pandoc = "*"
 httpx = ">=0.23.0,<0.27.3"
+psutil = "^5.9.8"
 
 # Model platforms
 litellm = { version = "^1.38.1", optional = true }
@@ -460,6 +461,7 @@ module = [
     "openai.error",
     "anthropic",
     "pytest",
+    "psutil",
     "_pytest.config",
     "_pytest.nodes",
     "numpy",

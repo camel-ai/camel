@@ -14,6 +14,7 @@
 
 import json
 import os
+import time
 
 from camel.agents import ChatAgent
 from camel.datagen import STaRPipeline
@@ -22,6 +23,8 @@ from camel.datagen import STaRPipeline
 
 
 def main():
+    start_time = time.time()
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     problems_path = os.path.join(current_dir, 'input_problems.json')
     output_path = os.path.join(current_dir, 'star_output.json')
@@ -53,7 +56,7 @@ def main():
     #     "coherence": 3,
     # }
     # Or use a single threshold for all dimensions:
-    score_threshold = 0.95
+    score_threshold = 0.9
 
     # Create and run pipeline
     pipeline = STaRPipeline(
@@ -66,9 +69,14 @@ def main():
         # reward_model=reward_model,  # To use a reward model (optional)
     )
 
-    results = pipeline.generate()
+    results = pipeline.generate(rationalization=True)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+
     print(f"\nProcessed {len(results)} problems")
     print(f"Results saved to: {output_path}")
+    print(f"Total execution time: {execution_time:.2f} seconds")
 
 
 if __name__ == "__main__":

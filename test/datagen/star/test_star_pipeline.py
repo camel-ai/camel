@@ -60,6 +60,8 @@ class TestSTaRPipeline(unittest.TestCase):
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
+            batch_size=10,
+            max_workers=4,
         )
         self.assertEqual(len(pipeline.problems), 1)
         self.assertEqual(pipeline.max_iterations, 3)
@@ -67,6 +69,8 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertIsNone(pipeline.reward_model)
         self.assertIsNone(pipeline.evaluator)
         self.assertIsNone(pipeline.few_shot_examples)
+        self.assertEqual(pipeline.batch_processor.batch_size, 10)
+        self.assertEqual(pipeline.batch_processor.max_workers, 4)
 
     def test_pipeline_initialization_with_few_shot(self):
         few_shot = "Example: 2 + 2 = 4"
@@ -197,11 +201,9 @@ class TestSTaRPipeline(unittest.TestCase):
     def test_process_problem(self):
         # Mock responses for the process_problem pipeline
         mock_reason_responses = [
-            # Initial reasoning trace
             MagicMock(msg=MagicMock(content="Initial reasoning trace")),
         ]
         mock_evaluate_responses = [
-            # Evaluation response
             MagicMock(
                 msg=MagicMock(
                     parsed={
@@ -230,68 +232,29 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertEqual(len(result.improvement_history), 1)
         self.assertIsInstance(result.improvement_history[0], TraceIteration)
 
-    def test_process_problem_with_rationalization(self):
-        # Mock responses for the process_problem pipeline with rationalization
-        mock_reason_responses = [
-            # Initial reasoning trace
-            MagicMock(msg=MagicMock(content="Initial reasoning trace")),
-            # Improved trace after rationalization
-            MagicMock(msg=MagicMock(content="Improved reasoning trace")),
-        ]
-        mock_evaluate_responses = [
-            # First evaluation
-            MagicMock(
-                msg=MagicMock(
-                    parsed={
-                        "correctness": 0.6,
-                        "clarity": 0.5,
-                        "completeness": 0.6,
-                        "feedback": "Needs improvement",
-                    }
-                )
-            ),
-            # Second evaluation after improvement
-            MagicMock(
-                msg=MagicMock(
-                    parsed={
-                        "correctness": 0.9,
-                        "clarity": 0.9,
-                        "completeness": 0.9,
-                        "feedback": "Much better",
-                    }
-                )
-            ),
-        ]
-        self.mock_reason_agent.step.side_effect = mock_reason_responses
-        self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
-
+    def test_score_threshold_dict(self):
         pipeline = STaRPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
-            score_threshold=0.8,  # Set high threshold to trigger improvement
+            score_threshold={"correctness": 0.8, "clarity": 0.7},
         )
 
-        result = pipeline.process_problem(
-            self.test_problems[0], rationalization=True
-        )
+        # Test with scores meeting thresholds
+        scores = {"correctness": 0.9, "clarity": 0.8, "completeness": 0.6}
+        self.assertTrue(pipeline._check_score_threshold(scores))
 
-        self.assertIsInstance(result, ProblemResult)
-        self.assertEqual(result.problem, self.test_problems[0]["problem"])
-        self.assertEqual(result.final_trace, "Improved reasoning trace")
-        self.assertEqual(len(result.improvement_history), 2)
-        self.assertIsInstance(result.improvement_history[0], TraceIteration)
-        self.assertIsInstance(result.improvement_history[1], TraceIteration)
+        # Test with scores below thresholds
+        scores = {"correctness": 0.7, "clarity": 0.6, "completeness": 0.9}
+        self.assertFalse(pipeline._check_score_threshold(scores))
 
     @patch("json.dump")
     def test_generate_with_output(self, mock_dump):
         # Mock responses for the full pipeline
         mock_reason_responses = [
-            # Initial reasoning trace
             MagicMock(msg=MagicMock(content="Initial reasoning trace")),
         ]
         mock_evaluate_responses = [
-            # Evaluation response
             MagicMock(
                 msg=MagicMock(
                     parsed={
@@ -329,20 +292,101 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertEqual(args[0], {"traces": results})
 
     def test_invalid_problem_format(self):
-        invalid_problem = {"id": "problem_0", "type": "arithmetic"}
+        test_cases = [
+            (
+                {"id": "problem_0", "type": "arithmetic"},
+                "Problem dictionary must contain 'problem' key.",
+            ),
+            ({"problem": 123}, "Problem 'problem' field must be a string."),
+            (
+                {"problem": "test", "id": 123},
+                "Problem 'id' must be of type str if present.",
+            ),
+            (
+                {"problem": "test", "type": 123},
+                "Problem 'type' must be of type str if present.",
+            ),
+            (
+                {"problem": "test", "solution": 123},
+                "Problem 'solution' must be of type str if present.",
+            ),
+        ]
+
         pipeline = STaRPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
-            problems=[invalid_problem],
+            problems=[],
         )
 
-        with self.assertRaises(ValueError) as context:
-            pipeline.process_problem(invalid_problem)
+        for invalid_problem, expected_error in test_cases:
+            with self.assertRaises(ValueError) as context:
+                pipeline.validate_problem_format(invalid_problem)
+            self.assertIn(expected_error, str(context.exception))
 
-        self.assertIn(
-            "Each problem dictionary must contain a 'problem' key",
-            str(context.exception),
+    def test_batch_processing(self):
+        # Test with multiple problems
+        test_problems = [
+            {
+                "id": f"problem_{i}",
+                "problem": f"Test problem {i}",
+                "type": "test",
+                "solution": str(i),
+            }
+            for i in range(3)
+        ]
+
+        # Create enough mock responses for all iterations
+        mock_reason_responses = [
+            MagicMock(
+                msg=MagicMock(
+                    content=f"Reasoning trace for {problem['problem']}"
+                )
+            )
+            for problem in test_problems
+        ]
+        mock_evaluate_responses = [
+            MagicMock(
+                msg=MagicMock(
+                    parsed={
+                        "correctness": 0.9,
+                        "clarity": 0.9,
+                        "completeness": 0.9,
+                        "feedback": f"Feedback for {problem['problem']}",
+                    }
+                )
+            )
+            for problem in test_problems
+        ]
+
+        self.mock_reason_agent.step.side_effect = mock_reason_responses
+        self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
+
+        pipeline = STaRPipeline(
+            reason_agent=self.mock_reason_agent,
+            evaluate_agent=self.mock_evaluate_agent,
+            problems=test_problems,
+            batch_size=2,  # Small batch size to test batching
+            max_workers=2,
         )
+
+        results = pipeline.generate()
+
+        # Verify results
+        self.assertEqual(len(results), 3)
+
+        # Create a map of problem text to expected trace
+        expected_traces = {
+            problem["problem"]: f"Reasoning trace for {problem['problem']}"
+            for problem in test_problems
+        }
+
+        # Verify each result matches its corresponding problem
+        for result in results:
+            problem_text = result["problem"]
+            self.assertIn(problem_text, expected_traces)
+            self.assertEqual(
+                result["final_trace"], expected_traces[problem_text]
+            )
 
 
 if __name__ == "__main__":

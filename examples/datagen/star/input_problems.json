@@ -22,5 +22,41 @@
         "problem": "In how many ways can 8 different books be arranged on a shelf if 3 specific books must always be kept together (but can be arranged in any order among themselves)? Explain your approach and verify the answer.",
         "type": "combinatorics",
         "solution": "720"
+    },
+    {
+        "id": "problem_4",
+        "problem": "Prove by mathematical induction that 3ⁿ > n² + 2 for all integers n ≥ 3. Show each step of the induction process clearly.",
+        "type": "mathematical_proof",
+        "solution": "Proof by induction holds for all n ≥ 3"
+    },
+    {
+        "id": "problem_5",
+        "problem": "A car travels from city A to city B at 60 km/h and returns at 40 km/h. If the total journey takes 5 hours, what is the distance between the two cities? Show your work.",
+        "type": "word_problem",
+        "solution": "120 kilometers"
+    },
+    {
+        "id": "problem_6",
+        "problem": "Solve the system of equations: 2x - 3y = 7 and 4x + y = 13. Show all steps and verify your solution.",
+        "type": "algebra",
+        "solution": "x = 4, y = -3"
+    },
+    {
+        "id": "problem_7",
+        "problem": "How many different 4-digit numbers can be formed using the digits 1, 2, 3, 4, 5 if each digit can be used only once? Explain your reasoning.",
+        "type": "combinatorics",
+        "solution": "120"
+    },
+    {
+        "id": "problem_8",
+        "problem": "Prove that the sum of two irrational numbers can be rational. Provide a specific example to support your proof.",
+        "type": "mathematical_proof",
+        "solution": "√2 + (-√2) = 0 is rational"
+    },
+    {
+        "id": "problem_9",
+        "problem": "A swimming pool is being filled at a rate of 50 liters per minute. If the pool has a volume of 10,000 liters and is already 40% full, how long will it take to fill the remaining volume?",
+        "type": "word_problem",
+        "solution": "120 minutes"
     }
 ]

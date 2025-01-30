@@ -12,7 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 import json
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
@@ -20,6 +23,7 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.models.reward import BaseRewardModel, Evaluator
+from camel.utils import BatchProcessor, retry_on_error
 
 logger = get_logger(__name__)
 
@@ -51,8 +55,12 @@ class TraceIteration(BaseModel):
 
 
 class ProblemResult(BaseModel):
+    id: Optional[str] = None
+    type: Optional[str] = None
     problem: str
+    solution: Optional[str] = None
     final_trace: str
+    success: bool = False  # Tracks if problem meets evaluation standards
     improvement_history: List[TraceIteration]
 
 
@@ -72,11 +80,13 @@ class STaRPipeline:
         evaluate_agent (ChatAgent): The chat agent used for evaluating
             reasoning traces.
         problems (List[Dict]): List of problem dictionaries to process.
-        max_iterations (int, optional): Max iterations. (default: :obj:`3`)
+        max_iterations (int, optional): Maximum number of improvement
+            iterations. If set to `0`, the pipeline will generate an initial
+            trace without any improvement iterations. (default: :obj:`3`)
         score_threshold (Union[float, Dict[str, float]], optional): Quality
             threshold. Can be either a single float value applied to all score,
             or a dictionary mapping score dimensions to their thresholds. For
-            example: {"correctness": 0.8, "coherence": 0.7} If using reward
+            example: {"correctness": 0.8, "coherence": 0.7}. If using reward
             model and threshold for a dimension is not specified, will use the
             default value 0.7. (default: :obj:`0.7`)
         reward_model (BaseRewardModel, optional): Model used for evaluating
@@ -85,6 +95,11 @@ class STaRPipeline:
         output_path (str, optional): Output path for saving traces. If `None`,
             results will only be returned without saving to file.
             (default: :obj:`None`)
+        few_shot_examples: Optional[str] = None,
+        batch_size (int, optional): Batch size for parallel processing.
+            (default: :obj:`10`)
+        max_workers (int, optional): Maximum number of worker threads.
+            (default: :obj:`4`)
     """
 
     def __init__(
@@ -97,6 +112,8 @@ class STaRPipeline:
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
         few_shot_examples: Optional[str] = None,
+        batch_size: Optional[int] = None,
+        max_workers: Optional[int] = None,
     ):
         r"""Initialize the STaR pipeline.
 
@@ -106,7 +123,10 @@ class STaRPipeline:
             evaluate_agent (ChatAgent): The chat agent used for evaluating
                 reasoning traces.
             problems (List[Dict]): List of problem dictionaries to process.
-            max_iterations (int, optional): Max iterations. (default: :obj:`3`)
+            max_iterations (int, optional): Maximum number of improvement
+                iterations. If set to `0`, the pipeline will generate an
+                initial trace without any improvement iterations.
+                (default: :obj:`3`)
             score_threshold (Union[float, Dict[str, float]], optional):
                 Quality threshold. Can be either a single float value applied
                 to average score, or a dictionary mapping score dimensions to
@@ -135,6 +155,161 @@ class STaRPipeline:
         )
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
+        self.batch_processor = BatchProcessor(max_workers, batch_size)
+
+    async def _batch_process_problems(
+        self, problems: List[Dict], rationalization: bool
+    ) -> List[ProblemResult]:
+        r"""Process multiple problems in parallel batches with dynamic sizing.
+
+        Args:
+            problems (List[Dict]): List of problem dictionaries to process.
+            rationalization (bool): Whether to use rationalization.
+
+        Returns:
+            List[ProblemResult]: List of problem results.
+        """
+        results = []
+        total_problems = len(problems)
+        processed = 0
+
+        while processed < total_problems:
+            batch_size = self.batch_processor.batch_size
+            batch = problems[processed : processed + batch_size]
+            batch_start_time = time.time()
+
+            try:
+                with ThreadPoolExecutor(
+                    max_workers=self.batch_processor.max_workers
+                ) as executor:
+                    # Create futures with rationalization parameter
+                    futures = [
+                        executor.submit(
+                            self.process_problem,
+                            problem=problem,
+                            rationalization=rationalization,
+                        )
+                        for problem in batch
+                    ]
+
+                    batch_results = []
+                    batch_success = True
+                    for future in as_completed(futures):
+                        try:
+                            result = future.result()
+                            batch_results.append(result)
+                        except Exception as e:
+                            logger.error(f"Error processing problem: {e}")
+                            batch_success = False
+                            continue
+
+                    results.extend(batch_results)
+                    processed += len(batch)
+
+                    # Calculate processing time and adjust batch size
+                    processing_time = time.time() - batch_start_time
+                    self.batch_processor.adjust_batch_size(
+                        batch_success, processing_time
+                    )
+
+                    # Log progress and performance metrics
+                    metrics = self.batch_processor.get_performance_metrics()
+                    logger.info(
+                        f"Processed {processed}/{total_problems} problems "
+                        f"(batch size: {batch_size}, workers: "
+                        f"{metrics['current_workers']}, "
+                        f"CPU: {metrics['current_cpu']:.1f}%, "
+                        f"Memory: {metrics['current_memory']:.1f}%)"
+                    )
+            except Exception as e:
+                logger.error(f"Batch processing error: {e}")
+                self.batch_processor.adjust_batch_size(False)
+                continue
+
+        return results
+
+    async def _batch_evaluate_traces(
+        self,
+        problems: List[Dict[str, Any]],
+        traces: List[str],
+        solutions: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        r"""Evaluate multiple traces in parallel batches with resource
+        monitoring.
+
+        Args:
+            problems (List[Dict[str, Any]]): List of problem dictionaries
+            traces (List[str]): List of reasoning traces to evaluate
+            solutions (Optional[List[str]]): Optional list of solutions
+
+        Returns:
+            List[Dict[str, Any]]: List of evaluation results
+        """
+        if solutions is None:
+            solutions = ["null"] * len(problems)
+
+        results = []
+        total_traces = len(traces)
+        processed = 0
+
+        while processed < total_traces:
+            batch_size = self.batch_processor.batch_size
+            problem_batch = problems[processed : processed + batch_size]
+            trace_batch = traces[processed : processed + batch_size]
+            solution_batch = solutions[processed : processed + batch_size]
+            batch_start_time = time.time()
+
+            try:
+                with ThreadPoolExecutor(
+                    max_workers=self.batch_processor.max_workers
+                ) as executor:
+                    futures = [
+                        executor.submit(
+                            self.evaluate_trace,
+                            problem=problem["problem"],
+                            trace=trace,
+                            solution=solution,
+                        )
+                        for problem, trace, solution in zip(
+                            problem_batch, trace_batch, solution_batch
+                        )
+                    ]
+
+                    batch_results = []
+                    batch_success = True
+                    for future in as_completed(futures):
+                        try:
+                            result = future.result()
+                            batch_results.append(result)
+                        except Exception as e:
+                            logger.error(f"Error evaluating trace: {e}")
+                            batch_success = False
+                            continue
+
+                    results.extend(batch_results)
+                    processed += len(batch_results)
+
+                    # Calculate processing time and adjust batch size
+                    processing_time = time.time() - batch_start_time
+                    self.batch_processor.adjust_batch_size(
+                        batch_success, processing_time
+                    )
+
+                    # Log progress and performance metrics
+                    metrics = self.batch_processor.get_performance_metrics()
+                    logger.info(
+                        f"Evaluated {processed}/{total_traces} traces "
+                        f"(batch size: {batch_size}, workers: "
+                        f"{metrics['current_workers']}, "
+                        f"avg time: {metrics['avg_processing_time']:.2f}s, "
+                        f"error rate: {metrics['error_rate']:.1f}%)"
+                    )
+            except Exception as e:
+                logger.error(f"Batch evaluation error: {e}")
+                self.batch_processor.adjust_batch_size(False)
+                continue
+
+        return results
 
     def _check_score_threshold(self, scores: Dict[str, float]) -> bool:
         r"""Check if scores meet the threshold requirements.
@@ -203,6 +378,7 @@ class STaRPipeline:
         )
         return f"Current scores - {dims}"
 
+    @retry_on_error()
     def generate_reasoning_trace(self, problem: str) -> str:
         r"""Generate initial reasoning trace for a given problem.
 
@@ -224,6 +400,7 @@ class STaRPipeline:
         response = self.reason_agent.step(prompt)
         return response.msg.content
 
+    @retry_on_error()
     def evaluate_trace(
         self, problem: str, trace: str, solution: Optional[str] = None
     ) -> Dict[str, Any]:
@@ -292,6 +469,7 @@ class STaRPipeline:
 
             return evaluation.model_dump()
 
+    @retry_on_error()
     def improve_trace(
         self,
         problem: str,
@@ -376,9 +554,31 @@ class STaRPipeline:
         current_trace = self.generate_reasoning_trace(problem_text)
         improvement_history = []
 
+        # Create batches for parallel evaluation
+        batch_problems = []
+        batch_traces = []
+        batch_solutions = []
+
         for iteration in range(self.max_iterations):
-            # Evaluate current trace
-            eval_dict = self.evaluate_trace(problem_text, current_trace)
+            # Add to evaluation batch
+            batch_problems.append(problem)
+            batch_traces.append(current_trace)
+            batch_solutions.append(solution_text)
+
+            # Evaluate current trace batch
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                eval_results = loop.run_until_complete(
+                    self._batch_evaluate_traces(
+                        batch_problems, batch_traces, batch_solutions
+                    )
+                )
+            finally:
+                loop.close()
+
+            # Process evaluation results
+            eval_dict = eval_results[-1]  # Get latest evaluation
             scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
 
             # Record iteration history
@@ -419,8 +619,12 @@ class STaRPipeline:
                 )
 
         return ProblemResult(
+            id=problem.get("id", ""),
+            type=problem.get("type", ""),
             problem=problem_text,
+            solution=problem.get("solution", ""),
             final_trace=current_trace,
+            success=self._check_score_threshold(scores),
             improvement_history=improvement_history,
         )
 
@@ -440,12 +644,18 @@ class STaRPipeline:
         # Pre-allocate results list
         self.reasoning_traces = []
 
-        # Process problems sequentially with progress tracking
-        total_problems = len(self.problems)
-        for i, problem in enumerate(self.problems, 1):
-            result = self.process_problem(problem, rationalization)
-            self.reasoning_traces.append(result.model_dump())
-            logger.info(f"Processed problem {i}/{total_problems}")
+        # Process problems in batches
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            results = loop.run_until_complete(
+                self._batch_process_problems(self.problems, rationalization)
+            )
+        finally:
+            loop.close()
+
+        self.reasoning_traces = [result.model_dump() for result in results]
 
         if self.output_path:
             with open(self.output_path, 'w') as f:
