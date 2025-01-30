@@ -102,6 +102,48 @@ def download_aime24_dataset():
         return None
 
 
+def download_amc23_dataset():
+    try:
+        # Direct API endpoint for the dataset
+        url = "https://datasets-server.huggingface.co/rows?dataset=zwhe99%2Famc23&config=default&split=test&offset=0&length=100"
+        response = requests.get(url)
+        
+        if not response.ok:
+            raise Exception(f"Failed to fetch data: {response.status_code}")
+            
+        data = response.json()
+        
+        # Convert to the desired format
+        formatted_data = []
+        for row in data.get('rows', []):
+            item = row.get('row', {})
+            formatted_item = {
+                "id": item.get('id', ''),
+                "problem": item.get('question', ''),
+                "type": "zwhe99/amc23",  # All problems are from AMC23
+                "solution": f"\\boxed{{{item.get('answer', '')}}}",
+                "answer": item.get('answer', None)
+            }
+            formatted_data.append(formatted_item)
+
+        # Create output directory if it doesn't exist
+        output_dir = Path("examples/datagen/star")
+        output_dir.mkdir(exist_ok=True)
+
+        # Save to JSON file
+        output_file = output_dir / "amc23_dataset.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(formatted_data, f, indent=4, ensure_ascii=False)
+
+        print(f"Successfully downloaded and saved AMC23 data to {output_file}")
+        return formatted_data
+
+    except Exception as e:
+        print(f"Error downloading AMC23 dataset: {e}")
+        return None
+
+
 if __name__ == "__main__":
     # download_huggingface_dataset()
-    download_aime24_dataset()
+    # download_aime24_dataset()
+    download_amc23_dataset()
