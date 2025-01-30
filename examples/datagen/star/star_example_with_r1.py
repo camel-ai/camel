@@ -27,11 +27,36 @@ export DEEPSEEK_API_KEY=""
 export GET_REASONING_CONTENT="true"
 """
 
-model = ModelFactory.create(
+evaluate_model = ModelFactory.create(
     model_platform=ModelPlatformType.DEEPSEEK,
-    model_type=ModelType.DEEPSEEK_REASONER,
+    model_type=ModelType.DEEPSEEK_CHAT,
 )
 
+reason_model_1 = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_REASONER,
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
+
+reason_model_2 = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="deepseek-ai/DeepSeek-R1",
+    api_key=os.getenv("DEEPINFRA_API_KEY"),
+    url="https://api.deepinfra.com/v1/openai",
+)
+
+reason_model_3 = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="deepseek-ai/DeepSeek-R1",
+    api_key=os.getenv("HYPERBOLIC_API_KEY"),
+    url="https://api.hyperbolic.xyz/v1",
+)
+
+reason_model_4 = ModelFactory.create(
+    model_platform=ModelPlatformType.TOGETHER,
+    model_type="deepseek-ai/DeepSeek-R1",
+    api_key=os.getenv("TOGETHER_API_KEY"),
+)
 # from camel.models.reward import NemotronRewardModel
 
 
@@ -39,7 +64,7 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'math_500_dataset.json')
+    problems_path = os.path.join(current_dir, 'openthoughts_math.json')
     output_path = os.path.join(current_dir, 'star_r1_output.json')
 
     # Load problems from JSON file
@@ -53,9 +78,15 @@ def main():
     evaluates the student's answers with a meticulous and demanding approach.
     """
     reason_agent = ChatAgent(
-        system_message=reason_agent_system_message, model=model
+        system_message=reason_agent_system_message,
+        model=[
+        reason_model_1,
+        reason_model_2,
+        reason_model_3,
+        reason_model_4,
+        ],
     )
-    evaluate_agent = ChatAgent(system_message=evaluate_agent_system_message)
+    evaluate_agent = ChatAgent(system_message=evaluate_agent_system_message, model=evaluate_model)
 
     # Initialize reward model (optional)
     # reward_model = NemotronRewardModel(

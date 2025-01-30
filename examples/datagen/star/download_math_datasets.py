@@ -245,9 +245,59 @@ def download_gsm8k_dataset():
         return None
 
 
+def download_openthoughts_dataset():
+    try:
+        # Direct API endpoint for the dataset
+        # Get only top 100 records by setting length=100 in the URL
+        url = (
+            "https://datasets-server.huggingface.co/rows?"
+            "dataset=open-r1%2FOpenThoughts-114k-math&config=default"
+            "&split=train&offset=0&length=100"
+        )
+        response = requests.get(url)
+
+        if not response.ok:
+            raise Exception(f"Failed to fetch data: {response.status_code}")
+
+        data = response.json()
+        rows = data.get('rows', [])[:100]  # Ensure we only take top 100 records
+
+        # Convert to the desired format
+        formatted_data = []
+        for row in rows:
+            item = row.get('row', {})
+            formatted_item = {
+                "id": item.get('id', ''),
+                "problem": item.get('problem', ''),
+                "type": "open-r1/OpenThoughts-114k-math\n" + item.get('source', ''),
+                "solution": item.get('solution', ''),
+            }
+            formatted_data.append(formatted_item)
+
+        # Create output directory if it doesn't exist
+        output_dir = Path("examples/datagen/star")
+        output_dir.mkdir(exist_ok=True)
+
+        # Save to JSON file
+        output_file = output_dir / "openthoughts_math.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(formatted_data, f, indent=4, ensure_ascii=False)
+
+        print(
+            f"Successfully downloaded and saved OpenThoughts data "
+            f"to {output_file}"
+        )
+        return formatted_data
+
+    except Exception as e:
+        print(f"Error downloading OpenThoughts dataset: {e}")
+        return None
+
+
 if __name__ == "__main__":
     # download_math500_dataset()
     # download_aime24_dataset()
     # download_amc23_dataset()
     # download_gaokao2023_dataset()
-    download_gsm8k_dataset()
+    # download_gsm8k_dataset()
+    download_openthoughts_dataset()
