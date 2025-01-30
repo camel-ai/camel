@@ -82,6 +82,8 @@ class WhatsAppToolkit(BaseToolkit):
             response = requests.post(url=url, headers=headers, json=data)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.RequestException as e:
+            raise e
         except Exception as e:
             return f"Failed to send message: {e!s}"
 
