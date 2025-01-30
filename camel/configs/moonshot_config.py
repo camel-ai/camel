@@ -25,28 +25,22 @@ class MoonshotConfig(BaseConfig):
     https://platform.moonshot.cn/docs/api-reference
 
     Args:
-        api_key (str, optional): The API key to access Moonshot AI services.
-            (default: :obj:`None`)
-        base_url (str, optional): The base URL for Moonshot AI API.
-            (default: :obj:`"https://api.moonshot.cn/v1"`)
+        stream (bool, optional): Whether to stream the response.
+            (default: :obj:`False`)
         temperature (float, optional): Controls randomness in the response.
             Lower values make the output more focused and deterministic.
             (default: :obj:`0.3`)
         max_tokens (int, optional): The maximum number of tokens to generate.
             (default: :obj:`None`)
-        stream (bool, optional): Whether to stream the response.
-            (default: :obj:`False`)
         tools (list, optional): List of tools that model can use for function
             calling. Each tool should be a dictionary containing type, function
             name, description, and parameters.
             (default: :obj:`None`)
     """
 
-    api_key: Optional[str] = None
-    base_url: str = "https://api.moonshot.cn/v1"
+    stream: bool = False
     temperature: float = 0.3
     max_tokens: Optional[int] = None
-    stream: bool = False
     tools: Optional[list] = None
 
 
