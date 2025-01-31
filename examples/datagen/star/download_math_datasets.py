@@ -82,8 +82,59 @@ def download_gsm8k_dataset():
         print(f"Error downloading GSM8K dataset: {e}")
         return None
 
+def download_amc_aime_dataset():
+    try:
+        # Load the dataset using the datasets library
+        dataset = load_dataset("mlfoundations-dev/bespokelabs-sky-t1-numina-amc-aime-subset-unfiltered")
+
+        # Get the first 4070 items from train split
+        data = dataset['train'].select(range(4069))
+
+        # Convert to the desired format
+        formatted_data = []
+        for item in data:
+            formatted_item = {
+                "id": str(uuid.uuid4()),
+                "problem": item['problem'],
+                "type": "amc_aime",
+                "solution": item['ground_truth_solution']
+            }
+            formatted_data.append(formatted_item)
+
+        # Create output directory if it doesn't exist
+        output_dir = Path("examples/datagen/star")
+        output_dir.mkdir(exist_ok=True)
+
+        # Split data into 4 parts, each containing less than 2000 records
+        total_records = len(formatted_data)
+        base_size = total_records // 4
+        remainder = total_records % 4
+        
+        datasets = []
+        start = 0
+        for i in range(4):
+            # Add one extra item to some chunks to distribute remainder
+            chunk_size = base_size + (1 if i < remainder else 0)
+            end = start + chunk_size
+            datasets.append(formatted_data[start:end])
+            start = end
+
+        # Save each part to a separate JSON file
+        for i, dataset_part in enumerate(datasets, 1):
+            output_file = output_dir / f"amc_aime_dataset_part{i}.json"
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(dataset_part, f, indent=4, ensure_ascii=False)
+            print(f"Successfully saved part {i} ({len(dataset_part)} records) to {output_file}")
+
+        return formatted_data
+
+    except Exception as e:
+        print(f"Error downloading AMC/AIME dataset: {e}")
+        return None
+
 
 
 
 if __name__ == "__main__":
-    download_gsm8k_dataset()
+    # download_gsm8k_dataset()
+    download_amc_aime_dataset()
