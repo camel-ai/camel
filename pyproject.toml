@@ -343,6 +343,7 @@ all = [
     "notion-client",
     "yt-dlp",
     "ffmpeg-python",
+    "scenedetect",
     "datacommons",
     "datacommons_pandas",
     "tavily-python",
