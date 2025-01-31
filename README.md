@@ -280,6 +280,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[CoT Data Generation and SFT Qwen with Unsolth](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)** | Discover how to generate CoT data using CAMEL and SFT Qwen with Unsolth, and seamlessly upload your data and model to Huggingface. |
 | **[Agentic Data Generation, Evaluation & Filtering with Reward Models](https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model.html)** | Discover methods for generating, evaluating, and filtering agentic data using reward models to enhance the quality and efficiency of your synthetic data pipelines. |
 | **[Data Model Generation and Structured Output with Qwen Model](https://docs.camel-ai.org/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html)** |Learn how to generate data models and structured outputs using the Qwen Model for improved data representation.|
+| **[Maths Reasoning Data Distillation From Deepseek R1](https://docs.camel-ai.org/cookbooks/data_generation/maths_reasoning_data_distillation_from_deepseek_R1.html)** |Learn  how to set up and leverage CAMEL's data distillation pipline for distilling high-quality maths reasoning data with thought process (Long Cot data)from deepseek R1, and uploading the results to Hugging Face.|
 
 
 ### Multi-Agent Systems & Applications
