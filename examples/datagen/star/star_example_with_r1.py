@@ -38,12 +38,12 @@ reason_model_1 = ModelFactory.create(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
 )
 
-reason_model_2 = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    model_type="deepseek-ai/DeepSeek-R1",
-    api_key=os.getenv("DEEPINFRA_API_KEY"),
-    url="https://api.deepinfra.com/v1/openai",
-)
+# reason_model_2 = ModelFactory.create(
+#     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+#     model_type="deepseek-ai/DeepSeek-R1",
+#     api_key=os.getenv("DEEPINFRA_API_KEY"),
+#     url="https://api.deepinfra.com/v1/openai",
+# )
 
 reason_model_3 = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
@@ -80,8 +80,8 @@ def main():
     reason_agent = ChatAgent(
         system_message=reason_agent_system_message,
         model=[
-        reason_model_1,
-        reason_model_2,
+        # reason_model_1,
+        # reason_model_2,
         reason_model_3,
         reason_model_4,
         ],
