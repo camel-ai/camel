@@ -45,6 +45,7 @@ from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
 from .video_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
+from .mineru_toolkit import MinerUToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -77,4 +78,5 @@ __all__ = [
     'MeshyToolkit',
     'OpenBBToolkit',
     'DappierToolkit',
+    'MinerUToolkit',
 ]
