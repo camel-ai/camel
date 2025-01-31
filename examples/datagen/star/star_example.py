@@ -17,16 +17,30 @@ import os
 import time
 
 from camel.agents import ChatAgent
+from camel.configs import DeepSeekConfig
 from camel.datagen import STaRPipeline
-
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 # from camel.models.reward import NemotronRewardModel
+
+"""
+please set the below os environment:
+export DEEPSEEK_API_KEY=""
+"""
+
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_CHAT,
+    model_config_dict=DeepSeekConfig(temperature=0).as_dict(),
+)
 
 
 def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'math_500_dataset.json')
+    problems_path = os.path.join(current_dir, 'amc_aime_dataset_part4.json')
     output_path = os.path.join(current_dir, 'star_output.json')
 
     # Load problems from JSON file
@@ -39,7 +53,7 @@ def main():
     evaluate_agent_system_message = """You are a highly critical teacher who 
     evaluates the student's answers with a meticulous and demanding approach.
     """
-    reason_agent = ChatAgent(reason_agent_system_message)
+    reason_agent = ChatAgent(reason_agent_system_message, model=model)
     evaluate_agent = ChatAgent(evaluate_agent_system_message)
 
     # Initialize reward model (optional)
@@ -49,13 +63,14 @@ def main():
     #     api_key=os.environ.get("NVIDIA_API_KEY"),
     # )
 
-    # # Set score thresholds for different dimensions (optional)
-    # score_threshold = {
-    #     "correctness": 1.6,
-    #     "coherence": 3,
-    # }
+    # Set score thresholds for different dimensions (optional)
+    score_threshold = {
+        "correctness": 0.9,
+        "clarity": 0.9,
+        "completeness":0.6,
+    }
     # Or use a single threshold for all dimensions:
-    score_threshold = 0.9
+    # score_threshold = 0.9
 
     # Create and run pipeline
     pipeline = STaRPipeline(
@@ -68,7 +83,7 @@ def main():
         # reward_model=reward_model,  # To use a reward model (optional)
     )
 
-    results = pipeline.generate(rationalization=True)
+    results = pipeline.generate(rationalization=False)
 
     end_time = time.time()
     execution_time = end_time - start_time

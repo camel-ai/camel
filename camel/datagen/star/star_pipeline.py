@@ -617,16 +617,12 @@ class STaRPipeline:
         improvement_history = []
         scores = {}
 
-        # Create batches for parallel evaluation
-        batch_problems = []
-        batch_traces = []
-        batch_solutions = []
-
-        for iteration in range(self.max_iterations):
-            # Add to evaluation batch
-            batch_problems.append(problem)
-            batch_traces.append(current_trace)
-            batch_solutions.append(solution_text)
+        # Only evaluate if evaluate_agent is set
+        if self.evaluate_agent:
+            # Create batches for parallel evaluation
+            batch_problems = [problem]
+            batch_traces = [current_trace]
+            batch_solutions = [solution_text]
 
             # Evaluate current trace batch
             loop = asyncio.new_event_loop()
@@ -644,11 +640,11 @@ class STaRPipeline:
             eval_dict = eval_results[-1]  # Get latest evaluation
             scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
 
-            # Record iteration history
+            # Record initial evaluation
             if self.evaluator:
                 improvement_history.append(
                     TraceIteration(
-                        iteration=iteration + 1,
+                        iteration=0,
                         trace=current_trace,
                         evaluation=RewardTraceEvaluation(**eval_dict),
                     )
@@ -656,7 +652,7 @@ class STaRPipeline:
             else:
                 improvement_history.append(
                     TraceIteration(
-                        iteration=iteration + 1,
+                        iteration=0,
                         trace=current_trace,
                         evaluation=AgentTraceEvaluation(
                             **scores, feedback=eval_dict["feedback"]
@@ -664,22 +660,61 @@ class STaRPipeline:
                     )
                 )
 
-            # Check if quality threshold met
-            if self._check_score_threshold(scores):
-                break
+            # Only do improvement iterations if max_iterations > 0
+            if self.max_iterations > 0:
+                for iteration in range(0, self.max_iterations):
+                    # Check if quality threshold met
+                    if self._check_score_threshold(scores):
+                        break
 
-            # Generate improved trace
-            if rationalization:
-                current_trace = self.improve_trace(
-                    problem_text,
-                    current_trace,
-                    eval_dict["feedback"],
-                    solution_text,
-                )
-            else:
-                current_trace = self.improve_trace(
-                    problem_text, current_trace, eval_dict["feedback"]
-                )
+                    # Generate improved trace
+                    if rationalization:
+                        current_trace = self.improve_trace(
+                            problem_text,
+                            current_trace,
+                            eval_dict["feedback"],
+                            solution_text,
+                        )
+                    else:
+                        current_trace = self.improve_trace(
+                            problem_text, current_trace, eval_dict["feedback"]
+                        )
+
+                    # Evaluate improved trace
+                    batch_traces = [current_trace]
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        eval_results = loop.run_until_complete(
+                            self._batch_evaluate_traces(
+                                batch_problems, batch_traces, batch_solutions
+                            )
+                        )
+                    finally:
+                        loop.close()
+
+                    eval_dict = eval_results[-1]
+                    scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
+
+                    # Record iteration history
+                    if self.evaluator:
+                        improvement_history.append(
+                            TraceIteration(
+                                iteration=iteration + 1,
+                                trace=current_trace,
+                                evaluation=RewardTraceEvaluation(**eval_dict),
+                            )
+                        )
+                    else:
+                        improvement_history.append(
+                            TraceIteration(
+                                iteration=iteration + 1,
+                                trace=current_trace,
+                                evaluation=AgentTraceEvaluation(
+                                    **scores, feedback=eval_dict["feedback"]
+                                ),
+                            )
+                        )
 
         boxed_answer_success = self._check_boxed_answers(
             problem.get("solution", ""), current_trace
@@ -691,7 +726,7 @@ class STaRPipeline:
             problem=problem_text,
             solution=problem.get("solution", ""),
             final_trace=current_trace,
-            evaluate_success=self._check_score_threshold(scores),
+            evaluate_success=self._check_score_threshold(scores) if scores else False,
             boxed_answer_success=boxed_answer_success,
             improvement_history=improvement_history,
         )
