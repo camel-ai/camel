@@ -83,8 +83,6 @@ class STaRPipeline:
     Args:
         reason_agent (ChatAgent): The chat agent used for generating and
             improving reasoning traces.
-        evaluate_agent (ChatAgent): The chat agent used for evaluating
-            reasoning traces.
         problems (List[Dict]): List of problem dictionaries to process.
         max_iterations (int, optional): Maximum number of improvement
             iterations. If set to `0`, the pipeline will generate an initial
@@ -95,6 +93,8 @@ class STaRPipeline:
             example: {"correctness": 0.8, "coherence": 0.7}. If using reward
             model and threshold for a dimension is not specified, will use the
             default value 0.7. (default: :obj:`0.7`)
+        evaluate_agent (ChatAgent): The chat agent used for evaluating
+            reasoning traces. (default: :obj:`None`)
         reward_model (BaseRewardModel, optional): Model used for evaluating
             reasoning traces. If `None`, uses Agent self-evaluation.
             (default: :obj:`None`)
@@ -111,10 +111,10 @@ class STaRPipeline:
     def __init__(
         self,
         reason_agent: ChatAgent,
-        evaluate_agent: ChatAgent,
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
+        evaluate_agent: Optional[ChatAgent] =None,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
         few_shot_examples: Optional[str] = None,
@@ -126,8 +126,6 @@ class STaRPipeline:
         Args:
             reason_agent (ChatAgent): The chat agent used for generating and
                 improving reasoning traces.
-            evaluate_agent (ChatAgent): The chat agent used for evaluating
-                reasoning traces.
             problems (List[Dict]): List of problem dictionaries to process.
             max_iterations (int, optional): Maximum number of improvement
                 iterations. If set to `0`, the pipeline will generate an
@@ -140,6 +138,8 @@ class STaRPipeline:
                 "coherence": 0.7}. If using reward model and threshold for a
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
+            evaluate_agent (Optional[ChatAgent]): The chat agent used for 
+                evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
                 reasoning traces. If `None`, uses Agent self-evaluation.
                 (default: :obj:`None`)
@@ -617,8 +617,8 @@ class STaRPipeline:
         improvement_history = []
         scores = {}
 
-        # Only evaluate if evaluate_agent is set
-        if self.evaluate_agent:
+        # Only evaluate if evaluate_agent or reward_model is set
+        if self.evaluate_agent or self.reward_model:
             # Create batches for parallel evaluation
             batch_problems = [problem]
             batch_traces = [current_trace]
