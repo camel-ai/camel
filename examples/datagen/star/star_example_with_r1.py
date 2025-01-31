@@ -28,8 +28,8 @@ export GET_REASONING_CONTENT="true"
 """
 
 evaluate_model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEEPSEEK,
-    model_type=ModelType.DEEPSEEK_CHAT,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 # reason_model_1 = ModelFactory.create(
@@ -38,32 +38,15 @@ evaluate_model = ModelFactory.create(
 #     api_key=os.getenv("DEEPSEEK_API_KEY"),
 # )
 
-# reason_model_2 = ModelFactory.create(
-#     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-#     model_type="deepseek-ai/DeepSeek-R1",
-#     api_key=os.getenv("DEEPINFRA_API_KEY"),
-#     url="https://api.deepinfra.com/v1/openai",
-# )
 
-# reason_model_3 = ModelFactory.create(
-#     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-#     model_type="deepseek-ai/DeepSeek-R1",
-#     api_key=os.getenv("HYPERBOLIC_API_KEY"),
-#     url="https://api.hyperbolic.xyz/v1",
-# )
-
-# reason_model_4 = ModelFactory.create(
-#     model_platform=ModelPlatformType.TOGETHER,
-#     model_type="deepseek-ai/DeepSeek-R1",
-#     # api_key=os.getenv("TOGETHER_API_KEY"),
-#     api_key="",
-# )
-reason_model_3 = ModelFactory.create(
+reason_model_2 = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="accounts/fireworks/models/deepseek-r1",
-    api_key="fw_3ZhFzo7gtDbv9pXr5TQxxEZ9",
+    api_key="jvDbIMS0AZfDxgFWK3WiRKesUuJG8LRkRvqGpG19dAttFvBc",
     url="https://api.fireworks.ai/inference/v1",
+    model_config_dict={"max_tokens": 20480},
 )
+
 # from camel.models.reward import NemotronRewardModel
 
 
@@ -71,15 +54,15 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'gsm8k_dataset_part3.json')
-    output_path = os.path.join(current_dir, 'star_r1_output.json')
+    problems_path = os.path.join(current_dir, 'amc_aime_dataset_part2.json')
+    output_path = os.path.join(current_dir, 'star_r1_output_amc_aime_p2.json')
 
     # Load problems from JSON file
     with open(problems_path, 'r') as f:
         problems = json.load(f)
 
     # Initialize agent
-    reason_agent_system_message = """Please reason step by step, and put your 
+    reason_agent_system_message = """Answer my question and give your 
     final answer within \\boxed{}."""
     evaluate_agent_system_message = """You are a highly critical teacher who 
     evaluates the student's answers with a meticulous and demanding approach.
@@ -87,15 +70,11 @@ def main():
     reason_agent = ChatAgent(
         system_message=reason_agent_system_message,
         model=[
-            reason_model_3,
-            # reason_model_2,
-            # reason_model_3,
-            # reason_model_4,
+        # reason_model_1,
+        reason_model_2,
         ],
     )
-    evaluate_agent = ChatAgent(
-        system_message=evaluate_agent_system_message, model=evaluate_model
-    )
+    evaluate_agent = ChatAgent(system_message=evaluate_agent_system_message, model=evaluate_model)
 
     # Initialize reward model (optional)
     # reward_model = NemotronRewardModel(
@@ -104,13 +83,14 @@ def main():
     #     api_key=os.environ.get("NVIDIA_API_KEY"),
     # )
 
-    # # Set score thresholds for different dimensions (optional)
-    # score_threshold = {
-    #     "correctness": 1.6,
-    #     "coherence": 3,
-    # }
+    # Set score thresholds for different dimensions (optional)
+    score_threshold = {
+        "correctness": 1.0,
+        "clarity": 0.0,
+        "completeness":0.0,
+    }
     # Or use a single threshold for all dimensions:
-    score_threshold = 0.9
+    # score_threshold = 0.9
 
     # Create and run pipeline
     pipeline = STaRPipeline(
@@ -123,7 +103,7 @@ def main():
         # reward_model=reward_model,  # To use a reward model (optional)
     )
 
-    results = pipeline.generate(rationalization=True)
+    results = pipeline.generate(rationalization=False)
 
     end_time = time.time()
     execution_time = end_time - start_time
