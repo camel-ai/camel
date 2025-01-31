@@ -21,6 +21,7 @@ from camel.configs import DeepSeekConfig
 from camel.datagen import STaRPipeline
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
+
 # from camel.models.reward import NemotronRewardModel
 
 """
@@ -67,7 +68,7 @@ def main():
     score_threshold = {
         "correctness": 0.9,
         "clarity": 0.9,
-        "completeness":0.6,
+        "completeness": 0.6,
     }
     # Or use a single threshold for all dimensions:
     # score_threshold = 0.9

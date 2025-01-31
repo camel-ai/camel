@@ -76,8 +76,8 @@ def download_gsm8k_dataset():
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(dataset_part, f, indent=4, ensure_ascii=False)
             print(
-                f"""uccessfully saved part {i} ({len(dataset_part)} records) 
-                to {output_file}"""
+                f"Successfully saved part {i} ({len(dataset_part)} records) "
+                f"to {output_file}"
             )
 
         return formatted_data
