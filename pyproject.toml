@@ -207,6 +207,7 @@ media_tools = [
     "pydub",
     "yt-dlp",
     "ffmpeg-python",
+    "scenedetect",
 ]
 
 # Communication platform tools
