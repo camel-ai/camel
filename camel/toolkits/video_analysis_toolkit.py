@@ -97,7 +97,7 @@ class VideoAnalysisToolkit(BaseToolkit):
             (default: :obj:`None`)
     """
 
-    @dependencies_required("ffmpeg, scenedetect")
+    @dependencies_required("ffmpeg", "scenedetect")
     def __init__(
         self,
         download_directory: Optional[str] = None,
@@ -134,6 +134,7 @@ class VideoAnalysisToolkit(BaseToolkit):
         self.vl_agent = ChatAgent(
             model=self.vl_model, output_language="English"
         )
+
         self.audio_models = OpenAIAudioModels()
 
     def _extract_audio_from_video(
