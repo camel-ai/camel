@@ -32,30 +32,45 @@ evaluate_model = ModelFactory.create(
     model_type=ModelType.DEFAULT,
 )
 
-# reason_model_1 = ModelFactory.create(
-#     model_platform=ModelPlatformType.DEEPSEEK,
-#     model_type=ModelType.DEEPSEEK_REASONER,
-#     api_key=os.getenv("DEEPSEEK_API_KEY"),
-# )
-
+reason_model_1 = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=ModelType.DEEPSEEK_REASONER,
+)
 
 reason_model_2 = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="accounts/fireworks/models/deepseek-r1",
-    api_key="jvDbIMS0AZfDxgFWK3WiRKesUuJG8LRkRvqGpG19dAttFvBc",
+    api_key=os.getenv("FIREWORKS_API_KEY"),
     url="https://api.fireworks.ai/inference/v1",
-    model_config_dict={"max_tokens": 20480},
+    model_config_dict={"max_tokens": 4096},
 )
 
+reason_model_3 = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+    model_type="deepseek-ai/DeepSeek-R1",
+    api_key=os.getenv("HYPERBOLIC_API_KEY"),
+    url="https://api.hyperbolic.xyz/v1",
+)
+
+reason_model_4 = ModelFactory.create(
+    model_platform=ModelPlatformType.TOGETHER,
+    model_type="deepseek-ai/DeepSeek-R1",
+    api_key=os.getenv("TOGETHER_API_KEY"),
+)
 # from camel.models.reward import NemotronRewardModel
+#
 
 
 def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'amc_aime_dataset_part2.json')
-    output_path = os.path.join(current_dir, 'star_r1_output_amc_aime_p2.json')
+    problems_path = os.path.join(
+        current_dir, 'outputs/gsm8k_dataset_part1_failed.json'
+    )
+    output_path = os.path.join(
+        current_dir, 'outputs/gsm8k_dataset_output_part1_retried.json'
+    )
 
     # Load problems from JSON file
     with open(problems_path, 'r') as f:
@@ -70,11 +85,15 @@ def main():
     reason_agent = ChatAgent(
         system_message=reason_agent_system_message,
         model=[
-        # reason_model_1,
-        reason_model_2,
+            # reason_model_1,
+            reason_model_2,
+            # reason_model_3,
+            # reason_model_4,
         ],
     )
-    evaluate_agent = ChatAgent(system_message=evaluate_agent_system_message, model=evaluate_model)
+    evaluate_agent = ChatAgent(
+        system_message=evaluate_agent_system_message, model=evaluate_model
+    )
 
     # Initialize reward model (optional)
     # reward_model = NemotronRewardModel(
@@ -87,7 +106,7 @@ def main():
     score_threshold = {
         "correctness": 1.0,
         "clarity": 0.0,
-        "completeness":0.0,
+        "completeness": 0.0,
     }
     # Or use a single threshold for all dimensions:
     # score_threshold = 0.9

@@ -14,7 +14,6 @@
 
 import asyncio
 import json
-import math
 import os
 import threading
 import time
@@ -114,7 +113,7 @@ class STaRPipeline:
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
-        evaluate_agent: Optional[ChatAgent] =None,
+        evaluate_agent: Optional[ChatAgent] = None,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
         few_shot_examples: Optional[str] = None,
@@ -138,7 +137,7 @@ class STaRPipeline:
                 "coherence": 0.7}. If using reward model and threshold for a
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
-            evaluate_agent (Optional[ChatAgent]): The chat agent used for 
+            evaluate_agent (Optional[ChatAgent]): The chat agent used for
                 evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
                 reasoning traces. If `None`, uses Agent self-evaluation.
@@ -162,29 +161,31 @@ class STaRPipeline:
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
         self.batch_processor = BatchProcessor(max_workers, batch_size)
+        self.output_file_lock = threading.Lock()
 
         # Initialize output file with empty results if path is specified
+        # Also retrieve the existing traces if the file exists
         if self.output_path:
-            with open(self.output_path, 'w') as f:
-                json.dump({'traces': []}, f, indent=2)
-        self.lock = threading.Lock()
+            # If the file doesn't exist, create it with empty results
+            if not os.path.exists(self.output_path):
+                with open(self.output_path, 'w') as f:
+                    json.dump({'traces': []}, f, indent=2)
 
-    def safe_write_json(self, file_path, data):
-        temp_path = file_path + ".tmp"
-        with open(temp_path, "w") as f:
-            json.dump(data, f, indent=2)
-        os.replace(temp_path, file_path)
-
-    def clean_json(self, data):
-        if isinstance(data, dict):
-            return {k: self.clean_json(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            return [self.clean_json(v) for v in data]
-        elif isinstance(data, float) and (
-            math.isnan(data) or math.isinf(data)
-        ):
-            return None
-        return data
+            # Read existing results and exclude processed problems
+            with open(self.output_path, 'r') as f:
+                reasoning_traces = json.load(f)['traces']
+                processed_problem_ids = {
+                    trace['id'] for trace in reasoning_traces
+                }
+                self.problems = [
+                    problem
+                    for problem in self.problems
+                    if problem['id'] not in processed_problem_ids
+                ]
+                logger.info(
+                    f"Skipping {len(processed_problem_ids)} processed "
+                    "problems from the input list."
+                )
 
     async def _batch_process_problems(
         self, problems: List[Dict], rationalization: bool
@@ -694,7 +695,9 @@ class STaRPipeline:
                         loop.close()
 
                     eval_dict = eval_results[-1]
-                    scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
+                    scores = {
+                        k: v for k, v in eval_dict.items() if k != "feedback"
+                    }
 
                     # Record iteration history
                     if self.evaluator:
@@ -726,25 +729,29 @@ class STaRPipeline:
             problem=problem_text,
             solution=problem.get("solution", ""),
             final_trace=current_trace,
-            evaluate_success=self._check_score_threshold(scores) if scores else False,
+            evaluate_success=self._check_score_threshold(scores)
+            if scores
+            else False,
             boxed_answer_success=boxed_answer_success,
             improvement_history=improvement_history,
         )
 
         # Write result to file immediately if output path is specified
         if self.output_path:
-            with self.lock:
-                try:
+            try:
+                with self.output_file_lock:
                     # Read existing results
                     with open(self.output_path, 'r') as f:
                         data = json.load(f)
 
-                    cleaned_result = self.clean_json(result.model_dump())
-                    data['traces'].append(cleaned_result)
-                    self.safe_write_json(self.output_path, data)
+                    # Append new result
+                    data['traces'].append(result.model_dump())
 
-                except Exception as e:
-                    logger.error(f"Error writing result to file: {e}")
+                    # Write back all results
+                    with open(self.output_path, 'w') as f:
+                        json.dump(data, f, indent=2)
+            except Exception as e:
+                logger.error(f"Error writing result to file: {e}")
 
         return result
 
