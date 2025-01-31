@@ -13,10 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-from pathlib import Path
 import uuid
+from pathlib import Path
 
 from datasets import load_dataset
+
 
 def download_gsm8k_dataset():
     try:
@@ -59,7 +60,7 @@ def download_gsm8k_dataset():
         total_records = len(formatted_data)
         base_size = total_records // 4
         remainder = total_records % 4
-        
+
         datasets = []
         start = 0
         for i in range(4):
@@ -74,7 +75,10 @@ def download_gsm8k_dataset():
             output_file = output_dir / f"gsm8k_dataset_part{i}.json"
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(dataset_part, f, indent=4, ensure_ascii=False)
-            print(f"Successfully saved part {i} ({len(dataset_part)} records) to {output_file}")
+            print(
+                f"""uccessfully saved part {i} ({len(dataset_part)} records) 
+                to {output_file}"""
+            )
 
         return formatted_data
 
@@ -82,10 +86,13 @@ def download_gsm8k_dataset():
         print(f"Error downloading GSM8K dataset: {e}")
         return None
 
+
 def download_amc_aime_dataset():
     try:
         # Load the dataset using the datasets library
-        dataset = load_dataset("mlfoundations-dev/bespokelabs-sky-t1-numina-amc-aime-subset-unfiltered")
+        dataset = load_dataset(
+            "mlfoundations-dev/bespokelabs-sky-t1-numina-amc-aime-subset-unfiltered"
+        )
 
         # Get the first 4070 items from train split
         data = dataset['train'].select(range(4069))
@@ -97,7 +104,7 @@ def download_amc_aime_dataset():
                 "id": str(uuid.uuid4()),
                 "problem": item['problem'],
                 "type": "amc_aime",
-                "solution": item['ground_truth_solution']
+                "solution": item['ground_truth_solution'],
             }
             formatted_data.append(formatted_item)
 
@@ -109,7 +116,7 @@ def download_amc_aime_dataset():
         total_records = len(formatted_data)
         base_size = total_records // 4
         remainder = total_records % 4
-        
+
         datasets = []
         start = 0
         for i in range(4):
@@ -124,15 +131,16 @@ def download_amc_aime_dataset():
             output_file = output_dir / f"amc_aime_dataset_part{i}.json"
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(dataset_part, f, indent=4, ensure_ascii=False)
-            print(f"Successfully saved part {i} ({len(dataset_part)} records) to {output_file}")
+            print(
+                f""""Successfully saved part {i} ({len(dataset_part)} records)
+                  to {output_file}"""
+            )
 
         return formatted_data
 
     except Exception as e:
         print(f"Error downloading AMC/AIME dataset: {e}")
         return None
-
-
 
 
 if __name__ == "__main__":

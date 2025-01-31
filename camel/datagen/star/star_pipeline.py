@@ -14,12 +14,12 @@
 
 import asyncio
 import json
+import math
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Union
-import os
-import math
 
 from pydantic import BaseModel
 
@@ -181,7 +181,8 @@ class STaRPipeline:
         elif isinstance(data, list):
             return [self.clean_json(v) for v in data]
         elif isinstance(data, float) and (
-                math.isnan(data) or math.isinf(data)):
+            math.isnan(data) or math.isinf(data)
+        ):
             return None
         return data
 
