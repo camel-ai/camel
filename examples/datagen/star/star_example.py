@@ -35,7 +35,7 @@ def main():
 
     # Initialize agent
     reason_agent_system_message = """Please reason step by step, and put your 
-    final answer within \boxed{}."""
+    final answer within \\boxed{}."""
     evaluate_agent_system_message = """You are a highly critical teacher who 
     evaluates the student's answers with a meticulous and demanding approach.
     """

@@ -14,9 +14,12 @@
 
 import asyncio
 import json
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Union
+import os
+import math
 
 from pydantic import BaseModel
 
@@ -164,6 +167,23 @@ class STaRPipeline:
         if self.output_path:
             with open(self.output_path, 'w') as f:
                 json.dump({'traces': []}, f, indent=2)
+        self.lock = threading.Lock()
+
+    def safe_write_json(self, file_path, data):
+        temp_path = file_path + ".tmp"
+        with open(temp_path, "w") as f:
+            json.dump(data, f, indent=2)
+        os.replace(temp_path, file_path)
+
+    def clean_json(self, data):
+        if isinstance(data, dict):
+            return {k: self.clean_json(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self.clean_json(v) for v in data]
+        elif isinstance(data, float) and (
+                math.isnan(data) or math.isinf(data)):
+            return None
+        return data
 
     async def _batch_process_problems(
         self, problems: List[Dict], rationalization: bool
@@ -677,19 +697,18 @@ class STaRPipeline:
 
         # Write result to file immediately if output path is specified
         if self.output_path:
-            try:
-                # Read existing results
-                with open(self.output_path, 'r') as f:
-                    data = json.load(f)
+            with self.lock:
+                try:
+                    # Read existing results
+                    with open(self.output_path, 'r') as f:
+                        data = json.load(f)
 
-                # Append new result
-                data['traces'].append(result.model_dump())
+                    cleaned_result = self.clean_json(result.model_dump())
+                    data['traces'].append(cleaned_result)
+                    self.safe_write_json(self.output_path, data)
 
-                # Write back all results
-                with open(self.output_path, 'w') as f:
-                    json.dump(data, f, indent=2)
-            except Exception as e:
-                logger.error(f"Error writing result to file: {e}")
+                except Exception as e:
+                    logger.error(f"Error writing result to file: {e}")
 
         return result
 

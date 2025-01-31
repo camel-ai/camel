@@ -32,11 +32,11 @@ evaluate_model = ModelFactory.create(
     model_type=ModelType.DEEPSEEK_CHAT,
 )
 
-reason_model_1 = ModelFactory.create(
-    model_platform=ModelPlatformType.DEEPSEEK,
-    model_type=ModelType.DEEPSEEK_REASONER,
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-)
+# reason_model_1 = ModelFactory.create(
+#     model_platform=ModelPlatformType.DEEPSEEK,
+#     model_type=ModelType.DEEPSEEK_REASONER,
+#     api_key=os.getenv("DEEPSEEK_API_KEY"),
+# )
 
 # reason_model_2 = ModelFactory.create(
 #     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
@@ -45,17 +45,24 @@ reason_model_1 = ModelFactory.create(
 #     url="https://api.deepinfra.com/v1/openai",
 # )
 
+# reason_model_3 = ModelFactory.create(
+#     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
+#     model_type="deepseek-ai/DeepSeek-R1",
+#     api_key=os.getenv("HYPERBOLIC_API_KEY"),
+#     url="https://api.hyperbolic.xyz/v1",
+# )
+
+# reason_model_4 = ModelFactory.create(
+#     model_platform=ModelPlatformType.TOGETHER,
+#     model_type="deepseek-ai/DeepSeek-R1",
+#     # api_key=os.getenv("TOGETHER_API_KEY"),
+#     api_key="44c9ec454a430a19c5243274cb68a3380b0c66feab60216e9b0f470ae16ad6c0",
+# )
 reason_model_3 = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-    model_type="deepseek-ai/DeepSeek-R1",
-    api_key=os.getenv("HYPERBOLIC_API_KEY"),
-    url="https://api.hyperbolic.xyz/v1",
-)
-
-reason_model_4 = ModelFactory.create(
-    model_platform=ModelPlatformType.TOGETHER,
-    model_type="deepseek-ai/DeepSeek-R1",
-    api_key=os.getenv("TOGETHER_API_KEY"),
+    model_type="accounts/fireworks/models/deepseek-r1",
+    api_key="fw_3ZhFzo7gtDbv9pXr5TQxxEZ9",
+    url="https://api.fireworks.ai/inference/v1",
 )
 # from camel.models.reward import NemotronRewardModel
 
@@ -64,7 +71,7 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'openthoughts_math.json')
+    problems_path = os.path.join(current_dir, 'gsm8k_dataset_part3.json')
     output_path = os.path.join(current_dir, 'star_r1_output.json')
 
     # Load problems from JSON file
@@ -73,17 +80,17 @@ def main():
 
     # Initialize agent
     reason_agent_system_message = """Please reason step by step, and put your 
-    final answer within \boxed{}."""
+    final answer within \\boxed{}."""
     evaluate_agent_system_message = """You are a highly critical teacher who 
     evaluates the student's answers with a meticulous and demanding approach.
     """
     reason_agent = ChatAgent(
         system_message=reason_agent_system_message,
         model=[
-        # reason_model_1,
-        # reason_model_2,
         reason_model_3,
-        reason_model_4,
+        # reason_model_2,
+        # reason_model_3,
+        # reason_model_4,
         ],
     )
     evaluate_agent = ChatAgent(system_message=evaluate_agent_system_message, model=evaluate_model)
