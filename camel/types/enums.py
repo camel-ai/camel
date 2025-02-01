@@ -37,6 +37,7 @@ class ModelType(UnifiedModelType, Enum):
     O1 = "o1"
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
+    O3_MINI = "o3-mini"
 
     GLM_4 = "glm-4"
     GLM_4V = 'glm-4v'
@@ -215,6 +216,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
+            ModelType.O3_MINI,
         }
 
     @property
@@ -562,6 +564,7 @@ class ModelType(UnifiedModelType, Enum):
             return 131_072
         elif self in {
             ModelType.O1,
+            ModelType.O3_MINI,
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
