@@ -78,9 +78,9 @@ class MinerUToolkit(BaseToolkit):
             language (str): Document language. (default: "ch")
 
         Returns:
-            Dict: Contains task_id and extraction results.
+            Dict: Contains task_id for tracking the extraction progress.
         """
-        task_data = self.client.extract_url(
+        return self.client.extract_url(
             url=url,
             is_ocr=is_ocr,
             enable_formula=enable_formula,
@@ -88,7 +88,6 @@ class MinerUToolkit(BaseToolkit):
             layout_model=layout_model,
             language=language,
         )
-        return self.client.get_task_status(task_data['task_id'])
 
     def batch_extract_from_urls(
         self,
@@ -111,7 +110,9 @@ class MinerUToolkit(BaseToolkit):
         Returns:
             Dict: Status and results of all files in the batch.
         """
-        files = [{"url": url} for url in urls]
+        files: List[Dict[str, str | bool]] = [
+            {"url": url, "is_ocr": True} for url in urls
+        ]
         batch_id = self.client.batch_extract_urls(
             files=files,
             enable_formula=enable_formula,
