@@ -104,7 +104,9 @@ class SubprocessInterpreter(BaseInterpreter):
             raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
         cmd = shlex.split(
-            self._CODE_EXECUTE_CMD_MAPPING[code_type].format(file_name=str(file))
+            self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
+                file_name=str(file)
+            )
         )
 
         proc = subprocess.Popen(
@@ -194,5 +196,6 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError("SubprocessInterpreter doesn't support " 
-                           "`action_space`.")
+        raise RuntimeError(
+            "SubprocessInterpreter doesn't support " "`action_space`."
+        )
