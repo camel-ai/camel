@@ -186,7 +186,6 @@ class ModelType(UnifiedModelType, Enum):
         return any(
             [
                 self.is_openai,
-                self.is_deepseek,
             ]
         )
 
