@@ -17,8 +17,8 @@ from sentence_transformers import SentenceTransformer
 from camel.embeddings import SentenceTransformerEncoder
 
 pytestmark = pytest.mark.skip(
-    reason="Temporarily skipping VLM embedding tests due to "
-    "Huggingface credentials not available"
+    reason="Temporarily skipping tests due to Huggingface "
+    "credentials not available"
 )
 
 
