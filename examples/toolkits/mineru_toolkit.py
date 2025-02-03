@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import time
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -21,165 +22,124 @@ from camel.models import ModelFactory
 from camel.toolkits import MinerUToolkit
 from camel.types import ModelPlatformType, ModelType
 
-# Initialize the toolkit with longer timeouts
-mineru_toolkit = MinerUToolkit()
 
-# Example 1: Direct toolkit usage
-print("Example 1: Extracting content from a single URL...")
-try:
-    print("Starting extraction (this may take several minutes)...")
-    # First, initiate the extraction task
-    task_data = mineru_toolkit.extract_from_url(
-        url="https://arxiv.org/pdf/2311.10993.pdf",
-        enable_formula=True,
-        enable_table=True,
-        language="en",
-    )
+def main():
+    # Initialize the toolkit
+    mineru_toolkit = MinerUToolkit()
 
-    print(f"Task initiated with ID: {task_data['task_id']}")
+    print("Example 1: Extracting content from a single URL...")
+    try:
+        # Extract and wait for results
+        result = mineru_toolkit.extract_from_url(
+            url="https://arxiv.org/pdf/2311.10993.pdf",
+            enable_formula=True,
+            enable_table=True,
+            language="en",
+        )
+        print("\nExtraction completed successfully:")
+        print(f"Download URL: {result['full_zip_url']}\n")
 
-    # Then check the status periodically
-    max_retries = 30
-    delay = 10
-    for _ in range(max_retries):
-        result = mineru_toolkit.get_task_status(task_data['task_id'])
-        if result['state'] == 'done':
-            print(f"Single URL extraction result:\n{result}\n")
-            break
-        print(f"Status: {result['state']}. Waiting {delay} seconds...")
-        time.sleep(delay)
-    else:
-        raise TimeoutError("Extraction timed out")
-except (TimeoutError, RuntimeError) as e:
-    print(f"Extraction failed: {e}\n")
+    except Exception as e:
+        print(f"Extraction failed: {e}\n")
+
+    print("Example 2: Extracting content from multiple URLs...")
+    try:
+        urls = [
+            "https://arxiv.org/pdf/2311.10993.pdf",
+            "https://arxiv.org/pdf/2310.07298.pdf",
+        ]
+
+        # Batch extract and wait for results
+        results = mineru_toolkit.batch_extract_from_urls(
+            urls=urls,
+            enable_formula=True,
+            enable_table=True,
+            language="en",
+        )
+
+        print("\nBatch extraction completed successfully:")
+        for result in results['extract_result']:
+            print(f"\nDocument: {result['file_name']}")
+            print(f"Download URL: {result['full_zip_url']}")
+
+    except Exception as e:
+        print(f"Batch extraction failed: {e}\n")
+
+    print("\nExample 3: Using MinerU with ChatAgent...")
+    try:
+        # Set up the ChatAgent with MinerU capabilities
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="Document Analyzer",
+            content="""
+            You are a helpful assistant that can extract and analyze 
+            content from documents using MinerU's document extraction. 
+            You can handle PDFs and extract text, formulas, and tables. When 
+            processing documents, inform users that it may take time.
+            """,
+        )
+
+        # Initialize the model with specific configuration
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.DEFAULT,
+            model_type=ModelType.DEFAULT,
+            model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
+        )
+
+        # Create the agent with MinerU toolkit
+        agent = ChatAgent(
+            system_message=sys_msg,
+            model=model,
+            tools=mineru_toolkit.get_tools(),
+        )
+
+        # Example document analysis request
+        usr_msg = BaseMessage.make_user_message(
+            role_name="User",
+            content="""Please extract and analyze this research paper, 
+            focusing on mathematical formulas and tables: 
+            https://arxiv.org/pdf/2311.10993.pdf""",
+        )
+
+        response = agent.step(usr_msg)
+        print("\nAgent Response:")
+        print(response.msg.content)
+
+    except Exception as e:
+        print(f"\nAgent interaction failed: {e}\n")
+
+
+if __name__ == "__main__":
+    main()
 
 """
+Example output:
+
 Example 1: Extracting content from a single URL...
-Starting extraction (this may take several minutes)...
-Task initiated with ID: cb66f544-8f8f-4b39-8339-b296622a0f5f
-Status: pending. Waiting 10 seconds...
 
-Single URL extraction result:
-{
-    'task_id': 'cb66f544-8f8f-4b39-8339-b296622a0f5f',
-    'state': 'done', 
-    'err_msg': '',
-    'full_zip_url': 
-        'https://cdn-mineru.openxlab.org.cn/pdf/690a7956-eaaa-4fb2-ad7d-6056d1d4e316.zip'
-}
-"""
+Extraction completed successfully:
+Download URL: https://cdn-mineru.openxlab.org.cn/pdf/690a7956-eaaa-4fb2-ad7d-6056d1d4e316.zip
 
-# Example 2: Batch extract content from multiple URLs
-print("Example 2: Extracting content from multiple URLs...")
-try:
-    print("Starting batch extraction (this may take several minutes)...")
-    urls = [
-        "https://arxiv.org/pdf/2311.10993.pdf",
-        "https://arxiv.org/pdf/2310.07298.pdf",
-    ]
-    # First, initiate the batch extraction
-    batch_id = mineru_toolkit.batch_extract_from_urls(
-        urls=urls,
-        enable_formula=True,
-        enable_table=True,
-        language="en",
-    )
-
-    print(f"Batch initiated with ID: {batch_id}")
-
-    # Then check the status periodically
-    max_retries = 30
-    delay = 10
-    for _ in range(max_retries):
-        result = mineru_toolkit.get_batch_status(batch_id)
-        if all(
-            task['state'] == 'completed' for task in result['extract_result']
-        ):
-            print(f"Batch extraction result:\n{result}\n")
-            break
-        print(f"Batch still processing. Waiting {delay} seconds...")
-        time.sleep(delay)
-    else:
-        raise TimeoutError("Batch extraction timed out")
-except (TimeoutError, RuntimeError) as e:
-    print(f"Batch extraction failed: {e}\n")
-
-"""
-===============================================================================
 Example 2: Extracting content from multiple URLs...
-Starting batch extraction (this may take several minutes)...
-Batch initiated with ID: {
-    'batch_id': '7a2a71b4-db30-4cc8-a78d-a067be5e50fa',
-    'extract_result': [
-        {
-            'file_name': '2311.10993.pdf',
-            'state': 'pending',
-            'err_msg': ''
-        },
-        {
-            'file_name': '2310.07298.pdf',
-            'state': 'pending',
-            'err_msg': ''
-        }
-    ]
-}
-Batch extraction failed: Failed to get batch status: 'data'
-===============================================================================
-"""
 
-# Example 3: Using with ChatAgent
-print("Example 3: Using MinerU with ChatAgent...")
+Batch extraction completed successfully:
 
-# Set up the agent
-sys_msg = BaseMessage.make_assistant_message(
-    role_name="Document Analyzer",
-    content="""You are a helpful assistant that can extract, analyze content 
-    from documents using MinerU's document extraction capabilities. Document 
-    processing may take several minutes, so please be patient and inform the 
-    user about potential waiting times.""",
-)
+Document: 2311.10993.pdf
+Download URL: https://cdn-mineru.openxlab.org.cn/pdf/690a7956-eaaa-4fb2-ad7d-6056d1d4e316.zip
 
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
-    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
-)
+Document: 2310.07298.pdf
+Download URL: https://cdn-mineru.openxlab.org.cn/pdf/250a3762-406e-4279-aa80-47e5ea934509.zip
 
-agent = ChatAgent(
-    system_message=sys_msg,
-    model=model,
-    tools=mineru_toolkit.get_tools(),
-)
-
-# Example document analysis request
-usr_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="""Please analyze this research paper and extract any mathematical 
-    formulas and tables: https://arxiv.org/pdf/2311.10993.pdf""",
-)
-
-try:
-    print("\nStarting document analysis (this may take several minutes)...")
-    response = agent.step(usr_msg)
-    print("\nAgent Response:")
-    print(response.msg.content)
-except Exception as e:
-    print(f"\nAgent encountered an error: {e}")
-
-"""
-===============================================================================
 Example 3: Using MinerU with ChatAgent...
 
-Starting document analysis (this may take several minutes)...
-
 Agent Response:
-The extraction process is complete. You can download the extracted content, 
-including mathematical formulas and tables, from the following link:
+The extraction of the research paper has been completed. You can download the
+extracted content, including mathematical formulas and tables,
+from the following link:
 
 [Download Extracted Content]
 (https://cdn-mineru.openxlab.org.cn/pdf/690a7956-eaaa-4fb2-ad7d-6056d1d4e316.zip)
 
-If you need any further analysis or specific information from the extracted 
-content, feel free to ask!
-===============================================================================
+If you need any specific analysis or further assistance with the content,
+please let me know!
+
 """
