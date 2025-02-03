@@ -32,22 +32,23 @@ from camel.utils import (
 
 
 class SiliconFlowModel(BaseModelBackend):
-    """SiliconFlow API in a unified BaseModelBackend interface.
+    r"""SiliconFlow API in a unified BaseModelBackend interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
-            created, one of SiliconFlow series.
+            created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into OpenAI client. If :obj:`None`,
             :obj:`SiliconFlowConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the SiliconFlow service. (default: :obj:`None`)
-        url (Optional[str], optional): The url to the SiliconFlow service.
-            (default: :obj:`https://api.siliconflow.cn/v1/`)
+        url (Optional[str], optional): The URL to the SiliconFlow service. If not
+            provided, :obj:`https://api.siliconflow.cn/v1/` will be used.
+            (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
-            ModelType.GPT_4)` will be used.
+            ModelType.GPT_4O_MINI)` will be used.
             (default: :obj:`None`)
     """
 
@@ -85,7 +86,7 @@ class SiliconFlowModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        """Runs inference of SiliconFlow chat completion.
+        r"""Runs inference of SiliconFlow chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -105,7 +106,7 @@ class SiliconFlowModel(BaseModelBackend):
 
     @property
     def token_counter(self) -> BaseTokenCounter:
-        """Initialize the token counter for the model backend.
+        r"""Initialize the token counter for the model backend.
 
         Returns:
             BaseTokenCounter: The token counter following the model's
@@ -116,7 +117,7 @@ class SiliconFlowModel(BaseModelBackend):
         return self._token_counter
 
     def check_model_config(self):
-        """Check whether the model configuration contains any
+        r"""Check whether the model configuration contains any
         unexpected arguments to SiliconFlow API.
 
         Raises:

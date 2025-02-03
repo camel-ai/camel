@@ -59,6 +59,7 @@ jobs:
         DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
+        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -107,6 +108,7 @@ jobs:
         DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
+        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
