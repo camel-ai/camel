@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import time
 from typing import Dict, List, Optional, Union
 
 import requests
@@ -179,3 +180,77 @@ class MinerU:
             return response.json()["data"]
         except Exception as e:
             raise RuntimeError(f"Failed to get batch status: {e}")
+
+    def wait_for_completion(
+        self,
+        task_id: str,
+        is_batch: bool = False,
+        timeout: int = 100,
+        check_interval: int = 5,
+    ) -> Dict:
+        r"""Wait for task completion with timeout.
+
+        Args:
+            task_id (str): The ID of the task or batch.
+            is_batch (bool): Whether this is a batch task. (default: False)
+            timeout (int): Maximum time to wait in seconds. (default: 300)
+            check_interval (int): Time between status checks in seconds.
+                (default: 5)
+
+        Returns:
+            Dict: Final task status and results.
+
+        Raises:
+            TimeoutError: If task doesn't complete within timeout period.
+            RuntimeError: If task fails or encounters an error.
+        """
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(
+                    f"Task {task_id} timed out after {timeout}s"
+                )
+
+            try:
+                status = (
+                    self.get_batch_status(task_id)
+                    if is_batch
+                    else self.get_task_status(task_id)
+                )
+
+                if is_batch:
+                    # Check batch status
+                    all_done = True
+                    failed_tasks = []
+                    for result in status.get('extract_result', []):
+                        if result.get('state') == 'failed':
+                            failed_tasks.append(
+                                f"{result.get('data_id')}:"
+                                f" {result.get('err_msg')}"
+                            )
+                        elif result.get('state') != 'done':
+                            all_done = False
+                            break
+
+                    if failed_tasks:
+                        raise RuntimeError(
+                            f"Batch tasks failed: {'; '.join(failed_tasks)}"
+                        )
+                    if all_done:
+                        return status
+                else:
+                    # Check single task status
+                    state = status.get('state')
+                    if state == 'failed':
+                        raise RuntimeError(
+                            f"Task failed: {status.get('err_msg')}"
+                        )
+                    elif state == 'done':
+                        return status
+
+            except Exception as e:
+                if not isinstance(e, RuntimeError):
+                    raise RuntimeError(f"Error checking status: {e}")
+                raise
+
+            time.sleep(check_interval)
