@@ -13,9 +13,9 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Type, Union
+from typing import Any, Sequence, Type, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -26,15 +26,15 @@ class SiliconFlowConfig(BaseConfig):
     SiliconFlow API.
 
     Args:
-        temperature (float, optional): Determines the degree of randomness 
+        temperature (float, optional): Determines the degree of randomness
             in the response. (default: :obj:`0.7`)
-        top_p (float, optional): The top_p (nucleus) parameter is used to 
-            dynamically adjust the number of choices for each predicted token 
+        top_p (float, optional): The top_p (nucleus) parameter is used to
+            dynamically adjust the number of choices for each predicted token
             based on the cumulative probabilities. (default: :obj:`0.7`)
         n (int, optional): Number of generations to return. (default::obj:`1`)
-        response_format (object, optional): An object specifying the format 
+        response_format (object, optional): An object specifying the format
             that the model must output.
-        stream (bool, optional): If set, tokens are returned as Server-Sent 
+        stream (bool, optional): If set, tokens are returned as Server-Sent
             Events as they are made available. (default: :obj:`False`)
         stop (str or list, optional): Up to :obj:`4` sequences where the API
             will stop generating further tokens. (default: :obj:`None`)
@@ -86,4 +86,6 @@ class SiliconFlowConfig(BaseConfig):
         return config_dict
 
 
-SILICONFLOW_API_PARAMS = {param for param in SiliconFlowConfig.model_fields.keys()}
+SILICONFLOW_API_PARAMS = {
+    param for param in SiliconFlowConfig.model_fields.keys()
+}

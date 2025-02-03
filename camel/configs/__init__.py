@@ -32,11 +32,11 @@ from .samba_config import (
     SambaVerseAPIConfig,
 )
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
+from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
-from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 
 __all__ = [
     'BaseConfig',
