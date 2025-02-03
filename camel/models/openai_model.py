@@ -111,6 +111,7 @@ class OpenAIModel(BaseModelBackend):
             ModelType.O1,
             ModelType.O1_MINI,
             ModelType.O1_PREVIEW,
+            ModelType.O3_MINI,
         ]:
             warnings.warn(
                 "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
