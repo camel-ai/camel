@@ -4,7 +4,7 @@
   </a>
 </div>
 
-<br />
+</br>
 
 <div align="center">
 
@@ -17,6 +17,9 @@
 [![Star][star-image]][star-url]
 [![Package License][package-license-image]][package-license-url]
 
+</div>
+
+<div align="left">
 
 <p style="line-height: 1.5;"> 🐫 CAMEL is an open-source community dedicated to finding the scaling laws of agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.</p>
 
@@ -25,13 +28,7 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 
 </div>
 
-<br />
-
-<div align="center">
-
-</div>
-
-<h4 align="center">
+<h4 align="left">
 
 [Community](https://github.com/camel-ai/camel#community) |
 [Installation](https://github.com/camel-ai/camel#installation) |
@@ -43,20 +40,36 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 
 </h4>
 
-## Table of Contents
 
-- [Quick Start](#quick-start)
-- [What Can You Build With CAMEL?](#what-can-you-build-with-camel)
-- [Tech Stack](#techstack)
-- [Installation](#installation)
-- [Cookbooks](#cookbooks)
-- [Acknowledgment](#acknowledgment)
-- [License](#license)
-- [Contributing](#contributing)
-- [Community & Contact](#community-contact)
+## 🌟　When to Choose CAMEL-AI Over Other Frameworks?
+
+```bash
+##If you need multi-agent collaboration
+CAMEL-AI is purpose-built for creating and managing systems where multiple agents interact and collaborate.
+
+##If you're conducting research
+CAMEL-AI research-first design makes it the go-to framework for academic and experimental projects.
+
+##If you require high customizability
+CAMEL-AI offers unparalleled flexibility in defining agent behaviors and workflows.
+
+##If you're tackling complex, decomposable tasks
+CAMEL-AI task decomposition capabilities make it ideal for breaking down and solving intricate problems.
+```
 
 
-## Quick Start
+| Feature | CAMEL-AI | LangChain | AutoGen | Crew-AI | AutoGPT |
+|---------|----------|-----------|----------|----------|----------|
+| Multi-Agent Focus | ✅ Optimized | ❌ General-purpose | ✅ Optimized | ❌ Human-AI focus | ❌ Single-agent focus |
+| Task Decomposition | ✅ Excellent | ❌ Limited | ❌ Moderate | ❌ Limited | ❌ Limited |
+| Customizability | ✅ High | ✅ Moderate | ✅ High | ❌ Low | ❌ Low |
+| Research-Oriented | ✅ Strong focus | ❌ General-purpose | ❌ Production-focused | ❌ Hybrid workflows | ❌ Automation-focused |
+| Scalability | ✅ Large-scale systems | ✅ Moderate | ✅ Large-scale systems | ❌ Small-scale | ❌ Moderate |
+
+
+
+## 🚀　Quick Start
+
 ### Installation
 
 ### 1. Install from PyPI
@@ -135,7 +148,6 @@ pip install -e .
 pip install -e '.[all]' # (Optional)
 ```
 
-
 Explore different types of agents, their roles, and their applications.
 
 - **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
@@ -159,7 +171,11 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 ## 💡 What Can You Build With CAMEL?
 
 ### 1. Data Generation
-
+description of datageneration
+- function-calling
+- CoT Data
+- Distillation reason
+- cases & links cooklinks
 
 ### 2. Task Automation
 
