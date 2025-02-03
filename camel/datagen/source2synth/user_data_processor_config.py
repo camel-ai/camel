@@ -23,7 +23,15 @@ class ProcessorConfig(BaseModel):
     r"""Data processing configuration class"""
 
     def __repr__(self):
-        return "MultiHopGeneratorAgent()"
+        return (
+            f"ProcessorConfig("
+            f"seed={self.seed}, min_length={self.min_length}, "
+            f"max_length={self.max_length}, "
+            f"complexity_threshold={self.complexity_threshold}, "
+            f"dataset_size={self.dataset_size}, "
+            f"use_ai_model={self.use_ai_model}"
+            f")"
+        )
 
     model_config = ConfigDict(
         validate_assignment=True,
@@ -43,13 +51,6 @@ class ProcessorConfig(BaseModel):
 
     max_length: int = Field(
         default=512, description="Maximum text length", gt=0
-    )
-
-    quality_threshold: float = Field(
-        default=0.7,
-        description="Quality threshold for processing",
-        ge=0.0,
-        le=1.0,
     )
 
     complexity_threshold: float = Field(
