@@ -36,6 +36,7 @@ from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
+from camel.models.siliconflow_model import SiliconFlowModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
 from camel.utils import BaseTokenCounter
 
@@ -100,6 +101,8 @@ class ModelFactory:
             model_class = LiteLLMModel
         elif model_platform.is_nvidia:
             model_class = NvidiaModel
+        elif model_platform.is_siliconflow:
+            model_class = SiliconFlowModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel

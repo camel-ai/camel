@@ -767,6 +767,7 @@ class ModelPlatformType(Enum):
     DEEPSEEK = "deepseek"
     SGLANG = "sglang"
     INTERNLM = "internlm"
+    SILICONFLOW = "siliconflow"
 
     @property
     def is_openai(self) -> bool:
@@ -873,6 +874,11 @@ class ModelPlatformType(Enum):
     def is_internlm(self) -> bool:
         r"""Returns whether this platform is InternLM."""
         return self is ModelPlatformType.INTERNLM
+
+    @property
+    def is_siliconflow(self) -> bool:
+        r"""Returns whether this platform is SiliconFlow."""
+        return self is ModelPlatformType.SILICONFLOW
 
 
 class AudioModelType(Enum):
