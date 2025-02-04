@@ -28,8 +28,10 @@ model = ModelFactory.create(
 )
 
 assistant_sys_msg = """You are a helpful assistant capable of performing web 
-interactions and answering questions. When appropriate, use the available 
-tools to automate web tasks and retrieve information."""
+interactions and answering questions with real-time data. When appropriate, 
+use the available 
+tools to automate web tasks and retrieve information.
+"""
 
 # Create a ChatAgent with just this single tool, wrapped in a list
 tool_agent = ChatAgent(
@@ -39,7 +41,6 @@ tool_agent = ChatAgent(
 )
 
 # Interact with the agent
-prompt = "What is the most visited website?"
-injection_for_tool_use = "Please use the web tool to find the answer."
-response = tool_agent.step(prompt + injection_for_tool_use)
+prompt = "What is the most visited website in the world?"
+response = tool_agent.step(prompt)
 print(response.msgs[0].content)
