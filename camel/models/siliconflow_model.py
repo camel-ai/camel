@@ -43,8 +43,8 @@ class SiliconFlowModel(BaseModelBackend):
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the SiliconFlow service. (default: :obj:`None`)
-        url (Optional[str], optional): The URL to the SiliconFlow service. If not
-            provided, :obj:`https://api.siliconflow.cn/v1/` will be used.
+        url (Optional[str], optional): The URL to the SiliconFlow service. If
+            not provided, :obj:`https://api.siliconflow.cn/v1/` will be used.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
