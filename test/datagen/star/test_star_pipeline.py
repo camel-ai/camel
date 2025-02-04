@@ -316,11 +316,11 @@ class TestSTaRPipeline(unittest.TestCase):
                     "how many does he have left?",
                     "solution": "3",
                     "final_trace": "Improved reasoning trace",
-                    "evaluate_success": False,
+                    "agent_evaluate_success": False,
                     "boxed_answer_success": False,
                     "improvement_history": [
                         {
-                            "iteration": 1,
+                            "iteration": 0,
                             "trace": "Initial reasoning trace",
                             "evaluation": {
                                 "correctness": 0.95,
@@ -328,7 +328,17 @@ class TestSTaRPipeline(unittest.TestCase):
                                 "completeness": 0.95,
                                 "feedback": "Excellent explanation",
                             },
-                        }
+                        },
+                        {
+                            "iteration": 1,
+                            "trace": "Improved reasoning trace",
+                            "evaluation": {
+                                "correctness": 0.98,
+                                "clarity": 0.95,
+                                "completeness": 0.98,
+                                "feedback": "Perfect explanation",
+                            },
+                        },
                     ],
                 }
             ]

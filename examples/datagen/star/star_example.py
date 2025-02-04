@@ -41,7 +41,7 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(current_dir, 'amc_aime_dataset_part4.json')
+    problems_path = os.path.join(current_dir, 'gsm8k_dataset_part1.json')
     output_path = os.path.join(current_dir, 'star_output.json')
 
     # Load problems from JSON file

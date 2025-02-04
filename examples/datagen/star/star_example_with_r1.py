@@ -66,11 +66,9 @@ def main():
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
     problems_path = os.path.join(
-        current_dir, 'outputs/gsm8k_dataset_part1_failed.json'
+        current_dir, 'outputs/gsm8k_dataset_part1.json'
     )
-    output_path = os.path.join(
-        current_dir, 'outputs/gsm8k_dataset_output_part1_retried.json'
-    )
+    output_path = os.path.join(current_dir, 'outputs/star_r1_output.json')
 
     # Load problems from JSON file
     with open(problems_path, 'r') as f:

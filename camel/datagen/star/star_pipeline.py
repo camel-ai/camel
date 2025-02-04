@@ -85,7 +85,7 @@ class STaRPipeline:
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
-        evaluate_agent: Optional[ChatAgent] =None,
+        evaluate_agent: Optional[ChatAgent] = None,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
         few_shot_examples: Optional[str] = None,
@@ -111,7 +111,7 @@ class STaRPipeline:
                 "coherence": 0.7}. If using reward model and threshold for a
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
-            evaluate_agent (Optional[ChatAgent]): The chat agent used for 
+            evaluate_agent (Optional[ChatAgent]): The chat agent used for
                 evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
                 reasoning traces. If `None`, uses Agent self-evaluation.
@@ -125,7 +125,7 @@ class STaRPipeline:
                 (default: :obj:`None`)
             max_workers (int, optional): Maximum number of worker threads.
                 (default: :obj:`None`)
-            solution_pattern (str, optional): Regular expression pattern with 
+            solution_pattern (str, optional): Regular expression pattern with
                 one capture group to extract answers from solution text.
                 (default: :obj:`r'\\boxed{(.*?)}'`)
             trace_pattern (str, optional): Regular expression pattern with one
@@ -147,7 +147,9 @@ class STaRPipeline:
         self.few_shot_examples = few_shot_examples
         self.batch_processor = BatchProcessor(max_workers, batch_size)
         self.solution_pattern = solution_pattern
-        self.trace_pattern = trace_pattern if trace_pattern is not None else solution_pattern
+        self.trace_pattern = (
+            trace_pattern if trace_pattern is not None else solution_pattern
+        )
 
         # Initialize output file with empty results if path is specified
         if self.output_path:
@@ -440,7 +442,7 @@ class STaRPipeline:
                 For reward model evaluation, the scores will depend on
                 the model's evaluation dimensions.
         """
-        self.evaluate_agent.reset()
+        self.evaluate_agent.reset()  # type: ignore[union-attr]
         if self.evaluator:
             # Use reward model evaluation
             messages = [
@@ -471,7 +473,7 @@ class STaRPipeline:
             prompt = self.EVALUATION_TEMPLATE.format(
                 problem=problem, trace=trace, solution=solution_text
             )
-            response = self.evaluate_agent.step(
+            response = self.evaluate_agent.step(  # type: ignore[union-attr]
                 prompt, response_format=AgentTraceEvaluation
             )
             if response.msg.parsed is None:
@@ -555,7 +557,7 @@ class STaRPipeline:
                 )
 
     def _check_boxed_answers(self, solution: str, trace: str) -> bool:
-        r"""Check if the answer in the trace matches the solution using the 
+        r"""Check if the answer in the trace matches the solution using the
         configured patterns.
 
         Args:
@@ -681,7 +683,9 @@ class STaRPipeline:
                         loop.close()
 
                     eval_dict = eval_results[-1]
-                    scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
+                    scores = {
+                        k: v for k, v in eval_dict.items() if k != "feedback"
+                    }
 
                     # Record iteration history
                     if self.evaluator:
@@ -713,7 +717,9 @@ class STaRPipeline:
             problem=problem_text,
             solution=problem.get("solution", ""),
             final_trace=current_trace,
-            agent_evaluate_success=self._check_score_threshold(scores) if scores else None,
+            agent_evaluate_success=self._check_score_threshold(scores)
+            if scores
+            else None,
             boxed_answer_success=boxed_answer_success,
             improvement_history=improvement_history,
         )

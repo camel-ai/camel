@@ -119,7 +119,10 @@ def download_amc_aime_dataset():
         output_file = output_dir / "star_r1_output_amc_aime.json"
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=4, ensure_ascii=False)
-        print(f"Successfully saved {len(formatted_data)} records to {output_file}")
+        print(
+            f"Successfully saved {len(formatted_data)} records "
+            f"to {output_file}"
+        )
 
         return formatted_data
 
