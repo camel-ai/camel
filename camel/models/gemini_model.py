@@ -91,7 +91,7 @@ class GeminiModel(BaseModelBackend):
 
     def _process_messages(self, messages) -> List[OpenAIMessage]:
         r"""Process the messages for Gemini API to ensure no empty content,
-        which is not accepeted by Gemini.
+        which is not accepted by Gemini.
         """
         processed_messages = []
         for msg in messages:
