@@ -17,6 +17,7 @@ import pytest
 
 from camel.memories import ContextRecord
 from camel.messages import BaseMessage
+from camel.messages.acl_parameter import Content
 from camel.models import ModelFactory
 from camel.prompts import CodePrompt, TextPrompt
 from camel.societies import RolePlaying
@@ -41,12 +42,12 @@ def base_message() -> BaseMessage:
 
 def test_base_message_addition_operator(base_message: BaseMessage):
     new_message = base_message + "!"
-    assert new_message.content == "test content!"
+    assert new_message.content.text == "test content!"
 
 
 def test_base_message_multiplication_operator(base_message: BaseMessage):
     new_message = base_message * 3
-    assert new_message.content == "test contenttest contenttest content"
+    assert new_message.content.text == "test contenttest contenttest content"
 
 
 def test_base_message_length_operator(base_message: BaseMessage):
@@ -100,7 +101,7 @@ def test_base_message():
     role_type = RoleType.USER
     meta_dict = {"key": "value"}
     backend_role = OpenAIBackendRole.USER
-    content = "test_content"
+    content = Content(text="test_content")
 
     message = BaseMessage(
         role_name=role_name,

@@ -122,7 +122,9 @@ class FunctionCallingMessage(BaseMessage):
 
         msg_dict: OpenAIAssistantMessage = {
             "role": "assistant",
-            "content": self.content,
+            "content": self.content
+            if isinstance(self.content, str)
+            else self.content.text,
             "function_call": {
                 "name": self.func_name,
                 "arguments": str(self.args),

@@ -47,10 +47,12 @@ def detect_image_obj(image_list) -> None:
     print("=" * 49)
 
     agent = ChatAgent(sys_msg)
-    content = Content(text = "Please start the object detection for the \
-                      following images!", 
-                      image_list = image_list, 
-                      image_detail = "high")
+    content = Content(
+        text="Please start the object detection for the \
+                      following images!",
+        image_list=image_list,
+        image_detail="high",
+    )
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content=content,

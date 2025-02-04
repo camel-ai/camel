@@ -43,7 +43,8 @@ def init_chat(
     )
 
     user_msg = BaseMessage.make_user_message(
-        role_name=user_agent.role_name, content=f"{assistant_sys_msg.content.text}"
+        role_name=user_agent.role_name,
+        content=f"{assistant_sys_msg.content.text}",
     )
     assistant_agent.step(user_msg)
 

@@ -18,8 +18,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
+from camel.messages.acl_parameter import Content
 from camel.types import OpenAIBackendRole, RoleType
-from camel.messages.acl_parameter import Content 
 
 
 class MemoryRecord(BaseModel):
@@ -62,11 +62,14 @@ class MemoryRecord(BaseModel):
         kwargs.pop("__class__")
         role_name = kwargs['role_name']
         role_type = RoleType(kwargs['role_type'].lower())
-        if 'image_list' in kwargs['content'] and len(kwargs['content']['image_list']) > 0:
+        if (
+            'image_list' in kwargs['content']
+            and len(kwargs['content']['image_list']) > 0
+        ):
             content = Content.from_dict(kwargs['content'])
         else:
             content = Content(text=kwargs['content'])
-  
+
         reconstructed_message = BaseMessage(role_name, role_type, content)
         return cls(
             uuid=UUID(record_dict["uuid"]),

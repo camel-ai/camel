@@ -11,27 +11,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from pydantic import UUID4, BaseModel, Field, ConfigDict
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+import base64
 import uuid
+from io import BytesIO
+from typing import Dict, List, Optional, Tuple, Union
+
+from PIL import Image
+from pydantic import UUID4, BaseModel, ConfigDict, Field
+
 from camel.types import (
-    RoleType,
     MessageType,
+    RoleType,
 )
 from camel.utils import get_local_time
-from PIL import Image
-import base64
-from io import BytesIO
 
 
 class Sender(BaseModel):
     r"""Represents the sender of a message in the system.
-    
+
     Attributes:
         id (UUID4): Unique identifier for the sender, automatically generated.
         name (str): Name of the sender.
         role_type (RoleType): Role type of the sender.
     """
+
     id: UUID4 = Field(
         default_factory=uuid.uuid4,
         description="Unique identifier for the sender, not set by user.",
@@ -40,15 +43,18 @@ class Sender(BaseModel):
     name: str
     """Role type of the sender."""
     role_type: RoleType
-    
+
+
 class Receiver(BaseModel):
     r"""Represents the receiver of a message in the system.
-    
+
     Attributes:
-        id (UUID4): Unique identifier for the receiver, automatically generated.
+        id (UUID4): Unique identifier for the receiver,
+            automatically generated.
         name (str): Name of the receiver.
         role_type (RoleType): Role type of the receiver.
     """
+
     id: UUID4 = Field(
         default_factory=uuid.uuid4,
         description="Unique identifier for the receiver, not set by user.",
@@ -57,37 +63,40 @@ class Receiver(BaseModel):
     name: str
     """Role type of the receiver."""
     role_type: RoleType
-    
+
 
 class Envelope(BaseModel):
     r"""Represents the envelope containing metadata about a message.
-    
+
     Attributes:
         time_sent (str): Timestamp indicating when the message was sent.
     """
+
     time_sent: str = Field(
         default_factory=get_local_time,
         description="Timestamp when the message was sented.",
     )
 
+
 class Content(BaseModel):
-    r"""Represents the content of a message, including text, images, videos, 
+    r"""Represents the content of a message, including text, images, videos,
         and audio.
-    
+
     Attributes:
         text (Optional[str]): Text content of the message.
-        image_list (Optional[List[Image.Image]]): List of images included in 
+        image_list (Optional[List[Image.Image]]): List of images included in
             the message.
         image_detail (str): Level of detail for the images (e.g., "auto").
         video_bytes (Optional[bytes]): Binary data for video content.
         video_detail (str): Level of detail for the video (e.g., "low").
-        audio_url (Optional[List[str]]): List of URLs pointing to audio 
+        audio_url (Optional[List[str]]): List of URLs pointing to audio
             content.
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     """Text content of the message."""
-    text: Optional[str] = Field(default="")
+    text: str = Field(default="")
     """List of images included in the message."""
     image_list: Optional[List[Image.Image]] = None
     """Level of detail for the images."""
@@ -110,18 +119,20 @@ class Content(BaseModel):
     def to_dict(self, *args, **kwargs):
         """Custom serialization for non-JSON-compatible fields."""
         content_dict = super().model_dump(*args, **kwargs)
-        
+
         # Serialize image_list to base64 strings
         if self.image_list:
             content_dict["image_list"] = [
                 base64.b64encode(self._image_to_bytes(image)).decode("utf-8")
                 for image in self.image_list
             ]
-        
+
         # Serialize video_bytes to base64 string
         if self.video_bytes:
-            content_dict["video_bytes"] = base64.b64encode(self.video_bytes).decode("utf-8")
-        
+            content_dict["video_bytes"] = base64.b64encode(
+                self.video_bytes
+            ).decode("utf-8")
+
         return content_dict
 
     @staticmethod
@@ -144,32 +155,35 @@ class Content(BaseModel):
                 cls._bytes_to_image(base64.b64decode(image_str))
                 for image_str in data["image_list"]
             ]
-        
+
         if "video_bytes" in data and isinstance(data["video_bytes"], str):
             data["video_bytes"] = base64.b64decode(data["video_bytes"])
-        
+
         return cls(**data)
-    
+
+
 class ACLParameter(BaseModel):
-    r"""Represents the parameters for an ACL (Agent Communication Language) message.
-    
+    r"""Represents the parameters for an ACL
+        (Agent Communication Language) message.
+
     Attributes:
         sender (Optional[Sender]): Sender of the message.
         receiver (Optional[Union[Receiver, Tuple[Receiver, ...]]]): Receiver
             (s) of the message.
         subject (Optional[str]): Subject of the message.
         reply_with (Optional[Content]): Content of the reply message.
-        in_reply_to (Optional[UUID4]): Identifier for the message being 
+        in_reply_to (Optional[UUID4]): Identifier for the message being
             replied to.
         envelope (Optional[Envelope]): Metadata about the message.
         language (str): Language used in the message.
         ontology (Optional[str]): Ontology used in the message.
-        protocol (Optional[Dict[str, str]]): Protocol information for the 
+        protocol (Optional[Dict[str, str]]): Protocol information for the
             message.
         message_type (MessageType): Type of the message.
-        conversation_id (Optional[UUID4]): Unique identifier for the 
+        conversation_id (Optional[UUID4]): Unique identifier for the
             conversation.
     """
+
     sender: Optional[Sender] = None
     receiver: Optional[Union[Receiver, Tuple[Receiver, ...]]] = None
     subject: Optional[str] = None

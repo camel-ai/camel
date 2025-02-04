@@ -17,6 +17,7 @@ from typing import cast
 
 from camel.types.unified_model_type import UnifiedModelType
 
+
 class MessageType(Enum):
     PASS = "pass"
     REQUEST = "request"

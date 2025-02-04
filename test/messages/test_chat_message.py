@@ -16,6 +16,7 @@ from typing import Any, Dict
 import pytest
 
 from camel.messages import BaseMessage
+from camel.messages.acl_parameter import Content
 from camel.types import RoleType
 
 
@@ -53,12 +54,12 @@ def test_chat_message(chat_message: BaseMessage) -> None:
     role_name = "test_role"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = "test chat message"
+    content = Content(text="test chat message")
 
     assert chat_message.role_name == role_name
     assert chat_message.role_type == role_type
     assert chat_message.meta_dict == meta_dict
-    assert chat_message.content == content
+    assert chat_message.content.text == content.text
 
     dictionary = chat_message.to_dict()
     reference_dict: Dict[str, Any] = {
@@ -73,12 +74,12 @@ def test_assistant_chat_message(assistant_chat_message: BaseMessage) -> None:
     role_name = "test_assistant"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = "test assistant chat message"
+    content = Content(text="test assistant chat message")
 
     assert assistant_chat_message.role_name == role_name
     assert assistant_chat_message.role_type == role_type
     assert assistant_chat_message.meta_dict == meta_dict
-    assert assistant_chat_message.content == content
+    assert assistant_chat_message.content.text == content.text
 
     dictionary = assistant_chat_message.to_dict()
     reference_dict: Dict[str, Any] = {
@@ -93,12 +94,12 @@ def test_user_chat_message(user_chat_message: BaseMessage) -> None:
     role_name = "test_user"
     role_type = RoleType.USER
     meta_dict = None
-    content = "test user chat message"
+    content = Content(text="test user chat message")
 
     assert user_chat_message.role_name == role_name
     assert user_chat_message.role_type == role_type
     assert user_chat_message.meta_dict == meta_dict
-    assert user_chat_message.content == content
+    assert user_chat_message.content.text == content.text
 
     dictionary = user_chat_message.to_dict()
     reference_dict: Dict[str, Any] = {

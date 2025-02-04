@@ -14,9 +14,8 @@
 import base64
 import io
 import re
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
-
 
 import numpy as np
 from PIL import Image
@@ -30,8 +29,8 @@ from camel.messages import (
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
-from camel.messages.conversion import ShareGPTMessage
 from camel.messages.acl_parameter import ACLParameter, Content, Sender
+from camel.messages.conversion import ShareGPTMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
@@ -40,12 +39,13 @@ from camel.types import (
 )
 from camel.utils import Constants
 
+
 class BaseMessage:
     r"""Base class for message objects used in CAMEL chat system.
 
     Args:
         role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either `RoleType.ASSISTANT` 
+        role_type (RoleType): The type of role, either `RoleType.ASSISTANT`
             or `RoleType.USER`.
         meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
             for the message.
@@ -63,7 +63,7 @@ class BaseMessage:
         self,
         role_name: str,
         role_type: RoleType,
-        content: Union[str, Content],
+        content: str,
         acl_parameter: Optional[ACLParameter] = None,
         meta_dict: Optional[Dict[str, Any]] = None,
         parsed: Optional[Union[BaseModel, dict]] = None,
@@ -71,94 +71,83 @@ class BaseMessage:
     ):
         self.role_name = role_name
         self.role_type = role_type
-        self.content = content
         self.acl_parameter = acl_parameter
         self.meta_dict = meta_dict
         self.parsed = parsed
         self.message_id = message_id or str(uuid4())
-    
+
         """Post-initialization logic for the BaseMessage class.
 
         - Ensures `content` is properly wrapped as a `Content` object.
         - Initializes `acl_parameter` with a default sender if not specified.
         """
-        if isinstance(self.content, str):
-            self.content = Content(text=self.content)
-        
+        self.content = Content(text=content)
+
         if self.acl_parameter is None:
             self.acl_parameter = ACLParameter(
                 sender=Sender(name=self.role_name, role_type=self.role_type)
             )
         else:
-            self.acl_parameter.sender = Sender(name=self.role_name, 
-                                               role_type=self.role_type)
+            self.acl_parameter.sender = Sender(
+                name=self.role_name, role_type=self.role_type
+            )
 
     @classmethod
     def make_user_message(
         cls,
         role_name: str,
-        content: Union[str, Content],
+        content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         acl_parameter: Optional[ACLParameter] = None,
-        parsed: Optional[Union[Type[BaseModel], dict]] = None,
     ) -> "BaseMessage":
         r"""Create a new user message.
 
         Args:
             role_name (str): The name of the user role.
-            content (Union[str, Content]): The content of the message, which 
-                can be plain text or a `Content` object.
-            meta_dict (Optional[Dict[str, str]]): Additional metadata 
+            content (str): The content of the message.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
                 dictionary for the message.
-            acl_parameter (Optional[ACLParameter]): Access control parameter 
+            acl_parameter (Optional[ACLParameter]): Access control parameter
                 for the message, defining sender details and permissions.
-            parsed (Optional[Union[Type[BaseModel], dict]]): Optional parsed 
-                object extracted from the message content.
 
         Returns:
             BaseMessage: The new user message.
         """
         return cls(
-            role_name = role_name,
-            role_type = RoleType.USER,
-            meta_dict = meta_dict,
-            content = content,
-            acl_parameter = acl_parameter,
-            parsed = parsed,
+            role_name=role_name,
+            role_type=RoleType.USER,
+            meta_dict=meta_dict,
+            content=content,
+            acl_parameter=acl_parameter,
         )
 
     @classmethod
     def make_assistant_message(
         cls,
         role_name: str,
-        content: Union[str, Content],
+        content: str,
         meta_dict: Optional[Dict[str, str]] = None,
         acl_parameter: Optional[ACLParameter] = None,
-        parsed: Optional[Union[Type[BaseModel], dict]] = None,
     ) -> "BaseMessage":
         r"""Create a new assistant message.
 
         Args:
             role_name (str): The name of the assistant role.
-            content (Union[str, Content]): The content of the message, which 
-                can be plain text or a `Content` object.
-            meta_dict (Optional[Dict[str, str]]): Additional metadata 
+            content (str): The content of the message.
+            meta_dict (Optional[Dict[str, str]]): Additional metadata
                 dictionary for the message.
-            acl_parameter (Optional[ACLParameter]): Access control parameter 
+            acl_parameter (Optional[ACLParameter]): Access control parameter
                 for the message, defining sender details and permissions.
-            parsed (Optional[Union[Type[BaseModel], dict]]): Optional parsed 
-                object extracted from the message content.
 
         Returns:
             BaseMessage: The new assistant message.
         """
         return cls(
-            role_name = role_name,
-            role_type = RoleType.ASSISTANT,
-            meta_dict = meta_dict,
-            content = content,
-            acl_parameter = acl_parameter,
-            parsed = parsed,
+            role_name=role_name,
+            role_type=RoleType.ASSISTANT,
+            meta_dict=meta_dict,
+            content=content,
+            acl_parameter=acl_parameter,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -188,9 +177,7 @@ class BaseMessage:
             Union[BaseMessage, Any]: The result of the addition.
         """
         if isinstance(other, BaseMessage):
-            combined_content = self.content.__add__(other.content)
-        elif isinstance(other, str):
-            combined_content = self.content.text.__add__(other)
+            combined_content = self.content.text.__add__(other.content.text)
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
@@ -207,8 +194,8 @@ class BaseMessage:
         Returns:
             Union[BaseMessage, Any]: The result of the multiplication.
         """
-        if isinstance(other, int):
-            multiplied_content = self.content * other
+        if isinstance(other, BaseMessage):
+            multiplied_content = self.content.text * other
             return self.create_new_instance(multiplied_content)
         else:
             raise TypeError(
@@ -222,9 +209,8 @@ class BaseMessage:
         Returns:
             int: The length of the content.
         """
-        return len(self.content.text) if isinstance(self.content, Content) \
-            else len(self.content)
-    
+        return len(self.content.text)
+
     def __str__(self) -> str:
         r"""Overridden version of the string function.
 
@@ -468,7 +454,8 @@ class BaseMessage:
             frame_count = 0
             # read video bytes
             video = iio.imiter(
-                self.content.video_bytes, plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV
+                self.content.video_bytes,
+                plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV,
             )
 
             for frame in video:
@@ -543,6 +530,8 @@ class BaseMessage:
             "role_name": self.role_name,
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
-            "content": self.content.to_dict() if self.content.image_list else self.content.text,
+            "content": self.content.to_dict()
+            if self.content.image_list
+            else self.content.text,
             "acl_parameter": self.acl_parameter.model_dump_json(),
         }
