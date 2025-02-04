@@ -24,8 +24,8 @@ def download_gsm8k_dataset():
         # Load the dataset using the datasets library
         dataset = load_dataset("openai/gsm8k", "main")
 
-        # Get the first 7473 items from train split
-        data = dataset['train'].select(range(7473))
+        # Get only 20 items from train split
+        data = dataset['train'].select(range(20))
 
         # Convert to the desired format
         formatted_data = []
@@ -49,6 +49,9 @@ def download_gsm8k_dataset():
                 "problem": item['question'],
                 "type": "openai/gsm8k",  # All problems are from GSM8K
                 "solution": solution,  # Use the modified solution with \boxed
+                "evaluate_success": False,
+                "boxed_answer_success": True,
+                "improvement_history": [],
             }
             formatted_data.append(formatted_item)
 
@@ -84,7 +87,6 @@ def download_gsm8k_dataset():
 
     except Exception as e:
         print(f"Error downloading GSM8K dataset: {e}")
-        return None
 
 
 def download_amc_aime_dataset():
@@ -112,29 +114,12 @@ def download_amc_aime_dataset():
         output_dir = Path("examples/datagen/star")
         output_dir.mkdir(exist_ok=True)
 
-        # Split data into 4 parts, each containing less than 2000 records
-        total_records = len(formatted_data)
-        base_size = total_records // 4
-        remainder = total_records % 4
-
-        datasets = []
-        start = 0
-        for i in range(4):
-            # Add one extra item to some chunks to distribute remainder
-            chunk_size = base_size + (1 if i < remainder else 0)
-            end = start + chunk_size
-            datasets.append(formatted_data[start:end])
-            start = end
-
-        # Save each part to a separate JSON file
-        for i, dataset_part in enumerate(datasets, 1):
-            output_file = output_dir / f"amc_aime_dataset_part{i}.json"
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(dataset_part, f, indent=4, ensure_ascii=False)
-            print(
-                f""""Successfully saved part {i} ({len(dataset_part)} records)
-                  to {output_file}"""
-            )
+        # Save all data to a single JSON file
+        output = formatted_data
+        output_file = output_dir / "star_r1_output_amc_aime.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(output, f, indent=4, ensure_ascii=False)
+        print(f"Successfully saved {len(formatted_data)} records to {output_file}")
 
         return formatted_data
 
