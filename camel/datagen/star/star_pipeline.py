@@ -14,6 +14,7 @@
 
 import asyncio
 import json
+import math
 import os
 import threading
 import time
@@ -62,9 +63,7 @@ class ProblemResult(BaseModel):
     problem: str
     solution: Optional[str] = None
     final_trace: str
-    evaluate_success: bool = (
-        False  # Tracks if problem meets evaluation standards
-    )
+    agent_evaluate_success: Optional[bool] = None
     boxed_answer_success: bool = False
     improvement_history: List[TraceIteration]
 
@@ -78,33 +77,6 @@ class STaRPipeline:
     2. Self-evaluation
     3. Feedback-based improvement
     4. Iterative refinement
-
-    Args:
-        reason_agent (ChatAgent): The chat agent used for generating and
-            improving reasoning traces.
-        problems (List[Dict]): List of problem dictionaries to process.
-        max_iterations (int, optional): Maximum number of improvement
-            iterations. If set to `0`, the pipeline will generate an initial
-            trace without any improvement iterations. (default: :obj:`3`)
-        score_threshold (Union[float, Dict[str, float]], optional): Quality
-            threshold. Can be either a single float value applied to all score,
-            or a dictionary mapping score dimensions to their thresholds. For
-            example: {"correctness": 0.8, "coherence": 0.7}. If using reward
-            model and threshold for a dimension is not specified, will use the
-            default value 0.7. (default: :obj:`0.7`)
-        evaluate_agent (ChatAgent): The chat agent used for evaluating
-            reasoning traces. (default: :obj:`None`)
-        reward_model (BaseRewardModel, optional): Model used for evaluating
-            reasoning traces. If `None`, uses Agent self-evaluation.
-            (default: :obj:`None`)
-        output_path (str, optional): Output path for saving traces. If `None`,
-            results will only be returned without saving to file.
-            (default: :obj:`None`)
-        few_shot_examples: Optional[str] = None,
-        batch_size (int, optional): Batch size for parallel processing.
-            (default: :obj:`10`)
-        max_workers (int, optional): Maximum number of worker threads.
-            (default: :obj:`4`)
     """
 
     def __init__(
@@ -113,12 +85,14 @@ class STaRPipeline:
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
-        evaluate_agent: Optional[ChatAgent] = None,
+        evaluate_agent: Optional[ChatAgent] =None,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
         few_shot_examples: Optional[str] = None,
         batch_size: Optional[int] = None,
         max_workers: Optional[int] = None,
+        solution_pattern: str = r'\\boxed{(.*?)}',
+        trace_pattern: Optional[str] = None,
     ):
         r"""Initialize the STaR pipeline.
 
@@ -137,7 +111,7 @@ class STaRPipeline:
                 "coherence": 0.7}. If using reward model and threshold for a
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
-            evaluate_agent (Optional[ChatAgent]): The chat agent used for
+            evaluate_agent (Optional[ChatAgent]): The chat agent used for 
                 evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
                 reasoning traces. If `None`, uses Agent self-evaluation.
@@ -147,6 +121,17 @@ class STaRPipeline:
                 (default: :obj:`None`)
             few_shot_examples (str, optional): Examples to use for few-shot
                 generation. (default: :obj:`None`)
+            batch_size (int, optional): Batch size for parallel processing.
+                (default: :obj:`None`)
+            max_workers (int, optional): Maximum number of worker threads.
+                (default: :obj:`None`)
+            solution_pattern (str, optional): Regular expression pattern with 
+                one capture group to extract answers from solution text.
+                (default: :obj:`r'\\boxed{(.*?)}'`)
+            trace_pattern (str, optional): Regular expression pattern with one
+                capture group to extract answers from trace text. If `None`,
+                uses the same pattern as solution_pattern.
+                (default: :obj:`None`)
         """
         self.reason_agent = reason_agent
         self.evaluate_agent = evaluate_agent
@@ -161,31 +146,31 @@ class STaRPipeline:
         self.reasoning_traces: List[Dict[str, Any]] = []
         self.few_shot_examples = few_shot_examples
         self.batch_processor = BatchProcessor(max_workers, batch_size)
-        self.output_file_lock = threading.Lock()
+        self.solution_pattern = solution_pattern
+        self.trace_pattern = trace_pattern if trace_pattern is not None else solution_pattern
 
         # Initialize output file with empty results if path is specified
-        # Also retrieve the existing traces if the file exists
         if self.output_path:
-            # If the file doesn't exist, create it with empty results
-            if not os.path.exists(self.output_path):
-                with open(self.output_path, 'w') as f:
-                    json.dump({'traces': []}, f, indent=2)
+            with open(self.output_path, 'w') as f:
+                json.dump({'traces': []}, f, indent=2)
+        self.lock = threading.Lock()
 
-            # Read existing results and exclude processed problems
-            with open(self.output_path, 'r') as f:
-                reasoning_traces = json.load(f)['traces']
-                processed_problem_ids = {
-                    trace['id'] for trace in reasoning_traces
-                }
-                self.problems = [
-                    problem
-                    for problem in self.problems
-                    if problem['id'] not in processed_problem_ids
-                ]
-                logger.info(
-                    f"Skipping {len(processed_problem_ids)} processed "
-                    "problems from the input list."
-                )
+    def safe_write_json(self, file_path, data):
+        temp_path = file_path + ".tmp"
+        with open(temp_path, "w") as f:
+            json.dump(data, f, indent=2)
+        os.replace(temp_path, file_path)
+
+    def clean_json(self, data):
+        if isinstance(data, dict):
+            return {k: self.clean_json(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self.clean_json(v) for v in data]
+        elif isinstance(data, float) and (
+            math.isnan(data) or math.isinf(data)
+        ):
+            return None
+        return data
 
     async def _batch_process_problems(
         self, problems: List[Dict], rationalization: bool
@@ -570,20 +555,21 @@ class STaRPipeline:
                 )
 
     def _check_boxed_answers(self, solution: str, trace: str) -> bool:
-        r"""Check if the boxed answer in the trace matches the solution.
+        r"""Check if the answer in the trace matches the solution using the 
+        configured patterns.
 
         Args:
             solution (str): The problem solution string.
             trace (str): The reasoning trace string.
 
         Returns:
-            bool: True if boxed answers match, False otherwise
+            bool: True if answers match, False otherwise
         """
         import re
 
-        # Extract content within \boxed{...}
-        solution_match = re.search(r'\\boxed{(.*?)}', solution, re.DOTALL)
-        trace_match = re.search(r'\\boxed{(.*?)}', trace, re.DOTALL)
+        # Extract content using the configured patterns
+        solution_match = re.search(self.solution_pattern, solution, re.DOTALL)
+        trace_match = re.search(self.trace_pattern, trace, re.DOTALL)
 
         if solution_match and trace_match:
             # Clean up whitespace and normalize content
@@ -695,9 +681,7 @@ class STaRPipeline:
                         loop.close()
 
                     eval_dict = eval_results[-1]
-                    scores = {
-                        k: v for k, v in eval_dict.items() if k != "feedback"
-                    }
+                    scores = {k: v for k, v in eval_dict.items() if k != "feedback"}
 
                     # Record iteration history
                     if self.evaluator:
@@ -729,29 +713,25 @@ class STaRPipeline:
             problem=problem_text,
             solution=problem.get("solution", ""),
             final_trace=current_trace,
-            evaluate_success=self._check_score_threshold(scores)
-            if scores
-            else False,
+            agent_evaluate_success=self._check_score_threshold(scores) if scores else None,
             boxed_answer_success=boxed_answer_success,
             improvement_history=improvement_history,
         )
 
         # Write result to file immediately if output path is specified
         if self.output_path:
-            try:
-                with self.output_file_lock:
+            with self.lock:
+                try:
                     # Read existing results
                     with open(self.output_path, 'r') as f:
                         data = json.load(f)
 
-                    # Append new result
-                    data['traces'].append(result.model_dump())
+                    cleaned_result = self.clean_json(result.model_dump())
+                    data['traces'].append(cleaned_result)
+                    self.safe_write_json(self.output_path, data)
 
-                    # Write back all results
-                    with open(self.output_path, 'w') as f:
-                        json.dump(data, f, indent=2)
-            except Exception as e:
-                logger.error(f"Error writing result to file: {e}")
+                except Exception as e:
+                    logger.error(f"Error writing result to file: {e}")
 
         return result
 
