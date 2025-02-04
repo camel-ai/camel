@@ -23,6 +23,7 @@ from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.moonshot_model import MoonshotModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -127,6 +128,8 @@ class ModelFactory:
             model_class = DeepSeekModel
         elif model_platform.is_internlm and model_type.is_internlm:
             model_class = InternLMModel
+        elif model_platform.is_moonshot and model_type.is_moonshot:
+            model_class = MoonshotModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 
