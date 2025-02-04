@@ -17,7 +17,7 @@ import os
 import time
 
 from camel.agents import ChatAgent
-from camel.datagen import STaRPipeline
+from camel.datagen import SelfImprovingCoTPipeline
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
@@ -65,9 +65,7 @@ def main():
     start_time = time.time()
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    problems_path = os.path.join(
-        current_dir, 'outputs/gsm8k_dataset_part1.json'
-    )
+    problems_path = os.path.join(current_dir, 'outputs/gsm8k_dataset.json')
     output_path = os.path.join(current_dir, 'outputs/star_r1_output.json')
 
     # Load problems from JSON file
@@ -110,7 +108,7 @@ def main():
     # score_threshold = 0.9
 
     # Create and run pipeline
-    pipeline = STaRPipeline(
+    pipeline = SelfImprovingCoTPipeline(
         reason_agent=reason_agent,
         evaluate_agent=evaluate_agent,
         problems=problems,  # Pass problems list directly

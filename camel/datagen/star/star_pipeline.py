@@ -68,7 +68,7 @@ class ProblemResult(BaseModel):
     improvement_history: List[TraceIteration]
 
 
-class STaRPipeline:
+class SelfImprovingCoTPipeline:
     r"""Pipeline for generating self-taught reasoning traces
     using the STaR methodology.
 

@@ -12,6 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .star_pipeline import STaRPipeline
+from .star_pipeline import SelfImprovingCoTPipeline
 
-__all__ = ['STaRPipeline']
+__all__ = ['SelfImprovingCoTPipeline']

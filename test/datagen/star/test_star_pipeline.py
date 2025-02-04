@@ -16,7 +16,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from camel.agents import ChatAgent
-from camel.datagen import STaRPipeline
+from camel.datagen import SelfImprovingCoTPipeline
 from camel.datagen.star.star_pipeline import (
     ProblemResult,
     TraceIteration,
@@ -24,7 +24,7 @@ from camel.datagen.star.star_pipeline import (
 from camel.models.reward import BaseRewardModel
 
 
-class TestSTaRPipeline(unittest.TestCase):
+class TestSelfImprovingCoTPipeline(unittest.TestCase):
     def setUp(self):
         self.mock_reason_agent = MagicMock(spec=ChatAgent)
         self.mock_reason_agent.step.return_value = MagicMock(
@@ -56,7 +56,7 @@ class TestSTaRPipeline(unittest.TestCase):
         ]
 
     def test_pipeline_initialization(self):
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -74,7 +74,7 @@ class TestSTaRPipeline(unittest.TestCase):
 
     def test_pipeline_initialization_with_few_shot(self):
         few_shot = "Example: 2 + 2 = 4"
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -83,7 +83,7 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertEqual(pipeline.few_shot_examples, few_shot)
 
     def test_generate_reasoning_trace(self):
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -106,7 +106,7 @@ class TestSTaRPipeline(unittest.TestCase):
             msg=MagicMock(parsed=evaluation_response)
         )
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -131,7 +131,7 @@ class TestSTaRPipeline(unittest.TestCase):
         mock_evaluator = MagicMock()
         mock_evaluator.evaluate.return_value = 0.85
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -157,7 +157,7 @@ class TestSTaRPipeline(unittest.TestCase):
             "helpfulness": 0.85,
         }
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -182,7 +182,7 @@ class TestSTaRPipeline(unittest.TestCase):
             msg=MagicMock(content=improved_trace)
         )
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -218,7 +218,7 @@ class TestSTaRPipeline(unittest.TestCase):
         self.mock_reason_agent.step.side_effect = mock_reason_responses
         self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -233,7 +233,7 @@ class TestSTaRPipeline(unittest.TestCase):
         self.assertIsInstance(result.improvement_history[0], TraceIteration)
 
     def test_score_threshold_dict(self):
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -285,7 +285,7 @@ class TestSTaRPipeline(unittest.TestCase):
         self.mock_reason_agent.step.side_effect = mock_reason_responses
         self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=self.test_problems,
@@ -367,7 +367,7 @@ class TestSTaRPipeline(unittest.TestCase):
             ),
         ]
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=[],
@@ -416,7 +416,7 @@ class TestSTaRPipeline(unittest.TestCase):
         self.mock_reason_agent.step.side_effect = mock_reason_responses
         self.mock_evaluate_agent.step.side_effect = mock_evaluate_responses
 
-        pipeline = STaRPipeline(
+        pipeline = SelfImprovingCoTPipeline(
             reason_agent=self.mock_reason_agent,
             evaluate_agent=self.mock_evaluate_agent,
             problems=test_problems,

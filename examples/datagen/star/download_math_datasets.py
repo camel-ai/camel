@@ -25,7 +25,7 @@ def download_gsm8k_dataset():
         dataset = load_dataset("openai/gsm8k", "main")
 
         # Get only 20 items from train split
-        data = dataset['train'].select(range(20))
+        data = dataset['train'].select(range(10))
 
         # Convert to the desired format
         formatted_data = []
@@ -59,29 +59,14 @@ def download_gsm8k_dataset():
         output_dir = Path("examples/datagen/star")
         output_dir.mkdir(exist_ok=True)
 
-        # Split data into 4 parts, each containing less than 2000 records
-        total_records = len(formatted_data)
-        base_size = total_records // 4
-        remainder = total_records % 4
-
-        datasets = []
-        start = 0
-        for i in range(4):
-            # Add one extra item to some chunks to distribute remainder
-            chunk_size = base_size + (1 if i < remainder else 0)
-            end = start + chunk_size
-            datasets.append(formatted_data[start:end])
-            start = end
-
-        # Save each part to a separate JSON file
-        for i, dataset_part in enumerate(datasets, 1):
-            output_file = output_dir / f"gsm8k_dataset_part{i}.json"
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(dataset_part, f, indent=4, ensure_ascii=False)
-            print(
-                f"Successfully saved part {i} ({len(dataset_part)} records) "
-                f"to {output_file}"
-            )
+        # Save all data to a single JSON file
+        output_file = output_dir / "gsm8k_dataset.json"
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(formatted_data, f, indent=4, ensure_ascii=False)
+        print(
+            f"Successfully saved {len(formatted_data)} records "
+            f"to {output_file}"
+        )
 
         return formatted_data
 
@@ -132,5 +117,5 @@ def download_amc_aime_dataset():
 
 
 if __name__ == "__main__":
-    # download_gsm8k_dataset()
-    download_amc_aime_dataset()
+    download_gsm8k_dataset()
+    # download_amc_aime_dataset()

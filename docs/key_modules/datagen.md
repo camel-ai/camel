@@ -384,7 +384,7 @@ The pipeline consists of four main stages:
 
 ### Key Components
 
-#### STaRPipeline Class
+#### SelfImprovingCoTPipeline Class
 
 The core class that implements the STaR methodology with the following features:
 - Customizable reasoning and evaluation agents
@@ -400,7 +400,7 @@ The core class that implements the STaR methodology with the following features:
 
 ```python
 from camel.agents import ChatAgent
-from camel.datagen import STaRPipeline
+from camel.datagen import SelfImprovingCoTPipeline
 
 # Initialize agents
 reason_agent = ChatAgent(
@@ -421,7 +421,7 @@ problems = [
 ]
 
 # Create and run the pipeline
-pipeline = STaRPipeline(
+pipeline = SelfImprovingCoTPipeline(
     reason_agent=reason_agent,
     evaluate_agent=evaluate_agent,
     problems=problems,
@@ -445,7 +445,7 @@ reward_model = NemotronRewardModel(
 )
 
 # Create pipeline with reward model
-pipeline = STaRPipeline(
+pipeline = SelfImprovingCoTPipeline(
     reason_agent=reason_agent,
     evaluate_agent=evaluate_agent,
     problems=problems,
