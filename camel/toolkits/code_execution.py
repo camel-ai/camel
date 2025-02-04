@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from typing import List, Literal, Optional, Union
 
 from camel.interpreters import (
@@ -23,6 +22,7 @@ from camel.interpreters import (
 )
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.utils import with_timeout
 
 
 class CodeExecutionToolkit(BaseToolkit):
@@ -93,33 +93,16 @@ class CodeExecutionToolkit(BaseToolkit):
                 f"The sandbox type `{sandbox}` is not supported."
             )
 
-    def execute_code(self, code: str, timer: int = -1) -> str:
+    def execute_code(self, code: str) -> str:
         r"""Execute a given code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
-            timer (int):  The number of seconds to wait for the result if the
-                future isn't done. If the code execution exceeds the timeout,
-                the code execution will be terminated and the result will be
-                returned as "Timed out". If the timer is set to -1, the code
-                execution will not be timed out. (default: :obj:`-1`)
 
         Returns:
             str: The text output from the Code Interpreter tool call.
         """
-
-        def run_interpreter():
-            return self.interpreter.run(code, "python")
-
-        if timer > 0:
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(run_interpreter)
-                try:
-                    output = future.result(timeout=timer)
-                except TimeoutError:
-                    output = "Timed out, execution terminated."
-        else:
-            output = self.interpreter.run(code, "python")
+        output = self.interpreter.run(code, "python")
 
         # Format the output content
         content = (
@@ -131,6 +114,18 @@ class CodeExecutionToolkit(BaseToolkit):
             print(content)
 
         return content
+
+    def execute_code_with_timeout(self, code: str, timeout: float = 10) -> str:
+        r"""Execute a given code snippet with a timeout.
+
+        Args:
+            code (str): The input code to the Code Interpreter tool call.
+            timeout (float): The timeout (seconds) for the code execution.
+
+        Returns:
+            str: The text output from the Code Interpreter tool call.
+        """
+        return with_timeout(timeout)(self.execute_code)(code)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the

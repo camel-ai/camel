@@ -124,3 +124,30 @@ Agent response:
 Weng earned $10.20 for 51 minutes of babysitting.
 ===============================================================================
 """
+
+
+time_consuming_code = '''
+import time
+time.sleep(100)
+'''
+
+code_execution_tool_kit = CodeExecutionToolkit(
+    sandbox='internal_python', import_white_list=['sympy'], unsafe_mode=True
+)
+
+result = code_execution_tool_kit.execute_code_with_timeout(
+    time_consuming_code, timeout=5
+)
+
+print(result)
+"""
+===============================================================================
+Executed the code below:
+```py
+import time
+time.sleep(100)
+```
+> Executed Results:
+Timed out, execution terminated.
+===============================================================================
+"""

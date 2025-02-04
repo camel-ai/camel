@@ -728,3 +728,32 @@ def generate_prompt_for_structured_output(
     {user_prompt}
     """
     return final_prompt
+
+
+def with_timeout(time: float):
+    r"""Decorator that adds a timeout to a function.
+
+    Args:
+        time (float): The timeout in seconds.
+
+    Returns:
+        The decorated function.
+    """
+    import multiprocessing
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            if time > 0:
+                with multiprocessing.Pool(processes=1) as pool:
+                    future = pool.apply_async(func, args=args, kwds=kwargs)
+                    try:
+                        result = future.get(timeout=time)
+                    except multiprocessing.TimeoutError:
+                        result = "Timed out, execution terminated."
+                return result
+            else:
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
