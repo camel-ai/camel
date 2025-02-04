@@ -107,7 +107,7 @@ class GeminiModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
+        r"""Runs inference of Gemini chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history

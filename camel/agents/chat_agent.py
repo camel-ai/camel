@@ -125,6 +125,12 @@ class ChatAgent(BaseAgent):
         tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
             of available :obj:`FunctionTool` or :obj:`Callable`. (default:
             :obj:`None`)
+        external_tools (Optional[List[Union[FunctionTool, Callable,
+            Dict[str, Any]]]], optional): List of external tools
+            (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`)
+            bind to one chat agent. When these tools are called, the agent will
+            directly return the request instead of processing it.
+            (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
