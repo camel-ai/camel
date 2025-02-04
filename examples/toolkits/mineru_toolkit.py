@@ -12,9 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
