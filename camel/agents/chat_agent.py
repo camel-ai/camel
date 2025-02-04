@@ -1389,12 +1389,12 @@ class ChatAgent(BaseAgent):
         choice = response.choices[0]
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool call is None")
-        tool_name = choice.message.tool_calls[0].function.name
+        func_name = choice.message.tool_calls[0].function.name
 
         arguments_str = choice.message.tool_calls[0].function.arguments
         args = self._safe_json_loads(arguments_str)
 
-        tool = self.tool_dict[tool_name]
+        tool = self.tool_dict[func_name]
         result = tool(**args)
         tool_call_id = choice.message.tool_calls[0].id
 
@@ -1403,7 +1403,7 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=tool_name,
+            func_name=func_name,
             args=args,
             tool_call_id=tool_call_id,
         )
@@ -1412,14 +1412,14 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=tool_name,
+            func_name=func_name,
             result=result,
             tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = ToolCallingRecord(
-            tool_name=tool_name,
+            tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
@@ -1461,10 +1461,10 @@ class ChatAgent(BaseAgent):
         choice = response.choices[0]
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool call is None")
-        tool_name = choice.message.tool_calls[0].function.name
+        func_name = choice.message.tool_calls[0].function.name
 
         args = json.loads(choice.message.tool_calls[0].function.arguments)
-        tool = self.tool_dict[tool_name]
+        tool = self.tool_dict[func_name]
         result = await tool(**args)
         tool_call_id = choice.message.tool_calls[0].id
 
@@ -1473,7 +1473,7 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=tool_name,
+            func_name=func_name,
             args=args,
             tool_call_id=tool_call_id,
         )
@@ -1482,14 +1482,14 @@ class ChatAgent(BaseAgent):
             role_type=self.role_type,
             meta_dict=None,
             content="",
-            func_name=tool_name,
+            func_name=func_name,
             result=result,
             tool_call_id=tool_call_id,
         )
 
         # Record information about this function call
         func_record = ToolCallingRecord(
-            tool_name=tool_name,
+            tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,
