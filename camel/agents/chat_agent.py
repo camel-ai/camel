@@ -463,7 +463,7 @@ class ChatAgent(BaseAgent):
             f"you must output text in {output_language}."
         )
         if self.orig_sys_message is not None:
-            content = self.orig_sys_message.content + language_prompt
+            content = self.orig_sys_message.content.text + language_prompt
             self._system_message = self.orig_sys_message.create_new_instance(
                 content
             )
@@ -1054,7 +1054,9 @@ class ChatAgent(BaseAgent):
             )
 
         for base_message_item in output_messages:
-            base_message_item.content = json.dumps(tool_call_record.result)
+            base_message_item.content.text = json.dumps(
+                tool_call_record.result
+            )
 
         # Recover the original tools
         self.model_backend.model_config_dict = original_model_dict

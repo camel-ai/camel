@@ -107,7 +107,7 @@ class Task(BaseModel):
         Returns:
             Task
         """
-        return cls(content=message.content, id="0")
+        return cls(content=message.content.text, id="0")
 
     @staticmethod
     def to_message():

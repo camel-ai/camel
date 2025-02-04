@@ -194,8 +194,8 @@ class BaseMessage:
         Returns:
             Union[BaseMessage, Any]: The result of the multiplication.
         """
-        if isinstance(other, BaseMessage):
-            multiplied_content = self.content.text * other
+        if isinstance(other, int):
+            multiplied_content = self.content.text.__mul__(other)
             return self.create_new_instance(multiplied_content)
         else:
             raise TypeError(
@@ -369,7 +369,7 @@ class BaseMessage:
             from_ = "gpt"
 
         # Function conversion code in FunctionCallingMessage
-        return ShareGPTMessage(from_=from_, value=self.content)  # type: ignore[call-arg]
+        return ShareGPTMessage(from_=from_, value=self.content.text)  # type: ignore[call-arg]
 
     def to_openai_message(
         self,
@@ -533,5 +533,5 @@ class BaseMessage:
             "content": self.content.to_dict()
             if self.content.image_list
             else self.content.text,
-            "acl_parameter": self.acl_parameter.model_dump_json(),
+            "acl_parameter": self.acl_parameter.model_dump_json(),  # type: ignore[union-attr]
         }

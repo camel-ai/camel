@@ -86,7 +86,7 @@ class CriticAgent(ChatAgent):
         Returns:
             str: A string containing the flattened options to the critic.
         """
-        options = [message.content for message in messages]
+        options = [message.content.text for message in messages]
         flatten_options = (
             f"> Proposals from "
             f"{messages[0].role_name} ({messages[0].role_type}). "
@@ -138,7 +138,7 @@ class CriticAgent(ChatAgent):
                     role_type=input_message.role_type,
                     meta_dict=input_message.meta_dict,
                     content="> Invalid choice. Please choose again.\n"
-                    + msg_content,
+                    + msg_content.text,
                 )
                 i += 1
         warnings.warn(
