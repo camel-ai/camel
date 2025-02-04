@@ -226,6 +226,7 @@ class StagehandPrompts:
 
         The the calling agent will provide you feedback on what to inlcude 
         in the 'updated_state'. 
+        Always define this in the code before ending it. 
         At the end of your snippet, always do the final extraction to fill 
         these fields in a 
         variable called 'updated_state'. For example:
@@ -388,11 +389,6 @@ const z = require('zod');
     try {{
         // Insert the generated snippet
         {js_code}
-
-        console.log(JSON.stringify({{
-            status: "success",
-            updated_state
-        }}));
     }} catch (error) {{
         console.error(JSON.stringify({{
             status: "failure",
@@ -412,10 +408,52 @@ const z = require('zod');
 
         exec_result = node_process.run(wrapper_code, "node")
 
-        if exec_result.startswith("(stderr"):
-            return "Failure: No output from Node.js script."
+        # Attempt to parse final JSON from logs:
+        final_json = self._parse_json_from_output(exec_result)
+        if final_json is not None:
+            # Return as a JSON string for the caller to parse
+            return json.dumps(final_json)
+        else:
+            # If no valid JSON found in logs, return an error as JSON
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "No valid JSON found in node logs.",
+                }
+            )
 
-        return exec_result
+    def _parse_json_from_output(self, text: str):
+        r"""
+        Extracts a substring that starts with the first '{' following
+        the keyword 'updated_state: ' and continues until the matching
+        '}' is found.
+
+        Args:
+            text (str): The input text containing the Stagehand code.
+
+        Returns:
+            str: The extracted JSON snippet or an empty string if not found.
+        """
+        start_marker = "updated_state: {"
+        start_index = text.find(start_marker)
+        if start_index == -1:
+            return ""
+        # Locate the first '{' after the marker
+        start_index = text.find("{", start_index)
+        if start_index == -1:
+            return ""
+
+        stack = []
+        for i in range(start_index, len(text)):
+            char = text[i]
+            if char == "{":
+                stack.append("{")
+            elif char == "}":
+                stack.pop()
+                if not stack:
+                    # Return from the first '{' up to and including this '}'
+                    return text[start_index : i + 1]
+        return ""
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
