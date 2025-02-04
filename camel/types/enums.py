@@ -206,6 +206,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sambanova,
                 self.is_groq,
                 self.is_sglang,
+                self.is_moonshot,
             ]
         )
 

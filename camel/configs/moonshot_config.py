@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Optional
+from typing import List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -23,23 +23,41 @@ class MoonshotConfig(BaseConfig):
     https://platform.moonshot.cn/docs/api-reference
 
     Args:
-        stream (bool, optional): Whether to stream the response.
-            (default: :obj:`False`)
         temperature (float, optional): Controls randomness in the response.
             Lower values make the output more focused and deterministic.
             (default: :obj:`0.3`)
         max_tokens (int, optional): The maximum number of tokens to generate.
             (default: :obj:`None`)
-        tools (list, optional): List of tools that model can use for function
-            calling. Each tool should be a dictionary containing type, function
-            name, description, and parameters.
+        stream (bool, optional): Whether to stream the response.
+            (default: :obj:`False`)
+        tools (list, optional): List of tools that the model can use for
+            function calling. Each tool should be a dictionary containing
+            type, function name, description, and parameters.
+            (default: :obj:`None`)
+        top_p (float, optional): Controls diversity via nucleus sampling.
+            (default: :obj:`1.0`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
+        presence_penalty (float, optional): Penalty for new tokens based on
+            whether they appear in the text so far.
+            (default: :obj:`0.0`)
+        frequency_penalty (float, optional): Penalty for new tokens based on
+            their frequency in the text so far.
+            (default: :obj:`0.0`)
+        stop (Optional[Union[str, List[str]]], optional): Up to 4 sequences
+            where the API will stop generating further tokens.
             (default: :obj:`None`)
     """
 
-    stream: bool = False
     temperature: float = 0.3
     max_tokens: Optional[int] = None
+    stream: bool = False
     tools: Optional[list] = None
+    top_p: float = 1.0
+    n: int = 1
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
+    stop: Optional[Union[str, List[str]]] = None
 
 
 MOONSHOT_API_PARAMS = {param for param in MoonshotConfig.model_fields.keys()}
