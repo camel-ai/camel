@@ -142,12 +142,6 @@ result = code_execution_tool_kit.execute_code_with_timeout(
 print(result)
 """
 ===============================================================================
-Executed the code below:
-```py
-import time
-time.sleep(100)
-```
-> Executed Results:
 Timed out, execution terminated.
 ===============================================================================
 """
