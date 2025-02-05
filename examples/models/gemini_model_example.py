@@ -71,7 +71,9 @@ model_2_0_flash_thinking = ModelFactory.create(
 camel_agent_thinking = ChatAgent(
     system_message=sys_msg, model=model_2_0_flash_thinking
 )
-response_thinking = camel_agent_thinking.step(user_msg)
+response_thinking = camel_agent_thinking.step(
+    "How many rs are there in 'starrary'?"
+)
 print(response_thinking.msgs[0].content)
 '''
 ===============================================================================
