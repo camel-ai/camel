@@ -71,13 +71,23 @@ class MathBenchmark(BaseBenchmark):
 
         logger.info(f"Running {mode.mode} evaluation on {on} set with k={mode.k}")
 
-        # Load the dataset
-        dataset = getattr(self, on)
+        if on not in ["train", "test"]:
+            raise ValueError(f"Invalid dataset split '{on}'. Use 'train', 'valid' (empty), or 'test'.")
+
+        if not self._data:
+            self.load()
+
+        dataset = self._data[on].copy()
+
+        if randomize:
+            import random
+            random.shuffle(dataset)
+
         if subset:
             dataset = dataset[:subset]
 
         # Generate solutions for each question in the dataset
-        results = self._generate_solutions(agent, dataset, randomize, mode, *args, **kwargs)
+        results = self._generate_solutions(agent, dataset, mode, *args, **kwargs)
 
         # Ensure the results are in the expected format
         if isinstance(results, dict):
@@ -125,7 +135,6 @@ class MathBenchmark(BaseBenchmark):
         self,
         agent: ChatAgent,
         dataset: List[Dict[str, Any]],
-        randomize: bool,
         mode: Mode,
         *args,
         **kwargs,
