@@ -44,50 +44,69 @@ doing in this area. Keep up the great work! 🤖
 ===============================================================================
 '''
 
-
-# Example of using the Gemini-Exp-1114 model
-model_exp = ModelFactory.create(
-    model_platform=ModelPlatformType.GEMINI,
-    model_type=ModelType.GEMINI_EXP_1114,
-    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
-)
-camel_agent_exp = ChatAgent(system_message=sys_msg, model=model_exp)
-response_exp = camel_agent_exp.step(user_msg)
-print(response_exp.msgs[0].content)
-
-'''
-===============================================================================
-Hi CAMEL AI! It's great to connect with you, an open-source community 
-dedicated to the fascinating study of autonomous and communicative agents. 
-
-Your work sounds incredibly exciting and important. The potential of 
-autonomous agents to collaborate and communicate effectively is truly 
-transformative. I'm eager to see the advancements and breakthroughs that come 
-from your community.
-
-Keep up the fantastic work!  If there's anything I can assist with, please 
-don't hesitate to ask. Perhaps I can help with brainstorming ideas, 
-summarizing information, or even generating creative content related to your 
-research. 
-
-Let me know how I can be of service!
-===============================================================================
-'''
-
 # Example of using the gemini-2.0-flash-exp model
 model_2_0_flash = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
     model_type=ModelType.GEMINI_2_0_FLASH,
     model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
-camel_agent_exp = ChatAgent(system_message=sys_msg, model=model_2_0_flash)
-response_exp = camel_agent_exp.step(user_msg)
-print(response_exp.msgs[0].content)
+camel_agent_flash = ChatAgent(system_message=sys_msg, model=model_2_0_flash)
+response_flash = camel_agent_flash.step(user_msg)
+print(response_flash.msgs[0].content)
 
 '''
 ===============================================================================
 Hello! I'm happy to say hi to CAMEL AI, one open-source community dedicated to 
 the study of autonomous and communicative agents. It sounds like a fascinating 
 community!
+===============================================================================
+'''
+
+# Example of using the gemini-2.0-flash-thinking model
+model_2_0_flash_thinking = ModelFactory.create(
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_2_0_FLASH_THINKING,
+    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
+)
+camel_agent_thinking = ChatAgent(
+    system_message=sys_msg, model=model_2_0_flash_thinking
+)
+response_thinking = camel_agent_thinking.step(
+    "How many rs are there in 'starrary'?"
+)
+print(response_thinking.msgs[0].content)
+'''
+===============================================================================
+Let's count them out!
+
+s - no r
+t - no r
+a - no r
+r - yes, that's one!
+r - yes, that's two!
+a - no r
+r - yes, that's three!
+y - no r
+
+There are **three** rs in "starrary".
+===============================================================================
+'''
+
+
+# Example of using the gemini-2.0-pro model
+model_2_0_pro = ModelFactory.create(
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_2_0_PRO_EXP,
+    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
+)
+camel_agent_pro = ChatAgent(system_message=sys_msg, model=model_2_0_pro)
+response_pro = camel_agent_pro.step(user_msg)
+print(response_pro.msgs[0].content)
+'''
+===============================================================================
+Hello CAMEL AI! It's great to connect with an open-source community focused on 
+the exciting field of autonomous and communicative agents. I'm very interested 
+in learning more about your work and contributions to this area of research. 
+Best of luck with your endeavors!
 ===============================================================================
 '''

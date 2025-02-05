@@ -117,9 +117,11 @@ class ModelType(UnifiedModelType, Enum):
 
     # Gemini models
     GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
+    GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
+    GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
-    GEMINI_EXP_1114 = "gemini-exp-1114"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -380,7 +382,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_EXP_1114,
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_PRO_EXP,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
         }
 
     @property
@@ -662,7 +666,9 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+            ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
             ModelType.GLM_4_LONG,
         }:
             return 1_048_576
