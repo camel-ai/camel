@@ -22,17 +22,36 @@ from camel.agents.programmed_agent_instruction import (
     ProgrammedAgentInstructionResult,
     programmable_capability,
 )
-from camel.messages import BaseMessage
-from camel.synthetic_datagen.source2synth.models import (
+from camel.datagen.source2synth.models import (
     ContextPrompt,
     MultiHopQA,
 )
+from camel.messages import BaseMessage
 
 
 class MultiHopGeneratorAgent(ProgrammableChatAgent):
+    r"""An agent specialized in generating multi-hop question-answer pairs.
+
+    This agent is designed to create complex questions that require multiple
+    steps of reasoning to answer. It analyzes context to identify related
+    facts and generates questions that require connecting these facts
+    logically.
+
+    Attributes:
+        model_config (ConfigDict): Configuration for model behavior.
+        system_message (BaseMessage): System message defining agent's role and
+            instructions.
+    """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
+        r"""Initialize the MultiHopGeneratorAgent.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments to pass to parent
+                class.
+        """
         super().__init__(**kwargs)
 
         system_text: str = textwrap.dedent(
@@ -64,6 +83,19 @@ class MultiHopGeneratorAgent(ProgrammableChatAgent):
     def generate_multi_hop_qa(
         self, context: str
     ) -> ProgrammedAgentInstructionResult[MultiHopQA]:
+        r"""Generate a multi-hop question-answer pair from given context.
+
+        Args:
+            context (str): The input text context to generate QA from.
+
+        Returns:
+            ProgrammedAgentInstructionResult[MultiHopQA]: Result containing the
+                generated question, reasoning steps, answer, and supporting
+                facts.
+
+        Raises:
+            RuntimeError: If the agent fails to generate a response.
+        """
         context_prompt = ContextPrompt(
             main_context=context, related_contexts=None
         )

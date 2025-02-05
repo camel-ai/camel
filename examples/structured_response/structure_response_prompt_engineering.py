@@ -33,7 +33,7 @@ class StudentList(BaseModel):
 # Define Qwen model
 qwen_model = ModelFactory.create(
     model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN_PLUS,
+    model_type=ModelType.QWEN_TURBO,
     model_config_dict=QwenConfig().as_dict(),
 )
 

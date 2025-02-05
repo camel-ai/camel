@@ -35,6 +35,9 @@ The following table lists currently supported model platforms by CAMEL.
 | Mistral AI | open-mixtral-8x7b | N |
 | Mistral AI | open-mixtral-8x22b | N |
 | Mistral AI | open-codestral-mamba | N |
+| Moonshot | moonshot-v1-8k | N |
+| Moonshot | moonshot-v1-32k | N |
+| Moonshot | moonshot-v1-128k | N |
 | Anthropic | claude-3-5-sonnet-latest | Y |
 | Anthropic | claude-3-5-haiku-latest | N |
 | Anthropic | claude-3-haiku-20240307 | Y |
@@ -68,9 +71,14 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen2.5-32b-instruct | N |
 | Qwen | qwen2.5-14b-instruct | N |
 | DeepSeek | deepseek-chat | N |
+| DeepSeek | deepseek-reasoner | N |
 | ZhipuAI | glm-4v | Y |
 | ZhipuAI | glm-4 | N |
 | ZhipuAI | glm-3-turbo | N |
+| InternLM | internlm3-latest | N |
+| InternLM | internlm3-8b-instruct | N |
+| InternLM | internlm2.5-latest	| N |
+| InternLM | internlm2-pro-chat	| N |
 | Reka | reka-core | Y |
 | Reka | reka-flash | Y |
 | Reka | reka-edge | Y |

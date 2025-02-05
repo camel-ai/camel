@@ -83,7 +83,7 @@ class GeminiConfig(BaseConfig):
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
     response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+    tool_choice: Optional[Union[dict[str, str], str, NotGiven]] = NOT_GIVEN
 
     def as_dict(self) -> dict[str, Any]:
         r"""Convert the current configuration to a dictionary.

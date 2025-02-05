@@ -1,4 +1,4 @@
-Model Training and Fine-tuning
+Agentic Data Generation
 =============================
 
 .. raw:: html
@@ -15,5 +15,9 @@ Model Training and Fine-tuning
    sft_data_generation_and_unsloth_finetuning_Qwen2_5_7B
    sft_data_generation_and_unsloth_finetuning_tinyllama
    data_gen_with_real_function_calls_and_hermes_format
-   cot_data_gen_upload_to_huggingface
+   self_instruct_data_generation
    cot_data_gen_sft_qwen_unsolth_upload_huggingface
+   synthetic_dataevaluation&filter_with_reward_model
+   data_model_generation_and_structured_output_with_qwen
+   distill_math_reasoning_data_from_deepseek_r1
+   self_improving_math_reasoning_data_distillation_from_deepSeek_r1
