@@ -170,6 +170,20 @@ class ModelType(UnifiedModelType, Enum):
     INTERNLM2_5_LATEST = "internlm2.5-latest"
     INTERNLM2_PRO_CHAT = "internlm2-pro-chat"
 
+    # SiliconFlow models
+    SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
+    SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
+    SILICONFLOW_INTERN_LM2_5_7B_CHAT = "internlm/internlm2_5-7b-chat"
+    SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT = "Pro/internlm/internlm2_5-7b-chat"
+    SILICONFLOW_QWEN2_5_72B_INSTRUCT = "Qwen/Qwen2.5-72B-Instruct"
+    SILICONFLOW_QWEN2_5_32B_INSTRUCT = "Qwen/Qwen2.5-32B-Instruct"
+    SILICONFLOW_QWEN2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
+    SILICONFLOW_QWEN2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+    SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT = "Pro/Qwen/Qwen2.5-7B-Instruct"
+    SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
+    SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
+
     def __str__(self):
         return self.value
 
@@ -201,6 +215,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sambanova,
                 self.is_groq,
                 self.is_sglang,
+                self.is_siliconflow,
             ]
         )
 
@@ -286,7 +301,7 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_sambanova(self) -> bool:
-        r"""Returns whether this type of models is served by SambaNova AI."""
+        r"""Returns whether this type of model is served by SambaNova AI."""
         return self in {
             ModelType.SAMBA_LLAMA_3_1_8B,
             ModelType.SAMBA_LLAMA_3_1_70B,
@@ -434,6 +449,23 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_7B,
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
+        }
+    
+    @property
+    def is_siliconflow(self) -> bool:
+        return self in {
+        ModelType.SILICONFLOW_DEEPSEEK_V2_5,
+        ModelType.SILICONFLOW_DEEPSEEK_V3,
+        ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
+        ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
+        ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+        ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
+        ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
+        ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
+        ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
+        ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
+        ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
+        ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
         }
 
     @property
