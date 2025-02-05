@@ -1,4 +1,4 @@
-Model Training and Fine-tuning
+Agentic Data Generation
 =============================
 
 .. raw:: html
@@ -20,3 +20,4 @@ Model Training and Fine-tuning
    synthetic_dataevaluation&filter_with_reward_model
    data_model_generation_and_structured_output_with_qwen
    distill_math_reasoning_data_from_deepseek_r1
+   self_improving_math_reasoning_data_distillation_from_deepSeek_r1
