@@ -25,6 +25,7 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
+        ModelType.GEMINI_2_0_FLASH,
         ModelType.GEMINI_1_5_FLASH,
         ModelType.GEMINI_1_5_PRO,
         ModelType.GEMINI_EXP_1114,
