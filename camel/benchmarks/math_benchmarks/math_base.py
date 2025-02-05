@@ -77,7 +77,7 @@ class MathBenchmark(BaseBenchmark):
             dataset = dataset[:subset]
 
         # Generate solutions for each question in the dataset
-        results = self._generate_solutions(agent, dataset, randomize, *args, **kwargs)
+        results = self._generate_solutions(agent, dataset, randomize, mode, *args, **kwargs)
 
         # Ensure the results are in the expected format
         if isinstance(results, dict):
@@ -126,6 +126,7 @@ class MathBenchmark(BaseBenchmark):
         agent: ChatAgent,
         dataset: List[Dict[str, Any]],
         randomize: bool,
+        mode: Mode,
         *args,
         **kwargs,
     ) -> Union[pd.DataFrame, Dict[str, List[Any]]]:
