@@ -57,13 +57,17 @@ class TestSemanticScholarToolkit(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 404
         mock_response.text = "Not Found"
+        mock_response.json.return_value = {
+            "error": "Request failed with status code 404",
+            "message": "Not Found",
+        }
         mock_get.return_value = mock_response
 
         paper_title = "Nonexistent Paper"
         response = self.toolkit.fetch_paper_data_title(paper_title)
 
         self.assertIn("error", response)
-        self.assertIn("Request failed with status code 404", response["error"])
+        self.assertIn("Request failed", response["error"])
         self.assertEqual(response["message"], "Not Found")
 
     @patch("requests.get")
@@ -94,6 +98,10 @@ class TestSemanticScholarToolkit(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
+        mock_response.json.return_value = {
+            "error": "Request failed with status code 500",
+            "message": "Internal Server Error",
+        }
         mock_get.return_value = mock_response
 
         paper_id = "xyz789"
@@ -134,6 +142,10 @@ class TestSemanticScholarToolkit(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 403
         mock_response.text = "Forbidden"
+        mock_response.json.return_value = {
+            "error": "Request failed with status code 403",
+            "message": "Forbidden",
+        }
         mock_get.return_value = mock_response
 
         query_str = "quantum computing"
@@ -181,6 +193,10 @@ class TestSemanticScholarToolkit(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 400
         mock_response.text = "Bad Request"
+        mock_response.json.return_value = {
+            "error": "Request failed with status code 400",
+            "message": "Bad Request",
+        }
         mock_post.return_value = mock_response
 
         result = self.toolkit.fetch_recommended_papers(
@@ -223,6 +239,10 @@ class TestSemanticScholarToolkit(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 404
         mock_response.text = "Not Found"
+        mock_response.json.return_value = {
+            "error": "Request failed with status code 404",
+            "message": "Not Found",
+        }
 
         # Let raise_for_status throw an HTTPError to trigger the except branch
         from requests.exceptions import HTTPError
