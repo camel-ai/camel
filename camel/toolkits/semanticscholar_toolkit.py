@@ -42,7 +42,7 @@ class SemanticScholarToolkit(BaseToolkit):
             paperTitle (str): The title of the paper to fetch.
             fields (str): A comma-separated list of fields to include
             in the response (default includes title, abstract, authors, year,
-            citation count, publicationTypes, publicationDate, openAccessPdf).
+            citation count, publicationTypes,publicationDate,openAccessPdf).
 
         Returns:
             dict: The response data from the API or error
@@ -50,14 +50,18 @@ class SemanticScholarToolkit(BaseToolkit):
         """
         url = f"{self.base_url}/paper/search"
         query_params = {"query": paperTitle, "fields": fields}
-        response = requests.get(url, params=query_params)
-        if response.status_code == 200:
+        try:
+            response = requests.get(url, params=query_params)
+            response.raise_for_status()
             return response.json()
-        else:
+        except requests.exceptions.RequestException as e:
             return {
-                "error": (
-                    f"Request failed with status code {response.status_code}"
-                ),
+                "error": f"Request failed: {e!s}",
+                "message": str(e),
+            }
+        except ValueError:
+            return {
+                "error": "Response is not valid JSON",
                 "message": response.text,
             }
 
@@ -83,14 +87,18 @@ class SemanticScholarToolkit(BaseToolkit):
         """
         url = f"{self.base_url}/paper/{paperID}"
         query_params = {"fields": fields}
-        response = requests.get(url, params=query_params)
-        if response.status_code == 200:
+        try:
+            response = requests.get(url, params=query_params)
+            response.raise_for_status()
             return response.json()
-        else:
+        except requests.exceptions.RequestException as e:
             return {
-                "error": (
-                    f"Request failed with status code {response.status_code}"
-                ),
+                "error": f"Request failed: {e!s}",
+                "message": str(e),
+            }
+        except ValueError:
+            return {
+                "error": "Response is not valid JSON",
                 "message": response.text,
             }
 
@@ -127,14 +135,18 @@ class SemanticScholarToolkit(BaseToolkit):
         """
         url = f"{self.base_url}/paper/search/bulk"
         query_params = {"query": query, "fields": fields, "year": year}
-        response = requests.get(url, params=query_params)
-        if response.status_code == 200:
+        try:
+            response = requests.get(url, params=query_params)
+            response.raise_for_status()
             return response.json()
-        else:
+        except requests.exceptions.RequestException as e:
             return {
-                "error": (
-                    f"Request failed with status code {response.status_code}"
-                ),
+                "error": f"Request failed: {e!s}",
+                "message": str(e),
+            }
+        except ValueError:
+            return {
+                "error": "Response is not valid JSON",
                 "message": response.text,
             }
 
@@ -177,27 +189,21 @@ class SemanticScholarToolkit(BaseToolkit):
             "positivePaperIds": positive_paper_ids,
             "negativePaperIds": negative_paper_ids,
         }
-
         try:
             response = requests.post(url, params=query_params, json=data)
             response.raise_for_status()
-
-            if response.status_code == 200:
-                papers = response.json()
-
-                # Optionally save the data to a file
-                if save_to_file:
-                    with open('recommended_papers.json', 'w') as output:
-                        json.dump(papers, output)
-                return papers
-
-            else:
-                return {
-                    "error": "Request failed with status code "
-                    f"{response.status_code}"
-                }
+            papers = response.json()
+            if save_to_file:
+                with open('recommended_papers.json', 'w') as output:
+                    json.dump(papers, output)
+            return papers
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
+        except ValueError:
+            return {
+                "error": "Response is not valid JSON",
+                "message": response.text,
+            }
 
     def fetch_author_data(
         self,
@@ -230,15 +236,17 @@ class SemanticScholarToolkit(BaseToolkit):
             response = requests.post(url, params=query_params, json=data)
             response.raise_for_status()
             response_data = response.json()
-
-            # Optionally save the data to a file
             if save_to_file:
                 with open('author_information.json', 'w') as output:
                     json.dump(response_data, output)
-
             return response_data
         except requests.exceptions.RequestException as e:
             return {"error": str(e)}
+        except ValueError:
+            return {
+                "error": "Response is not valid JSON",
+                "message": response.text,
+            }
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
