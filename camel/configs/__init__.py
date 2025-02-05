@@ -33,6 +33,7 @@ from .samba_config import (
     SambaVerseAPIConfig,
 )
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
+from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
@@ -82,4 +83,6 @@ __all__ = [
     'INTERNLM_API_PARAMS',
     'MoonshotConfig',
     "MOONSHOT_API_PARAMS",
+    'SiliconFlowConfig',
+    'SILICONFLOW_API_PARAMS',
 ]
