@@ -29,6 +29,8 @@ from camel.utils import OpenAITokenCounter
         ModelType.GEMINI_1_5_FLASH,
         ModelType.GEMINI_1_5_PRO,
         ModelType.GEMINI_2_0_FLASH_THINKING,
+        ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+        ModelType.GEMINI_2_0_PRO_EXP,
     ],
 )
 def test_gemini_model(model_type: ModelType):
