@@ -175,7 +175,7 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
 
-    # SiliconFlow models
+    # SiliconFlow models support tool calling
     SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
     SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
     SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
@@ -464,22 +464,22 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_QWEN_2_5_32B,
             ModelType.SGLANG_QWEN_2_5_72B,
         }
-    
+
     @property
     def is_siliconflow(self) -> bool:
         return self in {
-        ModelType.SILICONFLOW_DEEPSEEK_V2_5,
-        ModelType.SILICONFLOW_DEEPSEEK_V3,
-        ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
-        ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
-        ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
-        ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
-        ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
-        ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
-        ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
-        ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
-        ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
-        ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_DEEPSEEK_V2_5,
+            ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
         }
 
     @property
