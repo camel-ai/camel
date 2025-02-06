@@ -40,7 +40,17 @@ class ModelType(UnifiedModelType, Enum):
     O3_MINI = "o3-mini"
 
     GLM_4 = "glm-4"
-    GLM_4V = 'glm-4v'
+    GLM_4V = "glm-4v"
+    GLM_4V_FLASH = "glm-4v-flash"
+    GLM_4V_PLUS_0111 = "glm-4v-plus-0111"
+    GLM_4_PLUS = "glm-4-plus"
+    GLM_4_AIR = "glm-4-air"
+    GLM_4_AIR_0111 = "glm-4-air-0111"
+    GLM_4_AIRX = "glm-4-airx"
+    GLM_4_LONG = "glm-4-long"
+    GLM_4_FLASHX = "glm-4-flashx"
+    GLM_4_FLASH = "glm-4-flash"
+    GLM_ZERO_PREVIEW = "glm-zero-preview"
     GLM_3_TURBO = "glm-3-turbo"
 
     # Groq platform models
@@ -106,9 +116,12 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
+    GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
+    GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
-    GEMINI_EXP_1114 = "gemini-exp-1114"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -175,6 +188,20 @@ class ModelType(UnifiedModelType, Enum):
     MOONSHOT_V1_32K = "moonshot-v1-32k"
     MOONSHOT_V1_128K = "moonshot-v1-128k"
 
+    # SiliconFlow models support tool calling
+    SILICONFLOW_DEEPSEEK_V2_5 = "deepseek-ai/DeepSeek-V2.5"
+    SILICONFLOW_DEEPSEEK_V3 = "deepseek-ai/DeepSeek-V3"
+    SILICONFLOW_INTERN_LM2_5_20B_CHAT = "internlm/internlm2_5-20b-chat"
+    SILICONFLOW_INTERN_LM2_5_7B_CHAT = "internlm/internlm2_5-7b-chat"
+    SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT = "Pro/internlm/internlm2_5-7b-chat"
+    SILICONFLOW_QWEN2_5_72B_INSTRUCT = "Qwen/Qwen2.5-72B-Instruct"
+    SILICONFLOW_QWEN2_5_32B_INSTRUCT = "Qwen/Qwen2.5-32B-Instruct"
+    SILICONFLOW_QWEN2_5_14B_INSTRUCT = "Qwen/Qwen2.5-14B-Instruct"
+    SILICONFLOW_QWEN2_5_7B_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+    SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT = "Pro/Qwen/Qwen2.5-7B-Instruct"
+    SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
+    SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
+
     def __str__(self):
         return self.value
 
@@ -207,6 +234,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_groq,
                 self.is_sglang,
                 self.is_moonshot,
+                self.is_siliconflow,
             ]
         )
 
@@ -245,6 +273,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.GLM_4V,
+            ModelType.GLM_4V_FLASH,
+            ModelType.GLM_4V_PLUS_0111,
+            ModelType.GLM_4_PLUS,
+            ModelType.GLM_4_AIR,
+            ModelType.GLM_4_AIR_0111,
+            ModelType.GLM_4_AIRX,
+            ModelType.GLM_4_LONG,
+            ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASH,
+            ModelType.GLM_ZERO_PREVIEW,
         }
 
     @property
@@ -292,7 +330,7 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def is_sambanova(self) -> bool:
-        r"""Returns whether this type of models is served by SambaNova AI."""
+        r"""Returns whether this type of model is served by SambaNova AI."""
         return self in {
             ModelType.SAMBA_LLAMA_3_1_8B,
             ModelType.SAMBA_LLAMA_3_1_70B,
@@ -341,9 +379,12 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_EXP_1114,
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_PRO_EXP,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
         }
 
     @property
@@ -451,6 +492,23 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_siliconflow(self) -> bool:
+        return self in {
+            ModelType.SILICONFLOW_DEEPSEEK_V2_5,
+            ModelType.SILICONFLOW_DEEPSEEK_V3,
+            ModelType.SILICONFLOW_INTERN_LM2_5_20B_CHAT,
+            ModelType.SILICONFLOW_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_PRO_INTERN_LM2_5_7B_CHAT,
+            ModelType.SILICONFLOW_QWEN2_5_72B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_32B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_14B_INSTRUCT,
+            ModelType.SILICONFLOW_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_PRO_QWEN2_5_7B_INSTRUCT,
+            ModelType.SILICONFLOW_THUDM_GLM_4_9B_CHAT,
+            ModelType.SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -484,6 +542,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.TOGETHER_MISTRAL_7B,
             ModelType.MOONSHOT_V1_8K,
+            ModelType.GLM_4V_FLASH,
+            ModelType.GLM_4_AIRX,
         }:
             return 8_192
         elif self in {
@@ -496,6 +556,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE_RAG,
             ModelType.SAMBA_LLAMA_3_1_8B,
             ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.GLM_4V_PLUS_0111,
+            ModelType.GLM_ZERO_PREVIEW,
         }:
             return 16_384
         elif self in {
@@ -563,6 +625,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_LLAMA_3_2_1B,
             ModelType.SGLANG_MIXTRAL_NEMO,
             ModelType.MOONSHOT_V1_128K,
+            ModelType.GLM_4_PLUS,
+            ModelType.GLM_4_AIR,
+            ModelType.GLM_4_AIR_0111,
+            ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASH,
         }:
             return 128_000
         elif self in {
@@ -596,9 +663,13 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 256_000
         elif self in {
+            ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+            ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
+            ModelType.GLM_4_LONG,
         }:
             return 1_048_576
         elif self in {
@@ -785,6 +856,7 @@ class ModelPlatformType(Enum):
     SGLANG = "sglang"
     INTERNLM = "internlm"
     MOONSHOT = "moonshot"
+    SILICONFLOW = "siliconflow"
 
     @property
     def is_openai(self) -> bool:
@@ -896,6 +968,11 @@ class ModelPlatformType(Enum):
     def is_moonshot(self) -> bool:
         r"""Returns whether this platform is Moonshot model."""
         return self is ModelPlatformType.MOONSHOT
+
+    @property
+    def is_siliconflow(self) -> bool:
+        r"""Returns whether this platform is SiliconFlow."""
+        return self is ModelPlatformType.SILICONFLOW
 
 
 class AudioModelType(Enum):
