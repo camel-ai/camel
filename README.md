@@ -68,11 +68,11 @@ CAMEL-AI task decomposition capabilities make it ideal for breaking down and sol
 
 
 
-## 🚀　Quick Start
+##  Quick Start
 
-### Installation
+### 1. Install CAMEL
 
-### 1. Install from PyPI
+#### 1.1 Install from PyPI
 To install the base CAMEL library:
 ```bash
 pip install camel-ai
@@ -81,26 +81,11 @@ Some features require extra dependencies:
 
 To install with all dependencies:
 ```bash
-pip install 'camel-ai[all]'
+pip install 'camel-ai[all]'  # Replace with other options like `rag`, `document_tools`
 ```
 
-To use the HuggingFace agents:
+#### 1.2 Install from Source with Poetry
 ```bash
-pip install 'camel-ai[huggingface-agent]'
-```
-
-To enable RAG or use agent memory:
-```bash
-pip install 'camel-ai[tools]'
-```
-
-### 2. Install from Source
-
-#### Install from Source with Poetry
-```bash
-# Make sure your python version is later than 3.10
-# You can use pyenv to manage multiple python verisons in your sytstem
-
 # Clone github repo
 git clone https://github.com/camel-ai/camel.git
 
@@ -127,35 +112,13 @@ poetry install -E all  # (Optional)
 exit
 ```
 
-#### Install from Source with Conda and Pip
-```bash
-# Create a conda virtual environment
-conda create --name camel python=3.10
-
-# Activate CAMEL conda environment
-conda activate camel
-
-# Clone github repo
-git clone -b v0.2.18 https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# Install CAMEL from source
-pip install -e .
-
-# Or if you want to use all other extra packages
-pip install -e '.[all]' # (Optional)
-```
-
+### 2. Explore Different Types of Agents
 Explore different types of agents, their roles, and their applications.
 
 - **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
 - **[Creating Your First Agent Society](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agents_society.html)**
 - **[Embodied Agents](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents.html)**
 - **[Critic Agents](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search.html)**
-
-</br>
 
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
@@ -164,9 +127,6 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
     <img src="docs/images/role_playing.png" alt="Role Playing">
   </a>
 </div>
-
-</br>
-
 
 ## 💡 What Can You Build With CAMEL?
 
@@ -179,8 +139,27 @@ description of datageneration
 
 ### 2. Task Automation
 
+- RolePlaying
+
+RolePlaying was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. 
+
+https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html
+
+- Workforce
+
+Workforce is a system where multiple agents work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve tasks.
+
+https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html
+
+- RAG Pipeline
+
+Graph RAG utilize LLM to extract and structure knowledge from a given content source, and store this information in graph database. Subsequently, we can leverage a hybrid approach, combining vector retrieval and knowledge graph retrieval, to query and explore the stored knowledge.
+
+https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html
 
 ### 3. World Simulation
+
+- OASIS
 
 <br/>
 
@@ -204,7 +183,6 @@ Core components and utilities to build, operate, and enhance CAMEL-AI agents and
 | **[Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html)** | Embedding models for RAG. |
 | **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)** | Retrieval methods for knowledge access. |
 ---
-
 
 ## 📦 Installation
 
@@ -250,6 +228,34 @@ By default, the agent uses the `ModelType.DEFAULT` model from the `ModelPlatform
 ```bash
 ModelPlatformType.DEFAULT = "openai"
 ModelType.DEFAULT = "gpt-4o-mini"
+```
+
+### From Source with Poetry
+```bash
+# Clone github repo
+git clone https://github.com/camel-ai/camel.git
+
+# Change directory into project directory
+cd camel
+
+# If you didn't install peotry before
+pip install poetry  # (Optional)
+
+# We suggest using python 3.10
+poetry env use python3.10  # (Optional)
+
+# Activate CAMEL virtual environment
+poetry shell
+
+# Install the base CAMEL library
+# It takes about 90 seconds
+poetry install
+
+# Install CAMEL with all dependencies
+poetry install -E all  # (Optional)
+
+# Exit the virtual environment
+exit
 ```
 
 ### Setting Default Model Platform and Model Type (Optional)
