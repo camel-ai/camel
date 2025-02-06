@@ -77,8 +77,9 @@ class MathBenchmark(BaseBenchmark):
         if not self._data:
             self.load()
 
-        dataset = self._data[on].copy()
+        dataset = self._prepare_dataset(self._data[on])
 
+        #TODO: Fix Seed for reproducibility
         if randomize:
             import random
             random.shuffle(dataset)
@@ -129,12 +130,19 @@ class MathBenchmark(BaseBenchmark):
                 return most_common == solution
 
         return False
+    
+    @abstractmethod
+    def _prepare_dataset(self, dataset:List[Dict[str, Any]]) -> pd.DataFrame:
+        """
+        Method to further prepare the dataset, like renaming or normalizing columns.
+        """
+        pass
 
     @abstractmethod
     def _generate_solutions(
         self,
         agent: ChatAgent,
-        dataset: List[Dict[str, Any]],
+        dataset: pd.DataFrame,
         mode: Mode,
         *args,
         **kwargs,
