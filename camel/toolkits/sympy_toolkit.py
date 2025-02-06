@@ -13,43 +13,30 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 from typing import List, Optional
 
-import sympy as sp  # type: ignore[import]
-
+from camel.logger import get_logger
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+
+logger = get_logger(__name__)
 
 
 class SymPyToolkit(BaseToolkit):
     r"""A toolkit for performing symbolic computations using SymPy.
     This includes methods for Algebraic manipulation calculus
-    and Linear Algebra
+    and Linear Algebra.
     """
 
-    def __init__(self, default_variable: str = "x", log_level=logging.INFO):
-        r"""
-        Initializes the toolkit with a default variable and logging.
+    def __init__(self, default_variable: str = 'x'):
+        r"""Initializes the toolkit with a default variable and logging.
 
         Args:
             default_variable (str): The default variable for
-            operations (default: 'x').
-            log_level (int): The logging level (default: logging.INFO).
+                operations (default: :obj: `x`)
         """
-
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(log_level)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(message)s"
-        )
-        handler.setFormatter(formatter)
-        if not self.logger.handlers:
-            self.logger.addHandler(handler)
-
-        self.default_variable = sp.symbols(default_variable)
-        self.logger.info(f"Default variable set to: {default_variable}")
+        self.default_variable = default_variable
+        logger.info(f"Default variable set to: {self.default_variable}")
 
     def simplify_expression(self, expression: str) -> str:
         r"""Simplifies a mathematical expression.
@@ -68,16 +55,14 @@ class SymPyToolkit(BaseToolkit):
             Exception: If there is an error during the simplification
                 process, such as invalid input or unsupported syntax.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Simplifying expression: {expression}")
             expr = sp.sympify(expression)
             simplified = sp.simplify(expr)
             return json.dumps({"status": "success", "result": str(simplified)})
         except Exception as e:
-            self.logger.error(
-                f"Error simplifying expression: {expression} - {e}"
-            )
-            return json.dumps({"status": "error", "message": str(e)})
+            return self.handle_exception("simplify_expression", e)
 
     def expand_expression(self, expression: str) -> str:
         r"""Expands an algebraic expression.
@@ -96,8 +81,9 @@ class SymPyToolkit(BaseToolkit):
             Exception: If there is an error during the expansion process,
                 such as invalid input or unsupported syntax.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Expanding expression: {expression}")
             expr = sp.sympify(expression)
             expanded_expr = sp.expand(expr)
             return json.dumps({"result": str(expanded_expr)})
@@ -121,8 +107,9 @@ class SymPyToolkit(BaseToolkit):
             Exception: If there is an error during the factoring process,
                 such as invalid input or unsupported syntax.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Factoring expression: {expression}")
             expr = sp.sympify(expression)
             factored_expr = sp.factor(expr)
             return json.dumps({"result": str(factored_expr)})
@@ -152,11 +139,9 @@ class SymPyToolkit(BaseToolkit):
                 invalid equations, incompatible variables, or an
                 unsolvable system.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Solving linear system: {equations}
-                with variables: {variables}"""
-            )
             eqs = [sp.sympify(eq) for eq in equations]
             vars = sp.symbols(variables)
             solution = sp.linsolve(eqs, vars)
@@ -170,8 +155,9 @@ class SymPyToolkit(BaseToolkit):
         r"""Solves a system of nonlinear equations.
 
         Args:
-            sympy_equations (List[str]): A list of strings representing the nonlinear
-                equations to be solved. The equation to solve, must be compatible with SymPy, provided as a string.
+            sympy_equations (List[str]): A list of strings representing the
+                nonlinear equations to be solved. The equation to solve, must
+                be compatible with SymPy, provided as a string.
 
             variables (List[str]): A list of strings representing the variables
                 involved in the equations.
@@ -189,11 +175,9 @@ class SymPyToolkit(BaseToolkit):
                 such as invalid equations, incompatible variables, or
                 an unsolvable system.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Solving nonlinear system: {sympy_equations}
-                with variables: {variables}"""
-            )
             eqs = [sp.sympify(eq) for eq in sympy_equations]
             vars = sp.symbols(variables)
             solution = sp.nonlinsolve(eqs, vars)
@@ -223,11 +207,9 @@ class SymPyToolkit(BaseToolkit):
                 invalid input, unsupported syntax, or issues with the variable
                 definition.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Solving univariate inequality: {inequality} 
-                for variable: {variable}"""
-            )
             var = sp.symbols(variable)
             ineq = sp.sympify(inequality)
             solution = sp.solve_univariate_inequality(ineq, var)
@@ -254,8 +236,9 @@ class SymPyToolkit(BaseToolkit):
                 as invalid input, unsupported syntax, or inconsistencies in the
                 inequalities.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Reducing inequalities: {inequalities}")
             ineqs = [sp.sympify(ineq) for ineq in inequalities]
             solution = sp.reduce_inequalities(ineqs)
             return json.dumps({"result": str(solution)})
@@ -282,11 +265,10 @@ class SymPyToolkit(BaseToolkit):
             Exception: If there is an error during the polynomial conversion
                 process, such as invalid input or unsupported syntax.
         """
+
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Creating polynomial representation of: {expression} 
-                with variable: {variable}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             poly = sp.Poly(expr, var)
@@ -314,11 +296,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or if
                 the expression is not a valid polynomial.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Getting degree of polynomial: {expression} 
-                with variable: {variable}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             degree = int(sp.degree(expr, var))
@@ -347,11 +327,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or if the
                 expression is not a valid polynomial.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Getting coefficients of polynomial: {expression} 
-                with variable: {variable}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             coeffs = sp.Poly(expr, var).all_coeffs()
@@ -365,7 +343,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Solves an equation for a specific variable.
 
         Args:
-            sympy_equation(str): The equation to solve, must be compatible with SymPy, provided as a string.
+            sympy_equation(str): The equation to solve, must be compatible
+                with SymPy, provided as a string.
             variable (str, optional): The variable to solve for. If not
                 specified, the function will use the default variable.
 
@@ -379,12 +358,13 @@ class SymPyToolkit(BaseToolkit):
             Exception: If there is an error during the solving process, such as
                 invalid input, unsupported syntax, or an undefined variable.
         """
+        import sympy as sp
+
         try:
             variable = (
-                sp.symbols(variable) if variable else self.default_variable
-            )
-            self.logger.info(
-                f"Solving equation: {sympy_equation} for {variable}"
+                sp.symbols(variable)
+                if variable
+                else sp.symbols(self.default_variable)
             )
             eq = sp.sympify(sympy_equation)
             solutions = sp.solve(eq, variable)
@@ -407,27 +387,19 @@ class SymPyToolkit(BaseToolkit):
                 with the corresponding error description.
 
         Raises:
-            ValueError: If the input expression is empty or contains only
-                whitespace.
             Exception: If there is an error during the root-finding process,
                 such as invalid input, unsupported syntax, or if the equation
                 is not solvable.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Finding roots for expression: {expression}")
-            if not expression.strip():
-                raise ValueError(
-                    "Expression cannot be empty or whitespace"
-                )  # is this necessary
             expr = sp.sympify(expression)
             roots = sp.solve(expr)
             return json.dumps({"status": "success", "result": str(roots)})
 
         except Exception as e:
-            self.logger.error(
-                f"Error finding roots for expression: {expression} - {e}"
-            )
-            return json.dumps({"status": "error", "message": str(e)})
+            return self.handle_exception("find_roots", e)
 
     def differentiate(
         self, expression: str, variable: Optional[str] = None
@@ -452,12 +424,13 @@ class SymPyToolkit(BaseToolkit):
                 such as invalid input, unsupported syntax, or issues with the
                 variable definition.
         """
+        import sympy as sp
+
         try:
             variable = (
-                sp.symbols(variable) if variable else self.default_variable
-            )
-            self.logger.info(
-                f"Differentiating {expression} with respect to {variable}"
+                sp.symbols(variable)
+                if variable
+                else sp.symbols(self.default_variable)
             )
             expr = sp.sympify(expression)
             derivative = sp.diff(expr, variable)
@@ -488,12 +461,13 @@ class SymPyToolkit(BaseToolkit):
                 such as invalid input, unsupported syntax, or issues with
                 the variable definition.
         """
+        import sympy as sp
+
         try:
             variable = (
-                sp.symbols(variable) if variable else self.default_variable
-            )
-            self.logger.info(
-                f"Integrating {expression} with respect to {variable}"
+                sp.symbols(variable)
+                if variable
+                else sp.symbols(self.default_variable)
             )
             expr = sp.sympify(expression)
             integral = sp.integrate(expr, variable)
@@ -526,11 +500,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or issues
                 with the variable or bounds.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Computing definite integral of: {expression} 
-                with respect to {variable} from {lower} to {upper}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             integral = sp.integrate(expr, (var, lower, upper))
@@ -565,11 +537,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or
                 issues with the variable, point, or order.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Expanding expression: {expression} 
-                into Taylor series at {point} up to order {order}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             series = sp.series(expr, var, point, order)
@@ -582,7 +552,7 @@ class SymPyToolkit(BaseToolkit):
         expression: str,
         variable: str,
         point: float,
-        direction: str = "both",
+        direction: str = 'both',
     ) -> str:
         r"""Computes the limit of an expression as a variable approaches
         a point.
@@ -608,12 +578,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or
                 issues with the variable, point, or direction.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Computing limit of expression: {expression} 
-                as {variable} approaches {point} 
-                from direction: {direction}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             limit = sp.limit(expr, var, point)
@@ -643,11 +610,9 @@ class SymPyToolkit(BaseToolkit):
                 computation process, such as invalid input, unsupported
                 syntax, or issues with the variable or the expression.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Finding critical points of expression: {expression} 
-                with respect to {variable}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
             derivative = sp.diff(expr, var)
@@ -683,15 +648,13 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or
                 issues with the variable or the point.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(
-                f"""Checking continuity of expression: {expression} 
-                at point {point}"""
-            )
             var = sp.symbols(variable)
             expr = sp.sympify(expression)
-            left_limit = sp.limit(expr, var, point, dir="-")
-            right_limit = sp.limit(expr, var, point, dir="+")
+            left_limit = sp.limit(expr, var, point, dir='-')
+            right_limit = sp.limit(expr, var, point, dir='+')
             value_at_point = expr.subs(var, point)
             is_continuous = left_limit == right_limit == value_at_point
             return json.dumps({"result": str(is_continuous)})
@@ -702,8 +665,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the determinant of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the determinant is to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the determinant is to be computed.
 
         Returns:
             str: JSON string containing the determinant of the matrix in the
@@ -716,8 +679,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported syntax, or if the
                 matrix is not square.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Computing determinant of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             determinant = mat.det()
             return json.dumps({"result": str(determinant)})
@@ -728,22 +692,24 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the inverse of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the inverse is to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the inverse is to be computed.
 
         Returns:
             str: JSON string containing the inverse of the matrix in the
                 `"result"` field. The inverse is represented in a symbolic
-                matrix format. If an error occurs, the JSON string will include
-                an `"error"` field with the corresponding error message.
+                matrix format. If an error occurs, the JSON string will
+                include an `"error"` field with the corresponding error
+                message.
 
         Raises:
             Exception: If there is an error during the inverse computation
                 process, such as invalid input, unsupported syntax, or if
                 the matrix is not invertible (i.e., its determinant is zero).
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Computing inverse of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             inverse = mat.inv()
             return json.dumps({"result": str(inverse)})
@@ -754,8 +720,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the eigenvalues of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the eigenvalues are to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the eigenvalues are to be computed.
 
         Returns:
             str: JSON string containing the eigenvalues of the matrix in the
@@ -770,8 +736,9 @@ class SymPyToolkit(BaseToolkit):
                 computation process, such as invalid input, unsupported
                 syntax, or if the matrix is not square.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Computing eigenvalues of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             eigenvalues = mat.eigenvals()
             return json.dumps(
@@ -784,8 +751,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the eigenvectors of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the eigenvectors are to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the eigenvectors are to be computed.
 
         Returns:
             str: JSON string containing the eigenvectors of the matrix in the
@@ -805,8 +772,9 @@ class SymPyToolkit(BaseToolkit):
                 computation process, such as invalid input, unsupported
                 syntax, or if the matrix is not square.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Computing eigenvectors of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             eigenvectors = mat.eigenvects()
             result = [
@@ -825,8 +793,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the null space of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the null space is to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the null space is to be computed.
 
         Returns:
             str: JSON string containing the null space of the matrix in the
@@ -841,8 +809,9 @@ class SymPyToolkit(BaseToolkit):
             process, such as invalid input, unsupported syntax, or if the
             matrix is malformed.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Computing null space of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             nullspace = mat.nullspace()
             return json.dumps({"result": [str(vec) for vec in nullspace]})
@@ -853,8 +822,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the rank of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the rank is to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the rank is to be computed.
 
         Returns:
             str: JSON string containing the rank of the matrix in the
@@ -867,8 +836,9 @@ class SymPyToolkit(BaseToolkit):
                 process, such as invalid input, unsupported
                 syntax, or if the matrix is malformed.
         """
+        import sympy as sp
+
         try:
-            self.logger.info(f"Computing rank of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             rank = mat.rank()
             return json.dumps({"result": rank})
@@ -895,8 +865,10 @@ class SymPyToolkit(BaseToolkit):
             None: This function does not raise exceptions. It is used to handle
                 and report exceptions from other methods.
         """
-        self.logger.error(f"Error in {func_name}: {error}")
-        return json.dumps({"status": "error", "message": str(error)})
+        logger.error(f"Error in {func_name}: {error}")
+        return json.dumps(
+            {"status": "error", "message": f"Error in {func_name}: {error}"}
+        )
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Exposes the tool's methods to the agent framework.
