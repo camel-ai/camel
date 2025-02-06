@@ -19,8 +19,7 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-r"""
-Before using sglang to run LLM model offline,
+"""Before using sglang to run LLM model offline,
 you need to install flashinfer which cannot 
 be installed by poetry.
 Consider your machine's configuration and 
@@ -35,6 +34,7 @@ When using the OpenAI interface to run SGLang model server,
 the base model may fail to recognize  huggingface default
 chat template, switching to the Instruct model resolves the issue.
 """
+
 load_dotenv()
 sglang_model = ModelFactory.create(
     model_platform=ModelPlatformType.SGLANG,

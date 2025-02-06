@@ -34,7 +34,7 @@ openai = "^1.59.7"
 tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
-protobuf = "^4"
+protobuf = "^5"
 pathlib = "^1.0.1"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<2.10"
@@ -45,7 +45,7 @@ httpx = ">=0.23.0,<0.27.3"
 
 # Model platforms
 litellm = { version = "^1.38.1", optional = true }
-google-generativeai = { version = "^0.6.0", optional = true }
+google-generativeai = { version = "^0.8.0", optional = true }
 mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.42.0", optional = true }
@@ -91,6 +91,7 @@ unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 pandasai = { version = "^2.3.0", optional = true }
+python-magic-bin = { version = "^0.4.14", optional = true }
 
 # Media processing tools
 pillow = ">=10.1.0,<11.0.0"
@@ -167,6 +168,7 @@ rag = [
     "rank-bm25",
     "cohere",
     "unstructured",
+    "python-magic-bin",
     "pandasai",
 ]
 
@@ -194,6 +196,7 @@ document_tools = [
     "PyMuPDF",
     "pdfplumber",
     "unstructured",
+    "python-magic-bin",
     "pandasai",
     "prance",
     "openapi-spec-validator",
@@ -304,6 +307,7 @@ all = [
     "PyMuPDF",
     "pdfplumber",
     "unstructured",
+    "python-magic-bin",
     "pandasai",
     "wikipedia",
     "linkup-sdk",
@@ -488,6 +492,7 @@ module = [
     "fitz",
     "qdrant_client.*",
     "unstructured.*",
+    "python_magic_bin",
     "rouge",
     "aiosqlite",
     "e2b_code_interpreter",

@@ -79,6 +79,7 @@ response = agent.step(input_message=usr_msg, response_format=None)
 
 print(response.msgs[0].content)
 '''
+===============================================================================
 The current temperature in Tokyo can be found on various weather websites. 
 Here are a couple of reliable sources where you can check the latest weather 
 conditions:
@@ -88,6 +89,7 @@ conditions:
 
 You can visit these links to get the most up-to-date temperature and weather 
 conditions in Tokyo.
+===============================================================================
 '''
 
 search_linkup_response = SearchToolkit().search_linkup(
