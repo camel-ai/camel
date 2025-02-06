@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import SemanticScholarToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -26,10 +25,7 @@ model = ModelFactory.create(
 )
 
 
-sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling operator', content='You are a helpful assistant'
-)
-
+sys_msg = "You are a helpful assistant"
 
 # Initialize a toolkit
 toolkit = SemanticScholarToolkit()
@@ -43,13 +39,8 @@ camel_agent = ChatAgent(
     tools=tools,
 )
 
-camel_agent.reset()
-
-
 # Description of the added tools
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User", content="""Describe the tools you've added"""
-)
+usr_msg = "Describe the tools you've added"
 
 response = camel_agent.step(usr_msg)
 print(response.msgs[0].content)
@@ -89,12 +80,9 @@ These tools can be used individually or in combination to
 '''
 
 # Search a paper through its id
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""search the paper 'Construction of the Literature
-    Graph in Semantic Scholar' for me including its paperid""",
-)
-
+usr_msg = """search the paper 'Construction of the Literature
+    Graph in Semantic Scholar' for me including its paperid"""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -121,12 +109,9 @@ discovery. The resulting literature graph consists of more than
 '''
 
 # Search a paper through its title
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""search the paper with paper id of 
-    '649def34f8be52c8b66281af98ae884c09aef38b' for me""",
-)
-
+usr_msg = """search the paper with paper id of 
+    '649def34f8be52c8b66281af98ae884c09aef38b' for me"""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -154,12 +139,9 @@ result={'paperId': '649def34f8be52c8b66281af98ae884c09aef38b',
 '''
 
 # Search papers thourgh related topic
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""search 10 papers with topic related to
-    'generative ai' from 2024 for me""",
-)
-
+usr_msg = """search 3 papers with topic related to
+    'generative ai' from 2024 for me"""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -186,12 +168,9 @@ f0883cd9', 'title': 'A Chitchat on Using ChatGPT for Cheating',
 '''
 
 # Search papers through realted topic and operator
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""search 20 papers with topic related to
-    'ai and bio' from 2024 for me""",
-)
-
+usr_msg = """search 2 papers with topic related to
+    'ai and bio' from 2024 for me"""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -218,15 +197,12 @@ cholar.org/paper/00c8477a9cc28b85e4f6da13d2a889c94a955291',
 '''
 
 # Recommand papers thorugh positive and negative paper id
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""recommend 20 papers with positive paper id
+usr_msg = """recommend 2 papers with positive paper id
     of "02138d6d094d1e7511c157f0b1a3dd4e5b20ebee",
     "018f58247a20ec6b3256fd3119f57980a6f37748" and negative
     paper id of "0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc"
-    for me""",
-)
-
+    for me"""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -253,12 +229,9 @@ le': 'Embrace, Don't Avoid: Reimagining Higher Education with
 '''
 
 # Recommend papers and save the result in a file
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""search the authors of author ids of "2281351310",
-    "2281342663","2300302076","2300141520" for me""",
-)
-
+usr_msg = """search the authors of author ids of "2281351310",
+    "2281342663","2300302076","2300141520" for me"""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -285,15 +258,12 @@ e_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
 '''
 
 # Search author information through author id
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""recommend 20 papers with positive paper id
+usr_msg = """recommend 2 papers with positive paper id
     of "02138d6d094d1e7511c157f0b1a3dd4e5b20ebee", "018f5
     8247a20ec6b3256fd3119f57980a6f37748" and negative paper
     id of "0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc" for me,
-    and please save the result in a file.""",
-)
-
+    and please save the result in a file."""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
@@ -320,13 +290,10 @@ ive_paper_ids': ['0045ad0c1e14a4d1f4b011c92eb36b8df63d65bc'],
 '''
 
 # Search author information and save the result in a file
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""search the authors of author ids of "2281351310"
+usr_msg = """search the authors of author ids of "2281351310"
     ,"2281342663","2300302076","2300141520" for me, and please
-    save the record in a file.""",
-)
-
+    save the record in a file."""
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 
