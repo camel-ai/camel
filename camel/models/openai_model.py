@@ -21,7 +21,6 @@ from camel.configs import OPENAI_API_PARAMS, ChatGPTConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
-    NOT_GIVEN,
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,
@@ -112,6 +111,7 @@ class OpenAIModel(BaseModelBackend):
             ModelType.O1,
             ModelType.O1_MINI,
             ModelType.O1_PREVIEW,
+            ModelType.O3_MINI,
         ]:
             warnings.warn(
                 "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
@@ -147,14 +147,6 @@ class OpenAIModel(BaseModelBackend):
             )
 
             return self._to_chat_completion(response)
-
-        # Removing 'strict': True from the dictionary for
-        # client.chat.completions.create
-        if self.model_config_dict.get('tools') is not NOT_GIVEN:
-            for tool in self.model_config_dict.get('tools', []):
-                function_dict = tool.get('function', {})
-                if 'strict' in function_dict:
-                    del function_dict['strict']
 
         response = self._client.chat.completions.create(
             messages=messages,

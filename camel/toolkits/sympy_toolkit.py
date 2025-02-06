@@ -50,10 +50,6 @@ class SymPyToolkit(BaseToolkit):
                 expression in the `"result"` field. If an error occurs,
                 the `"status"` field will be set to `"error"` with a
                 corresponding `"message"`.
-
-        Raises:
-            Exception: If there is an error during the simplification
-                process, such as invalid input or unsupported syntax.
         """
         import sympy as sp
 
@@ -76,10 +72,6 @@ class SymPyToolkit(BaseToolkit):
                 in the `"result"` field. If an error occurs, the JSON
                 string will include an `"error"` field with the corresponding
                 error message.
-
-        Raises:
-            Exception: If there is an error during the expansion process,
-                such as invalid input or unsupported syntax.
         """
         import sympy as sp
 
@@ -102,10 +94,6 @@ class SymPyToolkit(BaseToolkit):
                 in the `"result"` field. If an error occurs, the JSON string
                 will include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the factoring process,
-                such as invalid input or unsupported syntax.
         """
         import sympy as sp
 
@@ -133,11 +121,6 @@ class SymPyToolkit(BaseToolkit):
                 a tuple of values corresponding to the variables. If an
                 error occurs, the JSON string will include an `"error"`
                 field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the solving process, such as
-                invalid equations, incompatible variables, or an
-                unsolvable system.
         """
         import sympy as sp
 
@@ -169,11 +152,6 @@ class SymPyToolkit(BaseToolkit):
                 variables. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding
                 error message.
-
-        Raises:
-            Exception: If there is an error during the solving process,
-                such as invalid equations, incompatible variables, or
-                an unsolvable system.
         """
         import sympy as sp
 
@@ -201,11 +179,6 @@ class SymPyToolkit(BaseToolkit):
                 format (e.g., intervals or expressions). If an error occurs,
                 the JSON string will include an `"error"` field with the
                 corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the solving process, such as
-                invalid input, unsupported syntax, or issues with the variable
-                definition.
         """
         import sympy as sp
 
@@ -230,11 +203,6 @@ class SymPyToolkit(BaseToolkit):
                 a symbolic format (e.g., combined intervals or expressions).
                 If an error occurs, the JSON string will include an `"error"`
                 field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the reduction process, such
-                as invalid input, unsupported syntax, or inconsistencies in the
-                inequalities.
         """
         import sympy as sp
 
@@ -260,10 +228,6 @@ class SymPyToolkit(BaseToolkit):
                 in a symbolic format. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the polynomial conversion
-                process, such as invalid input or unsupported syntax.
         """
 
         import sympy as sp
@@ -290,11 +254,6 @@ class SymPyToolkit(BaseToolkit):
                 `"result"` field. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the degree calculation
-                process, such as invalid input, unsupported syntax, or if
-                the expression is not a valid polynomial.
         """
         import sympy as sp
 
@@ -321,11 +280,6 @@ class SymPyToolkit(BaseToolkit):
                 ordered from the highest degree term to the constant term.
                 If an error occurs, the JSON string will include an `"error"
                 field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the coefficient extraction
-                process, such as invalid input, unsupported syntax, or if the
-                expression is not a valid polynomial.
         """
         import sympy as sp
 
@@ -353,10 +307,6 @@ class SymPyToolkit(BaseToolkit):
                 `"result"` field. Each solution is represented as a string.
                 If an error occurs, the JSON string will include an `"error"`
                 field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the solving process, such as
-                invalid input, unsupported syntax, or an undefined variable.
         """
         import sympy as sp
 
@@ -385,11 +335,6 @@ class SymPyToolkit(BaseToolkit):
                 solutions. If an error occurs, the JSON string will include
                 a `"status"` field set to `"error"` and a `"message"` field
                 with the corresponding error description.
-
-        Raises:
-            Exception: If there is an error during the root-finding process,
-                such as invalid input, unsupported syntax, or if the equation
-                is not solvable.
         """
         import sympy as sp
 
@@ -418,11 +363,6 @@ class SymPyToolkit(BaseToolkit):
                 `"result"` field. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the differentiation process,
-                such as invalid input, unsupported syntax, or issues with the
-                variable definition.
         """
         import sympy as sp
 
@@ -455,11 +395,6 @@ class SymPyToolkit(BaseToolkit):
                 `"result"` field. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the integration process,
-                such as invalid input, unsupported syntax, or issues with
-                the variable definition.
         """
         import sympy as sp
 
@@ -494,11 +429,6 @@ class SymPyToolkit(BaseToolkit):
                 in the `"result"` field. If an error occurs, the JSON string
                 will include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the definite integration
-                process, such as invalid input, unsupported syntax, or issues
-                with the variable or bounds.
         """
         import sympy as sp
 
@@ -531,11 +461,6 @@ class SymPyToolkit(BaseToolkit):
                 expression in the `"result"` field. If an error occurs,
                 the JSON string will include an `"error"` field with the
                 corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the series expansion
-                process, such as invalid input, unsupported syntax, or
-                issues with the variable, point, or order.
         """
         import sympy as sp
 
@@ -552,7 +477,6 @@ class SymPyToolkit(BaseToolkit):
         expression: str,
         variable: str,
         point: float,
-        direction: str = 'both',
     ) -> str:
         r"""Computes the limit of an expression as a variable approaches
         a point.
@@ -563,20 +487,12 @@ class SymPyToolkit(BaseToolkit):
             variable (str): The variable with respect to which the limit is
                 computed.
             point (float): The point that the variable approaches.
-            direction (str, optional): The direction from which the limit is
-                approached. Options are `'both'`, `'+'` (right-hand limit),
-                or `'-'` (left-hand limit). Defaults to `'both'`.
 
         Returns:
             str: JSON string containing the computed limit of the expression
                 in the `"result"` field. If an error occurs, the JSON string
                 will include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the limit computation
-                process, such as invalid input, unsupported syntax, or
-                issues with the variable, point, or direction.
         """
         import sympy as sp
 
@@ -604,11 +520,6 @@ class SymPyToolkit(BaseToolkit):
                 list of values corresponding to the variable. If an error
                 occurs, the JSON string will include an `"error"` field with
                 the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the critical point
-                computation process, such as invalid input, unsupported
-                syntax, or issues with the variable or the expression.
         """
         import sympy as sp
 
@@ -642,11 +553,6 @@ class SymPyToolkit(BaseToolkit):
                 expression is continuous at the given point, otherwise
                 `"False"`. If an error occurs, the JSON string will include
                 an `"error"` field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the continuity check
-                process, such as invalid input, unsupported syntax, or
-                issues with the variable or the point.
         """
         import sympy as sp
 
@@ -673,11 +579,6 @@ class SymPyToolkit(BaseToolkit):
                 `"result"` field. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the determinant computation
-                process, such as invalid input, unsupported syntax, or if the
-                matrix is not square.
         """
         import sympy as sp
 
@@ -701,11 +602,6 @@ class SymPyToolkit(BaseToolkit):
                 matrix format. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the inverse computation
-                process, such as invalid input, unsupported syntax, or if
-                the matrix is not invertible (i.e., its determinant is zero).
         """
         import sympy as sp
 
@@ -730,11 +626,6 @@ class SymPyToolkit(BaseToolkit):
                 values are their multiplicities (as strings). If an error
                 occurs, the JSON string will include an `"error"` field
                 with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the eigenvalue
-                computation process, such as invalid input, unsupported
-                syntax, or if the matrix is not square.
         """
         import sympy as sp
 
@@ -766,11 +657,6 @@ class SymPyToolkit(BaseToolkit):
 
                 If an error occurs, the JSON string will include an `"error"`
                 field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the eigenvector
-                computation process, such as invalid input, unsupported
-                syntax, or if the matrix is not square.
         """
         import sympy as sp
 
@@ -803,11 +689,6 @@ class SymPyToolkit(BaseToolkit):
                 symbolic format. If an error occurs, the JSON string will
                 include an `"error"` field with the corresponding error
                 message.
-
-        Raises:
-            Exception: If there is an error during the null space computation
-            process, such as invalid input, unsupported syntax, or if the
-            matrix is malformed.
         """
         import sympy as sp
 
@@ -830,11 +711,6 @@ class SymPyToolkit(BaseToolkit):
                 `"result"` field. The rank is represented as an integer.
                 If an error occurs,the JSON string will include an
                 `"error"` field with the corresponding error message.
-
-        Raises:
-            Exception: If there is an error during the rank computation
-                process, such as invalid input, unsupported
-                syntax, or if the matrix is malformed.
         """
         import sympy as sp
 
@@ -860,10 +736,6 @@ class SymPyToolkit(BaseToolkit):
                 - `"status"`: Always set to `"error"`.
                 - `"message"`: A string representation of the
                 exception message.
-
-        Raises:
-            None: This function does not raise exceptions. It is used to handle
-                and report exceptions from other methods.
         """
         logger.error(f"Error in {func_name}: {error}")
         return json.dumps(
