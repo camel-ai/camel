@@ -15,12 +15,19 @@
 from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
+from .math_benchmarks.math_base import MathBenchmark, Mode
+from .math_benchmarks.gsm8k import GSM8KBenchmark
+from .math_benchmarks.math_bench import MATHBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
 
 __all__ = [
     "BaseBenchmark",
+    "MathBenchmark",
+    "Mode",
+    "MATHBenchmark",
+    "GSM8KBenchmark",
     "GAIABenchmark",
     "DefaultGAIARetriever",
     "NexusBenchmark",
