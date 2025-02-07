@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents.chat_agent import ChatAgent
-from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
 from camel.toolkits import DalleToolkit
@@ -32,28 +31,18 @@ def main():
     print(sys_msg)
     print("=" * 49)
 
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Artist",
-        content=sys_msg,
-    )
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="Draw a picture of a camel.",
-    )
-
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
     )
 
     dalle_agent = ChatAgent(
-        system_message=assistant_sys_msg,
+        system_message=sys_msg,
         model=model,
         tools=DalleToolkit().get_tools(),
     )
 
-    response = dalle_agent.step(user_msg)
+    response = dalle_agent.step("Draw a picture of a camel.")
 
     print("=" * 20 + " RESULT " + "=" * 20)
     print(response.msg.content)
