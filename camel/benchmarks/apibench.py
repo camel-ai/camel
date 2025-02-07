@@ -24,7 +24,6 @@ from tree_sitter import Language, Parser
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
-from camel.messages import BaseMessage
 from camel.utils import download_github_subdirectory
 
 logger = logging.getLogger(__name__)
@@ -281,12 +280,9 @@ class APIBenchBenchmark(BaseBenchmark):
         with open(self.save_to, "w") as f:
             for question in tqdm(datas, desc="Running"):
                 prompt = encode_question(question["text"], dataset_name)
-                msg = BaseMessage.make_user_message(
-                    role_name="User", content=prompt
-                )
                 try:
                     # Generate response
-                    responses = agent.step(msg)
+                    responses = agent.step(prompt)
                     response = responses.msgs[0].content
                     api_database = self._data['api']
                     qa_pairs = self._data['eval']
