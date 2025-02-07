@@ -368,11 +368,11 @@ Key parameters:
    - Target size sampling
 
 
-## STaR (Self-Taught Reasoner) Data Generation
+## Self-Improving CoT Data Generation
 
 ### Overview
 
-The STaR (Self-Taught Reasoner) pipeline implements an iterative approach to generate and improve reasoning traces for problem-solving tasks. This implementation is based on the methodology of self-taught reasoning, where an AI agent learns to improve its reasoning process through self-evaluation and feedback.
+The Self-Improving CoT Data Generation pipeline implements an iterative approach to generate and improve reasoning traces for problem-solving tasks. This implementation is based on the methodology of self-taught reasoning, where an AI agent learns to improve its reasoning process through self-evaluation and feedback.
 
 ### Architecture
 

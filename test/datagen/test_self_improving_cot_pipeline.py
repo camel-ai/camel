@@ -248,13 +248,43 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
         scores = {"correctness": 0.7, "clarity": 0.6, "completeness": 0.9}
         self.assertFalse(pipeline._check_score_threshold(scores))
 
+    @patch("psutil.cpu_times")
+    @patch("psutil.cpu_count")
+    @patch("psutil.cpu_percent")
+    @patch("psutil.virtual_memory")
     @patch("builtins.open")
     @patch("json.dump")
     @patch("json.load")
-    def test_generate_with_output(self, mock_load, mock_dump, mock_open):
+    def test_generate_with_output(
+        self,
+        mock_load,
+        mock_dump,
+        mock_open,
+        mock_virtual_memory,
+        mock_cpu_percent,
+        mock_cpu_count,
+        mock_cpu_times,
+    ):
         mock_load.return_value = {"traces": []}
         mock_open.return_value.__enter__ = mock_open
         mock_open.return_value.__exit__ = MagicMock()
+
+        # Mock psutil functions
+        mock_cpu_times.return_value = MagicMock(
+            user=100.0,
+            nice=0.0,
+            system=50.0,
+            idle=200.0,
+            iowait=0.0,
+            irq=0.0,
+            softirq=0.0,
+            steal=0.0,
+            guest=0.0,
+            guest_nice=0.0,
+        )
+        mock_cpu_count.return_value = 8
+        mock_cpu_percent.return_value = 50.0
+        mock_virtual_memory.return_value = MagicMock(percent=60.0)
 
         mock_reason_responses = [
             MagicMock(msg=MagicMock(content="Initial reasoning trace")),
