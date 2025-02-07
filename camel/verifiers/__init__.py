@@ -12,9 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .base_verifier import BaseVerifier
 from .code_verifier import CodeVerifier
-from .math_verifier import MathVerifier
-from .router.verification_router import DomainVerifier
 
-__all__ = ['BaseVerifier', 'MathVerifier', 'CodeVerifier', 'DomainVerifier']
+__all__ = ['CodeVerifier']
