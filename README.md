@@ -42,15 +42,14 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 
 
 ## 🌟　When to Choose CAMEL-AI Over Other Frameworks?
-```
-For Multi-agent Collaboration - CAMEL-AI excels in managing interactive agent systems.
 
-For Research - A research-first design makes CAMEL-AI ideal for academic and experimental projects.
+- **For Multi-agent Collaboration** - CAMEL-AI excels in managing interactive agent systems.
 
-For Customizability - CAMEL-AI offers unmatched flexibility in agent behaviors and workflows.
+- **For Research** - A research-first design makes CAMEL-AI ideal for academic and experimental projects.
 
-For Complex Tasks - Its task decomposition capabilities simplify intricate problem-solving.
-```
+- **For Customizability** - CAMEL-AI offers unmatched flexibility in agent behaviors and workflows.
+
+- **For Complex Tasks** - Its task decomposition capabilities simplify intricate problem-solving.
 
 Among its competitors, CAMEL-AI is unique by being research-driven, developer-friendly, and scalable.
 
