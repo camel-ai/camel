@@ -54,7 +54,7 @@ class SymPyToolkit(BaseToolkit):
         import sympy as sp
 
         try:
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             simplified = sp.simplify(expr)
             return json.dumps({"status": "success", "result": str(simplified)})
         except Exception as e:
@@ -76,7 +76,7 @@ class SymPyToolkit(BaseToolkit):
         import sympy as sp
 
         try:
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             expanded_expr = sp.expand(expr)
             return json.dumps({"result": str(expanded_expr)})
         except Exception as e:
@@ -98,7 +98,7 @@ class SymPyToolkit(BaseToolkit):
         import sympy as sp
 
         try:
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             factored_expr = sp.factor(expr)
             return json.dumps({"result": str(factored_expr)})
         except Exception as e:
@@ -234,7 +234,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             poly = sp.Poly(expr, var)
             return json.dumps({"result": str(poly)})
         except Exception as e:
@@ -259,7 +259,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             degree = int(sp.degree(expr, var))
             return json.dumps({"result": degree})
         except Exception as e:
@@ -285,7 +285,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             coeffs = sp.Poly(expr, var).all_coeffs()
             return json.dumps({"result": [str(coeff) for coeff in coeffs]})
         except Exception as e:
@@ -339,7 +339,7 @@ class SymPyToolkit(BaseToolkit):
         import sympy as sp
 
         try:
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             roots = sp.solve(expr)
             return json.dumps({"status": "success", "result": str(roots)})
 
@@ -372,7 +372,7 @@ class SymPyToolkit(BaseToolkit):
                 if variable
                 else sp.symbols(self.default_variable)
             )
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             derivative = sp.diff(expr, variable)
             return json.dumps({"result": str(derivative)})
         except Exception as e:
@@ -404,7 +404,7 @@ class SymPyToolkit(BaseToolkit):
                 if variable
                 else sp.symbols(self.default_variable)
             )
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             integral = sp.integrate(expr, variable)
             return json.dumps({"result": str(integral)})
         except Exception as e:
@@ -434,7 +434,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             integral = sp.integrate(expr, (var, lower, upper))
             return json.dumps({"result": str(integral)})
         except Exception as e:
@@ -466,7 +466,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             series = sp.series(expr, var, point, order)
             return json.dumps({"result": str(series)})
         except Exception as e:
@@ -498,7 +498,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             limit = sp.limit(expr, var, point)
             return json.dumps({"result": str(limit)})
         except Exception as e:
@@ -525,7 +525,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             derivative = sp.diff(expr, var)
             critical_points = sp.solve(derivative, var)
             return json.dumps(
@@ -558,7 +558,7 @@ class SymPyToolkit(BaseToolkit):
 
         try:
             var = sp.symbols(variable)
-            expr = sp.sympify(expression)
+            expr = sp.parsing.sympy_parser.parse_expr(expression)
             left_limit = sp.limit(expr, var, point, dir='-')
             right_limit = sp.limit(expr, var, point, dir='+')
             value_at_point = expr.subs(var, point)
