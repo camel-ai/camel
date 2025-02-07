@@ -52,7 +52,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_author_detailed_info', args={}, result=
+[ToolCallingRecord(func_name='get_author_detailed_info', args={}, result=
 {'container_type': 'Author', 'filled': ['basics', 'indices', 'counts', 
 'coauthors', 'publications', 'public_access'], 'scholar_id': 'JicYPdAAAAAJ', 
 'source': <AuthorSource.AUTHOR_PROFILE_PAGE: 'AUTHOR_PROFILE_PAGE'>, 'name': 
@@ -90,7 +90,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_author_publications', args={}, result=
+[ToolCallingRecord(func_name='get_author_publications', args={}, result=
 ['Imagenet classification with deep convolutional neural networks', 'Deep 
 learning', 'Learning internal representations by error-propagation', 'Dropout: 
 a simple way to prevent neural networks from overfitting', 'Visualizing data 
@@ -117,7 +117,7 @@ response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_publication_by_title', args=
+[ToolCallingRecord(func_name='get_publication_by_title', args=
 {'publication_title': 'Camel: Communicative agents for" mind" exploration of 
 large language model society'}, result={'container_type': 'Publication', 
 'source': <PublicationSource.AUTHOR_PUBLICATION_ENTRY: 
@@ -162,7 +162,7 @@ response = camel_agent.step(usr_msg)
 print((response.info['tool_calls'])[:1000])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_full_paper_content_by_link', args=
+[ToolCallingRecord(func_name='get_full_paper_content_by_link', args=
 {'pdf_url': 'https://hal.science/hal-04206682/document'}, result='Deep 
 learning\nYann Lecun, Yoshua Bengio, Geoffrey Hinton\n\nTo cite this 
 version:\n\nYann Lecun, Yoshua Bengio, Geoffrey Hinton. Deep learning. Nature, 

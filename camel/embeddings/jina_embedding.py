@@ -35,8 +35,11 @@ class JinaEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             Jina AI. (default: :obj:`None`)
         dimensions (Optional[int], optional): The dimension of the output
             embeddings. (default: :obj:`None`)
-        embedding_type (Optional[str], optional): The type of embedding to use.
-            (default: :obj:`None`)
+        embedding_type (Optional[str], optional): The type of embedding format
+            to generate. Options: 'int8' (binary encoding with higher storage
+            and transfer efficiency), 'uint8' (unsigned binary encoding with
+            higher storage and transfer efficiency), 'base64' (base64 string
+            encoding with higher transfer efficiency). (default: :obj:`None`)
         task (Optional[str], optional): The type of task for text embeddings.
             Options: retrieval.query, retrieval.passage, text-matching,
             classification, separation. (default: :obj:`None`)
