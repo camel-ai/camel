@@ -13,8 +13,14 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional, Tuple
+
+try:
+    import psutil  # type: ignore[import]
+except ImportError:
+    psutil = None
 
 from .unstructured_io import UnstructuredIO
 
@@ -30,10 +36,12 @@ default_clean_options: List[Tuple[str, Dict]] = [
 
 class MultiSourceParser:
     def __init__(
-        self, clean_options: Optional[List[Tuple]] = default_clean_options
+        self,
+        clean_options: Optional[List[Tuple]] = default_clean_options,
+        max_workers: Optional[int] = None,
     ):
-        r"""A class for parsing and
-        processing multiple text sources in parallel.
+        r"""A class for parsing and processing
+        multiple text sources in parallel.
 
         Args:
             clean_options (List[Tuple]): A list of text cleaning options to be
@@ -42,17 +50,45 @@ class MultiSourceParser:
                 - Cleaning dashes
                 - Removing non-ASCII characters
                 - Cleaning extra whitespace
+            max_workers (Optional[int]): Maximum number of worker threads.
+                If None, will be set dynamically based on system resources.
+                Defaults to None.
         """
         self.uio = UnstructuredIO()
-        if clean_options:
-            self.clean_options = clean_options
-        else:
-            self.clean_options = [
-                ('replace_unicode_quotes', {}),
-                ('clean_dashes', {}),
-                ('clean_non_ascii_chars', {}),
-                ('clean_extra_whitespace', {}),
-            ]
+        self.clean_options = (
+            clean_options if clean_options else default_clean_options
+        )
+        self.max_workers = (
+            max_workers
+            if max_workers is not None
+            else self._get_optimal_workers()
+        )
+
+    def _get_optimal_workers(self) -> int:
+        r"""Determine optimal number of worker threads
+        based on system resources.
+
+        Returns:
+            int: Recommended number of worker threads
+        """
+        cpu_count = os.cpu_count() or 1
+
+        if psutil is None:
+            # Fallback if psutil is not installed
+            return max(1, cpu_count - 1)
+
+        try:
+            # Get available memory in GB
+            available_memory = psutil.virtual_memory().available / (
+                1024 * 1024 * 1024
+            )
+            # Allocate 1 worker per 2GB of available memory,
+            # capped by CPU count
+            memory_based_workers = int(available_memory / 2)
+            return min(cpu_count, max(1, memory_based_workers))
+        except Exception:
+            # Fallback to CPU count if psutil fails
+            return max(1, cpu_count - 1)
 
     def parse_multiple_sources(
         self,
@@ -86,8 +122,8 @@ class MultiSourceParser:
         """
         all_elements = []
 
-        # Parse all sources in parallel
-        with ThreadPoolExecutor() as executor:
+        # Parse all sources in parallel with limited workers
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = {
                 executor.submit(self.uio.parse_file_or_url, source): source
                 for source in sources
@@ -122,8 +158,8 @@ class MultiSourceParser:
             overlap=overlap,
         )
 
-        # Clean each chunk in parallel
-        with ThreadPoolExecutor() as executor:
+        # Clean each chunk in parallel with limited workers
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             cleaned_chunks = list(
                 executor.map(
                     lambda chunk: self.uio.clean_text_data(
