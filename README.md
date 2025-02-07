@@ -42,16 +42,17 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 
 
 ## 🌟　When to Choose CAMEL-AI Over Other Frameworks?
+```
+For Multi-agent Collaboration - CAMEL-AI excels in managing interactive agent systems.
 
-> **For multi-agent collaboration**: CAMEL-AI excels in managing interactive agent systems.
+For Research - A research-first design makes CAMEL-AI ideal for academic and experimental projects.
 
-> **For research**: A research-first design makes CAMEL-AI ideal for academic and experimental projects.
+For Customizability - CAMEL-AI offers unmatched flexibility in agent behaviors and workflows.
 
-> **For customizability**: CAMEL-AI offers unmatched flexibility in agent behaviors and workflows.
+For Complex Tasks - Its task decomposition capabilities simplify intricate problem-solving.
+```
 
-> **For complex tasks**: Its task decomposition capabilities simplify intricate problem-solving.
-
-</br>
+Among its competitors, CAMEL-AI is unique by being research-driven, developer-friendly, and scalable.
 
 | Feature | CAMEL-AI | LangChain | AutoGen | Crew-AI | AutoGPT |
 |---------|----------|-----------|----------|----------|----------|
@@ -125,43 +126,47 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 
 ### 1. Data Generation
 
-- function-calling
+- **Function-Calling Format Data Generation**
 
-- CoT Data
+This method enables models to interact with external tools by generating user queries and structured tool call data. Utilizing real tools and standardized formats, it enhances data diversity and scalability. [Open Cookbook](https://docs.camel-ai.org/cookbooks/data_generation/data_gen_with_real_function_calls_and_hermes_format.html)
 
-- Distillation reason
+- **Chain-of-Thought (CoT) Data Generation**
 
-> Read more about data generation cookbooks
+CoT data generation produces high-quality question-answer pairs by simulating reasoning processes, thereby improving the model’s ability to handle complex tasks. [Open Cookbook](https://docs.camel-ai.org/cookbooks/data_generation/cot_data_gen_sft_qwen_unsolth_upload_huggingface.html)
+
+- **Distillation**
+
+Distillation involves refining model outputs to improve performance and efficiency. It serves as a flexible framework for evaluation, filtering, and optimization of AI-generated content. [Open Cookbook](https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation%26filter_with_reward_model.html)
 
 ### 2. Task Automation
 
-- RolePlaying
+- **RolePlaying**
 
-RolePlaying was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. [read more](https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html)
+RolePlaying was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. [Open Cookbook](https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html)
 
-- Workforce
+- **Workforce**
 
-Workforce is a system where multiple agents work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve tasks.[read more](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)
+Workforce is a system where multiple agents work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve tasks. [Open Cookbook](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)
 
-- RAG Pipeline
+- **RAG Pipeline**
 
-Graph RAG utilize LLM to extract and structure knowledge from a given content source, and store this information in graph database. Subsequently, we can leverage a hybrid approach, combining vector retrieval and knowledge graph retrieval, to query and explore the stored knowledge.[read more](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)
+Graph RAG utilize LLM to extract and structure knowledge from a given content source, and store this information in graph database. Subsequently, we can leverage a hybrid approach, combining vector retrieval and knowledge graph retrieval, to query and explore the stored knowledge. [Open Cookbook](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)
 
 ### 3. World Simulation
 
-- OASIS
+- **🏝️ OASIS**
 
-🏝️ OASIS is a scalable, open-source social media simulator that integrates large language models with rule-based agents to realistically mimic the behavior of up to one million users on platforms like Twitter and Reddit. It's designed to facilitate the study of complex social phenomena such as information spread, group polarization, and herd behavior, offering a versatile tool for exploring diverse social dynamics and user interactions in digital environments. [read more](https://github.com/camel-ai/oasis)
+OASIS is a scalable, open-source social media simulator that integrates large language models with rule-based agents to realistically mimic the behavior of up to one million users on platforms like Twitter and Reddit. It's designed to facilitate the study of complex social phenomena such as information spread, group polarization, and herd behavior, offering a versatile tool for exploring diverse social dynamics and user interactions in digital environments. [Explore More](https://github.com/camel-ai/oasis)
 
 <br/>
 
-## TechStack
+## 🛠️ TechStack
 
 <div align="center">
   <img src="docs/images/techstack.png" alt="TechStack">
 </div>
 
-### Key Modules
+### 1. Key Modules
 Core components and utilities to build, operate, and enhance CAMEL-AI agents and societies.
 
 | Module | Description |
@@ -179,7 +184,7 @@ Core components and utilities to build, operate, and enhance CAMEL-AI agents and
 | **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)** | Retrieval methods for knowledge access. |
 ---
 
-### Utilize Various LLMs as Backends
+### 2. Utilize Various LLMs as Backends
 
 For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models.html#).
 
@@ -194,7 +199,7 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 | **Chemistry**  | [Chat format](https://huggingface.co/datasets/camel-ai/chemistry)                                   | x                                                                                                                | x                                                                                          |
 | **Biology**    | [Chat format](https://huggingface.co/datasets/camel-ai/biology)                                     | x                                                                                                                | x                                                                                          |
 
-### Visualizations of Instructions and Tasks
+### 3. Visualizations of Instructions and Tasks
 
 | Dataset          | Instructions                                                                                                         | Tasks                                                                                                         |
 |------------------|----------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -205,7 +210,7 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 
 ## 📦 Installation
 
-### From PyPI
+### 1. From PyPI
 
 To install the base CAMEL library:
 ```bash
@@ -237,7 +242,7 @@ Multiple extras can be combined using commas:
 pip install 'camel-ai[rag,web_tools,document_tools]'  # Example: RAG system with web search and document processing
 ```
 
-### From Docker
+### 2. From Docker
 
 Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
 
@@ -249,7 +254,7 @@ ModelPlatformType.DEFAULT = "openai"
 ModelType.DEFAULT = "gpt-4o-mini"
 ```
 
-### From Source with Poetry
+### 3. From Source with Poetry
 ```bash
 # Clone github repo
 git clone https://github.com/camel-ai/camel.git
@@ -277,7 +282,7 @@ poetry install -E all  # (Optional)
 exit
 ```
 
-### Setting Default Model Platform and Model Type (Optional)
+### 4. Setting Default Model Platform and Model Type (Optional)
 
 You can customize the default model platform and model type by setting the following environment variables:
 ```bash
@@ -285,7 +290,7 @@ export DEFAULT_MODEL_PLATFORM_TYPE=<your preferred platform>  # e.g., openai, an
 export DEFAULT_MODEL_TYPE=<your preferred model>  # e.g., gpt-3.5-turbo, gpt-4o-mini, etc.
 ```
 
-### Setting Your Model API Key (Using OpenAI as an Example)
+### 5. Setting Your Model API Key (Using OpenAI as an Example)
 
 **For Bash shell (Linux, macOS, Git Bash on Windows):**
 
