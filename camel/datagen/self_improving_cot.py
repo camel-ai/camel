@@ -70,7 +70,7 @@ class ProblemResult(BaseModel):
 
 class SelfImprovingCoTPipeline:
     r"""Pipeline for generating self-taught reasoning traces
-    using the STaR methodology.
+    using the self-improving methodology.
 
     This implements the STaR paper's approach of:
     1. Initial reasoning trace generation
@@ -94,7 +94,7 @@ class SelfImprovingCoTPipeline:
         solution_pattern: str = r'\\boxed{(.*?)}',
         trace_pattern: Optional[str] = None,
     ):
-        r"""Initialize the STaR pipeline.
+        r"""Initialize the self-improving cot pipeline.
 
         Args:
             reason_agent (ChatAgent): The chat agent used for generating and
@@ -584,7 +584,7 @@ class SelfImprovingCoTPipeline:
     def process_problem(
         self, problem: Dict, rationalization: bool = False
     ) -> ProblemResult:
-        r"""Process a single problem through the STaR pipeline.
+        r"""Process a single problem through the self-improving cot pipeline.
 
         Args:
             problem (Dict): Problem dictionary containing the problem text.
@@ -742,7 +742,7 @@ class SelfImprovingCoTPipeline:
         return result
 
     def generate(self, rationalization: bool = False) -> List[Dict[str, Any]]:
-        r"""Execute the STaR pipeline on all problems.
+        r"""Execute the self-improving cot pipeline on all problems.
 
         Process problems and return results. If output_path is specified,
         also save results to file.

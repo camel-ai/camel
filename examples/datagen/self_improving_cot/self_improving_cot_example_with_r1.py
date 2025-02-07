@@ -58,7 +58,6 @@ reason_model_4 = ModelFactory.create(
     api_key=os.getenv("TOGETHER_API_KEY"),
 )
 # from camel.models.reward import NemotronRewardModel
-#
 
 
 def main():
@@ -66,7 +65,9 @@ def main():
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
     problems_path = os.path.join(current_dir, 'outputs/gsm8k_dataset.json')
-    output_path = os.path.join(current_dir, 'outputs/star_r1_output.json')
+    output_path = os.path.join(
+        current_dir, 'outputs/self_improving_cot_r1_output.json'
+    )
 
     # Load problems from JSON file
     with open(problems_path, 'r') as f:

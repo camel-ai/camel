@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 from camel.agents import ChatAgent
 from camel.datagen import SelfImprovingCoTPipeline
-from camel.datagen.star.star_pipeline import (
+from camel.datagen.self_improving_cot import (
     ProblemResult,
     TraceIteration,
 )
