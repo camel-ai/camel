@@ -55,7 +55,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 '''
 ===============================================================================
-[FunctionCallingRecord(func_name='search_papers', args={'query': 'attention is 
+[ToolCallingRecord(func_name='search_papers', args={'query': 'attention is 
 all you need'}, result=[{'title': "Attention Is All You Need But You Don't 
 Need All Of It For Inference of Large Language Models", 'published_date': 
 '2024-07-22', 'authors': ['Georgy Tyukin', 'Gbetondji J-S Dovonon', 'Jean 
@@ -85,7 +85,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 '''
 ===============================================================================
-[FunctionCallingRecord(func_name='download_papers', args={'query': 'attention 
+[ToolCallingRecord(func_name='download_papers', args={'query': 'attention 
 is all you need', 'output_dir': '/Users/enrei/Desktop/camel0826/camel/examples/
 tool_call', 'paper_ids': ['2407.15516v1', '2107.08000v1', '2306.01926v1', 
 '2112.05993v1', '1912.11959v2']}, result='papers downloaded successfully')]

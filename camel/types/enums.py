@@ -40,7 +40,17 @@ class ModelType(UnifiedModelType, Enum):
     O3_MINI = "o3-mini"
 
     GLM_4 = "glm-4"
-    GLM_4V = 'glm-4v'
+    GLM_4V = "glm-4v"
+    GLM_4V_FLASH = "glm-4v-flash"
+    GLM_4V_PLUS_0111 = "glm-4v-plus-0111"
+    GLM_4_PLUS = "glm-4-plus"
+    GLM_4_AIR = "glm-4-air"
+    GLM_4_AIR_0111 = "glm-4-air-0111"
+    GLM_4_AIRX = "glm-4-airx"
+    GLM_4_LONG = "glm-4-long"
+    GLM_4_FLASHX = "glm-4-flashx"
+    GLM_4_FLASH = "glm-4-flash"
+    GLM_ZERO_PREVIEW = "glm-zero-preview"
     GLM_3_TURBO = "glm-3-turbo"
 
     # Groq platform models
@@ -106,9 +116,12 @@ class ModelType(UnifiedModelType, Enum):
     NVIDIA_LLAMA3_3_70B_INSTRUCT = "meta/llama-3.3-70b-instruct"
 
     # Gemini models
+    GEMINI_2_0_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_2_0_FLASH_THINKING = "gemini-2.0-flash-thinking-exp"
+    GEMINI_2_0_PRO_EXP = "gemini-2.0-pro-exp-02-05"
+    GEMINI_2_0_FLASH_LITE_PREVIEW = "gemini-2.0-flash-lite-preview-02-05"
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
-    GEMINI_EXP_1114 = "gemini-exp-1114"
 
     # Mistral AI models
     MISTRAL_3B = "ministral-3b-latest"
@@ -145,10 +158,12 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MATH_TURBO = "qwen-math-turbo"
     QWEN_CODER_TURBO = "qwen-coder-turbo"
     QWEN_2_5_CODER_32B = "qwen2.5-coder-32b-instruct"
+    QWEN_2_5_VL_72B = "qwen2.5-vl-72b-instruct"
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
     QWEN_QWQ_32B = "qwq-32b-preview"
+    QWEN_QVQ_72B = "qvq-72b-preview"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -203,7 +218,11 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def support_native_structured_output(self) -> bool:
-        return self.is_openai
+        return any(
+            [
+                self.is_openai,
+            ]
+        )
 
     @property
     def support_native_tool_calling(self) -> bool:
@@ -222,6 +241,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
+                self.is_zhipuai,
             ]
         )
 
@@ -260,6 +280,16 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
             ModelType.GLM_4V,
+            ModelType.GLM_4V_FLASH,
+            ModelType.GLM_4V_PLUS_0111,
+            ModelType.GLM_4_PLUS,
+            ModelType.GLM_4_AIR,
+            ModelType.GLM_4_AIR_0111,
+            ModelType.GLM_4_AIRX,
+            ModelType.GLM_4_LONG,
+            ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASH,
+            ModelType.GLM_ZERO_PREVIEW,
         }
 
     @property
@@ -356,9 +386,12 @@ class ModelType(UnifiedModelType, Enum):
             bool: Whether this type of models is gemini.
         """
         return self in {
+            ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_EXP_1114,
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_PRO_EXP,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
         }
 
     @property
@@ -421,10 +454,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
             ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QVQ_72B,
         }
 
     @property
@@ -516,6 +551,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.TOGETHER_MISTRAL_7B,
             ModelType.MOONSHOT_V1_8K,
+            ModelType.GLM_4V_FLASH,
+            ModelType.GLM_4_AIRX,
         }:
             return 8_192
         elif self in {
@@ -528,6 +565,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.YI_LARGE_RAG,
             ModelType.SAMBA_LLAMA_3_1_8B,
             ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.GLM_4V_PLUS_0111,
+            ModelType.GLM_ZERO_PREVIEW,
         }:
             return 16_384
         elif self in {
@@ -543,6 +582,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QVQ_72B,
             ModelType.INTERNLM3_8B_INSTRUCT,
             ModelType.INTERNLM3_LATEST,
             ModelType.INTERNLM2_5_LATEST,
@@ -575,6 +615,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
@@ -595,6 +636,11 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_LLAMA_3_2_1B,
             ModelType.SGLANG_MIXTRAL_NEMO,
             ModelType.MOONSHOT_V1_128K,
+            ModelType.GLM_4_PLUS,
+            ModelType.GLM_4_AIR,
+            ModelType.GLM_4_AIR_0111,
+            ModelType.GLM_4_FLASHX,
+            ModelType.GLM_4_FLASH,
         }:
             return 128_000
         elif self in {
@@ -628,9 +674,13 @@ class ModelType(UnifiedModelType, Enum):
         }:
             return 256_000
         elif self in {
+            ModelType.GEMINI_2_0_FLASH,
             ModelType.GEMINI_1_5_FLASH,
             ModelType.GEMINI_1_5_PRO,
-            ModelType.GEMINI_EXP_1114,  # Not given in docs, assuming the same
+            ModelType.GEMINI_2_0_FLASH_THINKING,
+            ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
+            ModelType.GEMINI_2_0_PRO_EXP,  # Not given in doc, assume the same
+            ModelType.GLM_4_LONG,
         }:
             return 1_048_576
         elif self in {
