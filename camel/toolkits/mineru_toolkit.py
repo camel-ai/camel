@@ -55,21 +55,21 @@ class MinerUToolkit(BaseToolkit):
         """
         self.client = MinerU(api_key=api_key, api_url=api_url)
 
-    def extract_from_url(
+    def extract_from_urls(
         self,
-        url: str,
+        urls: str | List[str],
         is_ocr: bool = True,
         enable_formula: bool = False,
         enable_table: bool = True,
         layout_model: str = "doclayout_yolo",
         language: str = "ch",
         wait: bool = True,
-        timeout: int = 300,
+        timeout: float = 300,
     ) -> Dict:
-        r"""Extract content from a single URL.
+        r"""Extract content from one or multiple URLs.
 
         Args:
-            url (str): The URL to extract content from.
+            urls (str | List[str]): Single URL string or list of URLs.
             is_ocr (bool): Whether to enable OCR. (default: True)
             enable_formula (bool): Whether to enable formula recognition.
                 (default: False)
@@ -79,72 +79,49 @@ class MinerUToolkit(BaseToolkit):
                 'doclayout_yolo' or 'layoutlmv3'. (default: 'doclayout_yolo')
             language (str): Document language. (default: "ch")
             wait (bool): Whether to wait for task completion. (default: True)
-            timeout (int): Maximum time to wait in seconds. (default: 300)
+            timeout (float): Maximum time to wait in seconds. (default: 300)
 
         Returns:
-            Dict: Contains task results if wait=True, otherwise task_id
-                for tracking.
+            Dict: Contains task results if wait=True, otherwise
+                task_id/batch_id for tracking.
         """
-        response = self.client.extract_url(
-            url=url,
-            is_ocr=is_ocr,
-            enable_formula=enable_formula,
-            enable_table=enable_table,
-            layout_model=layout_model,
-            language=language,
-        )
-
-        if wait:
-            return self.client.wait_for_completion(
-                response['task_id'],
-                timeout=timeout,
+        if isinstance(urls, str):
+            # Single URL case
+            response = self.client.extract_url(
+                url=urls,
+                is_ocr=is_ocr,
+                enable_formula=enable_formula,
+                enable_table=enable_table,
+                layout_model=layout_model,
+                language=language,
             )
-        return response
 
-    def batch_extract_from_urls(
-        self,
-        urls: List[str],
-        enable_formula: bool = True,
-        enable_table: bool = True,
-        layout_model: str = "doclayout_yolo",
-        language: str = "ch",
-        wait: bool = True,
-        timeout: int = 600,
-    ) -> Dict:
-        r"""Extract content from multiple URLs in batch.
-
-        Args:
-            urls (List[str]): List of URLs to extract content from.
-            enable_formula (bool): Enable formula recognition. (default: True)
-            enable_table (bool): Enable table recognition. (default: True)
-            layout_model (str): Layout detection model.
-                (default: 'doclayout_yolo')
-            language (str): Document language. (default: "ch")
-            wait (bool): Whether to wait for task completion. (default: True)
-            timeout (int): Maximum time to wait in seconds. (default: 600)
-
-        Returns:
-            Dict: Status and results of all files in the batch if wait=True,
-                otherwise batch_id for tracking.
-        """
-        files: List[Dict[str, str | bool]] = [
-            {"url": url, "is_ocr": True} for url in urls
-        ]
-        batch_id = self.client.batch_extract_urls(
-            files=files,
-            enable_formula=enable_formula,
-            enable_table=enable_table,
-            layout_model=layout_model,
-            language=language,
-        )
-
-        if wait:
-            return self.client.wait_for_completion(
-                batch_id,
-                is_batch=True,
-                timeout=timeout,
+            if wait:
+                return self.client.wait_for_completion(
+                    response['task_id'],
+                    timeout=timeout,
+                )
+            return response
+        else:
+            # Multiple URLs case
+            files: List[Dict[str, str | bool]] = [
+                {"url": str(url), "is_ocr": bool(is_ocr)} for url in urls
+            ]
+            batch_id = self.client.batch_extract_urls(
+                files=files,
+                enable_formula=enable_formula,
+                enable_table=enable_table,
+                layout_model=layout_model,
+                language=language,
             )
-        return {"batch_id": batch_id}
+
+            if wait:
+                return self.client.wait_for_completion(
+                    batch_id,
+                    is_batch=True,
+                    timeout=timeout if timeout > 300 else 600,
+                )
+            return {"batch_id": batch_id}
 
     def get_task_status(self, task_id: str) -> Dict:
         r"""Check the status of a single extraction task.
@@ -185,8 +162,7 @@ class MinerUToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.extract_from_url),
-            FunctionTool(self.batch_extract_from_urls),
+            FunctionTool(self.extract_from_urls),
             FunctionTool(self.get_task_status),
             FunctionTool(self.get_batch_status),
         ]

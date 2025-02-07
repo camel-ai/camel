@@ -24,43 +24,43 @@ def main():
     # Initialize the toolkit
     mineru_toolkit = MinerUToolkit()
 
-    print("Example 1: Extracting content from a single URL...")
-    try:
-        # Extract and wait for results
-        result = mineru_toolkit.extract_from_url(
-            url="https://arxiv.org/pdf/2311.10993.pdf",
-            enable_formula=True,
-            enable_table=True,
-            language="en",
-        )
-        print("\nExtraction completed successfully:")
-        print(f"Download URL: {result['full_zip_url']}\n")
+    # print("Example 1: Extracting content from a single URL...")
+    # try:
+    #     # Extract and wait for results
+    #     result = mineru_toolkit.extract_from_urls(
+    #         urls="https://arxiv.org/pdf/2311.10993.pdf",
+    #         enable_formula=True,
+    #         enable_table=True,
+    #         language="en",
+    #     )
+    #     print("\nExtraction completed successfully:")
+    #     print(f"Download URL: {result['full_zip_url']}\n")
 
-    except Exception as e:
-        print(f"Extraction failed: {e}\n")
+    # except Exception as e:
+    #     print(f"Extraction failed: {e}\n")
 
-    print("Example 2: Extracting content from multiple URLs...")
-    try:
-        urls = [
-            "https://arxiv.org/pdf/2311.10993.pdf",
-            "https://arxiv.org/pdf/2310.07298.pdf",
-        ]
+    # print("Example 2: Extracting content from multiple URLs...")
+    # try:
+    #     urls = [
+    #         "https://arxiv.org/pdf/2311.10993.pdf",
+    #         "https://arxiv.org/pdf/2310.07298.pdf",
+    #     ]
 
-        # Batch extract and wait for results
-        results = mineru_toolkit.batch_extract_from_urls(
-            urls=urls,
-            enable_formula=True,
-            enable_table=True,
-            language="en",
-        )
+    #     # Batch extract and wait for results
+    #     results = mineru_toolkit.extract_from_urls(
+    #         urls=urls,
+    #         enable_formula=True,
+    #         enable_table=True,
+    #         language="en",
+    #     )
 
-        print("\nBatch extraction completed successfully:")
-        for result in results['extract_result']:
-            print(f"\nDocument: {result['file_name']}")
-            print(f"Download URL: {result['full_zip_url']}")
+    #     print("\nBatch extraction completed successfully:")
+    #     for result in results['extract_result']:
+    #         print(f"\nDocument: {result['file_name']}")
+    #         print(f"Download URL: {result['full_zip_url']}")
 
-    except Exception as e:
-        print(f"Batch extraction failed: {e}\n")
+    # except Exception as e:
+    #     print(f"Batch extraction failed: {e}\n")
 
     print("\nExample 3: Using MinerU with ChatAgent...")
     try:

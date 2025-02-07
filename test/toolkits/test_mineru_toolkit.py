@@ -90,9 +90,9 @@ def test_initialization():
             MinerUToolkit()
 
 
-def test_extract_from_url(mineru_toolkit):
-    result = mineru_toolkit.extract_from_url(
-        url="https://test.com/doc.pdf",
+def test_extract_from_urls_single(mineru_toolkit):
+    result = mineru_toolkit.extract_from_urls(
+        urls="https://test.com/doc.pdf",
         enable_formula=True,
         enable_table=True,
         language="en",
@@ -107,9 +107,9 @@ def test_extract_from_url(mineru_toolkit):
     )
 
 
-def test_batch_extract_from_urls(mineru_toolkit):
+def test_extract_from_urls_batch(mineru_toolkit):
     urls = ["https://test.com/doc1.pdf", "https://test.com/doc2.pdf"]
-    result = mineru_toolkit.batch_extract_from_urls(urls=urls)
+    result = mineru_toolkit.extract_from_urls(urls=urls)
 
     assert result['status'] == 'completed'
     assert len(result['extract_result']) == 2
@@ -122,6 +122,30 @@ def test_batch_extract_from_urls(mineru_toolkit):
     mineru_toolkit.client.wait_for_completion.assert_called_once_with(
         'batch_123', is_batch=True, timeout=600
     )
+
+
+def test_extract_from_urls_no_wait(mineru_toolkit):
+    # Test single URL without waiting
+    single_result = mineru_toolkit.extract_from_urls(
+        urls="https://test.com/doc.pdf", wait=False
+    )
+    assert 'task_id' in single_result
+    # Verify extract_url was called but wait_for_completion was not
+    mineru_toolkit.client.extract_url.assert_called_once()
+    mineru_toolkit.client.wait_for_completion.assert_not_called()
+
+    # Reset mock counters
+    mineru_toolkit.client.reset_mock()
+
+    # Test multiple URLs without waiting
+    batch_result = mineru_toolkit.extract_from_urls(
+        urls=["https://test.com/doc1.pdf", "https://test.com/doc2.pdf"],
+        wait=False,
+    )
+    assert 'batch_id' in batch_result
+    # Verify batch_extract_urls was called but wait_for_completion was not
+    mineru_toolkit.client.batch_extract_urls.assert_called_once()
+    mineru_toolkit.client.wait_for_completion.assert_not_called()
 
 
 def test_get_task_status(mineru_toolkit):
