@@ -11,50 +11,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import re
 
 import pytest
 
-from camel.configs import GeminiConfig
-from camel.models import GeminiModel
+from camel.configs import MoonshotConfig
+from camel.models import MoonshotModel
 from camel.types import ModelType
-from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GEMINI_2_0_FLASH,
-        ModelType.GEMINI_1_5_FLASH,
-        ModelType.GEMINI_1_5_PRO,
-        ModelType.GEMINI_2_0_FLASH_THINKING,
-        ModelType.GEMINI_2_0_FLASH_LITE_PREVIEW,
-        ModelType.GEMINI_2_0_PRO_EXP,
+        ModelType.MOONSHOT_V1_8K,
+        ModelType.MOONSHOT_V1_32K,
+        ModelType.MOONSHOT_V1_128K,
     ],
 )
-def test_gemini_model(model_type: ModelType):
-    model_config_dict = GeminiConfig().as_dict()
-    model = GeminiModel(model_type, model_config_dict)
+def test_moonshot_model(model_type: ModelType):
+    model = MoonshotModel(model_type)
     assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, OpenAITokenCounter)
+    assert model.model_config_dict == MoonshotConfig().as_dict()
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_gemini_model_unexpected_argument():
-    model_type = ModelType.GEMINI_1_5_FLASH
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_moonshot_model_unexpected_argument():
+    model_type = ModelType.MOONSHOT_V1_8K
+    model_config_dict = {"model_path": "moonshot_v1"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Gemini model backend."
+                "input into Moonshot model backend."
             )
         ),
     ):
-        _ = GeminiModel(model_type, model_config_dict)
+        _ = MoonshotModel(model_type, model_config_dict)
