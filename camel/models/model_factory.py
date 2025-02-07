@@ -23,6 +23,7 @@ from camel.models.groq_model import GroqModel
 from camel.models.internlm_model import InternLMModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.mistral_model import MistralModel
+from camel.models.moonshot_model import MoonshotModel
 from camel.models.nvidia_model import NvidiaModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.openai_compatible_model import OpenAICompatibleModel
@@ -31,6 +32,7 @@ from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
 from camel.models.sglang_model import SGLangModel
+from camel.models.siliconflow_model import SiliconFlowModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
@@ -100,6 +102,8 @@ class ModelFactory:
             model_class = LiteLLMModel
         elif model_platform.is_nvidia:
             model_class = NvidiaModel
+        elif model_platform.is_siliconflow:
+            model_class = SiliconFlowModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
@@ -127,6 +131,8 @@ class ModelFactory:
             model_class = DeepSeekModel
         elif model_platform.is_internlm and model_type.is_internlm:
             model_class = InternLMModel
+        elif model_platform.is_moonshot and model_type.is_moonshot:
+            model_class = MoonshotModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
 

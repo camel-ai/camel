@@ -44,7 +44,6 @@ from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
-    GeminiTokenCounter,
     LiteLLMTokenCounter,
     MistralTokenCounter,
     OpenAITokenCounter,
@@ -71,7 +70,6 @@ __all__ = [
     "dependencies_required",
     "api_keys_required",
     "is_docker_running",
-    "GeminiTokenCounter",
     "MistralTokenCounter",
     "get_pydantic_major_version",
     "get_pydantic_object_schema",
