@@ -46,6 +46,8 @@ from .stripe_toolkit import StripeToolkit
 from .video_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
 from .mineru_toolkit import MinerUToolkit
+from .semantic_scholar_toolkit import SemanticScholarToolkit
+
 
 __all__ = [
     'BaseToolkit',
@@ -79,4 +81,5 @@ __all__ = [
     'OpenBBToolkit',
     'DappierToolkit',
     'MinerUToolkit',
+    'SemanticScholarToolkit',
 ]
