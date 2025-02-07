@@ -185,16 +185,16 @@ class MinerU:
         self,
         task_id: str,
         is_batch: bool = False,
-        timeout: int = 100,
-        check_interval: int = 5,
+        timeout: float = 100,
+        check_interval: float = 5,
     ) -> Dict:
         r"""Wait for task completion with timeout.
 
         Args:
             task_id (str): The ID of the task or batch.
             is_batch (bool): Whether this is a batch task. (default: False)
-            timeout (int): Maximum time to wait in seconds. (default: 300)
-            check_interval (int): Time between status checks in seconds.
+            timeout (float): Maximum time to wait in seconds. (default: 300)
+            check_interval (float): Time between status checks in seconds.
                 (default: 5)
 
         Returns:
