@@ -158,10 +158,12 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MATH_TURBO = "qwen-math-turbo"
     QWEN_CODER_TURBO = "qwen-coder-turbo"
     QWEN_2_5_CODER_32B = "qwen2.5-coder-32b-instruct"
+    QWEN_2_5_VL_72B = "qwen2.5-vl-72b-instruct"
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
     QWEN_QWQ_32B = "qwq-32b-preview"
+    QWEN_QVQ_72B = "qvq-72b-preview"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -235,6 +237,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
+                self.is_zhipuai,
             ]
         )
 
@@ -447,10 +450,12 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
             ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QVQ_72B,
         }
 
     @property
@@ -573,6 +578,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
+            ModelType.QWEN_QVQ_72B,
             ModelType.INTERNLM3_8B_INSTRUCT,
             ModelType.INTERNLM3_LATEST,
             ModelType.INTERNLM2_5_LATEST,
@@ -605,6 +611,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.QWEN_2_5_CODER_32B,
+            ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
