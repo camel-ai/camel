@@ -218,7 +218,11 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def support_native_structured_output(self) -> bool:
-        return self.is_openai
+        return any(
+            [
+                self.is_openai,
+            ]
+        )
 
     @property
     def support_native_tool_calling(self) -> bool:
