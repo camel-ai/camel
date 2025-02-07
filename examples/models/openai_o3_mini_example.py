@@ -40,7 +40,7 @@ response = camel_agent.step(user_msg)
 print(str(response.info['tool_calls'])[:1000])
 '''
 ===============================================================================
-[FunctionCallingRecord(func_name='search_duckduckgo', args={'query': 'what is 
+[ToolCallingRecord(func_name='search_duckduckgo', args={'query': 'what is 
 deepseek r1, and do a comparison between deepseek r1 and openai o3 mini', 
 'source': 'text', 'max_results': 5}, result=[{'result_id': 1, 'title': 
 'DeepSeek R1 vs OpenAI o1: Which One is Better? - Analytics Vidhya', 
