@@ -573,9 +573,8 @@ class ChatAgent(BaseAgent):
             self.model_backend.model_config_dict.get("response_format")
             and response_format
         ):
-            raise ValueError(
-                "The `response_format` parameter cannot be set both in "
-                "the model configuration and in the ChatAgent step."
+            logger.warning(
+                f"Overriding the response format with {response_format}."
             )
 
         self.original_model_dict = self.model_backend.model_config_dict
