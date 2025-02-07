@@ -28,7 +28,7 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 
 </div>
 
-<h4 align="left">
+<h4 align="center">
 
 [Community](https://github.com/camel-ai/camel#community) |
 [Installation](https://github.com/camel-ai/camel#installation) |
@@ -43,20 +43,15 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
 
 ## 🌟　When to Choose CAMEL-AI Over Other Frameworks?
 
-```bash
-##If you need multi-agent collaboration
-CAMEL-AI is purpose-built for creating and managing systems where multiple agents interact and collaborate.
+> **For multi-agent collaboration**: CAMEL-AI excels in managing interactive agent systems.
 
-##If you're conducting research
-CAMEL-AI research-first design makes it the go-to framework for academic and experimental projects.
+> **For research**: A research-first design makes CAMEL-AI ideal for academic and experimental projects.
 
-##If you require high customizability
-CAMEL-AI offers unparalleled flexibility in defining agent behaviors and workflows.
+> **For customizability**: CAMEL-AI offers unmatched flexibility in agent behaviors and workflows.
 
-##If you're tackling complex, decomposable tasks
-CAMEL-AI task decomposition capabilities make it ideal for breaking down and solving intricate problems.
-```
+> **For complex tasks**: Its task decomposition capabilities simplify intricate problem-solving.
 
+</br>
 
 | Feature | CAMEL-AI | LangChain | AutoGen | Crew-AI | AutoGPT |
 |---------|----------|-----------|----------|----------|----------|
@@ -68,11 +63,9 @@ CAMEL-AI task decomposition capabilities make it ideal for breaking down and sol
 
 
 
-##  Quick Start
+## 🚀 Quick Start
 
-### 1. Install CAMEL
-
-#### 1.1 Install from PyPI
+### 1. Install CAMEL from PyPI
 To install the base CAMEL library:
 ```bash
 pip install camel-ai
@@ -84,7 +77,7 @@ To install with all dependencies:
 pip install 'camel-ai[all]'  # Replace with other options like `rag`, `document_tools`
 ```
 
-#### 1.2 Install from Source with Poetry
+### 2. Install from Source with Poetry
 ```bash
 # Clone github repo
 git clone https://github.com/camel-ai/camel.git
@@ -112,7 +105,7 @@ poetry install -E all  # (Optional)
 exit
 ```
 
-### 2. Explore Different Types of Agents
+### 3. Explore Different Types of Agents
 Explore different types of agents, their roles, and their applications.
 
 - **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
@@ -131,42 +124,44 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 ## 💡 What Can You Build With CAMEL?
 
 ### 1. Data Generation
-description of datageneration
+
 - function-calling
+
 - CoT Data
+
 - Distillation reason
-- cases & links cooklinks
+
+> Read more about data generation cookbooks
 
 ### 2. Task Automation
 
 - RolePlaying
 
-RolePlaying was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. 
-
-https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html
+RolePlaying was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. [read more](https://docs.camel-ai.org/cookbooks/applications/dynamic_travel_planner.html)
 
 - Workforce
 
-Workforce is a system where multiple agents work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve tasks.
-
-https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html
+Workforce is a system where multiple agents work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve tasks.[read more](https://docs.camel-ai.org/cookbooks/multi_agent_society/workforce_judge_committee.html)
 
 - RAG Pipeline
 
-Graph RAG utilize LLM to extract and structure knowledge from a given content source, and store this information in graph database. Subsequently, we can leverage a hybrid approach, combining vector retrieval and knowledge graph retrieval, to query and explore the stored knowledge.
-
-https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html
+Graph RAG utilize LLM to extract and structure knowledge from a given content source, and store this information in graph database. Subsequently, we can leverage a hybrid approach, combining vector retrieval and knowledge graph retrieval, to query and explore the stored knowledge.[read more](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_graph_rag.html)
 
 ### 3. World Simulation
 
 - OASIS
 
+🏝️ OASIS is a scalable, open-source social media simulator that integrates large language models with rule-based agents to realistically mimic the behavior of up to one million users on platforms like Twitter and Reddit. It's designed to facilitate the study of complex social phenomena such as information spread, group polarization, and herd behavior, offering a versatile tool for exploring diverse social dynamics and user interactions in digital environments. [read more](https://github.com/camel-ai/oasis)
+
 <br/>
 
 ## TechStack
-[Image]
 
-### 🔑 Key Modules
+<div align="center">
+  <img src="docs/images/techstack.png" alt="TechStack">
+</div>
+
+### Key Modules
 Core components and utilities to build, operate, and enhance CAMEL-AI agents and societies.
 
 | Module | Description |
@@ -183,6 +178,30 @@ Core components and utilities to build, operate, and enhance CAMEL-AI agents and
 | **[Embeddings](https://docs.camel-ai.org/key_modules/embeddings.html)** | Embedding models for RAG. |
 | **[Retrievers](https://docs.camel-ai.org/key_modules/retrievers.html)** | Retrieval methods for knowledge access. |
 ---
+
+### Utilize Various LLMs as Backends
+
+For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models.html#).
+
+> **Data (Hosted on Hugging Face)**
+
+| Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |
+|----------------|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| **AI Society** | [Chat format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_chat.tar.gz) | [Instruction format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_instructions.json) | [Chat format (translated)](https://huggingface.co/datasets/camel-ai/ai_society_translated) |
+| **Code**       | [Chat format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_chat.tar.gz)             | [Instruction format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_instructions.json)             | x                                                                                          |
+| **Math**       | [Chat format](https://huggingface.co/datasets/camel-ai/math)                                        | x                                                                                                                | x                                                                                          |
+| **Physics**    | [Chat format](https://huggingface.co/datasets/camel-ai/physics)                                     | x                                                                                                                | x                                                                                          |
+| **Chemistry**  | [Chat format](https://huggingface.co/datasets/camel-ai/chemistry)                                   | x                                                                                                                | x                                                                                          |
+| **Biology**    | [Chat format](https://huggingface.co/datasets/camel-ai/biology)                                     | x                                                                                                                | x                                                                                          |
+
+### Visualizations of Instructions and Tasks
+
+| Dataset          | Instructions                                                                                                         | Tasks                                                                                                         |
+|------------------|----------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| **AI Society**   | [Instructions](https://atlas.nomic.ai/map/3a559a06-87d0-4476-a879-962656242452/db961915-b254-48e8-8e5c-917f827b74c6) | [Tasks](https://atlas.nomic.ai/map/cb96f41b-a6fd-4fe4-ac40-08e101714483/ae06156c-a572-46e9-8345-ebe18586d02b) |
+| **Code**         | [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457) | [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd) |
+| **Misalignment** | [Instructions](https://atlas.nomic.ai/map/5c491035-a26e-4a05-9593-82ffb2c3ab40/2bd98896-894e-4807-9ed8-a203ccb14d5e) | [Tasks](https://atlas.nomic.ai/map/abc357dd-9c04-4913-9541-63e259d7ac1f/825139a4-af66-427c-9d0e-f36b5492ab3f) |
+
 
 ## 📦 Installation
 
@@ -358,7 +377,7 @@ python examples/vision/image_crafting.py
 For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
 
 
-## 📖 Cookbooks (Usecase)
+## 📖 Cookbooks (Usecases)
 Practical guides and tutorials for implementing specific functionalities in CAMEL-AI agents and societies.
 
 ### 1. Basic Concepts
@@ -400,27 +419,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[3 Ways to Ingest Data from Websites with Firecrawl](https://docs.camel-ai.org/cookbooks/data_processing/ingest_data_from_websites_with_Firecrawl.html)** | Explore three methods for extracting and processing data from websites using Firecrawl. |
 | **[Create AI Agents that work with your PDFs](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html)** | Learn how to create AI agents that work with your PDFs using Chunkr and Mistral AI. |
 
-## 🔀 Utilize Various LLMs as Backends
 
-For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models.html#).
-
-## 🔗 Data (Hosted on Hugging Face)
-| Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |
-|----------------|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| **AI Society** | [Chat format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_chat.tar.gz) | [Instruction format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_instructions.json) | [Chat format (translated)](https://huggingface.co/datasets/camel-ai/ai_society_translated) |
-| **Code**       | [Chat format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_chat.tar.gz)             | [Instruction format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_instructions.json)             | x                                                                                          |
-| **Math**       | [Chat format](https://huggingface.co/datasets/camel-ai/math)                                        | x                                                                                                                | x                                                                                          |
-| **Physics**    | [Chat format](https://huggingface.co/datasets/camel-ai/physics)                                     | x                                                                                                                | x                                                                                          |
-| **Chemistry**  | [Chat format](https://huggingface.co/datasets/camel-ai/chemistry)                                   | x                                                                                                                | x                                                                                          |
-| **Biology**    | [Chat format](https://huggingface.co/datasets/camel-ai/biology)                                     | x                                                                                                                | x                                                                                          |
-
-## 📊 Visualizations of Instructions and Tasks
-
-| Dataset          | Instructions                                                                                                         | Tasks                                                                                                         |
-|------------------|----------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| **AI Society**   | [Instructions](https://atlas.nomic.ai/map/3a559a06-87d0-4476-a879-962656242452/db961915-b254-48e8-8e5c-917f827b74c6) | [Tasks](https://atlas.nomic.ai/map/cb96f41b-a6fd-4fe4-ac40-08e101714483/ae06156c-a572-46e9-8345-ebe18586d02b) |
-| **Code**         | [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457) | [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd) |
-| **Misalignment** | [Instructions](https://atlas.nomic.ai/map/5c491035-a26e-4a05-9593-82ffb2c3ab40/2bd98896-894e-4807-9ed8-a203ccb14d5e) | [Tasks](https://atlas.nomic.ai/map/abc357dd-9c04-4913-9541-63e259d7ac1f/825139a4-af66-427c-9d0e-f36b5492ab3f) |
 
 
 ## 🔬 Research
@@ -482,6 +481,14 @@ We appreciate your interest in contributing to our open-source initiative. We pr
 ## 📞 Community & Contact
 For more information please contact camel-ai@eigent.ai
 
+- **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
+
+- **Discord:** Get real-time support, chat with the community, and stay updated. [Join us](https://discord.camel-ai.org/)
+
+- **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
+
+- **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
+
 
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
@@ -504,3 +511,4 @@ For more information please contact camel-ai@eigent.ai
 [twitter-image]: https://img.shields.io/twitter/follow/CamelAIOrg?style=social&color=brightgreen&logo=twitter
 [reddit-url]: https://www.reddit.com/r/CamelAI/
 [reddit-image]: https://img.shields.io/reddit/subreddit-subscribers/CamelAI?style=plastic&logo=reddit&label=r%2FCAMEL&labelColor=white
+[ambassador-url]: https://www.camel-ai.org/community
