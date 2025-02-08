@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-from typing import Any, Dict, List
+from typing import List
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -110,7 +110,8 @@ class StagehandPrompts:
 
         So always wrap arrays in an object at the top level of your 'schema'.
         
-        - If needed use import {{ zodResponseFormat }} from "openai/helpers/zod";
+        - If needed use import {{ zodResponseFormat }} 
+        from "openai/helpers/zod";
 
           const schema = z.object({{
               userId: z.string(),
@@ -245,10 +246,10 @@ class StagehandPrompts:
            or a number never a Object.
            The link should be an absolute url extracted from the url bar. 
            
-          - Convert the value to a string or array before calling the includes() 
-          method on it.
-          - Retrieve the current date and time programmatically whenever a question 
-          pertains to 'today' or involves time-related inquiries.
+          - Convert the value to a string or array before calling the 
+          includes() method on it.
+          - Retrieve the current date and time programmatically whenever a 
+          question pertains to 'today' or involves time-related inquiries.
         
         const updated_state = {{
         status: "success",
@@ -328,7 +329,7 @@ class WebToolkit(BaseToolkit):
             self.model,
         )
 
-    def stagehand_extract_text_images(self, url: str) -> Dict[str, Any]:
+    def stagehand_extract_text_images(self, url: str) -> str:
         r"""
         Extracts all visible text and image URLs from a webpage using Stagehand
         if the correct URL to a webpage is known.
@@ -406,7 +407,7 @@ class WebToolkit(BaseToolkit):
                 }
             )
 
-    def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
+    def stagehand_tool(self, task_prompt: str) -> str:
         r"""Single entry point that:
          1) Generates Stagehand JavaScript code to interact with the web
          2) Executes it under Node.js
@@ -430,13 +431,15 @@ class WebToolkit(BaseToolkit):
 
         # Attempt to parse JSON
         try:
-            return json.loads(result_str)
+            return result_str
         except json.JSONDecodeError:
-            return {
-                "status": "error",
-                "message": f"""No valid JSON output. 
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": f"""No valid JSON output. 
                 Last script line:\n{result_str}""",
-            }
+                }
+            )
 
     #
     # Internals
