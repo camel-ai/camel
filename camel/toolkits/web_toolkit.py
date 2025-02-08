@@ -241,11 +241,14 @@ class StagehandPrompts:
         variable called 'updated_state'. For example:
 
         - IMPORTANT: 
-           All of the values of the 'updated_state' should always be a string or a number never a Object.
+           All of the values of the 'updated_state' should always be a string 
+           or a number never a Object.
            The link should be an absolute url extracted from the url bar. 
            
-          - Convert the value to a string or array before calling the includes() method on it.
-          - Retrieve the current date and time programmatically whenever a question pertains to 'today' or involves time-related inquiries.
+          - Convert the value to a string or array before calling the includes() 
+          method on it.
+          - Retrieve the current date and time programmatically whenever a question 
+          pertains to 'today' or involves time-related inquiries.
         
         const updated_state = {{
         status: "success",
@@ -327,7 +330,8 @@ class WebToolkit(BaseToolkit):
 
     def stagehand_extract_text_images(self, url: str) -> Dict[str, Any]:
         r"""
-        Extracts all visible text and image URLs from a webpage using Stagehand if the correct URL to a webpage is known.
+        Extracts all visible text and image URLs from a webpage using Stagehand
+        if the correct URL to a webpage is known.
 
         Args:
             url (str): The webpage URL to extract text and images from.
@@ -383,7 +387,9 @@ class WebToolkit(BaseToolkit):
           """
 
         # Run Stagehand script
-        node_process = SubprocessInterpreter(require_confirm=False, print_stdout=True, print_stderr=True)
+        node_process = SubprocessInterpreter(
+            require_confirm=False, print_stdout=True, print_stderr=True
+        )
         exec_result = node_process.run(js_code, "node")
 
         # Attempt to parse final JSON from logs:
@@ -415,7 +421,7 @@ class WebToolkit(BaseToolkit):
         """
 
         print("[DEBUG]: Calling the web interaction tool")
-        
+
         # Generate Stagehand code
         js_code = self._generate_stagehand_code(task_prompt)
 
@@ -556,5 +562,7 @@ const z = require('zod');
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.stagehand_tool),
-                FunctionTool(self.stagehand_extract_text_images)]
+        return [
+            FunctionTool(self.stagehand_tool),
+            FunctionTool(self.stagehand_extract_text_images),
+        ]
