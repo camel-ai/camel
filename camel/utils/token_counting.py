@@ -267,44 +267,6 @@ class AnthropicTokenCounter(BaseTokenCounter):
         ).input_tokens
 
 
-class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: UnifiedModelType):
-        r"""Constructor for the token counter for Gemini models.
-
-        Args:
-            model_type (UnifiedModelType): Model type for which tokens will be
-                counted.
-        """
-        import google.generativeai as genai
-
-        self._client = genai.GenerativeModel(model_type)
-
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count number of tokens in the provided message list using
-        loaded tokenizer specific for this type of model.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: Number of tokens in the messages.
-        """
-        converted_messages = []
-        for message in messages:
-            role = message.get('role')
-            if role == 'assistant':
-                role_to_gemini = 'model'
-            else:
-                role_to_gemini = 'user'
-            converted_message = {
-                "role": role_to_gemini,
-                "parts": message.get("content"),
-            }
-            converted_messages.append(converted_message)
-        return self._client.count_tokens(converted_messages).total_tokens
-
-
 class LiteLLMTokenCounter(BaseTokenCounter):
     def __init__(self, model_type: UnifiedModelType):
         r"""Constructor for the token counter for LiteLLM models.

@@ -11,17 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import OpenAPIToolkit
+from camel.toolkits import SymPyToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = "You are a helpful assistant"
+sys_msg = (
+    "You are a helpful math assistant that can perform symbolic computations"
+)
 
 # Set model config
-tools = OpenAPIToolkit().get_tools()
+tools = SymPyToolkit().get_tools()
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
 ).as_dict()
@@ -41,22 +44,15 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Define a user message
-usr_msg = "help me to select a basketball in klarna."
+usr_msg = """Simplify the expression: x^2 + 2*x + 1"""
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
-"""
+'''
 ===============================================================================
-[ToolCallingRecord(func_name='klarna_productsUsingGET', args={
-'q_in_query': 'basketball'}, result={'products': [{'name': 'Wilson Evolution'
-, 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/3203801266/Basketball
-/Wilson-Evolution/?utm_source=openai&ref-site=openai_plugin', 'price':
-'$65.00', 'attributes': ['Color:Brown,Blue,Black,Orange', 'Ball Size:6,7',
-'Area of Use:Indoors,Outdoors', 'Material:Leather,Rubber']}, {'name':
-'Wilson NBA Authentic', 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/
-3200358202/Basketball/Wilson-NBA-Authentic/?utm_source=openai&ref-site=openai
-_plugin', 'price': '$24.99', 'attributes': ['Color:Orange', 'Ball Size:6,7',
-'Area of Use: Indoors,Outdoors', 'Material:Leather']},]})]
+[FunctionCallingRecord(func_name='simplify_expression', args={'expression': 
+'x^2 + 2*x + 1'}, result='{"status": "success", "result": "x**2 + 2*x + 1"}', 
+tool_call_id='call_USLSZHjQwLHHCa8oLiNsm2AH')]
 ===============================================================================
-"""
+'''
