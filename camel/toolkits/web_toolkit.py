@@ -37,7 +37,7 @@ class StagehandPrompts:
     def __init__(self, high_level_task: str):
         self.high_level_task = high_level_task
         self.stagehand_prompt = TextPrompt(
-            f"""You are an assistant that helps in writing a 
+            f"""You an assistant that helps in writing a 
     JavaScript snippet for a web automation task using Stagehand. that acts 
     as a low level plan for getting the information for the high 
     level task of {high_level_task}The snippet must only contain 
@@ -234,7 +234,7 @@ class StagehandPrompts:
         }}
         }}
 
-        The calling agent will provide you feedback on what to inlcude 
+        The the calling agent will provide you feedback on what to inlcude 
         in the 'updated_state'. 
         Always define this in the code before ending it. 
         At the end of your snippet, always do the final extraction to fill 
