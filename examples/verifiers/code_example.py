@@ -79,8 +79,43 @@ def process_array():
     )
     print("Result:", result[0]["verification_result"])
 
-    # Example 4: Syntax Error
-    print("\nExample 4: Syntax Error")
+    # Example 4: Multi-threaded verification
+    print("\nExample 4: Multi-threaded verification")
+    verifier = CodeVerifier(interpreter="subprocess")
+    result = verifier.verify(
+        {
+            "code": [
+                """
+            def square(x): 
+                return x * x
+            """,
+                """
+            def cube(x): 
+                return x * x * x
+            """,
+                """
+            def double(x): 
+                return x + x
+            """,
+                """
+            def half(x): 
+                return x / 2
+            """,
+            ],
+            "language": ["python"] * 4,
+            "test_cases": [
+                [{"inputs": {"x": 4}, "expected": {"square(x)": 16}}],
+                [{"inputs": {"x": 3}, "expected": {"cube(x)": 27}}],
+                [{"inputs": {"x": 5}, "expected": {"double(x)": 10}}],
+                [{"inputs": {"x": 8}, "expected": {"half(x)": 4.0}}],
+            ],
+        }
+    )
+    for i, result in enumerate(results):
+        print(f"\nFunction {i+1} result:", result["verification_result"])
+
+    # Example 5: Syntax Error
+    print("\nExample 5: Syntax Error")
     result = verifier.verify(
         {
             "code": ["def broken_function(x: return x"],  # Syntax error
@@ -98,14 +133,14 @@ if __name__ == "__main__":
 Example Output:
 
 Example 1: Basic Function Test
-Map: 100%|██████████| 1/1 [00:00<00:00, 14.90 examples/s]
+Verifying code: 100%|██████████| 1/1 [00:00<00:00, 16.84 examples/s]
 {
     'details': {
         'test_count': 2,
         'tests': [
             {
                 'output': 'Test passed: 3\n',
-                'status': 'passed', 
+                'status': 'passed',
                 'test_case': 1
             },
             {
@@ -121,7 +156,7 @@ Map: 100%|██████████| 1/1 [00:00<00:00, 14.90 examples/s]
 }
 
 Example 2: Multiple Solutions
-Map: 100%|██████████| 2/2 [00:00<00:00, 25.12 examples/s]
+Verifying code (num_proc=2):100%|██████████| 2/2 [00:00<00:00,15.64 examples/s]
 Solution 1 result: {
     'details': {
         'test_count': 1,
@@ -154,7 +189,7 @@ Solution 2 result: {
 }
 
 Example 3: External Imports
-Map: 100%|██████████| 1/1 [00:00<00:00,  3.33 examples/s]
+Verifying code: 100%|██████████| 1/1 [00:00<00:00,  9.29 examples/s]
 Result: {
     'details': {
         'test_count': 1,
@@ -171,8 +206,43 @@ Result: {
     'test_results': [True]
 }
 
-Example 4: Syntax Error
-Map: 100%|██████████| 1/1 [00:00<00:00, 661.88 examples/s]
+Example 4: Multi-threaded verification
+Verifying code(num_proc=4):100%|██████████| 4/4 [00:00<00:00, 35.86 examples/s]
+
+Function 1 result: {
+    'details': {
+        'test_count': 1,
+        'tests': [
+            {
+                'output': 'Test passed: 120\n',
+                'status': 'passed',
+                'test_case': 1
+            }
+        ]
+    },
+    'error': None,
+    'passed': True,
+    'test_results': [True]
+}
+
+Function 2 result: {
+    'details': {
+        'test_count': 1,
+        'tests': [
+            {
+                'output': 'Test passed: 120\n',
+                'status': 'passed',
+                'test_case': 1
+            }
+        ]
+    },
+    'error': None,
+    'passed': True,
+    'test_results': [True]
+}
+
+Example 5: Syntax Error
+Verifying code: 100%|██████████| 1/1 [00:00<00:00, 504.24 examples/s]
 Result: {
     'details': {
         'line': 1,

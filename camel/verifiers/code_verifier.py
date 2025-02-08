@@ -121,7 +121,12 @@ class CodeVerifier:
             except Exception as e:
                 return self._handle_execution_error(example, e)
 
-        return data.map(verify_single)
+        # For Parallelization
+        num_proc = min(4, len(data))
+
+        return data.map(
+            verify_single, num_proc=num_proc, desc="Verifying code"
+        )
 
     def _prepare_test_code(
         self,
