@@ -37,7 +37,7 @@ class StagehandPrompts:
     def __init__(self, high_level_task: str):
         self.high_level_task = high_level_task
         self.stagehand_prompt = TextPrompt(
-            f"""You an assistant that helps in writing a 
+            f"""You are an assistant that helps in writing a 
     JavaScript snippet for a web automation task using Stagehand. that acts 
     as a low level plan for getting the information for the high 
     level task of {high_level_task}The snippet must only contain 
@@ -234,7 +234,7 @@ class StagehandPrompts:
         }}
         }}
 
-        The the calling agent will provide you feedback on what to inlcude 
+        The calling agent will provide you feedback on what to inlcude 
         in the 'updated_state'. 
         Always define this in the code before ending it. 
         At the end of your snippet, always do the final extraction to fill 
@@ -305,11 +305,13 @@ class WebToolkit(BaseToolkit):
         model_type=ModelType.DEFAULT,
         model_config_dict=_DEFAULT_CHATGPT_CONFIG_DICT,
         headless_mode=True,
+        debug=False,
     ):
         self.model_platform = model_platform
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self.headless_mode = headless_mode
+        self.debug = debug
 
         self.model = ModelFactory.create(
             model_platform=self.model_platform,
@@ -341,7 +343,9 @@ class WebToolkit(BaseToolkit):
             Dict[str, Any]: Extracted text and image URLs in JSON format.
         """
 
-        print("[DEBUG]: Calling the text and image extraction tool")
+        if self.debug:
+            print("[DEBUG]: Calling the web interaction tool")
+
         # JavaScript code to extract text and images using Stagehand
         js_code = f"""
           const {{ Stagehand }} = require('@browserbasehq/stagehand');
@@ -374,7 +378,8 @@ class WebToolkit(BaseToolkit):
                       link: "{url}"
                   }};
 
-                  console.log(JSON.stringify(extractedData, null, 2));
+                  console.log("Final updated_state: ", 
+                  JSON.stringify(extractedData, null, 2));
 
               }} catch (error) {{
                   console.error("Final updated_state: ", JSON.stringify({{
@@ -389,15 +394,21 @@ class WebToolkit(BaseToolkit):
 
         # Run Stagehand script
         node_process = SubprocessInterpreter(
-            require_confirm=False, print_stdout=True, print_stderr=True
+            require_confirm=False, print_stdout=False, print_stderr=False
         )
         exec_result = node_process.run(js_code, "node")
 
         # Attempt to parse final JSON from logs:
-        final_json = self._parse_json_from_output(exec_result)
-        if final_json is not None:
-            # Return as a JSON string for the caller to parse
-            return json.dumps(final_json)
+        result_str = self._parse_json_from_output(exec_result)
+
+        if self.debug:
+            print(f"[DEBUG]: Generated code: {js_code}")
+
+            print(f"[DEBUG]: result_str: {result_str}")
+
+        if result_str is not None:
+            # Return as a JSON string to the caller
+            return json.dumps(result_str)
         else:
             # If no valid JSON found in logs, return an error as JSON
             return json.dumps(
@@ -420,16 +431,21 @@ class WebToolkit(BaseToolkit):
             Dict[str, Any]: JSON result from the Stagehand script,
             or an error.
         """
-
-        print("[DEBUG]: Calling the web interaction tool")
+        if self.debug:
+            print("[DEBUG]: Calling the web interaction tool")
 
         # Generate Stagehand code
         js_code = self._generate_stagehand_code(task_prompt)
 
-        # Run code in Node, capture JSON
+        # Run code in Node, capture JSON in string format
         result_str = self._run_stagehand_script_in_node(js_code)
 
-        # Attempt to parse JSON
+        if self.debug:
+            print(f"[DEBUG]: Generated code: {js_code}")
+
+            print(f"[DEBUG]: result_str: {result_str}")
+
+        # Return JSON in string format
         try:
             return result_str
         except json.JSONDecodeError:
@@ -479,33 +495,33 @@ class WebToolkit(BaseToolkit):
 
         # Wrap the user snippet with Stagehand environment
         wrapper_code = f"""
-const {{ Stagehand }} = require('@browserbasehq/stagehand');
-const z = require('zod');
+        const {{ Stagehand }} = require('@browserbasehq/stagehand');
+        const z = require('zod');
 
-(async () => {{
-    const stagehand = new Stagehand({{ headless: {"true" if 
-    self.headless_mode else "false"} }});
-    await stagehand.init();
-    const page = stagehand.page;
-    console.log("Starting Stagehand automation...");
-    try {{
-        // Insert the generated snippet
-        {js_code}
-    }} catch (error) {{
-        console.error("Final updated_state: ", JSON.stringify({{
-            status: "failure",
-            error: error.message
-        }}));
-    }} finally {{
-        await stagehand.close();
-        console.log("Stagehand session closed.");
-    }}
-}})();
-"""
+        (async () => {{
+            const stagehand = new Stagehand({{ headless: {"true" if 
+            self.headless_mode else "false"} }});
+            await stagehand.init();
+            const page = stagehand.page;
+            console.log("Starting Stagehand automation...");
+            try {{
+                // Insert the generated snippet
+                {js_code}
+            }} catch (error) {{
+                console.error("Final updated_state: ", JSON.stringify({{
+                    status: "failure",
+                    error: error.message
+                }}));
+            }} finally {{
+                await stagehand.close();
+                console.log("Stagehand session closed.");
+            }}
+        }})();
+        """
 
         # Run the script in Node.js
         node_process = SubprocessInterpreter(
-            require_confirm=False, print_stdout=True, print_stderr=True
+            require_confirm=False, print_stdout=False, print_stderr=False
         )
 
         exec_result = node_process.run(wrapper_code, "node")
@@ -536,7 +552,7 @@ const z = require('zod');
         Returns:
             str: The extracted JSON snippet or an empty string if not found.
         """
-        start_marker = "updated_state: {"
+        start_marker = "updated_state:"
         start_index = text.find(start_marker)
         if start_index == -1:
             return ""
