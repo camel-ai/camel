@@ -109,6 +109,15 @@ class StagehandPrompts:
         }}))
 
         So always wrap arrays in an object at the top level of your 'schema'.
+        
+        - If needed use import {{ zodResponseFormat }} from "openai/helpers/zod";
+
+          const schema = z.object({{
+              userId: z.string(),
+          }});
+
+          const format = zodResponseFormat(schema);
+
     - Do NOT combine multiple actions into one instruction—each action 
       must be atomic.
     - Keep the script concise, and use no more than one action per line.
@@ -197,7 +206,7 @@ class StagehandPrompts:
         For extractions, use one extraction call for each chunk.
 
     Remember:
-
+    - Always use absolute URLs for links in page.goto().
     - Use observe() to see potential clickable items or possible actions.
     - Use extract() with a carefully chosen instruction and schema 
       to gather data. 
@@ -231,6 +240,13 @@ class StagehandPrompts:
         these fields in a 
         variable called 'updated_state'. For example:
 
+        - IMPORTANT: 
+           All of the values of the 'updated_state' should always be a string or a number never a Object.
+           The link should be an absolute url extracted from the url bar. 
+           
+          - Convert the value to a string or array before calling the includes() method on it.
+          - Retrieve the current date and time programmatically whenever a question pertains to 'today' or involves time-related inquiries.
+        
         const updated_state = {{
         status: "success",
         updated_state: {{
@@ -309,6 +325,81 @@ class WebToolkit(BaseToolkit):
             self.model,
         )
 
+    def stagehand_extract_text_images(self, url: str) -> Dict[str, Any]:
+        r"""
+        Extracts all visible text and image URLs from a webpage using Stagehand if the correct URL to a webpage is known.
+
+        Args:
+            url (str): The webpage URL to extract text and images from.
+
+        Returns:
+            Dict[str, Any]: Extracted text and image URLs in JSON format.
+        """
+
+        print("[DEBUG]: Calling the text and image extraction tool")
+        # JavaScript code to extract text and images using Stagehand
+        js_code = f"""
+          const {{ Stagehand }} = require('@browserbasehq/stagehand');
+          const z = require('zod');
+
+          (async () => {{
+              const stagehand = new Stagehand({{ headless: false }});
+              await stagehand.init();
+              const page = stagehand.page;
+              try {{
+                  await page.goto("{url}");
+
+                  // Extract visible text
+                  const textData = await page.extract({{
+                      instruction: "Extract all visible text on the page.",
+                      schema: z.object({{ text: z.string() }})
+                  }});
+
+                  // Extract image URLs
+                  const imageData = await page.extract({{
+                      instruction: "Extract all image URLs from the page.",
+                      schema: z.object({{ images: z.array(z.string()) }})
+                  }});
+
+                  // Create final JSON object
+                  const extractedData = {{
+                      status: "success",
+                      text: textData.text,
+                      images: imageData.images,
+                      link: "{url}"
+                  }};
+
+                  console.log(JSON.stringify(extractedData, null, 2));
+
+              }} catch (error) {{
+                  console.error("Final updated_state: ", JSON.stringify({{
+                      status: "failure",
+                      error: error.message
+                  }}));
+              }} finally {{
+                  await stagehand.close();
+              }}
+          }})();
+          """
+
+        # Run Stagehand script
+        node_process = SubprocessInterpreter(require_confirm=False, print_stdout=True, print_stderr=True)
+        exec_result = node_process.run(js_code, "node")
+
+        # Attempt to parse final JSON from logs:
+        final_json = self._parse_json_from_output(exec_result)
+        if final_json is not None:
+            # Return as a JSON string for the caller to parse
+            return json.dumps(final_json)
+        else:
+            # If no valid JSON found in logs, return an error as JSON
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "No valid JSON found in node logs.",
+                }
+            )
+
     def stagehand_tool(self, task_prompt: str) -> Dict[str, Any]:
         r"""Single entry point that:
          1) Generates Stagehand JavaScript code to interact with the web
@@ -323,6 +414,8 @@ class WebToolkit(BaseToolkit):
             or an error.
         """
 
+        print("[DEBUG]: Calling the web interaction tool")
+        
         # Generate Stagehand code
         js_code = self._generate_stagehand_code(task_prompt)
 
@@ -390,7 +483,7 @@ const z = require('zod');
         // Insert the generated snippet
         {js_code}
     }} catch (error) {{
-        console.error(JSON.stringify({{
+        console.error("Final updated_state: ", JSON.stringify({{
             status: "failure",
             error: error.message
         }}));
@@ -403,7 +496,7 @@ const z = require('zod');
 
         # Run the script in Node.js
         node_process = SubprocessInterpreter(
-            require_confirm=True, print_stdout=True, print_stderr=True
+            require_confirm=False, print_stdout=True, print_stderr=True
         )
 
         exec_result = node_process.run(wrapper_code, "node")
@@ -463,4 +556,5 @@ const z = require('zod');
             List[FunctionTool]: A list of FunctionTool objects
                 representing the functions in the toolkit.
         """
-        return [FunctionTool(self.stagehand_tool)]
+        return [FunctionTool(self.stagehand_tool),
+                FunctionTool(self.stagehand_extract_text_images)]
