@@ -18,7 +18,6 @@ from datasets import Dataset
 
 from camel.interpreters import (
     BaseInterpreter,
-    SubprocessInterpreter,
 )
 
 
@@ -33,7 +32,7 @@ class CodeVerifier:
 
     def __init__(
         self,
-        interpreter: str = "subprocess",
+        interpreter: BaseInterpreter,
         require_confirmation: bool = False,
     ) -> None:
         r"""Initialize the code verifier.
@@ -44,34 +43,7 @@ class CodeVerifier:
             require_confirmation (bool, optional): Whether to require user
                 confirmation before execution. (default: :obj:`False`)
         """
-        self.interpreter = self._get_interpreter(
-            interpreter, require_confirmation
-        )
-
-    def _get_interpreter(
-        self,
-        interpreter_type: str,
-        require_confirmation: bool,
-    ) -> BaseInterpreter:
-        r"""Initialize appropriate interpreter based on type.
-
-        Args:
-            interpreter_type (str): Type of interpreter to use
-            require_confirmation (bool): Whether to require confirmation
-
-        Returns:
-            BaseInterpreter: Configured interpreter instance
-
-        Raises:
-            ValueError: If interpreter type is not supported
-        """
-        if interpreter_type == "subprocess":
-            return SubprocessInterpreter(
-                require_confirm=require_confirmation,
-                print_stdout=False,
-                print_stderr=True,
-            )
-        raise ValueError(f"Unsupported interpreter type: {interpreter_type}")
+        self.interpreter = interpreter
 
     def verify(
         self,

@@ -12,11 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+from camel.interpreters import SubprocessInterpreter
 from camel.verifiers import CodeVerifier
 
 
 def main():
-    verifier = CodeVerifier(interpreter="subprocess")
+    interpreter = SubprocessInterpreter(require_confirm=False)
+    verifier = CodeVerifier(interpreter=interpreter)
 
     # Example 1: Matrix Operations
     matrix_test = {

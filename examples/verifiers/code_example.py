@@ -16,12 +16,14 @@ from pprint import pprint
 
 from datasets import Dataset
 
+from camel.interpreters import SubprocessInterpreter
 from camel.verifiers import CodeVerifier
 
 
 def main():
     print("\nExample 1: Basic Function Test")
-    verifier = CodeVerifier(require_confirmation=False)
+    interpreter = SubprocessInterpreter(require_confirm=False)
+    verifier = CodeVerifier(interpreter=interpreter)
     result = verifier.verify(
         {
             "code": ["def add(a, b): return a + b"],
@@ -60,7 +62,8 @@ def main():
 
     # Example 3: Using subprocess interpreter
     print("\nExample 3: External Imports")
-    verifier = CodeVerifier(interpreter="subprocess")
+    interpreter = SubprocessInterpreter(require_confirm=False)
+    verifier = CodeVerifier(interpreter=interpreter)
     result = verifier.verify(
         {
             "code": [
@@ -81,7 +84,8 @@ def process_array():
 
     # Example 4: Multi-threaded verification
     print("\nExample 4: Multi-threaded verification")
-    verifier = CodeVerifier(interpreter="subprocess")
+    interpreter = SubprocessInterpreter()
+    verifier = CodeVerifier(interpreter=interpreter)
     result = verifier.verify(
         {
             "code": [
