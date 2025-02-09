@@ -533,6 +533,7 @@ module = [
     "tree-sitter-python",
     "tree-sitter",
     "pandasai",
+    "sklearn.metrics.pairwise",
     "sympy",
 ]
 ignore_missing_imports = true
