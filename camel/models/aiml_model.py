@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import SILICONFLOW_API_PARAMS, SiliconFlowConfig
+from camel.configs import AIML_API_PARAMS, AIMLConfig
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
@@ -31,20 +31,20 @@ from camel.utils import (
 )
 
 
-class SiliconFlowModel(BaseModelBackend):
-    r"""SiliconFlow API in a unified BaseModelBackend interface.
+class AIMLModel(BaseModelBackend):
+    r"""AIML API in a unified BaseModelBackend interface.
 
     Args:
         model_type (Union[ModelType, str]): Model for which a backend is
             created.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
             that will be fed into OpenAI client. If :obj:`None`,
-            :obj:`SiliconFlowConfig().as_dict()` will be used.
+            :obj:`AIMLConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
-            the SiliconFlow service. (default: :obj:`None`)
-        url (Optional[str], optional): The URL to the SiliconFlow service. If
-            not provided, :obj:`https://api.siliconflow.cn/v1/` will be used.
+            the AIML service. (default: :obj:`None`)
+        url (Optional[str], optional): The URL to the AIML service. If
+            not provided, :obj:`https://api.aimlapi.com/v1` will be used.
             (default: :obj:`None`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`OpenAITokenCounter(
@@ -54,7 +54,7 @@ class SiliconFlowModel(BaseModelBackend):
 
     @api_keys_required(
         [
-            ("api_key", 'SILICONFLOW_API_KEY'),
+            ("api_key", 'AIML_API_KEY'),
         ]
     )
     def __init__(
@@ -66,11 +66,11 @@ class SiliconFlowModel(BaseModelBackend):
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         if model_config_dict is None:
-            model_config_dict = SiliconFlowConfig().as_dict()
-        api_key = api_key or os.environ.get("SILICONFLOW_API_KEY")
+            model_config_dict = AIMLConfig().as_dict()
+        api_key = api_key or os.environ.get("AIML_API_KEY")
         url = url or os.environ.get(
-            "SILICONFLOW_API_BASE_URL",
-            "https://api.siliconflow.cn/v1/",
+            "AIML_API_BASE_URL",
+            "https://api.aimlapi.com/v1",
         )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
@@ -86,7 +86,7 @@ class SiliconFlowModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of SiliconFlow chat completion.
+        r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -118,17 +118,17 @@ class SiliconFlowModel(BaseModelBackend):
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to SiliconFlow API.
+        unexpected arguments to AIML API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to SiliconFlow API.
+                unexpected arguments to AIML API.
         """
         for param in self.model_config_dict:
-            if param not in SILICONFLOW_API_PARAMS:
+            if param not in AIML_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into SiliconFlow model backend."
+                    "input into AIML model backend."
                 )
 
     @property

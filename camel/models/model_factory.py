@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Dict, Optional, Type, Union
 
+from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -104,6 +105,8 @@ class ModelFactory:
             model_class = NvidiaModel
         elif model_platform.is_siliconflow:
             model_class = SiliconFlowModel
+        elif model_platform.is_aiml:
+            model_class = AIMLModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
