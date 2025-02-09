@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
@@ -25,15 +24,11 @@ def main(model=None) -> None:
     sys_prompt = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.MISALIGNMENT, "dan_prompt"
     )
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content=sys_prompt,
-    )
-    agent = ChatAgent(assistant_sys_msg, model=model)
+
+    agent = ChatAgent(sys_prompt, model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
-    assistant_response = agent.step(user_msg)
+    assistant_response = agent.step(prompt)
     print(assistant_response.msg.content)
 
 

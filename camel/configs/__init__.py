@@ -20,6 +20,7 @@ from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
+from .moonshot_config import MOONSHOT_API_PARAMS, MoonshotConfig
 from .nvidia_config import NVIDIA_API_PARAMS, NvidiaConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig
@@ -32,6 +33,7 @@ from .samba_config import (
     SambaVerseAPIConfig,
 )
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
+from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
@@ -79,4 +81,8 @@ __all__ = [
     'DEEPSEEK_API_PARAMS',
     'InternLMConfig',
     'INTERNLM_API_PARAMS',
+    'MoonshotConfig',
+    "MOONSHOT_API_PARAMS",
+    'SiliconFlowConfig',
+    'SILICONFLOW_API_PARAMS',
 ]

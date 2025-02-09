@@ -294,3 +294,81 @@ x += 1"""
         "Evaluation of the code stopped at node 1. See:"
         "\nAugAssign is not supported."
     )
+
+
+@pytest.fixture
+def unsafe_interpreter():
+    interpreter = InternalPythonInterpreter()
+    interpreter.unsafe_mode = True
+    return interpreter
+
+
+def test_unsafe_mode_eval(unsafe_interpreter):
+    # Test basic arithmetic
+    result = unsafe_interpreter.run("2 + 2", code_type="python")
+    assert result == "4"
+
+    # Test string operations
+    result = unsafe_interpreter.run("'hello' + ' world'", code_type="python")
+    assert result == "hello world"
+
+    # Test built-in functions
+    result = unsafe_interpreter.run("len([1, 2, 3])", code_type="python")
+    assert result == "3"
+
+
+def test_unsafe_mode_exec(unsafe_interpreter):
+    # Test print statement
+    result = unsafe_interpreter.run("print('hello world')", code_type="python")
+    assert result == "hello world\n"  # exec returns captured stdout
+
+    # Test multiple print statements
+    code = """
+print('line 1')
+print('line 2')
+"""
+    result = unsafe_interpreter.run(code, code_type="python")
+    assert result == "line 1\nline 2\n"  # exec returns captured stdout
+
+    # Test variable assignment without print
+    code = """
+x = 42
+y = x * 2
+"""
+    result = unsafe_interpreter.run(code, code_type="python")
+    assert result == ""  # exec returns empty string when no stdout
+
+    # Test variable assignment with print
+    code = """
+x = 42
+print(f'The value is {x}')
+"""
+    result = unsafe_interpreter.run(code, code_type="python")
+    assert result == "The value is 42\n"  # exec returns captured stdout
+
+
+def test_unsafe_mode_complex_operations(unsafe_interpreter):
+    # Test list comprehension with eval
+    result = unsafe_interpreter.run(
+        "[x * 2 for x in range(3)]", code_type="python"
+    )
+    assert result == "[0, 2, 4]"  # eval returns str of result
+
+    # Test function definition and execution
+    code = """
+def greet(name):
+    print(f'Hello, {name}!')
+greet('World')
+"""
+    result = unsafe_interpreter.run(code, code_type="python")
+    assert result == "Hello, World!\n"  # exec returns captured stdout
+
+    # Test multiple operations with variable scope
+    code = """
+total = 0
+for i in range(5):
+    total += i
+print(f'Sum: {total}')
+"""
+    result = unsafe_interpreter.run(code, code_type="python")
+    assert result == "Sum: 10\n"  # exec returns captured stdout

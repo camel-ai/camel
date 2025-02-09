@@ -13,47 +13,46 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.agents import ChatAgent
-from camel.configs import DeepSeekConfig
+from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
+from camel.toolkits import SymPyToolkit
 from camel.types import ModelPlatformType, ModelType
 
-"""
-please set the below os environment:
-export DEEPSEEK_API_KEY=""
-"""
-
-model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEEPSEEK,
-    model_type=ModelType.DEEPSEEK_REASONER,
-    model_config_dict=DeepSeekConfig(temperature=0.2).as_dict(),
+# Define system message
+sys_msg = (
+    "You are a helpful math assistant that can perform symbolic computations"
 )
 
-# Define system message
-sys_msg = "You are a helpful assistant."
+# Set model config
+tools = SymPyToolkit().get_tools()
+model_config_dict = ChatGPTConfig(
+    temperature=0.0,
+).as_dict()
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
+    model_config_dict=model_config_dict,
+)
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model)
+camel_agent = ChatAgent(
+    system_message=sys_msg,
+    model=model,
+    tools=tools,
+)
+camel_agent.reset()
 
-user_msg = """How many Rs are there in the word 'strawberry'?"""
+# Define a user message
+usr_msg = """Simplify the expression: x^2 + 2*x + 1"""
 
 # Get response information
-response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+response = camel_agent.step(usr_msg)
+print(response.info['tool_calls'])
 '''
 ===============================================================================
-The word 'strawberry' is spelled **S-T-R-A-W-B-E-R-R-Y**. Breaking it down:
-
-1. **S**  
-2. **T**  
-3. **R** (first R)  
-4. **A**  
-5. **W**  
-6. **B**  
-7. **E**  
-8. **R** (second R)  
-9. **R** (third R)  
-10. **Y**  
-
-There are **3 Rs** in the word 'strawberry'.
+[FunctionCallingRecord(func_name='simplify_expression', args={'expression': 
+'x^2 + 2*x + 1'}, result='{"status": "success", "result": "x**2 + 2*x + 1"}', 
+tool_call_id='call_USLSZHjQwLHHCa8oLiNsm2AH')]
 ===============================================================================
 '''
