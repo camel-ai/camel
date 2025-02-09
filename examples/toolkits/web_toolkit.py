@@ -28,10 +28,13 @@ model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI, model_type=ModelType.GPT_4O_MINI
 )
 
-assistant_sys_msg = """You are a helpful assistant capable of performing web 
-interactions and answering questions with real-time data. When appropriate, 
-use the available 
-tools to automate web tasks and retrieve information.
+assistant_sys_msg = """You are a helpful assistant capable of performing 
+web interactions and answering questions with 
+real-time data. Use the available tools to automate web tasks and 
+retrieve necessary information. 
+Always include references to the websites you visited and provide the 
+extracted text as evidence. 
+Verify the authenticity of the information before responding.
 """
 
 # Create a ChatAgent with just this single tool, wrapped in a list
