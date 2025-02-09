@@ -207,6 +207,7 @@ class StagehandPrompts:
         For extractions, use one extraction call for each chunk.
 
     Remember:
+    - Never use relative URLs for links in page.goto().
     - Always use absolute URLs for links in page.goto().
     - Use observe() to see potential clickable items or possible actions.
     - Use extract() with a carefully chosen instruction and schema 
@@ -344,7 +345,7 @@ class WebToolkit(BaseToolkit):
         """
 
         if self.debug:
-            print("[DEBUG]: Calling the web interaction tool")
+            print("[DEBUG]: Calling the extract text & images tool")
 
         # JavaScript code to extract text and images using Stagehand
         js_code = f"""
