@@ -13,17 +13,30 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 
-import networkx as nx
+from camel.logger import get_logger
+from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-class NetworkXGraph:
+class NetworkXToolkit(BaseToolkit):
+    _nx = None  # Class variable to store the networkx module
+
+    @classmethod
+    def _get_nx(cls):
+        r"""Lazily import networkx module when needed."""
+        if cls._nx is None:
+            import networkx
+
+            cls._nx = networkx
+        return cls._nx
+
     def __init__(self):
         r"""Initializes the NetworkXGraph client."""
+        nx = self._get_nx()
         self.graph = nx.Graph()
         logger.info("Initialized NetworkXGraph instance.")
 
@@ -68,26 +81,55 @@ class NetworkXGraph:
         logger.info("Fetching all edges.")
         return list(self.graph.edges)
 
-    def get_shortest_path(self, source: str, target: str) -> List[str]:
+    def get_shortest_path(
+        self,
+        source: str,
+        target: str,
+        weight: Any = None,
+        method: Literal['dijkstra', 'bellman-ford'] = 'dijkstra',
+    ) -> List[str]:
         r"""Finds the shortest path between two nodes.
 
         Args:
             source (str): The source node ID.
             target (str): The target node ID.
+            weight (None, str or function, optional): Edge weights/distances.
+                If None, every edge has weight/distance/cost 1.
+                If string, use this edge attribute as the edge weight.
+                If function, the weight of an edge is the value returned by
+                the function. The function must accept three positional
+                arguments: the two endpoints and the edge attribute
+                dictionary. (default: :obj:`None`)
+            method (Literal['dijkstra', 'bellman-ford'], optional): Algorithm
+                to compute the path. Ignored if weight is None. (default:
+                :obj:`'dijkstra'`)
 
         Returns:
             List[str]: A list of nodes in the shortest path.
         """
-        logger.info(f"Finding shortest path from {source} to {target}.")
+        logger.info(
+            f"Finding shortest path from '{source}' to '{target}' "
+            f"using {method} algorithm"
+        )
         try:
-            path = nx.shortest_path(self.graph, source=source, target=target)
+            nx = self._get_nx()
+            path = nx.shortest_path(
+                self.graph,
+                source=source,
+                target=target,
+                weight=weight,
+                method=method,
+            )
+            logger.debug(f"Found path: {' -> '.join(path)}")
             return path
-        except nx.NetworkXNoPath as e:
-            logger.error(f"No path exists between {source} and {target}: {e}")
-            return []
+        except nx.NetworkXNoPath:
+            error_msg = f"No path exists between '{source}' and '{target}'"
+            logger.error(error_msg)
+            return [error_msg]
         except nx.NodeNotFound as e:
-            logger.error(f"Node not found in the graph: {e}")
-            return []
+            error_msg = f"Node not found in graph: {e!s}"
+            logger.error(error_msg)
+            return [error_msg]
 
     def compute_centrality(self) -> Dict[str, float]:
         r"""Computes centrality measures for the graph.
@@ -96,6 +138,7 @@ class NetworkXGraph:
             Dict[str, float]: Centrality values for each node.
         """
         logger.info("Computing centrality measures.")
+        nx = self._get_nx()
         return nx.degree_centrality(self.graph)
 
     def serialize_graph(self) -> str:
@@ -105,6 +148,7 @@ class NetworkXGraph:
             str: The serialized graph in JSON format.
         """
         logger.info("Serializing the graph.")
+        nx = self._get_nx()
         return json.dumps(nx.node_link_data(self.graph))
 
     def deserialize_graph(self, data: str) -> None:
@@ -114,6 +158,7 @@ class NetworkXGraph:
             data (str): The JSON string representing the graph.
         """
         logger.info("Deserializing graph from JSON data.")
+        nx = self._get_nx()
         self.graph = nx.node_link_graph(json.loads(data))
 
     def export_to_file(self, file_path: str) -> None:
@@ -123,6 +168,7 @@ class NetworkXGraph:
             file_path (str): The file path to save the graph.
         """
         logger.info(f"Exporting graph to file: {file_path}")
+        nx = self._get_nx()
         with open(file_path, "w") as file:
             json.dump(nx.node_link_data(self.graph), file)
 
@@ -133,6 +179,7 @@ class NetworkXGraph:
             file_path (str): The file path to load the graph from.
         """
         logger.info(f"Importing graph from file: {file_path}")
+        nx = self._get_nx()
         with open(file_path, "r") as file:
             self.graph = nx.node_link_graph(json.load(file))
 
@@ -140,3 +187,25 @@ class NetworkXGraph:
         r"""Clears the current graph."""
         logger.info("Clearing the graph.")
         self.graph.clear()
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the
+        functions in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects for the
+                toolkit methods.
+        """
+        return [
+            FunctionTool(self.add_edge),
+            FunctionTool(self.add_node),
+            FunctionTool(self.clear_graph),
+            FunctionTool(self.compute_centrality),
+            FunctionTool(self.deserialize_graph),
+            FunctionTool(self.export_to_file),
+            FunctionTool(self.get_edges),
+            FunctionTool(self.get_nodes),
+            FunctionTool(self.import_from_file),
+            FunctionTool(self.serialize_graph),
+            FunctionTool(self.get_shortest_path),
+        ]

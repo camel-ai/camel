@@ -131,6 +131,8 @@ datacommons_pandas = { version = "^0.0.3", optional = true }
 pandas = { version = "^2.2.3", optional = true }
 openbb = { version = "^4.3.5", optional = true }
 stripe = { version = "^11.3.0", optional = true }
+networkx = { version = "^3.4.2", optional = true }
+
 
 # Research tools
 scholarly = { extras = ["tor"], version = "1.7.11", optional = true }
@@ -226,6 +228,7 @@ data_tools = [
     "aiosqlite",
     "openbb",
     "stripe",
+    "networkx",
 ]
 
 # Academic and research tools
@@ -346,6 +349,7 @@ all = [
     "tree-sitter-python",
     "tree-sitter",
     "openbb",
+    "networkx",
     "qdrant-client",
     "pymilvus",
     "cohere",
@@ -529,5 +533,6 @@ module = [
     "tree-sitter-python",
     "tree-sitter",
     "ragas",
+    "networkx",
 ]
 ignore_missing_imports = true
