@@ -35,6 +35,7 @@ print(response.msgs[0].content)
 
 '''
 ===============================================================================
-
+ Hello CAMEL AI! It's great to meet a community dedicated to the study of 
+ autonomous and communicative agents. How can I assist you today?
 ===============================================================================
 '''

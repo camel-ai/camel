@@ -97,10 +97,15 @@ class AIMLModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        # Process model configuration parameters
+        model_config = self.model_config_dict.copy()
+
+        # Handle special case for tools parameter
+        if model_config.get('tools') is None:
+            model_config['tools'] = []
+
         response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
+            messages=messages, model=self.model_type, **model_config
         )
         return response
 
