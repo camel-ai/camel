@@ -40,6 +40,7 @@ from .commons import (
     track_agent,
 )
 from .constants import Constants
+from .deduplication import DeduplicationResult, deduplicate_internally
 from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
@@ -82,6 +83,8 @@ __all__ = [
     "get_pydantic_model",
     "download_github_subdirectory",
     "generate_prompt_for_structured_output",
+    "deduplicate_internally",
+    "DeduplicationResult",
     "retry_on_error",
     "BatchProcessor",
 ]
