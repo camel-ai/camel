@@ -188,7 +188,7 @@ def ragas_evaluate_dataset(
     Returns:
         Dataset: Dataset with added evaluation metrics.
     """
-    from ragas import evaluate
+    from ragas import evaluate  # type: ignore[import-untyped]
     from ragas.metrics import (  # type: ignore[import-untyped]
         context_relevancy,
         faithfulness,
