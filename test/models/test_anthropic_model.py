@@ -42,7 +42,7 @@ system_role_message = {
 }
 user_role_message = {
     "role": "user",
-    "content": "The capital of morocco is Rabat",
+    "content": "What is the capital city of Morocco ?",
 }
 model_types = [
     ModelType.CLAUDE_INSTANT_1_2,
