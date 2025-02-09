@@ -19,9 +19,10 @@ from camel.toolkits.web_toolkit import WebToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Initialize the toolkit
-toolkit = WebToolkit(headless_mode=False)
+toolkit = WebToolkit(headless_mode=False, debug=True)
 
 stagehand_tool = FunctionTool(toolkit.stagehand_tool)
+web_text_and_image_tool = FunctionTool(toolkit.stagehand_extract_text_images)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI, model_type=ModelType.GPT_4O_MINI
@@ -37,7 +38,7 @@ tools to automate web tasks and retrieve information.
 tool_agent = ChatAgent(
     assistant_sys_msg,
     model=model,
-    tools=[stagehand_tool],
+    tools=[stagehand_tool, web_text_and_image_tool],
 )
 
 # Interact with the agent
