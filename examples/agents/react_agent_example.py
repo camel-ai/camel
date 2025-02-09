@@ -40,7 +40,7 @@ def main() -> None:
     math_tool = MathToolkit()
     agent = ReActAgent(
         system_message=system_message,
-        tools=[math_tool],
+        tools=math_tool.get_tools(),
         model=model,
         max_steps=5,
     )
