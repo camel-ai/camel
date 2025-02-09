@@ -17,7 +17,7 @@ from typing import List
 import agentops
 from colorama import Fore
 
-from camel.agents.chat_agent import FunctionCallingRecord
+from camel.agents.chat_agent import ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
@@ -125,8 +125,8 @@ while n < chat_turn_limit:
     # Print output from the assistant, including any function
     # execution information
     print_text_animated(Fore.GREEN + "AI Assistant:")
-    tool_calls: List[FunctionCallingRecord] = [
-        FunctionCallingRecord(**call.as_dict())
+    tool_calls: List[ToolCallingRecord] = [
+        ToolCallingRecord(**call.as_dict())
         for call in assistant_response.info['tool_calls']
     ]
     for func_record in tool_calls:
