@@ -12,16 +12,20 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
+from camel.toolkits import FunctionTool
 from camel.types import RoleType
+
+logger = get_logger(__name__)
 
 # AgentOps decorator setting
 try:
@@ -34,7 +38,15 @@ try:
 except (ImportError, AttributeError):
     from camel.utils import track_agent
 
-logger = logging.getLogger(__name__)
+
+class ReActStep(BaseModel):
+    """Structured format for ReAct steps"""
+
+    thought: str = Field(description="Reasoning about current situation")
+    action: str = Field(description="Action to take (Search/Lookup/Finish)")
+    observation: Optional[str] = Field(
+        None, description="Results of the action"
+    )
 
 
 class ReActActionSpace(Enum):
@@ -60,26 +72,29 @@ class ReActAgent(ChatAgent):
     Args:
         system_message (BaseMessage): The system message for initializing the
             agent's conversation context.
-        model (Any, optional): The model backend to use for
-        response generation. Defaults to None.
-        tools (List[Any], optional): List of available tools for executing
-            actions. Defaults to None.
-        max_steps (int, optional): Maximum number of steps before termination.
-            Defaults to 10.
-
-    References:
-        https://arxiv.org/pdf/2210.03629
+        model (Optional[BaseModelBackend], optional): The model backend to use
+            for response generation. (default: :obj:`None`)
+        tools (Optional[List[Union[FunctionTool, Callable]]], optional): List
+            of available tools that can be used to execute actions. Tools can
+            be either FunctionTool instances or callable functions.
+            (default: :obj:`None`)
+        max_steps (int, optional): Maximum number of reasoning steps before
+            forced termination. Prevents infinite loops.
+            (default: :obj:`10`)
     """
 
     def __init__(
         self,
         system_message: BaseMessage,
-        model: Optional[Any] = None,
-        tools: Optional[List[Any]] = None,
+        model: Optional[BaseModelBackend] = None,
+        tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         max_steps: int = 10,
     ) -> None:
         super().__init__(system_message=system_message, model=model)
-        self.tools = tools or []
+        self.tools: List[FunctionTool] = [
+            t if isinstance(t, FunctionTool) else FunctionTool(t)
+            for t in (tools or [])
+        ]
         self.scratchpad: List[Dict[str, Optional[str]]] = []
         self._set_react_prompt()
         self.step_count = 0
@@ -93,19 +108,17 @@ class ReActAgent(ChatAgent):
         response format and behavior.
         """
         self.react_prompt = (
-            "Follow this STRICT format:\n\n"
-            "Thought: [analyze current situation]\n"
-            "Action: [EXACTLY ONE of these]\n"
-            "- Search(query=<search terms>)\n"
-            "- Lookup(key=<exact key>)\n"
-            "- Finish(answer=<final answer>)\n\n"
-            "Examples:\n"
-            "Good: Action: Search(query=Paris population)\n"
-            "Bad:  Action: Search Paris population\n\n"
-            "Rules:\n"
-            "1. ALWAYS validate action syntax before execution\n"
-            "2. If action fails, diagnose and retry\n"
-            "3. Use Finish() only when ready with final answer\n\n"
+            "Respond with a JSON object containing:\n"
+            "- thought: Your analysis of the current situation\n"
+            "- action: EXACTLY ONE of:\n"
+            "  - Search(query=<search terms>)\n"
+            "  - Lookup(key=<exact key>)\n"
+            "  - Finish(answer=<final answer>)\n"
+            "\nExample response:\n"
+            '{\n'
+            '    "thought": "I need to find population data",\n'
+            '    "action": "Search(query=Paris population 2024)"\n'
+            '}\n\n'
             "Current scratchpad:\n"
             "{scratchpad}"
         )
@@ -155,65 +168,6 @@ class ReActAgent(ChatAgent):
                 "action": "",
                 "observation": "Task terminated due to step limit",
             },
-        )
-
-    def _parse_react_components(
-        self,
-        content: str,
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        r"""Parse the response into ReAct components.
-
-        Args:
-            content (str): The response content to parse. Expected to contain
-                sections starting with "Thought:", "Action:", and/or
-                "Observation:".
-
-        Returns:
-            Tuple[Optional[str], Optional[str], Optional[str]]:
-                A tuple containing:
-                - thought: The parsed thought component, or None if not found
-                - action: The parsed action component, or None if not found
-                - observation: The observation, or None if not found
-        """
-        components: Dict[str, Optional[str]] = {
-            "Thought": None,
-            "Action": None,
-            "Observation": None,
-        }
-
-        current_component: Optional[str] = None
-        current_text: List[str] = []
-
-        for line in content.split('\n'):
-            for component in components:
-                if line.startswith(f"{component}:"):
-                    if current_component is not None:
-                        components[current_component] = (
-                            '\n'.join(current_text).strip() or None
-                        )
-                    current_component = component
-                    current_text = [line[len(component) + 1 :].strip()]
-                    break
-            else:
-                if current_component is not None:
-                    current_text.append(line.strip())
-
-        if current_component is not None:
-            components[current_component] = (
-                '\n'.join(current_text).strip() or None
-            )
-
-        logger.debug(
-            "Parsed components - Thought: %s, Action: %s, Observation: %s",
-            bool(components["Thought"]),
-            bool(components["Action"]),
-            bool(components["Observation"]),
-        )
-
-        return (
-            components["Thought"],
-            components["Action"],
-            components["Observation"],
         )
 
     def _execute_action(self, action: str) -> str:
@@ -271,7 +225,7 @@ class ReActAgent(ChatAgent):
                 If string, it will be converted to BaseMessage. This will be
                 augmented with the scratchpad history and ReAct prompt.
             response_format (Optional[type[BaseModel]], optional): The expected
-                response format. Defaults to None.
+                response format. (default: :obj:`None`)
             **kwargs: Additional keyword arguments passed to the underlying
                 model call.
 
@@ -313,12 +267,22 @@ class ReActAgent(ChatAgent):
         )
 
         # Get initial response
-        response = super().step(augmented_message)
+        response = super().step(augmented_message, response_format=ReActStep)
 
-        # Parse ReAct components
-        thought, action, observation = self._parse_react_components(
-            response.msgs[0].content
-        )
+        # Parse response into ReActStep model
+        if (
+            hasattr(response.msgs[0], 'parsed')
+            and response.msgs[0].parsed
+            and isinstance(response.msgs[0].parsed, ReActStep)
+        ):
+            react_step = response.msgs[0].parsed
+            thought = react_step.thought
+            action = react_step.action
+            observation = react_step.observation
+        else:
+            thought = ""
+            action = ""
+            observation = None
 
         # Execute action if specified
         if action:

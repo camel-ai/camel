@@ -14,8 +14,9 @@
 
 from camel.agents import ReActAgent
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
-from camel.types import RoleType
+from camel.types import ModelPlatformType, ModelType, RoleType
 
 
 def main() -> None:
@@ -30,11 +31,17 @@ def main() -> None:
         ),
     )
 
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
+    )
+
     # Initialize toolkit and agent
     math_tool = MathToolkit()
     agent = ReActAgent(
         system_message=system_message,
         tools=[math_tool],
+        model=model,
         max_steps=5,
     )
 
@@ -45,12 +52,35 @@ def main() -> None:
         "Divide 1000 by 3 and round to the nearest whole number",
     ]
 
-    # Process each query - simplified!
+    # Process each query and print raw JSON response
     for query in queries:
         response = agent.step(query)
-        print("Agent response:", response.msgs[0].content)
+        print("JSON response:", response.info)
         print("-" * 50)
 
 
 if __name__ == "__main__":
     main()
+
+"""
+JSON response: {
+    'thought': 'I need to calculate the sum of 123.45 and 678.90.',
+    'action': 'Finish(answer=802.35)',
+    'observation': 'Task completed.'
+}
+--------------------------------------------------
+JSON response: {
+    'thought': 'I need to calculate 25 multiplied by 3.14 and round the result 
+                to 2 decimal places.',
+    'action': 'Finish(answer=78.50)', 
+    'observation': 'Task completed.'
+}
+--------------------------------------------------
+JSON response: {
+    'thought': 'I need to divide 1000 by 3 and round the result to the nearest 
+                whole number.',
+    'action': 'Finish(answer=334)',
+    'observation': 'Task completed.'
+}
+--------------------------------------------------
+"""
