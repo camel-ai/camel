@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 import re
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -94,6 +95,7 @@ def test_deepseek_run(mock_deepseek, model_type: ModelType):
     mock_deepseek_client.chat.completions.create.return_value = (
         deepseek_model_response
     )
+    os.environ["GET_REASONING_CONTENT"] = "True"
 
     model = DeepSeekModel(model_type)
     response = model.run(messages=[user_role_message])  # type: ignore[list-item]
