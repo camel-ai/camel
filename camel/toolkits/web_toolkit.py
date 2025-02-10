@@ -486,7 +486,8 @@ class WebToolkit(BaseToolkit):
     def stagehand_screenshot_and_analyze_with_gpt4o(self, url: str) -> Dict[str, Any]:
         """
         Captures multiple screenshots while scrolling and sends each screenshot to GPT-4o for analysis.
-
+        Use this tool when you think visual analysis of graphs/images/or the website content would be useful
+        
         Args:
             url (str): The webpage URL to analyze.
 
@@ -645,6 +646,65 @@ class WebToolkit(BaseToolkit):
 
         return results
 
+    def _run_stagehand_script_in_node(self, js_code: str) -> str:
+        r"""
+        Internal method that executes the Stagehand code under
+        Node.js and returns the final JSON line from stdout.
+
+        Args:
+            js_code (str): The JavaScript code to execute.
+
+        Returns:
+            str: The final output of the script or an error message.
+        """
+
+        # Wrap the user snippet with Stagehand environment
+        wrapper_code = f"""
+        const {{ Stagehand }} = require('@browserbasehq/stagehand');
+        const z = require('zod');
+
+        (async () => {{
+            const stagehand = new Stagehand({{ headless: {"true" if 
+            self.headless_mode else "false"} }});
+            await stagehand.init();
+            const page = stagehand.page;
+            console.log("Starting Stagehand automation...");
+            try {{
+                // Insert the generated snippet
+                {js_code}
+            }} catch (error) {{
+                console.error("Final updated_state: ", JSON.stringify({{
+                    status: "failure",
+                    error: error.message
+                }}));
+            }} finally {{
+                await stagehand.close();
+                console.log("Stagehand session closed.");
+            }}
+        }})();
+        """
+
+        # Run the script in Node.js
+        node_process = SubprocessInterpreter(
+            require_confirm=False, print_stdout=False, print_stderr=False
+        )
+
+        exec_result = node_process.run(wrapper_code, "node")
+
+        # Attempt to parse final JSON from logs:
+        final_json = self._parse_json_from_output(exec_result)
+        if final_json is not None:
+            # Return as a JSON string for the caller to parse
+            return json.dumps(final_json)
+        else:
+            # If no valid JSON found in logs, return an error as JSON
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "No valid JSON found in node logs.",
+                }
+            )
+            
     def _parse_json_from_output(self, text: str):
         r"""
         Extracts a substring that starts with the first '{' following
