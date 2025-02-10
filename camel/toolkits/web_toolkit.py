@@ -345,7 +345,7 @@ class WebToolkit(BaseToolkit):
         """
 
         if self.debug:
-            print("[DEBUG]: Calling the web interaction tool")
+            print("[DEBUG]: Calling the extract_text_images tool")
 
         # JavaScript code to extract text and images using Stagehand
         js_code = f"""
@@ -482,11 +482,10 @@ class WebToolkit(BaseToolkit):
         else:
             raise ValueError("Failed to generate Stagehand code.")
 
-    def stagehand_screenshot_and_analyze_with_gpt4o(self, url: str) -> str:
-        r"""
-        Captures multiple screenshots while scrolling, extracts page text,
-        and sends each screenshot along with the extracted text to GPT-4o
-        for analysis.
+        
+    def stagehand_screenshot_and_analyze_with_gpt4o(self, url: str) -> Dict[str, Any]:
+        """
+        Captures multiple screenshots while scrolling and sends each screenshot to GPT-4o for analysis.
 
         Args:
             url (str): The webpage URL to analyze.
@@ -494,12 +493,11 @@ class WebToolkit(BaseToolkit):
         Returns:
             Dict[str, Any]: JSON response containing:
                 - GPT-4o analysis for each screenshot.
-                - Extracted text from the page.
                 - Screenshot file paths.
         """
 
         if self.debug:
-            print("[DEBUG]: Calling the screenshot and analyze tool")
+            print("[DEBUG]: Capturing screenshots for analysis")
 
         screenshot_folder = "screenshots"
         os.makedirs(screenshot_folder, exist_ok=True)
@@ -507,15 +505,13 @@ class WebToolkit(BaseToolkit):
             screenshot_folder, os.path.basename(url).replace("/", "_")
         )
 
-        # JavaScript code for scrolling, taking screenshots,
-        # and extracting text per screenshot
+        # JavaScript code for scrolling and taking screenshots
         js_code = f"""
           const {{ Stagehand }} = require('@browserbasehq/stagehand');
-          const z = require('zod');
           const fs = require('fs');
 
           (async () => {{
-              const stagehand = new Stagehand({{ headless: true }});
+              const stagehand = new Stagehand({{ headless: false }});
               await stagehand.init();
               const page = stagehand.page;
               try {{
@@ -523,53 +519,37 @@ class WebToolkit(BaseToolkit):
 
                   let screenshots = [];
                   let totalHeight = 0;
-                  let viewportHeight = await page.evaluate(
-                    () => window.innerHeight);
-                  let scrollHeight = await page.evaluate(
-                    () => document.body.scrollHeight);
+                  let viewportHeight = await page.evaluate(() => window.innerHeight);
+                  let scrollHeight = await page.evaluate(() => document.body.scrollHeight);
                   let scrollY = 0;
                   let index = 0;
 
-                  // Extract full-page text once
-                  const fullTextData = await page.extract({{
-                      instruction: "Extract all visible text on the page.",
-                      schema: z.object({{ text: z.string() }})
-                  }});
-
-                  let extracted_text = fullTextData.text;
-
                   // Scroll and take multiple screenshots
                   while (scrollY < scrollHeight) {{
-                      let screenshot_path = "{screenshot_base}_" + 
-                      index + ".png";
+                      let screenshot_path = "{screenshot_base}_" + index + ".png";
                       await page.screenshot({{ path: screenshot_path }});
                       screenshots.push(screenshot_path);
 
                       totalHeight += viewportHeight;
                       scrollY += viewportHeight;
-                      await page.evaluate((height) => 
-                      window.scrollBy(0, height), 
-                      viewportHeight);
-                      await page.act({{ action: "Wait a second 
-                      for scrolling to complete." }});
+                      await page.evaluate((height) => window.scrollBy(0, height), viewportHeight);
+                      await page.act({{ action: "Wait a second for scrolling to complete." }});
                       index++;
                   }}
 
                   // Final JSON object
                   const extractedData = {{
-                      status: "success",
-                      text: extracted_text,
-                      screenshots: screenshots,
-                      link: "{url}"
+                      "status": "success",
+                      "screenshots": screenshots,
+                      "link": "{url}"
                   }};
 
-                  console.log("Final updated_state: ", 
-                  JSON.stringify(extractedData, null, 2));
+                  console.log("updated_state: ", JSON.stringify(extractedData, null, 2));
 
               }} catch (error) {{
-                  console.error("Final updated_state: ", JSON.stringify({{
-                      status: "failure",
-                      error: error.message
+                  console.error("updated_state: ", JSON.stringify({{
+                      "status": "failure",
+                      "error": error.message
                   }}));
               }} finally {{
                   await stagehand.close();
@@ -577,68 +557,80 @@ class WebToolkit(BaseToolkit):
           }})();
         """
 
-        # Run Stagehand script
+        print("[DEBUG]: Executing JavaScript in Node.js")
+
+        # Run the script in Node.js
         node_process = SubprocessInterpreter(
-            require_confirm=False, print_stdout=False, print_stderr=False
+            require_confirm=False, print_stdout=True, print_stderr=True
         )
+
         exec_result = node_process.run(js_code, "node")
 
-        # Parse the JSON output
-        result_str = self._parse_json_from_output(exec_result)
+        # Debugging: Print raw output from node
+        print(f"[DEBUG] Raw Node.js Output:\n{exec_result}")
 
-        if not result_str or "screenshots" not in result_str:
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "No valid JSON found in node logs.",
-                }
-            )
+        # Parse the JSON output using the unchanged _parse_json_from_output function
+        raw_json = self._parse_json_from_output(exec_result)
 
-        screenshots = result_str["screenshots"]
-        extracted_text = result_str["text"]
+        # Convert JSON string to a Python dictionary
+        try:
+            final_json = json.loads(raw_json)
+        except json.JSONDecodeError:
+            print("[ERROR]: Failed to parse JSON from extracted output.")
+            return {"status": "error", "message": "Failed to parse extracted JSON."}
+
+        if "screenshots" not in final_json:
+            print("[ERROR]: No valid screenshots found.")
+            return {"status": "error", "message": "No screenshots found in output."}
+
+        screenshots = final_json["screenshots"]
+
+        print("[DEBUG]: Screenshots Captured:\n", screenshots)
 
         # Analyze each screenshot with GPT-4o
-        gpt_results = self._analyze_screenshots_with_gpt4o(
-            screenshots, extracted_text
-        )
+        gpt_results = self._analyze_screenshots_with_gpt4o(screenshots)
 
         # Final response with GPT-4o results
-        final_response = {
+        return {
             "status": "success",
             "link": url,
-            "text": extracted_text,
-            "gpt_analysis": gpt_results,
+            "gpt_analysis": gpt_results
         }
 
-        return json.dumps(final_response)
-
-    def _analyze_screenshots_with_gpt4o(
-        self, screenshots: List[str], text: str
-    ) -> List[Dict[str, Any]]:
-        r"""
-        Sends each screenshot along with extracted text to GPT-4o for analysis.
+    def _analyze_screenshots_with_gpt4o(self, screenshots: List[str]) -> List[Dict[str, Any]]:
+        """
+        Sends each screenshot to GPT-4o for analysis.
 
         Args:
             screenshots (List[str]): List of screenshot file paths.
-            text (str): Extracted text from the webpage.
 
         Returns:
             List[Dict[str, Any]]: List of GPT-4o responses for each screenshot.
         """
+
+        if self.debug:
+            print("[DEBUG]: Calling _analyze_screenshots_with_gpt4o")
+
         results = []
 
         for screenshot in screenshots:
-            gpt_input = {
-                "prompt": f"""Analyze the following screenshot in the 
-                context of the extracted webpage 
-                text:\n\n{text}\n\n"""
-                f"""Describe the visual elements and provide insights 
-                based on the webpage's purpose.""",
-                "image": screenshot,  # Pass image file for analysis
-            }
+            gpt_input = BaseMessage(
+                role_name="GPT-4o Screenshot Analyzer",
+                role_type=RoleType.USER,
+                meta_dict=None,
+                content="Analyze the following screenshot and describe the visual elements. Identify key UI components, any notable content, and overall design layout."
+            )
+
+            # Debugging: Check input message
+            if self.debug:
+                print(f"[DEBUG] Sending GPT-4o Input for {screenshot}")
 
             # Send to GPT-4o model
             response = self.agent.step(input_message=gpt_input)
+
+            # Debugging: Check response
+            if self.debug:
+                print(f"[DEBUG] GPT-4o Response: {response}")
 
             # Extract response content
             gpt_response = (
@@ -652,65 +644,6 @@ class WebToolkit(BaseToolkit):
             )
 
         return results
-
-    def _run_stagehand_script_in_node(self, js_code: str) -> str:
-        r"""
-        Internal method that executes the Stagehand code under
-        Node.js and returns the final JSON line from stdout.
-
-        Args:
-            js_code (str): The JavaScript code to execute.
-
-        Returns:
-            str: The final output of the script or an error message.
-        """
-
-        # Wrap the user snippet with Stagehand environment
-        wrapper_code = f"""
-        const {{ Stagehand }} = require('@browserbasehq/stagehand');
-        const z = require('zod');
-
-        (async () => {{
-            const stagehand = new Stagehand({{ headless: {"true" if 
-            self.headless_mode else "false"} }});
-            await stagehand.init();
-            const page = stagehand.page;
-            console.log("Starting Stagehand automation...");
-            try {{
-                // Insert the generated snippet
-                {js_code}
-            }} catch (error) {{
-                console.error("Final updated_state: ", JSON.stringify({{
-                    status: "failure",
-                    error: error.message
-                }}));
-            }} finally {{
-                await stagehand.close();
-                console.log("Stagehand session closed.");
-            }}
-        }})();
-        """
-
-        # Run the script in Node.js
-        node_process = SubprocessInterpreter(
-            require_confirm=False, print_stdout=False, print_stderr=False
-        )
-
-        exec_result = node_process.run(wrapper_code, "node")
-
-        # Attempt to parse final JSON from logs:
-        final_json = self._parse_json_from_output(exec_result)
-        if final_json is not None:
-            # Return as a JSON string for the caller to parse
-            return json.dumps(final_json)
-        else:
-            # If no valid JSON found in logs, return an error as JSON
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "No valid JSON found in node logs.",
-                }
-            )
 
     def _parse_json_from_output(self, text: str):
         r"""
