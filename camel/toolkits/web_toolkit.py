@@ -24,6 +24,7 @@ from camel.prompts import TextPrompt
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelPlatformType, ModelType, RoleType
+from PIL import Image
 
 # Define a module-level constant for the default ChatGPT configuration
 _DEFAULT_CHATGPT_CONFIG_DICT = ChatGPTConfig(temperature=0.0).as_dict()
@@ -483,13 +484,15 @@ class WebToolkit(BaseToolkit):
             raise ValueError("Failed to generate Stagehand code.")
 
         
-    def stagehand_screenshot_and_analyze_with_gpt4o(self, url: str) -> Dict[str, Any]:
+    def stagehand_screenshot_and_analyze_with_gpt4o(self, question: str, url: str) -> Dict[str, Any]:
         """
         Captures multiple screenshots while scrolling and sends each screenshot to GPT-4o for analysis.
         Use this tool when you think visual analysis of graphs/images/or the website content would be useful
         
         Args:
             url (str): The webpage URL to analyze.
+            question (str): The question to be answered.
+            
 
         Returns:
             Dict[str, Any]: JSON response containing:
@@ -589,7 +592,7 @@ class WebToolkit(BaseToolkit):
         print("[DEBUG]: Screenshots Captured:\n", screenshots)
 
         # Analyze each screenshot with GPT-4o
-        gpt_results = self._analyze_screenshots_with_gpt4o(screenshots)
+        gpt_results = self._analyze_screenshots_with_gpt4o(question, screenshots)
 
         # Final response with GPT-4o results
         return {
@@ -598,11 +601,12 @@ class WebToolkit(BaseToolkit):
             "gpt_analysis": gpt_results
         }
 
-    def _analyze_screenshots_with_gpt4o(self, screenshots: List[str]) -> List[Dict[str, Any]]:
+    def _analyze_screenshots_with_gpt4o(self, question: str, screenshots: List[str]) -> List[Dict[str, Any]]:
         """
         Sends each screenshot to GPT-4o for analysis.
 
         Args:
+            question (str): The question to be answered.
             screenshots (List[str]): List of screenshot file paths.
 
         Returns:
@@ -614,19 +618,28 @@ class WebToolkit(BaseToolkit):
 
         results = []
 
-        for screenshot in screenshots:
+        for screenshot_path in screenshots:
+            # Ensure the screenshot file exists before proceeding
+            if not os.path.exists(screenshot_path):
+                print(f"[ERROR]: Screenshot {screenshot_path} not found.")
+                continue
+
+            # Convert the screenshot to a PIL Image object
+            image = Image.open(screenshot_path)
+
             gpt_input = BaseMessage(
                 role_name="GPT-4o Screenshot Analyzer",
                 role_type=RoleType.USER,
                 meta_dict=None,
-                content="Analyze the following screenshot and describe the visual elements. Identify key UI components, any notable content, and overall design layout."
+                image_list=[image],
+                image_detail="high",
+                content=f"Analyze this screenshot and describe the visual elements. {question}"
             )
 
-            # Debugging: Check input message
             if self.debug:
-                print(f"[DEBUG] Sending GPT-4o Input for {screenshot}")
+                print(f"[DEBUG] Sending GPT-4o Input for {screenshot_path}")
 
-            # Send to GPT-4o model
+            # Send to GPT-4o model for **vision processing**
             response = self.agent.step(input_message=gpt_input)
 
             # Debugging: Check response
@@ -641,10 +654,11 @@ class WebToolkit(BaseToolkit):
             )
 
             results.append(
-                {"screenshot": screenshot, "analysis": gpt_response}
+                {"screenshot": screenshot_path, "analysis": gpt_response}
             )
 
         return results
+
 
     def _run_stagehand_script_in_node(self, js_code: str) -> str:
         r"""
