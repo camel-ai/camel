@@ -80,6 +80,9 @@ jobs:
           DISCORD_BOT_TOKEN: "${{ secrets.DISCORD_BOT_TOKEN }}"
           INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
           JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
+          SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
+          MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
+          AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test

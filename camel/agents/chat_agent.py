@@ -685,7 +685,7 @@ class ChatAgent(BaseAgent):
             usage_dict (Dict[str, int]): Dictionary containing token usage
                 information.
             response_id (str): The ID of the response from the model.
-            tool_calls (List[FunctionCallingRecord]): Records of function calls
+            tool_calls (List[ToolCallingRecord]): Records of function calls
                 made during this step.
             num_tokens (int): The number of tokens used in this step.
 
@@ -896,7 +896,7 @@ class ChatAgent(BaseAgent):
 
         Args:
             num_tokens (int): Number of tokens in the messages.
-            tool_calls (List[FunctionCallingRecord]): List of information
+            tool_calls (List[ToolCallingRecord]): List of information
                 objects of functions called in the current step.
             termination_reason (str): String of termination reason.
 

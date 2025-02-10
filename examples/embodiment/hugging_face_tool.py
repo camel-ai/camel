@@ -16,7 +16,6 @@ from typing import List
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.agents.tool_agents.base import BaseToolAgent
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
 from camel.types import RoleType
 
 
@@ -40,13 +39,11 @@ def main():
         verbose=True,
         tool_agents=tool_agents,
     )
-    user_msg = BaseMessage.make_user_message(
-        role_name=role_name,
-        content=(
-            "Draw all the Camelidae species, "
-            "caption the image content, "
-            "save the images by species name."
-        ),
+
+    user_msg = (
+        "Draw all the Camelidae species, "
+        "caption the image content, "
+        "save the images by species name."
     )
     response = embodied_agent.step(user_msg)
     print(response.msg.content)

@@ -16,7 +16,6 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -39,13 +38,10 @@ model = ModelFactory.create(
 
 
 # set up agent
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Teacher",
-    content=(
-        "You are a personal math tutor and programmer. "
-        "When asked a math question, "
-        "write and run Python code to answer the question."
-    ),
+assistant_sys_msg = (
+    "You are a personal math tutor and programmer. "
+    "When asked a math question, "
+    "write and run Python code to answer the question."
 )
 
 agent = ChatAgent(
@@ -62,10 +58,9 @@ prompt = (
     "Weng earns $12 an hour for babysitting. "
     "Yesterday, she just did 51 minutes of babysitting. How much did she earn?"
 )
-user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
 print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 
-response = agent.step(user_msg)
+response = agent.step(prompt)
 for msg in response.msgs:
     print_text_animated(Fore.GREEN + f"Agent response:\n{msg.content}\n")
 
@@ -98,7 +93,7 @@ agent_with_e2b.reset()
 
 print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 
-response_with_e2b = agent_with_e2b.step(user_msg)
+response_with_e2b = agent_with_e2b.step(prompt)
 for msg in response_with_e2b.msgs:
     print_text_animated(Fore.GREEN + f"Agent response:\n{msg.content}\n")
 

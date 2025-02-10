@@ -32,7 +32,7 @@ from camel.utils import (
     api_keys_required,
 )
 
-O1_UNSUPPORTED_PARAMS = {
+UNSUPPORTED_PARAMS = {
     "temperature",
     "top_p",
     "presence_penalty",
@@ -84,8 +84,6 @@ class OpenAIModel(BaseModelBackend):
             model_type, model_config_dict, api_key, url, token_counter
         )
 
-        self._sanitize_model_config()
-
         self._client = OpenAI(
             timeout=180,
             max_retries=3,
@@ -99,12 +97,14 @@ class OpenAIModel(BaseModelBackend):
             api_key=self._api_key,
         )
 
-    def _sanitize_model_config(self) -> None:
+    def _sanitize_config(self, config_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize the model configuration for O1 models."""
+
         if self.model_type in [
             ModelType.O1,
             ModelType.O1_MINI,
             ModelType.O1_PREVIEW,
+            ModelType.O3_MINI,
         ]:
             warnings.warn(
                 "Warning: You are using an O1 model (O1_MINI or O1_PREVIEW), "
@@ -112,11 +112,12 @@ class OpenAIModel(BaseModelBackend):
                 "`https://platform.openai.com/docs/guides/reasoning`.",
                 UserWarning,
             )
-            self.model_config_dict = {
+            return {
                 k: v
-                for k, v in self.model_config_dict.items()
-                if k not in O1_UNSUPPORTED_PARAMS
+                for k, v in config_dict.items()
+                if k not in UNSUPPORTED_PARAMS
             }
+        return config_dict
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -201,6 +202,8 @@ class OpenAIModel(BaseModelBackend):
                 function_dict.pop("strict", None)
             request_config["tools"] = tools
 
+        request_config = self._sanitize_config(request_config)
+
         return self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
@@ -219,6 +222,8 @@ class OpenAIModel(BaseModelBackend):
                 function_dict = tool.get('function', {})
                 function_dict.pop("strict", None)
             request_config["tools"] = tools
+
+        request_config = self._sanitize_config(request_config)
 
         return await self._async_client.chat.completions.create(
             messages=messages,
@@ -239,6 +244,8 @@ class OpenAIModel(BaseModelBackend):
         if tools is not None:
             request_config["tools"] = tools
 
+        request_config = self._sanitize_config(request_config)
+
         return self._client.beta.chat.completions.parse(
             messages=messages,
             model=self.model_type,
@@ -257,6 +264,8 @@ class OpenAIModel(BaseModelBackend):
         request_config.pop("stream", None)
         if tools is not None:
             request_config["tools"] = tools
+
+        request_config = self._sanitize_config(request_config)
 
         return await self._async_client.beta.chat.completions.parse(
             messages=messages,

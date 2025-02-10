@@ -13,13 +13,13 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
+from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models._utils import try_modify_message_with_format
 from camel.models.base_model import BaseModelBackend
@@ -29,6 +29,8 @@ from camel.types import (
     ModelType,
 )
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+
+logger = get_logger(__name__)
 
 REASONSER_UNSUPPORTED_PARAMS = [
     "temperature",
@@ -122,6 +124,40 @@ class DeepSeekModel(BaseModelBackend):
         tools: Optional[List[Dict[str, Any]]],
     ) -> Dict[str, Any]:
         request_config = self.model_config_dict.copy()
+
+        if self.model_type in [
+            ModelType.DEEPSEEK_REASONER,
+        ]:
+            import re
+
+            # Remove thinking content from messages before sending to API
+            # This ensures only the final response is sent, excluding
+            # intermediate thought processes
+            messages = [
+                {  # type: ignore[misc]
+                    **msg,
+                    'content': re.sub(
+                        r'<think>.*?</think>',
+                        '',
+                        msg['content'],  # type: ignore[arg-type]
+                        flags=re.DOTALL,
+                    ).strip(),
+                }
+                for msg in messages
+            ]
+
+            logger.warning(
+                "Warning: You are using an DeepSeek Reasoner model, "
+                "which has certain limitations, reference: "
+                "`https://api-docs.deepseek.com/guides/reasoning_model"
+                "#api-parameters`.",
+            )
+            request_config = {
+                key: value
+                for key, value in request_config.items()
+                if key not in REASONSER_UNSUPPORTED_PARAMS
+            }
+
         if tools:
             for tool in tools:
                 function_dict = tool.get('function', {})
@@ -130,22 +166,6 @@ class DeepSeekModel(BaseModelBackend):
         elif response_format:
             try_modify_message_with_format(messages[-1], response_format)
             request_config["response_format"] = {"type": "json_object"}
-
-        if self.model_type in [
-            ModelType.DEEPSEEK_REASONER,
-        ]:
-            warnings.warn(
-                "Warning: You are using an DeepSeek Reasoner model, "
-                "which has certain limitations, reference: "
-                "`https://api-docs.deepseek.com/guides/reasoning_model"
-                "#api-parameters`.",
-                UserWarning,
-            )
-            request_config = {
-                key: value
-                for key, value in request_config.items()
-                if key not in REASONSER_UNSUPPORTED_PARAMS
-            }
 
         return request_config
 
@@ -169,11 +189,13 @@ class DeepSeekModel(BaseModelBackend):
         request_config = self._prepare_request(
             messages, response_format, tools
         )
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **request_config,
         )
+
         return response
 
     async def _arun(
@@ -202,8 +224,7 @@ class DeepSeekModel(BaseModelBackend):
             **request_config,
         )
 
-        # Temporary solution to handle the case where
-        # deepseek returns a reasoning_content
+        # Handle reasoning content with <think> tags at the beginning
         if (
             self.model_type
             in [
@@ -214,10 +235,10 @@ class DeepSeekModel(BaseModelBackend):
         ):
             reasoning_content = response.choices[0].message.reasoning_content
             combined_content = (
-                response.choices[0].message.content
-                + "\n\nBELOW IS THE REASONING CONTENT:\n\n"
-                + (reasoning_content if reasoning_content else "")
-            )
+                f"<think>\n{reasoning_content}\n</think>\n"
+                if reasoning_content
+                else ""
+            ) + response.choices[0].message.content
 
             response = ChatCompletion.construct(
                 id=response.id,

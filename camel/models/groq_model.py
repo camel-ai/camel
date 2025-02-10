@@ -95,8 +95,6 @@ class GroqModel(BaseModelBackend):
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
-        # Make sure you have the access to these open-source model in
-        # HuggingFace
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
