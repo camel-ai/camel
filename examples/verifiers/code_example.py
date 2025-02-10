@@ -116,6 +116,18 @@ def process_array():
     )
     print("Result:", result[0]["verification_result"])
 
+    # Example 6: Test Case Validation
+    print("\nExample 6: Test Case Validation")
+    # Invalid test case (not a list)
+    result = verifier.verify(
+        {
+            "code": ["def add(a, b): return a + b"],
+            "language": ["python"],
+            "test_cases": {"not": "a list"},  # Invalid: not a list
+        }
+    )
+    print("Invalid test case (not a list):", result[0]["verification_result"])
+
 
 if __name__ == "__main__":
     main()
@@ -243,6 +255,27 @@ Result: {
         'type': 'syntax_error'
     },
     'error': 'Syntax error: invalid syntax (<string>, line 1)',
+    'passed': False,
+    'test_results': []
+}
+
+Example 6: Test Case Validation
+Verifying code:   0%|         | 0/1 [00:00<?, ? examples/s]
+
+2025-02-10 07:41:14,094 - 
+camel.verifiers.code_verifier - WARNING - Invalid test cases: Test cases must 
+be a list
+2025-02-10 07:41:14,094 - 
+camel.verifiers.code_verifier - ERROR - Handling execution error: Invalid test 
+cases: Test cases must be a list
+
+Verifying code: 100%|██████████| 1/1 [00:00<00:00, 662.71 examples/s]
+Result: {
+    'details': {
+        'message': 'Invalid test cases: Test cases must be provided as a list',
+        'type': 'execution_error'
+    },
+    'error': 'Invalid test cases: Test cases must be provided as a list',
     'passed': False,
     'test_results': []
 }

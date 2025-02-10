@@ -13,13 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from datasets import Dataset
 
-from camel.interpreters import (
-    BaseInterpreter,
-)
+from camel.interpreters import BaseInterpreter, InterpreterError
 from camel.logger import logging
 
 logger = logging.getLogger(__name__)
@@ -52,20 +50,12 @@ class CodeVerifier:
             "Initialized CodeVerifier with interpreter %s", interpreter
         )
 
-    def verify(
-        self,
-        data: Union[Dataset, Dict[str, Any]],
-        criteria: Optional[Dict[str, Any]] = None,
-    ) -> Dataset:
+    def verify(self, data: Union[Dataset, Dict[str, Any]]) -> Dataset:
         r"""Verify code solutions.
 
         Args:
             data (Union[Dataset, Dict[str, Any]]): Data containing code to
                 verify
-
-            criteria (Optional[Dict[str, Any]], optional): Optional
-                verification criteria for this specific call.
-                (default: :obj:`None`)
 
         Returns:
             Dataset: Dataset with verification results added
@@ -86,7 +76,31 @@ class CodeVerifier:
             """
             code = example.get("code", "")
             language = example.get("language", "python")
+
+            # Validate language is supported by interpreter
+            supported_languages = self.interpreter.supported_code_types()
+            if language not in supported_languages:
+                logger.warning(
+                    "Language %s not supported by interpreter %s. "
+                    "Supported languages: %s",
+                    language,
+                    self.interpreter.__class__.__name__,
+                    supported_languages,
+                )
+                return self._handle_execution_error(
+                    example,
+                    InterpreterError(f"Language {language} not supported"),
+                )
+
             test_cases = example.get("test_cases", [])
+
+            try:
+                self._validate_test_cases(test_cases)
+            except ValueError as e:
+                logger.warning("Invalid test cases: %s", e)
+                return self._handle_execution_error(
+                    example, ValueError(f"Invalid test cases: {e!s}")
+                )
 
             logger.debug(
                 "Verifying code in %s with %d test cases",
@@ -164,6 +178,26 @@ print(f"Test passed: {{result}}")
             full_code.extend(test_assertions)
 
         return "\n".join(full_code)
+
+    def _validate_test_cases(self, test_cases: List[Dict[str, Any]]) -> None:
+        """Validate test cases structure.
+
+        Args:
+            test_cases (List[Dict[str, Any]]): List of test cases to validate
+
+        Raises:
+            ValueError: If test cases are malformed
+        """
+        if not isinstance(test_cases, list):
+            raise ValueError("Test cases must be provided as a list")
+
+        for i, test_case in enumerate(test_cases):
+            if not isinstance(test_case, dict):
+                raise ValueError(f"Test case {i} must be a dictionary")
+            if not test_case.get("expected"):
+                raise ValueError(
+                    f"Test case {i} must contain 'expected' results"
+                )
 
     def _handle_syntax_error(
         self,
