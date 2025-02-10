@@ -19,11 +19,12 @@ from datasets import Dataset
 
 from camel.interpreters import BaseInterpreter, InterpreterError
 from camel.logger import logging
+from camel.verifiers import BaseVerifier
 
 logger = logging.getLogger(__name__)
 
 
-class CodeVerifier:
+class CodeVerifier(BaseVerifier):
     r"""Verifier for code solutions.
 
     This verifier checks code solutions by:
@@ -45,6 +46,7 @@ class CodeVerifier:
             require_confirmation (bool, optional): Whether to require user
                 confirmation before execution. (default: :obj:`False`)
         """
+        super().__init__()
         self.interpreter = interpreter
         logger.info(
             "Initialized CodeVerifier with interpreter %s", interpreter
