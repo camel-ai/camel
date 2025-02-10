@@ -14,7 +14,6 @@
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MinerUToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -24,55 +23,44 @@ def main():
     # Initialize the toolkit
     mineru_toolkit = MinerUToolkit()
 
-    # print("Example 1: Extracting content from a single URL...")
-    # try:
-    #     # Extract and wait for results
-    #     result = mineru_toolkit.extract_from_urls(
-    #         urls="https://arxiv.org/pdf/2311.10993.pdf",
-    #         enable_formula=True,
-    #         enable_table=True,
-    #         language="en",
-    #     )
-    #     print("\nExtraction completed successfully:")
-    #     print(f"Download URL: {result['full_zip_url']}\n")
+    print("Example 1: Extracting content from a single URL...")
+    try:
+        # Extract and wait for results
+        result = mineru_toolkit.extract_from_urls(
+            urls="https://arxiv.org/pdf/2311.10993.pdf"
+        )
+        print("\nExtraction completed successfully:")
+        print(f"Download URL: {result['full_zip_url']}\n")
 
-    # except Exception as e:
-    #     print(f"Extraction failed: {e}\n")
+    except Exception as e:
+        print(f"Extraction failed: {e}\n")
 
-    # print("Example 2: Extracting content from multiple URLs...")
-    # try:
-    #     urls = [
-    #         "https://arxiv.org/pdf/2311.10993.pdf",
-    #         "https://arxiv.org/pdf/2310.07298.pdf",
-    #     ]
+    print("Example 2: Extracting content from multiple URLs...")
+    try:
+        urls = [
+            "https://arxiv.org/pdf/2311.10993.pdf",
+            "https://arxiv.org/pdf/2310.07298.pdf",
+        ]
 
-    #     # Batch extract and wait for results
-    #     results = mineru_toolkit.extract_from_urls(
-    #         urls=urls,
-    #         enable_formula=True,
-    #         enable_table=True,
-    #         language="en",
-    #     )
+        # Batch extract and wait for results
+        results = mineru_toolkit.extract_from_urls(urls=urls)
 
-    #     print("\nBatch extraction completed successfully:")
-    #     for result in results['extract_result']:
-    #         print(f"\nDocument: {result['file_name']}")
-    #         print(f"Download URL: {result['full_zip_url']}")
+        print("\nBatch extraction completed successfully:")
+        for result in results['extract_result']:
+            print(f"\nDocument: {result['file_name']}")
+            print(f"Download URL: {result['full_zip_url']}")
 
-    # except Exception as e:
-    #     print(f"Batch extraction failed: {e}\n")
+    except Exception as e:
+        print(f"Batch extraction failed: {e}\n")
 
     print("\nExample 3: Using MinerU with ChatAgent...")
     try:
         # Set up the ChatAgent with MinerU capabilities
-        sys_msg = BaseMessage.make_assistant_message(
-            role_name="Document Analyzer",
-            content="""
-            You are a helpful assistant that can extract and analyze 
-            content from documents using MinerU's document extraction. 
-            You can handle PDFs and extract text, formulas, and tables. When 
-            processing documents, inform users that it may take time.
-            """,
+        sys_msg = (
+            "You are a helpful assistant that can extract and analyze "
+            "content from documents using MinerU's document extraction. "
+            "You can handle PDFs and extract text, formulas, and tables. When "
+            "processing documents, inform users that it may take time."
         )
 
         # Initialize the model with specific configuration
@@ -90,11 +78,10 @@ def main():
         )
 
         # Example document analysis request
-        usr_msg = BaseMessage.make_user_message(
-            role_name="User",
-            content="""Please extract and analyze this research paper, 
-            focusing on mathematical formulas and tables: 
-            https://arxiv.org/pdf/2311.10993.pdf""",
+        usr_msg = (
+            "Please extract and analyze this research paper,"
+            "focusing on mathematical formulas and tables: "
+            "https://arxiv.org/pdf/2311.10993.pdf "
         )
 
         response = agent.step(usr_msg)

@@ -24,11 +24,6 @@ def main():
         # Extract content from a single URL
         response = mineru.extract_url(
             url="https://arxiv.org/pdf/2311.10993.pdf",
-            is_ocr=True,
-            enable_formula=True,
-            enable_table=True,
-            layout_model="doclayout_yolo",
-            language="en",
         )
         task_id = response['task_id']
         print(f"Task ID: {task_id}")
@@ -60,10 +55,6 @@ def main():
         # Batch extract URLs
         batch_id = mineru.batch_extract_urls(
             files=files,
-            enable_formula=True,
-            enable_table=True,
-            layout_model="doclayout_yolo",
-            language="en",
         )
         print(f"Batch ID: {batch_id}")
 

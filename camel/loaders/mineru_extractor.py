@@ -22,14 +22,15 @@ from camel.utils import api_keys_required
 
 
 class MinerU:
-    r"""MinerU is a document extraction service that supports OCR, formula
-    recognition, and table detection.
+    r"""Document extraction service supporting OCR, formula recognition
+        and tables.
 
     Args:
-        api_key (Optional[str]): API key for authenticating with MinerU API.
-            If not provided, will look for MINERU_API_KEY environment variable.
-        api_url (Optional[str]): Base URL for the MinerU API.
-            (default: "https://mineru.net/api/v4")
+        api_key (str, optional): Authentication key for MinerU API service.
+            If not provided, will use MINERU_API_KEY environment variable.
+            (default: :obj:`None`)
+        api_url (str, optional): Base URL endpoint for the MinerU API service.
+            (default: :obj:`"https://mineru.net/api/v4"`)
 
     Note:
         - Single file size limit: 200MB
@@ -47,7 +48,31 @@ class MinerU:
         self,
         api_key: Optional[str] = None,
         api_url: Optional[str] = "https://mineru.net/api/v4",
+        is_ocr: bool = False,
+        enable_formula: bool = False,
+        enable_table: bool = True,
+        layout_model: str = "doclayout_yolo",
+        language: str = "en",
     ) -> None:
+        r"""Initialize MinerU extractor.
+
+        Args:
+            api_key (str, optional): Authentication key for MinerU API service.
+                If not provided, will use MINERU_API_KEY environment variable.
+            api_url (str, optional): Base URL endpoint for MinerU API service.
+                (default: "https://mineru.net/api/v4")
+            is_ocr (bool, optional): Enable optical character recognition.
+                (default: :obj:`False`)
+            enable_formula (bool, optional): Enable formula recognition.
+                (default: :obj:`False`)
+            enable_table (bool, optional): Enable table detection, extraction.
+                (default: :obj:`True`)
+            layout_model (str, optional): Model for document layout detection.
+                Options are 'doclayout_yolo' or 'layoutlmv3'.
+                (default: :obj:`"doclayout_yolo"`)
+            language (str, optional): Primary language of the document.
+                (default: :obj:`"en"`)
+        """
         self._api_key = api_key or os.environ.get("MINERU_API_KEY")
         self._api_url = api_url
         self._headers = {
@@ -55,41 +80,23 @@ class MinerU:
             "Content-Type": "application/json",
             "Accept": "*/*",
         }
+        self.is_ocr = is_ocr
+        self.enable_formula = enable_formula
+        self.enable_table = enable_table
+        self.layout_model = layout_model
+        self.language = language
 
-    def extract_url(
-        self,
-        url: str,
-        is_ocr: bool = True,
-        enable_formula: bool = False,
-        enable_table: bool = True,
-        layout_model: str = "doclayout_yolo",
-        language: str = "ch",
-    ) -> Dict:
-        r"""Extract content from a single URL.
+    def extract_url(self, url: str) -> Dict:
+        r"""Extract content from a URL document.
 
         Args:
-            url (str): The URL to extract content from.
-            is_ocr (bool): Whether to enable OCR. (default: True)
-            enable_formula (bool): Whether to enable formula recognition.
-                (default: False)
-            enable_table (bool): Whether to enable table recognition.
-                (default: True)
-            layout_model (str): Model for layout detection. Options:
-                'doclayout_yolo' or 'layoutlmv3'. (default: 'doclayout_yolo')
-            language (str): Document language. (default: "ch")
+            url (str): Document URL to extract content from.
 
         Returns:
-            Dict: Contains task_id for tracking the extraction progress.
+            Dict: Task identifier for tracking extraction progress.
         """
         endpoint = f"{self._api_url}/extract/task"
-        payload = {
-            "url": url,
-            "is_ocr": is_ocr,
-            "enable_formula": enable_formula,
-            "enable_table": enable_table,
-            "layout_model": layout_model,
-            "language": language,
-        }
+        payload = {"url": url}
 
         try:
             response = requests.post(
@@ -105,34 +112,19 @@ class MinerU:
     def batch_extract_urls(
         self,
         files: List[Dict[str, Union[str, bool]]],
-        enable_formula: bool = True,
-        enable_table: bool = True,
-        layout_model: str = "doclayout_yolo",
-        language: str = "ch",
     ) -> str:
-        r"""Extract content from multiple URLs in batch.
+        r"""Extract content from multiple document URLs in batch.
 
         Args:
-            files (List[Dict[str, Union[str, bool]]]): List of file
-                configurations. Each file should have 'url' and optionally
-                'is_ocr' and 'data_id'.
-            enable_formula (bool): Enable formula recognition. (default: True)
-            enable_table (bool): Enable table recognition. (default: True)
-            layout_model (str): Layout detection model.
-                (default: 'doclayout_yolo')
-            language (str): Document language. (default: "ch")
+            files (List[Dict[str, Union[str, bool]]]): List of document
+                configurations. Each document requires 'url' and optionally
+                'is_ocr' and 'data_id' parameters.
 
         Returns:
-            str: Batch ID for tracking the extraction progress.
+            str: Batch identifier for tracking extraction progress.
         """
         endpoint = f"{self._api_url}/extract/task/batch"
-        payload = {
-            "files": files,
-            "enable_formula": enable_formula,
-            "enable_table": enable_table,
-            "layout_model": layout_model,
-            "language": language,
-        }
+        payload = {"files": files}
 
         try:
             response = requests.post(
@@ -146,13 +138,13 @@ class MinerU:
             raise RuntimeError(f"Failed to batch extract URLs: {e}")
 
     def get_task_status(self, task_id: str) -> Dict:
-        r"""Check the status of a single extraction task.
+        r"""Retrieve status of a single extraction task.
 
         Args:
-            task_id (str): The ID of the extraction task.
+            task_id (str): Unique identifier of the extraction task.
 
         Returns:
-            Dict: Task status and results if completed.
+            Dict: Current task status and results if completed.
         """
         endpoint = f"{self._api_url}/extract/task/{task_id}"
 
@@ -164,13 +156,13 @@ class MinerU:
             raise RuntimeError(f"Failed to get task status: {e}")
 
     def get_batch_status(self, batch_id: str) -> Dict:
-        r"""Check the status of a batch extraction task.
+        r"""Retrieve status of a batch extraction task.
 
         Args:
-            batch_id (str): The ID of the batch extraction task.
+            batch_id (str): Unique identifier of the batch extraction task.
 
         Returns:
-            Dict: Status and results of all files in the batch.
+            Dict: Current status and results for all documents in the batch.
         """
         endpoint = f"{self._api_url}/extract-results/batch/{batch_id}"
 
@@ -188,21 +180,23 @@ class MinerU:
         timeout: float = 100,
         check_interval: float = 5,
     ) -> Dict:
-        r"""Wait for task completion with timeout.
+        r"""Monitor task until completion or timeout.
 
         Args:
-            task_id (str): The ID of the task or batch.
-            is_batch (bool): Whether this is a batch task. (default: False)
-            timeout (float): Maximum time to wait in seconds. (default: 300)
-            check_interval (float): Time between status checks in seconds.
-                (default: 5)
+            task_id (str): Unique identifier of the task or batch.
+            is_batch (bool, optional): Indicates if task is a batch operation.
+                (default: :obj:`False`)
+            timeout (float, optional): Maximum wait time in seconds.
+                (default: :obj:`100`)
+            check_interval (float, optional): Time between status checks in
+                seconds. (default: :obj:`5`)
 
         Returns:
-            Dict: Final task status and results.
+            Dict: Final task status and extraction results.
 
         Raises:
-            TimeoutError: If task doesn't complete within timeout period.
-            RuntimeError: If task fails or encounters an error.
+            TimeoutError: If task exceeds specified timeout duration.
+            RuntimeError: If task fails or encounters processing error.
         """
         start_time = time.time()
         while True:
