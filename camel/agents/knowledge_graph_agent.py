@@ -165,11 +165,7 @@ class KnowledgeGraphAgent(ChatAgent):
             task=str(element)
         )
 
-        knowledge_graph_generation_msg = BaseMessage.make_user_message(
-            role_name="Graphify", content=knowledge_graph_generation
-        )
-
-        response = self.step(input_message=knowledge_graph_generation_msg)
+        response = self.step(input_message=knowledge_graph_generation)
 
         content = response.msg.content
 

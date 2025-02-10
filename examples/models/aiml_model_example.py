@@ -11,35 +11,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from pydantic import BaseModel, Field
-
 from camel.agents import ChatAgent
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-
-# Define system message
-assistant_sys_msg = "You are a helpful assistant."
+from camel.types import ModelPlatformType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
+    model_platform=ModelPlatformType.AIML,
+    model_type="mistralai/Mixtral-8x7B-Instruct-v0.1",
 )
 
+# Define system message
+sys_msg = "You are a helpful assistant."
+
 # Set agent
-camel_agent = ChatAgent(assistant_sys_msg, model=model)
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-
-# pydantic basemodel as input params format
-class JokeResponse(BaseModel):
-    joke: str = Field(description="a joke")
-    funny_level: str = Field(description="Funny level, from 1 to 10")
-
+user_msg = """Say hi to CAMEL AI, one open-source community
+    dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
-response = camel_agent.step("Tell me a joke.", response_format=JokeResponse)
+response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
-"""
-{'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"
-, 'funny_level': '8'}
-"""
+
+'''
+===============================================================================
+ Hello CAMEL AI! It's great to meet a community dedicated to the study of 
+ autonomous and communicative agents. How can I assist you today?
+===============================================================================
+'''

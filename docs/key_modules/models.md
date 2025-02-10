@@ -101,6 +101,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
 | SGLang | https://sgl-project.github.io/references/supported_models.html | ----- |
+| AIML | https://docs.aimlapi.com/api-overview/model-database/text-models | ----- |
 
 ## 3. Using Models by API calling
 
