@@ -15,7 +15,7 @@
 from camel.agents import ReActAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import MathToolkit
+from camel.toolkits import SearchToolkit
 from camel.types import ModelPlatformType, ModelType, RoleType
 
 
@@ -37,19 +37,17 @@ def main() -> None:
     )
 
     # Initialize toolkit and agent
-    math_tool = MathToolkit()
     agent = ReActAgent(
         system_message=system_message,
-        tools=math_tool.get_tools(),
+        tools=[SearchToolkit().search_duckduckgo],
         model=model,
         max_steps=5,
     )
 
     # Example queries
     queries = [
-        "What is 123.45 plus 678.90?",
-        "Calculate 25 multiplied by 3.14, rounded to 2 decimal places",
-        "Divide 1000 by 3 and round to the nearest whole number",
+        "What is the population of Paris in 2024?",
+        "What is the population of the capital of France?",
     ]
 
     # Process each query and print raw JSON response

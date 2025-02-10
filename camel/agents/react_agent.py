@@ -104,10 +104,15 @@ class ReActAgent(ChatAgent):
             "  - Search(query=<search terms>)\n"
             "  - Lookup(key=<exact key>)\n"
             "  - Finish(answer=<final answer>)\n"
-            "\nExample response:\n"
+            "\nExample response for Search:\n"
             '{\n'
-            '    "thought": "I need to find population data",\n'
-            '    "action": "Search(query=Paris population 2024)"\n'
+            '    "thought": "I need to find current population data",\n'
+            '    "action": "Search(query=Paris population estimate 2024)"\n'
+            '}\n\n'
+            "Example response for Lookup:\n"
+            '{\n'
+            '    "thought": "I need structured lookup results",\n'
+            '    "action": "Lookup(key=Paris_population_data)"\n'
             '}\n\n'
             "Current scratchpad:\n"
             "{scratchpad}"
@@ -169,8 +174,8 @@ class ReActAgent(ChatAgent):
                 Finish).
 
         Returns:
-            str: The result of the action execution. Returns error message if
-                action execution fails or no suitable tool is found.
+            str: The result of the action execution. Returns an error message
+                if action execution fails or no suitable tool is found.
         """
         logger.debug("Executing action: %s", action)
 
@@ -182,18 +187,21 @@ class ReActAgent(ChatAgent):
             logger.warning("No tools available to execute action")
             return "No tools available to execute action."
 
+        # Differentiate based on the type of actionable command
         for tool in self.tools:
             try:
-                if hasattr(tool, 'can_handle') and tool.can_handle(action):
-                    logger.debug("Found tool to handle action")
+                if not hasattr(tool, 'can_handle') or tool.can_handle(action):
+                    logger.debug(
+                        "Found tool to handle action using tool: %s",
+                        getattr(tool, "name", tool),
+                    )
                     if hasattr(tool, 'execute'):
-                        return tool.execute(action)
+                        result = tool.execute(action)
+                        return result
                     elif callable(tool):
                         return tool(action)
                     else:
-                        logger.error(
-                            "Tool has no execute method or is not callable"
-                        )
+                        logger.error("No execute method or is not callable")
                         return "Error: Tool implementation is invalid"
             except Exception as e:
                 logger.error("Error executing action: %s", str(e))
@@ -245,10 +253,11 @@ class ReActAgent(ChatAgent):
         # Include scratchpad history in the prompt
         history = self._format_scratchpad()
         augmented_content = (
-            f"{input_message.content}\n\n"
-            f"{history}\n"
-            f"{self.react_prompt}"
+            f"Question: {input_message.content}\n\n"
+            f"Previous steps:\n{history}\n\n"
+            "Let's approach this step-by-step:\n"
         )
+
         augmented_message = BaseMessage(
             role_name=input_message.role_name,
             role_type=input_message.role_type,
