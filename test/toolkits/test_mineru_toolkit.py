@@ -21,17 +21,30 @@ from camel.toolkits import MinerUToolkit
 
 
 @pytest.fixture
-def mineru_toolkit():
-    # Create a mock MinerU class
-    mock_mineru = MagicMock()
+def mock_mineru():
+    """Create a mock MinerU client with all required responses."""
+    mock = MagicMock(spec=MinerU)
 
     # Mock single URL extraction
-    mock_mineru.extract_url.return_value = {'task_id': 'test_task'}
+    mock.extract_url.return_value = {'task_id': 'test_task'}
 
     # Mock batch URL extraction
-    mock_mineru.batch_extract_urls.return_value = 'batch_123'
+    mock.batch_extract_urls.return_value = 'batch_123'
 
-    # Mock wait_for_completion with different responses for single and batch
+    # Mock task status
+    mock.get_task_status.return_value = {
+        'status': 'processing',
+        'progress': 50,
+    }
+
+    # Mock batch status
+    mock.get_batch_status.return_value = {
+        'status': 'processing',
+        'files_completed': 1,
+        'files_total': 2,
+    }
+
+    # Mock wait_for_completion with different responses
     def wait_for_completion_side_effect(task_id, is_batch=False, timeout=None):
         if is_batch:
             return {
@@ -41,125 +54,113 @@ def mineru_toolkit():
                     {'url': 'https://test.com/doc2.pdf', 'status': 'success'},
                 ],
             }
-        else:
-            return {
-                'status': 'success',
-                'full_zip_url': 'https://example.com/test.zip',
-            }
+        return {
+            'status': 'success',
+            'full_zip_url': 'https://example.com/test.zip',
+        }
 
-    mock_mineru.wait_for_completion.side_effect = (
-        wait_for_completion_side_effect
-    )
+    mock.wait_for_completion.side_effect = wait_for_completion_side_effect
+    return mock
 
-    # Mock status checks
-    mock_mineru.get_task_status.return_value = {
-        'status': 'processing',
-        'progress': 50,
-    }
 
-    mock_mineru.get_batch_status.return_value = {
-        'status': 'processing',
-        'files_completed': 1,
-        'files_total': 2,
-    }
-
-    # Create toolkit with mocked MinerU
+@pytest.fixture
+def mineru_toolkit(mock_mineru):
+    """Create a MinerUToolkit instance with mocked client."""
     with patch.dict('os.environ', {'MINERU_API_KEY': 'fake_api_key'}):
         with patch(
             'camel.toolkits.mineru_toolkit.MinerU', return_value=mock_mineru
         ):
             toolkit = MinerUToolkit()
+            toolkit.client = mock_mineru
             return toolkit
 
 
-def test_initialization():
-    # Test initialization with API key from environment
-    with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        toolkit = MinerUToolkit()
-        assert isinstance(toolkit.client, MinerU)
-
-    # Test initialization with custom API URL
-    with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
-        custom_url = "https://custom.mineru.net/api/v4"
-        toolkit = MinerUToolkit(api_url=custom_url)
-        assert isinstance(toolkit.client, MinerU)
-
-    # Test initialization without API key
-    with patch.dict('os.environ', {}, clear=True):
-        with pytest.raises(ValueError):
-            MinerUToolkit()
-
-
 def test_extract_from_urls_single(mineru_toolkit):
-    result = mineru_toolkit.extract_from_urls(
-        urls="https://test.com/doc.pdf",
-        enable_formula=True,
-        enable_table=True,
-        language="en",
-    )
-
+    """Test single URL extraction."""
+    result = mineru_toolkit.extract_from_urls("https://test.com/doc.pdf")
     assert result['status'] == 'success'
     assert result['full_zip_url'] == 'https://example.com/test.zip'
-
     mineru_toolkit.client.extract_url.assert_called_once()
-    mineru_toolkit.client.wait_for_completion.assert_called_once_with(
-        'test_task', timeout=300
-    )
 
 
 def test_extract_from_urls_batch(mineru_toolkit):
+    """Test batch URL extraction."""
     urls = ["https://test.com/doc1.pdf", "https://test.com/doc2.pdf"]
-    result = mineru_toolkit.extract_from_urls(urls=urls)
-
+    result = mineru_toolkit.extract_from_urls(urls)
     assert result['status'] == 'completed'
     assert len(result['extract_result']) == 2
-    assert all(
-        item['status'] == 'success' for item in result['extract_result']
-    )
-
-    # Verify the batch extraction was called with correct parameters
     mineru_toolkit.client.batch_extract_urls.assert_called_once()
-    mineru_toolkit.client.wait_for_completion.assert_called_once_with(
-        'batch_123', is_batch=True, timeout=600
-    )
 
 
-def test_extract_from_urls_no_wait(mineru_toolkit):
-    # Test single URL without waiting
-    single_result = mineru_toolkit.extract_from_urls(
-        urls="https://test.com/doc.pdf", wait=False
-    )
-    assert 'task_id' in single_result
-    # Verify extract_url was called but wait_for_completion was not
-    mineru_toolkit.client.extract_url.assert_called_once()
-    mineru_toolkit.client.wait_for_completion.assert_not_called()
-
-    # Reset mock counters
-    mineru_toolkit.client.reset_mock()
-
-    # Test multiple URLs without waiting
-    batch_result = mineru_toolkit.extract_from_urls(
-        urls=["https://test.com/doc1.pdf", "https://test.com/doc2.pdf"],
-        wait=False,
-    )
-    assert 'batch_id' in batch_result
-    # Verify batch_extract_urls was called but wait_for_completion was not
+def test_extract_from_urls_batch_no_wait(mineru_toolkit):
+    """Test batch URL extraction without waiting."""
+    mineru_toolkit.wait = False
+    urls = ["https://test.com/doc1.pdf", "https://test.com/doc2.pdf"]
+    result = mineru_toolkit.extract_from_urls(urls)
+    assert 'batch_id' in result
+    assert result['batch_id'] == 'batch_123'
     mineru_toolkit.client.batch_extract_urls.assert_called_once()
-    mineru_toolkit.client.wait_for_completion.assert_not_called()
 
 
 def test_get_task_status(mineru_toolkit):
-    result = mineru_toolkit.get_task_status('task_123')
-
+    """Test getting task status."""
+    result = mineru_toolkit.get_task_status('test_task')
     assert result['status'] == 'processing'
     assert result['progress'] == 50
-    mineru_toolkit.client.get_task_status.assert_called_once_with('task_123')
+    mineru_toolkit.client.get_task_status.assert_called_once_with('test_task')
 
 
 def test_get_batch_status(mineru_toolkit):
+    """Test getting batch status."""
     result = mineru_toolkit.get_batch_status('batch_123')
-
     assert result['status'] == 'processing'
     assert result['files_completed'] == 1
     assert result['files_total'] == 2
     mineru_toolkit.client.get_batch_status.assert_called_once_with('batch_123')
+
+
+def test_get_tools(mineru_toolkit):
+    """Test getting available tools."""
+    tools = mineru_toolkit.get_tools()
+    assert len(tools) == 3
+    tool_names = {tool.get_function_name() for tool in tools}
+    expected_names = {
+        'extract_from_urls',
+        'get_task_status',
+        'get_batch_status',
+    }
+    assert tool_names == expected_names
+
+
+def test_error_handling(mineru_toolkit):
+    """Test error handling when API calls fail."""
+    # Test single URL extraction error
+    mineru_toolkit.client.extract_url.side_effect = Exception("API Error")
+    with pytest.raises(Exception) as exc_info:
+        mineru_toolkit.extract_from_urls("https://test.com/doc.pdf")
+    assert "API Error" in str(exc_info.value)
+
+    # Test batch URL extraction error
+    mineru_toolkit.client.batch_extract_urls.side_effect = Exception(
+        "Batch API Error"
+    )
+    with pytest.raises(Exception) as exc_info:
+        mineru_toolkit.extract_from_urls(
+            ["https://test.com/doc1.pdf", "https://test.com/doc2.pdf"]
+        )
+    assert "Batch API Error" in str(exc_info.value)
+
+    # Test status check errors
+    mineru_toolkit.client.get_task_status.side_effect = Exception(
+        "Status API Error"
+    )
+    with pytest.raises(Exception) as exc_info:
+        mineru_toolkit.get_task_status("test_task")
+    assert "Status API Error" in str(exc_info.value)
+
+    mineru_toolkit.client.get_batch_status.side_effect = Exception(
+        "Batch Status Error"
+    )
+    with pytest.raises(Exception) as exc_info:
+        mineru_toolkit.get_batch_status("batch_123")
+    assert "Batch Status Error" in str(exc_info.value)

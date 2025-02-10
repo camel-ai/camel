@@ -76,12 +76,15 @@ class MinerUToolkit(BaseToolkit):
             timeout (float): Maximum duration in seconds to wait for task
                 completion. (default: :obj:`300`)
         """
-        self.client = MinerU(api_key=api_key, api_url=api_url)
-        self.is_ocr = is_ocr
-        self.enable_formula = enable_formula
-        self.enable_table = enable_table
-        self.layout_model = layout_model
-        self.language = language
+        self.client = MinerU(
+            api_key=api_key,
+            api_url=api_url,
+            is_ocr=is_ocr,
+            enable_formula=enable_formula,
+            enable_table=enable_table,
+            layout_model=layout_model,
+            language=language,
+        )
         self.wait = wait
         self.timeout = timeout
 
@@ -114,7 +117,7 @@ class MinerUToolkit(BaseToolkit):
         else:
             # Multiple URLs case
             files: List[Dict[str, str | bool]] = [
-                {"url": str(url), "is_ocr": bool(self.is_ocr)} for url in urls
+                {"url": str(url)} for url in urls
             ]
             batch_id = self.client.batch_extract_urls(files=files)
 
