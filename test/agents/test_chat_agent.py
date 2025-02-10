@@ -30,7 +30,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import FunctionCallingRecord
+from camel.agents.chat_agent import ToolCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -857,16 +857,16 @@ def test_tool_calling_sync(step_call_count=3):
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
 
-        tool_calls: List[FunctionCallingRecord] = [
+        tool_calls: List[ToolCallingRecord] = [
             call for call in agent_response.info['tool_calls']
         ]
 
         assert len(tool_calls) > 0, f"Error in calling round {i+1}"
         assert str(tool_calls[0]).startswith(
-            "Function Execution"
+            "Tool Execution"
         ), f"Error in calling round {i+1}"
         assert (
-            tool_calls[0].func_name == "multiply"
+            tool_calls[0].tool_name == "multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -985,7 +985,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         tool_calls = agent_response.info['tool_calls']
 
         assert (
-            tool_calls[0].func_name == "multiply"
+            tool_calls[0].tool_name == "multiply"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             "a": 2,
@@ -1074,11 +1074,11 @@ async def test_tool_calling_async(step_call_count=3):
 
         assert tool_calls, f"Error in calling round {i+1}"
         assert str(tool_calls[0]).startswith(
-            "Function Execution"
+            "Tool Execution"
         ), f"Error in calling round {i+1}"
 
         assert (
-            tool_calls[0].func_name == "async_sleep"
+            tool_calls[0].tool_name == "async_sleep"
         ), f"Error in calling round {i+1}"
         assert tool_calls[0].args == {
             'second': 1
