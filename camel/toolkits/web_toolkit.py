@@ -12,7 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-from typing import List
+import os
+from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -207,7 +208,6 @@ class StagehandPrompts:
         For extractions, use one extraction call for each chunk.
 
     Remember:
-    - Never use relative URLs for links in page.goto().
     - Always use absolute URLs for links in page.goto().
     - Use observe() to see potential clickable items or possible actions.
     - Use extract() with a carefully chosen instruction and schema 
@@ -345,7 +345,7 @@ class WebToolkit(BaseToolkit):
         """
 
         if self.debug:
-            print("[DEBUG]: Calling the extract text & images tool")
+            print("[DEBUG]: Calling the web interaction tool")
 
         # JavaScript code to extract text and images using Stagehand
         js_code = f"""
@@ -482,6 +482,177 @@ class WebToolkit(BaseToolkit):
         else:
             raise ValueError("Failed to generate Stagehand code.")
 
+    def stagehand_screenshot_and_analyze_with_gpt4o(self, url: str) -> str:
+        r"""
+        Captures multiple screenshots while scrolling, extracts page text,
+        and sends each screenshot along with the extracted text to GPT-4o
+        for analysis.
+
+        Args:
+            url (str): The webpage URL to analyze.
+
+        Returns:
+            Dict[str, Any]: JSON response containing:
+                - GPT-4o analysis for each screenshot.
+                - Extracted text from the page.
+                - Screenshot file paths.
+        """
+
+        if self.debug:
+            print("[DEBUG]: Calling the screenshot and analyze tool")
+
+        screenshot_folder = "screenshots"
+        os.makedirs(screenshot_folder, exist_ok=True)
+        screenshot_base = os.path.join(
+            screenshot_folder, os.path.basename(url).replace("/", "_")
+        )
+
+        # JavaScript code for scrolling, taking screenshots,
+        # and extracting text per screenshot
+        js_code = f"""
+          const {{ Stagehand }} = require('@browserbasehq/stagehand');
+          const z = require('zod');
+          const fs = require('fs');
+
+          (async () => {{
+              const stagehand = new Stagehand({{ headless: true }});
+              await stagehand.init();
+              const page = stagehand.page;
+              try {{
+                  await page.goto("{url}");
+
+                  let screenshots = [];
+                  let totalHeight = 0;
+                  let viewportHeight = await page.evaluate(
+                    () => window.innerHeight);
+                  let scrollHeight = await page.evaluate(
+                    () => document.body.scrollHeight);
+                  let scrollY = 0;
+                  let index = 0;
+
+                  // Extract full-page text once
+                  const fullTextData = await page.extract({{
+                      instruction: "Extract all visible text on the page.",
+                      schema: z.object({{ text: z.string() }})
+                  }});
+
+                  let extracted_text = fullTextData.text;
+
+                  // Scroll and take multiple screenshots
+                  while (scrollY < scrollHeight) {{
+                      let screenshot_path = "{screenshot_base}_" + 
+                      index + ".png";
+                      await page.screenshot({{ path: screenshot_path }});
+                      screenshots.push(screenshot_path);
+
+                      totalHeight += viewportHeight;
+                      scrollY += viewportHeight;
+                      await page.evaluate((height) => 
+                      window.scrollBy(0, height), 
+                      viewportHeight);
+                      await page.act({{ action: "Wait a second 
+                      for scrolling to complete." }});
+                      index++;
+                  }}
+
+                  // Final JSON object
+                  const extractedData = {{
+                      status: "success",
+                      text: extracted_text,
+                      screenshots: screenshots,
+                      link: "{url}"
+                  }};
+
+                  console.log("Final updated_state: ", 
+                  JSON.stringify(extractedData, null, 2));
+
+              }} catch (error) {{
+                  console.error("Final updated_state: ", JSON.stringify({{
+                      status: "failure",
+                      error: error.message
+                  }}));
+              }} finally {{
+                  await stagehand.close();
+              }}
+          }})();
+        """
+
+        # Run Stagehand script
+        node_process = SubprocessInterpreter(
+            require_confirm=False, print_stdout=False, print_stderr=False
+        )
+        exec_result = node_process.run(js_code, "node")
+
+        # Parse the JSON output
+        result_str = self._parse_json_from_output(exec_result)
+
+        if not result_str or "screenshots" not in result_str:
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "No valid JSON found in node logs.",
+                }
+            )
+
+        screenshots = result_str["screenshots"]
+        extracted_text = result_str["text"]
+
+        # Analyze each screenshot with GPT-4o
+        gpt_results = self._analyze_screenshots_with_gpt4o(
+            screenshots, extracted_text
+        )
+
+        # Final response with GPT-4o results
+        final_response = {
+            "status": "success",
+            "link": url,
+            "text": extracted_text,
+            "gpt_analysis": gpt_results,
+        }
+
+        return json.dumps(final_response)
+
+    def _analyze_screenshots_with_gpt4o(
+        self, screenshots: List[str], text: str
+    ) -> List[Dict[str, Any]]:
+        r"""
+        Sends each screenshot along with extracted text to GPT-4o for analysis.
+
+        Args:
+            screenshots (List[str]): List of screenshot file paths.
+            text (str): Extracted text from the webpage.
+
+        Returns:
+            List[Dict[str, Any]]: List of GPT-4o responses for each screenshot.
+        """
+        results = []
+
+        for screenshot in screenshots:
+            gpt_input = {
+                "prompt": f"""Analyze the following screenshot in the 
+                context of the extracted webpage 
+                text:\n\n{text}\n\n"""
+                f"""Describe the visual elements and provide insights 
+                based on the webpage's purpose.""",
+                "image": screenshot,  # Pass image file for analysis
+            }
+
+            # Send to GPT-4o model
+            response = self.agent.step(input_message=gpt_input)
+
+            # Extract response content
+            gpt_response = (
+                response.msgs[-1].content.strip()
+                if response and response.msgs
+                else "No response from model."
+            )
+
+            results.append(
+                {"screenshot": screenshot, "analysis": gpt_response}
+            )
+
+        return results
+
     def _run_stagehand_script_in_node(self, js_code: str) -> str:
         r"""
         Internal method that executes the Stagehand code under
@@ -585,4 +756,5 @@ class WebToolkit(BaseToolkit):
         return [
             FunctionTool(self.stagehand_tool),
             FunctionTool(self.stagehand_extract_text_images),
+            FunctionTool(self.stagehand_screenshot_and_analyze_with_gpt4o),
         ]
