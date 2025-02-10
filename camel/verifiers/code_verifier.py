@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 from typing import Any, Dict, List, Optional, Union
 
 from datasets import Dataset
@@ -19,6 +20,9 @@ from datasets import Dataset
 from camel.interpreters import (
     BaseInterpreter,
 )
+from camel.logger import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CodeVerifier:
@@ -38,12 +42,15 @@ class CodeVerifier:
         r"""Initialize the code verifier.
 
         Args:
-            interpreter (str, optional): Type of interpreter to use.
-                (default: :obj:`"subprocess"`)
+            interpreter (BaseInterpreter): The interpreter instance to use for
+                code execution
             require_confirmation (bool, optional): Whether to require user
                 confirmation before execution. (default: :obj:`False`)
         """
         self.interpreter = interpreter
+        logger.info(
+            "Initialized CodeVerifier with interpreter %s", interpreter
+        )
 
     def verify(
         self,
@@ -66,6 +73,8 @@ class CodeVerifier:
         if isinstance(data, dict):
             data = Dataset.from_dict(data)
 
+        logger.info("Starting verification of %d examples", len(data))
+
         def verify_single(example: Dict[str, Any]) -> Dict[str, Any]:
             r"""Verify a single code example.
 
@@ -79,11 +88,18 @@ class CodeVerifier:
             language = example.get("language", "python")
             test_cases = example.get("test_cases", [])
 
+            logger.debug(
+                "Verifying code in %s with %d test cases",
+                language,
+                len(test_cases),
+            )
+
             # Check syntax first
             try:
                 if language == "python":
                     compile(code, '<string>', 'exec')
             except SyntaxError as e:
+                logger.warning("Syntax error in code: %s", e)
                 return self._handle_syntax_error(example, e)
 
             try:
@@ -91,10 +107,13 @@ class CodeVerifier:
                     example, code, language, test_cases
                 )
             except Exception as e:
+                logger.error("Execution error: %s", e)
                 return self._handle_execution_error(example, e)
 
         # For Parallelization
-        num_proc = min(4, len(data))
+        default_cpus = max(1, min(8, (os.cpu_count() or 1) // 2))
+        num_proc = min(default_cpus, len(data))
+        logger.info("Using %d processes for parallel verification", num_proc)
 
         return data.map(
             verify_single, num_proc=num_proc, desc="Verifying code"
@@ -114,6 +133,9 @@ class CodeVerifier:
         Returns:
             str: Complete test code with assertions
         """
+        logger.debug(
+            "Preparing test code with inputs: %s", test_case.get("inputs")
+        )
         full_code = [code]
 
         # Add test case setup
@@ -157,6 +179,9 @@ print(f"Test passed: {{result}}")
         Returns:
             Dict[str, Any]: Updated example with error information
         """
+        logger.warning(
+            "Handling syntax error: %s at line %d", error, error.lineno
+        )
         return {
             **example,
             "verification_result": {
@@ -186,6 +211,7 @@ print(f"Test passed: {{result}}")
         Returns:
             Dict[str, Any]: Updated example with error information
         """
+        logger.error("Handling execution error: %s", error)
         example["verification_result"] = {
             "passed": False,
             "test_results": [],
@@ -219,7 +245,9 @@ print(f"Test passed: {{result}}")
         test_details = []
 
         if test_cases:
+            logger.info("Running %d test cases", len(test_cases))
             for i, test_case in enumerate(test_cases):
+                logger.debug("Running test case %d", i + 1)
                 test_code = self._prepare_test_code(code, test_case)
                 try:
                     output = self.interpreter.run(test_code, language)
@@ -231,6 +259,7 @@ print(f"Test passed: {{result}}")
                             "output": output,
                         }
                     )
+                    logger.debug("Test case %d passed", i + 1)
                 except Exception as e:
                     test_results.append(False)
                     test_details.append(
@@ -240,9 +269,13 @@ print(f"Test passed: {{result}}")
                             "error": str(e),
                         }
                     )
+                    logger.warning("Test case %d failed: %s", i + 1, e)
+
+        passed = all(test_results) if test_results else True
+        logger.info("All test cases %s", "passed" if passed else "failed")
 
         example["verification_result"] = {
-            "passed": all(test_results) if test_results else True,
+            "passed": passed,
             "test_results": test_results,
             "error": None,
             "details": {

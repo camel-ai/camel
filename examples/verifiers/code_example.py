@@ -84,34 +84,22 @@ def process_array():
 
     # Example 4: Multi-threaded verification
     print("\nExample 4: Multi-threaded verification")
-    interpreter = SubprocessInterpreter()
+    interpreter = SubprocessInterpreter(require_confirm=False)
     verifier = CodeVerifier(interpreter=interpreter)
-    result = verifier.verify(
+    results = verifier.verify(
         {
             "code": [
-                """
-            def square(x): 
-                return x * x
-            """,
-                """
-            def cube(x): 
-                return x * x * x
-            """,
-                """
-            def double(x): 
-                return x + x
-            """,
-                """
-            def half(x): 
-                return x / 2
-            """,
+                "def square(x):\n    return x * x\nresult = square(4)",
+                "def cube(x):\n    return x * x * x\nresult = cube(3)",
+                "def double(x):\n    return x + x\nresult = double(5)",
+                "def half(x):\n    return x / 2\nresult = half(8)",
             ],
             "language": ["python"] * 4,
             "test_cases": [
-                [{"inputs": {"x": 4}, "expected": {"square(x)": 16}}],
-                [{"inputs": {"x": 3}, "expected": {"cube(x)": 27}}],
-                [{"inputs": {"x": 5}, "expected": {"double(x)": 10}}],
-                [{"inputs": {"x": 8}, "expected": {"half(x)": 4.0}}],
+                [{"inputs": {}, "expected": {"result": 16}}],
+                [{"inputs": {}, "expected": {"result": 27}}],
+                [{"inputs": {}, "expected": {"result": 10}}],
+                [{"inputs": {}, "expected": {"result": 4.0}}],
             ],
         }
     )
