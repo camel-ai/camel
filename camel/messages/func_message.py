@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
-from dataclasses import dataclass
 from typing import Any, Dict, Optional, Union
-from camel.messages.acl_parameter import ACLParameter, Content, Sender
+
+from pydantic import BaseModel
 
 from camel.messages import (
     BaseMessage,
@@ -23,6 +23,7 @@ from camel.messages import (
     OpenAIMessage,
     OpenAIToolMessageParam,
 )
+from camel.messages.acl_parameter import ACLParameter, Content
 from camel.messages.conversion import (
     ShareGPTMessage,
     ToolCall,
@@ -31,12 +32,10 @@ from camel.messages.conversion import (
 from camel.messages.conversion.sharegpt.function_call_formatter import (
     FunctionCallFormatter,
 )
-from camel.types import OpenAIBackendRole
 from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
-from pydantic import BaseModel
 
 
 class FunctionCallingMessage(BaseMessage):
@@ -89,9 +88,9 @@ class FunctionCallingMessage(BaseMessage):
             acl_parameter=acl_parameter,
             meta_dict=meta_dict,
             parsed=parsed,
-            message_id=message_id
+            message_id=message_id,
         )
-        
+
         # Initialize function-specific attributes
         self.func_name = func_name
         self.args = args
@@ -205,7 +204,7 @@ class FunctionCallingMessage(BaseMessage):
             "content": result_content,
             "tool_call_id": self.tool_call_id or "null",
         }
-    
+
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.
 

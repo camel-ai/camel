@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.messages.acl_parameter import Content
-from camel.types import OpenAIBackendRole, RoleType
+from camel.types import OpenAIBackendRole
 
 
 class MemoryRecord(BaseModel):
@@ -77,30 +77,32 @@ class MemoryRecord(BaseModel):
         else:
             content = Content(text=kwargs['content'])
 
-        if record_dict["message"].copy()['__class__'] == \
-            'BaseMessage':
-            # Check if the message type in the message dictionary is 
+        if record_dict["message"].copy()['__class__'] == 'BaseMessage':
+            # Check if the message type in the message dictionary is
             # 'BaseMessage'
-            # If the message type is 'BaseMessage', reconstruct a BaseMessage 
+            # If the message type is 'BaseMessage', reconstruct a BaseMessage
             # object
             reconstructed_message = BaseMessage(role_name, role_type, content)
-        elif record_dict["message"].copy()['__class__'] == \
-            'FunctionCallingMessage':
+        elif (
+            record_dict["message"].copy()['__class__']
+            == 'FunctionCallingMessage'
+        ):
             # Check if the message type is 'FunctionCallingMessage'
-            # Extract additional parameters for constructing the 
+            # Extract additional parameters for constructing the
             # FunctionCallingMessa
             func_name = kwargs['func_name']
             args = kwargs['args']
             result = kwargs['result']
             tool_call_id = kwargs['tool_call_id']
             reconstructed_message = FunctionCallingMessage(
-                role_name = role_name, 
-                role_type = role_type, 
-                content = content,
-                func_name = func_name,
-                args = args,
-                result = result,
-                tool_call_id = tool_call_id)
+                role_name=role_name,
+                role_type=role_type,
+                content=content,
+                func_name=func_name,
+                args=args,
+                result=result,
+                tool_call_id=tool_call_id,
+            )
 
         return cls(
             uuid=UUID(record_dict["uuid"]),
