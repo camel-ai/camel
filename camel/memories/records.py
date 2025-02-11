@@ -77,7 +77,24 @@ class MemoryRecord(BaseModel):
         else:
             content = Content(text=kwargs['content'])
 
-        reconstructed_message = BaseMessage(role_name, role_type, content)
+        if record_dict["message"].copy()['__class__'] == \
+            'BaseMessage':
+            reconstructed_message = BaseMessage(role_name, role_type, content)
+        elif record_dict["message"].copy()['__class__'] == \
+            'FunctionCallingMessage':
+            func_name = kwargs.get('func_name', None)
+            args = kwargs.get('args', None)
+            result = kwargs.get('result', None)
+            tool_call_id = kwargs.get('tool_call_id', None)
+            reconstructed_message = FunctionCallingMessage(
+                role_name = role_name, 
+                role_type = role_type, 
+                content = content,
+                func_name = func_name,
+                args = args,
+                result = result,
+                tool_call_id = tool_call_id)
+
         return cls(
             uuid=UUID(record_dict["uuid"]),
             message=reconstructed_message,

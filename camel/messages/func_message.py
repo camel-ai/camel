@@ -39,7 +39,6 @@ from camel.types import (
 from pydantic import BaseModel
 
 
-@dataclass
 class FunctionCallingMessage(BaseMessage):
     r"""Class for message objects used specifically for
     function-related messages.
