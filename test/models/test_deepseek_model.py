@@ -28,7 +28,6 @@ from camel.utils import OpenAITokenCounter
 """
 please set the below os environment variable:
 export DEEPSEEK_API_KEY="xxx"
-export GET_REASONING_CONTENT=True
 """
 
 model_types = [
@@ -88,11 +87,11 @@ def test_deepseek_model_create(model_type: ModelType):
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", model_types)
 @patch("camel.models.deepseek_model.OpenAI")
-def test_deepseek_run(mock_deepseek, model_type: ModelType):
+def test_deepseek_run(mock_openai, model_type: ModelType):
     # Mock the Deepseek create client function
-    mock_deepseek_client = MagicMock()
-    mock_deepseek.return_value = mock_deepseek_client
-    mock_deepseek_client.chat.completions.create.return_value = (
+    mock_openai_client = MagicMock()
+    mock_openai.return_value = mock_openai_client
+    mock_openai_client.chat.completions.create.return_value = (
         deepseek_model_response
     )
     os.environ["GET_REASONING_CONTENT"] = "True"
@@ -102,7 +101,7 @@ def test_deepseek_run(mock_deepseek, model_type: ModelType):
     if model_type in [
         ModelType.DEEPSEEK_REASONER,
     ]:
-        mock_deepseek_client.chat.completions.create.assert_called_once_with(
+        mock_openai_client.chat.completions.create.assert_called_once_with(
             messages=[{'role': 'user', 'content': 'Why is the sky blue ?'}],
             model=model_type,
             stream=False,
@@ -119,7 +118,7 @@ def test_deepseek_run(mock_deepseek, model_type: ModelType):
             + deepseek_model_response.choices[0].message.content
         )
     else:
-        mock_deepseek_client.chat.completions.create.asser_called_once_with(
+        mock_openai_client.chat.completions.create.asser_called_once_with(
             messages=[{'role': 'user', 'content': 'Why is the sky blue ?'}],
             model=model_type,
             tools=NOT_GIVEN,

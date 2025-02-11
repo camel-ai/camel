@@ -65,15 +65,15 @@ def test_gemini_model(model_type: ModelType):
     model_types,
 )
 @patch("camel.models.gemini_model.OpenAI")
-def test_gemini_run(mock_gemini, model_type: ModelType):
+def test_gemini_run(mock_openai, model_type: ModelType):
     # Mock the Gemini create client function
-    mock_gemini_client = MagicMock()
-    mock_gemini.return_value = mock_gemini_client
-    mock_gemini_client.chat.completions.create.return_value = None
+    mock_openai_client = MagicMock()
+    mock_openai.return_value = mock_openai_client
+    mock_openai_client.chat.completions.create.return_value = None
 
     model = GeminiModel(model_type)
     model.run([user_role_message, empty_content_message])  # type: ignore[list-item]
-    mock_gemini_client.chat.completions.create.assert_called_once_with(
+    mock_openai_client.chat.completions.create.assert_called_once_with(
         messages=[
             {
                 'role': 'user',

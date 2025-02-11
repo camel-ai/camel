@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 """
 please set the below os environment:
-export GROQ_API_KEY=""
+export GROQ_API_KEY="xxc"
 """
 
 import re
@@ -61,14 +61,14 @@ def test_groq_llama3_model(model_type: ModelType):
     model_types,
 )
 @patch("camel.models.groq_model.OpenAI")
-def test_groq_run(groq_mock, model_type: ModelType):
+def test_groq_run(mock_openai, model_type: ModelType):
     # Mock the client creation function OpenAI
-    mock_groq_client = MagicMock()
-    groq_mock.return_value = mock_groq_client
-    mock_groq_client.chat.completions.create.return_value = None
+    mock_openai_client = MagicMock()
+    mock_openai.return_value = mock_openai_client
+    mock_openai_client.chat.completions.create.return_value = None
     model = GroqModel(model_type)
     model.run([user_role_message])  # type: ignore[list-item]
-    mock_groq_client.chat.completions.create.assert_called_once_with(
+    mock_openai_client.chat.completions.create.assert_called_once_with(
         messages=[
             {
                 'role': 'user',

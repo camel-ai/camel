@@ -58,14 +58,14 @@ def test_internlm_model(model_type: ModelType):
     model_types,
 )
 @patch("camel.models.internlm_model.OpenAI")
-def test_internlm_model_run(internlm_mock, model_type: ModelType):
+def test_internlm_model_run(mock_openai, model_type: ModelType):
     # Mock the client creation function OpenAI
-    mock_internlm_client = MagicMock()
-    internlm_mock.return_value = mock_internlm_client
-    mock_internlm_client.chat.completions.create.return_value = None
+    mock_openai_client = MagicMock()
+    mock_openai.return_value = mock_openai_client
+    mock_openai_client.chat.completions.create.return_value = None
     model = InternLMModel(model_type)
     model.run([user_role_message])  # type: ignore[list-item]
-    mock_internlm_client.chat.completions.create.assert_called_once_with(
+    mock_openai_client.chat.completions.create.assert_called_once_with(
         messages=[
             {
                 'role': 'user',
