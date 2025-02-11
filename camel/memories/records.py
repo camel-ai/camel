@@ -64,7 +64,14 @@ class MemoryRecord(BaseModel):
         role_type = RoleType(kwargs['role_type'].lower())
         if (
             'image_list' in kwargs['content']
+            and kwargs['content']['image_list']
             and len(kwargs['content']['image_list']) > 0
+        ):
+            content = Content.from_dict(kwargs['content'])
+        elif (
+            'video_bytes' in kwargs['content']
+            and kwargs['content']['video_bytes']
+            and len(kwargs['content']['video_bytes']) > 0
         ):
             content = Content.from_dict(kwargs['content'])
         else:

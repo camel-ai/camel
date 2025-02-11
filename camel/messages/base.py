@@ -63,7 +63,7 @@ class BaseMessage:
         self,
         role_name: str,
         role_type: RoleType,
-        content: str,
+        content: Union[str, Content],
         acl_parameter: Optional[ACLParameter] = None,
         meta_dict: Optional[Dict[str, Any]] = None,
         parsed: Optional[Union[BaseModel, dict]] = None,
@@ -81,7 +81,10 @@ class BaseMessage:
         - Ensures `content` is properly wrapped as a `Content` object.
         - Initializes `acl_parameter` with a default sender if not specified.
         """
-        self.content = Content(text=content)
+        if isinstance(content, str):
+            self.content = Content(text=content)
+        elif isinstance(content, Content):
+            self.content = content
 
         if self.acl_parameter is None:
             self.acl_parameter = ACLParameter(
@@ -531,7 +534,7 @@ class BaseMessage:
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
             "content": self.content.to_dict()
-            if self.content.image_list
+            if self.content.image_list or self.content.video_bytes
             else self.content.text,
             "acl_parameter": self.acl_parameter.model_dump_json(),  # type: ignore[union-attr]
         }

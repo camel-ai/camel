@@ -13,7 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
+from camel.messages.acl_parameter import ACLParameter, Content, Sender
 
 from camel.messages import (
     BaseMessage,
@@ -31,6 +32,11 @@ from camel.messages.conversion.sharegpt.function_call_formatter import (
     FunctionCallFormatter,
 )
 from camel.types import OpenAIBackendRole
+from camel.types import (
+    OpenAIBackendRole,
+    RoleType,
+)
+from pydantic import BaseModel
 
 
 @dataclass
@@ -39,6 +45,19 @@ class FunctionCallingMessage(BaseMessage):
     function-related messages.
 
     Args:
+        role_name (str): The name of the user or assistant role.
+        role_type (RoleType): The type of role, either `RoleType.ASSISTANT`
+            or `RoleType.USER`.
+        meta_dict (Optional[Dict[str, Any]]): Additional metadata dictionary
+            for the message.
+        content (Union[str, Content]): Represents the content of a message,
+            which can include text, images, videos, and audio.
+        acl_parameter (Optional[ACLParameter]): Access control parameter
+            associated with the message, defining sender details.
+        parsed (Optional[Union[Type[BaseModel], dict]]): An optional parsed
+            object extracted from the content.
+        message_id (UUID4): A unique identifier for the message, generated
+            automatically and not set by the user.
         func_name (Optional[str]): The name of the function used.
             (default: :obj:`None`)
         args (Optional[Dict]): The dictionary of arguments passed to the
@@ -49,10 +68,36 @@ class FunctionCallingMessage(BaseMessage):
             (default: :obj:`None`)
     """
 
-    func_name: Optional[str] = None
-    args: Optional[Dict] = None
-    result: Optional[Any] = None
-    tool_call_id: Optional[str] = None
+    def __init__(
+        self,
+        role_name: str,
+        role_type: RoleType,
+        content: Union[str, Content],
+        acl_parameter: Optional[ACLParameter] = None,
+        meta_dict: Optional[Dict[str, Any]] = None,
+        parsed: Optional[Union[BaseModel, dict]] = None,
+        message_id: Optional[str] = None,
+        func_name: Optional[str] = None,
+        args: Optional[Dict] = None,
+        result: Optional[Any] = None,
+        tool_call_id: Optional[str] = None,
+    ):
+        # Initialize the base class
+        super().__init__(
+            role_name=role_name,
+            role_type=role_type,
+            content=content,
+            acl_parameter=acl_parameter,
+            meta_dict=meta_dict,
+            parsed=parsed,
+            message_id=message_id
+        )
+        
+        # Initialize function-specific attributes
+        self.func_name = func_name
+        self.args = args
+        self.result = result
+        self.tool_call_id = tool_call_id
 
     def to_openai_message(
         self,
