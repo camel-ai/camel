@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from typing import List, Optional
+import warnings
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
@@ -49,7 +50,16 @@ class ChatHistoryMemory(AgentMemory):
         self._chat_history_block = ChatHistoryBlock(storage=storage)
 
     def retrieve(self) -> List[ContextRecord]:
-        return self._chat_history_block.retrieve(self._window_size)
+        records = self._chat_history_block.retrieve(self._window_size)
+        if self._window_size is not None and len(records) == self._window_size:
+            warnings.warn(
+                f"Chat history window size limit ({self._window_size}) reached. "
+                "Some earlier messages will not be included in the context. "
+                "Consider increasing window_size if you need a longer context.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        return records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         self._chat_history_block.write_records(records)
