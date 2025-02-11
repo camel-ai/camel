@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import List, Tuple
+import logging
 
 from pydantic import BaseModel
 
@@ -20,6 +21,7 @@ from camel.memories.records import ContextRecord
 from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
 
+logger = logging.getLogger(__name__)
 
 class _ContextUnit(BaseModel):
     idx: int
@@ -102,6 +104,12 @@ class ScoreBasedContextCreator(BaseContextCreator):
         total_tokens = sum([unit.num_tokens for unit in context_units])
         if total_tokens <= self.token_limit:
             return self._create_output(context_units)
+
+        # Log warning about token limit being exceeded
+        logger.warning(
+            f"Token limit reached ({total_tokens} > {self.token_limit}). "
+            f"Some messages will be pruned from memory to meet the token limit. "
+        )
 
         # Sort by score
         context_units = sorted(
