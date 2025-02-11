@@ -446,6 +446,12 @@ markers = [
 [tool.coverage.report]
 include_namespace_packages = true
 
+[tool.mypy]
+exclude = [
+    '\.venv/.*',  # exclude .venv directory
+    'site-packages/.*',  # exclude site-packages
+]
+
 [[tool.mypy.overrides]]
 module = [
     "transformers.*",
