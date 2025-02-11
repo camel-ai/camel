@@ -14,11 +14,12 @@
 import os
 from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import AsyncStream, OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
 from pydantic import BaseModel
 
 from camel.configs import AIML_API_PARAMS, AIMLConfig
 from camel.messages import OpenAIMessage
+from camel.models._utils import try_modify_message_with_format
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
@@ -82,6 +83,25 @@ class AIMLModel(BaseModelBackend):
             api_key=self._api_key,
             base_url=self._url,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=180,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
+        )
+
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]],
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        request_config = self.model_config_dict.copy()
+        if tools:
+            request_config['tools'] = tools
+        if response_format:
+            try_modify_message_with_format(messages[-1], response_format)
+        return request_config
 
     def _run(
         self,
@@ -100,15 +120,12 @@ class AIMLModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Process model configuration parameters
-        model_config = self.model_config_dict.copy()
-
-        # Handle special case for tools parameter
-        if model_config.get('tools') is None:
-            model_config['tools'] = []
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
 
         response = self._client.chat.completions.create(
-            messages=messages, model=self.model_type, **model_config
+            messages=messages, model=self.model_type, **request_config
         )
         return response
 
@@ -118,7 +135,13 @@ class AIMLModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]],
         tools: Optional[List[Dict[str, Any]]],
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
-        raise NotImplementedError("AIML does not support async inference.")
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+        response = await self._async_client.chat.completions.create(
+            messages=messages, model=self.model_type, **request_config
+        )
+        return response
 
     @property
     def token_counter(self) -> BaseTokenCounter:
