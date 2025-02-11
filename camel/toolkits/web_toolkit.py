@@ -15,6 +15,8 @@ import json
 import os
 from typing import Any, Dict, List
 
+from PIL import Image
+
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.interpreters.subprocess_interpreter import SubprocessInterpreter
@@ -24,7 +26,6 @@ from camel.prompts import TextPrompt
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 from camel.types import ModelPlatformType, ModelType, RoleType
-from PIL import Image
 
 # Define a module-level constant for the default ChatGPT configuration
 _DEFAULT_CHATGPT_CONFIG_DICT = ChatGPTConfig(temperature=0.0).as_dict()
@@ -244,9 +245,12 @@ class StagehandPrompts:
         variable called 'updated_state'. For example:
 
         - IMPORTANT: 
-           All of the values of the 'updated_state' should always be a string 
+           - All of the values of the 
+           'updated_state' should always be a string 
            or a number never a Object.
-           The link should be an absolute url extracted from the url bar. 
+           - The link should be an absolute url extracted from the url bar. 
+           - Always extract the link in the end to 
+           represent the last webpage visited.
            
           - Convert the value to a string or array before calling the 
           includes() method on it.
@@ -483,16 +487,17 @@ class WebToolkit(BaseToolkit):
         else:
             raise ValueError("Failed to generate Stagehand code.")
 
-        
-    def stagehand_screenshot_and_analyze_with_gpt4o(self, question: str, url: str) -> Dict[str, Any]:
-        """
-        Captures multiple screenshots while scrolling and sends each screenshot to GPT-4o for analysis.
-        Use this tool when you think visual analysis of graphs/images/or the website content would be useful
-        
+    def stagehand_screenshot_and_analyze_with_gpt4o(
+        self, question: str, url: str
+    ) -> str:
+        r"""
+        Captures multiple screenshots while scrolling and sends each screenshot
+        to GPT-4o for analysis.
+
         Args:
             url (str): The webpage URL to analyze.
             question (str): The question to be answered.
-            
+
 
         Returns:
             Dict[str, Any]: JSON response containing:
@@ -523,21 +528,28 @@ class WebToolkit(BaseToolkit):
 
                   let screenshots = [];
                   let totalHeight = 0;
-                  let viewportHeight = await page.evaluate(() => window.innerHeight);
-                  let scrollHeight = await page.evaluate(() => document.body.scrollHeight);
+                  let viewportHeight = await 
+                  page.evaluate(() => window.innerHeight);
+                  let scrollHeight = await page.evaluate(() => 
+                        document.body.scrollHeight
+                    );
+
                   let scrollY = 0;
                   let index = 0;
 
                   // Scroll and take multiple screenshots
                   while (scrollY < scrollHeight) {{
-                      let screenshot_path = "{screenshot_base}_" + index + ".png";
+                      let screenshot_path = 
+                      "{screenshot_base}_" + index + ".png";
                       await page.screenshot({{ path: screenshot_path }});
                       screenshots.push(screenshot_path);
 
                       totalHeight += viewportHeight;
                       scrollY += viewportHeight;
-                      await page.evaluate((height) => window.scrollBy(0, height), viewportHeight);
-                      await page.act({{ action: "Wait a second for scrolling to complete." }});
+                      await page.evaluate((height) => 
+                      window.scrollBy(0, height), viewportHeight);
+                      await page.act({{ action: "Wait a second for" + 
+                      "scrolling to complete." }});
                       index++;
                   }}
 
@@ -548,7 +560,8 @@ class WebToolkit(BaseToolkit):
                       "link": "{url}"
                   }};
 
-                  console.log("updated_state: ", JSON.stringify(extractedData, null, 2));
+                  console.log("updated_state: ", 
+                  JSON.stringify(extractedData, null, 2));
 
               }} catch (error) {{
                   console.error("updated_state: ", JSON.stringify({{
@@ -570,10 +583,8 @@ class WebToolkit(BaseToolkit):
 
         exec_result = node_process.run(js_code, "node")
 
-        # Debugging: Print raw output from node
         print(f"[DEBUG] Raw Node.js Output:\n{exec_result}")
 
-        # Parse the JSON output using the unchanged _parse_json_from_output function
         raw_json = self._parse_json_from_output(exec_result)
 
         # Convert JSON string to a Python dictionary
@@ -581,28 +592,40 @@ class WebToolkit(BaseToolkit):
             final_json = json.loads(raw_json)
         except json.JSONDecodeError:
             print("[ERROR]: Failed to parse JSON from extracted output.")
-            return {"status": "error", "message": "Failed to parse extracted JSON."}
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "Failed to parse extracted JSON.",
+                }
+            )
 
         if "screenshots" not in final_json:
             print("[ERROR]: No valid screenshots found.")
-            return {"status": "error", "message": "No screenshots found in output."}
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "No screenshots found in output.",
+                }
+            )
 
         screenshots = final_json["screenshots"]
 
         print("[DEBUG]: Screenshots Captured:\n", screenshots)
 
         # Analyze each screenshot with GPT-4o
-        gpt_results = self._analyze_screenshots_with_gpt4o(question, screenshots)
+        gpt_results = self._analyze_screenshots_with_gpt4o(
+            question, screenshots
+        )
 
         # Final response with GPT-4o results
-        return {
-            "status": "success",
-            "link": url,
-            "gpt_analysis": gpt_results
-        }
+        return json.dumps(
+            {"status": "success", "link": url, "gpt_analysis": gpt_results}
+        )
 
-    def _analyze_screenshots_with_gpt4o(self, question: str, screenshots: List[str]) -> List[Dict[str, Any]]:
-        """
+    def _analyze_screenshots_with_gpt4o(
+        self, question: str, screenshots: List[str]
+    ) -> List[Dict[str, Any]]:
+        r"""
         Sends each screenshot to GPT-4o for analysis.
 
         Args:
@@ -633,7 +656,8 @@ class WebToolkit(BaseToolkit):
                 meta_dict=None,
                 image_list=[image],
                 image_detail="high",
-                content=f"Analyze this screenshot and describe the visual elements. {question}"
+                content=f"""Analyze this screenshot and describe the 
+                visual elements. {question}""",
             )
 
             if self.debug:
@@ -658,7 +682,6 @@ class WebToolkit(BaseToolkit):
             )
 
         return results
-
 
     def _run_stagehand_script_in_node(self, js_code: str) -> str:
         r"""
@@ -718,7 +741,7 @@ class WebToolkit(BaseToolkit):
                     "message": "No valid JSON found in node logs.",
                 }
             )
-            
+
     def _parse_json_from_output(self, text: str):
         r"""
         Extracts a substring that starts with the first '{' following
