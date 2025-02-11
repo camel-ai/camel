@@ -80,11 +80,9 @@ class ReActAgent(ChatAgent):
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         max_steps: int = 10,
     ) -> None:
-        super().__init__(system_message=system_message, model=model)
-        self.tools: List[FunctionTool] = [
-            t if isinstance(t, FunctionTool) else FunctionTool(t)
-            for t in (tools or [])
-        ]
+        super().__init__(
+            system_message=system_message, model=model, tools=tools
+        )
         self.scratchpad: List[Dict[str, Optional[str]]] = []
         self._set_react_prompt()
         self.step_count = 0
@@ -98,21 +96,22 @@ class ReActAgent(ChatAgent):
         response format and behavior.
         """
         self.react_prompt = (
-            "Respond with a JSON object containing:\n"
-            "- thought: Your analysis of the current situation\n"
-            "- action: EXACTLY ONE of:\n"
-            "  - Search(query=<search terms>)\n"
-            "  - Lookup(key=<exact key>)\n"
-            "  - Finish(answer=<final answer>)\n"
+            "You MUST ALWAYS use EXACTLY ONE of the following actions. "
+            "You MUST ALWAYS include a 'thought' and 'action'.\n"
+            "- Search(query=<search terms>)\n"
+            "- Lookup(key=<exact key>)\n"
+            "- Finish(answer=<final answer>)\n"
+            "Respond with JSON object with the keys 'thought' and 'action'.\n"
+            "The 'action' value must be one of the three options above.\n"
             "\nExample response for Search:\n"
             '{\n'
             '    "thought": "I need to find current population data",\n'
             '    "action": "Search(query=Paris population estimate 2024)"\n'
             '}\n\n'
-            "Example response for Lookup:\n"
+            "Example response for Finish:\n"
             '{\n'
-            '    "thought": "I need structured lookup results",\n'
-            '    "action": "Lookup(key=Paris_population_data)"\n'
+            '    "thought":"Based on the data,I can now provide the answer",\n'
+            '    "action":"Finish(answer=Population is approx. 2.1 million)"\n'
             '}\n\n'
             "Current scratchpad:\n"
             "{scratchpad}"
@@ -169,13 +168,12 @@ class ReActAgent(ChatAgent):
         r"""Execute an action using available tools.
 
         Args:
-            action (str): The action string to execute in format Action(params)
-                Must be one of the supported action types (Search, Lookup, or
-                Finish).
+            action (str): The action string in format Action(params)
+                e.g., "Search(query=Paris population 2024)"
+                or "Finish(answer=The population is 2.1M)"
 
         Returns:
-            str: The result of the action execution. Returns an error message
-                if action execution fails or no suitable tool is found.
+            str: The result of the action execution
         """
         logger.debug("Executing action: %s", action)
 
@@ -187,28 +185,31 @@ class ReActAgent(ChatAgent):
             logger.warning("No tools available to execute action")
             return "No tools available to execute action."
 
-        # Differentiate based on the type of actionable command
-        for tool in self.tools:
-            try:
-                if not hasattr(tool, 'can_handle') or tool.can_handle(action):
-                    logger.debug(
-                        "Found tool to handle action using tool: %s",
-                        getattr(tool, "name", tool),
-                    )
-                    if hasattr(tool, 'execute'):
-                        result = tool.execute(action)
-                        return result
-                    elif callable(tool):
-                        return tool(action)
-                    else:
-                        logger.error("No execute method or is not callable")
-                        return "Error: Tool implementation is invalid"
-            except Exception as e:
-                logger.error("Error executing action: %s", str(e))
-                return f"Error executing action: {e!s}"
+        try:
+            func_name = action.split('(')[0].strip()
+            params_str = action[action.find('(') + 1 : action.rfind(')')]
 
-        logger.warning("No suitable tool found for action: %s", action)
-        return "Action could not be executed with available tools."
+            params = {}
+            if '=' in params_str:
+                key, value = params_str.split('=', 1)
+                params[key.strip()] = value.strip()
+
+            for tool in self.tools:
+                if isinstance(tool, FunctionTool):
+                    if (
+                        tool.openai_tool_schema["function"]["name"].lower()
+                        == func_name.lower()
+                    ):
+                        return tool(**params)
+                elif callable(tool):
+                    return tool(action)
+
+            logger.warning(f"No suitable tool found for action: {action}")
+            return f"No tool found matching {func_name}"
+
+        except Exception as e:
+            logger.error(f"Error executing action: {e!s}")
+            return f"Error executing action: {e!s}"
 
     def step(
         self,
@@ -288,15 +289,18 @@ class ReActAgent(ChatAgent):
             logger.debug("Executing action: %s", action)
             actual_observation = self._execute_action(action)
             observation = actual_observation
+        else:
+            observation = None
 
         # Update scratchpad
-        self.scratchpad.append(
-            {
-                "Thought": thought or "",
-                "Action": action or "",
-                "Observation": observation or "",
-            }
-        )
+        scratchpad_entry: Dict[str, Optional[str]] = {
+            "Thought": thought or "",
+            "Action": action or "",
+        }
+
+        if action:
+            scratchpad_entry["Observation"] = observation or None
+        self.scratchpad.append(scratchpad_entry)
 
         # Create final response
         final_content = "\n".join(
@@ -305,7 +309,9 @@ class ReActAgent(ChatAgent):
                 [
                     f"Thought: {thought}" if thought else None,
                     f"Action: {action}" if action else None,
-                    f"Observation: {observation}" if observation else None,
+                    f"Observation: {observation}"
+                    if action and observation
+                    else None,
                 ],
             )
         )
