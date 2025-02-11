@@ -538,5 +538,6 @@ module = [
     "pandasai",
     "sklearn.metrics.pairwise",
     "sympy",
+    "astor",
 ]
 ignore_missing_imports = true
