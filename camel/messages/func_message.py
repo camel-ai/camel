@@ -205,3 +205,23 @@ class FunctionCallingMessage(BaseMessage):
             "content": result_content,
             "tool_call_id": self.tool_call_id or "null",
         }
+    
+    def to_dict(self) -> Dict:
+        r"""Converts the message to a dictionary.
+
+        Returns:
+            dict: The converted dictionary.
+        """
+        return {
+            "role_name": self.role_name,
+            "role_type": self.role_type,
+            **(self.meta_dict or {}),
+            "content": self.content.to_dict()
+            if self.content.image_list or self.content.video_bytes
+            else self.content.text,
+            "acl_parameter": self.acl_parameter.model_dump_json(),  # type: ignore[union-attr]
+            "func_name": self.func_name,
+            "args": self.args,
+            "result": self.result,
+            "tool_call_id": self.tool_call_id,
+        }

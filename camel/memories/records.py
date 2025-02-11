@@ -61,7 +61,7 @@ class MemoryRecord(BaseModel):
         kwargs: Dict = record_dict["message"].copy()
         kwargs.pop("__class__")
         role_name = kwargs['role_name']
-        role_type = RoleType(kwargs['role_type'].lower())
+        role_type = kwargs['role_type']
         if (
             'image_list' in kwargs['content']
             and kwargs['content']['image_list']
@@ -79,13 +79,20 @@ class MemoryRecord(BaseModel):
 
         if record_dict["message"].copy()['__class__'] == \
             'BaseMessage':
+            # Check if the message type in the message dictionary is 
+            # 'BaseMessage'
+            # If the message type is 'BaseMessage', reconstruct a BaseMessage 
+            # object
             reconstructed_message = BaseMessage(role_name, role_type, content)
         elif record_dict["message"].copy()['__class__'] == \
             'FunctionCallingMessage':
-            func_name = kwargs.get('func_name', None)
-            args = kwargs.get('args', None)
-            result = kwargs.get('result', None)
-            tool_call_id = kwargs.get('tool_call_id', None)
+            # Check if the message type is 'FunctionCallingMessage'
+            # Extract additional parameters for constructing the 
+            # FunctionCallingMessa
+            func_name = kwargs['func_name']
+            args = kwargs['args']
+            result = kwargs['result']
+            tool_call_id = kwargs['tool_call_id']
             reconstructed_message = FunctionCallingMessage(
                 role_name = role_name, 
                 role_type = role_type, 

@@ -531,7 +531,7 @@ class BaseMessage:
         """
         return {
             "role_name": self.role_name,
-            "role_type": self.role_type.name,
+            "role_type": self.role_type,
             **(self.meta_dict or {}),
             "content": self.content.to_dict()
             if self.content.image_list or self.content.video_bytes
