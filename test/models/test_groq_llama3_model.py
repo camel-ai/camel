@@ -62,7 +62,7 @@ def test_groq_llama3_model(model_type: ModelType):
 )
 @patch("camel.models.groq_model.OpenAI")
 def test_groq_run(groq_mock, model_type: ModelType):
-    # Mock the client creation function AzureOpenAI
+    # Mock the client creation function OpenAI
     mock_groq_client = MagicMock()
     groq_mock.return_value = mock_groq_client
     mock_groq_client.chat.completions.create.return_value = None
