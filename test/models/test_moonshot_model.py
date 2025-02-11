@@ -58,7 +58,7 @@ def test_moonshot_model(model_type: ModelType):
     model_types,
 )
 @patch("camel.models.moonshot_model.OpenAI")
-def test_internlm_model_run(mock_openai, model_type: ModelType):
+def test_moonshot_model_run(mock_openai, model_type: ModelType):
     # Mock the client creation function OpenAI
     mock_openai_client = MagicMock()
     mock_openai.return_value = mock_openai_client
