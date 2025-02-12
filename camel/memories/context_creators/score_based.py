@@ -23,6 +23,7 @@ from camel.utils import BaseTokenCounter
 
 logger = logging.getLogger(__name__)
 
+
 class _ContextUnit(BaseModel):
     idx: int
     record: ContextRecord
