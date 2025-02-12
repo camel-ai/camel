@@ -117,6 +117,61 @@ class ZapierToolkit(BaseToolkit):
         except ValueError:
             return {"error": "Response is not valid JSON"}
 
+    def preview_action(
+        self,
+        action_id: str,
+        instructions: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        r"""Preview a specific Zapier action using natural language instructions.
+
+        This function allows you to preview any exposed Zapier action using
+        natural language instructions. Instead of actually executing the action,
+        will instead return a preview of params that have been guessed by the AI
+        in case you need to explicitly review before executing.
+
+        Args:
+            action_id (str): The ID of the Zapier action to preview.
+            instructions (str): Natural language instructions for previewing
+                the action. For example: "Send an email to john@example.com
+                with subject 'Hello' and body 'How are you?'"
+            params (Optional[Dict[str, Any]], optional): Optional explicit
+                parameters for the action. If provided, these will override
+                any parameters inferred from the instructions.
+                (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Any]: The preview result showing what parameters would
+                be used if the action were executed.
+
+        Note:
+            The action must be previously exposed in your Zapier NLA
+            dashboard for it to be previewable.
+        """
+        try:
+            headers = {
+                'accept': 'application/json',
+                'x-api-key': self.api_key,
+                'Content-Type': 'application/json',
+            }
+            data = {
+                "instructions": instructions,
+                "preview_only": True,
+                **(params or {})
+            }
+            response = requests.post(
+                f"{self.base_url}exposed/{action_id}/execute/",
+                params={'api_key': self.api_key},
+                headers=headers,
+                json=data
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Request failed: {str(e)}"}
+        except ValueError:
+            return {"error": "Response is not valid JSON"}
+
     def get_execution_result(self, execution_id: str) -> Dict[str, Any]:
         r"""Get the execution result of a Zapier action.
 
@@ -158,5 +213,6 @@ class ZapierToolkit(BaseToolkit):
         return [
             FunctionTool(self.list_actions),
             FunctionTool(self.execute_action),
+            FunctionTool(self.preview_action),
             FunctionTool(self.get_execution_result),
         ]
