@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -31,9 +31,11 @@ class ZapierToolkit(BaseToolkit):
     """
 
     @dependencies_required("requests")
-    @api_keys_required([
-        (None, "ZAPIER_NLA_API_KEY"),
-    ])
+    @api_keys_required(
+        [
+            (None, "ZAPIER_NLA_API_KEY"),
+        ]
+    )
     def __init__(self) -> None:
         r"""Initialize the ZapierToolkit with API client. The API key is
         retrieved from environment variables.
@@ -67,9 +69,10 @@ class ZapierToolkit(BaseToolkit):
         self,
         action_id: str,
         instructions: str,
-        params: Optional[Dict[str, Any]] = None
+        params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        r"""Execute a specific Zapier action using natural language instructions.
+        r"""Execute a specific Zapier action using natural language
+        instructions.
 
         This function allows you to execute any exposed Zapier action using
         natural language instructions. The API will interpret the instructions
@@ -102,18 +105,18 @@ class ZapierToolkit(BaseToolkit):
             data = {
                 "instructions": instructions,
                 "preview_only": False,
-                **(params or {})
+                **(params or {}),
             }
             response = requests.post(
                 f"{self.base_url}exposed/{action_id}/execute/",
                 params={'api_key': self.api_key},
                 headers=headers,
-                json=data
+                json=data,
             )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {str(e)}"}
+            return {"error": f"Request failed: {e!s}"}
         except ValueError:
             return {"error": "Response is not valid JSON"}
 
@@ -123,12 +126,13 @@ class ZapierToolkit(BaseToolkit):
         instructions: str,
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        r"""Preview a specific Zapier action using natural language instructions.
+        r"""Preview a specific Zapier action using natural language
+        instructions.
 
         This function allows you to preview any exposed Zapier action using
-        natural language instructions. Instead of actually executing the action,
-        will instead return a preview of params that have been guessed by the AI
-        in case you need to explicitly review before executing.
+        natural language instructions. Instead of actually executing the
+        action, will instead return a preview of params that have been guessed
+        by the AI in case you need to explicitly review before executing.
 
         Args:
             action_id (str): The ID of the Zapier action to preview.
@@ -157,18 +161,18 @@ class ZapierToolkit(BaseToolkit):
             data = {
                 "instructions": instructions,
                 "preview_only": True,
-                **(params or {})
+                **(params or {}),
             }
             response = requests.post(
                 f"{self.base_url}exposed/{action_id}/execute/",
                 params={'api_key': self.api_key},
                 headers=headers,
-                json=data
+                json=data,
             )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {str(e)}"}
+            return {"error": f"Request failed: {e!s}"}
         except ValueError:
             return {"error": "Response is not valid JSON"}
 
@@ -191,14 +195,14 @@ class ZapierToolkit(BaseToolkit):
                 'x-api-key': self.api_key,
             }
             response = requests.get(
-                f"{self.base_url}execution-log/{execution_id}/",  
+                f"{self.base_url}execution-log/{execution_id}/",
                 params={'api_key': self.api_key},
                 headers=headers,
             )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {str(e)}"}
+            return {"error": f"Request failed: {e!s}"}
         except ValueError:
             return {"error": "Response is not valid JSON"}
 
