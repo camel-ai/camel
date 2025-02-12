@@ -12,8 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import List, Optional
 import warnings
+from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
