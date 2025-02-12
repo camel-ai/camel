@@ -108,7 +108,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # Log warning about token limit being exceeded
         logger.warning(
             f"Token limit reached ({total_tokens} > {self.token_limit}). "
-            f"Some messages will be pruned from memory to meet the token limit. "
+            f"Some messages will be pruned from memory to meet the limit."
         )
 
         # Sort by score

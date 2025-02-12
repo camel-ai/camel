@@ -53,9 +53,10 @@ class ChatHistoryMemory(AgentMemory):
         records = self._chat_history_block.retrieve(self._window_size)
         if self._window_size is not None and len(records) == self._window_size:
             warnings.warn(
-                f"Chat history window size limit ({self._window_size}) reached. "
-                "Some earlier messages will not be included in the context. "
-                "Consider increasing window_size if you need a longer context.",
+                f"Chat history window size limit ({self._window_size}) "
+                f"reached. Some earlier messages will not be included in "
+                f"the context. Consider increasing window_size if you need "
+                f"a longer context.",
                 RuntimeWarning,
                 stacklevel=2,
             )
