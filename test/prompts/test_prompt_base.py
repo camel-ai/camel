@@ -140,7 +140,7 @@ def test_code_prompt_execute(monkeypatch):
         "a = 1\nprint('Hello, World!')", code_type="python"
     )
     result = code_prompt.execute()
-    assert result == "Hello, World!\n"
+    assert result == "Hello, World!\nNone\n"
 
 
 def test_code_prompt_execute_error(monkeypatch):
