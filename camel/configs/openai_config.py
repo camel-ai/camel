@@ -133,6 +133,7 @@ class ChatGPTConfig(BaseConfig):
                     )
                 tools_schema.append(tool.get_openai_tool_schema())
         config_dict["tools"] = NOT_GIVEN
+        config_dict["tool_choice"] = NOT_GIVEN
         return config_dict
 
 
