@@ -1,6 +1,11 @@
-# Data Generation Modules
+# Data Generation
 
-This document describes the key data generation modules in CAMEL: Chain of Thought (CoT), Self-Instruct, Source2Synth, and STaR.
+This document describes CAMEL's key data generation modules that enable high-quality training data creation through advanced reasoning and instruction tuning techniques. The modules include:
+
+- Chain of Thought (CoT): Generates explicit reasoning paths
+- Self-Instruct: Creates diverse instruction-following data
+- Source2Synth: Converts source code into natural language
+- Self-Improving CoT: Iteratively refines reasoning chains through self-critique
 
 ## Chain of Thought (CoT) Data Generation
 
