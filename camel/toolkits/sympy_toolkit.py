@@ -28,13 +28,18 @@ class SymPyToolkit(BaseToolkit):
     and Linear Algebra.
     """
 
-    def __init__(self, default_variable: str = 'x'):
+    def __init__(
+        self,
+        default_variable: str = 'x',
+        timeout: Optional[float] = None,
+    ):
         r"""Initializes the toolkit with a default variable and logging.
 
         Args:
             default_variable (str): The default variable for
                 operations (default: :obj: `x`)
         """
+        super().__init__(timeout=timeout)
         self.default_variable = default_variable
         logger.info(f"Default variable set to: {self.default_variable}")
 

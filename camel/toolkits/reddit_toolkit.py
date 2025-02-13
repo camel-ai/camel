@@ -14,7 +14,7 @@
 
 import os
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -34,7 +34,13 @@ class RedditToolkit(BaseToolkit):
         reddit (Reddit): An instance of the Reddit client.
     """
 
-    def __init__(self, retries: int = 3, delay: int = 0):
+    def __init__(
+        self,
+        retries: int = 3,
+        delay: int = 0,
+        timeout: Optional[float] = None,
+    ):
+        super().__init__(timeout=timeout)
         r"""Initializes the RedditToolkit with the specified number of retries
         and delay.
 
@@ -44,6 +50,7 @@ class RedditToolkit(BaseToolkit):
             delay (int): Time in seconds to wait between retries. Defaults to
             `0`.
         """
+        super().__init__(timeout=timeout)
         from praw import Reddit  # type: ignore[import-untyped]
 
         self.retries = retries

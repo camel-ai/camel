@@ -48,7 +48,9 @@ class CodeExecutionToolkit(BaseToolkit):
         unsafe_mode: bool = False,
         import_white_list: Optional[List[str]] = None,
         require_confirm: bool = False,
+        timeout: Optional[float] = None,
     ) -> None:
+        super().__init__(timeout=timeout)
         self.verbose = verbose
         self.unsafe_mode = unsafe_mode
         self.import_white_list = import_white_list or list()
@@ -103,6 +105,7 @@ class CodeExecutionToolkit(BaseToolkit):
         """
         output = self.interpreter.run(code, "python")
         # ruff: noqa: E501
+        # print(output)
         content = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n{output}"
         if self.verbose:
             print(content)
