@@ -47,6 +47,7 @@ from .video_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .semantic_scholar_toolkit import SemanticScholarToolkit
+from .zappier_toolkit import ZapierToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -81,4 +82,5 @@ __all__ = [
     'DappierToolkit',
     'SymPyToolkit',
     'SemanticScholarToolkit',
+    'ZapierToolkit',
 ]

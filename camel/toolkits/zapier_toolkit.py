@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 
@@ -28,6 +28,10 @@ class ZapierToolkit(BaseToolkit):
     This class provides methods for executing Zapier actions through natural
     language commands, allowing integration with various web services and
     automation of workflows through the Zapier platform.
+
+    Attributes:
+        api_key (str): The API key for authenticating with Zapier's API.
+        base_url (str): The base URL for Zapier's API endpoints.
     """
 
     @dependencies_required("requests")
@@ -45,9 +49,6 @@ class ZapierToolkit(BaseToolkit):
 
     def list_actions(self) -> Dict[str, Any]:
         r"""List all available Zapier actions.
-
-        This function retrieves all exposed actions from your Zapier account
-        that can be controlled through the Natural Language Actions API.
 
         Returns:
             Dict[str, Any]: A dictionary containing the list of available
@@ -69,32 +70,19 @@ class ZapierToolkit(BaseToolkit):
         self,
         action_id: str,
         instructions: str,
-        params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         r"""Execute a specific Zapier action using natural language
         instructions.
-
-        This function allows you to execute any exposed Zapier action using
-        natural language instructions. The API will interpret the instructions
-        and map them to the appropriate action parameters.
 
         Args:
             action_id (str): The ID of the Zapier action to execute.
             instructions (str): Natural language instructions for executing
                 the action. For example: "Send an email to john@example.com
                 with subject 'Hello' and body 'How are you?'"
-            params (Optional[Dict[str, Any]], optional): Optional explicit
-                parameters for the action. If provided, these will override
-                any parameters inferred from the instructions.
-                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: The result of the action execution, including
                 status and any output data.
-
-        Note:
-            The action must be previously exposed in your Zapier NLA
-            dashboard for it to be executable.
         """
         try:
             headers = {
@@ -105,7 +93,6 @@ class ZapierToolkit(BaseToolkit):
             data = {
                 "instructions": instructions,
                 "preview_only": False,
-                **(params or {}),
             }
             response = requests.post(
                 f"{self.base_url}exposed/{action_id}/execute/",
@@ -124,33 +111,19 @@ class ZapierToolkit(BaseToolkit):
         self,
         action_id: str,
         instructions: str,
-        params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         r"""Preview a specific Zapier action using natural language
         instructions.
-
-        This function allows you to preview any exposed Zapier action using
-        natural language instructions. Instead of actually executing the
-        action, will instead return a preview of params that have been guessed
-        by the AI in case you need to explicitly review before executing.
 
         Args:
             action_id (str): The ID of the Zapier action to preview.
             instructions (str): Natural language instructions for previewing
                 the action. For example: "Send an email to john@example.com
                 with subject 'Hello' and body 'How are you?'"
-            params (Optional[Dict[str, Any]], optional): Optional explicit
-                parameters for the action. If provided, these will override
-                any parameters inferred from the instructions.
-                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: The preview result showing what parameters would
                 be used if the action were executed.
-
-        Note:
-            The action must be previously exposed in your Zapier NLA
-            dashboard for it to be previewable.
         """
         try:
             headers = {
@@ -161,7 +134,6 @@ class ZapierToolkit(BaseToolkit):
             data = {
                 "instructions": instructions,
                 "preview_only": True,
-                **(params or {}),
             }
             response = requests.post(
                 f"{self.base_url}exposed/{action_id}/execute/",
@@ -178,9 +150,6 @@ class ZapierToolkit(BaseToolkit):
 
     def get_execution_result(self, execution_id: str) -> Dict[str, Any]:
         r"""Get the execution result of a Zapier action.
-
-        This function retrieves the execution log and status of a previously
-        executed Zapier action using its execution ID.
 
         Args:
             execution_id (str): The execution ID returned from execute_action.
