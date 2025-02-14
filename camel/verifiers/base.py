@@ -46,6 +46,32 @@ class BaseVerifier(ABC):
     - Extensible validation framework
     """
 
+    async def _update_metrics(
+        self, duration: float, status: VerificationStatus
+    ) -> None:
+        """Update verification metrics with the results of a verification.
+
+        Args:
+            duration: Time taken for the verification in seconds.
+            status: Status of the verification.
+        """
+        async with self._metrics_lock:
+            self._metrics.total_verifications += 1
+            self._metrics.total_duration += duration
+            self._metrics.avg_duration = (
+                self._metrics.total_duration
+                / self._metrics.total_verifications
+            )
+
+            if status == VerificationStatus.SUCCESS:
+                self._metrics.successful_verifications += 1
+            elif status == VerificationStatus.FAILURE:
+                self._metrics.failed_verifications += 1
+            elif status == VerificationStatus.TIMEOUT:
+                self._metrics.timeout_verifications += 1
+            elif status == VerificationStatus.ERROR:
+                self._metrics.error_verifications += 1
+
     def __init__(
         self,
         max_parallel: Optional[int] = None,
@@ -93,6 +119,7 @@ class BaseVerifier(ABC):
         # Internal state
         self._start_time: Optional[float] = None
         self._metrics = VerificationMetrics()
+        self._metrics_lock = asyncio.Lock()
 
     async def verify(self, result: Response) -> VerificationResult:  # type: ignore[return]
         r"""Perform verification with full error handling and metrics.
@@ -112,8 +139,7 @@ class BaseVerifier(ABC):
         attempt = 0
         start_time = time.time()
 
-        # Update metrics
-        self._metrics.total_verifications += 1
+        # Start tracking metrics
 
         while attempt < self.max_retries:
             try:
@@ -129,18 +155,9 @@ class BaseVerifier(ABC):
                     )
 
                 duration = time.time() - start_time
-                self._metrics.total_duration += duration
-                self._metrics.avg_duration = (
-                    self._metrics.total_duration
-                    / self._metrics.total_verifications
+                await self._update_metrics(
+                    duration, verification_result.status
                 )
-
-                # Update success/failure metrics
-                if verification_result.status == VerificationStatus.SUCCESS:
-                    self._metrics.successful_verifications += 1
-                elif verification_result.status == VerificationStatus.FAILURE:
-                    self._metrics.failed_verifications += 1
-
                 verification_result.duration = duration
                 verification_result.metadata["attempt"] = attempt + 1
                 return verification_result
@@ -148,12 +165,9 @@ class BaseVerifier(ABC):
             except asyncio.TimeoutError:
                 attempt += 1
                 if attempt == self.max_retries:
-                    self._metrics.timeout_verifications += 1
                     duration = time.time() - start_time
-                    self._metrics.total_duration += duration
-                    self._metrics.avg_duration = (
-                        self._metrics.total_duration
-                        / self._metrics.total_verifications
+                    await self._update_metrics(
+                        duration, VerificationStatus.TIMEOUT
                     )
                     return VerificationResult(
                         status=VerificationStatus.TIMEOUT,
@@ -170,12 +184,9 @@ class BaseVerifier(ABC):
             except Exception as e:
                 attempt += 1
                 if attempt == self.max_retries:
-                    self._metrics.error_verifications += 1
                     duration = time.time() - start_time
-                    self._metrics.total_duration += duration
-                    self._metrics.avg_duration = (
-                        self._metrics.total_duration
-                        / self._metrics.total_verifications
+                    await self._update_metrics(
+                        duration, VerificationStatus.ERROR
                     )
                     error_msg = (
                         f"Verification failed after {attempt} attempts: {e!s}"
