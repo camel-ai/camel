@@ -19,12 +19,11 @@ from datasets import Dataset
 
 from camel.interpreters import BaseInterpreter, InterpreterError
 from camel.logger import logging
-from camel.verifiers import BaseVerifier
 
 logger = logging.getLogger(__name__)
 
 
-class CodeVerifier(BaseVerifier):
+class CodeVerifier:
     r"""Verifier for code solutions.
 
     This verifier checks code solutions by:

@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from .base_verifier import BaseVerifier
 from .code_verifier import CodeVerifier
 
-__all__ = ['BaseVerifier', 'CodeVerifier']
+__all__ = ['CodeVerifier']
