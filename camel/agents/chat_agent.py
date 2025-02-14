@@ -182,7 +182,7 @@ class ChatAgent(BaseAgent):
         )
 
         # Set up system message and initialize messages
-        self._system_message = (
+        self._original_system_message = (
             BaseMessage.make_assistant_message(
                 role_name="Assistant", content=system_message
             )
@@ -190,7 +190,9 @@ class ChatAgent(BaseAgent):
             else system_message
         )
         self._output_language = output_language
-        self._update_system_message_for_output_language()
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
         self.init_messages()
 
         # Set up role name and role type
@@ -231,11 +233,30 @@ class ChatAgent(BaseAgent):
 
     @property
     def system_message(self) -> Optional[BaseMessage]:
+        r"""Returns the system message for the agent."""
         return self._system_message
 
     @property
     def tool_dict(self) -> Dict[str, FunctionTool]:
+        r"""Returns a dictionary of internal tools."""
         return self._internal_tools
+
+    @property
+    def output_language(self) -> Optional[str]:
+        r"""Returns the output language for the agent."""
+        return self._output_language
+
+    @output_language.setter
+    def output_language(self, value: str) -> None:
+        r"""Set the output language for the agent.
+
+        Note that this will clear the message history.
+        """
+        self._output_language = value
+        self._system_message = (
+            self._generate_system_message_for_output_language()
+        )
+        self.init_messages()
 
     def _get_full_tool_schemas(self) -> List[Dict[str, Any]]:
         r"""Returns a list of tool schemas of all tools, including internal
@@ -303,25 +324,30 @@ class ChatAgent(BaseAgent):
             MemoryRecord(message=message, role_at_backend=role)
         )
 
-    def _update_system_message_for_output_language(self) -> None:
-        r"""Updates the output language for the system message. The output
-        language determines the language in which the output text should be
-        generated.
+    def _generate_system_message_for_output_language(
+        self,
+    ) -> Optional[BaseMessage]:
+        r"""Generate a new system message with the output language prompt.
+
+        The output language determines the language in which the output text
+        should be generated.
+
+        Returns:
+            BaseMessage: The new system message.
         """
         if not self._output_language:
-            return
+            return self._original_system_message
 
         language_prompt = (
             "\nRegardless of the input language, "
             f"you must output text in {self._output_language}."
         )
-        if self._system_message is not None:
-            content = self._system_message.content + language_prompt
-            self._system_message = self._system_message.create_new_instance(
-                content
-            )
+
+        if self._original_system_message is not None:
+            content = self._original_system_message.content + language_prompt
+            return self._original_system_message.create_new_instance(content)
         else:
-            self._system_message = BaseMessage.make_assistant_message(
+            return BaseMessage.make_assistant_message(
                 role_name="Assistant",
                 content=language_prompt,
             )
@@ -448,6 +474,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
+        external_tool_call_request: Optional[ToolCallRequest] = None
 
         while True:
             try:
@@ -467,17 +494,13 @@ class ChatAgent(BaseAgent):
             if self.single_iteration:
                 break
 
-            # TODO: return with external tools
-            # If tool call requested, execute it and enter the next iteration
             if tool_call_request := response.tool_call_request:
-                if (
-                    tool_call_request.func_name
-                    not in self._external_tool_schemas
-                ):
-                    tool_call_records.append(
-                        self._execute_tool(tool_call_request)
-                    )
-                    continue
+                if tool_call_request.tool_name in self._external_tool_schemas:
+                    external_tool_call_request = tool_call_request
+                    break
+
+                tool_call_records.append(self._execute_tool(tool_call_request))
+                continue
 
             break
 
@@ -485,7 +508,7 @@ class ChatAgent(BaseAgent):
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
-            response, tool_call_records, num_tokens
+            response, tool_call_records, num_tokens, external_tool_call_request
         )
 
     @property
@@ -527,6 +550,7 @@ class ChatAgent(BaseAgent):
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         tool_call_records: List[ToolCallingRecord] = []
+        external_tool_call_request: Optional[ToolCallRequest] = None
         while True:
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -546,6 +570,10 @@ class ChatAgent(BaseAgent):
                 break
 
             if tool_call_request := response.tool_call_request:
+                if tool_call_request.tool_name in self._external_tool_schemas:
+                    external_tool_call_request = tool_call_request
+                    break
+
                 tool_call_record = await self._aexecute_tool(tool_call_request)
                 tool_call_records.append(tool_call_record)
                 continue
@@ -556,7 +584,7 @@ class ChatAgent(BaseAgent):
         self._record_final_output(response.output_messages)
 
         return self._convert_to_chatagent_response(
-            response, tool_call_records, num_tokens
+            response, tool_call_records, num_tokens, external_tool_call_request
         )
 
     def _convert_to_chatagent_response(
@@ -564,6 +592,7 @@ class ChatAgent(BaseAgent):
         response: ModelResponse,
         tool_call_records: List[ToolCallingRecord],
         num_tokens: int,
+        external_tool_call_request: Optional[ToolCallRequest],
     ) -> ChatAgentResponse:
         r"""Parse the final model response into the chat agent response."""
         info = self._step_get_info(
@@ -573,6 +602,7 @@ class ChatAgent(BaseAgent):
             response.response_id,
             tool_call_records,
             num_tokens,
+            external_tool_call_request,
         )
 
         return ChatAgentResponse(
@@ -675,6 +705,7 @@ class ChatAgent(BaseAgent):
         response_id: str,
         tool_calls: List[ToolCallingRecord],
         num_tokens: int,
+        external_tool_call_request: Optional[ToolCallRequest] = None,
     ) -> Dict[str, Any]:
         r"""Process the output of a chat step and gather information about the
         step.
@@ -694,6 +725,8 @@ class ChatAgent(BaseAgent):
             tool_calls (List[ToolCallingRecord]): Records of function calls
                 made during this step.
             num_tokens (int): The number of tokens used in this step.
+            external_tool_call_request (Optional[ToolCallRequest]): The
+                request for external tool call.
 
         Returns:
             Dict[str, Any]: A dictionary containing information about the chat
@@ -729,6 +762,7 @@ class ChatAgent(BaseAgent):
             finish_reasons,
             num_tokens,
             tool_calls,
+            external_tool_call_request,
         )
 
     def _handle_batch_response(
@@ -769,11 +803,11 @@ class ChatAgent(BaseAgent):
 
         tool_call_request: Optional[ToolCallRequest] = None
         if tool_calls := response.choices[0].message.tool_calls:
-            func_name = tool_calls[0].function.name
+            tool_name = tool_calls[0].function.name
             tool_call_id = tool_calls[0].id
             args = json.loads(tool_calls[0].function.arguments)
             tool_call_request = ToolCallRequest(
-                func_name=func_name, args=args, tool_call_id=tool_call_id
+                tool_name=tool_name, args=args, tool_call_id=tool_call_id
             )
 
         return ModelResponse(
@@ -939,7 +973,7 @@ class ChatAgent(BaseAgent):
             FunctionCallingRecord: A struct for logging information about this
                 function call.
         """
-        func_name = tool_call_request.func_name
+        func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
@@ -951,15 +985,11 @@ class ChatAgent(BaseAgent):
         self,
         tool_call_request: ToolCallRequest,
     ) -> ToolCallingRecord:
-        func_name = tool_call_request.func_name
+        func_name = tool_call_request.tool_name
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        if tool.is_async:
-            result = await tool(**args)
-        else:
-            result = tool(**args)
-
+        result = await tool.async_call(**args)
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
@@ -996,7 +1026,7 @@ class ChatAgent(BaseAgent):
 
         # Record information about this tool call
         tool_record = ToolCallingRecord(
-            func_name=func_name,
+            tool_name=func_name,
             args=args,
             result=result,
             tool_call_id=tool_call_id,

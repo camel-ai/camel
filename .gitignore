@@ -431,5 +431,3 @@ benchmark/gaia/results.jsonl
 
 # Secret files for docker
 .container/.env
-
-examples/datagen/star/outputs/

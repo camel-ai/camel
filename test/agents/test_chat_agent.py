@@ -335,7 +335,7 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         ),
     )
 
-    model._run = MagicMock(
+    model.run = MagicMock(
         side_effect=[model_backend_external1, model_backend_external2]
         * step_call_count
     )
@@ -361,9 +361,11 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         response = external_tool_agent.step(usr_msg)
         assert not response.msg.content
 
-        external_tool_request = response.info["external_tool_request"]
+        external_tool_call_request = response.info[
+            "external_tool_call_request"
+        ]
         assert (
-            external_tool_request.function.name == "sub"
+            external_tool_call_request.tool_name == "sub"
         ), f"Error in calling round {i+1}"
 
 
@@ -449,20 +451,6 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
                     content="What do you call fake spaghetti? An impasta!",
                     role="assistant",
                     function_call=None,
-                    tool_calls=[
-                        ChatCompletionMessageToolCall(
-                            id="call_mock123456",
-                            function=Function(
-                                arguments='{ \
-                                    "joke":"What do you call fake spaghetti?" \
-                                    " An impasta!", \
-                                    "funny_level":"6" \
-                                }',
-                                name="return_json_response",
-                            ),
-                            type="function",
-                        )
-                    ],
                 ),
             )
         ]
@@ -476,7 +464,7 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
             total_tokens=47,
         ),
     )
-    model._run = MagicMock(return_value=model_backend_rsp_tool)
+    model.run = MagicMock(return_value=model_backend_rsp_tool)
 
     system_msg = BaseMessage(
         "Assistant",
@@ -542,7 +530,7 @@ def test_chat_agent_multiple_return_message_error(n, step_call_count=3):
             ),
         )
     )
-    model._run = MagicMock(return_value=model_backend_multi_messages)
+    model.run = MagicMock(return_value=model_backend_multi_messages)
 
     system_msg = BaseMessage(
         "Assistant",
@@ -594,7 +582,7 @@ def test_chat_agent_stream_output(step_call_count=3):
         model_type=ModelType.GPT_4O_MINI,
         model_config_dict=stream_model_config.as_dict(),
     )
-    model._run = MagicMock(return_value=model_backend_rsp_base)
+    model.run = MagicMock(return_value=model_backend_rsp_base)
     stream_assistant = ChatAgent(system_msg, model=model)
     stream_assistant.reset()
     for i in range(step_call_count):
@@ -630,7 +618,7 @@ def test_set_output_language():
 
     # Set the output language to "Arabic"
     output_language = "Arabic"
-    agent.set_output_language(output_language)
+    agent.output_language = output_language
 
     # Check if the output language is set correctly
     assert agent.output_language == output_language
@@ -658,12 +646,12 @@ def test_set_multiple_output_language():
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
-    agent_with_sys_msg.set_output_language("Chinese")
-    agent_with_sys_msg.set_output_language("English")
-    agent_with_sys_msg.set_output_language("French")
-    agent_without_sys_msg.set_output_language("Chinese")
-    agent_without_sys_msg.set_output_language("English")
-    agent_without_sys_msg.set_output_language("French")
+    agent_with_sys_msg.output_language = "Chinese"
+    agent_with_sys_msg.output_language = "English"
+    agent_with_sys_msg.output_language = "French"
+    agent_without_sys_msg.output_language = "Chinese"
+    agent_without_sys_msg.output_language = "English"
+    agent_without_sys_msg.output_language = "French"
 
     updated_system_message_with_sys_msg = {
         'role': 'system',
@@ -687,29 +675,6 @@ def test_set_multiple_output_language():
         memory_content_without_sys_msg[0][0]
         == updated_system_message_without_sys_msg
     )
-
-
-@pytest.mark.model_backend
-def test_function_enabled():
-    system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant.",
-    )
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-    )
-    agent_no_func = ChatAgent(system_message=system_message)
-    agent_with_funcs = ChatAgent(
-        system_message=system_message,
-        model=model,
-        tools=MathToolkit().get_tools(),
-    )
-
-    assert not agent_no_func.is_tools_added()
-    assert agent_with_funcs.is_tools_added()
 
 
 @pytest.mark.model_backend
@@ -845,7 +810,7 @@ def test_tool_calling_sync(step_call_count=3):
         ),
     )
 
-    model._run = MagicMock(
+    model.run = MagicMock(
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,
@@ -971,7 +936,7 @@ async def test_tool_calling_math_async(step_call_count=3):
         ),
     )
 
-    model._run = MagicMock(
+    model.run = MagicMock(
         side_effect=[
             model_backend_rsp_tool,
             model_backend_rsp_tool1,
@@ -1026,7 +991,7 @@ async def test_tool_calling_async(step_call_count=3):
     # Mock tool calling
     def mock_run_tool_calling_async(*args, **kwargs):
         # Reset tool_calls at the beginning of each new round of step() call
-        if model._run.call_count % 2 == 1:
+        if model.run.call_count % 2 == 1:
             model_backend_rsp_tool_async.choices[0].message.tool_calls = [
                 ChatCompletionMessageToolCall(
                     id='call_mock_123456',
@@ -1049,7 +1014,7 @@ async def test_tool_calling_async(step_call_count=3):
 
         return model_backend_rsp_tool_async
 
-    model._run = MagicMock(side_effect=mock_run_tool_calling_async)
+    model.run = MagicMock(side_effect=mock_run_tool_calling_async)
 
     agent = ChatAgent(
         system_message=system_message,

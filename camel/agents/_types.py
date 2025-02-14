@@ -23,7 +23,7 @@ from camel.types import ChatCompletion
 class ToolCallRequest(BaseModel):
     r"""The request for tool calling."""
 
-    func_name: str
+    tool_name: str
     args: Dict[str, Any]
     tool_call_id: str
 

@@ -26,7 +26,7 @@ class ToolCallingRecord(BaseModel):
         tool_call_id (str): The ID of the tool call, if available.
     """
 
-    func_name: str
+    tool_name: str
     args: Dict[str, Any]
     result: Any
     tool_call_id: str
@@ -38,7 +38,7 @@ class ToolCallingRecord(BaseModel):
             str: Modified string to represent the tool calling.
         """
         return (
-            f"Tool Execution: {self.func_name}\n"
+            f"Tool Execution: {self.tool_name}\n"
             f"\tArgs: {self.args}\n"
             f"\tResult: {self.result}\n"
         )
