@@ -54,6 +54,8 @@ def main():
         print(f"Batch extraction failed: {e}\n")
 
     print("\nExample 3: Using MinerU with ChatAgent...")
+    # TODO: implement this example with loader toolkit to get information from
+    # the zip url
     try:
         # Set up the ChatAgent with MinerU capabilities
         sys_msg = (
