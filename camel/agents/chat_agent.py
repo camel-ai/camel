@@ -211,7 +211,7 @@ class ChatAgent(BaseAgent):
         }
 
         self._external_tool_schemas = {
-            tool_schema["name"]: tool_schema
+            tool_schema["function"]["name"]: tool_schema
             for tool_schema in [
                 convert_to_schema(tool) for tool in (external_tools or [])
             ]
@@ -368,7 +368,7 @@ class ChatAgent(BaseAgent):
     def _format_response_if_needed(
         self,
         response: ModelResponse,
-        response_format: Optional[Type[BaseModel]],
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> None:
         r"""Format the response if needed.
 
@@ -387,7 +387,7 @@ class ChatAgent(BaseAgent):
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             # Explicitly set the tools to empty list to avoid calling tools
             response = self._get_model_response(
-                [openai_message], response_format, [], 0
+                [openai_message], 0, response_format, []
             )
             message.content = response.output_messages[0].content
             if not self._try_format_message(message, response_format):
@@ -396,7 +396,7 @@ class ChatAgent(BaseAgent):
     async def _aformat_response_if_needed(
         self,
         response: ModelResponse,
-        response_format: Optional[Type[BaseModel]],
+        response_format: Optional[Type[BaseModel]] = None,
     ) -> None:
         r"""Format the response if needed."""
 
@@ -411,7 +411,7 @@ class ChatAgent(BaseAgent):
             prompt = SIMPLE_FORMAT_PROMPT.format(content=message.content)
             openai_message: OpenAIMessage = {"role": "user", "content": prompt}
             response = await self._aget_model_response(
-                [openai_message], response_format, [], 0
+                [openai_message], 0, response_format, []
             )
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
@@ -459,9 +459,9 @@ class ChatAgent(BaseAgent):
             # Get response from model backend
             response = self._get_model_response(
                 openai_messages,
+                num_tokens,
                 response_format,
                 self._get_full_tool_schemas(),
-                num_tokens,
             )
 
             if self.single_iteration:
@@ -470,8 +470,14 @@ class ChatAgent(BaseAgent):
             # TODO: return with external tools
             # If tool call requested, execute it and enter the next iteration
             if tool_call_request := response.tool_call_request:
-                tool_call_records.append(self._execute_tool(tool_call_request))
-                continue
+                if (
+                    tool_call_request.func_name
+                    not in self._external_tool_schemas
+                ):
+                    tool_call_records.append(
+                        self._execute_tool(tool_call_request)
+                    )
+                    continue
 
             break
 
@@ -531,9 +537,9 @@ class ChatAgent(BaseAgent):
 
             response = await self._aget_model_response(
                 openai_messages,
+                num_tokens,
                 response_format,
                 self._get_full_tool_schemas(),
-                num_tokens,
             )
 
             if self.single_iteration:
@@ -588,9 +594,9 @@ class ChatAgent(BaseAgent):
     def _get_model_response(
         self,
         openai_messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tool_schemas: Optional[List[Dict[str, Any]]],
         num_tokens: int,
+        response_format: Optional[Type[BaseModel]] = None,
+        tool_schemas: Optional[List[Dict[str, Any]]] = None,
     ) -> ModelResponse:
         r"""Internal function for agent step model response."""
 
@@ -626,9 +632,9 @@ class ChatAgent(BaseAgent):
     async def _aget_model_response(
         self,
         openai_messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tool_schemas: Optional[List[Dict[str, Any]]],
         num_tokens: int,
+        response_format: Optional[Type[BaseModel]] = None,
+        tool_schemas: Optional[List[Dict[str, Any]]] = None,
     ) -> ModelResponse:
         r"""Internal function for agent step model response."""
 

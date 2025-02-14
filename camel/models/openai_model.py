@@ -134,8 +134,8 @@ class OpenAIModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
@@ -163,8 +163,8 @@ class OpenAIModel(BaseModelBackend):
     async def _arun(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion in async mode.
 
@@ -192,7 +192,7 @@ class OpenAIModel(BaseModelBackend):
     def _request_chat_completion(
         self,
         messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         request_config = self.model_config_dict.copy()
 
@@ -213,7 +213,7 @@ class OpenAIModel(BaseModelBackend):
     async def _arequest_chat_completion(
         self,
         messages: List[OpenAIMessage],
-        tools: Optional[List[Dict[str, Any]]],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self.model_config_dict.copy()
 
@@ -235,7 +235,7 @@ class OpenAIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         request_config = self.model_config_dict.copy()
 
@@ -256,7 +256,7 @@ class OpenAIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
         response_format: Type[BaseModel],
-        tools: Optional[List[Dict[str, Any]]],
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> ChatCompletion:
         request_config = self.model_config_dict.copy()
 

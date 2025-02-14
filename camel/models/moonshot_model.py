@@ -82,8 +82,8 @@ class MoonshotModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Moonshot chat completion.
 
@@ -107,8 +107,8 @@ class MoonshotModel(BaseModelBackend):
     async def _arun(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         raise NotImplementedError("Moonshot does not support async inference.")
 

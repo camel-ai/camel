@@ -222,8 +222,8 @@ class CohereModel(BaseModelBackend):
     def _prepare_request(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         request_config = self.model_config_dict.copy()
         if tools:

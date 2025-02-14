@@ -93,8 +93,8 @@ class AIMLModel(BaseModelBackend):
     def _prepare_request(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         request_config = self.model_config_dict.copy()
         if tools:
@@ -106,8 +106,8 @@ class AIMLModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
@@ -132,8 +132,8 @@ class AIMLModel(BaseModelBackend):
     async def _arun(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         request_config = self._prepare_request(
             messages, response_format, tools
