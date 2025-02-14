@@ -86,8 +86,8 @@ class InternLMModel(BaseModelBackend):
     def _run(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of InternLM chat completion.
 
@@ -110,8 +110,8 @@ class InternLMModel(BaseModelBackend):
     async def _arun(
         self,
         messages: List[OpenAIMessage],
-        response_format: Optional[Type[BaseModel]],
-        tools: Optional[List[Dict[str, Any]]],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
         raise NotImplementedError("InternLM does not support async inference.")
 
