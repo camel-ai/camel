@@ -60,16 +60,16 @@ class MemoryRecord(BaseModel):
         """
         message_data = record_dict["message"]
         message_class = message_data.get('__class__')
-        
+
         # Extract common data
         role_name = message_data['role_name']
         role_type = message_data['role_type']
         content_data = message_data['content']
-        
+
         # Determine content type
-        if 'image_list' in content_data and content_data['image_list']:
+        if content_data.get('image_list'):
             content = Content.from_dict(content_data)
-        elif 'video_bytes' in content_data and content_data['video_bytes']:
+        elif content_data.get('video_bytes'):
             content = Content.from_dict(content_data)
         else:
             content = Content(text=content_data)
