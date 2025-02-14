@@ -17,7 +17,7 @@ from typing import List
 import agentops
 from colorama import Fore
 
-from camel.agents.chat_agent import FunctionCallingRecord
+from camel.agents.chat_agent import ToolCallingRecord
 from camel.configs import SambaCloudAPIConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
@@ -64,7 +64,6 @@ def main(
                 model_config_dict=assistant_model_config.as_dict(),
             ),
             tools=tools_list,
-            message_window_size=2,
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(
@@ -73,7 +72,6 @@ def main(
                 url="https://api.sambanova.ai/v1",
                 model_config_dict=user_model_config.as_dict(),
             ),
-            message_window_size=5,
         ),
         task_prompt=task_prompt,
         with_task_specify=False,
@@ -128,8 +126,8 @@ def main(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        tool_calls: List[FunctionCallingRecord] = [
-            FunctionCallingRecord(**call.as_dict())
+        tool_calls: List[ToolCallingRecord] = [
+            ToolCallingRecord(**call.as_dict())
             for call in assistant_response.info['tool_calls']
         ]
         for func_record in tool_calls:

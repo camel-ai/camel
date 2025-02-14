@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Dict, Optional, Type, Union
 
+from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -32,6 +33,7 @@ from camel.models.qwen_model import QwenModel
 from camel.models.reka_model import RekaModel
 from camel.models.samba_model import SambaModel
 from camel.models.sglang_model import SGLangModel
+from camel.models.siliconflow_model import SiliconFlowModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
@@ -101,6 +103,10 @@ class ModelFactory:
             model_class = LiteLLMModel
         elif model_platform.is_nvidia:
             model_class = NvidiaModel
+        elif model_platform.is_siliconflow:
+            model_class = SiliconFlowModel
+        elif model_platform.is_aiml:
+            model_class = AIMLModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel

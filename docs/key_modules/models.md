@@ -44,6 +44,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Anthropic | claude-3-sonnet-20240229 | Y |
 | Anthropic | claude-3-opus-latest | Y |
 | Anthropic | claude-2.0 | N |
+| Gemini | gemini-2.0-flash-exp | Y |
 | Gemini | gemini-1.5-pro | Y |
 | Gemini | gemini-1.5-flash | Y |
 | Gemini | gemini-exp-1114 | Y |
@@ -72,8 +73,18 @@ The following table lists currently supported model platforms by CAMEL.
 | Qwen | qwen2.5-14b-instruct | N |
 | DeepSeek | deepseek-chat | N |
 | DeepSeek | deepseek-reasoner | N |
+| ZhipuAI | glm-4 | Y |
 | ZhipuAI | glm-4v | Y |
-| ZhipuAI | glm-4 | N |
+| ZhipuAI | glm-4v-flash | Y |
+| ZhipuAI | glm-4v-plus-0111 | Y |
+| ZhipuAI | glm-4-plus | N |
+| ZhipuAI | glm-4-air | N |
+| ZhipuAI | glm-4-air-0111 | N |
+| ZhipuAI | glm-4-airx | N |
+| ZhipuAI | glm-4-long | N |
+| ZhipuAI | glm-4-flashx | N |
+| ZhipuAI | glm-zero-preview | N |
+| ZhipuAI | glm-4-flash | N |
 | ZhipuAI | glm-3-turbo | N |
 | InternLM | internlm3-latest | N |
 | InternLM | internlm3-8b-instruct | N |
@@ -90,6 +101,7 @@ The following table lists currently supported model platforms by CAMEL.
 | Together AI | https://docs.together.ai/docs/chat-models | ----- |
 | LiteLLM | https://docs.litellm.ai/docs/providers | ----- |
 | SGLang | https://sgl-project.github.io/references/supported_models.html | ----- |
+| AIML | https://docs.aimlapi.com/api-overview/model-database/text-models | ----- |
 
 ## 3. Using Models by API calling
 

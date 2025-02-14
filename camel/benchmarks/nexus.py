@@ -28,7 +28,6 @@ from tqdm import tqdm
 
 from camel.agents import ChatAgent
 from camel.benchmarks.base import BaseBenchmark
-from camel.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 
@@ -309,14 +308,11 @@ class NexusBenchmark(BaseBenchmark):
         with open(self.save_to, "w") as f:
             for sample in tqdm(datas, desc="Running"):
                 prompt = construct_prompt(input=sample.input, tools=tools)
-                msg = BaseMessage.make_user_message(
-                    role_name="User", content=prompt
-                )
                 ground_truth_call = sample.output
                 try:
                     # Generate response
-                    response = agent.step(msg)
-                    agent_call = response.msgs[0].content.text
+                    response = agent.step(prompt)
+                    agent_call = response.msgs[0].content
 
                     # Evaluate response
                     if agent_call:

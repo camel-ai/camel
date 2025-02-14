@@ -15,7 +15,6 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.data_collector import AlpacaDataCollector
-from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
 
@@ -30,17 +29,11 @@ model = ModelFactory.create(
 )
 
 agent = ChatAgent(
-    system_message=BaseMessage.make_assistant_message(
-        role_name="Tools calling operator",
-        content="You are a helpful assistant",
-    ),
+    system_message="You are a helpful assistant",
     model=model,
 )
 
-usr_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="When is the release date of the video game Portal?",
-)
+usr_msg = "When is the release date of the video game Portal?"
 
 collector = AlpacaDataCollector().record(agent).start()
 
@@ -54,7 +47,7 @@ print(collector.llm_convert())
 collector.reset()
 
 # Manually record the message
-collector.step("user", "Tools calling operator", usr_msg.content.text)
+collector.step("user", "Tools calling operator", usr_msg)
 
 collector.step(
     "assistant", "Tools calling operator", resp.msgs[0].content.text

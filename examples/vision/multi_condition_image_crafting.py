@@ -35,18 +35,13 @@ def main(image_paths: list[str]) -> list[str]:
     print(sys_msg)
     print("=" * 49)
 
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Artist",
-        content=sys_msg,
-    )
-
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
         model_type=ModelType.DEFAULT,
     )
 
     dalle_agent = ChatAgent(
-        system_message=assistant_sys_msg,
+        system_message=sys_msg,
         model=model,
         tools=DalleToolkit().get_tools(),
     )

@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.bots import DiscordApp
-from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
@@ -50,52 +49,49 @@ class BotAgent:
             return_detailed_info (bool): Whether to return detailed
                 information from the retriever.
         """
-        assistant_sys_msg: BaseMessage = BaseMessage.make_assistant_message(
-            role_name="Assistant",
-            content='''
-                Objective: 
-                    You are a customer service bot designed to assist users
-                    with inquiries related to our open-source project. 
-                    Your responses should be informative, concise, and helpful.
 
-                Instructions:
-                    Understand User Queries: Carefully read and understand the
-                            user's question. Focus on keywords and context to
-                            determine the user's intent.
-                    Search for Relevant Information: Use the provided dataset
-                            and refer to the RAG (file to find answers that 
-                            closely match the user's query. The RAG file 
-                            contains detailed interactions and should be your 
-                            primary resource for crafting responses.
-                    Provide Clear and Concise Responses: Your answers should 
-                            be clear and to the point. Avoid overly technical
-                            language unless the user's query indicates 
-                            familiarity with technical terms.
-                    Encourage Engagement: Where applicable, encourage users
-                            to contribute to the project or seek further
-                            assistance.
+        assistant_sys_msg = '''
+            Objective: 
+                You are a customer service bot designed to assist users
+                with inquiries related to our open-source project. 
+                Your responses should be informative, concise, and helpful.
 
-                Response Structure:
-                    Greeting: Begin with a polite greeting or acknowledgment.
-                    Main Response: Provide the main answer to the user's query.
-                    Additional Information: Offer any extra tips or direct the
-                            user to additional resources if necessary.
-                    Closing: Close the response politely, encouraging
-                            further engagement if appropriate.
-                bd
-                Tone:
-                    Professional: Maintain a professional tone that 
-                            instills confidence in the user.
-                    Friendly: Be approachable and friendly to make users 
-                            feel comfortable.
-                    Helpful: Always aim to be as helpful as possible,
-                            guiding users to solutions.        
-            ''',
-        )
+            Instructions:
+                Understand User Queries: Carefully read and understand the
+                        user's question. Focus on keywords and context to
+                        determine the user's intent.
+                Search for Relevant Information: Use the provided dataset
+                        and refer to the RAG (file to find answers that 
+                        closely match the user's query. The RAG file 
+                        contains detailed interactions and should be your 
+                        primary resource for crafting responses.
+                Provide Clear and Concise Responses: Your answers should 
+                        be clear and to the point. Avoid overly technical
+                        language unless the user's query indicates 
+                        familiarity with technical terms.
+                Encourage Engagement: Where applicable, encourage users
+                        to contribute to the project or seek further
+                        assistance.
+
+            Response Structure:
+                Greeting: Begin with a polite greeting or acknowledgment.
+                Main Response: Provide the main answer to the user's query.
+                Additional Information: Offer any extra tips or direct the
+                        user to additional resources if necessary.
+                Closing: Close the response politely, encouraging
+                        further engagement if appropriate.
+            bd
+            Tone:
+                Professional: Maintain a professional tone that 
+                        instills confidence in the user.
+                Friendly: Be approachable and friendly to make users 
+                        feel comfortable.
+                Helpful: Always aim to be as helpful as possible,
+                        guiding users to solutions.        
+        '''
 
         self._agent = ChatAgent(
             assistant_sys_msg,
-            message_window_size=10,
         )
 
         self._auto_retriever = None
@@ -135,10 +131,7 @@ class BotAgent:
                 f"answer the query"
             )
 
-        user_msg = BaseMessage.make_user_message(
-            role_name="User", content=user_raw_msg
-        )
-        assistant_response = self._agent.step(user_msg)
+        assistant_response = self._agent.step(user_raw_msg)
         return assistant_response.msg.content.text
 
 

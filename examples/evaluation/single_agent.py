@@ -17,7 +17,6 @@ import re
 from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
@@ -56,15 +55,11 @@ def generate_questions(
 
     prompt = prompt_template.format(**evaluation_dict)
     print(prompt)
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg, model=model)
+
+    agent = ChatAgent("You are a helpful assistant.", model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
-    assistant_response = agent.step(user_msg)
+    assistant_response = agent.step(prompt)
 
     if len(assistant_response.msgs) > 0:
         print(assistant_response.msg.content)

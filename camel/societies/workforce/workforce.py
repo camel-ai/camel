@@ -281,13 +281,9 @@ class Workforce(BaseNode):
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
         )
-        req = BaseMessage.make_user_message(
-            role_name="User",
-            content=prompt,
-        )
 
         response = self.coordinator_agent.step(
-            req, response_format=TaskAssignResult
+            prompt, response_format=TaskAssignResult
         )
         result_dict = json.loads(response.msg.content.text)
         task_assign_result = TaskAssignResult(**result_dict)
@@ -315,11 +311,9 @@ class Workforce(BaseNode):
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
         )
-        req = BaseMessage.make_user_message(
-            role_name="User",
-            content=prompt,
+        response = self.coordinator_agent.step(
+            prompt, response_format=WorkerConf
         )
-        response = self.coordinator_agent.step(req, response_format=WorkerConf)
         result_dict = json.loads(response.msg.content.text)
         new_node_conf = WorkerConf(**result_dict)
 

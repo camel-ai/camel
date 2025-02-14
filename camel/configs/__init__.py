@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aiml_config import AIML_API_PARAMS, AIMLConfig
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .cohere_config import COHERE_API_PARAMS, CohereConfig
@@ -33,6 +34,7 @@ from .samba_config import (
     SambaVerseAPIConfig,
 )
 from .sglang_config import SGLANG_API_PARAMS, SGLangConfig
+from .siliconflow_config import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .yi_config import YI_API_PARAMS, YiConfig
@@ -82,4 +84,8 @@ __all__ = [
     'INTERNLM_API_PARAMS',
     'MoonshotConfig',
     "MOONSHOT_API_PARAMS",
+    'SiliconFlowConfig',
+    'SILICONFLOW_API_PARAMS',
+    'AIMLConfig',
+    'AIML_API_PARAMS',
 ]

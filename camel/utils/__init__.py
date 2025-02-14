@@ -14,6 +14,7 @@
 
 from .commons import (
     AgentOpsMeta,
+    BatchProcessor,
     agentops_decorator,
     api_keys_required,
     check_server_running,
@@ -34,16 +35,17 @@ from .commons import (
     is_docker_running,
     json_to_function_code,
     print_text_animated,
+    retry_on_error,
     text_extract_from_web,
     to_pascal,
     track_agent,
 )
 from .constants import Constants
+from .deduplication import DeduplicationResult, deduplicate_internally
 from .response_format import get_pydantic_model
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
-    GeminiTokenCounter,
     LiteLLMTokenCounter,
     MistralTokenCounter,
     OpenAITokenCounter,
@@ -71,7 +73,6 @@ __all__ = [
     "dependencies_required",
     "api_keys_required",
     "is_docker_running",
-    "GeminiTokenCounter",
     "MistralTokenCounter",
     "get_pydantic_major_version",
     "get_pydantic_object_schema",
@@ -84,4 +85,8 @@ __all__ = [
     "get_pydantic_model",
     "download_github_subdirectory",
     "generate_prompt_for_structured_output",
+    "deduplicate_internally",
+    "DeduplicationResult",
+    "retry_on_error",
+    "BatchProcessor",
 ]
