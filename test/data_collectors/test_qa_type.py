@@ -12,28 +12,30 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import json
+import pytest
 
 from camel.messages.conversion.qa import QAItem
 
-
-def test_qa_item_to_json():
-    r"""Test converting a QAItem to JSON."""
-    qa = QAItem(
+def test_qa_item_to_string():
+    r"""Test converting a QAItem to a formatted string."""
+    qa_item = QAItem(
         question="What is the capital of Australia?",
         answer="The capital city of Australia is Canberra."
     )
-    json_str = qa.to_json()
-    data = json.loads(json_str)
 
-    assert data["question"] == "What is the capital of Australia?"
-    assert data["answer"] == "The capital city of Australia is Canberra."
+    text = qa_item.to_string()
 
+    assert "Q:" in text
+    assert "What is the capital of Australia?" in text
+    assert "A:" in text
+    assert "The capital city of Australia is Canberra." in text
 
-def test_qa_item_from_json():
-    r"""Test parsing a QAItem from JSON."""
-    json_str = '{"question": "What is the capital of Australia?", "answer": "The capital city of Australia is Canberra."}'
-    qa = QAItem.from_json(json_str)
+def test_qa_item_from_string():
+    r"""Test parsing a QAItem from a formatted string."""
+    text = r"""Q: Who discovered gravity?
+A: Sir Isaac Newton discovered gravity after observing a falling apple."""
 
-    assert qa.question == "What is the capital of Australia?"
-    assert qa.answer == "The capital city of Australia is Canberra."
+    qa_item = QAItem.from_string(text)
+
+    assert qa_item.question == "Who discovered gravity?"
+    assert qa_item.answer == "Sir Isaac Newton discovered gravity after observing a falling apple."

@@ -34,7 +34,6 @@ class QAItem(BaseModel):
         max_length=2000,
         description="The corresponding answer to the question. Must be at least 1 character."
     )
-
     def to_string(self) -> str:
         r"""Convert the QA item into a formatted string."""
         return f"Q: {self.question}\nA: {self.answer}"
@@ -62,13 +61,3 @@ class QAItem(BaseModel):
 
         question, answer = match.groups()
         return cls(question=question.strip(), answer=answer.strip())
-
-    @classmethod
-    def to_json(self) -> str:
-        r"""Converts the QAItem to a JSON string."""
-        return self.model_dump_json()
-
-    @classmethod
-    def from_json(cls, json_str: str) -> "QAItem":
-        r"""Creates a QAItem instance from a JSON string."""
-        return cls.model_validate_json(json_str)
