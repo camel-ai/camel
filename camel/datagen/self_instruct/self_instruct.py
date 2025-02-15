@@ -361,7 +361,7 @@ class SelfInstructPipeline:
         in JSON format.
         """
         with open(self.data_output_path, 'w') as f:
-            json.dump(self.machine_tasks, f, indent=4)
+            json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
 
     def generate(self):
         r"""Execute the entire pipeline to generate machine instructions
