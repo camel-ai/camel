@@ -133,7 +133,7 @@ class StagehandPrompts:
         Just return the plain JavaScript code.
     - First go to the link in the state.
     - If the url is google.com, then search for the term you want.
-    - Add a small wait ight after searching on Google, do something like
+    - Add a small wait right after searching on Google, do something like
     - await page.act({{ action: "Wait a few seconds for results to load." }}); 
       Then do the extraction. 
       (Stagehand supports a small “Wait for N seconds” or “Wait for 
@@ -390,6 +390,7 @@ class WebToolkit(BaseToolkit):
               }} catch (error) {{
                   console.error("Final updated_state: ", JSON.stringify({{
                       status: "failure",
+                      link: "{url}",
                       error: error.message
                   }}));
               }} finally {{
@@ -426,6 +427,9 @@ class WebToolkit(BaseToolkit):
 
     def stagehand_tool(self, task_prompt: str) -> str:
         r"""Single entry point that:
+        
+        Always extract the content first and then make a plan to interact
+        on the webpage based on the given task
          1) Generates Stagehand JavaScript code to interact with the web
          2) Executes it under Node.js
          3) Returns the final JSON result
@@ -566,6 +570,7 @@ class WebToolkit(BaseToolkit):
               }} catch (error) {{
                   console.error("updated_state: ", JSON.stringify({{
                       "status": "failure",
+                      "link": "{url}",
                       "error": error.message
                   }}));
               }} finally {{
@@ -712,6 +717,7 @@ class WebToolkit(BaseToolkit):
             }} catch (error) {{
                 console.error("Final updated_state: ", JSON.stringify({{
                     status: "failure",
+                    "link": await page.evaluate(() => window.location.href),
                     error: error.message
                 }}));
             }} finally {{
