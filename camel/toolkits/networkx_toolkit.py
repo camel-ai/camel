@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from camel.logger import get_logger
 from camel.toolkits import FunctionTool
@@ -114,7 +114,7 @@ class NetworkXToolkit(BaseToolkit):
         self,
         source: str,
         target: str,
-        weight: Any = None,
+        weight: Optional[Union[str, Callable]] = None,
         method: Literal['dijkstra', 'bellman-ford'] = 'dijkstra',
     ) -> List[str]:
         r"""Finds the shortest path between two nodes.
