@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import abc
+import re
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -28,7 +30,30 @@ from camel.types import (
 from camel.utils import BaseTokenCounter
 
 
-class BaseModelBackend(ABC):
+class ModelBackendMeta(abc.ABCMeta):
+    r"""Metaclass that automatically preprocesses messages in run method.
+
+    Automatically wraps the run method of any class inheriting from
+    BaseModelBackend to preprocess messages (remove <think> tags) before they
+    are sent to the model.
+    """
+
+    def __new__(mcs, name, bases, namespace):
+        r"""Wraps run method with preprocessing if it exists in the class."""
+        if 'run' in namespace:
+            original_run = namespace['run']
+
+            def wrapped_run(
+                self, messages: List[OpenAIMessage], *args, **kwargs
+            ):
+                messages = self.preprocess_messages(messages)
+                return original_run(self, messages, *args, **kwargs)
+
+            namespace['run'] = wrapped_run
+        return super().__new__(mcs, name, bases, namespace)
+
+
+class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
     r"""Base class for different model backends.
     It may be OpenAI API, a local LLM, a stub for unit tests, etc.
 
@@ -73,6 +98,34 @@ class BaseModelBackend(ABC):
                 tokenization style.
         """
         pass
+
+    def preprocess_messages(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Preprocess messages before sending to model API.
+        Removes thinking content and other model-specific preprocessing.
+
+        Args:
+            messages (List[OpenAIMessage]): Original messages
+
+        Returns:
+            List[OpenAIMessage]: Preprocessed messages
+        """
+        # Remove thinking content from messages before sending to API
+        # This ensures only the final response is sent, excluding
+        # intermediate thought processes
+        return [
+            {  # type: ignore[misc]
+                **msg,
+                'content': re.sub(
+                    r'<think>.*?</think>',
+                    '',
+                    msg['content'],  # type: ignore[arg-type]
+                    flags=re.DOTALL,
+                ).strip(),
+            }
+            for msg in messages
+        ]
 
     @abstractmethod
     def _run(
