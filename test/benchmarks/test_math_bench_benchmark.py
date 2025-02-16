@@ -65,3 +65,18 @@ def test_generate_solutions(benchmark):
     )
     assert "answers" in result_df.columns
     assert result_df["answers"].apply(lambda x: x[0] == "\boxed{2}").all()
+
+def test_download_math():
+    """Test that MATHBenchmark downloads the dataset to the data/ directory."""
+    
+    data_dir = Path("data/")
+    save_to = Path("data/")
+
+    benchmark = MATHBenchmark(data_dir=str(data_dir), save_to=str(save_to))
+    benchmark.download()
+
+    assert data_dir.exists(), "Data directory was not created!"
+    dataset_files = list(data_dir.glob("**/*"))
+    assert len(dataset_files) > 0, "Dataset files were not downloaded!"
+
+    print("MATH dataset downloaded successfully.")
