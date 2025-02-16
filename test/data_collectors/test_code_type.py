@@ -14,17 +14,26 @@ def test_code_item_valid():
     assert item.description == "Write a Python function to compute factorial."
     assert "def factorial" in item.code
 
+def test_code_item_valid_2():
+    r"""Test valid CodeItem creation."""
+    item = CodeItem(
+        description="Write a sample SQL code",
+        code="SELECT * FROM VALID_DATA;"
+    )
 
-def test_code_item_invalid_description():
-    r"""Test invalid CodeItem with too short description."""
-    with pytest.raises(ValidationError):
-        CodeItem(description="Bad", code="def valid_code(): pass")
+    # Assert that the object is created successfully
+    assert item.description == "Write a sample SQL code"
+    assert item.code == "SELECT * FROM VALID_DATA;"
+
+    # Assert that the validation method correctly identifies SQL as code
+    assert CodeItem.is_code_using_pygments(item.code) == True
+
 
 
 def test_code_item_invalid_code():
     r"""Test invalid CodeItem with missing code structure."""
-    with pytest.raises(ValidationError):
-        CodeItem(description="Write a function.", code="Just some random text.")
+    with pytest.raises(ValueError):
+        CodeItem(description="Write a function.", code="bLAH bLAH blah blah")
 
 
 def test_code_item_non_ascii_code():

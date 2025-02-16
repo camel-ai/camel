@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, Field, field_validator
+from pygments.lexers import guess_lexer, get_all_lexers
+from pygments.util import ClassNotFound
 import re
 
 class CodeItem(BaseModel):
@@ -24,29 +26,34 @@ class CodeItem(BaseModel):
         code (str): The actual code snippet.
     """
     description: str = Field(
-        min_length=5,
-        max_length=500,
+        min_length=1,
         description="A clear requirement or description of the code."
     )
     code: str = Field(
-        min_length=5,
-        max_length=5000,
         description="The actual code snippet."
     )
+
+    @classmethod
+    def is_code_using_pygments(cls, text: str) -> bool:
+        r"""Detect if the given text is code using Pygments."""
+        VALID_LEXERS = {name.lower() for lexer in get_all_lexers() for name in lexer[1]}
+        try:
+            lexer = guess_lexer(text)
+            lexer_name = lexer.name.lower()
+
+            # Allow only programming languages
+            result = lexer_name in VALID_LEXERS
+            return result
+        except ClassNotFound:
+            return False  # If no lexer is found, it's likely not code
 
     @field_validator("code")
     @classmethod
     def validate_code(cls, value: str) -> str:
         r"""Ensures that the provided code follows basic coding patterns."""
-        code_keywords = ["def", "class", "return", "import", "print", "if", "else", "for", "while", "try", "except"]
-
-        if not any(keyword in value for keyword in code_keywords):
-            raise ValueError("Code does not appear to be valid programming code.")
-
-        if re.search(r"[^\x20-\x7E\t\n]", value):  # Non-ASCII or control characters
-            raise ValueError("Code contains invalid characters.")
-
-        return value.strip()
+        if not cls.is_code_using_pygments(value):
+            raise ValueError("Invalid code format or not recognized as code.")
+        return value  # Must return the validated value
 
     def to_string(self) -> str:
         r"""Convert the CodeItem into a formatted string."""
@@ -75,4 +82,3 @@ class CodeItem(BaseModel):
 
         description, code = match.groups()
         return cls(description=description.strip(), code=code.strip())
-

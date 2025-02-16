@@ -25,17 +25,19 @@ def test_qa_item_to_string():
 
     text = qa_item.to_string()
 
-    assert "Q:" in text
+    assert "Question:" in text
     assert "What is the capital of Australia?" in text
-    assert "A:" in text
+    assert "Answer:" in text
     assert "The capital city of Australia is Canberra." in text
 
 def test_qa_item_from_string():
     r"""Test parsing a QAItem from a formatted string."""
-    text = r"""Q: Who discovered gravity?
-A: Sir Isaac Newton discovered gravity after observing a falling apple."""
+    text = "Question: What is the capital city of Australia?\nAnswer: The capital city of Australia is Canberra."
 
-    qa_item = QAItem.from_string(text)
+    # Create QAItem using from_string()
+    item = QAItem.from_string(text)
 
-    assert qa_item.question == "Who discovered gravity?"
-    assert qa_item.answer == "Sir Isaac Newton discovered gravity after observing a falling apple."
+    # Assertions to verify correct parsing
+    assert isinstance(item, QAItem)  # Ensure it's an instance of QAItem
+    assert item.question == "What is the capital city of Australia?"
+    assert item.answer == "The capital city of Australia is Canberra."
