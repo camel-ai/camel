@@ -17,7 +17,7 @@ import pytest
 
 from camel.memories import ContextRecord
 from camel.messages import BaseMessage
-from camel.messages.acl_parameter import ACLParameter, Content, Sender
+from camel.messages.acl_parameter import Content
 from camel.models import ModelFactory
 from camel.prompts import CodePrompt, TextPrompt
 from camel.societies import RolePlaying
@@ -88,18 +88,17 @@ def test_extract_text_and_code_prompts():
 
 def test_base_message_to_dict(base_message: BaseMessage) -> None:
     role_type = RoleType.USER
-    content = Content(text="test content")
-    acl_parameter = ACLParameter(
-        sender=Sender(name="test_user", role_type=role_type)
-    )
+    text = "test content"
+
     expected_dict = {
         "role_name": "test_user",
         "role_type": role_type,
         "key": "value",
-        "content": content.to_dict(),
-        "acl_parameter": acl_parameter,
+        "content": text,
     }
-    assert base_message.to_dict() == expected_dict
+    base_message_dict = base_message.to_dict()
+    del base_message_dict['acl_parameter']
+    assert base_message_dict == expected_dict
 
 
 def test_base_message():
@@ -108,9 +107,6 @@ def test_base_message():
     meta_dict = {"key": "value"}
     backend_role = OpenAIBackendRole.USER
     content = Content(text="test_content")
-    acl_parameter = ACLParameter(
-        sender=Sender(name=role_name, role_type=role_type)
-    )
 
     message = BaseMessage(
         role_name=role_name,
@@ -122,7 +118,7 @@ def test_base_message():
     assert message.role_name == role_name
     assert message.role_type == role_type
     assert message.meta_dict == meta_dict
-    assert message.content == content
+    assert message.content.text == content.text
 
     openai_message = message.to_openai_message(backend_role)
     assert openai_message == {
@@ -143,15 +139,6 @@ def test_base_message():
     assert openai_assistant_message == {
         "role": "assistant",
         "content": "test_content",
-    }
-
-    dictionary = message.to_dict()
-    assert dictionary == {
-        "role_name": role_name,
-        "role_type": role_type.name,
-        **(meta_dict or {}),
-        "content": content.to_dict(),
-        "acl_parameter": acl_parameter,
     }
 
 

@@ -139,7 +139,7 @@ class FunctionCallingMessage(BaseMessage):
             # TODO: split the incoming types to be more specific
             #  and remove the type ignores
             content = function_format.format_tool_call(
-                self.content or "",  # type: ignore[arg-type]
+                self.content.text or "",  # type: ignore[arg-type]
                 self.func_name,  # type: ignore[arg-type]
                 self.args,  # type: ignore[arg-type]
             )

@@ -1186,5 +1186,5 @@ def test_chat_agent_vision(step_call_count=3):
     for i in range(step_call_count):
         agent_response = agent.step(user_msg)
         assert (
-            agent_response.msgs[0].content == "Yes."
+            agent_response.msgs[0].content.text == "Yes."
         ), f"Error in calling round {i+1}"
