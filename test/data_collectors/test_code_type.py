@@ -29,6 +29,12 @@ def test_code_item_valid_2():
     assert CodeItem.is_code_using_pygments(item.code) == True
 
 
+def test_code_item_unrecognized_code():
+    r"""Test CodeItem with valid-looking but unsupported code."""
+    fake_code = "This is not really code, but it looks structured."
+
+    with pytest.raises(ValueError):
+        CodeItem(description="Test unrecognized code.", code=fake_code)
 
 def test_code_item_invalid_code():
     r"""Test invalid CodeItem with missing code structure."""
