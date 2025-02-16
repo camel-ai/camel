@@ -17,10 +17,8 @@ from typing import Any, Dict, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
-from camel.configs import BaseConfig
 from camel.datasets.base import BaseDataset, DataPoint
 from camel.extractors.base import BaseExtractor, ExtractionResult
-from camel.types import ModelType
 from camel.verifiers.base import BaseVerifier, VerificationResult
 from camel.verifiers.models import Response, TaskType
 
@@ -83,8 +81,6 @@ class BaseEnvironment(ABC):
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
         task_type: TaskType = TaskType.SOFTWARE_ENGINEERING,
-        model_type: ModelType = ModelType.GPT_4,
-        generation_config: Optional[BaseConfig] = None,
         **kwargs,
     ):
         r"""Initialize the environment.
@@ -125,10 +121,10 @@ class BaseEnvironment(ABC):
     async def process_response(
         self, response: Response, context: Optional[Dict[str, Any]] = None
     ) -> Tuple[ExtractionResult, VerificationResult]:
-        r"""Process an LLM response through extraction and verification.
+        r"""Process an response through extraction and verification.
 
         Args:
-            response: Response containing the LLM output.
+            response: Response containing the output.
             context: Optional context for extraction.
 
         Returns:
@@ -149,14 +145,14 @@ class BaseEnvironment(ABC):
         r"""Take a step in the environment.
 
         Args:
-            response: Response containing LLM output
+            response: Response containing output
 
         Returns:
             StepResult containing next observation, reward, done flag, and info
         """
         if self.max_steps and self._current_step >= self.max_steps:
             return StepResult(
-                observation=Observation(question="", context={}),
+                observation=self._get_terminal_observation(),
                 reward={},
                 done=True,
                 info={"reason": "max_steps_reached"},
@@ -172,7 +168,7 @@ class BaseEnvironment(ABC):
 
         self._current_step += 1
         return StepResult(
-            observation=Observation(question="", context={}),
+            observation=self._get_next_observation(),
             reward=reward,
             done=False,
             info={
@@ -182,14 +178,32 @@ class BaseEnvironment(ABC):
         )
 
     @abstractmethod
+    def _get_next_observation(self) -> Observation:
+        r"""Get the next observation for the environment.
+
+        Returns:
+            Observation for the next step
+        """
+        pass
+
+    @abstractmethod
+    def _get_terminal_observation(self) -> Observation:
+        r"""Get the terminal observation when episode ends.
+
+        Returns:
+            Terminal observation
+        """
+        pass
+
+    @abstractmethod
     async def compute_reward(
         self, response: Response, verification_result: VerificationResult
     ) -> Dict[str, float]:
         r"""Compute reward scores for different aspects of the response.
 
         Args:
-            response: The LLM response
-            verification_result: Result from the verifier
+            response: The response.
+            verification_result: Result from the verifier.
 
         Returns:
             Dictionary of reward scores for different aspects.
