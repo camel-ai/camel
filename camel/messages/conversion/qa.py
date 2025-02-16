@@ -25,18 +25,16 @@ class QAItem(BaseModel):
         answer (str): The corresponding answer to the question.
     """
     question: str = Field(
-        min_length=3,
-        max_length=500,
-        description="The question being asked. Must be at least 3 characters."
+        min_length=1,
+        description="The question being asked."
     )
     answer: str = Field(
         min_length=1,
-        max_length=2000,
         description="The corresponding answer to the question. Must be at least 1 character."
     )
     def to_string(self) -> str:
         r"""Convert the QA item into a formatted string."""
-        return f"Q: {self.question}\nA: {self.answer}"
+        return f"Question: {self.question}\nAnswer: {self.answer}"
 
     @classmethod
     def from_string(cls, text: str) -> "QAItem":
@@ -45,7 +43,7 @@ class QAItem(BaseModel):
 
         Args:
             text (str): A string in the format:
-                "Q: <question>\nA: <answer>"
+                "Question: <question>\nAnswer: <answer>"
 
         Returns:
             QAItem: Parsed instance of QAItem.
@@ -54,10 +52,10 @@ class QAItem(BaseModel):
             ValueError: If the text format is incorrect.
         """
         text = text.strip()
-        match = re.search(r"Q:\s*(.+?)\nA:\s*(.+)", text, re.DOTALL)
+        match = re.search(r"Question:\s*(.+?)\nAnswer:\s*(.+)", text, re.DOTALL)
 
         if not match:
-            raise ValueError("Invalid format. Expected 'Q: <question>\\nA: <answer>'.")
+            raise ValueError("Invalid format. Expected 'Question: <question>\\nAnswer: <answer>'.")
 
         question, answer = match.groups()
         return cls(question=question.strip(), answer=answer.strip())
