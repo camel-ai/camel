@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from camel.datasets.base import BaseDataset, DataPoint
-from camel.extractors.base import BaseExtractor, ExtractionResult
+from camel.extractors.base import BaseExtractor
 from camel.verifiers.base import BaseVerifier, VerificationResult
 from camel.verifiers.models import Response, TaskType
 
@@ -120,7 +120,7 @@ class BaseEnvironment(ABC):
 
     async def process_response(
         self, response: Response, context: Optional[Dict[str, Any]] = None
-    ) -> Tuple[ExtractionResult, VerificationResult]:
+    ) -> Tuple[Dict[str, Any], VerificationResult]:
         r"""Process an response through extraction and verification.
 
         Args:

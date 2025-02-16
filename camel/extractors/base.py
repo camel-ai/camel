@@ -15,35 +15,11 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
-
-
-class ExtractionResult(BaseModel):
-    r"""Result of content extraction.
-
-    Attributes:
-        content: The extracted content in a format suitable for verification
-        success: Whether the extraction was successful
-        error: Optional error message if extraction failed
-    """
-
-    content: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="The extracted content in a format suitable for"
-        " verification",
-    )
-    success: bool = Field(
-        ..., description="Whether the extraction was successful"
-    )
-    error: Optional[str] = Field(
-        default=None, description="Optional error message if extraction failed"
-    )
-
 
 class BaseExtractor(ABC):
     r"""Base class for all response extractors.
 
-    An extractor takes the response of the LLM and extracts the relevant parts,
+    An extractor takes the response and extracts the relevant parts,
     converting them into a format that the verifier can handle.
     """
 
@@ -51,26 +27,26 @@ class BaseExtractor(ABC):
         r"""Initialize the extractor.
 
         Args:
-            **kwargs: Additional extractor parameters
+            **kwargs: Additional extractor parameters.
         """
         self._metadata = kwargs
 
     @abstractmethod
     async def extract(
         self, response: str, context: Optional[Dict[str, Any]] = None
-    ) -> ExtractionResult:
-        """Extract relevant parts from an LLM response.
+    ) -> Dict[str, Any]:
+        r"""Extract relevant parts from a response.
 
         Args:
-            response: Raw LLM response
-            context: Optional context for extraction
+            response: Raw response.
+            context: Optional context for extraction.
 
         Returns:
-            ExtractionResult containing extracted content and status
+            Dictionary containing extracted content.
 
         Raises:
-            ValueError: If response is empty
+            ValueError: If response is empty.
         """
         if not response.strip():
             raise ValueError("Empty response")
-        return ExtractionResult(success=False, error="Not implemented")
+        raise NotImplementedError("Subclasses must implement extract()")
