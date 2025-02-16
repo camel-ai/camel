@@ -79,7 +79,7 @@ class TestSymPyToolkit(unittest.TestCase):
         self.assertEqual(result, "x - x**3/6 + O(x**5)")
 
     def test_compute_limit(self):
-        response = self.toolkit.compute_limit("1/x", "x", 0, "plus")
+        response = self.toolkit.compute_limit("1/x", "x", 0)
         result = json.loads(response)["result"]
         self.assertEqual(result, "oo")
 

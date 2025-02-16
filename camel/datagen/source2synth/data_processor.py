@@ -15,33 +15,61 @@
 import random
 from typing import Any, Dict, List, Optional, Sequence
 
-import numpy as np
 from tqdm import tqdm
 
 from camel.agents.multi_hop_generator_agent import MultiHopGeneratorAgent
-from camel.logger import get_logger
-from camel.synthetic_datagen.source2synth.user_data_processor_config import (
+from camel.datagen.source2synth.user_data_processor_config import (
     ProcessorConfig,
 )
+from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class UserDataProcessor:
-    r"""User Data Processor."""
+    r"""A processor for generating multi-hop question-answer pairs from user
+    data.
+
+    This class handles the processing of text data to generate multi-hop
+    question-answer pairs using either an AI model or rule-based approaches.
+    It manages the entire pipeline from text preprocessing to dataset curation.
+
+    Attributes:
+        config (ProcessorConfig): Configuration for data processing parameters.
+        rng (random.Random): Random number generator for reproducibility.
+        multi_hop_agent (Optional[MultiHopGeneratorAgent]): Agent for
+            generating QA pairs.
+    """
 
     def __init__(self, config: Optional[ProcessorConfig] = None):
+        r"""Initialize the UserDataProcessor.
+
+        Args:
+            config (Optional[ProcessorConfig], optional): Configuration for
+                data processing. (default: :obj:`None`)
+        """
         self.config = config or ProcessorConfig()
-        random.seed(self.config.seed)
-        np.random.seed(self.config.seed)
+        self.rng = random.Random(self.config.seed)
         self.multi_hop_agent = (
-            MultiHopGeneratorAgent() if self.config.use_ai_model else None
+            self.config.hop_generating_agent
+            if self.config.use_ai_model
+            else None
         )
 
     def process_text(
         self, text: str, source: str = "user_input"
     ) -> List[Dict[str, Any]]:
-        r"""Process a single text."""
+        r"""Process a single text to generate multi-hop QA pairs.
+
+        Args:
+            text (str): The input text to process.
+            source (str, optional): Source identifier for the text.
+                (default: :obj:`"user_input"`)
+
+        Returns:
+            List[Dict[str, Any]]: List of processed examples with QA pairs and
+                metadata.
+        """
         # Convert text to standard format
         raw_data = [
             {
@@ -55,7 +83,7 @@ class UserDataProcessor:
         examples = constructor.construct_examples(raw_data)
 
         # Manage data
-        curator = DataCurator(self.config)
+        curator = DataCurator(self.config, self.rng)
         final_dataset = curator.curate_dataset(examples)
 
         return final_dataset
@@ -63,7 +91,20 @@ class UserDataProcessor:
     def process_batch(
         self, texts: List[str], sources: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
-        r"""Process multiple texts in batch."""
+        r"""Process multiple texts in batch to generate multi-hop QA pairs.
+
+        Args:
+            texts (List[str]): List of input texts to process.
+            sources (Optional[List[str]], optional): List of source
+                identifiers. (default: :obj:`None`)
+
+        Returns:
+            List[Dict[str, Any]]: List of processed examples with QA pairs and
+                metadata.
+
+        Raises:
+            ValueError: If length of sources doesn't match length of texts.
+        """
         if sources is None:
             sources = ["user_input"] * len(texts)
         elif len(sources) != len(texts):
@@ -82,27 +123,52 @@ class UserDataProcessor:
         examples = constructor.construct_examples(raw_data)
 
         # Manage data
-        curator = DataCurator(self.config)
+        curator = DataCurator(self.config, self.rng)
         final_dataset = curator.curate_dataset(examples)
 
         return final_dataset
 
 
 class ExampleConstructor:
-    r"""Example Constructor."""
+    r"""Constructs training examples from raw text data.
+
+    This class handles the construction of training examples by preprocessing
+    text, extracting information pairs, and generating question-answer pairs.
+
+    Attributes:
+        config (ProcessorConfig): Configuration for example construction.
+        multi_hop_agent (Optional[MultiHopGeneratorAgent]): Agent for QA
+            generation.
+    """
 
     def __init__(
         self,
         config: ProcessorConfig,
         multi_hop_agent: Optional[MultiHopGeneratorAgent] = None,
     ):
+        r"""Initialize the ExampleConstructor.
+
+        Args:
+            config (ProcessorConfig): Configuration for example construction.
+            multi_hop_agent (Optional[MultiHopGeneratorAgent], optional):
+                Agent for generating multi-hop QA pairs. (default: :obj:`None`)
+        """
         self.config = config
         self.multi_hop_agent = multi_hop_agent
 
     def construct_examples(
         self, raw_data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""Construct training examples."""
+        r"""Construct training examples from raw data.
+
+        Args:
+            raw_data (List[Dict[str, Any]]): List of raw data dictionaries
+                containing text and metadata.
+
+        Returns:
+            List[Dict[str, Any]]: List of constructed examples with QA pairs
+                and metadata.
+        """
         logger.info("Starting to construct training examples...")
         examples = []
 
@@ -135,7 +201,15 @@ class ExampleConstructor:
         return examples
 
     def _preprocess_text(self, text: str) -> str:
-        r"""Text preprocessing."""
+        r"""Preprocess input text for example construction.
+
+        Args:
+            text (str): Input text to preprocess.
+
+        Returns:
+            str: Preprocessed text, or empty string if text fails quality
+                checks.
+        """
         if not isinstance(text, str):
             return ''
 
@@ -156,7 +230,14 @@ class ExampleConstructor:
         return text
 
     def _check_text_quality(self, text: str) -> bool:
-        r"""Check text quality."""
+        r"""Check the quality of input text.
+
+        Args:
+            text (str): Text to check quality for.
+
+        Returns:
+            bool: True if text passes quality checks, False otherwise.
+        """
         # 1. Basic quality check
         if text.count('.') < 2:  # Must have at least 2 sentences
             return False
@@ -171,7 +252,15 @@ class ExampleConstructor:
         return True
 
     def _extract_info_pairs(self, text: str) -> List[Dict[str, Sequence[str]]]:
-        r"""Extract information pairs and relationships."""
+        r"""Extract information pairs and relationships from text.
+
+        Args:
+            text (str): Input text to extract information from.
+
+        Returns:
+            List[Dict[str, Sequence[str]]]: List of dictionaries containing
+                premise, intermediate, conclusion, and related contexts.
+        """
         # Split into sentences
         sentences = [s.strip() for s in text.split('.') if s.strip()]
         info_pairs = []
@@ -200,7 +289,15 @@ class ExampleConstructor:
     def _generate_qa_pairs(
         self, info_pairs: List[Dict[str, Sequence[str]]]
     ) -> List[Dict[str, str]]:
-        r"""Generate multi-hop question-answer pairs."""
+        r"""Generate multi-hop question-answer pairs from information pairs.
+
+        Args:
+            info_pairs (List[Dict[str, Sequence[str]]]): List of information
+                pairs extracted from text.
+
+        Returns:
+            List[Dict[str, str]]: List of generated QA pairs.
+        """
         qa_pairs = []
 
         for pair in info_pairs:
@@ -219,7 +316,15 @@ class ExampleConstructor:
         return qa_pairs
 
     def _calculate_complexity(self, qa_pairs: List[Dict[str, Any]]) -> float:
-        r"""Calculate complexity of QA pairs."""
+        r"""Calculate the complexity score for a set of QA pairs.
+
+        Args:
+            qa_pairs (List[Dict[str, Any]]): List of QA pairs to calculate
+                complexity for.
+
+        Returns:
+            float: Complexity score between 0.0 and 1.0.
+        """
         if not qa_pairs:
             return 0.0
 
@@ -233,10 +338,10 @@ class ExampleConstructor:
             supporting_facts_count = len(qa.get('supporting_facts', []))
 
             # 3. Question length
-            question_length = len(qa['question'].split())
+            question_length = len(qa.get('question', '').split())
 
             # 4. Answer length
-            answer_length = len(qa['answer'].split())
+            answer_length = len(qa.get('answer', '').split())
 
             # Calculate complexity of a single QA pair
             qa_complexity = (
@@ -256,15 +361,37 @@ class ExampleConstructor:
 
 
 class DataCurator:
-    r"""Data Manager."""
+    r"""Manages and curates datasets of multi-hop question-answer pairs.
 
-    def __init__(self, config: ProcessorConfig):
+    This class handles dataset management tasks including quality filtering,
+    complexity filtering, deduplication, and dataset sampling.
+
+    Attributes:
+        config (ProcessorConfig): Configuration for data curation parameters.
+        rng (random.Random): Random number generator for reproducible sampling.
+    """
+
+    def __init__(self, config: ProcessorConfig, rng: random.Random):
+        r"""Initialize the DataCurator.
+
+        Args:
+            config (ProcessorConfig): Configuration for data curation.
+            rng (random.Random): Random number generator for reproducibility.
+        """
         self.config = config
+        self.rng = rng
 
     def curate_dataset(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""Dataset management."""
+        r"""Manage and curate a dataset through multiple filtering stages.
+
+        Args:
+            examples (List[Dict[str, Any]]): List of examples to curate.
+
+        Returns:
+            List[Dict[str, Any]]: Curated dataset meeting quality criteria.
+        """
         logger.info("Starting dataset management...")
 
         # 1. Quality filtering
@@ -296,7 +423,14 @@ class DataCurator:
     def _quality_filter(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""Quality filtering."""
+        r"""Filter examples based on quality criteria.
+
+        Args:
+            examples (List[Dict[str, Any]]): List of examples to filter.
+
+        Returns:
+            List[Dict[str, Any]]: Examples that pass quality checks.
+        """
         filtered = []
 
         for example in examples:
@@ -314,7 +448,14 @@ class DataCurator:
         return filtered
 
     def _check_qa_quality(self, qa_pairs: List[Dict[str, str]]) -> bool:
-        r"""Check quality of QA pairs."""
+        r"""Check the quality of question-answer pairs.
+
+        Args:
+            qa_pairs (List[Dict[str, str]]): List of QA pairs to check.
+
+        Returns:
+            bool: True if QA pairs meet quality criteria, False otherwise.
+        """
         if not qa_pairs:
             return False
 
@@ -335,7 +476,17 @@ class DataCurator:
     def _complexity_filter(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""Complexity filtering."""
+        """
+        Filter examples based on complexity threshold.
+
+        Removes examples with complexity scores below the configured threshold.
+
+        Args:
+            examples (List[Dict[str, Any]]): List of examples to filter.
+
+        Returns:
+            List[Dict[str, Any]]: Examples meeting complexity threshold.
+        """
         return [
             example
             for example in examples
@@ -346,7 +497,14 @@ class DataCurator:
     def _remove_duplicates(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""Remove duplicates."""
+        r"""Remove duplicate examples from the dataset.
+
+        Args:
+            examples (List[Dict[str, Any]]): List of examples to deduplicate.
+
+        Returns:
+            List[Dict[str, Any]]: Deduplicated examples.
+        """
         seen = set()
         unique_examples = []
 
@@ -366,8 +524,15 @@ class DataCurator:
     def _sample_dataset(
         self, examples: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""Sample to target dataset size."""
+        r"""Sample examples to match target dataset size.
+
+        Args:
+            examples (List[Dict[str, Any]]): List of examples to sample from.
+
+        Returns:
+            List[Dict[str, Any]]: Sampled dataset of target size or smaller.
+        """
         if len(examples) <= self.config.dataset_size:
             return examples
 
-        return random.sample(examples, self.config.dataset_size)
+        return self.rng.sample(examples, self.config.dataset_size)

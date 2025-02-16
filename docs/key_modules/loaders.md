@@ -135,7 +135,7 @@ print(staged_element)
 ```markdown
 >>> {'rows': [{'data': {'type': 'UncategorizedText', 'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5', 'text': 'CNN\n        \xa0—'}, 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.cnn.com/2023/01/30/sport/empire-state-building-green-philadelphia-eagles-spt-intl/index.html', 'emphasized_text_contents': ['CNN'], 'emphasized_text_tags': ['span']}}, ...
 ```
-This is a basic guide to get you started with the `Unstructured IO` module. For more advanced usage, refer to the specific method documentation and the [Unstructured IO Documentation](https://unstructured-io.github.io/unstructured/).
+This is a basic guide to get you started with the `Unstructured IO` module. For more advanced usage, refer to the specific method documentation and the [Unstructured IO Documentation](https://docs.unstructured.io).
 
 ### 3.3. Using `Apify Reader`
 
@@ -340,14 +340,14 @@ response = jina_reader.read_content("https://docs.camel-ai.org/")
 print(response)
 ```
 ```markdown
->>>Welcome to CAMEL’s documentation! — CAMEL 0.2.16 documentation
+>>>Welcome to CAMEL’s documentation! — CAMEL 0.2.22 documentation
 ===============
 
 [Skip to main content](https://docs.camel-ai.org/#main-content)
 
 Back to top Ctrl+K
 
- [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.16](https://docs.camel-ai.org/#)
+ [![Image 1](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png) ![Image 2](https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png)CAMEL 0.2.22](https://docs.camel-ai.org/#)
 
 Search Ctrl+K
 

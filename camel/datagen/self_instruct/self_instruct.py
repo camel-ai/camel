@@ -171,6 +171,7 @@ class SelfInstructPipeline:
         )
 
         response = self.agent.step(prompt)
+        self.agent.reset()
         generated_tasks = [
             line.strip()
             for line in response.msgs[0].content.split("\n")
@@ -197,6 +198,7 @@ class SelfInstructPipeline:
             "{\n  \"answer\": false\n}\n"
         )
         response = self.agent.step(clf_prompt)
+        self.agent.reset()
         try:
             structured_response = AgentResponse.parse_raw(
                 response.msgs[0].content.strip()
@@ -241,6 +243,7 @@ class SelfInstructPipeline:
             )
 
         response = self.agent.step(prompt)
+        self.agent.reset()
         generated_text = response.msgs[0].content.strip()
 
         if classification:
@@ -358,20 +361,20 @@ class SelfInstructPipeline:
         in JSON format.
         """
         with open(self.data_output_path, 'w') as f:
-            json.dump(self.machine_tasks, f, indent=4)
+            json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
 
     def generate(self):
         r"""Execute the entire pipeline to generate machine instructions
         and instances.
         """
         while len(self.machine_tasks) < self.num_machine_instructions:
+            prompt, instruction = self.generate_machine_instruction()
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
             ] + [t["instruction"] for t in self.machine_tasks]
             for f in self.instruction_filter.filters:
                 if isinstance(f, RougeSimilarityFilter):
                     f.existing_instructions = existing_instructions
-            prompt, instruction = self.generate_machine_instruction()
             if self.instruction_filter.filter(prompt, instruction):
                 instruction_dict = {
                     "id": f"machine_task_{len(self.machine_tasks) + 1}",

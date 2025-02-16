@@ -13,15 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import OpenAPIToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling opertor', content='You are a helpful assistant'
-)
+sys_msg = "You are a helpful assistant"
 
 # Set model config
 tools = OpenAPIToolkit().get_tools()
@@ -44,16 +41,14 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name='CAMEL User', content='help me to select a basketball in klarna.'
-)
+usr_msg = "help me to select a basketball in klarna."
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='klarna_productsUsingGET', args={
+[ToolCallingRecord(func_name='klarna_productsUsingGET', args={
 'q_in_query': 'basketball'}, result={'products': [{'name': 'Wilson Evolution'
 , 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/3203801266/Basketball
 /Wilson-Evolution/?utm_source=openai&ref-site=openai_plugin', 'price':

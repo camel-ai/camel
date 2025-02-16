@@ -15,7 +15,6 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.data_collector import AlpacaDataCollector
-from camel.messages.base import BaseMessage
 from camel.models.model_factory import ModelFactory
 from camel.types.enums import ModelPlatformType, ModelType
 
@@ -30,17 +29,11 @@ model = ModelFactory.create(
 )
 
 agent = ChatAgent(
-    system_message=BaseMessage.make_assistant_message(
-        role_name="Tools calling operator",
-        content="You are a helpful assistant",
-    ),
+    system_message="You are a helpful assistant",
     model=model,
 )
 
-usr_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="When is the release date of the video game Portal?",
-)
+usr_msg = "When is the release date of the video game Portal?"
 
 collector = AlpacaDataCollector().record(agent).start()
 
@@ -54,7 +47,7 @@ print(collector.llm_convert())
 collector.reset()
 
 # Manually record the message
-collector.step("user", "Tools calling operator", usr_msg.content)
+collector.step("user", "Tools calling operator", usr_msg)
 
 collector.step("assistant", "Tools calling operator", resp.msgs[0].content)
 
@@ -62,7 +55,8 @@ print(collector.convert())
 
 # ruff: noqa: E501
 """
-{'instruction': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game "Portal" was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included "Half-Life 2" and its episodes. It was later released as a standalone game on April 9, 2008, for PC and Xbox 360.'}
-{'instruction': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': "The video game Portal was released on October 10, 2007, as part of the game bundle 'The Orange Box.' It was later released as a standalone game on April 9, 2008, for PC and Xbox 360."}
-{'instruction': 'You are a helpful assistant', 'input': 'When is the release date of the video game Portal?', 'output': 'The video game "Portal" was released on October 10, 2007, as part of the game bundle "The Orange Box," which also included "Half-Life 2" and its episodes. It was later released as a standalone game on April 9, 2008, for PC and Xbox 360.'}
+{'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by Valve Corporation and is part of the game bundle known as "The Orange Box," which also included "Half-Life 2" and its episodes.'}
+2025-01-19 19:26:09,140 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+{'instruction': 'You are a helpful assistant When is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by Valve Corporation and is part of the game bundle known as "The Orange Box," which also included "Half-Life 2" and its episodes.'}
+{'instruction': 'You are a helpful assistantWhen is the release date of the video game Portal?', 'input': '', 'output': 'The video game "Portal" was released on October 10, 2007. It was developed by 
 """

@@ -131,7 +131,7 @@ class ShareGPTDataCollector(BaseDataCollector):
                     conversations.append(
                         {"from": "gpt", "value": message.message}
                     )
-            elif role == "function":
+            elif role == "function" or role == "tool":
                 conversations.append(
                     {
                         "from": "observation",
@@ -182,7 +182,7 @@ class ShareGPTDataCollector(BaseDataCollector):
             if message.function_call:
                 context.append(prefix + json.dumps(message.function_call))
 
-            elif role == "function":
+            elif role == "function" or role == "tool":
                 context.append(prefix + json.dumps(message.message))  # type: ignore[attr-defined]
             else:
                 context.append(prefix + str(message.message))

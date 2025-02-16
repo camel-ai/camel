@@ -33,13 +33,12 @@ class StudentList(BaseModel):
 # Define Qwen model
 qwen_model = ModelFactory.create(
     model_platform=ModelPlatformType.QWEN,
-    model_type=ModelType.QWEN_PLUS,
+    model_type=ModelType.QWEN_TURBO,
     model_config_dict=QwenConfig().as_dict(),
 )
 
 qwen_agent = ChatAgent(
     model=qwen_model,
-    message_window_size=10,
 )
 
 user_msg = """give me 1 student info."""

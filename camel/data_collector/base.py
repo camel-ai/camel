@@ -27,7 +27,7 @@ class CollectorData:
         self,
         id: UUID,
         name: str,
-        role: Literal["user", "assistant", "system", "function"],
+        role: Literal["user", "assistant", "system", "tool"],
         message: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -52,7 +52,7 @@ class CollectorData:
             ValueError: If neither message nor function call is provided.
 
         """
-        if role not in ["user", "assistant", "system", "function"]:
+        if role not in ["user", "assistant", "system", "tool"]:
             raise ValueError(f"Role {role} not supported")
         if role == "system" and function_call:
             raise ValueError("System role cannot have function call")
@@ -82,7 +82,7 @@ class CollectorData:
             name=name,
             role=context["role"],
             message=context["content"],
-            function_call=context.get("function_call", None),
+            function_call=context.get("tool_calls", None),
         )
 
 
@@ -98,7 +98,7 @@ class BaseDataCollector(ABC):
 
     def step(
         self,
-        role: Literal["user", "assistant", "system", "function"],
+        role: Literal["user", "assistant", "system", "tool"],
         name: Optional[str] = None,
         message: Optional[str] = None,
         function_call: Optional[Dict[str, Any]] = None,
@@ -106,7 +106,7 @@ class BaseDataCollector(ABC):
         r"""Record a message.
 
         Args:
-            role (Literal["user", "assistant", "system", "function"]):
+            role (Literal["user", "assistant", "system", "tool"]):
                 The role of the message.
             name (Optional[str], optional): The name of the agent.
                 (default: :obj:`None`)

@@ -17,12 +17,30 @@ from pydantic import BaseModel, Field
 
 
 class ReasoningStep(BaseModel):
+    r"""A single step in a multi-hop reasoning process.
+
+    Attributes:
+        step (str): The textual description of the reasoning step.
+    """
+
     step: str = Field(
         ..., description="A single step in the reasoning process."
     )
 
 
 class MultiHopQA(BaseModel):
+    r"""A multi-hop question-answer pair with reasoning steps and supporting
+    facts.
+
+    Attributes:
+        question (str): The question requiring multi-hop reasoning.
+        reasoning_steps (List[ReasoningStep]): List of reasoning steps to
+            answer.
+        answer (str): The final answer to the question.
+        supporting_facts (List[str]): List of facts supporting the reasoning.
+        type (str): The type of question-answer pair.
+    """
+
     question: str = Field(
         ..., description="The question that requires multi-hop reasoning."
     )
@@ -57,6 +75,13 @@ class MultiHopQA(BaseModel):
 
 
 class ContextPrompt(BaseModel):
+    r"""A context prompt for generating multi-hop question-answer pairs.
+
+    Attributes:
+        main_context (str): The primary context for generating QA pairs.
+        related_contexts (Optional[List[str]]): Additional related contexts.
+    """
+
     main_context: str = Field(
         ...,
         description="The main context for generating"

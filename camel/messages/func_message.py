@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -18,8 +19,8 @@ from camel.messages import (
     BaseMessage,
     HermesFunctionFormatter,
     OpenAIAssistantMessage,
-    OpenAIFunctionMessage,
     OpenAIMessage,
+    OpenAIToolMessageParam,
 )
 from camel.messages.conversion import (
     ShareGPTMessage,
@@ -44,11 +45,14 @@ class FunctionCallingMessage(BaseMessage):
             function. (default: :obj:`None`)
         result (Optional[Any]): The result of function execution.
             (default: :obj:`None`)
+        tool_call_id (Optional[str]): The ID of the tool call, if available.
+            (default: :obj:`None`)
     """
 
     func_name: Optional[str] = None
     args: Optional[Dict] = None
     result: Optional[Any] = None
+    tool_call_id: Optional[str] = None
 
     def to_openai_message(
         self,
@@ -66,7 +70,7 @@ class FunctionCallingMessage(BaseMessage):
         if role_at_backend == OpenAIBackendRole.ASSISTANT:
             return self.to_openai_assistant_message()
         elif role_at_backend == OpenAIBackendRole.FUNCTION:
-            return self.to_openai_function_message()
+            return self.to_openai_tool_message()
         else:
             raise ValueError(f"Unsupported role: {role_at_backend}.")
 
@@ -120,24 +124,29 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name or arguments."
             )
 
-        msg_dict: OpenAIAssistantMessage = {
+        return {
             "role": "assistant",
-            "content": self.content,
-            "function_call": {
-                "name": self.func_name,
-                "arguments": str(self.args),
-            },
+            "content": self.content or "",
+            "tool_calls": [
+                {
+                    "id": self.tool_call_id or "null",
+                    "type": "function",
+                    "function": {
+                        "name": self.func_name,
+                        "arguments": json.dumps(self.args),
+                    },
+                }
+            ],
         }
 
-        return msg_dict
-
-    def to_openai_function_message(self) -> OpenAIFunctionMessage:
-        r"""Converts the message to an :obj:`OpenAIMessage` object
-        with the role being "function".
+    def to_openai_tool_message(self) -> OpenAIToolMessageParam:
+        r"""Converts the message to an :obj:`OpenAIToolMessageParam` object
+        with the role being "tool".
 
         Returns:
-            OpenAIMessage: The converted :obj:`OpenAIMessage` object
-                with its role being "function".
+            OpenAIToolMessageParam: The converted
+                :obj:`OpenAIToolMessageParam` object with its role being
+                "tool".
         """
         if not self.func_name:
             raise ValueError(
@@ -145,11 +154,10 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name."
             )
 
-        result_content = {"result": {str(self.result)}}
-        msg_dict: OpenAIFunctionMessage = {
-            "role": "function",
-            "name": self.func_name,
-            "content": f'{result_content}',
-        }
+        result_content = str(self.result)
 
-        return msg_dict
+        return {
+            "role": "tool",
+            "content": result_content,
+            "tool_call_id": self.tool_call_id or "null",
+        }

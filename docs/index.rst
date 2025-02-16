@@ -34,6 +34,8 @@ Main Documentation
    :caption: Key Modules
    :name: key_modules
 
+   key_modules/agents.md
+   key_modules/datagen.md
    key_modules/models.md
    key_modules/messages.md
    key_modules/memory.md
@@ -55,7 +57,7 @@ Main Documentation
    cookbooks/basic_concepts/index
    cookbooks/advanced_features/index
    cookbooks/multi_agent_society/index
-   cookbooks/model_training/index
+   cookbooks/data_generation/index
    cookbooks/applications/index
    cookbooks/data_processing/index
 

@@ -14,15 +14,12 @@
 
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import GoogleScholarToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = BaseMessage.make_assistant_message(
-    role_name="Tools calling opertor", content="You are a helpful assistant"
-)
+sys_msg = "You are a helpful assistant"
 
 # Set model config
 tools = GoogleScholarToolkit(
@@ -48,17 +45,14 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="get the detailed information of this author",
-)
+usr_msg = "get the detailed information of this author"
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_author_detailed_info', args={}, result=
+[ToolCallingRecord(func_name='get_author_detailed_info', args={}, result=
 {'container_type': 'Author', 'filled': ['basics', 'indices', 'counts', 
 'coauthors', 'publications', 'public_access'], 'scholar_id': 'JicYPdAAAAAJ', 
 'source': <AuthorSource.AUTHOR_PROFILE_PAGE: 'AUTHOR_PROFILE_PAGE'>, 'name': 
@@ -89,16 +83,14 @@ DeepMind'}, {'container_type': 'Author', 'filled': [], 'scholar_id':
 """
 
 # Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User", content="get the publications of this author"
-)
+usr_msg = "get the publications of this author"
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_author_publications', args={}, result=
+[ToolCallingRecord(func_name='get_author_publications', args={}, result=
 ['Imagenet classification with deep convolutional neural networks', 'Deep 
 learning', 'Learning internal representations by error-propagation', 'Dropout: 
 a simple way to prevent neural networks from overfitting', 'Visualizing data 
@@ -117,17 +109,15 @@ detectors', 'Lec
 
 # ruff: noqa: E501
 # Define a user message
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""get the detailed information for publication with title: `Camel: Communicative agents for" mind" exploration of large language model society`""",
-)
+
+usr_msg = """get the detailed information for publication with title: `Camel: Communicative agents for" mind" exploration of large language model society`"""
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_publication_by_title', args=
+[ToolCallingRecord(func_name='get_publication_by_title', args=
 {'publication_title': 'Camel: Communicative agents for" mind" exploration of 
 large language model society'}, result={'container_type': 'Publication', 
 'source': <PublicationSource.AUTHOR_PUBLICATION_ENTRY: 
@@ -165,17 +155,14 @@ google.com/', 'cites_per_year': {2023: 95, 2024: 269}})]
 ===============================================================================
 """
 
-usr_msg = BaseMessage.make_user_message(
-    role_name="CAMEL User",
-    content="""get the full information for paper from link: `https://hal.science/hal-04206682/document`""",
-)
+usr_msg = """get the full information for paper from link: `https://hal.science/hal-04206682/document`"""
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print((response.info['tool_calls'])[:1000])
 """
 ===============================================================================
-[FunctionCallingRecord(func_name='get_full_paper_content_by_link', args=
+[ToolCallingRecord(func_name='get_full_paper_content_by_link', args=
 {'pdf_url': 'https://hal.science/hal-04206682/document'}, result='Deep 
 learning\nYann Lecun, Yoshua Bengio, Geoffrey Hinton\n\nTo cite this 
 version:\n\nYann Lecun, Yoshua Bengio, Geoffrey Hinton. Deep learning. Nature, 

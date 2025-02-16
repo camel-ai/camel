@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from .aiml_model import AIMLModel
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
@@ -19,10 +20,12 @@ from .deepseek_model import DeepSeekModel
 from .fish_audio_model import FishAudioModel
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
+from .internlm_model import InternLMModel
 from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .model_manager import ModelManager, ModelProcessingError
+from .moonshot_model import MoonshotModel
 from .nemotron_model import NemotronModel
 from .nvidia_model import NvidiaModel
 from .ollama_model import OllamaModel
@@ -68,4 +71,7 @@ __all__ = [
     'ModelProcessingError',
     'DeepSeekModel',
     'FishAudioModel',
+    'InternLMModel',
+    'MoonshotModel',
+    'AIMLModel',
 ]
