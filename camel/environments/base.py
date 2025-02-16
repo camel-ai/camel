@@ -95,8 +95,6 @@ class BaseEnvironment(ABC):
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
             task_type: Type of task being performed.
-            model_type: Type of LLM being used.
-            generation_config: Configuration for LLM generation.
             **kwargs: Additional environment parameters.
         """
         self.dataset = dataset
@@ -104,8 +102,6 @@ class BaseEnvironment(ABC):
         self.extractor = extractor
         self.max_steps = max_steps
         self.task_type = task_type
-        self.model_type = model_type
-        self.generation_config = generation_config or BaseConfig()
         self._current_step = 0
         self._current_datapoint: Optional[DataPoint] = None
         self._metadata = kwargs
