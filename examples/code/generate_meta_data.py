@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
@@ -23,18 +22,10 @@ def generate_meta_data(meta_data: str, num: int = 50, model=None):
     )
     prompt = prompt_template.format(**{f"num_{meta_data}": num})
     print(prompt)
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg, model=model)
+    agent = ChatAgent("You are a helpful assistant.", model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
-    assistant_response = agent.step(user_msg)
+    assistant_response = agent.step(prompt)
     print(assistant_response.msg.content)
 
 

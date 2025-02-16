@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.18"
+version = "0.2.22"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -29,23 +29,22 @@ documentation = "https://docs.camel-ai.org"
 [tool.poetry.dependencies]
 # Core dependencies
 python = ">=3.10,<3.13"
-numpy = "^1"
-openai = "^1.58.1"
+numpy = "^1.26"
+openai = "^1.59.7"
 tiktoken = "^0.7.0"
-colorama = "^0"
+colorama = "^0.4.6"
 jsonschema = "^4"
-protobuf = "^4"
-pathlib = "^1.0.1"
+protobuf = "^5"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
-pandoc = "*"
+pandoc = "^2.4"
 httpx = ">=0.23.0,<0.27.3"
+psutil = "^5.9.8"
 
 # Model platforms
 litellm = { version = "^1.38.1", optional = true }
-google-generativeai = { version = "^0.6.0", optional = true }
 mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.42.0", optional = true }
@@ -63,8 +62,8 @@ torch = [
     # Torch 2.2.1 is used on non-arm64 macOS systems.
     { version = "2.2.1", optional = true, markers = "platform_system == 'Darwin' and platform_machine != 'arm64'" }
 ]
-soundfile = { version = "^0", optional = true }
-sentencepiece = { version = "^0", optional = true }
+soundfile = { version = "^0.13", optional = true }
+sentencepiece = { version = "^0.2", optional = true }
 opencv-python = { version = "^4", optional = true }
 
 # Core RAG components
@@ -72,7 +71,6 @@ sentence-transformers = { version = "^3.0.1", optional = true }
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
 rank-bm25 = { version = "^0.2.2", optional = true }
-ragas = { version = "<=0.1.6", optional = true }
 
 # Storage solutions
 neo4j = { version = "^5.18.0", optional = true }
@@ -86,8 +84,7 @@ botocore = { version = "^1.35.3", optional = true }
 beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
-pdfplumber = { version = "^0.11.0", optional = true }
-unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
+unstructured = { extras = ["all-docs"], version = "0.16.20", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 pandasai = { version = "^2.3.0", optional = true }
@@ -113,6 +110,7 @@ apify_client = { version = "^1.8.1", optional = true }
 tavily-python = { version = "^0.5.0", optional = true }
 asknews = { version = "^0.7.54", optional = true }
 dappier = { version = "^0.3.3", optional = true }
+sympy = { version = "^1.13.3", optional = true }
 
 # Communication platform tools
 slack-sdk = { version = "^3.27.2", optional = true }
@@ -185,6 +183,7 @@ web_tools = [
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
+    "sympy",
 ]
 
 # Document processing tools
@@ -192,7 +191,6 @@ document_tools = [
     "beautifulsoup4",
     "docx2txt", 
     "PyMuPDF",
-    "pdfplumber",
     "unstructured",
     "pandasai",
     "prance",
@@ -252,7 +250,6 @@ dev_tools = [
 # Model platforms
 model_platforms = [
     "litellm",
-    "google-generativeai",
     "mistralai",
     "reka-api",
     "anthropic",
@@ -302,7 +299,6 @@ all = [
     "beautifulsoup4",
     "docx2txt",
     "PyMuPDF",
-    "pdfplumber",
     "unstructured",
     "pandasai",
     "wikipedia",
@@ -310,6 +306,7 @@ all = [
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
+    "sympy",
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
@@ -360,7 +357,6 @@ all = [
     "litellm",
     "mistralai",
     "fish-audio-sdk",
-    "google-generativeai",
     "anthropic",
     "reka-api",
     "sglang",
@@ -369,7 +365,6 @@ all = [
     "google-cloud-storage",
     "botocore",
     "dappier",
-    "ragas",
 ]
 
 [tool.poetry.group.dev]
@@ -451,6 +446,12 @@ markers = [
 [tool.coverage.report]
 include_namespace_packages = true
 
+[tool.mypy]
+exclude = [
+    '\.venv/.*',  # exclude .venv directory
+    'site-packages/.*',  # exclude site-packages
+]
+
 [[tool.mypy.overrides]]
 module = [
     "transformers.*",
@@ -460,6 +461,7 @@ module = [
     "openai.error",
     "anthropic",
     "pytest",
+    "psutil",
     "_pytest.config",
     "_pytest.nodes",
     "numpy",
@@ -533,7 +535,9 @@ module = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
-    "ragas",
     "pandasai",
+    "sklearn.metrics.pairwise",
+    "sympy",
+    "astor",
 ]
 ignore_missing_imports = true
