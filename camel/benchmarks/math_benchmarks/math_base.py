@@ -15,7 +15,8 @@
 from abc import abstractmethod
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union, ClassVar
+
 
 import pandas as pd
 
@@ -26,9 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 class Mode:
-    VALID_MODES = {"pass@k", "majority voting"}
+    VALID_MODES: ClassVar[set[str]] = {"pass@k", "majority voting"}
 
-    def __init__(self, mode: Literal["pass@k", "majority voting"], k: Optional[int] = None):
+    def __init__(self, mode: Literal["pass@k", "majority voting"], 
+        k: Optional[int] = None):
         self.mode = mode
 
         if mode == "pass@k":
@@ -38,18 +40,23 @@ class Mode:
 
         elif mode == "majority voting":
             if k is None or k < 2:
-                raise ValueError("`k` must be at least 2 for 'majority voting'.")
+                raise ValueError("`k` must be at least 2 "
+                "for 'majority voting'."
+                )
             self.k = k
 
         else:
-            raise ValueError(f"Invalid mode '{mode}'. Supported modes: {self.VALID_MODES}")
+            raise ValueError(f"Invalid mode '{mode}'." 
+            f"Supported modes: {self.VALID_MODES}"
+            )
 
     def __repr__(self) -> str:
         return f"Mode(mode={self.mode}, k={self.k})"
 
 
 class MathBenchmark(BaseBenchmark):
-    r"""Benchmark class for evaluating mathematical problem-solving capabilities."""
+    r"""Benchmark class for evaluating 
+    mathematical problem-solving capabilities."""
 
     def __init__(
         self, name: str, data_dir: str, save_to: str, processes: int = 1
@@ -63,16 +70,24 @@ class MathBenchmark(BaseBenchmark):
         on: Literal["train", "valid", "test"],
         randomize: bool = False,
         subset: Optional[int] = None,
-        mode: Mode = Mode("pass@k", 1),
+        mode: Mode = None,
         *args,
         **kwargs,
     ) -> "MathBenchmark":
-        r"""Runs the benchmark, evaluates answers, and saves results as JSON."""
+        r"""Runs the benchmark, evaluates answers, 
+        and saves results as JSON."""
 
-        logger.info(f"Running {mode.mode} evaluation on {on} set with k={mode.k}")
+        if mode is None:
+            mode = Mode("pass@k", 1)
+
+        logger.info(f"Running {mode.mode} evaluation "
+        f"on {on} set with k={mode.k}"
+        )
 
         if on not in ["train", "test"]:
-            raise ValueError(f"Invalid dataset split '{on}'. Use 'train', 'valid' (empty), or 'test'.")
+            raise ValueError(f"Invalid dataset split '{on}'." 
+            "Use 'train', 'valid' (empty), or 'test'."
+            )
 
         if not self._data:
             self.load()
@@ -88,20 +103,29 @@ class MathBenchmark(BaseBenchmark):
             dataset = dataset[:subset]
 
         # Generate solutions for each question in the dataset
-        results = self._generate_solutions(agent, dataset, mode, *args, **kwargs)
+        results = self._generate_solutions(agent, dataset, 
+        mode, *args, **kwargs)
 
         # Ensure the results are in the expected format
         if isinstance(results, dict):
             results = pd.DataFrame(results)
 
         if not isinstance(results, pd.DataFrame):
-            raise TypeError("Expected results as a pandas DataFrame or dictionary.")
+            raise TypeError("Expected results as a "
+            "pandas DataFrame or dictionary."
+            )
 
-        if "answers" not in results.columns or "solution" not in results.columns:
-            raise ValueError("Results must contain 'answers' and 'solution' columns.")
+        if (
+            "answers" not in results.columns
+            or "solution" not in results.columns
+            ):
+            raise ValueError("Results must contain 'answers' " 
+            "and 'solution' columns.")
 
         # Process answers based on mode
-        results["correct"] = results.apply(lambda row: self._evaluate(row, mode), axis=1)
+        results["correct"] = results.apply(lambda row: 
+        self._evaluate(row, mode), axis=1
+        )
 
         # Save results as JSON
         save_path = Path(self.save_to) / f"{self.name}_results.json"
@@ -119,7 +143,8 @@ class MathBenchmark(BaseBenchmark):
         solution = row["solution"]
 
         if not isinstance(answers, list):
-            raise ValueError(f"Expected 'answers' to be a list, but got {type(answers)}")
+            raise ValueError(f"Expected 'answers' to be a list," 
+            f" but got {type(answers)}")
 
         match mode.mode:
             case "pass@k":
@@ -134,7 +159,8 @@ class MathBenchmark(BaseBenchmark):
     @abstractmethod
     def _prepare_dataset(self, dataset:List[Dict[str, Any]]) -> pd.DataFrame:
         r"""
-        Method to further prepare the dataset, like renaming or normalizing columns.
+        Method to further prepare the dataset, 
+        like renaming or normalizing columns.
         """
         pass
 

@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class GSM8KBenchmark(MathBenchmark):
-    r"""Benchmark for evaluating ChatAgents on the GSM8K dataset from Hugging Face Hub."""
+    r"""Benchmark for evaluating ChatAgents on the GSM8K dataset 
+    from Hugging Face Hub."""
 
     DATASET_NAME = "gsm8k"
     DATASET_REPO = "openai/gsm8k"
@@ -20,13 +21,16 @@ class GSM8KBenchmark(MathBenchmark):
 
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
         r"""Initialize the GSM8K Benchmark."""
-        super().__init__(name="GSM8K", data_dir=data_dir, save_to=save_to, processes=processes)
+        super().__init__(name="GSM8K", data_dir=data_dir, 
+        save_to=save_to, processes=processes)
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "GSM8KBenchmark":
-        r"""Ensures the dataset is available. Hugging Face Datasets manages caching automatically."""
+        r"""Ensures the dataset is available. 
+        Hugging Face Datasets manages caching automatically."""
         logger.info("Ensuring GSM8K dataset is downloaded...")
-        _ = load_dataset(self.DATASET_REPO, 'main', cache_dir=str(self.data_dir))
+        _ = load_dataset(self.DATASET_REPO, 'main', 
+        cache_dir=str(self.data_dir))
         logger.info("GSM8K dataset is ready.")
         return self
 
@@ -38,7 +42,8 @@ class GSM8KBenchmark(MathBenchmark):
             self.DATASET_REPO,
             'main',
             cache_dir=str(self.data_dir),
-            download_mode="force_redownload" if force_download else "reuse_dataset_if_exists"
+            download_mode="force_redownload" if force_download 
+            else "reuse_dataset_if_exists"
         )
 
         self._data = {
@@ -64,7 +69,8 @@ class GSM8KBenchmark(MathBenchmark):
         mode: Mode
     ) -> Union[pd.DataFrame, Dict[str, List[Any]]]:
         r"""Generates model responses for the dataset."""
-        dataset["answers"] = dataset["question"].apply(lambda q: [agent.step(q).msgs[0].content for _ in range(mode.k)])
+        dataset["answers"] = dataset["question"].apply(lambda q: 
+        [agent.step(q).msgs[0].content for _ in range(mode.k)])
 
         return dataset
 

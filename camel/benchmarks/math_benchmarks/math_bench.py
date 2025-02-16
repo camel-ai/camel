@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, ClassVar
 
 import pandas as pd
 from datasets import load_dataset
@@ -9,25 +9,31 @@ from camel.benchmarks import MathBenchmark, Mode
 logger = logging.getLogger(__name__)
 
 class MATHBenchmark(MathBenchmark):
-    r"""Benchmark for evaluating ChatAgents on the MATH dataset from Hugging Face Hub."""
+    r"""Benchmark for evaluating ChatAgents on the 
+    MATH dataset from Hugging Face Hub."""
 
-    DATASET_NAME = "math"
-    DATASET_REPO = "EleutherAI/hendrycks_math"
-    DATASET_CONFIGS = [
+    DATASET_NAME: ClassVar[str] = "math"
+    DATASET_REPO: ClassVar[str] = "EleutherAI/hendrycks_math"
+    DATASET_CONFIGS: ClassVar[List[str]] = [
         'algebra', 'counting_and_probability', 'geometry', 
         'intermediate_algebra', 'number_theory', 'prealgebra', 'precalculus'
     ]
 
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
         r"""Initialize the MATH Benchmark."""
-        super().__init__(name="MATH", data_dir=data_dir, save_to=save_to, processes=processes)
+        super().__init__(name="MATH", data_dir=data_dir, 
+        save_to=save_to, processes=processes
+        )
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "MATHBenchmark":
-        r"""Ensures the dataset is available. Hugging Face Datasets manages caching automatically."""
+        r"""Ensures the dataset is available. 
+        Hugging Face Datasets manages caching automatically."""
         logger.info("Ensuring MATH dataset is downloaded...")
         for config in self.DATASET_CONFIGS:
-            _ = load_dataset(self.DATASET_REPO, config, cache_dir=str(self.data_dir))
+            _ = load_dataset(self.DATASET_REPO, 
+            config, cache_dir=str(self.data_dir)
+            )
         logger.info("MATH dataset is ready.")
         return self
 
@@ -42,10 +48,14 @@ class MATHBenchmark(MathBenchmark):
                 self.DATASET_REPO,
                 config,
                 cache_dir=str(self.data_dir),
-                download_mode="force_redownload" if force_download else "reuse_dataset_if_exists"
+                download_mode = (
+                    "force_redownload" if force_download 
+                    else "reuse_dataset_if_exists"
+                    )
             )
 
-            # Convert to pandas DataFrame and add a `config` column before converting to dict
+            # Convert to pandas DataFrame and 
+            # add a `config` column before converting to dict
             train_df = dataset["train"].to_pandas()
             train_df["config"] = config
             self._data["train"].extend(train_df.to_dict(orient="records"))
@@ -73,10 +83,12 @@ class MATHBenchmark(MathBenchmark):
         # rename problem to questions
         df.rename(columns={"problem": "questions"}, inplace=True)
 
-        # in the MATH dataset, solutions are in the 'solution' column wrapped inside a `\boxed{}`
+        # in the MATH dataset, solutions are 
+        # in the 'solution' column wrapped inside a `\boxed{}`
 
         def extract_boxed(text: str) -> str:
-            r"""Extracts the content inside the first correctly balanced `\boxed{}`."""
+            r"""Extracts the content inside the 
+            first correctly balanced `\boxed{}`."""
             start_seq = r"\boxed{"
             stack = []  # Stack to track `{}` nesting
             content = []
@@ -95,7 +107,8 @@ class MATHBenchmark(MathBenchmark):
                         stack.append("{")
                     elif text[i] == "}":
                         stack.pop()
-                        if not stack:  # If stack is empty, we've closed `\boxed{}` correctly
+                        # If stack is empty, we've closed `\boxed{}` correctly
+                        if not stack:  
                             return "".join(content)
 
                     content.append(text[i])
@@ -119,7 +132,8 @@ class MATHBenchmark(MathBenchmark):
         """
 
         dataset["answers"] = dataset["questions"].apply(
-            lambda problem: [agent.step(problem).msgs[0].content for _ in range(mode.k)]
+            lambda problem: [agent.step(problem).msgs[0].content 
+            for _ in range(mode.k)]
         )
 
         return dataset
