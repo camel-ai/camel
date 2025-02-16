@@ -34,11 +34,40 @@ class NetworkXToolkit(BaseToolkit):
             cls._nx = networkx
         return cls._nx
 
-    def __init__(self):
-        r"""Initializes the NetworkXGraph client."""
+    def __init__(
+        self,
+        graph_type: Literal[
+            'graph', 'digraph', 'multigraph', 'multidigraph'
+        ] = 'graph',
+    ):
+        r"""Initializes the NetworkX graph client.
+
+        Args:
+            graph_type (Literal['graph', 'digraph', 'multigraph',
+            'multidigraph'], optional):
+                Type of graph to create. Options are:
+                - 'graph': Undirected graph
+                - 'digraph': Directed graph
+                - 'multigraph': Undirected graph with parallel edges
+                - 'multidigraph': Directed graph with parallel edges
+                Defaults to 'graph'.
+        """
         nx = self._get_nx()
-        self.graph = nx.Graph()
-        logger.info("Initialized NetworkXGraph instance.")
+        graph_types = {
+            'graph': nx.Graph,
+            'digraph': nx.DiGraph,
+            'multigraph': nx.MultiGraph,
+            'multidigraph': nx.MultiDiGraph,
+        }
+        graph_class = graph_types.get(graph_type.lower())
+        if graph_class is None:
+            raise ValueError(
+                f"Invalid graph type: {graph_type}. Must be one "
+                f"of: {list(graph_types.keys())}"
+            )
+
+        self.graph = graph_class()
+        logger.info(f"Initialized NetworkX {graph_type} instance.")
 
     def add_node(self, node_id: str, **attributes: Any) -> None:
         r"""Adds a node to the graph.
