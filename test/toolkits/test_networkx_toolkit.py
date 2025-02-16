@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import unittest
 
-from camel.storages.graph_storages.Networkx import NetworkXGraph
+from camel.toolkits import NetworkXToolkit
 
 
-class TestNetworkXGraph(unittest.TestCase):
+class TestNetworkXToolkit(unittest.TestCase):
     def setUp(self):
-        self.graph = NetworkXGraph()
+        self.graph = NetworkXToolkit()
 
     def test_add_node(self):
         self.graph.add_node("A", attr1="value1")
@@ -55,7 +55,7 @@ class TestNetworkXGraph(unittest.TestCase):
         self.graph.add_node("A")
         self.graph.add_node("C")
         path = self.graph.get_shortest_path("A", "C")
-        self.assertListEqual(path, [])
+        self.assertListEqual(path, ["No path exists between 'A' and 'C'"])
 
     def test_compute_centrality(self):
         self.graph.add_edge("A", "B")
@@ -84,7 +84,7 @@ class TestNetworkXGraph(unittest.TestCase):
         self.graph.add_edge("A", "B")
         self.graph.export_to_file(file_path)
 
-        new_graph = NetworkXGraph()
+        new_graph = NetworkXToolkit()
         new_graph.import_from_file(file_path)
         self.assertListEqual(new_graph.get_nodes(), ["A", "B"])
         self.assertListEqual(new_graph.get_edges(), [("A", "B")])
