@@ -8,7 +8,7 @@ The model is the brain of the intelligent agent, responsible for intelligent age
 
 ## 2. Supported Model Platforms in CAMEL
 
-CAMEL supports a wide range of models, including [OpenAI’s GPT series](https://platform.openai.com/docs/models), [Meta’s Llama models](https://www.llama.com/), [DeepSeek's R1](https://www.deepseek.com/), and more. The table below lists all supported model platforms:
+CAMEL supports a wide range of models, including [OpenAI’s GPT series](https://platform.openai.com/docs/models), [Meta’s Llama models](https://www.llama.com/), [DeepSeek models](https://www.deepseek.com/) (R1 and other variants), and more. The table below lists all supported model platforms:
 
 | Model Platform | Model Type(s) |
 |---------------|--------------|
@@ -29,6 +29,13 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **SGLANG** | meta-llama/Meta-Llama-3.1-8B-Instruct, meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct, meta-llama/Llama-3.2-1B-Instruct, mistralai/Mistral-Nemo-Instruct-2407, mistralai/Mistral-7B-Instruct-v0.3, Qwen/Qwen2.5-7B-Instruct, Qwen/Qwen2.5-32B-Instruct, Qwen/Qwen2.5-72B-Instruct |
 | **NVIDIA** | nvidia/nemotron-4-340b-instruct, nvidia/nemotron-4-340b-reward, 01-ai/yi-large, mistralai/mistral-large, mistralai/mixtral-8x7b-instruct, meta/llama3-70b, meta/llama-3.1-8b-instruct, meta/llama-3.1-70b-instruct, meta/llama-3.1-405b-instruct, meta/llama-3.2-1b-instruct, meta/llama-3.2-3b-instruct, meta/llama-3.3-70b-instruct |
 | **COHERE** | command-r-plus, command-r, command-light, command, command-nightly |
+
+#### **Custom Model Support**
+If your preferred model is not listed above, **you can still use it** by directly specifying its name as a string in `model_type`. Example:
+
+```python
+model = ModelFactory.create(model_platform="custom", model_type="YourModelName")
+```
 
 
 ## 3. How to Use Models via API Calls
@@ -207,9 +214,7 @@ Performance is critical for interactive AI applications. CAMEL-AI benchmarks tok
 
 In [this notebook](../cookbooks/model_speed_comparison.ipynb), we compared several models, including OpenAI’s GPT-4O Mini, GPT-4O, O1 Preview, and SambaNova's Llama series, by measuring the number of tokens each model processes per second.
 
-- OpenAI GPT-4O Mini: Fast and efficient.
-- SambaNova’s Llama 405B: High capacity but slower response.
-- Local Inference: SGLang reached a peak of 220.98 tokens per second, compared to vLLM’s 107.2 tokens per second.
+**Key Insights:** Smaller models like SambaNova’s Llama 8B and OpenAI's GPT-4O Mini typically offer faster responses. Larger models like SambaNova’s Llama 405B, while more powerful, tend to generate output more slowly due to their complexity. OpenAI models demonstrate relatively consistent performance, while SambaNova's Llama 8B significantly outperforms others in speed. The chart below illustrates the tokens per second achieved by each model during our tests:
 
 ![Model Speed Comparison: Chart comparing tokens per second for various AI models](https://i.postimg.cc/4xByytyZ/model-speed.png)
 
