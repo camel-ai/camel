@@ -35,6 +35,7 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
+from camel.messages.acl_parameter import Content
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
@@ -1144,13 +1145,16 @@ def test_chat_agent_vision(step_call_count=3):
     image = Image.open(img_byte_arr)
     image_list.append(image)
 
+    content = Content(
+        text="Is this image blue? Just answer yes or no.",
+        image_list=image_list,
+        image_detail="low",
+    )
     user_msg = BaseMessage(
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Is this image blue? Just answer yes or no.",
-        image_list=image_list,
-        image_detail="low",
+        content=content,
     )
     # Mock the OpenAI model return value:
     agent.model_backend.run = MagicMock(

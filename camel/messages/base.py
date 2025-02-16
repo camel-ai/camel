@@ -188,11 +188,11 @@ class BaseMessage:
             )
         return self.create_new_instance(combined_content)
 
-    def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
+    def __mul__(self, other: int) -> Union["BaseMessage", Any]:
         r"""Multiplication operator override for :obj:`BaseMessage`.
 
         Args:
-            other (Any): The value to be multiplied with.
+            other (int): The value to be multiplied with.
 
         Returns:
             Union[BaseMessage, Any]: The result of the multiplication.

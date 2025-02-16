@@ -16,7 +16,7 @@ from typing import Any, Dict
 import pytest
 
 from camel.messages import BaseMessage
-from camel.messages.acl_parameter import Content
+from camel.messages.acl_parameter import ACLParameter, Content, Sender
 from camel.types import RoleType
 
 
@@ -55,6 +55,9 @@ def test_chat_message(chat_message: BaseMessage) -> None:
     role_type = RoleType.ASSISTANT
     meta_dict = None
     content = Content(text="test chat message")
+    acl_parameter = ACLParameter(
+        sender=Sender(name=role_name, role_type=role_type)
+    )
 
     assert chat_message.role_name == role_name
     assert chat_message.role_type == role_type
@@ -64,8 +67,9 @@ def test_chat_message(chat_message: BaseMessage) -> None:
     dictionary = chat_message.to_dict()
     reference_dict: Dict[str, Any] = {
         "role_name": role_name,
-        "role_type": role_type.name,
-        "content": content,
+        "role_type": role_type,
+        "content": content.to_dict(),
+        "acl_parameter": acl_parameter,
     }
     assert dictionary == reference_dict
 
@@ -75,6 +79,9 @@ def test_assistant_chat_message(assistant_chat_message: BaseMessage) -> None:
     role_type = RoleType.ASSISTANT
     meta_dict = None
     content = Content(text="test assistant chat message")
+    acl_parameter = ACLParameter(
+        sender=Sender(name=role_name, role_type=role_type)
+    )
 
     assert assistant_chat_message.role_name == role_name
     assert assistant_chat_message.role_type == role_type
@@ -85,7 +92,8 @@ def test_assistant_chat_message(assistant_chat_message: BaseMessage) -> None:
     reference_dict: Dict[str, Any] = {
         "role_name": role_name,
         "role_type": role_type.name,
-        "content": content,
+        "content": content.to_dict(),
+        "acl_parameter": acl_parameter,
     }
     assert dictionary == reference_dict
 
@@ -95,6 +103,9 @@ def test_user_chat_message(user_chat_message: BaseMessage) -> None:
     role_type = RoleType.USER
     meta_dict = None
     content = Content(text="test user chat message")
+    acl_parameter = ACLParameter(
+        sender=Sender(name=role_name, role_type=role_type)
+    )
 
     assert user_chat_message.role_name == role_name
     assert user_chat_message.role_type == role_type
@@ -105,6 +116,7 @@ def test_user_chat_message(user_chat_message: BaseMessage) -> None:
     reference_dict: Dict[str, Any] = {
         "role_name": role_name,
         "role_type": role_type.name,
-        "content": content,
+        "content": content.to_dict(),
+        "acl_parameter": acl_parameter,
     }
     assert dictionary == reference_dict

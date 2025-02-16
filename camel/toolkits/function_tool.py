@@ -283,7 +283,7 @@ def generate_docstring(
 
     # Get the response containing the generated docstring
     response = docstring_assistant.step(user_msg)
-    return response.msg.content.text
+    return response.msg.content
 
 
 class FunctionTool:
