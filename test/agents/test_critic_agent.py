@@ -117,6 +117,6 @@ def test_reduce_step(critic_agent: CriticAgent):
     ]
 
     critic_response = critic_agent.reduce_step(messages)
-    assert (critic_response.msg == messages[0]) or (
-        critic_response.msg == messages[1]
+    assert (critic_response.msg.text == messages[0].text) or (
+        critic_response.msg.text == messages[1].text
     )

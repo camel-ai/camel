@@ -67,9 +67,11 @@ class MemoryRecord(BaseModel):
         content_data = message_data['content']
 
         # Determine content type
-        if 'image_list' in content_data and content_data['image_list']:
+        if isinstance(content_data, dict) and content_data.get('image_list'):
             content = Content.from_dict(content_data)
-        elif 'video_bytes' in content_data and content_data['video_bytes']:
+        elif isinstance(content_data, dict) and content_data.get(
+            'video_bytes'
+        ):
             content = Content.from_dict(content_data)
         else:
             content = Content(text=content_data)
