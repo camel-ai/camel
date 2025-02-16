@@ -44,13 +44,13 @@ class NetworkXToolkit(BaseToolkit):
 
         Args:
             graph_type (Literal['graph', 'digraph', 'multigraph',
-            'multidigraph'], optional):
+            'multidigraph']):
                 Type of graph to create. Options are:
                 - 'graph': Undirected graph
                 - 'digraph': Directed graph
                 - 'multigraph': Undirected graph with parallel edges
                 - 'multidigraph': Directed graph with parallel edges
-                Defaults to 'graph'.
+                (default: :obj:`'graph'`)
         """
         nx = self._get_nx()
         graph_types = {
