@@ -1,12 +1,12 @@
-import json
-import pytest
-import pandas as pd
-from unittest.mock import MagicMock, patch, mock_open
-from pathlib import Path
 import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, mock_open, patch
 
-from camel.benchmarks import GSM8KBenchmark, Mode
+import pandas as pd
+import pytest
+
 from camel.agents import ChatAgent
+from camel.benchmarks import GSM8KBenchmark, Mode
 
 SAMPLE_DATA = [
     {"question": "What is 5 + 7?", "answer": "#### 12"},
