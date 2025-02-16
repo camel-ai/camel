@@ -25,6 +25,7 @@ from .commons import (
     func_string_to_callable,
     generate_prompt_for_structured_output,
     get_first_int,
+    get_local_time,
     get_prompt_template_key_words,
     get_pydantic_major_version,
     get_pydantic_object_schema,
@@ -54,6 +55,7 @@ from .token_counting import (
 __all__ = [
     "print_text_animated",
     "get_prompt_template_key_words",
+    "get_local_time",
     "get_first_int",
     "download_tasks",
     "get_task_list",

@@ -741,7 +741,7 @@ class FunctionTool:
             response_format=self.synthesize_output_format,
         )
 
-        return response.msg.content
+        return response.msg.content.text
 
     @property
     def parameters(self) -> Dict[str, Any]:
