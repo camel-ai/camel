@@ -151,8 +151,6 @@ def test_roleplay_conversion_with_tools():
         # Clear tool_call_id for function messages
         if isinstance(message, FunctionCallingMessage):
             message.tool_call_id = ""
-            item['args'] = message.args
-            item['result'] = message.result
 
         original_messages.append(item)
         sharegpt_msgs.append(message.to_sharegpt())
@@ -166,8 +164,6 @@ def test_roleplay_conversion_with_tools():
         # Clear tool_call_id for function messages
         if isinstance(message, FunctionCallingMessage):
             message.tool_call_id = ""
-            item['args'] = message.args
-            item['result'] = message.result
         converted_back.append(item)
 
     assert converted_back == original_messages
