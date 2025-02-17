@@ -34,6 +34,12 @@ class TestBaseModelBackend:
             def check_model_config(self):
                 pass
 
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
+                pass
+
         model = DummyModel(ModelType.GPT_4O_MINI)
 
         # Test basic thinking removal
@@ -76,6 +82,12 @@ class TestBaseModelBackend:
                 return None
 
             def check_model_config(self):
+                pass
+
+            def _run(self, messages, response_format=None, tools=None):
+                pass
+
+            async def _arun(self, messages, response_format=None, tools=None):
                 pass
 
         model = TestModel(ModelType.GPT_4O_MINI)
