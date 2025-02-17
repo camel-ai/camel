@@ -36,7 +36,7 @@ def with_timeout(func):
         thread.join(timeout)
         if thread.is_alive():
             return (
-                f"Function {func.__name__} execution timed out, exceeded"
+                f"Function `{func.__name__}` execution timed out, exceeded"
                 f" {timeout} seconds."
             )
         else:

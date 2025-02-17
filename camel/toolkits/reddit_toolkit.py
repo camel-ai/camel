@@ -30,17 +30,16 @@ class RedditToolkit(BaseToolkit):
 
     Attributes:
         retries (int): Number of retries for API requests in case of failure.
-        delay (int): Delay between retries in seconds.
+        delay (float): Delay between retries in seconds.
         reddit (Reddit): An instance of the Reddit client.
     """
 
     def __init__(
         self,
         retries: int = 3,
-        delay: int = 0,
+        delay: float = 0.0,
         timeout: Optional[float] = None,
     ):
-        super().__init__(timeout=timeout)
         r"""Initializes the RedditToolkit with the specified number of retries
         and delay.
 
@@ -49,6 +48,8 @@ class RedditToolkit(BaseToolkit):
                 failure. Defaults to `3`.
             delay (int): Time in seconds to wait between retries. Defaults to
             `0`.
+            timeout (float): Timeout for API requests in seconds. Defaults to
+                `None`.
         """
         super().__init__(timeout=timeout)
         from praw import Reddit  # type: ignore[import-untyped]

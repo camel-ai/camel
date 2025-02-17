@@ -105,7 +105,6 @@ class CodeExecutionToolkit(BaseToolkit):
         """
         output = self.interpreter.run(code, "python")
         # ruff: noqa: E501
-        # print(output)
         content = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\n{output}"
         if self.verbose:
             print(content)
