@@ -361,9 +361,11 @@ def test_chat_agent_step_with_external_tools(step_call_count=3):
         response = external_tool_agent.step(usr_msg)
         assert not response.msg.content
 
-        external_tool_request = response.info["external_tool_request"]
+        external_tool_call_request = response.info[
+            "external_tool_call_request"
+        ]
         assert (
-            external_tool_request.function.name == "sub"
+            external_tool_call_request.tool_name == "sub"
         ), f"Error in calling round {i+1}"
 
 
@@ -449,20 +451,6 @@ def test_chat_agent_multiple_return_messages(n, step_call_count=3):
                     content="What do you call fake spaghetti? An impasta!",
                     role="assistant",
                     function_call=None,
-                    tool_calls=[
-                        ChatCompletionMessageToolCall(
-                            id="call_mock123456",
-                            function=Function(
-                                arguments='{ \
-                                    "joke":"What do you call fake spaghetti?" \
-                                    " An impasta!", \
-                                    "funny_level":"6" \
-                                }',
-                                name="return_json_response",
-                            ),
-                            type="function",
-                        )
-                    ],
                 ),
             )
         ]
@@ -630,7 +618,7 @@ def test_set_output_language():
 
     # Set the output language to "Arabic"
     output_language = "Arabic"
-    agent.set_output_language(output_language)
+    agent.output_language = output_language
 
     # Check if the output language is set correctly
     assert agent.output_language == output_language
@@ -658,12 +646,12 @@ def test_set_multiple_output_language():
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
-    agent_with_sys_msg.set_output_language("Chinese")
-    agent_with_sys_msg.set_output_language("English")
-    agent_with_sys_msg.set_output_language("French")
-    agent_without_sys_msg.set_output_language("Chinese")
-    agent_without_sys_msg.set_output_language("English")
-    agent_without_sys_msg.set_output_language("French")
+    agent_with_sys_msg.output_language = "Chinese"
+    agent_with_sys_msg.output_language = "English"
+    agent_with_sys_msg.output_language = "French"
+    agent_without_sys_msg.output_language = "Chinese"
+    agent_without_sys_msg.output_language = "English"
+    agent_without_sys_msg.output_language = "French"
 
     updated_system_message_with_sys_msg = {
         'role': 'system',
@@ -687,29 +675,6 @@ def test_set_multiple_output_language():
         memory_content_without_sys_msg[0][0]
         == updated_system_message_without_sys_msg
     )
-
-
-@pytest.mark.model_backend
-def test_function_enabled():
-    system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant.",
-    )
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-    )
-    agent_no_func = ChatAgent(system_message=system_message)
-    agent_with_funcs = ChatAgent(
-        system_message=system_message,
-        model=model,
-        tools=MathToolkit().get_tools(),
-    )
-
-    assert not agent_no_func.is_tools_added()
-    assert agent_with_funcs.is_tools_added()
 
 
 @pytest.mark.model_backend
@@ -980,7 +945,7 @@ async def test_tool_calling_math_async(step_call_count=3):
     )
 
     for i in range(step_call_count):
-        agent_response = await agent.step_async(user_msg)
+        agent_response = await agent.astep(user_msg)
 
         tool_calls = agent_response.info['tool_calls']
 
@@ -1068,7 +1033,7 @@ async def test_tool_calling_async(step_call_count=3):
     )
 
     for i in range(step_call_count):
-        agent_response = await agent.step_async(user_msg)
+        agent_response = await agent.astep(user_msg)
 
         tool_calls = agent_response.info['tool_calls']
 

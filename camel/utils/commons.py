@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import functools
 import importlib
+import logging
 import os
 import platform
 import re
@@ -46,6 +48,8 @@ from camel.types import TaskType
 from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
+
+logger = logging.getLogger(__name__)
 
 
 def print_text_animated(text, delay: float = 0.02, end: str = ""):
@@ -620,33 +624,206 @@ def handle_http_error(response: requests.Response) -> str:
         return "HTTP Error"
 
 
-def retry_request(
-    func: Callable, retries: int = 3, delay: int = 1, *args: Any, **kwargs: Any
-) -> Any:
-    r"""Retries a function in case of any errors.
+def retry_on_error(
+    max_retries: int = 3, initial_delay: float = 1.0
+) -> Callable:
+    r"""Decorator to retry function calls on exception with exponential
+    backoff.
 
     Args:
-        func (Callable): The function to be retried.
-        retries (int): Number of retry attempts. (default: :obj:`3`)
-        delay (int): Delay between retries in seconds. (default: :obj:`1`)
-        *args: Arguments to pass to the function.
-        **kwargs: Keyword arguments to pass to the function.
+        max_retries (int): Maximum number of retry attempts
+        initial_delay (float): Initial delay between retries in seconds
 
     Returns:
-        Any: The result of the function call if successful.
-
-    Raises:
-        Exception: If all retry attempts fail.
+        Callable: Decorated function with retry logic
     """
-    for attempt in range(retries):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            print(f"Attempt {attempt + 1}/{retries} failed: {e}")
-            if attempt < retries - 1:
-                time.sleep(delay)
-            else:
-                raise
+
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            last_exception = None
+
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt == max_retries:
+                        logger.error(
+                            f"Failed after {max_retries} retries: {e!s}"
+                        )
+                        raise
+
+                    logger.warning(
+                        f"Attempt {attempt + 1} failed: {e!s}. "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    time.sleep(delay)
+                    delay *= 2  # Exponential backoff
+
+            raise last_exception
+
+        return wrapper
+
+    return decorator
+
+
+class BatchProcessor:
+    r"""Handles batch processing with dynamic sizing and error handling based
+    on system load.
+    """
+
+    def __init__(
+        self,
+        max_workers: Optional[int] = None,
+        initial_batch_size: Optional[int] = None,
+        monitoring_interval: float = 5.0,
+        cpu_threshold: float = 80.0,
+        memory_threshold: float = 85.0,
+    ):
+        r"""Initialize the BatchProcessor with dynamic worker allocation.
+
+        Args:
+            max_workers: Maximum number of workers. If None, will be
+                determined dynamically based on system resources.
+                (default: :obj:`None`)
+            initial_batch_size: Initial size of each batch. If `None`,
+                defaults to `10`. (default: :obj:`None`)
+            monitoring_interval: Interval in seconds between resource checks.
+                (default: :obj:`5.0`)
+            cpu_threshold: CPU usage percentage threshold for scaling down.
+                (default: :obj:`80.0`)
+            memory_threshold: Memory usage percentage threshold for scaling
+                down. (default: :obj:`85.0`)
+        """
+        import psutil
+
+        self.monitoring_interval = monitoring_interval
+        self.cpu_threshold = cpu_threshold
+        self.memory_threshold = memory_threshold
+        self.last_check_time = time.time()
+        self.psutil = psutil
+
+        # Initialize performance metrics
+        self.total_processed = 0
+        self.total_errors = 0
+        self.processing_times: List = []
+
+        if max_workers is None:
+            self.max_workers = self._calculate_optimal_workers()
+        else:
+            self.max_workers = max_workers
+
+        self.batch_size = (
+            10 if initial_batch_size is None else initial_batch_size
+        )
+        self.min_batch_size = 1
+        self.max_batch_size = 20
+        self.backoff_factor = 0.8
+        self.success_factor = 1.2
+
+        # Initial resource check
+        self._update_resource_metrics()
+
+    def _calculate_optimal_workers(self) -> int:
+        r"""Calculate optimal number of workers based on system resources."""
+        cpu_count = self.psutil.cpu_count()
+        cpu_percent = self.psutil.cpu_percent(interval=1)
+        memory = self.psutil.virtual_memory()
+
+        # Base number of workers on CPU count and current load
+        if cpu_percent > self.cpu_threshold:
+            workers = max(1, cpu_count // 4)
+        elif cpu_percent > 60:
+            workers = max(1, cpu_count // 2)
+        else:
+            workers = max(1, cpu_count - 1)
+
+        # Further reduce if memory is constrained
+        if memory.percent > self.memory_threshold:
+            workers = max(1, workers // 2)
+
+        return workers
+
+    def _update_resource_metrics(self) -> None:
+        r"""Update current resource usage metrics."""
+        self.current_cpu = self.psutil.cpu_percent()
+        self.current_memory = self.psutil.virtual_memory().percent
+        self.last_check_time = time.time()
+
+    def _should_check_resources(self) -> bool:
+        r"""Determine if it's time to check resource usage again."""
+        return time.time() - self.last_check_time >= self.monitoring_interval
+
+    def adjust_batch_size(
+        self, success: bool, processing_time: Optional[float] = None
+    ) -> None:
+        r"""Adjust batch size based on success/failure and system resources.
+
+        Args:
+            success (bool): Whether the last batch completed successfully
+            processing_time (Optional[float]): Time taken to process the last
+                batch. (default: :obj:`None`)
+        """
+        # Update metrics
+        self.total_processed += 1
+        if not success:
+            self.total_errors += 1
+        if processing_time is not None:
+            self.processing_times.append(processing_time)
+
+        # Check system resources if interval has elapsed
+        if self._should_check_resources():
+            self._update_resource_metrics()
+
+            # Adjust based on resource usage
+            if (
+                self.current_cpu > self.cpu_threshold
+                or self.current_memory > self.memory_threshold
+            ):
+                self.batch_size = max(
+                    int(self.batch_size * self.backoff_factor),
+                    self.min_batch_size,
+                )
+                self.max_workers = max(1, self.max_workers - 1)
+                return
+
+        # Adjust based on success/failure
+        if success:
+            self.batch_size = min(
+                int(self.batch_size * self.success_factor), self.max_batch_size
+            )
+        else:
+            self.batch_size = max(
+                int(self.batch_size * self.backoff_factor), self.min_batch_size
+            )
+
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        r"""Get current performance metrics.
+
+        Returns:
+            Dict containing performance metrics including:
+            - total_processed: Total number of batches processed
+            - error_rate: Percentage of failed batches
+            - avg_processing_time: Average time per batch
+            - current_batch_size: Current batch size
+            - current_workers: Current number of workers
+            - current_cpu: Current CPU usage percentage
+            - current_memory: Current memory usage percentage
+        """
+        metrics = {
+            "total_processed": self.total_processed,
+            "error_rate": (self.total_errors / max(1, self.total_processed))
+            * 100,
+            "avg_processing_time": sum(self.processing_times)
+            / max(1, len(self.processing_times)),
+            "current_batch_size": self.batch_size,
+            "current_workers": self.max_workers,
+            "current_cpu": self.current_cpu,
+            "current_memory": self.current_memory,
+        }
+        return metrics
 
 
 def download_github_subdirectory(
@@ -692,39 +869,3 @@ def download_github_subdirectory(
             download_github_subdirectory(
                 repo, f'{subdir}/{file["name"]}', file_path, branch
             )
-
-
-def generate_prompt_for_structured_output(
-    response_format: Optional[Type[BaseModel]],
-    user_message: str,
-) -> str:
-    """
-    This function generates a prompt based on the provided Pydantic model and
-    user message.
-
-    Args:
-        response_format (Type[BaseModel]): The Pydantic model class.
-        user_message (str): The user message to be used in the prompt.
-
-    Returns:
-        str: A prompt string for the LLM.
-    """
-    if response_format is None:
-        return user_message
-
-    json_schema = response_format.model_json_schema()
-    sys_prompt = (
-        "Given the user message, please generate a JSON response adhering "
-        "to the following JSON schema:\n"
-        f"{json_schema}\n"
-        "Make sure the JSON response is valid and matches the EXACT structure "
-        "defined in the schema. Your result should only be a valid json "
-        "object, without any other text or comments.\n"
-    )
-    user_prompt = f"User message: {user_message}\n"
-
-    final_prompt = f"""
-    {sys_prompt}
-    {user_prompt}
-    """
-    return final_prompt

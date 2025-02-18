@@ -11,10 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import abc
+import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import Stream
+from openai import AsyncStream, Stream
+from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
 from camel.types import (
@@ -27,7 +30,30 @@ from camel.types import (
 from camel.utils import BaseTokenCounter
 
 
-class BaseModelBackend(ABC):
+class ModelBackendMeta(abc.ABCMeta):
+    r"""Metaclass that automatically preprocesses messages in run method.
+
+    Automatically wraps the run method of any class inheriting from
+    BaseModelBackend to preprocess messages (remove <think> tags) before they
+    are sent to the model.
+    """
+
+    def __new__(mcs, name, bases, namespace):
+        r"""Wraps run method with preprocessing if it exists in the class."""
+        if 'run' in namespace:
+            original_run = namespace['run']
+
+            def wrapped_run(
+                self, messages: List[OpenAIMessage], *args, **kwargs
+            ):
+                messages = self.preprocess_messages(messages)
+                return original_run(self, messages, *args, **kwargs)
+
+            namespace['run'] = wrapped_run
+        return super().__new__(mcs, name, bases, namespace)
+
+
+class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
     r"""Base class for different model backends.
     It may be OpenAI API, a local LLM, a stub for unit tests, etc.
 
@@ -73,23 +99,111 @@ class BaseModelBackend(ABC):
         """
         pass
 
+    def preprocess_messages(
+        self, messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        r"""Preprocess messages before sending to model API.
+        Removes thinking content and other model-specific preprocessing.
+
+        Args:
+            messages (List[OpenAIMessage]): Original messages
+
+        Returns:
+            List[OpenAIMessage]: Preprocessed messages
+        """
+        # Remove thinking content from messages before sending to API
+        # This ensures only the final response is sent, excluding
+        # intermediate thought processes
+        return [
+            {  # type: ignore[misc]
+                **msg,
+                'content': re.sub(
+                    r'<think>.*?</think>',
+                    '',
+                    msg['content'],  # type: ignore[arg-type]
+                    flags=re.DOTALL,
+                ).strip(),
+            }
+            for msg in messages
+        ]
+
     @abstractmethod
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        pass
+
+    @abstractmethod
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        pass
+
     def run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs the query to the backend model.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The response format
+                to use for the model. (default: :obj:`None`)
+            tools (Optional[List[Tool]]): The schema of tools to use for the
+                model for this request. Will override the tools specified in
+                the model configuration (but not change the configuration).
+                (default: :obj:`None`)
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        pass
+        # None -> use default tools
+        if tools is None:
+            tools = self.model_config_dict.get("tools", None)
+        # Empty -> use no tools
+        elif not tools:
+            tools = None
+        return self._run(messages, response_format, tools)
+
+    async def arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs the query to the backend model asynchronously.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The response format
+                to use for the model. (default: :obj:`None`)
+            tools (Optional[List[Tool]]): The schema of tools to use for the
+                model for this request. Will override the tools specified in
+                the model configuration (but not change the configuration).
+                (default: :obj:`None`)
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+        if tools is None:
+            tools = self.model_config_dict.get("tools", None)
+        elif not tools:
+            tools = None
+        return await self._arun(messages, response_format, tools)
 
     @abstractmethod
     def check_model_config(self):
