@@ -13,11 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
-from camel.datasets.base import BaseDataset, DataPoint
+from camel.agents import ChatAgent
+from camel.datasets.base import BaseDataset
 from camel.extractors.base import BaseExtractor
 from camel.verifiers.base import BaseVerifier, VerificationResult
 from camel.verifiers.models import Response, TaskType
@@ -81,8 +82,10 @@ class BaseEnvironment(ABC):
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
         task_type: TaskType = TaskType.SOFTWARE_ENGINEERING,
+        teacher_agent: Optional[ChatAgent] = None,
+        generator_agent: Optional[ChatAgent] = None,
         **kwargs,
-    ):
+    ) -> None:
         r"""Initialize the environment.
 
         Args:
@@ -91,6 +94,8 @@ class BaseEnvironment(ABC):
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
             task_type: Type of task being performed.
+            teacher_agent: Optional agent for reward shaping
+            generator_agent: Optional agent for data generation
             **kwargs: Additional environment parameters.
         """
         self.dataset = dataset
@@ -98,25 +103,76 @@ class BaseEnvironment(ABC):
         self.extractor = extractor
         self.max_steps = max_steps
         self.task_type = task_type
-        self._current_step = 0
-        self._current_datapoint: Optional[DataPoint] = None
+        self.teacher_agent = teacher_agent
+        self.generator_agent = generator_agent
         self._metadata = kwargs
+
+        # State tracking
+        self._is_setup: bool = False
+        self._current_step: int = 0
+        self._episode_ended: bool = False
+        self._state: Dict[str, Any] = self._get_initial_state()
+        self._last_observation: Optional[Observation] = None
+        self._episode_history: List[Tuple[Observation, Response]] = []
 
     @abstractmethod
     async def setup(self) -> None:
         r"""Set up the environment, including verifier initialization."""
-        pass
+        if self._is_setup:
+            return
+
+        # TODO: implement something to initialize in respective classes
+        # await self.verifier.setup()
+        # await self.dataset.setup()
+        # await self.extractor.setup()
+
+        # initialize agents if present
+        if self.teacher_agent:
+            await self.teacher_agent.reset()
+        if self.generator_agent:
+            await self.generator_agent.reset()
+
+        self._is_setup = True
 
     @abstractmethod
     async def teardown(self) -> None:
         r"""Clean up resources, including verifier teardown."""
-        pass
+        if not self._is_setup:
+            return
+
+        # Cleanup components
+        # TODO: implement something to cleanup in respective classes
+        # await self.verifier.cleanup()
+        # await self.dataset.cleanup()
+        # await self.extractor.cleanup()
+
+        self._is_setup = False
 
     @abstractmethod
-    async def reset(self) -> None:
-        r"""Reset the environment to initial state."""
+    async def reset(self) -> Observation:
+        r"""Reset the environment to initial state.
+
+        Returns:
+            Initial observation for the episode
+        """
+
+        if not self._is_setup:
+            await self.setup()
+
+        # Reset state
         self._current_step = 0
-        self._current_datapoint = None
+        self._episode_ended = False
+        self._episode_history = []
+        self._state = self._get_initial_state()
+
+        # Get initial observation
+        observation = self._get_next_observation()
+        if observation is None:
+            raise RuntimeError("Failed to get initial observation")
+
+        self._last_observation = observation
+
+        return observation
 
     async def process_response(
         self, response: Response, context: Optional[Dict[str, Any]] = None
@@ -130,14 +186,15 @@ class BaseEnvironment(ABC):
         Returns:
             Tuple of (extraction_result, verification_result).
         """
-        # Extract relevant content from response
+        # TODO: Define response.content/message in Response class
         extraction_result = await self.extractor.extract(
-            response.llm_response, context=context
+            str(
+                response
+            ),  # Temporary solution until Response class is defined
+            context or {},
         )
 
-        # Verify using Response object
         verification_result = await self.verifier.verify(response)
-
         return extraction_result, verification_result
 
     @abstractmethod
@@ -158,24 +215,63 @@ class BaseEnvironment(ABC):
                 info={"reason": "max_steps_reached"},
             )
 
-        # Process the response
+        if not self._is_setup:
+            raise RuntimeError("Environment not set up. Call setup() first.")
+        if self._episode_ended:
+            raise RuntimeError("Episode has ended. Call reset() first.")
+        if self._last_observation is None:
+            raise RuntimeError("No current observation. Call reset() first.")
+
+        self._current_step += 1
+
+        current_obs: Observation = self._last_observation
+        self._episode_history.append((current_obs, response))
+
+        # process response
         extraction_result, verification_result = await self.process_response(
             response
         )
 
-        # Compute reward
-        reward = await self.compute_reward(response, verification_result)
+        # compute rewards
+        rewards = await self.compute_reward(
+            response, extraction_result, verification_result
+        )
 
-        self._current_step += 1
+        # check termination
+        done = self._is_done()
+
+        next_obs = (
+            self._get_terminal_observation()
+            if done
+            else self._get_next_observation()
+        )
+
+        self._last_observation = next_obs
+        self._episode_ended = done
+
         return StepResult(
-            observation=self._get_next_observation(),
-            reward=reward,
-            done=False,
+            observation=next_obs,
+            reward=rewards,
+            done=done,
             info={
-                "extraction": extraction_result,
-                "verification": verification_result,
+                "extraction_result": extraction_result,
+                "verification_result": verification_result,
+                "step": self._current_step,
+                "state": self._state,
             },
         )
+
+    @abstractmethod
+    def _get_initial_state(self) -> Dict[str, Any]:
+        r"""Get initial environment state."""
+
+        return {
+            "current_datapoint": None,
+            "attempts": 0,
+            "success_rate": 0.0,
+            "rewards": [],
+            "termination_reason": None,
+        }
 
     @abstractmethod
     def _get_next_observation(self) -> Observation:
@@ -184,7 +280,20 @@ class BaseEnvironment(ABC):
         Returns:
             Observation for the next step
         """
-        pass
+
+        # TODO: Implement sample() method in BaseDataset
+        # datapoint = self.dataset.sample()
+
+        # TODO: Update once DataPoint structure is defined
+        return Observation(
+            question="No data available",
+            context={"status": "placeholder", "step": self._current_step},
+            metadata={
+                "step": self._current_step,
+                "datapoint_id": f"placeholder_{self._current_step}",
+                "is_placeholder": True,
+            },
+        )
 
     @abstractmethod
     def _get_terminal_observation(self) -> Observation:
@@ -193,22 +302,56 @@ class BaseEnvironment(ABC):
         Returns:
             Terminal observation
         """
-        pass
+        return Observation(
+            question="Episode completed",
+            context={},
+            metadata={"terminal": True, "final_step": self._current_step},
+        )
 
     @abstractmethod
     async def compute_reward(
-        self, response: Response, verification_result: VerificationResult
+        self,
+        response: Response,
+        extraction_result: Dict[str, Any],
+        verification_result: VerificationResult,
     ) -> Dict[str, float]:
         r"""Compute reward scores for different aspects of the response.
 
         Args:
             response: The response.
+            extraction_result: Extracted information from response
             verification_result: Result from the verifier.
 
         Returns:
             Dictionary of reward scores for different aspects.
         """
-        pass
+        rewards = {}
+
+        # TODO: Define success attribute in VerificationResult
+        verification_success = 0.0  # Temporary
+        rewards["correctness"] = 1.0 if verification_success > 0.5 else 0.0
+
+        # Update state
+        self._state["rewards"].append(rewards)
+        total_attempts = self._state["attempts"] + 1
+        self._state["success_rate"] = (
+            self._state["success_rate"] * (total_attempts - 1)
+            + verification_success
+        ) / total_attempts
+
+        # Additional reward aspects can be added here
+        # For example:
+        # - Solution efficiency/structure
+        # - Reasoning quality
+        # ...
+
+        return rewards
+
+    def _is_done(self) -> bool:
+        """Check if episode should terminate."""
+        if self.max_steps and self._current_step >= self.max_steps:
+            return True
+        return False
 
     @property
     def metadata(self) -> Dict[str, Any]:
