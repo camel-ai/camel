@@ -37,7 +37,7 @@ print(result_1)
 print(result_2)
 """
 ===============================================================================
-Function time_consuming_tool execution timed out, exceeded 0.5 seconds.
+Function `time_consuming_tool` execution timed out, exceeded 0.5 seconds.
 Fast tool run successfully!
 ===============================================================================
 """
