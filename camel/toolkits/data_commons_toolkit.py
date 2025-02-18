@@ -14,6 +14,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Union
 
+from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,18 @@ class DataCommonsToolkit(BaseToolkit):
     Refer to https://datacommons.org/browser/ for more details.
     """
 
-    @staticmethod
+    def __init__(self, timeout: Optional[float] = None):
+        r"""Initialize the DataCommonsToolkit.
+
+        Args:
+            timeout (Optional[float], optional): Maximum time in seconds to
+            wait for API calls to complete. If None, will wait indefinitely.
+                (default: :obj:`None`)
+        """
+        super().__init__(timeout=timeout)
+
     def query_data_commons(
+        self,
         query_string: str,
     ) -> Optional[List[Dict[str, Any]]]:
         r"""Query the Data Commons knowledge graph using SPARQL.
@@ -76,9 +87,8 @@ class DataCommonsToolkit(BaseToolkit):
             )
             return None
 
-    @staticmethod
     def get_triples(
-        dcids: Union[str, List[str]], limit: int = 500
+        self, dcids: Union[str, List[str]], limit: int = 500
     ) -> Optional[Dict[str, List[tuple]]]:
         r"""Retrieve triples associated with nodes.
 
@@ -117,8 +127,8 @@ class DataCommonsToolkit(BaseToolkit):
             logger.error(f"An error occurred: {e!s}")
             return None
 
-    @staticmethod
     def get_stat_time_series(
+        self,
         place: str,
         stat_var: str,
         measurement_method: Optional[str] = None,
@@ -166,9 +176,8 @@ class DataCommonsToolkit(BaseToolkit):
             )
             return None
 
-    @staticmethod
     def get_property_labels(
-        dcids: Union[str, List[str]], out: bool = True
+        self, dcids: Union[str, List[str]], out: bool = True
     ) -> Optional[Dict[str, List[str]]]:
         r"""Retrieves and analyzes property labels for given DCIDs.
 
@@ -195,8 +204,8 @@ class DataCommonsToolkit(BaseToolkit):
             )
             return None
 
-    @staticmethod
     def get_property_values(
+        self,
         dcids: Union[str, List[str]],
         prop: str,
         out: Optional[bool] = True,
@@ -239,9 +248,8 @@ class DataCommonsToolkit(BaseToolkit):
             )
             return None
 
-    @staticmethod
     def get_places_in(
-        dcids: list, place_type: str
+        self, dcids: list, place_type: str
     ) -> Optional[Dict[str, Any]]:
         r"""Retrieves places within a given place type.
 
@@ -269,8 +277,8 @@ class DataCommonsToolkit(BaseToolkit):
             )
             return None
 
-    @staticmethod
     def get_stat_value(
+        self,
         place: str,
         stat_var: str,
         date: Optional[str] = None,
@@ -326,8 +334,7 @@ class DataCommonsToolkit(BaseToolkit):
             )
             return None
 
-    @staticmethod
-    def get_stat_all(places: str, stat_vars: str) -> Optional[dict]:
+    def get_stat_all(self, places: str, stat_vars: str) -> Optional[dict]:
         r"""Retrieves the value of a statistical variable for a given place
         and date.
 
@@ -358,3 +365,22 @@ class DataCommonsToolkit(BaseToolkit):
                 f"statistical variable: {e!s}"
             )
             return None
+
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Returns a list of FunctionTool objects representing the functions
+        in the toolkit.
+
+        Returns:
+            List[FunctionTool]: A list of FunctionTool objects representing
+                the functions in the toolkit.
+        """
+        return [
+            FunctionTool(self.query_data_commons),
+            FunctionTool(self.get_triples),
+            FunctionTool(self.get_stat_time_series),
+            FunctionTool(self.get_property_labels),
+            FunctionTool(self.get_property_values),
+            FunctionTool(self.get_places_in),
+            FunctionTool(self.get_stat_value),
+            FunctionTool(self.get_stat_all),
+        ]
