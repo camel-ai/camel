@@ -57,7 +57,7 @@ class ChatHistoryMemory(AgentMemory):
                 f"reached. Some earlier messages will not be included in "
                 f"the context. Consider increasing window_size if you need "
                 f"a longer context.",
-                RuntimeWarning,
+                UserWarning,
                 stacklevel=2,
             )
         return records
