@@ -15,7 +15,6 @@ import os
 from typing import TYPE_CHECKING, Optional
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.utils import dependencies_required
 
 # Conditionally import telebot types only for type checking
@@ -74,9 +73,6 @@ class TelegramBot:
         if not message.text:
             return
 
-        user_msg = BaseMessage.make_user_message(
-            role_name="User", content=message.text
-        )
-        assistant_response = self.chat_agent.step(user_msg)
+        assistant_response = self.chat_agent.step(message.text)
 
         self.bot.reply_to(message, assistant_response.msg.content)

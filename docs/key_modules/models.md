@@ -15,27 +15,26 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **OpenAI** | gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Mistral AI** | mistral-large-latest, pixtral-12b-2409, ministral-8b-latest, ministral-3b-latest, open-mistral-nemo, codestral-latest, open-mistral-7b, open-mixtral-8x7b, open-mixtral-8x22b, open-codestral-mamba |
+| **Moonshot** | moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
 | **Anthropic** | claude-2.1, claude-2.0, claude-instant-1.2, claude-3-opus-latest, claude-3-sonnet-20240229, claude-3-haiku-20240307, claude-3-5-sonnet-latest, claude-3-5-haiku-latest |
-| **Gemini** | gemini-1.5-flash, gemini-1.5-pro, gemini-exp-1114 |
+| **Gemini** | gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash, gemini-exp-1114 |
 | **Lingyiwanwu** | yi-lightning, yi-large, yi-medium, yi-large-turbo, yi-vision, yi-medium-200k, yi-spark, yi-large-rag, yi-large-fc |
 | **Qwen** | qwq-32b-preview, qwen-max, qwen-plus, qwen-turbo, qwen-long, qwen-vl-max, qwen-vl-plus, qwen-math-plus, qwen-math-turbo, qwen-coder-turbo, qwen2.5-coder-32b-instruct, qwen2.5-72b-instruct, qwen2.5-32b-instruct, qwen2.5-14b-instruct |
 | **DeepSeek** | deepseek-chat, deepseek-reasoner |
-| **ZhipuAI** | glm-4v, glm-4, glm-3-turbo |
+| **ZhipuAI** | glm-4, glm-4v, glm-4v-flash, glm-4v-plus-0111, glm-4-plus, glm-4-air, glm-4-air-0111, glm-4-airx, glm-4-long, glm-4-flashx, glm-zero-preview, glm-4-flash, glm-3-turbo |
 | **InternLM** | internlm3-latest, internlm3-8b-instruct, internlm2.5-latest, internlm2-pro-chat |
 | **Reka** | reka-core, reka-flash, reka-edge |
-| **GROQ** | llama-3.1-8b-instant, llama-3.3-70b-versatile, llama-3.3-70b-specdec, llama3-8b-8192, llama3-70b-8192, mixtral-8x7b-32768, gemma2-9b-it |
-| **TOGETHER** | meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo, meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo, meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo, meta-llama/Llama-3.3-70B-Instruct-Turbo, mistralai/Mixtral-8x7B-Instruct-v0.1, mistralai/Mistral-7B-Instruct-v0.1 |
-| **SAMBA** | Meta-Llama-3.1-8B-Instruct, Meta-Llama-3.1-70B-Instruct, Meta-Llama-3.1-405B-Instruct |
-| **SGLANG** | meta-llama/Meta-Llama-3.1-8B-Instruct, meta-llama/Meta-Llama-3.1-70B-Instruct, meta-llama/Meta-Llama-3.1-405B-Instruct, meta-llama/Llama-3.2-1B-Instruct, mistralai/Mistral-Nemo-Instruct-2407, mistralai/Mistral-7B-Instruct-v0.3, Qwen/Qwen2.5-7B-Instruct, Qwen/Qwen2.5-32B-Instruct, Qwen/Qwen2.5-72B-Instruct |
-| **NVIDIA** | nvidia/nemotron-4-340b-instruct, nvidia/nemotron-4-340b-reward, 01-ai/yi-large, mistralai/mistral-large, mistralai/mixtral-8x7b-instruct, meta/llama3-70b, meta/llama-3.1-8b-instruct, meta/llama-3.1-70b-instruct, meta/llama-3.1-405b-instruct, meta/llama-3.2-1b-instruct, meta/llama-3.2-3b-instruct, meta/llama-3.3-70b-instruct |
 | **COHERE** | command-r-plus, command-r, command-light, command, command-nightly |
+| **GROQ** | [supported models](https://console.groq.com/docs/models) |
+| **TOGETHER AI** | [supported models](https://docs.together.ai/docs/chat-models) |
+| **SambaNova** | [supported models](https://community.sambanova.ai/t/supported-models/193) |
+| **Ollama** |  [supported models](https://ollama.com/library) |
+| **LiteLLM** | [supported models](https://docs.litellm.ai/docs/providers) |
+| **vLLM** |  [supported models](https://docs.vllm.ai/en/latest/models/supported_models.html) |
+| **SGLANG** | [supported models](https://sgl-project.github.io/references/supported_models.html) |
+| **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
+| **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
 
-#### **Custom Model Support**
-If your preferred model is not listed above, **you can still use it** by directly specifying its name as a string in `model_type`. Example:
-
-```python
-model = ModelFactory.create(model_platform="custom", model_type="YourModelName")
-```
 
 
 ## 3. How to Use Models via API Calls

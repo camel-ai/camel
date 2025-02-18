@@ -12,13 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncStream, OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.base_model import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -82,9 +83,11 @@ class SiliconFlowModel(BaseModelBackend):
             base_url=self._url,
         )
 
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of SiliconFlow chat completion.
 
@@ -103,6 +106,16 @@ class SiliconFlowModel(BaseModelBackend):
             **self.model_config_dict,
         )
         return response
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        raise NotImplementedError(
+            "SiliconFlow does not support async inference."
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
