@@ -131,13 +131,11 @@ class TestMeshyToolkit(unittest.TestCase):
             "status": "PENDING"
         }  # Simulate pending status
 
-        # Use a very short timeout and let the mock_get simulate an infinite
-        # pending state
-        result = toolkit.wait_for_task_completion(
-            task_id, timeout=0.1, polling_interval=0.01
-        )
-        self.assertTrue(isinstance(result, str))
-        self.assertIn("timed out", result)
+        # Act & Assert
+        with self.assertRaises(TimeoutError):
+            toolkit.wait_for_task_completion(
+                task_id, timeout=1
+            )  # Timeout after 1 second
 
     @patch("requests.post")
     @patch("requests.get")
