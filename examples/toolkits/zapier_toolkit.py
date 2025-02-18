@@ -29,7 +29,7 @@ tools = ZapierToolkit().get_tools()
 model_config_dict = ChatGPTConfig(
     temperature=0.0,
 ).as_dict()
-print(tools[0].openai_tool_schema)
+
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -50,7 +50,7 @@ usr_msg = "First, list all available Zapier tools."
 response = camel_agent.step(usr_msg)
 print("Available Tools:")
 print(response.msg.content)
-print("\n" + "="*80 + "\n")
+print("\n" + "=" * 80 + "\n")
 
 # Now, use the translation tool
 usr_msg = """Now that we can see the translation tool is available, please 

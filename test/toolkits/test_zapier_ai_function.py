@@ -15,7 +15,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-import requests
 
 from camel.toolkits import ZapierToolkit
 from camel.toolkits.function_tool import FunctionTool
@@ -41,13 +40,13 @@ def test_list_actions_success(mock_get, zapier_toolkit):
     # Mock successful API response
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        "results": [{
-            "id": "action1",
-            "description": "Test action 1",
-            "params": {
-                "param1": "value1"
+        "results": [
+            {
+                "id": "action1",
+                "description": "Test action 1",
+                "params": {"param1": "value1"},
             }
-        }]
+        ]
     }
     mock_response.raise_for_status.return_value = None
     mock_get.return_value = mock_response
@@ -58,10 +57,7 @@ def test_list_actions_success(mock_get, zapier_toolkit):
     mock_get.assert_called_once_with(
         f"{zapier_toolkit.base_url}exposed/",
         params={'api_key': 'test_api_key'},
-        headers={
-            'accept': 'application/json',
-            'x-api-key': 'test_api_key'
-        },
+        headers={'accept': 'application/json', 'x-api-key': 'test_api_key'},
     )
 
 
@@ -70,7 +66,8 @@ def test_execute_action_success(mock_post, zapier_toolkit):
     # Mock successful API response
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        "result": "Action executed successfully"}
+        "result": "Action executed successfully"
+    }
     mock_response.raise_for_status.return_value = None
     mock_post.return_value = mock_response
 
@@ -85,12 +82,9 @@ def test_execute_action_success(mock_post, zapier_toolkit):
         headers={
             'accept': 'application/json',
             'x-api-key': 'test_api_key',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         },
-        json={
-            'instructions': instructions,
-            'preview_only': False
-        },
+        json={'instructions': instructions, 'preview_only': False},
     )
 
 

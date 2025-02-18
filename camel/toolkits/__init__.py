@@ -47,7 +47,7 @@ from .video_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
 from .networkx_toolkit import NetworkXToolkit
 from .semantic_scholar_toolkit import SemanticScholarToolkit
-from .zappier_toolkit import ZapierToolkit
+from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
 
