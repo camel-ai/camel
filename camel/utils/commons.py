@@ -19,6 +19,7 @@ import platform
 import re
 import socket
 import subprocess
+import threading
 import time
 import zipfile
 from functools import wraps
@@ -905,3 +906,49 @@ def generate_prompt_for_structured_output(
     {user_prompt}
     """
     return final_prompt
+
+
+def with_timeout(func):
+    r"""Decorator that adds timeout functionality to instance methods.
+
+    Executes methods with a timeout specified either through a class-level
+    default or per-call override. Returns a timeout message if execution time
+    is exceeded.
+
+    Args:
+        func: The instance method to be decorated.
+
+    Example:
+        >>> class MyClass:
+        ...     timeout = 5  # Default timeout
+        ...     @with_timeout
+        ...     def my_method(self):
+        ...         return "Success"
+        >>> obj = MyClass()
+        >>> obj.my_method(timeout=2)  # Override default timeout
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        # Allow timeout to be specified per function call, falling back to
+        # class default
+        timeout = kwargs.pop('timeout', None) or getattr(self, "timeout", None)
+        if timeout is None:
+            return func(self, *args, **kwargs)
+        result_container = []
+
+        def target():
+            result_container.append(func(self, *args, **kwargs))
+
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join(timeout)
+        if thread.is_alive():
+            return (
+                f"Function `{func.__name__}` execution timed out, exceeded"
+                f" {timeout} seconds."
+            )
+        else:
+            return result_container[0]
+
+    return wrapper

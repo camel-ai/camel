@@ -52,4 +52,4 @@ def test_toolkit_timeout_exceeded():
     r"""Test that operation times out when exceeding timeout period."""
     toolkit = MockToolkit(delay_seconds=2, timeout=1)
     result = toolkit.run()
-    assert result == "Function run execution timed out, exceeded 1 seconds."
+    assert result == "Function `run` execution timed out, exceeded 1 seconds."

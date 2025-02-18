@@ -12,37 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import functools
-import threading
 from typing import List, Optional
 
 from camel.toolkits import FunctionTool
-from camel.utils import AgentOpsMeta
-
-
-def with_timeout(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        timeout = getattr(self, "timeout", None)
-        if timeout is None:
-            return func(self, *args, **kwargs)
-        result_container = []
-
-        def target():
-            result_container.append(func(self, *args, **kwargs))
-
-        thread = threading.Thread(target=target)
-        thread.start()
-        thread.join(timeout)
-        if thread.is_alive():
-            return (
-                f"Function `{func.__name__}` execution timed out, exceeded"
-                f" {timeout} seconds."
-            )
-        else:
-            return result_container[0]
-
-    return wrapper
+from camel.utils import AgentOpsMeta, with_timeout
 
 
 class BaseToolkit(metaclass=AgentOpsMeta):
