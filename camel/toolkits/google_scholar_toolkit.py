@@ -39,6 +39,7 @@ class GoogleScholarToolkit(BaseToolkit):
         use_free_proxies: bool = False,
         proxy_http: Optional[str] = None,
         proxy_https: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the GoogleScholarToolkit with the author's identifier.
 
@@ -54,6 +55,7 @@ class GoogleScholarToolkit(BaseToolkit):
             proxy_https ( Optional[str]): Proxy https address pass to pg.
                 SingleProxy. (default: :obj:`None`)
         """
+        super().__init__(timeout=timeout)
         from scholarly import ProxyGenerator, scholarly
 
         # Set Free Proxies is needed
