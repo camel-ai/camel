@@ -908,47 +908,68 @@ def generate_prompt_for_structured_output(
     return final_prompt
 
 
-def with_timeout(func):
-    r"""Decorator that adds timeout functionality to instance methods.
+def with_timeout(timeout=None):
+    r"""Decorator that adds timeout functionality to functions.
 
-    Executes methods with a timeout specified either through a class-level
-    default or per-call override. Returns a timeout message if execution time
-    is exceeded.
+    Executes functions with a specified timeout value. Returns a timeout
+    message if execution time is exceeded.
 
     Args:
-        func: The instance method to be decorated.
+        timeout (float, optional): The timeout duration in seconds. If None,
+            will try to get timeout from the instance's timeout attribute.
+            (default: :obj:`None`)
 
     Example:
+        >>> @with_timeout(5)
+        ... def my_function():
+        ...     return "Success"
+        >>> my_function()
+
         >>> class MyClass:
-        ...     timeout = 5  # Default timeout
-        ...     @with_timeout
+        ...     timeout = 5
+        ...     @with_timeout()
         ...     def my_method(self):
         ...         return "Success"
-        >>> obj = MyClass()
-        >>> obj.my_method(timeout=2)  # Override default timeout
     """
 
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        # Allow timeout to be specified per function call, falling back to
-        # class default
-        timeout = kwargs.pop('timeout', None) or getattr(self, "timeout", None)
-        if timeout is None:
-            return func(self, *args, **kwargs)
-        result_container = []
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Determine the effective timeout value
+            effective_timeout = timeout
+            if effective_timeout is None and args:
+                effective_timeout = getattr(args[0], 'timeout', None)
 
-        def target():
-            result_container.append(func(self, *args, **kwargs))
+            # If no timeout value is provided, execute function normally
+            if effective_timeout is None:
+                return func(*args, **kwargs)
 
-        thread = threading.Thread(target=target)
-        thread.start()
-        thread.join(timeout)
-        if thread.is_alive():
-            return (
-                f"Function `{func.__name__}` execution timed out, exceeded"
-                f" {timeout} seconds."
-            )
-        else:
-            return result_container[0]
+            # Container to hold the result of the function call
+            result_container = []
 
-    return wrapper
+            def target():
+                result_container.append(func(*args, **kwargs))
+
+            # Start the function in a new thread
+            thread = threading.Thread(target=target)
+            thread.start()
+            thread.join(effective_timeout)
+
+            # Check if the thread is still alive after the timeout
+            if thread.is_alive():
+                return (
+                    f"Function `{func.__name__}` execution timed out, "
+                    f"exceeded {effective_timeout} seconds."
+                )
+            else:
+                return result_container[0]
+
+        return wrapper
+
+    # Handle both @with_timeout and @with_timeout() usage
+    if callable(timeout):
+        # If timeout is passed as a function, apply it to the decorator
+        func, timeout = timeout, None
+        return decorator(func)
+
+    return decorator
