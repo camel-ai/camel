@@ -64,7 +64,6 @@ def main(
                 model_config_dict=assistant_model_config.as_dict(),
             ),
             tools=tools_list,
-            message_window_size=2,
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(
@@ -73,7 +72,6 @@ def main(
                 url="https://api.sambanova.ai/v1",
                 model_config_dict=user_model_config.as_dict(),
             ),
-            message_window_size=5,
         ),
         task_prompt=task_prompt,
         with_task_specify=False,
