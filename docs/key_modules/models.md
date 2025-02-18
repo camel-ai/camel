@@ -35,8 +35,6 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 | **NVIDIA** | [supported models](https://docs.api.nvidia.com/nim/reference/llm-apis) |
 | **AIML** | [supported models](https://docs.aimlapi.com/api-overview/model-database/text-models) |
 
-
-
 ## 3. How to Use Models via API Calls
 
 Easily integrate your chosen model with CAMEL AI using straightforward API calls. For example, to use the **gpt-4o-mini** model:
