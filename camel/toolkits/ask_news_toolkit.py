@@ -62,10 +62,11 @@ class AskNewsToolkit(BaseToolkit):
     based on user queries using the AskNews API.
     """
 
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initialize the AskNewsToolkit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """
+        super().__init__(timeout=timeout)
         from asknews_sdk import AskNewsSDK
 
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")

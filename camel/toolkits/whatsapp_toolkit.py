@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
@@ -36,8 +36,9 @@ class WhatsAppToolkit(BaseToolkit):
         version (str): API version.
     """
 
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initializes the WhatsAppToolkit."""
+        super().__init__(timeout=timeout)
         self.base_url = "https://graph.facebook.com"
         self.version = "v17.0"
 
