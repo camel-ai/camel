@@ -48,11 +48,13 @@ class SubprocessInterpreter(BaseInterpreter):
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
+        "r": "Rscript {file_name}",
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
+        "r": "R",
     }
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
@@ -63,6 +65,8 @@ class SubprocessInterpreter(BaseInterpreter):
         "shell": "bash",
         "bash": "bash",
         "sh": "bash",
+        "r": "r",
+        "R": "r",
     }
 
     def __init__(
@@ -98,7 +102,7 @@ class SubprocessInterpreter(BaseInterpreter):
         if not file.is_file():
             raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
-        if code_type == "python":
+        if self._CODE_TYPE_MAPPING[code_type] == "python":
             # For Python code, use ast to analyze and modify the code
             import ast
 
@@ -113,23 +117,41 @@ class SubprocessInterpreter(BaseInterpreter):
                 # Get the last node
                 if tree.body:
                     last_node = tree.body[-1]
-                    # If it's an expression, wrap it in a print
+                    # Handle expressions that would normally not produce output
+                    # For example: In a REPL, typing '1 + 2' should show '3'
+
                     if isinstance(last_node, ast.Expr):
-                        tree.body[-1] = ast.Expr(
-                            value=ast.Call(
-                                func=ast.Name(id='print', ctx=ast.Load()),
-                                args=[
-                                    ast.Call(
-                                        func=ast.Name(
-                                            id='repr', ctx=ast.Load()
-                                        ),
-                                        args=[last_node.value],
-                                        keywords=[],
-                                    )
-                                ],
-                                keywords=[],
+                        # Only wrap in print(repr()) if it's not already a
+                        # print call
+                        if not (
+                            isinstance(last_node.value, ast.Call)
+                            and isinstance(last_node.value.func, ast.Name)
+                            and last_node.value.func.id == 'print'
+                        ):
+                            # Transform the AST to wrap the expression in print
+                            # (repr())
+                            # Example transformation:
+                            #   Before: x + y
+                            #   After:  print(repr(x + y))
+                            tree.body[-1] = ast.Expr(
+                                value=ast.Call(
+                                    # Create print() function call
+                                    func=ast.Name(id='print', ctx=ast.Load()),
+                                    args=[
+                                        ast.Call(
+                                            # Create repr() function call
+                                            func=ast.Name(
+                                                id='repr', ctx=ast.Load()
+                                            ),
+                                            # Pass the original expression as
+                                            # argument to repr()
+                                            args=[last_node.value],
+                                            keywords=[],
+                                        )
+                                    ],
+                                    keywords=[],
+                                )
                             )
-                        )
                     # Fix missing source locations
                     ast.fix_missing_locations(tree)
                     # Convert back to source
@@ -159,7 +181,10 @@ class SubprocessInterpreter(BaseInterpreter):
         return_code = proc.returncode
 
         # Clean up temporary file if it was created
-        if code_type == "python" and 'temp_file' in locals():
+        if (
+            self._CODE_TYPE_MAPPING[code_type] == "python"
+            and 'temp_file' in locals()
+        ):
             temp_file.unlink()
 
         if self.print_stdout and stdout:
