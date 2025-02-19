@@ -141,10 +141,9 @@ class BaseEnvironment(ABC):
             return
 
         # Cleanup components
-        # TODO: implement something to cleanup in respective classes
-        # await self.verifier.cleanup()
-        # await self.dataset.cleanup()
-        # await self.extractor.cleanup()
+        await self.verifier.cleanup()
+        await self.dataset.cleanup()
+        await self.extractor.cleanup()
 
         self._is_setup = False
 

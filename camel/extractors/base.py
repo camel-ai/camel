@@ -30,6 +30,28 @@ class BaseExtractor(ABC):
             **kwargs: Additional extractor parameters.
         """
         self._metadata = kwargs
+        self._is_initialized = False
+
+    @abstractmethod
+    async def cleanup(self) -> None:
+        r"""Clean up extractor resources.
+
+        This method handles cleanup of resources and resets the extractor state
+        It ensures:
+        1. All resources are properly released
+        2. State is reset to initial
+        3. Cleanup happens even if errors occur
+        """
+        if not self._is_initialized:
+            return
+
+        try:
+            # Clear any cached data
+            self._metadata = {}
+
+        finally:
+            # Always mark as uninitialized, even if cleanup fails
+            self._is_initialized = False
 
     @abstractmethod
     async def extract(
