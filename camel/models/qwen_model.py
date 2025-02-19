@@ -107,10 +107,14 @@ class QwenModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
         response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
         return response
 
