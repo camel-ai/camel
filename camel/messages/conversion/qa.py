@@ -17,8 +17,7 @@ from pydantic import BaseModel, Field
 import re
 
 class QAItem(BaseModel):
-    r"""
-    Represents a simple question-answer pair.
+    r"""Represents a simple question-answer pair.
 
     Attributes:
         question (str): The question being asked.
@@ -38,8 +37,7 @@ class QAItem(BaseModel):
 
     @classmethod
     def from_string(cls, text: str) -> "QAItem":
-        r"""
-        Parses a formatted Q/A string into a QAItem.
+        r"""Parses a formatted Q/A string into a QAItem.
 
         Args:
             text (str): A string in the format:

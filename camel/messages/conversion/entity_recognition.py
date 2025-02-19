@@ -18,8 +18,7 @@ from typing import List
 import re
 
 class EntityItem(BaseModel):
-    r"""
-    Represents an individual entity in the text.
+    r"""Represents an individual entity in the text.
 
     Attributes:
         entity (str): The entity name found in the text.
@@ -41,8 +40,7 @@ class EntityItem(BaseModel):
         return value.strip()
 
 class EntityRecognitionItem(BaseModel):
-    r"""
-    Represents text with labeled entities.
+    r"""Represents text with labeled entities.
 
     Attributes:
         text (str): The input text containing named entities.

@@ -17,8 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 import re
 
 class ClassificationItem(BaseModel):
-    r"""
-    Represents a text sample labeled with a classification category.
+    r"""Represents a text sample labeled with a classification category.
 
     Attributes:
         text (str): The input text that is classified.

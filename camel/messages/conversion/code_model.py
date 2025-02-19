@@ -18,8 +18,7 @@ from pygments.util import ClassNotFound
 import re
 
 class CodeItem(BaseModel):
-    r"""
-    Represents a code snippet paired with a description.
+    r"""Represents a code snippet paired with a description.
 
     Attributes:
         description (str): A clear instruction or requirement for the code.
