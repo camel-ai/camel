@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from camel.configs import MOONSHOT_API_PARAMS, MoonshotConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -79,6 +80,19 @@ class MoonshotModel(BaseModelBackend):
             base_url=self._url,
         )
 
+    def _prepare_request(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        request_config = self.model_config_dict.copy()
+        if tools:
+            request_config["tools"] = tools
+        elif response_format:
+            try_modify_message_with_format(messages[-1], response_format)
+        return request_config
+
     def _run(
         self,
         messages: List[OpenAIMessage],
@@ -86,7 +100,6 @@ class MoonshotModel(BaseModelBackend):
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of Moonshot chat completion.
-
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -97,10 +110,14 @@ class MoonshotModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
         return response
 

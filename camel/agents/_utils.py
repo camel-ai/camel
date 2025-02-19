@@ -15,13 +15,7 @@ import json
 import logging
 import re
 import textwrap
-import uuid
 from typing import Any, Callable, Dict, List, Optional, Union
-
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
-    Function,
-)
 
 from camel.agents._types import ToolCallRequest
 from camel.toolkits import FunctionTool
@@ -74,73 +68,31 @@ def generate_tool_prompt(tool_schema_list: List[Dict[str, Any]]) -> str:
     return final_prompt
 
 
-def _parse_tool_response(response: str) -> Optional[Dict[str, Any]]:
-    r"""Parses the tool response to extract the function name and
-    arguments.
-
-    Args:
-        response (str): The response from the model containing the
-            function call.
-
-    Returns:
-        Optional[Dict[str, Any]]: The parsed function name and arguments
-            if found, otherwise :obj:`None`.
-    """
-    function_regex = r"<function=(\w+)>(.*?)</function>"
-    match = re.search(function_regex, response)
-
-    if match:
-        function_name, args_string = match.groups()
-        try:
-            args = json.loads(args_string)
-            return {"function": function_name, "arguments": args}
-        except json.JSONDecodeError as error:
-            logger.error(f"Error parsing function arguments: {error}")
-            return None
-    return None
-
-
 def extract_tool_call(
-    self, response: Any
-) -> Optional[ChatCompletionMessageToolCall]:
+    content: str,
+) -> Optional[Dict[str, Any]]:
     r"""Extract the tool call from the model response, if present.
 
     Args:
         response (Any): The model's response object.
 
     Returns:
-        Optional[ChatCompletionMessageToolCall]: The parsed tool call if
-            present, otherwise None.
+        Optional[Dict[str, Any]]: The parsed tool call if present,
+            otherwise None.
     """
-    # Check if the response contains tool calls
-    if (
-        self.has_tools
-        and not self.model_type.support_native_tool_calling
-        and "</function>" in response.choices[0].message.content
-    ):
-        parsed_content = _parse_tool_response(
-            response.choices[0].message.content
-        )
-        if parsed_content:
-            return ChatCompletionMessageToolCall(
-                id=str(uuid.uuid4()),
-                function=Function(
-                    arguments=str(parsed_content["arguments"]).replace(
-                        "'", '"'
-                    ),
-                    name=str(parsed_content["function"]),
-                ),
-                type="function",
-            )
-    elif (
-        self.has_tools
-        and self.model_type.support_native_tool_calling
-        and response.choices[0].message.tool_calls
-    ):
-        return response.choices[0].message.tool_calls[0]
+    function_regex = r"<function=(\w+)>(.*?)</function>"
+    match = re.search(function_regex, content)
 
-    # No tool call found
-    return None
+    if not match:
+        return None
+
+    function_name, args_string = match.groups()
+    try:
+        args = json.loads(args_string)
+        return {"function": function_name, "arguments": args}
+    except json.JSONDecodeError as error:
+        logger.error(f"Error parsing function arguments: {error}")
+        return None
 
 
 def safe_model_dump(obj) -> Dict[str, Any]:
