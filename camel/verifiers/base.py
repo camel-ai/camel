@@ -49,7 +49,7 @@ class BaseVerifier(ABC):
     async def _update_metrics(
         self, duration: float, status: VerificationStatus
     ) -> None:
-        """Update verification metrics with the results of a verification.
+        r"""Update verification metrics with the results of a verification.
 
         Args:
             duration: Time taken for the verification in seconds.
@@ -120,6 +120,7 @@ class BaseVerifier(ABC):
         self._start_time: Optional[float] = None
         self._metrics = VerificationMetrics()
         self._metrics_lock = asyncio.Lock()
+        self._is_initialized: bool = False
 
     async def verify(self, result: Response) -> VerificationResult:  # type: ignore[return]
         r"""Perform verification with full error handling and metrics.
@@ -203,6 +204,38 @@ class BaseVerifier(ABC):
                     f"{e!s}, retrying..."
                 )
                 await asyncio.sleep(self.retry_delay)
+
+    @abstractmethod
+    async def cleanup(self) -> None:
+        r"""Clean up verifier resources.
+
+        This method handles cleanup of resources and resets the verifier state.
+        It ensures:
+        1. All verification resources are released
+        2. Batch processor is cleaned up
+        3. Metrics are reset
+        4. State is reset to initial
+        """
+        if not self._is_initialized:
+            return
+
+        try:
+            # Clean up batch processor
+            if hasattr(self.batch_processor, 'total_processed'):
+                self.batch_processor.total_processed = 0
+                self.batch_processor.total_errors = 0
+                self.batch_processor.processing_times = []
+
+            # Reset metrics under lock
+            async with self._metrics_lock:
+                self._metrics = VerificationMetrics()
+
+            # Reset timing
+            self._start_time = None
+
+        finally:
+            # Always mark as uninitialized, even if cleanup fails
+            self._is_initialized = False
 
     @abstractmethod
     async def _verify_implementation(
