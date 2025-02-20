@@ -20,8 +20,11 @@ from pydantic import BaseModel, Field
 from camel.agents import ChatAgent
 from camel.datasets.base import BaseDataset
 from camel.extractors.base import BaseExtractor
+from camel.logger import get_logger
 from camel.verifiers.base import BaseVerifier, VerificationResult
-from camel.verifiers.models import Response, TaskType
+from camel.verifiers.models import Response, TaskType, VerificationStatus
+
+logger = get_logger(__name__)
 
 
 class Observation(BaseModel):
@@ -68,11 +71,22 @@ class BaseEnvironment(ABC):
     r"""Base class for all RLVR training environments.
 
     An environment ties everything together. It:
-    1. Holds state
-    2. Defines a reward function
-    3. Manages a dataset
+    1. Holds state and manages curriculum progression
+    2. Defines reward functions and hint generation
+    3. Manages dataset and task selection
     4. Provides reset and step functions
     5. Handles verifier setup and teardown
+    6. Enables proactive agent behavior
+    7. Supports practice environment creation
+    8. Facilitates chain-of-thought verification
+
+    Key Features:
+    - Curriculum learning with adaptive difficulty
+    - Reward shaping based on solution quality
+    - Hint generation from verified solutions
+    - Task selection based on agent progress
+    - Practice environment generation
+    - Chain-of-thought validation
     """
 
     def __init__(
@@ -84,6 +98,8 @@ class BaseEnvironment(ABC):
         task_type: TaskType = TaskType.SOFTWARE_ENGINEERING,
         teacher_agent: Optional[ChatAgent] = None,
         generator_agent: Optional[ChatAgent] = None,
+        curriculum_config: Optional[Dict[str, Any]] = None,
+        practice_env_config: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -94,8 +110,17 @@ class BaseEnvironment(ABC):
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
             task_type: Type of task being performed.
-            teacher_agent: Optional agent for reward shaping
+            teacher_agent: Optional agent for reward shaping and hints
             generator_agent: Optional agent for data generation
+            curriculum_config: Configuration for curriculum learning including:
+                - difficulty_levels: List of available difficulty levels
+                - promotion_threshold: Score needed to advance
+                - demotion_threshold: Score triggering level decrease
+                - min_questions_per_level: Questions before promotion
+            practice_env_config: Configuration for practice environments:
+                - max_practice_envs: Maximum concurrent environments
+                - difficulty_range: Allowed difficulty variation
+                - focus_areas: Specific skills to practice
             **kwargs: Additional environment parameters.
         """
         self.dataset = dataset
@@ -121,18 +146,26 @@ class BaseEnvironment(ABC):
         if self._is_setup:
             return
 
-        # TODO: implement something to initialize in respective classes
-        # await self.verifier.setup()
-        # await self.dataset.setup()
-        # await self.extractor.setup()
+        try:
+            # Initialize core components
+            if hasattr(self.verifier, 'setup'):
+                await self.verifier.setup()
+            if hasattr(self.dataset, 'setup'):
+                await self.dataset.setup()
+            if hasattr(self.extractor, 'setup'):
+                await self.extractor.setup()
 
-        # initialize agents if present
-        if self.teacher_agent:
-            await self.teacher_agent.reset()
-        if self.generator_agent:
-            await self.generator_agent.reset()
+            # initialize agents if present
+            if self.teacher_agent:
+                await self.teacher_agent.reset()
+            if self.generator_agent:
+                await self.generator_agent.reset()
 
-        self._is_setup = True
+            self._is_setup = True
+            logger.info('Environment setup completed successfully')
+        except Exception as e:
+            logger.error(f'Failed to setup environment: {e}')
+            raise
 
     @abstractmethod
     async def teardown(self) -> None:
@@ -140,12 +173,20 @@ class BaseEnvironment(ABC):
         if not self._is_setup:
             return
 
-        # Cleanup components
-        await self.verifier.cleanup()
-        await self.dataset.cleanup()
-        await self.extractor.cleanup()
+        try:
+            # Cleanup components
+            if hasattr(self.verifier, 'cleanup'):
+                await self.verifier.cleanup()
+            if hasattr(self.dataset, 'cleanup'):
+                await self.dataset.cleanup()
+            if hasattr(self.extractor, 'cleanup'):
+                await self.extractor.cleanup()
 
-        self._is_setup = False
+            self._is_setup = False
+            logger.info('Environment teardown completed successfully')
+        except Exception as e:
+            logger.error(f'Failed to teardown environment: {e}')
+            raise
 
     @abstractmethod
     async def reset(self) -> Observation:
@@ -280,19 +321,67 @@ class BaseEnvironment(ABC):
             Observation for the next step
         """
 
-        # TODO: Implement sample() method in BaseDataset
-        # datapoint = self.dataset.sample()
+        if not self.dataset or len(self.dataset) == 0:
+            logger.error('Dataset is empty or not initialized')
+            return self._get_terminal_observation()
 
-        # TODO: Update once DataPoint structure is defined
-        return Observation(
-            question="No data available",
-            context={"status": "placeholder", "step": self._current_step},
-            metadata={
-                "step": self._current_step,
-                "datapoint_id": f"placeholder_{self._current_step}",
-                "is_placeholder": True,
-            },
-        )
+        try:
+            datapoint_idx = self._current_step % len(self.dataset)
+            datapoint = self.dataset[datapoint_idx]
+            if not datapoint:
+                logger.error(f'Invalid datapoint at index {datapoint_idx}')
+                return self._get_terminal_observation()
+
+            self._state['current_datapoint'] = datapoint
+            required_attrs = [
+                'question',
+                'ground_truth',
+                'final_answer',
+                'difficulty',
+                'chain_of_thought',
+            ]
+
+            # Validate required attributes
+            missing_attrs = [
+                attr for attr in required_attrs if not hasattr(datapoint, attr)
+            ]
+            if missing_attrs:
+                logger.error(
+                    f'Datapoint missing required attributes: {missing_attrs}'
+                )
+                return self._get_terminal_observation()
+
+            observation = Observation(
+                question=datapoint.question,
+                context={
+                    'ground_truth': datapoint.ground_truth,
+                    'final_answer': datapoint.final_answer,
+                    'difficulty': datapoint.difficulty,
+                    'chain_of_thought': datapoint.chain_of_thought,
+                },
+                metadata={
+                    'step': self._current_step,
+                    'datapoint_id': str(datapoint_idx),
+                    'verified': getattr(datapoint, 'verified', False),
+                    **(
+                        datapoint.metadata
+                        if hasattr(datapoint, 'metadata')
+                        and datapoint.metadata
+                        else {}
+                    ),
+                },
+            )
+            logger.debug(
+                f'Generated observation for step {self._current_step}'
+            )
+            return observation
+
+        except (IndexError, AttributeError) as e:
+            logger.error(f'Error getting next observation: {e}')
+            return self._get_terminal_observation()
+        except Exception as e:
+            logger.error(f'Unexpected error getting next observation: {e}')
+            return self._get_terminal_observation()
 
     @abstractmethod
     def _get_terminal_observation(self) -> Observation:
@@ -326,8 +415,10 @@ class BaseEnvironment(ABC):
         """
         rewards = {}
 
-        # TODO: Define success attribute in VerificationResult
-        verification_success = 0.0  # Temporary
+        # Get success from verification result status
+        verification_success = float(
+            verification_result.status == VerificationStatus.SUCCESS
+        )
         rewards["correctness"] = 1.0 if verification_success > 0.5 else 0.0
 
         # Update state
@@ -347,7 +438,7 @@ class BaseEnvironment(ABC):
         return rewards
 
     def _is_done(self) -> bool:
-        """Check if episode should terminate."""
+        r"""Check if episode should terminate."""
         if self.max_steps and self._current_step >= self.max_steps:
             return True
         return False
