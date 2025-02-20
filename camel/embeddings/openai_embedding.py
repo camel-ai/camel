@@ -30,8 +30,6 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         model_type (EmbeddingModelType, optional): The model type to be
             used for text embeddings.
             (default: :obj:`TEXT_EMBEDDING_3_SMALL`)
-        url (Optional[str], optional): The url to the OpenAI service.
-            (default: :obj:`None`)
         api_key (str, optional): The API key for authenticating with the
             OpenAI service. (default: :obj:`None`)
         dimensions (int, optional): The text embedding output dimensions.
@@ -51,7 +49,6 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         model_type: EmbeddingModelType = (
             EmbeddingModelType.TEXT_EMBEDDING_3_SMALL
         ),
-        url: str | None = None,
         api_key: str | None = None,
         dimensions: int | NotGiven = NOT_GIVEN,
     ) -> None:
@@ -64,13 +61,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             assert isinstance(dimensions, int)
             self.output_dim = dimensions
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self.client = OpenAI(
-            timeout=180,
-            max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
-        )
+        self.client = OpenAI(timeout=180, max_retries=3, api_key=self._api_key)
 
     def embed_list(
         self,
