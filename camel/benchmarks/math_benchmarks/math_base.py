@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 import pandas as pd
 
-from camel.benchmarks import BaseBenchmark
+from benchmarks import BaseBenchmark
 from camel.agents import ChatAgent
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import pandas as pd
 from datasets import load_dataset
 from camel.agents import ChatAgent
-from camel.benchmarks import MathBenchmark, Mode
+from benchmarks import MathBenchmark, Mode
 
 logger = logging.getLogger(__name__)
 
