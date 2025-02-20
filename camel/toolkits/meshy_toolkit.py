@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import requests
 
@@ -38,10 +38,11 @@ class MeshyToolkit(BaseToolkit):
             (None, 'MESHY_API_KEY'),
         ]
     )
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initializes the MeshyToolkit with the API key from the
         environment.
         """
+        super().__init__(timeout=timeout)
         self.api_key = os.getenv('MESHY_API_KEY')
 
     def generate_3d_preview(
