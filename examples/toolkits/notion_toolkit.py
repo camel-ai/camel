@@ -55,7 +55,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ==========================================================================
-[ToolCallingRecord(func_name='list_all_pages', args={}, result=[{'id': 
+[FunctionCallingRecord(func_name='list_all_pages', args={}, result=[{'id': 
 '12684f56-4caa-8080-be91-d7fb1a5834e3', 'title': 'test page'}, 
 {'id': '47a4fb54-e34b-4b45-9928-aa2802982eb8', 'title': 'Aigentbot'}])]
 """
@@ -71,7 +71,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ==========================================================================
-[ToolCallingRecord(func_name='get_notion_block_text_content', args=
+[FunctionCallingRecord(func_name='get_notion_block_text_content', args=
 {'block_id': '12684f56-4caa-8080-be91-d7fb1a5834e3'}, result='hellonihao 
 buhao this is a test par [Needs case added] another par [Needs case added]
 A cute cat: https://www.google.com/imgres?q=cat&imgurl=https%3A%2F%2Fi.
@@ -92,7 +92,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:1000])
 """
 ==========================================================================
-[ToolCallingRecord(func_name='list_all_users', args={}, result=[{'type':
+[FunctionCallingRecord(func_name='list_all_users', args={}, result=[{'type':
 'person', 'name': 'user a', 'workspace': ''}, {'type': 'bot', 'name':
 'test', 'workspace': "user a's Notion"}])]
 ==========================================================================

@@ -53,7 +53,7 @@ response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 """
 ===============================================================================
-[ToolCallingRecord(func_name='klarna_productsUsingGET', args={
+[FunctionCallingRecord(func_name='klarna_productsUsingGET', args={
 'q_in_query': 'basketball'}, result={'products': [{'name': 'Wilson Evolution'
 , 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/3203801266/Basketball
 /Wilson-Evolution/?utm_source=openai&ref-site=openai_plugin', 'price':
