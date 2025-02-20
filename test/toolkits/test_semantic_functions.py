@@ -14,7 +14,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from camel.toolkits import SemanticScholarToolkit
+from camel.toolkits.semanticscholar_toolkit import SemanticScholarToolkit
 
 
 class TestSemanticScholarToolkit(unittest.TestCase):
