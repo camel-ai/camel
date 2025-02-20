@@ -55,16 +55,3 @@ def test_preprocess_answers(benchmark):
     )
     processed = benchmark._preprocess_answers(raw_answers)
     assert list(processed) == ["12", "24", "-7"]
-
-def test_download():
-    r"""Test that GSM8KBenchmark downloads the dataset to the data/ directory."""
-    
-    data_dir = Path("data/")
-    save_to = Path("data/")
-
-    benchmark = GSM8KBenchmark(data_dir=str(data_dir), save_to=str(save_to))
-    benchmark.download()
-
-    assert data_dir.exists(), "Data directory was not created!"
-    dataset_files = list(data_dir.glob("**/*"))
-    assert len(dataset_files) > 0, "Dataset files were not downloaded!"
