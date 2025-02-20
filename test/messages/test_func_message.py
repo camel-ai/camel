@@ -157,6 +157,7 @@ def test_roleplay_conversion_with_tools():
 
     converted_back = []
     for msg in sharegpt_msgs:
+        item = {}
         message = BaseMessage.from_sharegpt(
             msg, function_format=HermesFunctionFormatter()
         )
