@@ -119,11 +119,6 @@ class UnifiedModelType(str):
         return True
 
     @property
-    def is_moonshot(self) -> bool:
-        r"""Returns whether this platform is Moonshot model."""
-        return True
-
-    @property
     def support_native_structured_output(self) -> bool:
         r"""Returns whether the model supports native structured output."""
         return False

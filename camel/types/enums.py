@@ -170,11 +170,6 @@ class ModelType(UnifiedModelType, Enum):
     INTERNLM2_5_LATEST = "internlm2.5-latest"
     INTERNLM2_PRO_CHAT = "internlm2-pro-chat"
 
-    # Moonshot models
-    MOONSHOT_V1_8K = "moonshot-v1-8k"
-    MOONSHOT_V1_32K = "moonshot-v1-32k"
-    MOONSHOT_V1_128K = "moonshot-v1-128k"
-
     def __str__(self):
         return self.value
 
@@ -206,7 +201,6 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sambanova,
                 self.is_groq,
                 self.is_sglang,
-                self.is_moonshot,
             ]
         )
 
@@ -429,14 +423,6 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
-    def is_moonshot(self) -> bool:
-        return self in {
-            ModelType.MOONSHOT_V1_8K,
-            ModelType.MOONSHOT_V1_32K,
-            ModelType.MOONSHOT_V1_128K,
-        }
-
-    @property
     def is_sglang(self) -> bool:
         return self in {
             ModelType.SGLANG_LLAMA_3_1_8B,
@@ -483,7 +469,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_VL_PLUS,
             ModelType.NVIDIA_LLAMA3_70B,
             ModelType.TOGETHER_MISTRAL_7B,
-            ModelType.MOONSHOT_V1_8K,
         }:
             return 8_192
         elif self in {
@@ -517,7 +502,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.INTERNLM2_PRO_CHAT,
             ModelType.TOGETHER_MIXTRAL_8_7B,
             ModelType.SGLANG_MISTRAL_7B,
-            ModelType.MOONSHOT_V1_32K,
         }:
             return 32_768
         elif self in {
@@ -562,7 +546,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.SGLANG_LLAMA_3_1_405B,
             ModelType.SGLANG_LLAMA_3_2_1B,
             ModelType.SGLANG_MIXTRAL_NEMO,
-            ModelType.MOONSHOT_V1_128K,
         }:
             return 128_000
         elif self in {
@@ -784,7 +767,6 @@ class ModelPlatformType(Enum):
     DEEPSEEK = "deepseek"
     SGLANG = "sglang"
     INTERNLM = "internlm"
-    MOONSHOT = "moonshot"
 
     @property
     def is_openai(self) -> bool:
@@ -891,11 +873,6 @@ class ModelPlatformType(Enum):
     def is_internlm(self) -> bool:
         r"""Returns whether this platform is InternLM."""
         return self is ModelPlatformType.INTERNLM
-
-    @property
-    def is_moonshot(self) -> bool:
-        r"""Returns whether this platform is Moonshot model."""
-        return self is ModelPlatformType.MOONSHOT
 
 
 class AudioModelType(Enum):

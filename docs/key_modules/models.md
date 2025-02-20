@@ -35,9 +35,6 @@ The following table lists currently supported model platforms by CAMEL.
 | Mistral AI | open-mixtral-8x7b | N |
 | Mistral AI | open-mixtral-8x22b | N |
 | Mistral AI | open-codestral-mamba | N |
-| Moonshot | moonshot-v1-8k | N |
-| Moonshot | moonshot-v1-32k | N |
-| Moonshot | moonshot-v1-128k | N |
 | Anthropic | claude-3-5-sonnet-latest | Y |
 | Anthropic | claude-3-5-haiku-latest | N |
 | Anthropic | claude-3-haiku-20240307 | Y |
