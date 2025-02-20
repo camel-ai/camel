@@ -45,10 +45,8 @@ from .human_toolkit import HumanToolkit
 from .stripe_toolkit import StripeToolkit
 from .video_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
-from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .sympy_toolkit import SymPyToolkit
-from .mineru_toolkit import MinerUToolkit
-
+from .semantic_scholar_toolkit import SemanticScholarToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -81,7 +79,6 @@ __all__ = [
     'MeshyToolkit',
     'OpenBBToolkit',
     'DappierToolkit',
-    'SemanticScholarToolkit',
     'SymPyToolkit',
-    'MinerUToolkit',
+    'SemanticScholarToolkit',
 ]
