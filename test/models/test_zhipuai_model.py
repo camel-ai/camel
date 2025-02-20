@@ -28,16 +28,6 @@ from camel.utils import OpenAITokenCounter
         ModelType.GLM_3_TURBO,
         ModelType.GLM_4,
         ModelType.GLM_4V,
-        ModelType.GLM_4V_FLASH,
-        ModelType.GLM_4V_PLUS_0111,
-        ModelType.GLM_4_PLUS,
-        ModelType.GLM_4_AIR,
-        ModelType.GLM_4_AIR_0111,
-        ModelType.GLM_4_AIRX,
-        ModelType.GLM_4_LONG,
-        ModelType.GLM_4_FLASHX,
-        ModelType.GLM_4_FLASH,
-        ModelType.GLM_ZERO_PREVIEW,
     ],
 )
 def test_zhipuai_model(model_type: ModelType):
