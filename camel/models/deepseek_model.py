@@ -13,12 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
 from camel.configs import DEEPSEEK_API_PARAMS, DeepSeekConfig
-from camel.logger import get_logger
 from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import (
@@ -27,8 +27,6 @@ from camel.types import (
     ModelType,
 )
 from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
-
-logger = get_logger(__name__)
 
 
 class DeepSeekModel(BaseModelBackend):
@@ -118,12 +116,11 @@ class DeepSeekModel(BaseModelBackend):
         if self.model_type in [
             ModelType.DEEPSEEK_REASONER,
         ]:
-            import re
-
-            logger.warning(
-                "You are using a DeepSeek Reasoner model, "
+            warnings.warn(
+                "Warning: You are using an DeepSeek Reasoner model, "
                 "which has certain limitations, reference: "
-                "`https://api-docs.deepseek.com/guides/reasoning_model#api-parameters`"
+                "`https://api-docs.deepseek.com/guides/reasoning_model#api-parameters`.",
+                UserWarning,
             )
 
             # Check and remove unsupported parameters and reset the fixed
@@ -141,29 +138,14 @@ class DeepSeekModel(BaseModelBackend):
                 if key in self.model_config_dict:
                     del self.model_config_dict[key]
 
-            # Remove thinking content from messages before sending to API
-            # This ensures only the final response is sent, excluding
-            # intermediate thought processes
-            messages = [
-                {  # type: ignore[misc]
-                    **msg,
-                    'content': re.sub(
-                        r'<think>.*?</think>',
-                        '',
-                        msg['content'],  # type: ignore[arg-type]
-                        flags=re.DOTALL,
-                    ).strip(),
-                }
-                for msg in messages
-            ]
-
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
             **self.model_config_dict,
         )
 
-        # Handle reasoning content with <think> tags at the beginning
+        # Temporary solution to handle the case where
+        # deepseek returns a reasoning_content
         if (
             self.model_type
             in [
@@ -174,10 +156,10 @@ class DeepSeekModel(BaseModelBackend):
         ):
             reasoning_content = response.choices[0].message.reasoning_content
             combined_content = (
-                f"<think>\n{reasoning_content}\n</think>\n"
-                if reasoning_content
-                else ""
-            ) + response.choices[0].message.content
+                response.choices[0].message.content
+                + "\n\nBELOW IS THE REASONING CONTENT:\n\n"
+                + (reasoning_content if reasoning_content else "")
+            )
 
             response = ChatCompletion.construct(
                 id=response.id,

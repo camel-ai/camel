@@ -22,7 +22,6 @@ from camel.types import ModelPlatformType, ModelType
 """
 please set the below os environment:
 export DEEPSEEK_API_KEY=""
-export GET_REASONING_CONTENT="true"
 """
 
 model = ModelFactory.create(
@@ -44,8 +43,11 @@ response = camel_agent.step(user_msg)
 
 
 def extract_original_response(content):
-    # Remove any <think> tags and their content
-    return re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+    # Split the content at the marker
+    parts = content.split("BELOW IS THE REASONING CONTENT:")
+    if len(parts) > 0:
+        return parts[0].strip()
+    return ""
 
 
 # Extract original response
@@ -53,53 +55,10 @@ original_response = extract_original_response(response.msgs[0].content)
 print("Original Response:")
 print(original_response)
 
-'''
-===============================================================================
-Original Response:
-The output sequence of a transformer model becomes longer through a combination of architectural design and generation strategies. Here's a detailed breakdown:
-
-### 1. **Autoregressive Generation**
-   - **Step-by-Step Token Prediction**: In the decoder of a transformer (e.g., GPT or BART), tokens are generated **autoregressively**, meaning each new token depends on previously generated tokens. For example:
-     - At step 1: Generate token \( y_1 \) based on the input (encoder states) and a start token.
-     - At step 2: Generate \( y_2 \) using \( y_1 \), and so on.
-   - This sequential process inherently extends the output sequence length incrementally.
-
-### 2. **Positional Embeddings**
-   - **Dynamic Position Encoding**: Transformers use **positional embeddings** to encode the order of tokens. These embeddings are computed for every position up to a maximum length during training. During inference:
-     - For the \( t \)-th generated token, positional embeddings for position \( t \) are added, allowing the model to handle sequences longer than those seen during training (if extrapolation is possible).
-
-### 3. **Masked Self-Attention in the Decoder**
-   - **Causal Masking**: The decoder uses a **masked self-attention** mechanism to prevent tokens from attending to future positions. This ensures each token \( y_t \) only depends on \( y_1, y_2, ..., y_{t-1} \).
-   - As the sequence grows, the mask dynamically adjusts to include new tokens while maintaining causality.
-
-### 4. **Stopping Criteria**
-   - **End-of-Sequence (EOS) Token**: The model is trained to generate an EOS token (e.g., `<|endoftext|>` in GPT) to signal completion. Generation stops when this token is predicted.
-   - **Maximum Length**: A predefined maximum sequence length acts as a fallback to prevent infinite loops.
-
-### 5. **Handling Variable-Length Outputs**
-   - **Training on Variable-Length Data**: During training, the model learns to generate sequences of varying lengths by processing datasets with diverse input-output pairs (e.g., translations with different source/target lengths).
-   - **Teacher Forcing**: The decoder is trained using the entire target sequence (shifted right) with masking, teaching it to predict the next token given prior context.
-
-### 6. **Non-Autoregressive Extensions (Optional)**
-   - **Parallel Generation**: Some variants (e.g., Non-Autoregressive Transformers) generate all tokens in parallel by predicting output length upfront. However, this often requires auxiliary components (e.g., a length predictor) and trades quality for speed.
-
-### Example Workflow:
-1. **Input**: "Translate to French: Hello"
-2. **Step 1**: Model generates "Bonjour" (position 1).
-3. **Step 2**: Model generates "!" (position 2) based on "Bonjour".
-4. **Step 3**: EOS token is generated, stopping the process.  
-   Final Output: "Bonjour!" (longer than input "Hello").
-
-### Key Challenges:
-- **Positional Embedding Extrapolation**: Handling sequences longer than those seen in training may degrade performance if positional embeddings don’t generalize.
-- **Error Propagation**: Autoregressive models can accumulate errors if early tokens are incorrect.
-
-In summary, transformers produce longer sequences via autoregressive decoding, positional embeddings, causal masking, and dynamic stopping—enabling flexible, context-aware generation.
-===============================================================================
-'''
-
-# Extract reasoning content
-reasoning_pattern = r'<think>(.*?)</think>'
+# Extract reasoning content using regex
+reasoning_pattern = (
+    r"BELOW IS THE REASONING CONTENT:(.*?)(?=BELOW IS THE FINAL ANSWER:|$)"
+)
 reasoning_match = re.search(
     reasoning_pattern, response.msgs[0].content, re.DOTALL
 )
@@ -107,49 +66,98 @@ reasoning_response = (
     reasoning_match.group(1).strip() if reasoning_match else ""
 )
 
-print("\nReasoning Response:")
+print("Reasoning Response:")
 print(reasoning_response)
 # ruff: noqa: E501,RUF001
-'''
-===============================================================================
+"""
+
+Original Response:
+The output sequence of a transformer model can dynamically grow longer due to its **autoregressive generation mechanism** and architectural design. Here's a detailed breakdown of how this works:
+
+---
+
+### 1. **Autoregressive Generation**
+Transformers (especially decoder-only models like GPT or encoder-decoder models like T5) generate sequences **token-by-token** in a left-to-right manner:
+- **Step 1**: Start with an initial token (e.g., `<START>`).
+- **Step 2**: Feed the current sequence into the model to predict the **next token**.
+- **Step 3**: Append the new token to the sequence.
+- **Step 4**: Repeat until a stopping condition is met (e.g., an `<END>` token or maximum length).
+
+This iterative process inherently allows the output to grow incrementally.
+
+---
+
+### 2. **Key Architectural Features**
+#### a. **Masked Self-Attention**
+- The decoder uses **masked self-attention** to ensure each token only attends to previous positions (not future ones).
+- **During inference**: At each step, the model processes the entire sequence generated so far, but the mask restricts attention to existing tokens. This allows the model to handle sequences of arbitrary length.
+
+#### b. **Positional Encodings**
+- Positional embeddings (absolute or relative) assign a unique representation to each token’s position.
+- As new tokens are added, their positions are dynamically encoded, enabling the model to distinguish between tokens at different steps.
+
+#### c. **Cached Key-Value States**
+- To optimize efficiency, many implementations cache the **key-value (KV) states** of previous tokens.
+- This avoids recomputing all previous states at each step, making autoregressive generation faster while still allowing the sequence to grow.
+
+---
+
+### 3. **Training vs. Inference Dynamics**
+- **Training**: The model is trained with **teacher forcing**, where the entire target sequence is provided, and a causal mask ensures each token only sees prior tokens.
+- **Inference**: The model generates tokens sequentially, building the output incrementally. The lack of a fixed output length constraint allows flexibility.
+
+---
+
+### 4. **Stopping Conditions**
+The sequence grows until one of these conditions is met:
+- A predefined **`<END>` token** is generated.
+- A **maximum length** threshold is reached (e.g., 512 tokens).
+- A **probability threshold** (e.g., low confidence in next token).
+
+---
+
+### 5. **Example Workflow**
+Let’s say we’re generating text with GPT-3:
+1. Input: `"The cat sat on the"`
+2. Step 1: Model predicts `"mat"` → Output: `"The cat sat on the mat"`
+3. Step 2: Model predicts `"."` → Output: `"The cat sat on the mat."`
+4. Step 3: Model predicts `<END>` → Generation stops.
+
+At each step, the sequence length increases by 1.
+
+---
+
+### 6. **Non-Autoregressive Extensions (Optional)**
+Some variants (e.g., **non-autoregressive transformers**) generate all tokens in parallel but require tricks like:
+- **Iterative refinement** (e.g., Mask-Predict) to revise outputs over multiple steps.       
+- **Length prediction** upfront (e.g., for machine translation).
+
+---
+
+### Summary
+Transformers produce longer sequences by:
+1. Autoregressively generating one token at a time.
+2. Using masked attention and positional encodings to handle variable lengths.
+3. Caching intermediate states for efficiency.
+4. Halting based on dynamic stopping conditions.
+
+This design balances flexibility with computational feasibility, enabling applications like chatbots, translation, and text generation.
 Reasoning Response:
-Okay, so I need to figure out how the output sequence of a transformer model can become longer. Let me start by recalling what I know about transformers. They're used in tasks like translation, text generation, etc. The standard transformer model, like the ones used in BERT or GPT, processes input sequences and generates output sequences. But usually, in models like GPT, the output is generated one token at a time, right? So the length is either fixed or determined by some stopping condition like an end-of-sentence token.
+Okay, so the user wants to know how the output sequence of a transformer becomes longer. Hmm, let me start by recalling what I know about transformers. Transformers are used in models like GPT and BERT for tasks like translation, text generation, etc. They process sequences in parallel using self-attention mechanisms. But when generating output, especially in autoregressive models, they produce tokens one by one.
 
-But the question is about how the output sequence can become longer. Hmm. Maybe in some cases, the model needs to produce a longer sequence than the input. For example, summarization might take a long document and make a shorter summary, but maybe there are tasks where the output is longer. Wait, no, usually summarization is shorter. Maybe something like text generation where you keep generating until a certain condition, but that's more about variable length rather than making it longer than the input.
+Wait, the output sequence length... Normally, in machine translation, the model might have a fixed output length, but sometimes it's variable. How does that happen? Oh right, in autoregressive models, each generated token is fed back into the model to predict the next one. So the sequence grows step by step. But how exactly does the architecture allow this?
 
-Wait, the user is asking about the output sequence becoming longer, not just variable. So how does that happen in the architecture of a transformer? Let me think about the decoder part. In the original transformer paper, the decoder generates outputs autoregressively, meaning each token is generated based on the previous ones. So the output length is determined by the number of steps the model takes before emitting an end token. But that's variable, not necessarily longer. So maybe there's a different approach.
+Maybe it's because the decoder uses masked self-attention to prevent looking at future tokens. So during training, the model learns to predict the next token given the previous ones. At inference time, it starts with a start token, generates the first token, then appends that to the input and generates the next, and so on until an end token is produced. That way, the output sequence can keep growing until the stop condition is met.
 
-Alternatively, maybe in some non-autoregressive models, the transformer can generate all tokens in parallel. But how do they handle sequence length? Wait, non-autoregressive models often fix the output length in advance, which might be determined by another component. For example, in machine translation, if the input is of length N, the output might be set to N or some multiple. But that's a bit forced.
+But wait, what about models that generate non-autoregressively? Like some parallel decoding methods. Oh right, some approaches like the Transformer-XL or models using iterative refinement might generate sequences in chunks or revise previous outputs. But the standard transformer for tasks like translation is autoregressive.
 
-Another thought: maybe the transformer can dynamically adjust the number of processing steps. But I don't recall standard transformers doing that. They usually process all tokens in parallel through the layers. Wait, but during generation, autoregressive models produce one token at a time, so the sequence grows step by step. So each step adds a new token, making the output longer. But how does the model decide when to stop? It uses something like a maximum length or an end token. But the user is asking about the mechanism that allows the output to become longer.
+Another thing: positional encodings. Since each new token is added to the output, the positional embeddings would increment accordingly. So the model can handle variable lengths because the positional encodings are applied based on the position, not fixed during training. During training, they mi training, they might use teacher forcing with varying sequence lengths, so the model is trained to handle different positions.
 
-Wait, maybe in some architectures, the transformer can iteratively refine the output, adding more tokens each iteration. For example, in image generation with transformers, you might have patches that are generated in steps. But for text, perhaps using a transformer in a way that allows inserting tokens in the middle of the sequence, thereby increasing its length. But how would that work with the self-attention mechanism?
+Also, during generation, the model's self-attention in the decoder is masked so each step only attends to previous positions. That allows the model to process sequences of increasing length step by step. The key is that the model isn't constrained by a fixed window size, thanks to the positional embeddings and the autoregressive mechanism.
 
-Alternatively, maybe using a transformer decoder with a mechanism to repeat certain layers or to generate multiple tokens per step. But I'm not sure. Let me think about the positional encodings. If the model is trained to handle variable-length sequences, the positional encodings need to accommodate that. So during training, the model sees sequences of varying lengths, and during inference, it can generate sequences longer than those seen in training as long as the positional encodings can extrapolate. But that's more about handling longer sequences than making the output longer than the input.
+Wait, but how does the model manage memory or computational constraints when the sequence gets very long? Oh, right, in practice, there might be a maximum length set due to memory limits, but theoretically, it can keep generating until the stop token. So the output sequence length is dynamic based on the generation process.
 
-Wait, perhaps the user is referring to the fact that during autoregressive generation, the output is built incrementally, so each step appends a new token. But that's standard. The assistant needs to explain in detail the mechanisms that allow the output to extend beyond the input length. So maybe factors like positional embeddings that support variable lengths, the autoregressive process itself, and the use of end tokens or other stopping conditions.
+So putting it all together, the transformer decoder generates tokens one at a time, each time taking the previously generated tokens as input, using positional encodings to handle the growing length, and masking to ensure each step only depends on prior tokens. This iterative process allows the output sequence to become longer until a termination condition is met.
 
-Also, in some models, like Transformer-XL or those with memory, they can handle longer sequences by caching previous states, but that's about processing longer inputs, not outputs.
 
-Another angle: in sequence-to-sequence tasks, the encoder processes the input, and the decoder generates the output. The decoder's attention over the encoder's states allows it to generate output tokens one by one. So each generated token is conditioned on the encoder's input and the previously generated tokens. The length of the output is determined by the decoding process, which can be longer or shorter than the input.
-
-So, putting it all together, the transformer's decoder uses autoregressive generation, where each step produces a new token, thereby extending the output sequence. The model uses positional embeddings to handle the increasing length, and the self-attention in the decoder ensures that each new token is aware of all previous tokens. The process continues until a stopping criterion is met, which could be generating an end-of-sequence token or reaching a maximum length.
-
-Wait, but in the original transformer model, during training, the decoder is fed the entire target sequence shifted right, and uses masking to prevent attending to future tokens. During inference, it generates tokens one by one, so the output sequence grows incrementally. So the key mechanism is autoregressive generation with masked self-attention in the decoder, allowing each step to add a new token based on the previous ones.
-
-So the output sequence becomes longer because each generation step appends a new token, and this is possible due to the autoregressive nature and the positional embeddings that accommodate the growing length. The model is trained to predict the next token given the previous ones, so during inference, it can keep generating until it decides to stop.
-
-Another possibility is using beam search, where multiple hypotheses are extended step by step, but that's more about improving the quality rather than affecting the length.
-
-Additionally, models can be trained with dynamic output lengths, where the length is predicted first, but that's another approach. For example, some models might predict the length of the output before generating it, but that's less common in standard transformers.
-
-So, the main points are:
-
-1. Autoregressive generation: each token is generated based on previous ones, allowing the sequence to grow step by step.
-2. Positional embeddings: allow the model to handle the increasing sequence length by providing position information for each new token.
-3. Masked self-attention in the decoder: ensures that each step only attends to previous tokens, enabling the generation process.
-4. Stopping criteria: determine when to stop adding new tokens, either by an end token or maximum length.
-
-I think that's the core of it. The transformer's architecture, particularly the decoder with its autoregressive and masked attention mechanisms, along with positional encodings, allows the output sequence to be extended incrementally, making it longer until a stopping condition is met.
-===============================================================================
-'''
+"""
