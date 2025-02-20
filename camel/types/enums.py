@@ -163,7 +163,6 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
     QWEN_QWQ_32B = "qwq-32b-preview"
-    QWEN_QVQ_72B = "qvq-72b-preview"
 
     # Yi models (01-ai)
     YI_LIGHTNING = "yi-lightning"
@@ -237,7 +236,6 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_sglang,
                 self.is_moonshot,
                 self.is_siliconflow,
-                self.is_zhipuai,
             ]
         )
 
@@ -455,7 +453,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
             ModelType.QWEN_QWQ_32B,
-            ModelType.QWEN_QVQ_72B,
         }
 
     @property
@@ -578,7 +575,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.NVIDIA_MISTRAL_LARGE,
             ModelType.NVIDIA_MIXTRAL_8X7B,
             ModelType.QWEN_QWQ_32B,
-            ModelType.QWEN_QVQ_72B,
             ModelType.INTERNLM3_8B_INSTRUCT,
             ModelType.INTERNLM3_LATEST,
             ModelType.INTERNLM2_5_LATEST,
