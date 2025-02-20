@@ -54,11 +54,7 @@ class AIMLModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
-    @api_keys_required(
-        [
-            ("api_key", 'AIML_API_KEY'),
-        ]
-    )
+    @api_keys_required([("api_key", "AIML_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -98,8 +94,9 @@ class AIMLModel(BaseModelBackend):
     ) -> Dict[str, Any]:
         request_config = self.model_config_dict.copy()
         if tools:
-            request_config['tools'] = tools
+            request_config["tools"] = tools
         if response_format:
+            # AIML API does not natively support response format
             try_modify_message_with_format(messages[-1], response_format)
         return request_config
 
@@ -109,7 +106,7 @@ class AIMLModel(BaseModelBackend):
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
+        r"""Runs inference of AIML chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -178,4 +175,4 @@ class AIMLModel(BaseModelBackend):
         Returns:
             bool: Whether the model is in stream mode.
         """
-        return self.model_config_dict.get('stream', False)
+        return self.model_config_dict.get("stream", False)
