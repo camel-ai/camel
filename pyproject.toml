@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.21"
+version = "0.2.20"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -84,7 +84,8 @@ botocore = { version = "^1.35.3", optional = true }
 beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
-unstructured = { extras = ["all-docs"], version = "0.16.20", optional = true }
+pdfplumber = { version = "^0.11.0", optional = true }
+unstructured = { extras = ["all-docs"], version = "0.16.11", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 pandasai = { version = "^2.3.0", optional = true }
@@ -191,6 +192,7 @@ document_tools = [
     "beautifulsoup4",
     "docx2txt", 
     "PyMuPDF",
+    "pdfplumber",
     "unstructured",
     "pandasai",
     "prance",
@@ -299,6 +301,7 @@ all = [
     "beautifulsoup4",
     "docx2txt",
     "PyMuPDF",
+    "pdfplumber",
     "unstructured",
     "pandasai",
     "wikipedia",
@@ -445,12 +448,6 @@ markers = [
 
 [tool.coverage.report]
 include_namespace_packages = true
-
-[tool.mypy]
-exclude = [
-    '\.venv/.*',  # exclude .venv directory
-    'site-packages/.*',  # exclude site-packages
-]
 
 [[tool.mypy.overrides]]
 module = [
