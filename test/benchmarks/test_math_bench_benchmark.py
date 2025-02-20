@@ -1,11 +1,11 @@
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 import pytest
+import pandas as pd
+from unittest.mock import MagicMock, patch
+from pathlib import Path
+import tempfile
 
-from camel.agents import ChatAgent
 from camel.benchmarks import MATHBenchmark, Mode
+from camel.agents import ChatAgent
 
 SAMPLE_DATA = [
     {"problem": "Solve for x: x^2 - 4 = 0", "solution": r"Let’s solve: $x^2 - 4 = 0 \boxed{2}$"},
