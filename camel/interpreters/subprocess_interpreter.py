@@ -98,70 +98,15 @@ class SubprocessInterpreter(BaseInterpreter):
         if not file.is_file():
             raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
-        if code_type == "python":
-            # For Python code, use ast to analyze and modify the code
-            import ast
-
-            import astor
-
-            with open(file, 'r') as f:
-                source = f.read()
-
-            # Parse the source code
-            try:
-                tree = ast.parse(source)
-                # Get the last node
-                if tree.body:
-                    last_node = tree.body[-1]
-                    # If it's an expression, wrap it in a print
-                    if isinstance(last_node, ast.Expr):
-                        tree.body[-1] = ast.Expr(
-                            value=ast.Call(
-                                func=ast.Name(id='print', ctx=ast.Load()),
-                                args=[
-                                    ast.Call(
-                                        func=ast.Name(
-                                            id='repr', ctx=ast.Load()
-                                        ),
-                                        args=[last_node.value],
-                                        keywords=[],
-                                    )
-                                ],
-                                keywords=[],
-                            )
-                        )
-                    # Fix missing source locations
-                    ast.fix_missing_locations(tree)
-                    # Convert back to source
-                    modified_source = astor.to_source(tree)
-                    # Create a temporary file with the modified source
-                    temp_file = self._create_temp_file(modified_source, "py")
-                    cmd = shlex.split(f"python {temp_file!s}")
-            except SyntaxError:
-                # If parsing fails, run the original file
-                cmd = shlex.split(
-                    self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                        file_name=str(file)
-                    )
-                )
-        else:
-            # For non-Python code, use standard execution
-            cmd = shlex.split(
-                self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                    file_name=str(file)
-                )
+        cmd = shlex.split(
+            self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
+                file_name=str(file)
             )
-
+        )
         proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         stdout, stderr = proc.communicate()
-        return_code = proc.returncode
-
-        # Clean up temporary file if it was created
-        if code_type == "python" and 'temp_file' in locals():
-            temp_file.unlink()
-
         if self.print_stdout and stdout:
             print("======stdout======")
             print(Fore.GREEN + stdout + Fore.RESET)
@@ -170,19 +115,8 @@ class SubprocessInterpreter(BaseInterpreter):
             print("======stderr======")
             print(Fore.RED + stderr + Fore.RESET)
             print("==================")
-
-        # Build the execution result
-        exec_result = ""
-        if stdout:
-            exec_result += stdout
-        if stderr:
-            exec_result += f"(stderr: {stderr})"
-        if return_code != 0:
-            error_msg = f"(Execution failed with return code {return_code})"
-            if not stderr:
-                exec_result += error_msg
-            elif error_msg not in stderr:
-                exec_result += error_msg
+        exec_result = f"{stdout}"
+        exec_result += f"(stderr: {stderr})" if stderr else ""
         return exec_result
 
     def run(
