@@ -83,6 +83,7 @@ jobs:
           SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
           MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
           AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
+          NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
         run: |
           source venv/bin/activate
           pytest --fast-test-mode ./test
