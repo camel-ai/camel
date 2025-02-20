@@ -54,7 +54,7 @@ class MathBenchmark(BaseBenchmark):
     def __init__(
         self, name: str, data_dir: str, save_to: str, processes: int = 1
     ):
-        r"""Initialize the benchmark."""
+        """Initialize the benchmark."""
         super().__init__(name, data_dir, save_to, processes)
 
     def run(
@@ -67,7 +67,7 @@ class MathBenchmark(BaseBenchmark):
         *args,
         **kwargs,
     ) -> "MathBenchmark":
-        r"""Runs the benchmark, evaluates answers, and saves results as JSON."""
+        """Runs the benchmark, evaluates answers, and saves results as JSON."""
 
         logger.info(f"Running {mode.mode} evaluation on {on} set with k={mode.k}")
 
@@ -114,7 +114,7 @@ class MathBenchmark(BaseBenchmark):
         return self
 
     def _evaluate(self, row: pd.Series, mode: Mode) -> bool:
-        r"""Evaluate model predictions based on the chosen evaluation mode."""
+        """Evaluate model predictions based on the chosen evaluation mode."""
         answers = row["answers"]
         solution = row["solution"]
 
@@ -133,7 +133,7 @@ class MathBenchmark(BaseBenchmark):
     
     @abstractmethod
     def _prepare_dataset(self, dataset:List[Dict[str, Any]]) -> pd.DataFrame:
-        r"""
+        """
         Method to further prepare the dataset, like renaming or normalizing columns.
         """
         pass
@@ -147,7 +147,7 @@ class MathBenchmark(BaseBenchmark):
         *args,
         **kwargs,
     ) -> Union[pd.DataFrame, Dict[str, List[Any]]]:
-        r"""
+        """
         Method to be implemented by subclasses.
 
         This method should return a pandas DataFrame or a dictionary with:
