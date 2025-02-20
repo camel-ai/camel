@@ -16,9 +16,10 @@ import os
 import time
 from typing import Any, Dict, List, Union
 
+from requests.exceptions import RequestException
+
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import retry_on_error
 
 
 class RedditToolkit(BaseToolkit):
@@ -60,7 +61,30 @@ class RedditToolkit(BaseToolkit):
             request_timeout=30,  # Set a timeout to handle delays
         )
 
-    @retry_on_error()
+    def _retry_request(self, func, *args, **kwargs):
+        r"""Retries a function in case of network-related errors.
+
+        Args:
+            func (callable): The function to be retried.
+            *args: Arguments to pass to the function.
+            **kwargs: Keyword arguments to pass to the function.
+
+        Returns:
+            Any: The result of the function call if successful.
+
+        Raises:
+            RequestException: If all retry attempts fail.
+        """
+        for attempt in range(self.retries):
+            try:
+                return func(*args, **kwargs)
+            except RequestException as e:
+                print(f"Attempt {attempt + 1}/{self.retries} failed: {e}")
+                if attempt < self.retries - 1:
+                    time.sleep(self.delay)
+                else:
+                    raise
+
     def collect_top_posts(
         self,
         subreddit_name: str,
@@ -89,8 +113,8 @@ class RedditToolkit(BaseToolkit):
                 "Please set the environment variables."
             )
 
-        subreddit = self.reddit.subreddit(subreddit_name)
-        top_posts = subreddit.top(limit=post_limit)
+        subreddit = self._retry_request(self.reddit.subreddit, subreddit_name)
+        top_posts = self._retry_request(subreddit.top, limit=post_limit)
         data = []
 
         for post in top_posts:
@@ -98,7 +122,9 @@ class RedditToolkit(BaseToolkit):
                 "Post Title": post.title,
                 "Comments": [
                     {"Comment Body": comment.body, "Upvotes": comment.score}
-                    for comment in list(post.comments)[:comment_limit]
+                    for comment in self._retry_request(
+                        lambda post=post: list(post.comments)
+                    )[:comment_limit]
                 ],
             }
             data.append(post_data)
@@ -166,11 +192,15 @@ class RedditToolkit(BaseToolkit):
         data = []
 
         for subreddit_name in subreddits:
-            subreddit = self.reddit.subreddit(subreddit_name)
-            top_posts = subreddit.top(limit=post_limit)
+            subreddit = self._retry_request(
+                self.reddit.subreddit, subreddit_name
+            )
+            top_posts = self._retry_request(subreddit.top, limit=post_limit)
 
             for post in top_posts:
-                for comment in list(post.comments)[:comment_limit]:
+                for comment in self._retry_request(
+                    lambda post=post: list(post.comments)
+                )[:comment_limit]:
                     # Print comment body for debugging
                     if any(
                         keyword.lower() in comment.body.lower()

@@ -14,7 +14,6 @@
 
 from .commons import (
     AgentOpsMeta,
-    BatchProcessor,
     agentops_decorator,
     api_keys_required,
     check_server_running,
@@ -34,7 +33,6 @@ from .commons import (
     is_docker_running,
     json_to_function_code,
     print_text_animated,
-    retry_on_error,
     text_extract_from_web,
     to_pascal,
     track_agent,
@@ -82,6 +80,4 @@ __all__ = [
     "get_pydantic_model",
     "download_github_subdirectory",
     "generate_prompt_for_structured_output",
-    "retry_on_error",
-    "BatchProcessor",
 ]

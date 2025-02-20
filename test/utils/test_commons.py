@@ -18,13 +18,11 @@ from unittest.mock import patch
 import pytest
 
 from camel.utils import (
-    BatchProcessor,
     api_keys_required,
     dependencies_required,
     get_system_information,
     get_task_list,
     is_docker_running,
-    retry_on_error,
     to_pascal,
 )
 
@@ -232,89 +230,3 @@ class TestApiKeysRequired(TestCase):
             "Missing or empty required API keys in environment "
             "variables: API_KEY" in str(context.exception)
         )
-
-
-class TestRetryOnError(TestCase):
-    def test_successful_execution(self):
-        @retry_on_error()
-        def successful_func():
-            return "success"
-
-        result = successful_func()
-        self.assertEqual(result, "success")
-
-    def test_retry_on_failure(self):
-        attempts = []
-
-        @retry_on_error(max_retries=2, initial_delay=0.1)
-        def failing_func():
-            attempts.append(1)
-            if len(attempts) < 2:
-                raise ValueError("Test error")
-            return "success"
-
-        result = failing_func()
-        self.assertEqual(result, "success")
-        self.assertEqual(len(attempts), 2)
-
-    def test_max_retries_exceeded(self):
-        attempts = []
-
-        @retry_on_error(max_retries=2, initial_delay=0.1)
-        def always_failing_func():
-            attempts.append(1)
-            raise ValueError("Test error")
-
-        with self.assertRaises(ValueError):
-            always_failing_func()
-        self.assertEqual(len(attempts), 3)  # Initial attempt + 2 retries
-
-
-class TestBatchProcessor(TestCase):
-    def setUp(self):
-        self.processor = BatchProcessor(
-            max_workers=2,
-            initial_batch_size=5,
-            monitoring_interval=0.0,  # Set to 0 to force resource check
-            cpu_threshold=90.0,
-            memory_threshold=90.0,
-        )
-
-    @patch('psutil.cpu_percent')
-    @patch('psutil.virtual_memory')
-    def test_resource_based_adjustment(self, mock_memory, mock_cpu):
-        mock_cpu.return_value = 95.0
-        mock_memory.return_value.percent = 95.0
-
-        self.assertEqual(self.processor.batch_size, 5)
-
-        self.processor.last_check_time = 0
-
-        self.processor.adjust_batch_size(True)
-
-        expected_size = int(5 * self.processor.backoff_factor)
-        self.assertEqual(self.processor.batch_size, expected_size)
-        self.assertEqual(self.processor.max_workers, 1)
-
-    def test_success_based_adjustment(self):
-        initial_size = self.processor.batch_size
-
-        self.processor.adjust_batch_size(True)
-        self.assertGreater(self.processor.batch_size, initial_size)
-
-        self.processor.adjust_batch_size(False)
-        self.assertLess(
-            self.processor.batch_size, self.processor.batch_size * 1.2
-        )
-
-    def test_performance_metrics(self):
-        self.processor.adjust_batch_size(True, 1.0)
-        self.processor.adjust_batch_size(False, 2.0)
-        self.processor.adjust_batch_size(True, 1.5)
-
-        metrics = self.processor.get_performance_metrics()
-
-        self.assertEqual(metrics['total_processed'], 3)
-        self.assertAlmostEqual(metrics['error_rate'], 33.33333333333333)
-        self.assertAlmostEqual(metrics['avg_processing_time'], 1.5)
-        self.assertEqual(metrics['current_workers'], 2)

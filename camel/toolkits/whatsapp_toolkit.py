@@ -19,7 +19,7 @@ import requests
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
-from camel.utils import retry_on_error
+from camel.utils.commons import retry_request
 
 
 class WhatsAppToolkit(BaseToolkit):
@@ -36,8 +36,18 @@ class WhatsAppToolkit(BaseToolkit):
         version (str): API version.
     """
 
-    def __init__(self):
-        r"""Initializes the WhatsAppToolkit."""
+    def __init__(self, retries: int = 3, delay: int = 1):
+        r"""Initializes the WhatsAppToolkit with the specified number of
+        retries and delay.
+
+        Args:
+            retries (int): Number of times to retry the request in case of
+                failure. (default: :obj:`3`)
+            delay (int): Time in seconds to wait between retries.
+                (default: :obj:`1`)
+        """
+        self.retries = retries
+        self.delay = delay
         self.base_url = "https://graph.facebook.com"
         self.version = "v17.0"
 
@@ -51,7 +61,6 @@ class WhatsAppToolkit(BaseToolkit):
                 "WHATSAPP_PHONE_NUMBER_ID environment variables."
             )
 
-    @retry_on_error()
     def send_message(
         self, to: str, message: str
     ) -> Union[Dict[str, Any], str]:
@@ -79,15 +88,19 @@ class WhatsAppToolkit(BaseToolkit):
         }
 
         try:
-            response = requests.post(url=url, headers=headers, json=data)
+            response = retry_request(
+                requests.post,
+                retries=self.retries,
+                delay=self.delay,
+                url=url,
+                headers=headers,
+                json=data,
+            )
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
-            raise e
         except Exception as e:
             return f"Failed to send message: {e!s}"
 
-    @retry_on_error()
     def get_message_templates(self) -> Union[List[Dict[str, Any]], str]:
         r"""Retrieves all message templates for the WhatsApp Business account.
 
@@ -103,13 +116,18 @@ class WhatsAppToolkit(BaseToolkit):
         headers = {"Authorization": f"Bearer {self.access_token}"}
 
         try:
-            response = requests.get(url=url, headers=headers)
+            response = retry_request(
+                requests.get,
+                retries=self.retries,
+                delay=self.delay,
+                url=url,
+                headers=headers,
+            )
             response.raise_for_status()
             return response.json().get("data", [])
         except Exception as e:
             return f"Failed to retrieve message templates: {e!s}"
 
-    @retry_on_error()
     def get_business_profile(self) -> Union[Dict[str, Any], str]:
         r"""Retrieves the WhatsApp Business profile information.
 
@@ -131,7 +149,10 @@ class WhatsAppToolkit(BaseToolkit):
         }
 
         try:
-            response = requests.get(
+            response = retry_request(
+                requests.get,
+                retries=self.retries,
+                delay=self.delay,
                 url=url,
                 headers=headers,
                 params=params,
