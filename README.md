@@ -281,7 +281,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Agentic Data Generation, Evaluation & Filtering with Reward Models](https://docs.camel-ai.org/cookbooks/data_generation/synthetic_dataevaluation&filter_with_reward_model.html)** | Discover methods for generating, evaluating, and filtering agentic data using reward models to enhance the quality and efficiency of your synthetic data pipelines. |
 | **[Data Model Generation and Structured Output with Qwen Model](https://docs.camel-ai.org/cookbooks/data_generation/data_model_generation_and_structured_output_with_qwen.html)** |Learn how to generate data models and structured outputs using the Qwen Model for improved data representation.|
 | **[Distill Math Reasoning Data from DeepSeek R1](https://docs.camel-ai.org/cookbooks/data_generation/distill_math_reasoning_data_from_deepseek_r1.html)** |Learn  how to set up and leverage CAMEL's data distillation pipline for distilling high-quality maths reasoning data with thought process (Long CoT data)from deepseek R1, and uploading the results to Hugging Face.|
-| **[Self-Improving Math Reasoning Data Distillation from DeepSeek R1](https://docs.camel-ai.org/cookbooks/data_generation/self_improving_math_reasoning_data_distillation_from_deepSeek_r1.html)** |Learn how to set up and leverage CAMEL's data distillation pipline for self-improving math reasoning data distillation from deepseek R1, and uploading the results to Hugging Face.|
+
 
 ### Multi-Agent Systems & Applications
 | Cookbook | Description |
@@ -331,8 +331,6 @@ We implemented amazing research ideas from other works for you to build, compare
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
 - `Source2Synth` from *Alisia Lupidi et al.*: [Source2Synth: Synthetic Data Generation and Curation Grounded in Real Data Sources](https://arxiv.org/abs/2409.08239). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/source2synth.py)]
-
-- `STaR` from *Eric Zelikman et al.*: [STaR: Bootstrapping Reasoning With Reasoning](https://arxiv.org/abs/2203.14465). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/star)]
 
 ## Other Research Works Based on Camel
 - [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?
