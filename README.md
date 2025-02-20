@@ -41,7 +41,9 @@
 <br>
 
 
-Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents. And Star CAMEL on GitHub and be instantly notified of new releases.
+Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents. 
+
+🌟 Star CAMEL on GitHub and be instantly notified of new releases.
 
 </div>
 
@@ -50,10 +52,10 @@ Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.o
   </a>
 </div>
 
+<br>
 
 
-
-## 🐫 CAMEL Framework Design Principles
+## CAMEL Framework Design Principles
 
 <h3>🧬 Evolvability</h3 >
 
@@ -73,7 +75,7 @@ Every line of code and comment serves as a prompt for agents. Code should be wri
 
 <br>
 
-## 🌟 Why Use CAMEL for Your Research?
+## Why Use CAMEL for Your Research?
 
 We are a community-driven research collective comprising over 100 researchers dedicated to advancing frontier research in Multi-Agent Systems. Researchers worldwide choose CAMEL for their studies based on the following reasons.
 
@@ -85,39 +87,39 @@ We are a community-driven research collective comprising over 100 researchers de
   </tr>
   <tr>
     <td align="left">✅</td>
-    <td align="left">Large-Scale Agent System</td>
+    <td align="left" style="font-weight: bold;">Large-Scale Agent System</td>
     <td align="left">Simulates up to 1M agents for large-scale multi-agent research.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
-    <td align="left">Dynamic Communication</td>
+    <td align="left" style="font-weight: bold;">Dynamic Communication</td>
     <td align="left">Enables real-time collaboration between agents for complex tasks.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
-    <td align="left">Stateful Memory</td>
+    <td align="left" style="font-weight: bold;">Stateful Memory</td>
     <td align="left">Allows agents to retain and use past information for better decision-making.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
-    <td align="left">Support for Multiple Benchmarks</td>
+    <td align="left" style="font-weight: bold;">Support for Multiple Benchmarks</td>
     <td align="left">Provides standardized benchmarks for evaluating agent performance.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
-    <td align="left">Support for Different Agent Types</td>
+    <td align="left" style="font-weight: bold;">Support for Different Agent Types</td>
     <td align="left">Works with various agent types, tasks, models, and environments.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
-    <td align="left">Data Generation and Tool Integration</td>
+    <td align="left" style="font-weight: bold;">Data Generation and Tool Integration</td>
     <td align="left">Automates large-scale data creation with diverse and structured outputs.</td>
   </tr>
 </table>
 
 <br>
 
-## 💡 What Can You Build With CAMEL?
+## What Can You Build With CAMEL?
 
 
 ### 1. Data Generation
@@ -177,7 +179,7 @@ We are a community-driven research collective comprising over 100 researchers de
 
 <br>
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install CAMEL from PyPI
 To install the base CAMEL library:
@@ -231,10 +233,12 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 
 <br>
 
-## 🛠️ TechStack
+## Tech Stack
 
 <div align="center">
-  <img src="docs/images/techstack.png" alt="TechStack">
+  <a href="https://docs.camel-ai.org">
+    <img src="docs/images/techstack.png" alt="TechStack">
+  </a>
 </div>
 
 ### 1. Key Modules
@@ -280,8 +284,9 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 | **Code**         | [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457) | [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd) |
 | **Misalignment** | [Instructions](https://atlas.nomic.ai/map/5c491035-a26e-4a05-9593-82ffb2c3ab40/2bd98896-894e-4807-9ed8-a203ccb14d5e) | [Tasks](https://atlas.nomic.ai/map/abc357dd-9c04-4913-9541-63e259d7ac1f/825139a4-af66-427c-9d0e-f36b5492ab3f) |
 
+<br>
 
-## 📦 Installation
+## Installation
 
 ### 1. From PyPI
 
@@ -454,8 +459,9 @@ python examples/vision/image_crafting.py
 ```
 For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
 
+<br>
 
-## 📖 Cookbooks (Usecases)
+## Cookbooks (Usecases)
 Practical guides and tutorials for implementing specific functionalities in CAMEL-AI agents and societies.
 
 ### 1. Basic Concepts
@@ -498,9 +504,10 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 | **[Create AI Agents that work with your PDFs](https://docs.camel-ai.org/cookbooks/data_processing/agent_with_chunkr_for_pdf_parsing.html)** | Learn how to create AI agents that work with your PDFs using Chunkr and Mistral AI. |
 
 
+<br>
 
 
-## 🔬 Research
+## Research
 
 ### We warmly invite you to use CAMEL for your impactful research. 🙌
 
@@ -528,7 +535,9 @@ Practical guides and tutorials for implementing specific functionalities in CAME
   </a>
 </div>
 
-## 🏛️ Citation
+<br>
+
+## Citation
 ```
 @inproceedings{li2023camel,
   title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
@@ -538,7 +547,9 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 }
 ```
 
-## 📜 Acknowledgment
+<br>
+
+## Acknowledgment
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
 We would also like to thank Haya Hammoud for designing the initial logo of our project.
@@ -550,14 +561,20 @@ We implemented amazing research ideas from other works for you to build, compare
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
-## 📝 License
+<br>
+
+## License
 
 The source code is licensed under Apache 2.0.
 
-## 🤝 Contributing to CAMEL 🐫
+<br>
+
+## Contributing to CAMEL
 We appreciate your interest in contributing to our open-source initiative. We provide a document of [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) which outlines the steps for contributing to CAMEL. Please refer to this guide to ensure smooth collaboration and successful contributions. 🚀
 
-## 📞 Community & Contact
+<br>
+
+## Community & Contact
 For more information please contact camel-ai@eigent.ai
 
 - **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
@@ -568,7 +585,7 @@ For more information please contact camel-ai@eigent.ai
 
 - **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
 
-
+<br>
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
 [docs-url]: https://camel-ai.github.io/camel/index.html
