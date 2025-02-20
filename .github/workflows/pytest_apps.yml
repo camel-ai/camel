@@ -31,7 +31,6 @@ jobs:
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
-        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
       run: poetry run pytest -v apps/
 
   pytest_examples:
@@ -52,5 +51,4 @@ jobs:
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
-        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
       run: poetry run pytest -v examples/
