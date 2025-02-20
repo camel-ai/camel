@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .aiml_model import AIMLModel
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
@@ -73,5 +72,4 @@ __all__ = [
     'FishAudioModel',
     'InternLMModel',
     'MoonshotModel',
-    'AIMLModel',
 ]

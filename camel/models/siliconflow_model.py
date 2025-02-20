@@ -18,7 +18,7 @@ from openai import OpenAI, Stream
 
 from camel.configs import SILICONFLOW_API_PARAMS, SiliconFlowConfig
 from camel.messages import OpenAIMessage
-from camel.models.base_model import BaseModelBackend
+from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,

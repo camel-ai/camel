@@ -61,7 +61,6 @@ jobs:
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
-        AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -112,7 +111,6 @@ jobs:
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
-        AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:

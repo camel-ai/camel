@@ -19,8 +19,9 @@ from camel.toolkits import SymPyToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = """You are a helpful math assistant that can perform symbolic 
-computations"""
+sys_msg = (
+    "You are a helpful math assistant that can perform symbolic computations"
+)
 
 # Set model config
 tools = SymPyToolkit().get_tools()
@@ -42,18 +43,16 @@ camel_agent = ChatAgent(
 )
 camel_agent.reset()
 
-# Define a user message with a complex expression
-usr_msg = """Simplify the expression: (x^4 - 16)/(x^2 - 4) + sin(x)^2 + cos(x)
-^2 + (x^3 + 6*x^2 + 12*x + 8)/(x + 2)"""
+# Define a user message
+usr_msg = """Simplify the expression: x^2 + 2*x + 1"""
 
 # Get response information
 response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
 '''
 ===============================================================================
-[ToolCallingRecord(tool_name='simplify_expression', args={'expression': '(x**4 
-- 16)/(x**2 - 4) + sin(x)**2 + cos(x)**2 + (x**3 + 6*x**2 + 12*x + 8)/(x + 2)
-'}, result='{"status": "success", "result": "2*x**2 + 4*x + 9"}', 
-tool_call_id='call_CdoZsLWeagT0yBM13RYuz09W')]
+[FunctionCallingRecord(func_name='simplify_expression', args={'expression': 
+'x^2 + 2*x + 1'}, result='{"status": "success", "result": "x**2 + 2*x + 1"}', 
+tool_call_id='call_USLSZHjQwLHHCa8oLiNsm2AH')]
 ===============================================================================
 '''
