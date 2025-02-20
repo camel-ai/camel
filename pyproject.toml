@@ -34,7 +34,7 @@ openai = "^1.59.7"
 tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
-protobuf = "^5"
+protobuf = "^4"
 pathlib = "^1.0.1"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<2.10"
@@ -45,6 +45,7 @@ httpx = ">=0.23.0,<0.27.3"
 
 # Model platforms
 litellm = { version = "^1.38.1", optional = true }
+google-generativeai = { version = "^0.6.0", optional = true }
 mistralai = { version = "^1.1.0", optional = true }
 reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.42.0", optional = true }
@@ -112,7 +113,6 @@ apify_client = { version = "^1.8.1", optional = true }
 tavily-python = { version = "^0.5.0", optional = true }
 asknews = { version = "^0.7.54", optional = true }
 dappier = { version = "^0.3.3", optional = true }
-sympy = { version = "^1.13.3", optional = true }
 
 # Communication platform tools
 slack-sdk = { version = "^3.27.2", optional = true }
@@ -185,7 +185,6 @@ web_tools = [
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
-    "sympy",
 ]
 
 # Document processing tools
@@ -253,6 +252,7 @@ dev_tools = [
 # Model platforms
 model_platforms = [
     "litellm",
+    "google-generativeai",
     "mistralai",
     "reka-api",
     "anthropic",
@@ -310,7 +310,6 @@ all = [
     "duckduckgo-search",
     "newspaper3k",
     "wolframalpha",
-    "sympy",
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
@@ -361,6 +360,7 @@ all = [
     "litellm",
     "mistralai",
     "fish-audio-sdk",
+    "google-generativeai",
     "anthropic",
     "reka-api",
     "sglang",
@@ -535,6 +535,5 @@ module = [
     "tree-sitter",
     "ragas",
     "pandasai",
-    "sympy",
 ]
 ignore_missing_imports = true
