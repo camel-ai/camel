@@ -118,6 +118,8 @@ class DeepSeekModel(BaseModelBackend):
         if self.model_type in [
             ModelType.DEEPSEEK_REASONER,
         ]:
+            import re
+
             logger.warning(
                 "You are using a DeepSeek Reasoner model, "
                 "which has certain limitations, reference: "
@@ -138,6 +140,22 @@ class DeepSeekModel(BaseModelBackend):
             for key in unsupported_keys:
                 if key in self.model_config_dict:
                     del self.model_config_dict[key]
+
+            # Remove thinking content from messages before sending to API
+            # This ensures only the final response is sent, excluding
+            # intermediate thought processes
+            messages = [
+                {  # type: ignore[misc]
+                    **msg,
+                    'content': re.sub(
+                        r'<think>.*?</think>',
+                        '',
+                        msg['content'],  # type: ignore[arg-type]
+                        flags=re.DOTALL,
+                    ).strip(),
+                }
+                for msg in messages
+            ]
 
         response = self._client.chat.completions.create(
             messages=messages,
