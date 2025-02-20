@@ -16,6 +16,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.runtime import DockerRuntime, TaskConfig
 from camel.toolkits.code_execution import CodeExecutionToolkit
@@ -55,11 +56,14 @@ model = ModelFactory.create(
 
 
 # set up agent
-assistant_sys_msg = (
-    "You are a personal assistant and programmer. "
-    "When asked a question, "
-    "write and run Python code to answer the question."
-    "Your code will be executed using eval()."
+assistant_sys_msg = BaseMessage.make_assistant_message(
+    role_name="Teacher",
+    content=(
+        "You are a personal assistant and programmer. "
+        "When asked a question, "
+        "write and run Python code to answer the question."
+        "Your code will be executed using eval()."
+    ),
 )
 
 agent = ChatAgent(
@@ -75,9 +79,10 @@ agent.reset()
 with runtime as r:
     r.wait()
     prompt = "List all directories in /home"
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
     print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 
-    response = agent.step(prompt)
+    response = agent.step(user_msg)
     for msg in response.msgs:
         print_text_animated(Fore.GREEN + f"Agent response:\n{msg.content}\n")
 

@@ -14,12 +14,15 @@
 
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import GoogleScholarToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = "You are a helpful assistant"
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Tools calling opertor", content="You are a helpful assistant"
+)
 
 # Set model config
 tools = GoogleScholarToolkit(
@@ -45,7 +48,10 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Define a user message
-usr_msg = "get the detailed information of this author"
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="get the detailed information of this author",
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)
@@ -83,7 +89,9 @@ DeepMind'}, {'container_type': 'Author', 'filled': [], 'scholar_id':
 """
 
 # Define a user message
-usr_msg = "get the publications of this author"
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User", content="get the publications of this author"
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)
@@ -109,8 +117,10 @@ detectors', 'Lec
 
 # ruff: noqa: E501
 # Define a user message
-
-usr_msg = """get the detailed information for publication with title: `Camel: Communicative agents for" mind" exploration of large language model society`"""
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="""get the detailed information for publication with title: `Camel: Communicative agents for" mind" exploration of large language model society`""",
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)
@@ -155,7 +165,10 @@ google.com/', 'cites_per_year': {2023: 95, 2024: 269}})]
 ===============================================================================
 """
 
-usr_msg = """get the full information for paper from link: `https://hal.science/hal-04206682/document`"""
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="""get the full information for paper from link: `https://hal.science/hal-04206682/document`""",
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)

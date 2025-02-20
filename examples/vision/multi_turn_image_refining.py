@@ -53,7 +53,7 @@ CRITICS: the image needs to improve...
 PROMPT: here is the updated prompt!
         """
         self.critic_sys_msg = BaseMessage.make_assistant_message(
-            role_name='Critic', content=critic_sys
+            role_name='critic', content=critic_sys
         )
 
         self.artist_sys_msg = BaseMessage.make_assistant_message(

@@ -14,12 +14,15 @@
 
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import NotionToolkit
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-sys_msg = "You are a helpful assistant"
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Tools calling opertor", content="You are a helpful assistant"
+)
 
 # Set model config
 tools = NotionToolkit().get_tools()
@@ -42,7 +45,10 @@ camel_agent = ChatAgent(
 camel_agent.reset()
 
 # Define a user message
-usr_msg = "Lists all pages in the Notion workspace"
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="Lists all pages in the Notion workspace",
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)
@@ -54,8 +60,11 @@ print(str(response.info['tool_calls'])[:1000])
 {'id': '47a4fb54-e34b-4b45-9928-aa2802982eb8', 'title': 'Aigentbot'}])]
 """
 
-usr_msg = "Retrieves the text content of a Notion block which id is"
-"'12684f56-4caa-8080-be91-d7fb1a5834e3'"
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="Retrieves the text content of a Notion block which id is"
+    + "'12684f56-4caa-8080-be91-d7fb1a5834e3'",
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)
@@ -73,7 +82,10 @@ animals%2Fmammals%2Ffacts%2Fdomestic-cat&docid=K6Qd9XWnQFQCoM&tbnid=eAP24
 2&hcb=2&ved=2ahUKEwir9rf3oKGJAxVsFTQIHYsrMYkQM3oECBkQAA')]
 """
 
-usr_msg = "List names of users via the Notion integration"
+usr_msg = BaseMessage.make_user_message(
+    role_name="CAMEL User",
+    content="List names of users via the Notion integration",
+)
 
 # Get response information
 response = camel_agent.step(usr_msg)

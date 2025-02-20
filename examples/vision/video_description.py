@@ -23,6 +23,10 @@ from camel.types.enums import RoleType, TaskType
 sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
     TaskType.VIDEO_DESCRIPTION, RoleType.ASSISTANT
 )
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content=sys_msg_prompt,
+)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -30,7 +34,7 @@ model = ModelFactory.create(
 )
 
 # Set agent
-camel_agent = ChatAgent(sys_msg_prompt, model=model)
+camel_agent = ChatAgent(sys_msg, model=model)
 
 # The video from YouTube can be found at the following link:
 # https://www.youtube.com/watch?v=kQ_7GtE529M

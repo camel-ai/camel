@@ -168,9 +168,11 @@ class RolePlayingWorker(Worker):
             chat_history=chat_history_str,
             additional_info=task.additional_info,
         )
-        response = self.summarize_agent.step(
-            prompt, response_format=TaskResult
+        req = BaseMessage.make_user_message(
+            role_name="User",
+            content=prompt,
         )
+        response = self.summarize_agent.step(req, response_format=TaskResult)
         result_dict = json.loads(response.msg.content)
         task_result = TaskResult(**result_dict)
         task.result = task_result.content

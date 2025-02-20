@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import (
     MathToolkit,
@@ -32,7 +33,10 @@ assistant_model_config = ChatGPTConfig(
 )
 
 # Define system message
-assistant_sys_msg = "You are a helpful assistant."
+assistant_sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content="You are a helpful assistant.",
+)
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -56,9 +60,12 @@ class Schema(BaseModel):
     calculated_age: str = Field(description="the add more years of age")
 
 
-user_msg = "Assume now is 2024 in the Gregorian calendar, "
-"estimate the current age of University of Oxford "
-"and then add 10 more years to this age, "
+user_msg = BaseMessage.make_user_message(
+    role_name="User",
+    content="Assume now is 2024 in the Gregorian calendar, "
+    + "estimate the current age of University of Oxford "
+    + "and then add 10 more years to this age, ",
+)
 
 # Get response information
 response = camel_agent.step(user_msg, response_format=Schema)

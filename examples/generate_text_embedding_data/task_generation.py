@@ -16,6 +16,7 @@ import os
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType, TaskType
 
@@ -29,6 +30,10 @@ def main() -> None:
     evaluation_dict = dict(num_tasks=num_tasks)
     prompt = prompt_template.format(**evaluation_dict)
     print(prompt)
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful text retrieval task generator.",
+    )
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEFAULT,
@@ -36,14 +41,15 @@ def main() -> None:
         model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
     )
     agent = ChatAgent(
-        "You are a helpful text retrieval task generator.",
+        assistant_sys_msg,
         model=model,
     )
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
 
     total_tasks = []
     for _ in range(num_generate):
         agent.reset()
-        assistant_response = agent.step(prompt)
+        assistant_response = agent.step(user_msg)
         assistant_content = assistant_response.msg.content
         # Split tasks string to a list of tasks:
         tasks = assistant_content.split("\n")

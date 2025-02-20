@@ -159,8 +159,9 @@ from camel.datagen import SelfImprovingCoTPipeline
 
 # Initialize agents
 reason_agent = ChatAgent(
-    """Answer my question and give your 
-    final answer within \\boxed{}."""
+    "You are a struggling student who finds solving math problems challenging. "
+    "Your reasoning process is often flawed or lacks clarity when explaining "
+    "your answers to others."
 )
 
 evaluate_agent = ChatAgent(

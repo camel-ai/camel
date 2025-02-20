@@ -17,6 +17,7 @@ import json
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.data_collector import ShareGPTDataCollector
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.toolkits import MathToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -36,14 +37,22 @@ model = ModelFactory.create(
 
 # Set external_tools
 agent = ChatAgent(
-    system_message="You are a helpful assistant",
+    system_message=BaseMessage.make_assistant_message(
+        role_name="Tools calling operator",
+        content="You are a helpful assistant",
+    ),
     model=model,
     tools=tool_list,
 )
 collector = ShareGPTDataCollector().record(agent).start()
 
+usr_msg = BaseMessage.make_user_message(
+    role_name="User",
+    content="Call tools to calculate 17 * 19 = ?",
+)
+
 # This will directly run the internal tool
-response = agent.step("Call tools to calculate 17 * 19 = ?")
+response = agent.step(usr_msg)
 
 
 print(json.dumps(collector.convert(), indent=4))

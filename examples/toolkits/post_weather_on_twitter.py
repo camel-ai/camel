@@ -14,6 +14,7 @@
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.messages import BaseMessage
 from camel.toolkits import SearchToolkit, TwitterToolkit, WeatherToolkit
 from camel.utils import print_text_animated
 
@@ -30,7 +31,10 @@ def main():
     - SEARCH_ENGINE_ID
     """
 
-    sys_msg = "You are a helpful agent with multiple tools."
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful agent with multiple tools.",
+    )
 
     agent = ChatAgent(
         system_message=sys_msg,
@@ -41,9 +45,12 @@ def main():
         ],
     )
 
-    usr_msg = "I'm in Chicago and want to travel to Oxford today. Make a "
-    "travel plan for me, considering the weather today. Also announce my "
-    "plan on Twitter from my perspective."
+    usr_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="I'm in Chicago and want to travel to Oxford today. Make a "
+        "travel plan for me, considering the weather today. Also announce my "
+        "plan on Twitter from my perspective.",
+    )
 
     response = agent.step(usr_msg)
 

@@ -20,6 +20,7 @@ from camel.generators import (
     RoleNameGenerator,
     SystemMessageGenerator,
 )
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import RoleType, TaskType
 
@@ -38,7 +39,11 @@ def generate_tasks(
     )
     assistant_agent = ChatAgent(assistant_sys_msg)
 
-    assistant_response = assistant_agent.step(task_generator_prompt)
+    user_msg = BaseMessage.make_user_message(
+        role_name="Task Generator", content=task_generator_prompt
+    )
+
+    assistant_response = assistant_agent.step(user_msg)
 
     tasks = assistant_response.msg.content.split("\n")
 

@@ -15,6 +15,7 @@
 
 from camel.agents import ChatAgent
 from camel.benchmarks import DefaultGAIARetriever, GAIABenchmark
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.runtime import RemoteHttpRuntime
 from camel.toolkits import CodeExecutionToolkit
@@ -57,6 +58,11 @@ task_prompt = """
         a string.
         """.strip()
 
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content=task_prompt,
+)
+
 tools = runtime.get_tools()
 
 model = ModelFactory.create(
@@ -66,7 +72,7 @@ model = ModelFactory.create(
 
 
 agent = ChatAgent(
-    task_prompt,
+    sys_msg,
     model,
     tools=tools,
 )

@@ -14,6 +14,7 @@
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.tasks import (
     Task,
@@ -36,7 +37,10 @@ model = ModelFactory.create(
 )
 
 # set up agent
-assistant_sys_msg = "You are a personal math tutor and programmer."
+assistant_sys_msg = BaseMessage.make_user_message(
+    role_name="Teacher",
+    content=("You are a personal math tutor and programmer."),
+)
 agent = ChatAgent(assistant_sys_msg, model)
 agent.reset()
 
