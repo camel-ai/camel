@@ -4,12 +4,12 @@ from typing import Any, Dict, List
 import pandas as pd
 from datasets import load_dataset
 from camel.agents import ChatAgent
-from benchmarks import MathBenchmark, Mode
+from camel.benchmarks import MathBenchmark, Mode
 
 logger = logging.getLogger(__name__)
 
 class MATHBenchmark(MathBenchmark):
-    """Benchmark for evaluating ChatAgents on the MATH dataset from Hugging Face Hub."""
+    r"""Benchmark for evaluating ChatAgents on the MATH dataset from Hugging Face Hub."""
 
     DATASET_NAME = "math"
     DATASET_REPO = "EleutherAI/hendrycks_math"
@@ -19,12 +19,12 @@ class MATHBenchmark(MathBenchmark):
     ]
 
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
-        """Initialize the MATH Benchmark."""
+        r"""Initialize the MATH Benchmark."""
         super().__init__(name="MATH", data_dir=data_dir, save_to=save_to, processes=processes)
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "MATHBenchmark":
-        """Ensures the dataset is available. Hugging Face Datasets manages caching automatically."""
+        r"""Ensures the dataset is available. Hugging Face Datasets manages caching automatically."""
         logger.info("Ensuring MATH dataset is downloaded...")
         for config in self.DATASET_CONFIGS:
             _ = load_dataset(self.DATASET_REPO, config, cache_dir=str(self.data_dir))
@@ -32,7 +32,7 @@ class MATHBenchmark(MathBenchmark):
         return self
 
     def load(self, force_download: bool = False) -> "MATHBenchmark":
-        """Loads the MATH dataset, optionally forcing a re-download."""
+        r"""Loads the MATH dataset, optionally forcing a re-download."""
         logger.info("Loading MATH dataset...")
 
         self._data = {"train": [], "test": []}
@@ -58,11 +58,11 @@ class MATHBenchmark(MathBenchmark):
 
     @property
     def valid(self) -> List[Dict[str, Any]]:
-        """MATH does not have a validation set; return an empty list."""
+        r"""MATH does not have a validation set; return an empty list."""
         return []
 
     def _prepare_dataset(self, dataset: List[Dict[str, Any]]) -> pd.DataFrame:
-        """
+        r"""
         Prepare the dataset by extracting the solution from 
 
         - Extracts the correct answer from the solution (inside \boxed{}).
@@ -76,7 +76,7 @@ class MATHBenchmark(MathBenchmark):
         # in the MATH dataset, solutions are in the 'solution' column wrapped inside a `\boxed{}`
 
         def extract_boxed(text: str) -> str:
-            """Extracts the content inside the first correctly balanced `\boxed{}`."""
+            r"""Extracts the content inside the first correctly balanced `\boxed{}`."""
             start_seq = r"\boxed{"
             stack = []  # Stack to track `{}` nesting
             content = []
@@ -114,7 +114,7 @@ class MATHBenchmark(MathBenchmark):
         dataset: pd.DataFrame,
         mode: Mode
     ) -> pd.DataFrame:
-        """
+        r"""
         Generate k responses (depending on our eval mode) using the ChatAgent.
         """
 
