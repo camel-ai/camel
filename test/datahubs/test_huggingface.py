@@ -28,7 +28,7 @@ DATASET_NAME = (
 )
 REPO_ID = f"username/{DATASET_NAME}"
 
-os.environ["HF_TOKEN"] = TOKEN
+os.environ["HUGGING_FACE_TOKEN"] = TOKEN
 
 
 @pytest.fixture
