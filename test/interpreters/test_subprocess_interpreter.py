@@ -94,41 +94,6 @@ def test_run_unsupported_code_type(subprocess_interpreter):
     )
 
 
-@pytest.mark.skip(reason="R may not installed on system")
-def test_run_r_code(subprocess_interpreter):
-    r_code = """
-    add <- function(a, b) {
-        return(a + b)
-    }
-    
-    result <- add(10, 20)
-    print(result)
-    """
-    result = subprocess_interpreter.run(r_code, "r")
-    assert "[1] 30" in result
-
-
-@pytest.mark.skip(reason="R may not installed on system")
-def test_r_stderr(subprocess_interpreter):
-    r_code = """
-    undefined_function()
-    """
-    result = subprocess_interpreter.run(r_code, "r")
-    assert "Error" in result
-
-
-@pytest.mark.skip(reason="R may not installed on system")
-def test_r_code_type_variants(subprocess_interpreter):
-    r_code = "print('Hello')"
-    # Test lowercase 'r'
-    result1 = subprocess_interpreter.run(r_code, "r")
-    assert "[1] \"Hello\"" in result1
-
-    # Test uppercase 'R'
-    result2 = subprocess_interpreter.run(r_code, "R")
-    assert "[1] \"Hello\"" in result2
-
-
 def test_require_confirm(subprocess_interpreter, monkeypatch):
     subprocess_interpreter.require_confirm = True
     python_code = "print('Hello')"

@@ -102,42 +102,6 @@ if __name__ == "__main__":
     assert "ZeroDivisionError: division by zero" in result
 
 
-def test_run_r_code(docker_interpreter: DockerInterpreter):
-    code = """
-    fibonacci <- function(n) {
-        if (n <= 1) {
-            return(n)
-        } else {
-            return(fibonacci(n-1) + fibonacci(n-2))
-        }
-    }
-    
-    result <- fibonacci(10)
-    print(result)
-    """
-    result = docker_interpreter.run(code, "r")
-    assert "[1] 55" in result
-
-
-def test_run_r_stderr(docker_interpreter: DockerInterpreter):
-    code = """
-    undefined_function(123)
-    """
-    result = docker_interpreter.run(code, "r")
-    assert "Error" in result
-
-
-def test_r_code_type_variants(docker_interpreter: DockerInterpreter):
-    code = "print('Hello')"
-    # Test lowercase 'r'
-    result1 = docker_interpreter.run(code, "r")
-    assert "[1] \"Hello\"" in result1
-
-    # Test uppercase 'R'
-    result2 = docker_interpreter.run(code, "R")
-    assert "[1] \"Hello\"" in result2
-
-
 def test_run_unsupported_code_type(docker_interpreter: DockerInterpreter):
     with pytest.raises(InterpreterError) as exc_info:
         docker_interpreter.run("print('Hello')", "unsupported_code_type")

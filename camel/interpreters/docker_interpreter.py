@@ -52,13 +52,11 @@ class DockerInterpreter(BaseInterpreter):
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
-        "r": "Rscript {file_name}",
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
-        "r": "R",
     }
 
     _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
@@ -69,8 +67,6 @@ class DockerInterpreter(BaseInterpreter):
         "shell": "bash",
         "bash": "bash",
         "sh": "bash",
-        "r": "r",
-        "R": "r",
     }
 
     def __init__(
@@ -108,22 +104,8 @@ class DockerInterpreter(BaseInterpreter):
         import docker
 
         client = docker.from_env()
-
-        # Build custom image with Python and R
-        dockerfile_path = Path(__file__).parent / "docker"
-        image_tag = "camel-interpreter:latest"
-        try:
-            client.images.get(image_tag)
-        except docker.errors.ImageNotFound:
-            logger.info("Building custom interpreter image...")
-            client.images.build(
-                path=str(dockerfile_path),
-                tag=image_tag,
-                rm=True,
-            )
-
         self._container = client.containers.run(
-            image_tag,
+            "python:3.10",
             detach=True,
             name=f"camel-interpreter-{uuid.uuid4()}",
             command="tail -f /dev/null",

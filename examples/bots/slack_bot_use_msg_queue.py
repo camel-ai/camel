@@ -101,6 +101,7 @@ class BotAgent:
 
         self._agent = ChatAgent(
             assistant_sys_msg,
+            message_window_size=10,
         )
 
         self._auto_retriever = None

@@ -34,8 +34,6 @@ Main Documentation
    :caption: Key Modules
    :name: key_modules
 
-   key_modules/agents.md
-   key_modules/datagen.md
    key_modules/models.md
    key_modules/messages.md
    key_modules/memory.md

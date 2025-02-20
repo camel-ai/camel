@@ -98,6 +98,7 @@ class BotAgent:
 
         self._agent = ChatAgent(
             content,
+            message_window_size=10,
         )
 
         self._auto_retriever = None
