@@ -37,12 +37,13 @@ class OpenBBToolkit(BaseToolkit):
             (None, "OPENBB_TOKEN"),
         ]
     )
-    def __init__(self) -> None:
+    def __init__(self, timeout: Optional[float] = None) -> None:
         r"""Initialize the OpenBBToolkit.
 
         This method sets up the OpenBB client and initializes the OpenBB
         Hub account system.
         """
+        super().__init__(timeout=timeout)
         import os
 
         from openbb import obb
