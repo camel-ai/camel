@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType, ModelType
 o1_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.O1_MINI,  # Or ModelType.O1
-    model_config_dict=ChatGPTConfig().as_dict(),
+    model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
 )
 
 # Set agent
