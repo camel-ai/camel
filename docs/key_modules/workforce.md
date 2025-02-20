@@ -6,7 +6,7 @@
 > brief view on the architecture of workforce, and how you can configure
 > and utilize it to solve tasks.
 
-For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](https://colab.research.google.com/drive/18ajYUMfwDx3WyrjHow3EvUMpKQDcrLtr?usp=sharing)
+For more detailed usage information, please refer to our cookbook: [Create A Hackathon Judge Committee with Workforce](../cookbooks/workforce_judge_committee.ipynb)
 
 ## System Design
 
