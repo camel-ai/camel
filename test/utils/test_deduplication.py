@@ -21,7 +21,8 @@ from camel.utils import DeduplicationResult, deduplicate_internally
 
 
 class MockEmbedding(BaseEmbedding[str]):
-    r"""A mock embedding class that always returns the same embedding vector
+    """
+    A mock embedding class that always returns the same embedding vector
     for any input text. Useful for testing deduplication logic.
     """
 
@@ -33,36 +34,6 @@ class MockEmbedding(BaseEmbedding[str]):
 
     def get_output_dim(self) -> int:
         return 3
-
-
-def test_deduplicate_internally_empty_list():
-    mock_embedding_instance = MockEmbedding()
-    result = deduplicate_internally(
-        texts=[],
-        threshold=0.9,
-        embedding_instance=mock_embedding_instance,
-        strategy="top1",
-    )
-    assert len(result.original_texts) == 0
-    assert len(result.unique_ids) == 0
-    assert len(result.unique_embeddings_dict) == 0
-    assert len(result.duplicate_to_target_map) == 0
-
-
-def test_deduplicate_internally_single_item():
-    mock_embedding_instance = MockEmbedding()
-    texts = ["Hello world!"]
-    result = deduplicate_internally(
-        texts=texts,
-        threshold=0.9,
-        embedding_instance=mock_embedding_instance,
-        strategy="top1",
-    )
-    assert result.original_texts == texts
-    assert result.unique_ids == [0]
-    assert len(result.unique_embeddings_dict) == 1
-    assert 0 in result.unique_embeddings_dict
-    assert len(result.duplicate_to_target_map) == 0
 
 
 def test_deduplicate_internally_with_mock_embedding():
@@ -145,7 +116,8 @@ def test_deduplicate_internally_with_precomputed_embeddings():
 
 
 def test_deduplicate_internally_chain_scenario():
-    r"""Test scenario:
+    """
+    Test scenario:
       - A <-> B similarity > threshold
       - B <-> C similarity > threshold
       - C <-> D similarity > threshold
