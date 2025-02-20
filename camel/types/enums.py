@@ -158,7 +158,6 @@ class ModelType(UnifiedModelType, Enum):
     QWEN_MATH_TURBO = "qwen-math-turbo"
     QWEN_CODER_TURBO = "qwen-coder-turbo"
     QWEN_2_5_CODER_32B = "qwen2.5-coder-32b-instruct"
-    QWEN_2_5_VL_72B = "qwen2.5-vl-72b-instruct"
     QWEN_2_5_72B = "qwen2.5-72b-instruct"
     QWEN_2_5_32B = "qwen2.5-32b-instruct"
     QWEN_2_5_14B = "qwen2.5-14b-instruct"
@@ -448,7 +447,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.QWEN_MATH_TURBO,
             ModelType.QWEN_CODER_TURBO,
             ModelType.QWEN_2_5_CODER_32B,
-            ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,
@@ -607,7 +605,6 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.MISTRAL_8B,
             ModelType.MISTRAL_3B,
             ModelType.QWEN_2_5_CODER_32B,
-            ModelType.QWEN_2_5_VL_72B,
             ModelType.QWEN_2_5_72B,
             ModelType.QWEN_2_5_32B,
             ModelType.QWEN_2_5_14B,

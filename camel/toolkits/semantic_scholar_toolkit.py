@@ -228,8 +228,8 @@ class SemanticScholarToolkit(BaseToolkit):
         url = "https://api.semanticscholar.org/recommendations/v1/papers"
         query_params = {"fields": ",".join(fields), "limit": str(limit)}
         data = {
-            "positive_paper_ids": positive_paper_ids,
-            "negative_paper_ids": negative_paper_ids,
+            "positivepaper_ids": positive_paper_ids,
+            "negativepaper_ids": negative_paper_ids,
         }
         try:
             response = requests.post(url, params=query_params, json=data)

@@ -180,8 +180,8 @@ class TestSemanticScholarToolkit(unittest.TestCase):
         self.assertIn("recommendations/v1/papers", called_url)
 
         called_json = mock_post.call_args[1]["json"]
-        self.assertEqual(called_json["positive_paper_ids"], pos_ids)
-        self.assertEqual(called_json["negative_paper_ids"], neg_ids)
+        self.assertEqual(called_json["positivePaperIds"], pos_ids)
+        self.assertEqual(called_json["negativePaperIds"], neg_ids)
 
         self.assertEqual(result, mock_response_data)
 
