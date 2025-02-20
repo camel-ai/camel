@@ -16,8 +16,7 @@ SAMPLE_DATA = [
 
 @pytest.fixture
 def benchmark():
-    r"""Fixture to initialize GSM8KBenchmark 
-    with a fully mocked file system."""
+    r"""Fixture to initialize GSM8KBenchmark with a fully mocked file system."""
     with (
         patch("pathlib.Path.mkdir"),
         patch("pathlib.Path.is_dir", return_value=True),
@@ -50,8 +49,7 @@ def test_prepare_dataset(benchmark):
 
 
 def test_preprocess_answers(benchmark):
-    r"""Test that _preprocess_answers correctly 
-    extracts numeric values from answers."""
+    r"""Test that _preprocess_answers correctly extracts numeric values from answers."""
     raw_answers = pd.Series(
         ["#### 12", "#### 24", "Mock test with text and numbers 13 #### -7"]
     )
@@ -59,8 +57,7 @@ def test_preprocess_answers(benchmark):
     assert list(processed) == ["12", "24", "-7"]
 
 def test_download():
-    r"""Test that GSM8KBenchmark downloads 
-    the dataset to the data/ directory."""
+    r"""Test that GSM8KBenchmark downloads the dataset to the data/ directory."""
     
     data_dir = Path("data/")
     save_to = Path("data/")
