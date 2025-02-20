@@ -88,32 +88,32 @@ We are a community-driven research collective comprising over 100 researchers de
   <tr>
     <td align="left">✅</td>
     <td align="left" style="font-weight: bold;">Large-Scale Agent System</td>
-    <td align="left">Simulates up to 1M agents for large-scale multi-agent research.</td>
+    <td align="left">Simulate up to 1M agents to study emergent behaviors and scaling laws in complex, multi-agent environments.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
     <td align="left" style="font-weight: bold;">Dynamic Communication</td>
-    <td align="left">Enables real-time collaboration between agents for complex tasks.</td>
+    <td align="left">Enable real-time interactions among agents, fostering seamless collaboration for tackling intricate tasks.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
     <td align="left" style="font-weight: bold;">Stateful Memory</td>
-    <td align="left">Allows agents to retain and use past information for better decision-making.</td>
+    <td align="left">Equip agents with the ability to retain and leverage historical context, improving decision-making over extended interactions.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
     <td align="left" style="font-weight: bold;">Support for Multiple Benchmarks</td>
-    <td align="left">Provides standardized benchmarks for evaluating agent performance.</td>
+    <td align="left">Utilize standardized benchmarks to rigorously evaluate agent performance, ensuring reproducibility and reliable comparisons.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
     <td align="left" style="font-weight: bold;">Support for Different Agent Types</td>
-    <td align="left">Works with various agent types, tasks, models, and environments.</td>
+    <td align="left">Work with a variety of agent roles, tasks, models, and environments, supporting interdisciplinary experiments and diverse research applications.</td>
   </tr>
   <tr>
     <td align="left">✅</td>
     <td align="left" style="font-weight: bold;">Data Generation and Tool Integration</td>
-    <td align="left">Automates large-scale data creation with diverse and structured outputs.</td>
+    <td align="left">Automate the creation of large-scale, structured datasets while seamlessly integrating with multiple tools, streamlining synthetic data generation and research workflows.</td>
   </tr>
 </table>
 
@@ -549,7 +549,7 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 
 <br>
 
-## Acknowledgment
+## Acknowledgment
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
 We would also like to thank Haya Hammoud for designing the initial logo of our project.
