@@ -181,47 +181,18 @@ We are a community-driven research collective comprising over 100 researchers de
 
 ## Quick Start
 
-### 1. Install CAMEL from PyPI
-To install the base CAMEL library:
+Installing CAMEL is a breeze thanks to its availability on PyPI. Simply open your terminal and run:
+
 ```bash
 pip install camel-ai
 ```
-Some features require extra dependencies:
 
-To install with all dependencies:
-```bash
-pip install 'camel-ai[all]'  # Replace with other options like `rag`, `document_tools`
-```
+For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel#installation).
 
-### 2. Install from Source with Poetry
-```bash
-# Clone github repo
-git clone https://github.com/camel-ai/camel.git
+After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://www.docs.camel-ai.org) to build powerful multi-agent systems.
 
-# Change directory into project directory
-cd camel
+We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
-# If you didn't install peotry before
-pip install poetry  # (Optional)
-
-# We suggest using python 3.10
-poetry env use python3.10  # (Optional)
-
-# Activate CAMEL virtual environment
-poetry shell
-
-# Install the base CAMEL library
-# It takes about 90 seconds
-poetry install
-
-# Install CAMEL with all dependencies
-poetry install -E all  # (Optional)
-
-# Exit the virtual environment
-exit
-```
-
-### 3. Explore Different Types of Agents
 Explore different types of agents, their roles, and their applications.
 
 - **[Creating Your First Agent](https://docs.camel-ai.org/cookbooks/basic_concepts/create_your_first_agent.html)**
@@ -229,7 +200,11 @@ Explore different types of agents, their roles, and their applications.
 - **[Embodied Agents](https://docs.camel-ai.org/cookbooks/advanced_features/embodied_agents.html)**
 - **[Critic Agents](https://docs.camel-ai.org/cookbooks/advanced_features/critic_agents_and_tree_search.html)**
 
-We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
+### Seeking Help
+
+Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
+
+> If you would like to contribute to CAMEL refer to our [Contributing Guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md).
 
 <br>
 
@@ -547,8 +522,6 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 }
 ```
 
-<br>
-
 ## Acknowledgment
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
@@ -561,7 +534,6 @@ We implemented amazing research ideas from other works for you to build, compare
 
 - `Self-Instruct` from *Yizhong Wang et al.*: [SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions](https://arxiv.org/pdf/2212.10560). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/self_instruct/self_instruct.py)]
 
-<br>
 
 ## License
 
@@ -570,9 +542,11 @@ The source code is licensed under Apache 2.0.
 <br>
 
 ## Contributing to CAMEL
-We appreciate your interest in contributing to our open-source initiative. We provide a document of [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) which outlines the steps for contributing to CAMEL. Please refer to this guide to ensure smooth collaboration and successful contributions. 🚀
 
-<br>
+>For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
+>
+>We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
+
 
 ## Community & Contact
 For more information please contact camel-ai@eigent.ai
