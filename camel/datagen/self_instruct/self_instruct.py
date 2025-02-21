@@ -171,6 +171,7 @@ class SelfInstructPipeline:
         )
 
         response = self.agent.step(prompt)
+        self.agent.reset()
         generated_tasks = [
             line.strip()
             for line in response.msgs[0].content.split("\n")
@@ -197,6 +198,7 @@ class SelfInstructPipeline:
             "{\n  \"answer\": false\n}\n"
         )
         response = self.agent.step(clf_prompt)
+        self.agent.reset()
         try:
             structured_response = AgentResponse.parse_raw(
                 response.msgs[0].content.strip()
@@ -241,6 +243,7 @@ class SelfInstructPipeline:
             )
 
         response = self.agent.step(prompt)
+        self.agent.reset()
         generated_text = response.msgs[0].content.strip()
 
         if classification:
@@ -358,7 +361,7 @@ class SelfInstructPipeline:
         in JSON format.
         """
         with open(self.data_output_path, 'w') as f:
-            json.dump(self.machine_tasks, f, indent=4)
+            json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
 
     def generate(self):
         r"""Execute the entire pipeline to generate machine instructions

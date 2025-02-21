@@ -30,7 +30,7 @@ from camel.utils import (
 parametrize = pytest.mark.parametrize(
     'model_platform, model_type',
     [
-        (ModelPlatformType.OPENAI, ModelType.GPT_3_5_TURBO),
+        (ModelPlatformType.OPENAI, ModelType.GPT_4O),
         (ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI),
     ],
 )

@@ -85,7 +85,9 @@ class VideoDownloaderToolkit(BaseToolkit):
         self,
         download_directory: Optional[str] = None,
         cookies_path: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
+        super().__init__(timeout=timeout)
         self._cleanup = download_directory is None
         self._cookies_path = cookies_path
 

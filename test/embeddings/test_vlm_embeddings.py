@@ -18,6 +18,11 @@ from transformers import CLIPModel, CLIPProcessor
 
 from camel.embeddings import VisionLanguageEmbedding
 
+pytestmark = pytest.mark.skip(
+    reason="Temporarily skipping tests due to Huggingface "
+    "credentials not available"
+)
+
 
 @pytest.fixture
 def VLM_instance() -> VisionLanguageEmbedding:
