@@ -53,7 +53,8 @@ class BM25Retriever(BaseRetriever):
         self,
         chunks: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        r"""Build a BM25 index from text chunks.
+        r"""Build a BM25 index from text chunks. Allows for loading chunks
+        from different chunk tools.
 
         Uses BM25Okapi from the rank_bm25 library to create a BM25 model based
         on tokenized text. If no chunks are provided, `self.chunks` is used.

@@ -74,7 +74,8 @@ class VectorRetriever(BaseRetriever):
         content_path_info: str,
         embed_batch: int = 50,
     ) -> None:
-        r"""Embed and store text chunks in batches.
+        r"""Embed and store text chunks in batches. Allows for loading chunks
+        from different chunk tools.
 
         Embeds the text in each chunk using the configured embedding model and
         creates vector records with the embedding, content path, metadata, and
