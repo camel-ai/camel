@@ -103,7 +103,7 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         self, messages: List[OpenAIMessage]
     ) -> List[OpenAIMessage]:
         r"""Preprocess messages before sending to model API.
-        Removes thinking content and other model-specific preprocessing.
+        Removes thinking content from assistant and user messages.
 
         Args:
             messages (List[OpenAIMessage]): Original messages
@@ -111,18 +111,32 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         Returns:
             List[OpenAIMessage]: Preprocessed messages
         """
-        # Remove thinking content from messages before sending to API
-        # This ensures only the final response is sent, excluding
-        # intermediate thought processes
+
+        def should_process_thinking(msg: OpenAIMessage) -> bool:
+            # Only process thinking content for assistant and user messages
+            return msg['role'] in ['assistant', 'user'] and isinstance(
+                msg['content'], str
+            )
+
+        def remove_thinking(content: str) -> str:
+            # Only remove thinking content if the tags are present
+            if '<think>' in content and '</think>' in content:
+                return re.sub(
+                    r'<think>.*?</think>',
+                    '',
+                    content,
+                    flags=re.DOTALL,
+                ).strip()
+            return content
+
         return [
             {  # type: ignore[misc]
                 **msg,
-                'content': re.sub(
-                    r'<think>.*?</think>',
-                    '',
-                    msg['content'],  # type: ignore[arg-type]
-                    flags=re.DOTALL,
-                ).strip(),
+                'content': (
+                    remove_thinking(msg['content'])  # type: ignore[arg-type]
+                    if should_process_thinking(msg)
+                    else msg['content']
+                ),
             }
             for msg in messages
         ]
