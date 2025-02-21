@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
 from pydantic import BaseModel, Field, field_validator
 import re
 
@@ -48,7 +47,7 @@ class ClassificationItem(BaseModel):
 
     def to_string(self) -> str:
         r"""Convert the ClassificationItem into a formatted string."""
-        return f"Text:\n{self.text}\n\nLabel:\n{self.label}"
+        return f"<text>{self.text}</text>\n<label>{self.label}</label>"
 
     @classmethod
     def from_string(cls, text: str) -> "ClassificationItem":
@@ -57,7 +56,7 @@ class ClassificationItem(BaseModel):
 
         Args:
             text (str): A string in the format:
-                "Text: <text>\nLabel: <label>"
+                "<text>...</text>\n<label>...</label>"
 
         Returns:
             ClassificationItem: Parsed instance.
@@ -66,10 +65,14 @@ class ClassificationItem(BaseModel):
             ValueError: If the text format is incorrect.
         """
         text = text.strip()
-        match = re.search(r"Text:\s*(.+?)\nLabel:\s*(.+)", text, re.DOTALL)
+
+        match = re.search(
+            r"<text>\s*(.+?)\s*</text>\s*<label>\s*(.+?)\s*</label>",
+            text, re.DOTALL
+        )
 
         if not match:
-            raise ValueError("Invalid format. Expected 'Text: <text>\\nLabel: <label>'.")
+            raise ValueError("Invalid format. Expected '<text>...</text>\\n<label>...</label>'.")
 
-        text_content, label = match.groups()
-        return cls(text=text_content.strip(), label=label.strip())
+        extracted_text, extracted_label = match.groups()
+        return cls(text=extracted_text.strip(), label=extracted_label.strip())

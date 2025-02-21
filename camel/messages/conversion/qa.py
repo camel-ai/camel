@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
-
 from pydantic import BaseModel, Field
 import re
 
@@ -31,9 +30,10 @@ class QAItem(BaseModel):
         min_length=1,
         description="The corresponding answer to the question. Must be at least 1 character."
     )
+
     def to_string(self) -> str:
-        r"""Convert the QA item into a formatted string."""
-        return f"Question: {self.question}\nAnswer: {self.answer}"
+        r"""Convert the QA item into a formatted string using explicit markers."""
+        return f"<question>{self.question}</question>\n<answer>{self.answer}</answer>"
 
     @classmethod
     def from_string(cls, text: str) -> "QAItem":
@@ -41,7 +41,7 @@ class QAItem(BaseModel):
 
         Args:
             text (str): A string in the format:
-                "Question: <question>\nAnswer: <answer>"
+                "<question>...</question>\n<answer>...</answer>"
 
         Returns:
             QAItem: Parsed instance of QAItem.
@@ -50,10 +50,13 @@ class QAItem(BaseModel):
             ValueError: If the text format is incorrect.
         """
         text = text.strip()
-        match = re.search(r"Question:\s*(.+?)\nAnswer:\s*(.+)", text, re.DOTALL)
+        match = re.search(
+            r"<question>\s*(.+?)\s*</question>\s*<answer>\s*(.+?)\s*</answer>",
+            text, re.DOTALL
+        )
 
         if not match:
-            raise ValueError("Invalid format. Expected 'Question: <question>\\nAnswer: <answer>'.")
+            raise ValueError("Invalid format. Expected '<question>...</question>\\n<answer>...</answer>'.")
 
         question, answer = match.groups()
         return cls(question=question.strip(), answer=answer.strip())

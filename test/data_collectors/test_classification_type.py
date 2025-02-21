@@ -31,8 +31,8 @@ def test_classification_item_invalid_text():
 
 def test_classification_item_from_string():
     r"""Test parsing a ClassificationItem from a formatted string."""
-    text = r"""Text: The app crashes every time I open it.
-Label: Bug Report"""
+    text = r"""<text>The app crashes every time I open it.</text>
+<label>Bug Report</label>"""
 
     item = ClassificationItem.from_string(text)
 
@@ -49,7 +49,9 @@ def test_classification_item_to_string():
 
     text = item.to_string()
 
-    assert "Text:" in text
+    assert "<text>" in text
+    assert "</text>" in text
     assert "This book is a must-read for anyone interested in history." in text
-    assert "Label:" in text
+    assert "<label>" in text
+    assert "</label>" in text
     assert "Book Review" in text

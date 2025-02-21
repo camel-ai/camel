@@ -25,14 +25,16 @@ def test_qa_item_to_string():
 
     text = qa_item.to_string()
 
-    assert "Question:" in text
+    assert "<question>" in text
+    assert "</question>" in text
     assert "What is the capital of Australia?" in text
-    assert "Answer:" in text
+    assert "<answer>" in text
+    assert "</answer>" in text
     assert "The capital city of Australia is Canberra." in text
 
 def test_qa_item_from_string():
     r"""Test parsing a QAItem from a formatted string."""
-    text = "Question: What is the capital city of Australia?\nAnswer: The capital city of Australia is Canberra."
+    text = "<question>What is the capital city of Australia?</question>\n<answer>The capital city of Australia is Canberra.</answer>"
 
     # Create QAItem using from_string()
     item = QAItem.from_string(text)

@@ -11795,4 +11795,4 @@ web-tools = ["apify_client", "asknews", "dappier", "duckduckgo-search", "firecra
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "dae259953d45a1b76d7be0f06bc7fb8f97a08c80b284c5c0ca13e36d5ce03cfb"
+content-hash = "83970b0759c1ea3a85dbf589df6ccf7f3b83e867d29a47939635fe490434f8f6"
