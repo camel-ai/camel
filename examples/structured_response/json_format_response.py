@@ -15,15 +15,11 @@
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
-assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
-)
+assistant_sys_msg = "You are a helpful assistant."
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -40,13 +36,8 @@ class JokeResponse(BaseModel):
     funny_level: str = Field(description="Funny level, from 1 to 10")
 
 
-user_msg = BaseMessage.make_user_message(
-    role_name="User",
-    content="Tell a jokes.",
-)
-
 # Get response information
-response = camel_agent.step(user_msg, response_format=JokeResponse)
+response = camel_agent.step("Tell me a joke.", response_format=JokeResponse)
 print(response.msgs[0].content)
 """
 {'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"

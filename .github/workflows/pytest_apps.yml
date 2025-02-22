@@ -28,8 +28,6 @@ jobs:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
-        COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
-        INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
       run: poetry run pytest -v apps/
 
   pytest_examples:
@@ -49,4 +47,7 @@ jobs:
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
+        MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
+        SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
+        AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: poetry run pytest -v examples/
