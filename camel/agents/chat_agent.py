@@ -479,7 +479,7 @@ class ChatAgent(BaseAgent):
             )
 
         # Inject thinking steps
-        input_message = self.update_reasoning(input_message, reason_params)
+        input_message = self._update_reasoning(input_message, reason_params)
 
         # Add user input to memory
         self.update_memory(input_message, OpenAIBackendRole.USER)
@@ -522,12 +522,23 @@ class ChatAgent(BaseAgent):
             response, tool_call_records, num_tokens, external_tool_call_request
         )
 
-    def update_reasoning(
+    def _update_reasoning(
         self,
         input_message: BaseMessage,
         reason_params: Optional[Dict[str, Any]] = None,
     ) -> BaseMessage:
-        r"""Update the reasoning of the agent."""
+        r"""Updates the input message to include reasoning instructions and
+        adds human interaction capability.
+
+        Args:
+            input_message (BaseMessage): The message to be updated with
+                reasoning instructions.
+            reason_params (Optional[Dict[str, Any]], optional): Parameters for
+                the reasoning process.
+
+        Returns:
+            BaseMessage: The updated message with reasoning instructions.
+        """
         if reason_params is None:
             return input_message
         choices = reason_params.get("choices", 3)

@@ -12,25 +12,22 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-sys_msg = 'You are a helpful assistant.'
+sys_msg = "You are a helpful assistant."
 usr_msg = """Who is the best basketball player in the world? 
 Tell about his carrer.
 """
 
 openai_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().as_dict(),
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
 )
 
 openai_agent = ChatAgent(
     system_message=sys_msg,
     model=openai_model,
-    message_window_size=10,
 )
 
 
@@ -40,7 +37,9 @@ response = openai_agent.step(usr_msg)
 print(response.msgs[0].content)
 # flake8: noqa: E501
 """
+===============================================================================
 Determining the "best" basketball player in the world is subjective and often depends on personal preferences, criteria, and the specific time frame being considered. As of the latest NBA season, players like LeBron James, Kevin Durant, Giannis Antetokounmpo, Stephen Curry, and Nikola Jokić are frequently mentioned in discussions about the best players due to their exceptional skills, achievements, and impact on the game. Each of these players brings unique strengths to the court, and opinions on who is the best can vary widely among fans and analysts.
+===============================================================================
 """
 
 # 2nd run: the response with thinking (agent choose the best candidate above the threshold)
@@ -55,6 +54,7 @@ response_with_think = openai_agent.step(
 print(response_with_think.msgs[0].content)
 # flake8: noqa: E501
 """
+===============================================================================
 Let's start by identifying three potential candidates for the title of the best basketball player in the world. Here are three top candidates:
 
 1. **LeBron James**: Known for his versatility, basketball IQ, and leadership on and off the court. LeBron has won multiple NBA championships and MVP awards.
@@ -80,6 +80,7 @@ Throughout his career, LeBron has played for the Cleveland Cavaliers, Miami Heat
 LeBron is known for his ability to play and defend multiple positions, his leadership on and off the court, and his contributions to the game beyond just scoring. He is also recognized for his philanthropic efforts and influence in social justice issues.
 
 LeBron continues to play at a high level, consistently being a key player for his team and a significant figure in the NBA.
+===============================================================================
 """
 
 # 3rd run: the response with thinking (agent fails to choose the best candidate above the threshold, let the user decide)
@@ -95,6 +96,7 @@ response_with_think2 = openai_agent.step(
 print(response_with_think2.msgs[0].content)
 # flake8: noqa: E501
 """
+===============================================================================
 Question: Who do you think is the best basketball player in the world? Here are the candidates and their probabilities: 
 1. LeBron James (0.4): Known for his versatility, leadership, and consistent performance over the years. Multiple NBA championships and MVP awards.
 2. Giannis Antetokounmpo (0.3): Known as the "Greek Freak," celebrated for his athleticism, defensive skills, and recent NBA championship win. Multiple MVP awards.
@@ -129,4 +131,5 @@ Stephen Curry, born on March 14, 1988, is an American professional basketball pl
    - Even as he progresses in his career, Curry continues to perform at an elite level, contributing significantly to his team's success and maintaining his status as one of the top players in the league.
 
 Stephen Curry's combination of skill, leadership, and impact on the game makes him a strong candidate for the best basketball player in the world today.
+===============================================================================
 """
