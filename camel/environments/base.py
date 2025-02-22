@@ -226,11 +226,8 @@ class BaseEnvironment(ABC):
         Returns:
             Tuple of (extraction_result, verification_result).
         """
-        # TODO: Define response.content/message in Response class
         extraction_result = await self.extractor.extract(
-            str(
-                response
-            ),  # Temporary solution until Response class is defined
+            response.llm_response,
             context or {},
         )
 

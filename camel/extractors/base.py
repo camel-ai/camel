@@ -238,7 +238,7 @@ class BaseExtractor(ABC):
         6. Raw markdown for reward/hint generation
 
         Args:
-            response: Raw response from Gurobi examples or agent generation
+            response: Raw response from Gurobi examples or agent generation.
             context: Optional context for extraction including:
                 - source_type: 'gurobi_example' or 'agent_generated'
                 - domain: Problem domain (e.g. 'optimization', 'scheduling')
