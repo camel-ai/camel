@@ -12,15 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import logging
 from typing import Any, Dict, List
 
-import pandas as pd
-from datasets import load_dataset
 from camel.agents import ChatAgent
 from camel.benchmarks import MathBenchmark, Mode
+from camel.logger import get_logger
+from datasets import load_dataset
+import pandas as pd
 
-logger = logging.getLogger(__name__)
+
+logger = get_logger(__name__)
 
 class MATHBenchmark(MathBenchmark):
     r"""Benchmark for evaluating ChatAgents on the MATH dataset from Hugging Face Hub."""

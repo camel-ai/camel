@@ -13,17 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import abstractmethod
-import logging
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from camel.agents import ChatAgent
+from camel.benchmarks import BaseBenchmark
+from camel.logger import get_logger
 import pandas as pd
 
-from camel.benchmarks import BaseBenchmark
-from camel.agents import ChatAgent
-
-logger = logging.getLogger(__name__)
-
+logger = get_logger(__name__)
 
 class Mode:
     VALID_MODES = {"pass@k", "majority voting"}
