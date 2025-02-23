@@ -66,6 +66,7 @@ class Mode:
 
 
 class MathBenchmark(BaseBenchmark):
+    import numpy as np
     import pandas as pd
     r"""
     Benchmark class for evaluating mathematical problem-solving capabilities.
@@ -160,22 +161,21 @@ class MathBenchmark(BaseBenchmark):
         return self
 
     def _evaluate(self, row: pd.Series, mode: Mode) -> bool:
-        r"""Evaluate model predictions based on the chosen evaluation mode."""
+        """Evaluate model predictions based on the chosen evaluation mode."""
         answers = row["answers"]
         solution = row["solution"]
 
         if not isinstance(answers, list):
             raise ValueError(f"Expected 'answers' to be a list, but got {type(answers)}")
 
-        match mode.mode:
-            case "pass@k":
-                return any(ans == solution for ans in answers[: mode.k])
+        if mode.mode == "pass@k":
+            return np.any(np.array(answers[: mode.k]) == solution)
 
-            case "majority voting":
-                most_common = max(set(answers), key=answers.count)
-                return most_common == solution
+        elif mode.mode == "majority voting":
+            most_common = pd.Series(answers).mode().iloc[0]
+            return most_common == solution
 
-        return False
+        return False  # Default case
     
     @abstractmethod
     def _prepare_dataset(self, dataset:List[Dict[str, Any]]) -> pd.DataFrame:
