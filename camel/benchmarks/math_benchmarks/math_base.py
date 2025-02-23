@@ -19,7 +19,6 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
 from camel.logger import get_logger
-import pandas as pd
 
 logger = get_logger(__name__)
 
@@ -47,6 +46,7 @@ class Mode:
 
 
 class MathBenchmark(BaseBenchmark):
+    import pandas as pd
     r"""Benchmark class for evaluating mathematical problem-solving capabilities."""
 
     def __init__(

@@ -17,8 +17,6 @@ from typing import Any, Dict, List, Union
 from camel.agents import ChatAgent
 from camel.benchmarks import MathBenchmark, Mode
 from camel.logger import get_logger
-from datasets import load_dataset
-import pandas as pd
 
 
 logger = get_logger(__name__)
@@ -26,6 +24,9 @@ logger = get_logger(__name__)
 
 class GSM8KBenchmark(MathBenchmark):
     r"""Benchmark for evaluating ChatAgents on the GSM8K dataset from Hugging Face Hub."""
+    import pandas as pd
+    from datasets import load_dataset
+
 
     DATASET_NAME = "gsm8k"
     DATASET_REPO = "openai/gsm8k"
