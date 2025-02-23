@@ -23,7 +23,16 @@ logger = get_logger(__name__)
 
 
 class GSM8KBenchmark(MathBenchmark):
-    r"""Benchmark for evaluating ChatAgents on the GSM8K dataset from Hugging Face Hub."""
+    r"""
+    Benchmark for evaluating ChatAgents on the GSM8K dataset, a collection of grade-school-level math problems 
+    sourced from the Hugging Face Hub.
+    
+    Attributes:
+        DATASET_NAME (str): The name of the dataset.
+        DATASET_REPO (str): The repository location of the dataset on Hugging Face.
+        QUESTION_COLUMN (str): The column containing math problems.
+        ANSWER_COLUMN (str): The column containing solutions.
+    """
     import pandas as pd
     from datasets import load_dataset
 
@@ -34,19 +43,40 @@ class GSM8KBenchmark(MathBenchmark):
     ANSWER_COLUMN = "answer"
 
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
-        r"""Initialize the GSM8K Benchmark."""
+        r"""
+        Initializes the GSM8K Benchmark instance.
+
+        Args:
+            data_dir (str): Directory for storing the dataset.
+            save_to (str): Path for saving benchmark results.
+            processes (int, optional): Number of parallel processes. Defaults to 1.
+        """
         super().__init__(name="GSM8K", data_dir=data_dir, save_to=save_to, processes=processes)
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "GSM8KBenchmark":
-        r"""Ensures the dataset is available. Hugging Face Datasets manages caching automatically."""
+        r"""
+        Ensures the GSM8K dataset is available locally. 
+        Uses Hugging Face Datasets for automatic caching and management.
+
+        Returns:
+            GSM8KBenchmark: The benchmark instance after downloading.
+        """
         logger.info("Ensuring GSM8K dataset is downloaded...")
         _ = load_dataset(self.DATASET_REPO, 'main', cache_dir=str(self.data_dir))
         logger.info("GSM8K dataset is ready.")
         return self
 
     def load(self, force_download: bool = False) -> "GSM8KBenchmark":
-        r"""Loads the GSM8K dataset, optionally forcing a re-download."""
+        r"""
+        Loads the GSM8K dataset into memory, optionally forcing a re-download.
+
+        Args:
+            force_download (bool, optional): Whether to force re-downloading the dataset. Defaults to False.
+
+        Returns:
+            GSM8KBenchmark: The benchmark instance after loading.
+        """
         logger.info("Loading GSM8K dataset...")
 
         dataset = load_dataset(
@@ -64,10 +94,24 @@ class GSM8KBenchmark(MathBenchmark):
 
     @property
     def valid(self) -> List[Dict[str, Any]]:
-        r"""GSM8K does not have a validation set; return an empty list."""
+        r"""
+        Returns an empty list since GSM8K does not have a validation set.
+
+        Returns:
+            List[Dict[str, Any]]: An empty list.
+        """
         return []
 
     def _prepare_dataset(self, dataset: List[Dict[str, Any]]) -> pd.DataFrame:
+        r"""
+        Prepares the dataset by extracting the numeric solutions from the answer field.
+
+        Args:
+            dataset (List[Dict[str, Any]]): The dataset to process.
+
+        Returns:
+            pd.DataFrame: The processed dataset with extracted solutions.
+        """
         df = pd.DataFrame(dataset)
         df["solution"] = df["answer"].str.extract(r"####\s*(-?\d+)")[0]
         return df
@@ -78,11 +122,29 @@ class GSM8KBenchmark(MathBenchmark):
         dataset: pd.DataFrame,
         mode: Mode
     ) -> Union[pd.DataFrame, Dict[str, List[Any]]]:
-        r"""Generates model responses for the dataset."""
-        dataset["answers"] = dataset["question"].apply(lambda q: [agent.step(q).msgs[0].content for _ in range(mode.k)])
+        r"""
+        Generates responses from the ChatAgent for each problem in the dataset.
 
+        Args:
+            agent (ChatAgent): The agent used to generate solutions.
+            dataset (pd.DataFrame): The dataset containing math problems.
+            mode (Mode): The evaluation mode to use.
+
+        Returns:
+            Union[pd.DataFrame, Dict[str, List[Any]]]: The dataset with generated answers.
+        """
+        dataset["answers"] = dataset["question"].apply(lambda q: [agent.step(q).msgs[0].content for _ in range(mode.k)])
+        
         return dataset
 
     def _preprocess_answers(self, raw_answers: pd.Series) -> pd.Series:
-        r"""Extracts numeric answers in bulk using vectorized regex."""
+        r"""
+        Extracts numeric answers from generated responses using a regular expression.
+
+        Args:
+            raw_answers (pd.Series): The series containing raw model-generated responses.
+
+        Returns:
+            pd.Series: Extracted numeric answers.
+        """
         return raw_answers.str.extract(r"####\s*(-?\d+)")[0]

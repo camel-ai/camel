@@ -22,7 +22,16 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 class MATHBenchmark(MathBenchmark):
-    r"""Benchmark for evaluating ChatAgents on the MATH dataset from Hugging Face Hub."""
+    r"""
+    Benchmark for evaluating ChatAgents on the MATH dataset, a collection of 
+    high school-level and competition-style math problems sourced from Hugging Face Hub.
+
+    Attributes:
+        DATASET_NAME (str): The name of the dataset.
+        DATASET_REPO (str): The repository location of the dataset on Hugging Face.
+        DATASET_CONFIGS (List[str]): The different subcategories within the dataset.
+    """
+
     import pandas as pd
     from datasets import load_dataset
 
@@ -32,14 +41,26 @@ class MATHBenchmark(MathBenchmark):
         'algebra', 'counting_and_probability', 'geometry', 
         'intermediate_algebra', 'number_theory', 'prealgebra', 'precalculus'
     ]
-
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
-        r"""Initialize the MATH Benchmark."""
+        r"""
+        Initializes the MATH Benchmark instance.
+
+        Args:
+            data_dir (str): Directory for storing the dataset.
+            save_to (str): Path for saving benchmark results.
+            processes (int, optional): Number of parallel processes. Defaults to 1.
+        """
         super().__init__(name="MATH", data_dir=data_dir, save_to=save_to, processes=processes)
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "MATHBenchmark":
-        r"""Ensures the dataset is available. Hugging Face Datasets manages caching automatically."""
+        r"""
+        Ensures the MATH dataset is available locally.
+        Uses Hugging Face Datasets for automatic caching and management.
+
+        Returns:
+            MATHBenchmark: The benchmark instance after downloading.
+        """
         logger.info("Ensuring MATH dataset is downloaded...")
         for config in self.DATASET_CONFIGS:
             _ = load_dataset(self.DATASET_REPO, config, cache_dir=str(self.data_dir))
@@ -47,7 +68,15 @@ class MATHBenchmark(MathBenchmark):
         return self
 
     def load(self, force_download: bool = False) -> "MATHBenchmark":
-        r"""Loads the MATH dataset, optionally forcing a re-download."""
+        r"""
+        Loads the MATH dataset into memory, optionally forcing a re-download.
+
+        Args:
+            force_download (bool, optional): Whether to force re-downloading the dataset. Defaults to False.
+
+        Returns:
+            MATHBenchmark: The benchmark instance after loading.
+        """
         logger.info("Loading MATH dataset...")
 
         self._data = {"train": [], "test": []}
@@ -73,25 +102,43 @@ class MATHBenchmark(MathBenchmark):
 
     @property
     def valid(self) -> List[Dict[str, Any]]:
-        r"""MATH does not have a validation set; return an empty list."""
+        r"""
+        Returns an empty list since the MATH dataset does not have a validation set.
+
+        Returns:
+            List[Dict[str, Any]]: An empty list.
+        """
         return []
 
     def _prepare_dataset(self, dataset: List[Dict[str, Any]]) -> pd.DataFrame:
         r"""
-        Prepare the dataset by extracting the solution from 
+        Prepares the dataset by extracting solutions from the provided answers.
 
-        - Extracts the correct answer from the solution (inside \boxed{}).
+        - Renames the "problem" column to "questions" for consistency.
+        - Extracts the final answer from solutions wrapped in `\boxed{}`.
+
+        Args:
+            dataset (List[Dict[str, Any]]): The dataset to process.
+
+        Returns:
+            pd.DataFrame: The processed dataset with extracted solutions.
         """
-
         df = pd.DataFrame(dataset)
-
-        # rename problem to questions
         df.rename(columns={"problem": "questions"}, inplace=True)
 
-        # in the MATH dataset, solutions are in the 'solution' column wrapped inside a `\boxed{}`
-
         def extract_boxed(text: str) -> str:
-            r"""Extracts the content inside the first correctly balanced `\boxed{}`."""
+            r"""
+            Extracts the content inside the first correctly balanced `\boxed{}`.
+
+            Args:
+                text (str): The solution text containing `\boxed{}`.
+
+            Returns:
+                str: The extracted final answer.
+
+            Raises:
+                ValueError: If the answer cannot be extracted properly.
+            """
             start_seq = r"\boxed{"
             stack = []  # Stack to track `{}` nesting
             content = []
@@ -102,7 +149,7 @@ class MATHBenchmark(MathBenchmark):
                 if text[i:i+len(start_seq)] == start_seq and not inside_boxed:
                     inside_boxed = True
                     stack.append("{")
-                    i += len(start_seq)  # Skip the `\boxed{`
+                    i += len(start_seq)  # Skip `\boxed{`
                     continue
 
                 if inside_boxed:
@@ -130,9 +177,16 @@ class MATHBenchmark(MathBenchmark):
         mode: Mode
     ) -> pd.DataFrame:
         r"""
-        Generate k responses (depending on our eval mode) using the ChatAgent.
-        """
+        Generates responses from the ChatAgent for each problem in the dataset.
 
+        Args:
+            agent (ChatAgent): The agent used to generate solutions.
+            dataset (pd.DataFrame): The dataset containing math problems.
+            mode (Mode): The evaluation mode, determining the number of responses per problem.
+
+        Returns:
+            pd.DataFrame: The dataset with generated answers.
+        """
         dataset["answers"] = dataset["questions"].apply(
             lambda problem: [agent.step(problem).msgs[0].content for _ in range(mode.k)]
         )

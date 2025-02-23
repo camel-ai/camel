@@ -23,9 +23,28 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 class Mode:
+    r"""
+    Defines different evaluation modes for benchmarking.
+    
+    Attributes:
+        VALID_MODES (set): Supported evaluation modes.
+        mode (Literal["pass@k", "majority voting"]): Selected evaluation mode.
+        k (Optional[int]): Parameter defining the number of attempts or votes required.
+    """
     VALID_MODES = {"pass@k", "majority voting"}
 
     def __init__(self, mode: Literal["pass@k", "majority voting"], k: Optional[int] = None):
+        r"""
+        Initializes a Mode object.
+
+        Args:
+            mode (Literal["pass@k", "majority voting"]): The evaluation mode.
+            k (Optional[int]): Parameter defining the number of attempts (for "pass@k")
+                               or votes (for "majority voting").
+
+        Raises:
+            ValueError: If `k` is not valid for the selected mode.
+        """
         self.mode = mode
 
         if mode == "pass@k":
@@ -42,17 +61,31 @@ class Mode:
             raise ValueError(f"Invalid mode '{mode}'. Supported modes: {self.VALID_MODES}")
 
     def __repr__(self) -> str:
+        r"""Returns a string representation of the Mode instance."""
         return f"Mode(mode={self.mode}, k={self.k})"
 
 
 class MathBenchmark(BaseBenchmark):
     import pandas as pd
-    r"""Benchmark class for evaluating mathematical problem-solving capabilities."""
+    r"""
+    Benchmark class for evaluating mathematical problem-solving capabilities.
+    
+    Inherits from:
+        BaseBenchmark
+    """
 
     def __init__(
         self, name: str, data_dir: str, save_to: str, processes: int = 1
     ):
-        r"""Initialize the benchmark."""
+        r"""
+        Initializes the MathBenchmark class.
+
+        Args:
+            name (str): Name of the benchmark.
+            data_dir (str): Directory containing the dataset.
+            save_to (str): Path to save the benchmark results.
+            processes (int, optional): Number of parallel processes. Defaults to 1.
+        """
         super().__init__(name, data_dir, save_to, processes)
 
     def run(
@@ -65,8 +98,23 @@ class MathBenchmark(BaseBenchmark):
         *args,
         **kwargs,
     ) -> "MathBenchmark":
-        r"""Runs the benchmark, evaluates answers, and saves results as JSON."""
+        r"""
+        Runs the benchmark, evaluates answers, and saves results as JSON.
 
+        Args:
+            agent (ChatAgent): The agent used to generate answers.
+            on (Literal["train", "valid", "test"]): The dataset split to use.
+            randomize (bool, optional): Whether to randomize dataset order. Defaults to False.
+            subset (Optional[int], optional): Number of problems to process. Defaults to None (all).
+            mode (Mode, optional): The evaluation mode. Defaults to Mode("pass@k", 1).
+
+        Returns:
+            MathBenchmark: The benchmark instance with results.
+
+        Raises:
+            ValueError: If an invalid dataset split is specified.
+            TypeError: If the results are not in the expected format.
+        """
         logger.info(f"Running {mode.mode} evaluation on {on} set with k={mode.k}")
 
         if on not in ["train", "test", "valid"]:
@@ -77,7 +125,7 @@ class MathBenchmark(BaseBenchmark):
 
         dataset = self._prepare_dataset(self._data[on])
 
-        #TODO: Fix Seed for reproducibility
+        # TODO: Fix Seed for reproducibility
         if randomize:
             import random
             random.shuffle(dataset)
