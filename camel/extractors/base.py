@@ -77,7 +77,7 @@ class BaseExtractor(ABC):
             **kwargs,
         }
 
-        self._is_initialized = False
+        self._is_setup = False
         self._cache: Dict[str, Any] = {}
         self._batch_processor: Optional[BatchProcessor] = None
 
@@ -101,7 +101,7 @@ class BaseExtractor(ABC):
         Raises:
             RuntimeError: If initialization fails
         """
-        if self._is_initialized:
+        if self._is_setup:
             logger.debug(f"{self.__class__.__name__} already initialized")
             return
 
@@ -119,7 +119,7 @@ class BaseExtractor(ABC):
                     memory_threshold=self._memory_threshold,
                 )
 
-            self._is_initialized = True
+            self._is_setup = True
             logger.info(f"{self.__class__.__name__} initialized successfully")
 
         except Exception as e:
@@ -144,7 +144,7 @@ class BaseExtractor(ABC):
             RuntimeError: If cleanup fails (after resetting initialization
                 state)
         """
-        if not self._is_initialized:
+        if not self._is_setup:
             logger.debug(
                 f"{self.__class__.__name__} not initialized, skipping cleanup"
             )
@@ -188,7 +188,7 @@ class BaseExtractor(ABC):
 
         finally:
             # Always mark as uninitialized, even if cleanup fails
-            self._is_initialized = False
+            self._is_setup = False
             self._batch_processor = None
 
         if errors:
@@ -258,7 +258,7 @@ class BaseExtractor(ABC):
             KeyError: If required content sections are missing
             RuntimeError: If extractor is not initialized
         """
-        if not self._is_initialized:
+        if not self._is_setup:
             raise RuntimeError(
                 f"{self.__class__.__name__} must be initialized "
                 "before extraction"

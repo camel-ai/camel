@@ -92,7 +92,7 @@ class BaseDataset(ABC):
             ValueError: If max_cache_size is negative
         """
         self._current_index = 0
-        self._is_initialized = False
+        self._is_setup = False
         self._cache: Dict[int, DataPoint] = {}
 
         # Store configuration parameters
@@ -126,7 +126,7 @@ class BaseDataset(ABC):
             OSError: If cache directory creation fails
             Exception: If dataset initialization fails
         """
-        if self._is_initialized:
+        if self._is_setup:
             logger.debug(f"{self.__class__.__name__} already initialized")
             return
 
@@ -159,7 +159,7 @@ class BaseDataset(ABC):
                 random.shuffle(self._shuffle_indices)
                 logger.debug("Initialized shuffle indices")
 
-            self._is_initialized = True
+            self._is_setup = True
             logger.info(f"{self.__class__.__name__} initialized successfully")
 
         except Exception as e:
@@ -177,7 +177,7 @@ class BaseDataset(ABC):
         3. Cache is cleared
         4. Cleanup happens even if errors occur
         """
-        if not self._is_initialized:
+        if not self._is_setup:
             return
 
         try:
@@ -208,7 +208,7 @@ class BaseDataset(ABC):
 
         finally:
             # Always mark as uninitialized, even if cleanup fails
-            self._is_initialized = False
+            self._is_setup = False
 
     async def _get_item_async(self, idx: int) -> DataPoint:
         r"""Async wrapper around __getitem__ for preloading.
@@ -230,7 +230,7 @@ class BaseDataset(ABC):
         Raises:
             RuntimeError: If dataset is not initialized
         """
-        if not self._is_initialized:
+        if not self._is_setup:
             raise RuntimeError(
                 f"{self.__class__.__name__} must be initialized "
                 "before sampling"
@@ -284,5 +284,7 @@ class BaseDataset(ABC):
         return self._metadata.copy()
 
     def reset(self) -> None:
-        r"""Reset the dataset iterator."""
+        r"""Reset the dataset iterator and re-shuffle if enabled."""
         self._current_index = 0
+        if self._shuffle and self._is_setup:
+            random.shuffle(self._shuffle_indices)

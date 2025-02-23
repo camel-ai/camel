@@ -82,7 +82,7 @@ class BaseVerifier(ABC):
             **kwargs: Additional verifier parameters.
         """
         # Configuration parameters
-        self._is_initialized: bool = False
+        self._is_setup: bool = False
         self._max_parallel: Optional[int] = max_parallel
         self._timeout: Optional[float] = timeout
         self._max_retries: int = max_retries
@@ -108,7 +108,7 @@ class BaseVerifier(ABC):
         Raises:
             RuntimeError: If setup fails or resources cannot be initialized
         """
-        if self._is_initialized:
+        if self._is_setup:
             logger.debug(f"{self.__class__.__name__} already initialized")
             return
 
@@ -124,7 +124,7 @@ class BaseVerifier(ABC):
             if hasattr(self._batch_processor, 'setup'):
                 await self._batch_processor.setup()
 
-            self._is_initialized = True
+            self._is_setup = True
             logger.info(
                 f"{self.__class__.__name__} initialized with "
                 f"batch_size={batch_size}, max_parallel={max_parallel}"
@@ -151,7 +151,7 @@ class BaseVerifier(ABC):
             RuntimeError: If cleanup fails and resources cannot be properly
                 released
         """
-        if not self._is_initialized:
+        if not self._is_setup:
             return
 
         error = None
@@ -175,7 +175,7 @@ class BaseVerifier(ABC):
             ) from e
 
         finally:
-            self._is_initialized = False
+            self._is_setup = False
 
     async def _update_metrics(
         self, duration: float, status: VerificationStatus
