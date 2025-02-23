@@ -69,7 +69,7 @@ class MathBenchmark(BaseBenchmark):
 
         logger.info(f"Running {mode.mode} evaluation on {on} set with k={mode.k}")
 
-        if on not in ["train", "test"]:
+        if on not in ["train", "test", "valid"]:
             raise ValueError(f"Invalid dataset split '{on}'. Use 'train', 'valid' (empty), or 'test'.")
 
         if not self._data:
