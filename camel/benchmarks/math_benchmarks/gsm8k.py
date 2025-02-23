@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,30 +12,29 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
 from camel.benchmarks import MathBenchmark, Mode
 from camel.logger import get_logger
-
 
 logger = get_logger(__name__)
 
 
 class GSM8KBenchmark(MathBenchmark):
     r"""
-    Benchmark for evaluating ChatAgents on the GSM8K dataset, a collection of grade-school-level math problems 
+    Benchmark for evaluating ChatAgents on the GSM8K dataset, a collection of grade-school-level math problems
     sourced from the Hugging Face Hub.
-    
+
     Attributes:
         DATASET_NAME (str): The name of the dataset.
         DATASET_REPO (str): The repository location of the dataset on Hugging Face.
         QUESTION_COLUMN (str): The column containing math problems.
         ANSWER_COLUMN (str): The column containing solutions.
     """
+
     import pandas as pd
     from datasets import load_dataset
-
 
     DATASET_NAME = "gsm8k"
     DATASET_REPO = "openai/gsm8k"
@@ -51,19 +50,26 @@ class GSM8KBenchmark(MathBenchmark):
             save_to (str): Path for saving benchmark results.
             processes (int, optional): Number of parallel processes. Defaults to 1.
         """
-        super().__init__(name="GSM8K", data_dir=data_dir, save_to=save_to, processes=processes)
+        super().__init__(
+            name="GSM8K",
+            data_dir=data_dir,
+            save_to=save_to,
+            processes=processes,
+        )
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "GSM8KBenchmark":
         r"""
-        Ensures the GSM8K dataset is available locally. 
+        Ensures the GSM8K dataset is available locally.
         Uses Hugging Face Datasets for automatic caching and management.
 
         Returns:
             GSM8KBenchmark: The benchmark instance after downloading.
         """
         logger.info("Ensuring GSM8K dataset is downloaded...")
-        _ = load_dataset(self.DATASET_REPO, 'main', cache_dir=str(self.data_dir))
+        _ = load_dataset(
+            self.DATASET_REPO, 'main', cache_dir=str(self.data_dir)
+        )
         logger.info("GSM8K dataset is ready.")
         return self
 
@@ -83,7 +89,9 @@ class GSM8KBenchmark(MathBenchmark):
             self.DATASET_REPO,
             'main',
             cache_dir=str(self.data_dir),
-            download_mode="force_redownload" if force_download else "reuse_dataset_if_exists"
+            download_mode="force_redownload"
+            if force_download
+            else "reuse_dataset_if_exists",
         )
 
         self._data = {
@@ -117,10 +125,7 @@ class GSM8KBenchmark(MathBenchmark):
         return df
 
     def _generate_solutions(
-        self,
-        agent: ChatAgent,
-        dataset: pd.DataFrame,
-        mode: Mode
+        self, agent: ChatAgent, dataset: pd.DataFrame, mode: Mode
     ) -> pd.DataFrame:
         r"""
         Efficiently generates responses for each math problem using the ChatAgent,
@@ -138,7 +143,9 @@ class GSM8KBenchmark(MathBenchmark):
         def generate_answer(question: str) -> List[str]:
             """Generate `k` responses while resetting the agent after each question."""
             agent.reset()  # Ensuring statelessness
-            return [agent.step(question).msgs[0].content for _ in range(mode.k)]
+            return [
+                agent.step(question).msgs[0].content for _ in range(mode.k)
+            ]
 
         dataset["answers"] = dataset["question"].apply(generate_answer)
         return dataset

@@ -15,7 +15,6 @@
 from camel.agents import ChatAgent
 from camel.benchmarks import GSM8KBenchmark
 
-
 # Set up the agent to be benchmarked
 agent = ChatAgent()
 
@@ -25,7 +24,7 @@ benchmark = GSM8KBenchmark(
 )
 benchmark.download()
 
-#TODO run benchmark with API Key to get the value for correct answers
+# TODO run benchmark with API Key to get the value for correct answers
 result = benchmark.run(agent, on="test", subset=20)
 print("Total:", result["total"])
 print("Correct:", result["correct"])

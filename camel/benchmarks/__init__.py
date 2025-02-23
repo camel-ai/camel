@@ -15,10 +15,10 @@
 from .apibank import APIBankBenchmark
 from .apibench import APIBenchBenchmark
 from .base import BaseBenchmark
-from .math_benchmarks.math_base import MathBenchmark, Mode
-from .math_benchmarks.gsm8k import GSM8KBenchmark
-from .math_benchmarks.math_bench import MATHBenchmark
 from .gaia import DefaultGAIARetriever, GAIABenchmark
+from .math_benchmarks.gsm8k import GSM8KBenchmark
+from .math_benchmarks.math_base import MathBenchmark, Mode
+from .math_benchmarks.math_bench import MATHBenchmark
 from .nexus import NexusBenchmark
 from .ragbench import RAGBenchBenchmark
 

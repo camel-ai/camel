@@ -1,4 +1,4 @@
-# ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,12 +18,12 @@ from camel.agents import ChatAgent
 from camel.benchmarks import MathBenchmark, Mode
 from camel.logger import get_logger
 
-
 logger = get_logger(__name__)
+
 
 class MATHBenchmark(MathBenchmark):
     r"""
-    Benchmark for evaluating ChatAgents on the MATH dataset, a collection of 
+    Benchmark for evaluating ChatAgents on the MATH dataset, a collection of
     high school-level and competition-style math problems sourced from Hugging Face Hub.
 
     Attributes:
@@ -38,9 +38,15 @@ class MATHBenchmark(MathBenchmark):
     DATASET_NAME = "math"
     DATASET_REPO = "EleutherAI/hendrycks_math"
     DATASET_CONFIGS = [
-        'algebra', 'counting_and_probability', 'geometry', 
-        'intermediate_algebra', 'number_theory', 'prealgebra', 'precalculus'
+        'algebra',
+        'counting_and_probability',
+        'geometry',
+        'intermediate_algebra',
+        'number_theory',
+        'prealgebra',
+        'precalculus',
     ]
+
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
         r"""
         Initializes the MATH Benchmark instance.
@@ -50,7 +56,12 @@ class MATHBenchmark(MathBenchmark):
             save_to (str): Path for saving benchmark results.
             processes (int, optional): Number of parallel processes. Defaults to 1.
         """
-        super().__init__(name="MATH", data_dir=data_dir, save_to=save_to, processes=processes)
+        super().__init__(
+            name="MATH",
+            data_dir=data_dir,
+            save_to=save_to,
+            processes=processes,
+        )
         self._data: Dict[str, List[Dict[str, Any]]] = {}
 
     def download(self) -> "MATHBenchmark":
@@ -63,7 +74,9 @@ class MATHBenchmark(MathBenchmark):
         """
         logger.info("Ensuring MATH dataset is downloaded...")
         for config in self.DATASET_CONFIGS:
-            _ = load_dataset(self.DATASET_REPO, config, cache_dir=str(self.data_dir))
+            _ = load_dataset(
+                self.DATASET_REPO, config, cache_dir=str(self.data_dir)
+            )
         logger.info("MATH dataset is ready.")
         return self
 
@@ -86,7 +99,9 @@ class MATHBenchmark(MathBenchmark):
                 self.DATASET_REPO,
                 config,
                 cache_dir=str(self.data_dir),
-                download_mode="force_redownload" if force_download else "reuse_dataset_if_exists"
+                download_mode="force_redownload"
+                if force_download
+                else "reuse_dataset_if_exists",
             )
 
             # Convert to pandas DataFrame and add a `config` column before converting to dict
@@ -146,7 +161,10 @@ class MATHBenchmark(MathBenchmark):
             i = 0
 
             while i < len(text):
-                if text[i:i+len(start_seq)] == start_seq and not inside_boxed:
+                if (
+                    text[i : i + len(start_seq)] == start_seq
+                    and not inside_boxed
+                ):
                     inside_boxed = True
                     stack.append("{")
                     i += len(start_seq)  # Skip `\boxed{`
@@ -171,28 +189,27 @@ class MATHBenchmark(MathBenchmark):
         return df
 
     def _generate_solutions(
-            self,
-            agent: ChatAgent,
-            dataset: pd.DataFrame,
-            mode: Mode
-        ) -> pd.DataFrame:
-            r"""
-            Efficiently generates responses for each math problem using the ChatAgent,
-            ensuring the agent resets between questions without unnecessary instantiations.
+        self, agent: ChatAgent, dataset: pd.DataFrame, mode: Mode
+    ) -> pd.DataFrame:
+        r"""
+        Efficiently generates responses for each math problem using the ChatAgent,
+        ensuring the agent resets between questions without unnecessary instantiations.
 
-            Args:
-                agent (ChatAgent): The agent responsible for generating answers.
-                dataset (pd.DataFrame): The dataset containing math problems.
-                mode (Mode): The evaluation mode for generating multiple responses.
+        Args:
+            agent (ChatAgent): The agent responsible for generating answers.
+            dataset (pd.DataFrame): The dataset containing math problems.
+            mode (Mode): The evaluation mode for generating multiple responses.
 
-            Returns:
-                pd.DataFrame: The dataset with generated answers.
-            """
+        Returns:
+            pd.DataFrame: The dataset with generated answers.
+        """
 
-            def generate_answer(question: str) -> List[str]:
-                """Generate `k` responses while resetting the agent after each question."""
-                agent.reset()  # Ensuring statelessness
-                return [agent.step(question).msgs[0].content for _ in range(mode.k)]
+        def generate_answer(question: str) -> List[str]:
+            """Generate `k` responses while resetting the agent after each question."""
+            agent.reset()  # Ensuring statelessness
+            return [
+                agent.step(question).msgs[0].content for _ in range(mode.k)
+            ]
 
-            dataset["answers"] = dataset["question"].apply(generate_answer)
-            return dataset
+        dataset["answers"] = dataset["question"].apply(generate_answer)
+        return dataset
