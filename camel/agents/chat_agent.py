@@ -157,6 +157,7 @@ class ChatAgent(BaseAgent):
         response_terminators: Optional[List[ResponseTerminator]] = None,
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
+        tools_max_retries: int = 5,
     ) -> None:
         # Set up model backend
         self.model_backend = ModelManager(
@@ -223,6 +224,7 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.response_terminators = response_terminators or []
         self.single_iteration = single_iteration
+        self.tools_max_retries = tools_max_retries
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state."""
@@ -487,7 +489,20 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_request: Optional[ToolCallRequest] = None
 
+        max_retries = self.tools_max_retries
         while True:
+            max_retries -= 1
+            hit_max_retry = False
+            if max_retries == -1:
+                logger.info("Max retries reached, terminating the session.")
+                hit_max_retry = True
+                original_model_dict = self.model_backend.model_config_dict
+
+                # Replace the original tools with empty tools
+                self.model_backend.model_config_dict = original_model_dict.copy()
+                if "tools" in self.model_backend.model_config_dict:
+                    del self.model_backend.model_config_dict["tools"]
+
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
