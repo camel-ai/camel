@@ -121,20 +121,26 @@ class GSM8KBenchmark(MathBenchmark):
         agent: ChatAgent,
         dataset: pd.DataFrame,
         mode: Mode
-    ) -> Union[pd.DataFrame, Dict[str, List[Any]]]:
+    ) -> pd.DataFrame:
         r"""
-        Generates responses from the ChatAgent for each problem in the dataset.
+        Efficiently generates responses for each math problem using the ChatAgent,
+        ensuring the agent resets between questions without unnecessary instantiations.
 
         Args:
-            agent (ChatAgent): The agent used to generate solutions.
+            agent (ChatAgent): The agent responsible for generating answers.
             dataset (pd.DataFrame): The dataset containing math problems.
-            mode (Mode): The evaluation mode to use.
+            mode (Mode): The evaluation mode for generating multiple responses.
 
         Returns:
-            Union[pd.DataFrame, Dict[str, List[Any]]]: The dataset with generated answers.
+            pd.DataFrame: The dataset with generated answers.
         """
-        dataset["answers"] = dataset["question"].apply(lambda q: [agent.step(q).msgs[0].content for _ in range(mode.k)])
-        
+
+        def generate_answer(question: str) -> List[str]:
+            """Generate `k` responses while resetting the agent after each question."""
+            agent.reset()  # Ensuring statelessness
+            return [agent.step(question).msgs[0].content for _ in range(mode.k)]
+
+        dataset["answers"] = dataset["question"].apply(generate_answer)
         return dataset
 
     def _preprocess_answers(self, raw_answers: pd.Series) -> pd.Series:
