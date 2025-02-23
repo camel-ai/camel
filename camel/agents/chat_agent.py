@@ -489,15 +489,14 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_request: Optional[ToolCallRequest] = None
 
-        max_retries = self.tools_max_retries
+        max_retries = self.max_retries
         while True:
             max_retries -= 1
-            hit_max_retry = False
-            if max_retries == -1:
-                logger.info("Max retries reached, terminating the session.")
-                hit_max_retry = True
-                original_model_dict = self.model_backend.model_config_dict
 
+            if max_retries == -1:
+                # TODO: need changes!  Review after Wendong
+                logger.info("Max retries reached, terminating the session.")
+                original_model_dict = self.model_backend.model_config_dict
                 # Replace the original tools with empty tools
                 self.model_backend.model_config_dict = original_model_dict.copy()
                 if "tools" in self.model_backend.model_config_dict:
