@@ -489,7 +489,7 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_request: Optional[ToolCallRequest] = None
 
-        max_retries = self.max_retries
+        max_retries = self.tools_max_retries
         while True:
             max_retries -= 1
 
