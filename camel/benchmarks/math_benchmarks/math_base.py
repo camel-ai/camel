@@ -14,7 +14,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, ClassVar, Dict, List, Literal, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.benchmarks import BaseBenchmark
@@ -33,7 +33,7 @@ class Mode:
         k (Optional[int]): Parameter defining the number of attempts or votes required.
     """
 
-    VALID_MODES = {"pass@k", "majority voting"}
+    VALID_MODES: ClassVar[set[str]] = {"pass@k", "majority voting"}
 
     def __init__(
         self,
@@ -106,7 +106,7 @@ class MathBenchmark(BaseBenchmark):
         on: Literal["train", "valid", "test"],
         randomize: bool = False,
         subset: Optional[int] = None,
-        mode: Mode = Mode("pass@k", 1),
+        mode: Mode = None,
         *args,
         **kwargs,
     ) -> "MathBenchmark":
@@ -130,6 +130,8 @@ class MathBenchmark(BaseBenchmark):
         logger.info(
             f"Running {mode.mode} evaluation on {on} set with k={mode.k}"
         )
+
+        mode = Mode("pass@k", 1)
 
         if on not in ["train", "test", "valid"]:
             raise ValueError(
@@ -157,9 +159,9 @@ class MathBenchmark(BaseBenchmark):
 
         # Ensure the results are in the expected format
         if isinstance(results, dict):
-            results = pd.DataFrame(results)
+            results = self.pd.DataFrame(results)
 
-        if not isinstance(results, pd.DataFrame):
+        if not isinstance(results, self.pd.DataFrame):
             raise TypeError(
                 "Expected results as a pandas DataFrame or dictionary."
             )
@@ -198,10 +200,10 @@ class MathBenchmark(BaseBenchmark):
             )
 
         if mode.mode == "pass@k":
-            return np.any(np.array(answers[: mode.k]) == solution)
+            return self.np.any(self.np.array(answers[: mode.k]) == solution)
 
         elif mode.mode == "majority voting":
-            most_common = pd.Series(answers).mode().iloc[0]
+            most_common = self.pd.Series(answers).mode().iloc[0]
             return most_common == solution
 
         return False  # Default case

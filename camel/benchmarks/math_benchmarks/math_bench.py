@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from camel.agents import ChatAgent
 from camel.benchmarks import MathBenchmark, Mode
@@ -35,16 +35,16 @@ class MATHBenchmark(MathBenchmark):
     import pandas as pd
     from datasets import load_dataset
 
-    DATASET_NAME = "math"
-    DATASET_REPO = "EleutherAI/hendrycks_math"
-    DATASET_CONFIGS = [
-        'algebra',
-        'counting_and_probability',
-        'geometry',
-        'intermediate_algebra',
-        'number_theory',
-        'prealgebra',
-        'precalculus',
+    DATASET_NAME: ClassVar[str] = "math"
+    DATASET_REPO: ClassVar[str] = "EleutherAI/hendrycks_math"
+    DATASET_CONFIGS: ClassVar[list[str]] = [
+        "algebra",
+        "counting_and_probability",
+        "geometry",
+        "intermediate_algebra",
+        "number_theory",
+        "prealgebra",
+        "precalculus",
     ]
 
     def __init__(self, data_dir: str, save_to: str, processes: int = 1):
@@ -74,7 +74,7 @@ class MATHBenchmark(MathBenchmark):
         """
         logger.info("Ensuring MATH dataset is downloaded...")
         for config in self.DATASET_CONFIGS:
-            _ = load_dataset(
+            _ = self.load_dataset(
                 self.DATASET_REPO, config, cache_dir=str(self.data_dir)
             )
         logger.info("MATH dataset is ready.")
@@ -95,7 +95,7 @@ class MATHBenchmark(MathBenchmark):
         self._data = {"train": [], "test": []}
 
         for config in self.DATASET_CONFIGS:
-            dataset = load_dataset(
+            dataset = self.load_dataset(
                 self.DATASET_REPO,
                 config,
                 cache_dir=str(self.data_dir),
@@ -138,12 +138,12 @@ class MATHBenchmark(MathBenchmark):
         Returns:
             pd.DataFrame: The processed dataset with extracted solutions.
         """
-        df = pd.DataFrame(dataset)
+        df = self.pd.DataFrame(dataset)
         df.rename(columns={"problem": "questions"}, inplace=True)
 
         def extract_boxed(text: str) -> str:
             r"""
-            Extracts the content inside the first correctly balanced `\boxed{}`.
+            Extracts the content inside the first `\boxed{}`.
 
             Args:
                 text (str): The solution text containing `\boxed{}`.
@@ -175,7 +175,8 @@ class MATHBenchmark(MathBenchmark):
                         stack.append("{")
                     elif text[i] == "}":
                         stack.pop()
-                        if not stack:  # If stack is empty, we've closed `\boxed{}` correctly
+                        # If stack is empty, we've closed `\boxed{}` correctly
+                        if not stack:
                             return "".join(content)
 
                     content.append(text[i])

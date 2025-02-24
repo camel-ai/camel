@@ -67,7 +67,7 @@ class GSM8KBenchmark(MathBenchmark):
             GSM8KBenchmark: The benchmark instance after downloading.
         """
         logger.info("Ensuring GSM8K dataset is downloaded...")
-        _ = load_dataset(
+        _ = self.load_dataset(
             self.DATASET_REPO, 'main', cache_dir=str(self.data_dir)
         )
         logger.info("GSM8K dataset is ready.")
@@ -85,7 +85,7 @@ class GSM8KBenchmark(MathBenchmark):
         """
         logger.info("Loading GSM8K dataset...")
 
-        dataset = load_dataset(
+        dataset = self.load_dataset(
             self.DATASET_REPO,
             'main',
             cache_dir=str(self.data_dir),
@@ -120,7 +120,7 @@ class GSM8KBenchmark(MathBenchmark):
         Returns:
             pd.DataFrame: The processed dataset with extracted solutions.
         """
-        df = pd.DataFrame(dataset)
+        df = self.pd.DataFrame(dataset)
         df["solution"] = df["answer"].str.extract(r"####\s*(-?\d+)")[0]
         return df
 
