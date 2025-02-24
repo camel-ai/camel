@@ -196,12 +196,12 @@ def parse_sources(
         according to the default clean_options in MultiSourceParser.
 
     Example:
-        >>> sources = [
-        ...     "https://example.com/doc1.html",
-        ...     "path/to/local/file.txt"
-        ... ]
-        >>> chunks = parse_sources(sources, chunk_size=5000, overlap=2)
-        >>> print(len(chunks))  # Number of chunks generated
+        sources = [
+            "https://example.com/doc1.html",
+            "path/to/local/file.txt"
+        ]
+        chunks = parse_sources(sources, chunk_size=5000, overlap=2)
+        print(len(chunks))  # Number of chunks generated
     """
     parser = MultiSourceParser()
     return parser.parse_multiple_sources(
