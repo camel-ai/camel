@@ -81,9 +81,10 @@ class ReActAgent(ChatAgent):
         tools: Optional[List[Union[FunctionTool, Callable]]] = None,
         max_steps: int = 10,
     ) -> None:
+        # Set up ReAct prompt first
         self._set_react_prompt()
 
-        # Combine original system message with ReAct prompt
+        # Combine with system message before parent init
         combined_content = (
             f"{system_message.content}\n\n" f"{self.react_prompt}"
         )
@@ -91,14 +92,17 @@ class ReActAgent(ChatAgent):
             combined_content
         )
 
+        # Initialize parent with combined message
         super().__init__(
-            system_message=react_system_message, model=model, tools=tools
+            system_message=react_system_message,  # Use combined message here
+            model=model,
+            tools=tools,
         )
+
+        # Initialize ReAct specific attributes
         self.scratchpad: List[Dict[str, Optional[str]]] = []
-        self._set_react_prompt()
         self.step_count = 0
         self.max_steps = max_steps
-        logger.debug("ReActAgent initialized with %d tools", len(self.tools))
 
     def _set_react_prompt(self) -> None:
         r"""Set up the ReAct prompt template following the paper's format.
@@ -109,12 +113,13 @@ class ReActAgent(ChatAgent):
         self.react_prompt = (
             "You MUST ALWAYS use EXACTLY ONE of the following actions. "
             "You MUST ALWAYS include a 'thought' and 'action'.\n"
-            "- Search(query=<search terms>):Use this to search information\n"
+            "- Search(query=<search terms>): Use this to search information\n"
             "- Lookup(key=<exact key>): Use this to look up specific info\n"
-            "- Finish(answer=<final answer>): ONLY use this when you have ALL "
+            "- Finish(answer=<final answer>): ONLY use this when you have ALL"
             "information needed to fully answer the question\n\n"
             "IMPORTANT: DO NOT use Finish until you are completely certain you"
-            "gathered all necessary information to provide complete answer\n\n"
+            "have gathered all necessary information "
+            "to provide a complete and accurate answer.\n\n"
             "Respond with JSON object with the keys 'thought' and 'action'.\n"
             "The 'action' value must be one of the three options above.\n"
             "\nExample response for Search:\n"
@@ -124,13 +129,13 @@ class ReActAgent(ChatAgent):
             '}\n\n'
             "Example response for continuing research:\n"
             '{\n'
-            '    "thought": "I found the population,but need to verify.",\n'
+            '    "thought": "I found the population, but I need to verify",\n'
             '    "action": "Search(query=Paris census official data latest)"\n'
             '}\n\n'
             "Example response for Finish (only when task is fully complete):\n"
             '{\n'
-            '    "thought":"I have found and verified needed information",\n'
-            '    "action": "Finish(answer=Paris population is 2.1M)"\n'
+            '    "thought":"I have found and verified information",\n'
+            '    "action":"Finish(answer=Population of Paris: 2.1 million)"\n'
             '}\n\n'
             "Current scratchpad:\n"
             "{scratchpad}"
@@ -188,7 +193,7 @@ class ReActAgent(ChatAgent):
 
         Args:
             action (str): Action string in format,
-                         "Action(param1=value1, param2=value2)"
+                          "Action(param1=value1, param2=value2)"
 
         Returns:
             Tuple[str, Dict[str, Any]]: Function name and arguments dictionary
@@ -253,7 +258,7 @@ class ReActAgent(ChatAgent):
             logger.info("Task completion requested")
             return "Task completed."
 
-        if not self.tools:
+        if not self._internal_tools:
             logger.warning("No tools available to execute action")
             return "No tools available to execute action."
 
@@ -262,12 +267,10 @@ class ReActAgent(ChatAgent):
             func_name, params = self._parse_action(action)
 
             # Find and execute matching tool
-            for tool in self.tools:
+            for tool in self._internal_tools.values():
                 if isinstance(tool, FunctionTool):
-                    if (
-                        tool.openai_tool_schema["function"]["name"].lower()
-                        == func_name.lower()
-                    ):
+                    schema_name = tool.openai_tool_schema["function"]["name"]
+                    if schema_name.lower() == func_name.lower():
                         return tool(**params)
                 elif callable(tool):
                     return tool(action)
@@ -288,6 +291,7 @@ class ReActAgent(ChatAgent):
         self,
         input_message: Union[BaseMessage, str],
         response_format: Optional[type[BaseModel]] = None,
+        reason_params: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> ChatAgentResponse:
         r"""Perform ReAct cycles until task completion or max steps reached.
@@ -295,7 +299,7 @@ class ReActAgent(ChatAgent):
         Args:
             input_message (Union[BaseMessage, str]): Initial input message.
             response_format (Optional[type[BaseModel]], optional): Expected
-                    response format.
+                response format.
             **kwargs: Additional arguments passed to underlying model call.
 
         Returns:
@@ -360,9 +364,7 @@ class ReActAgent(ChatAgent):
                 action = react_step.action
                 observation = react_step.observation
             else:
-                logger.error(
-                    "Failed to parse model response into ReActStep format"
-                )
+                logger.error("Failed to parse model response into ReActStep")
                 thought = ""
                 action = ""
                 observation = None
