@@ -143,23 +143,22 @@ class MultiSourceParser:
                     source = futures[future]
                     logger.error(f"Error processing {source}: {e!s}")
 
-        if not all_elements:
-            logger.warning(
-                "No elements were successfully parsed from any\
-            sources"
+            if not all_elements:
+                logger.warning(
+                    "No elements were successfully parsed from any\
+                sources"
+                )
+                return []
+    
+            # Chunk the elements
+            chunks = self.uio.chunk_elements(
+                elements=all_elements,
+                chunk_type="chunk_by_title",
+                max_characters=chunk_size,
+                overlap=overlap,
             )
-            return []
-
-        # Chunk the elements
-        chunks = self.uio.chunk_elements(
-            elements=all_elements,
-            chunk_type="chunk_by_title",
-            max_characters=chunk_size,
-            overlap=overlap,
-        )
-
-        # Clean each chunk in parallel with limited workers
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+    
+            # Clean each chunk in parallel with limited workers
             cleaned_chunks = list(
                 executor.map(
                     lambda chunk: self.uio.clean_text_data(
