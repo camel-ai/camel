@@ -15,7 +15,7 @@
 import json
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
@@ -41,7 +41,12 @@ class StripeToolkit(BaseToolkit):
             (None, "STRIPE_API_KEY"),
         ]
     )
-    def __init__(self, retries: int = 3):
+    def __init__(
+        self,
+        retries: int = 3,
+        timeout: Optional[float] = None,
+    ):
+        super().__init__(timeout=timeout)
         r"""Initializes the StripeToolkit with the specified number of
         retries.
 
@@ -49,6 +54,7 @@ class StripeToolkit(BaseToolkit):
             retries (int,optional): Number of times to retry the request in
                 case of failure. (default: :obj:`3`)
         """
+        super().__init__(timeout=timeout)
         import stripe
 
         stripe.max_network_retries = retries

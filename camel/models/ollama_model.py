@@ -13,13 +13,15 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 import subprocess
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import OLLAMA_API_PARAMS, OllamaConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -75,6 +77,12 @@ class OllamaModel(BaseModelBackend):
             api_key="Set-but-ignored",  # required but ignored
             base_url=self._url,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=180,
+            max_retries=3,
+            api_key="Set-but-ignored",  # required but ignored
+            base_url=self._url,
+        )
 
     def _start_server(self) -> None:
         r"""Starts the Ollama server in a subprocess."""
@@ -119,40 +127,154 @@ class OllamaModel(BaseModelBackend):
                     "input into Ollama model backend."
                 )
 
-    def run(
+    def _run(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
+        r"""Runs inference of Ollama chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        if self.model_config_dict.get("response_format"):
-            # stream is not supported in beta.chat.completions.parse
-            if "stream" in self.model_config_dict:
-                del self.model_config_dict["stream"]
-
-            response = self._client.beta.chat.completions.parse(
-                messages=messages,
-                model=self.model_type,
-                **self.model_config_dict,
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        # For Ollama, the tool calling will be broken with response_format
+        if response_format and not tools:
+            return self._request_parse(messages, response_format, tools)
+        else:
+            return self._request_chat_completion(
+                messages, response_format, tools
             )
 
-            return self._to_chat_completion(response)
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of Ollama chat completion in async mode.
 
-        response = self._client.chat.completions.create(
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+        response_format = response_format or self.model_config_dict.get(
+            "response_format", None
+        )
+        if response_format:
+            return await self._arequest_parse(messages, response_format, tools)
+        else:
+            return await self._arequest_chat_completion(
+                messages, response_format, tools
+            )
+
+    def _prepare_chat_completion_config(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        request_config = self.model_config_dict.copy()
+
+        if tools:
+            request_config["tools"] = tools
+        if response_format:
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+
+        return request_config
+
+    def _request_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        request_config = self._prepare_chat_completion_config(
+            messages, response_format, tools
+        )
+
+        return self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
         )
-        return response
+
+    async def _arequest_chat_completion(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        request_config = self._prepare_chat_completion_config(
+            messages, response_format, tools
+        )
+
+        return await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    def _request_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        return self._client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
+
+    async def _arequest_parse(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Type[BaseModel],
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> ChatCompletion:
+        request_config = self.model_config_dict.copy()
+
+        request_config["response_format"] = response_format
+        request_config.pop("stream", None)
+        if tools is not None:
+            request_config["tools"] = tools
+
+        return await self._async_client.beta.chat.completions.parse(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
+        )
 
     @property
     def stream(self) -> bool:

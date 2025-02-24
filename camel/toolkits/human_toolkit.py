@@ -24,9 +24,6 @@ logger = logging.getLogger(__name__)
 class HumanToolkit(BaseToolkit):
     r"""A class representing a toolkit for human interaction."""
 
-    def __init__(self):
-        pass
-
     def ask_human_via_console(self, question: str) -> str:
         r"""Ask a question to the human via the console.
 

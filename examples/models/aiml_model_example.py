@@ -11,21 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
 from camel.agents import ChatAgent
-from camel.configs import DeepSeekConfig
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-
-"""
-please set the below os environment:
-export DEEPSEEK_API_KEY=""
-"""
+from camel.types import ModelPlatformType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.DEEPSEEK,
-    model_type=ModelType.DEEPSEEK_REASONER,
-    model_config_dict=DeepSeekConfig(temperature=0.2).as_dict(),
+    model_platform=ModelPlatformType.AIML,
+    model_type="mistralai/Mixtral-8x7B-Instruct-v0.1",
 )
 
 # Define system message
@@ -34,26 +26,16 @@ sys_msg = "You are a helpful assistant."
 # Set agent
 camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-user_msg = """How many Rs are there in the word 'strawberry'?"""
+user_msg = """Say hi to CAMEL AI, one open-source community
+    dedicated to the study of autonomous and communicative agents."""
 
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
+
 '''
 ===============================================================================
-The word 'strawberry' is spelled **S-T-R-A-W-B-E-R-R-Y**. Breaking it down:
-
-1. **S**  
-2. **T**  
-3. **R** (first R)  
-4. **A**  
-5. **W**  
-6. **B**  
-7. **E**  
-8. **R** (second R)  
-9. **R** (third R)  
-10. **Y**  
-
-There are **3 Rs** in the word 'strawberry'.
+ Hello CAMEL AI! It's great to meet a community dedicated to the study of 
+ autonomous and communicative agents. How can I assist you today?
 ===============================================================================
 '''

@@ -12,13 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import GROQ_API_PARAMS, GroqConfig
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
+from camel.models._utils import try_modify_message_with_format
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -51,11 +53,7 @@ class GroqModel(BaseModelBackend):
             (default: :obj:`None`)
     """
 
-    @api_keys_required(
-        [
-            ("api_key", "GROQ_API_KEY"),
-        ]
-    )
+    @api_keys_required([("api_key", "GROQ_API_KEY")])
     def __init__(
         self,
         model_type: Union[ModelType, str],
@@ -79,6 +77,12 @@ class GroqModel(BaseModelBackend):
             api_key=self._api_key,
             base_url=self._url,
         )
+        self._async_client = AsyncOpenAI(
+            timeout=180,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -88,31 +92,87 @@ class GroqModel(BaseModelBackend):
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
-        # Make sure you have the access to these open-source model in
-        # HuggingFace
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
-    def run(
+    def _prepare_request(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        request_config = self.model_config_dict.copy()
+        if tools:
+            request_config["tools"] = tools
+        elif response_format:
+            try_modify_message_with_format(messages[-1], response_format)
+            request_config["response_format"] = {"type": "json_object"}
+
+        return request_config
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
+        r"""Runs inference of Groq chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **request_config,
+        )
+
+        return response
+
+    async def _arun(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of Groq chat completion asynchronously.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The format of the
+                response.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+        request_config = self._prepare_request(
+            messages, response_format, tools
+        )
+
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **request_config,
         )
 
         return response
