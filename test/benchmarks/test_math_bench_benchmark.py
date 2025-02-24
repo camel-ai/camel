@@ -10,7 +10,7 @@ from camel.benchmarks import MATHBenchmark, Mode
 SAMPLE_DATA = [
     {
         "problem": "Solve for x: x^2 - 4 = 0",
-        "solution": r"Let’s solve: $x^2 - 4 = 0 \boxed{2}$",
+        "solution": r"Let's solve: $x^2 - 4 = 0 \boxed{2}$",
     },
     {
         "problem": "What is the sum of the first 10 positive integers?",
@@ -55,7 +55,8 @@ def test_run(mock_exists, mock_is_dir, mock_file, benchmark):
 
 
 def test_generate_solutions(benchmark):
-    r"""Test that _generate_solutions properly calls ChatAgent and formats responses."""
+    r"""Test that _generate_solutions properly calls ChatAgent
+    and formats responses."""
     df = benchmark._prepare_dataset(SAMPLE_DATA)
     mock_agent = MagicMock(spec=ChatAgent)
     mock_agent.step.return_value.msgs = [MagicMock(content="\boxed{2}")]
@@ -68,7 +69,7 @@ def test_generate_solutions(benchmark):
 
 def test_download_math():
     """Test that MATHBenchmark downloads the dataset to the data/ directory."""
-    
+
     data_dir = Path("data/")
     save_to = Path("data/")
 
