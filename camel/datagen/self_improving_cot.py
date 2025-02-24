@@ -85,6 +85,8 @@ class SelfImprovingCoTPipeline:
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
+        rejection_sampling: Optional[bool] = False,
+        rejection_sampling_n: int = 5,
         evaluate_agent: Optional[ChatAgent] = None,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
@@ -111,6 +113,17 @@ class SelfImprovingCoTPipeline:
                 "coherence": 0.7}. If using reward model and threshold for a
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
+            rejection_sampling (Optional[bool]):  An optional boolean flag that
+                enables the pipeline to generate multiple candidate traces for
+                each problem, evaluate all candidates against quality
+                criteria, select the best one(s), and reject the others.
+                If disabled (False), the pipeline generates a single candidate
+                trace without additional filtering.
+            rejection_sampling_n (int, optional): Specifies the number of
+                samples to be drawn using the rejection sampling
+                method, where samples are accepted or rejected based on
+                a predefined condition to achieve a desired distribution.
+                (default: :obj: `5`)
             evaluate_agent (Optional[ChatAgent]): The chat agent used for
                 evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
@@ -139,6 +152,8 @@ class SelfImprovingCoTPipeline:
         self.output_path = output_path
         self.max_iterations = max_iterations
         self.score_threshold = score_threshold
+        self.rejection_sampling = rejection_sampling
+        self.rejection_sampling_n = 5
         self.reward_model = reward_model
         self.evaluator = (
             Evaluator(reward_model=reward_model) if reward_model else None
@@ -487,6 +502,47 @@ class SelfImprovingCoTPipeline:
             return evaluation.model_dump()
 
     @retry_on_error()
+    def generate_reasoning_trace_rejection(self, problem: str) -> str:
+        r"""
+        Generate multiple candidate reasoning traces for a problem and
+        select the best one based on evaluation.
+
+        Args:
+            problem (str): The problem text for generating a reasoning trace.
+            max_attempts (int): The number of candidate traces to generate.
+
+        Returns:
+            str: The best candidate trace that meets quality criteria, or the
+            first candidate if none qualify.
+        """
+        candidate_traces = []
+        for _i in range(self.rejection_sampling_n):
+            trace = self.generate_reasoning_trace(problem)
+            candidate_traces.append(trace)
+
+        best_trace = None
+        best_avg_score = -1.0
+        for trace in candidate_traces:
+            eval_results = self.evaluate_trace(problem, trace)
+            # Remove feedback from scores
+            scores = {k: v for k, v in eval_results.items() if k != "feedback"}
+            # Compute average score (assuming at least one score exists)
+            if scores:
+                avg_score = sum(scores.values()) / len(scores)
+            else:
+                avg_score = 0.0
+            # If the candidate meets the threshold and is the best, select it
+            if (
+                self._check_score_threshold(scores)
+                and avg_score > best_avg_score
+            ):
+                best_trace = trace
+                best_avg_score = avg_score
+        if best_trace is None:
+            best_trace = candidate_traces[0]
+        return best_trace
+
+    @retry_on_error()
     def improve_trace(
         self,
         problem: str,
@@ -602,7 +658,13 @@ class SelfImprovingCoTPipeline:
 
         problem_text = problem["problem"]
         solution_text = problem.get("solution", "")
-        current_trace = self.generate_reasoning_trace(problem_text)
+        current_trace = None
+        if self.rejection_sampling:
+            current_trace = self.generate_reasoning_trace_rejection(
+                problem_text
+            )
+        else:
+            current_trace = self.generate_reasoning_trace(problem_text)
         improvement_history = []
         scores = {}
 
