@@ -332,7 +332,7 @@ We implemented amazing research ideas from other works for you to build, compare
 
 - `Source2Synth` from *Alisia Lupidi et al.*: [Source2Synth: Synthetic Data Generation and Curation Grounded in Real Data Sources](https://arxiv.org/abs/2409.08239). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/source2synth.py)]
 
-- `STaR` from *Eric Zelikman et al.*: [STaR: Bootstrapping Reasoning With Reasoning](https://arxiv.org/abs/2203.14465). [[Example](https://github.com/camel-ai/camel/blob/master/examples/datagen/star)]
+- `STaR` from *Eric Zelikman et al.*: [STaR: Bootstrapping Reasoning With Reasoning](https://arxiv.org/abs/2203.14465). [[Example](https://github.com/camel-ai/camel/tree/master/examples/datagen/self_improving_cot)]
 
 ## Other Research Works Based on Camel
 - [Agent Trust](http://agent-trust.camel-ai.org/): Can Large Language Model Agents Simulate Human Trust Behavior?

@@ -19,6 +19,7 @@ import platform
 import re
 import socket
 import subprocess
+import threading
 import time
 import zipfile
 from functools import wraps
@@ -306,10 +307,55 @@ def api_keys_required(
                 if not value or value.strip() == "":
                     missing_keys.append(env_var_name)
 
+            key_way = "the official website"
+            if env_var_name == 'ANTHROPIC_API_KEY':
+                key_way = (
+                    "https://docs.anthropic.com/zh-CN/api/getting-started"
+                )
+            elif env_var_name == 'AIML_API_KEY':
+                key_way = "https://aimlapi.com/"
+            elif env_var_name == 'COHERE_API_KEY':
+                key_way = "https://cohere.com/"
+            elif env_var_name == 'DEEPSEEK_API_KEY':
+                key_way = "https://www.deepseek.com/"
+            elif env_var_name == 'AZURE_OPENAI_API_KEY':
+                key_way = "https://portal.azure.com/"
+            elif env_var_name == 'OPENAI_API_KEY':
+                key_way = "https://platform.openai.com/docs/overview"
+            elif env_var_name == 'FISHAUDIO_API_KEY':
+                key_way = "https://fish.audio/"
+            elif env_var_name == 'GEMINI_API_KEY':
+                key_way = "https://gemini.google.com/"
+            elif env_var_name == 'INTERNLM_API_KEY':
+                key_way = "https://internlm-chat.intern-ai.org.cn/puyu/api/v1"
+            elif env_var_name == 'GROQ_API_KEY':
+                key_way = "https://api.groq.com/openai/v1"
+            elif env_var_name == 'MISTRAL_API_KEY':
+                key_way = "https://mistral.ai/"
+            elif env_var_name == 'MOONSHOT_API_KEY':
+                key_way = "https://api.moonshot.cn/v1"
+            elif env_var_name == 'NVIDIA_API_KEY':
+                key_way = "https://integrate.api.nvidia.com/"
+            elif env_var_name == 'OPENAI_COMPATIBILIY_API_KEY':
+                key_way = "https://platform.openai.com/docs/overview"
+            elif env_var_name == 'QWEN_API_KEY':
+                key_way = "https://tongyi.aliyun.com/"
+            elif env_var_name == 'REKA_API_KEY':
+                key_way = "https://docs.reka.ai/quick-start"
+            elif env_var_name == 'SAMBA_API_KEY':
+                key_way = "https://community.sambanova.ai/t/looking-for-api-key-and-url-for-sambanova/576"
+            elif env_var_name == 'TOGETHER_API_KEY':
+                key_way = "https://docs.together.ai/docs/quickstart"
+            elif env_var_name == 'YI_API_KEY':
+                key_way = "https://platform.lingyiwanwu.com/docs"
+            elif env_var_name == 'ZHIPUAI_API_KEY':
+                key_way = "https://www.zhipuai.cn/"
+
             if missing_keys:
                 raise ValueError(
                     "Missing or empty required API keys in "
-                    f"environment variables: {', '.join(missing_keys)}"
+                    f"environment variables: {', '.join(missing_keys)}.\n"
+                    f"You can obtain the API key from {key_way}"
                 )
             return func(*args, **kwargs)
 
@@ -919,3 +965,70 @@ def generate_prompt_for_structured_output(
     {user_prompt}
     """
     return final_prompt
+
+
+def with_timeout(timeout=None):
+    r"""Decorator that adds timeout functionality to functions.
+
+    Executes functions with a specified timeout value. Returns a timeout
+    message if execution time is exceeded.
+
+    Args:
+        timeout (float, optional): The timeout duration in seconds. If None,
+            will try to get timeout from the instance's timeout attribute.
+            (default: :obj:`None`)
+
+    Example:
+        >>> @with_timeout(5)
+        ... def my_function():
+        ...     return "Success"
+        >>> my_function()
+
+        >>> class MyClass:
+        ...     timeout = 5
+        ...     @with_timeout()
+        ...     def my_method(self):
+        ...         return "Success"
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Determine the effective timeout value
+            effective_timeout = timeout
+            if effective_timeout is None and args:
+                effective_timeout = getattr(args[0], 'timeout', None)
+
+            # If no timeout value is provided, execute function normally
+            if effective_timeout is None:
+                return func(*args, **kwargs)
+
+            # Container to hold the result of the function call
+            result_container = []
+
+            def target():
+                result_container.append(func(*args, **kwargs))
+
+            # Start the function in a new thread
+            thread = threading.Thread(target=target)
+            thread.start()
+            thread.join(effective_timeout)
+
+            # Check if the thread is still alive after the timeout
+            if thread.is_alive():
+                return (
+                    f"Function `{func.__name__}` execution timed out, "
+                    f"exceeded {effective_timeout} seconds."
+                )
+            else:
+                return result_container[0]
+
+        return wrapper
+
+    # Handle both @with_timeout and @with_timeout() usage
+    if callable(timeout):
+        # If timeout is passed as a function, apply it to the decorator
+        func, timeout = timeout, None
+        return decorator(func)
+
+    return decorator

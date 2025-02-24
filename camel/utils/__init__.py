@@ -23,7 +23,6 @@ from .commons import (
     download_github_subdirectory,
     download_tasks,
     func_string_to_callable,
-    generate_prompt_for_structured_output,
     get_first_int,
     get_prompt_template_key_words,
     get_pydantic_major_version,
@@ -38,6 +37,7 @@ from .commons import (
     text_extract_from_web,
     to_pascal,
     track_agent,
+    with_timeout,
 )
 from .constants import Constants
 from .deduplication import DeduplicationResult, deduplicate_internally
@@ -87,4 +87,5 @@ __all__ = [
     "DeduplicationResult",
     "retry_on_error",
     "BatchProcessor",
+    "with_timeout",
 ]
