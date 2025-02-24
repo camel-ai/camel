@@ -28,13 +28,18 @@ class SymPyToolkit(BaseToolkit):
     and Linear Algebra.
     """
 
-    def __init__(self, default_variable: str = 'x'):
+    def __init__(
+        self,
+        default_variable: str = 'x',
+        timeout: Optional[float] = None,
+    ):
         r"""Initializes the toolkit with a default variable and logging.
 
         Args:
             default_variable (str): The default variable for
                 operations (default: :obj: `x`)
         """
+        super().__init__(timeout=timeout)
         self.default_variable = default_variable
         logger.info(f"Default variable set to: {self.default_variable}")
 
@@ -721,6 +726,43 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_rank", e)
 
+    def compute_inner_product(
+        self, vector1: List[float], vector2: List[float]
+    ) -> str:
+        r"""Computes the inner (dot) product of two vectors.
+
+        Args:
+            vector1 (List[float]): The first vector as a list of floats.
+            vector2 (List[float]): The second vector as a list of floats.
+
+        Returns:
+            str: JSON string containing the inner product in the `"result"`
+                field. If an error occurs, the JSON string will include an
+                `"error"` field with the corresponding error message.
+
+        Raises:
+            ValueError: If the vectors have different dimensions.
+        """
+        import sympy as sp
+
+        try:
+            # Convert the lists into sympy Matrix objects (column vectors)
+            v1 = sp.Matrix(vector1)
+            v2 = sp.Matrix(vector2)
+
+            # Check that the vectors have the same dimensions.
+            if v1.shape != v2.shape:
+                raise ValueError(
+                    "Vectors must have the same dimensions to compute "
+                    "the inner product."
+                )
+
+            # Compute the dot (inner) product.
+            inner_product = v1.dot(v2)
+            return json.dumps({"result": str(inner_product)})
+        except Exception as e:
+            return self.handle_exception("compute_inner_product", e)
+
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging and returning error details.
 
@@ -775,4 +817,5 @@ class SymPyToolkit(BaseToolkit):
             FunctionTool(self.compute_eigenvectors),
             FunctionTool(self.compute_nullspace),
             FunctionTool(self.compute_rank),
+            FunctionTool(self.compute_inner_product),
         ]
