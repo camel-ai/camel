@@ -67,14 +67,13 @@ class BaseMessage:
         acl_parameter: Optional[ACLParameter] = None,
         meta_dict: Optional[Dict[str, Any]] = None,
         parsed: Optional[Union[BaseModel, dict]] = None,
-        message_id: Optional[str] = None,
     ):
         self.role_name = role_name
         self.role_type = role_type
         self.acl_parameter = acl_parameter
         self.meta_dict = meta_dict
         self.parsed = parsed
-        self.message_id = message_id or str(uuid4())
+        self.message_id = str(uuid4())
 
         """Post-initialization logic for the BaseMessage class.
         - Ensures `content` is properly wrapped as a `Content` object.
