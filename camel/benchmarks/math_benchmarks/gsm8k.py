@@ -23,12 +23,12 @@ logger = get_logger(__name__)
 
 class GSM8KBenchmark(MathBenchmark):
     r"""
-    Benchmark for evaluating ChatAgents on the GSM8K dataset, a collection of grade-school-level math problems
-    sourced from the Hugging Face Hub.
+    Benchmark for evaluating ChatAgents on the GSM8K dataset, a collection of
+    grade-school-level math problems sourced from Hugging Face Hub.
 
     Attributes:
         DATASET_NAME (str): The name of the dataset.
-        DATASET_REPO (str): The repository location of the dataset on Hugging Face.
+        DATASET_REPO (str): The dataset's repository on Hugging Face.
         QUESTION_COLUMN (str): The column containing math problems.
         ANSWER_COLUMN (str): The column containing solutions.
     """
@@ -48,7 +48,8 @@ class GSM8KBenchmark(MathBenchmark):
         Args:
             data_dir (str): Directory for storing the dataset.
             save_to (str): Path for saving benchmark results.
-            processes (int, optional): Number of parallel processes. Defaults to 1.
+            processes (int, optional): Number of parallel processes.
+                Defaults to 1.
         """
         super().__init__(
             name="GSM8K",
@@ -60,8 +61,8 @@ class GSM8KBenchmark(MathBenchmark):
 
     def download(self) -> "GSM8KBenchmark":
         r"""
-        Ensures the GSM8K dataset is available locally.
-        Uses Hugging Face Datasets for automatic caching and management.
+        Ensures the GSM8K dataset is available locally. Uses Hugging Face
+        Datasets for automatic caching and management.
 
         Returns:
             GSM8KBenchmark: The benchmark instance after downloading.
@@ -78,7 +79,8 @@ class GSM8KBenchmark(MathBenchmark):
         Loads the GSM8K dataset into memory, optionally forcing a re-download.
 
         Args:
-            force_download (bool, optional): Whether to force re-downloading the dataset. Defaults to False.
+            force_download (bool, optional): Whether to force re-downloading
+                the dataset. Defaults to False.
 
         Returns:
             GSM8KBenchmark: The benchmark instance after loading.
@@ -112,7 +114,8 @@ class GSM8KBenchmark(MathBenchmark):
 
     def _prepare_dataset(self, dataset: List[Dict[str, Any]]) -> pd.DataFrame:
         r"""
-        Prepares the dataset by extracting the numeric solutions from the answer field.
+        Prepares the dataset by extracting numeric solutions from the answer
+        field.
 
         Args:
             dataset (List[Dict[str, Any]]): The dataset to process.
@@ -128,8 +131,9 @@ class GSM8KBenchmark(MathBenchmark):
         self, agent: ChatAgent, dataset: pd.DataFrame, mode: Mode
     ) -> pd.DataFrame:
         r"""
-        Efficiently generates responses for each math problem using the ChatAgent,
-        ensuring the agent resets between questions without unnecessary instantiations.
+        Efficiently generates responses for each math problem using the
+        ChatAgent, ensuring the agent resets between questions without
+        unnecessary instantiations.
 
         Args:
             agent (ChatAgent): The agent responsible for generating answers.
@@ -141,7 +145,10 @@ class GSM8KBenchmark(MathBenchmark):
         """
 
         def generate_answer(question: str) -> List[str]:
-            """Generate `k` responses while resetting the agent after each question."""
+            r"""
+            Generate `k` responses while resetting the agent after each
+            question.
+            """
             agent.reset()  # Ensuring statelessness
             return [
                 agent.step(question).msgs[0].content for _ in range(mode.k)
@@ -152,10 +159,12 @@ class GSM8KBenchmark(MathBenchmark):
 
     def _preprocess_answers(self, raw_answers: pd.Series) -> pd.Series:
         r"""
-        Extracts numeric answers from generated responses using a regular expression.
+        Extracts numeric answers from generated responses using a regular
+        expression.
 
         Args:
-            raw_answers (pd.Series): The series containing raw model-generated responses.
+            raw_answers (pd.Series): The series containing raw model-generated
+                responses.
 
         Returns:
             pd.Series: Extracted numeric answers.

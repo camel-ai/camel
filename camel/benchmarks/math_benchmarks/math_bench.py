@@ -24,12 +24,14 @@ logger = get_logger(__name__)
 class MATHBenchmark(MathBenchmark):
     r"""
     Benchmark for evaluating ChatAgents on the MATH dataset, a collection of
-    high school-level and competition-style math problems sourced from Hugging Face Hub.
+    high school-level and competition-style math problems sourced from the
+    Hugging Face Hub.
 
     Attributes:
         DATASET_NAME (str): The name of the dataset.
-        DATASET_REPO (str): The repository location of the dataset on Hugging Face.
-        DATASET_CONFIGS (List[str]): The different subcategories within the dataset.
+        DATASET_REPO (str): The dataset's repository on Hugging Face.
+        DATASET_CONFIGS (List[str]):
+            The different subcategories in the dataset.
     """
 
     import pandas as pd
@@ -54,7 +56,8 @@ class MATHBenchmark(MathBenchmark):
         Args:
             data_dir (str): Directory for storing the dataset.
             save_to (str): Path for saving benchmark results.
-            processes (int, optional): Number of parallel processes. Defaults to 1.
+            processes (int, optional): Number of parallel processes.
+                Defaults to 1.
         """
         super().__init__(
             name="MATH",
@@ -66,8 +69,8 @@ class MATHBenchmark(MathBenchmark):
 
     def download(self) -> "MATHBenchmark":
         r"""
-        Ensures the MATH dataset is available locally.
-        Uses Hugging Face Datasets for automatic caching and management.
+        Ensures the MATH dataset is available locally. Uses Hugging Face
+        Datasets for automatic caching and management.
 
         Returns:
             MATHBenchmark: The benchmark instance after downloading.
@@ -85,7 +88,8 @@ class MATHBenchmark(MathBenchmark):
         Loads the MATH dataset into memory, optionally forcing a re-download.
 
         Args:
-            force_download (bool, optional): Whether to force re-downloading the dataset. Defaults to False.
+            force_download (bool, optional): Whether to force re-downloading
+                the dataset. Defaults to False.
 
         Returns:
             MATHBenchmark: The benchmark instance after loading.
@@ -104,7 +108,7 @@ class MATHBenchmark(MathBenchmark):
                 else "reuse_dataset_if_exists",
             )
 
-            # Convert to pandas DataFrame and add a `config` column before converting to dict
+            # Convert to pandas DataFrame and add a `config` column
             train_df = dataset["train"].to_pandas()
             train_df["config"] = config
             self._data["train"].extend(train_df.to_dict(orient="records"))
@@ -118,7 +122,8 @@ class MATHBenchmark(MathBenchmark):
     @property
     def valid(self) -> List[Dict[str, Any]]:
         r"""
-        Returns an empty list since the MATH dataset does not have a validation set.
+        Returns an empty list since the MATH dataset does not have a validation
+        set.
 
         Returns:
             List[Dict[str, Any]]: An empty list.
@@ -127,7 +132,7 @@ class MATHBenchmark(MathBenchmark):
 
     def _prepare_dataset(self, dataset: List[Dict[str, Any]]) -> pd.DataFrame:
         r"""
-        Prepares the dataset by extracting solutions from the provided answers.
+        Prepares the dataset by extracting solutions from provided answers.
 
         - Renames the "problem" column to "questions" for consistency.
         - Extracts the final answer from solutions wrapped in `\boxed{}`.
@@ -193,8 +198,9 @@ class MATHBenchmark(MathBenchmark):
         self, agent: ChatAgent, dataset: pd.DataFrame, mode: Mode
     ) -> pd.DataFrame:
         r"""
-        Efficiently generates responses for each math problem using the ChatAgent,
-        ensuring the agent resets between questions without unnecessary instantiations.
+        Efficiently generates responses for each math problem using the
+        ChatAgent, ensuring the agent resets between questions without
+        unnecessary instantiations.
 
         Args:
             agent (ChatAgent): The agent responsible for generating answers.
@@ -206,7 +212,10 @@ class MATHBenchmark(MathBenchmark):
         """
 
         def generate_answer(question: str) -> List[str]:
-            """Generate `k` responses while resetting the agent after each question."""
+            r"""
+            Generate `k` responses while resetting the agent after each
+            question.
+            """
             agent.reset()  # Ensuring statelessness
             return [
                 agent.step(question).msgs[0].content for _ in range(mode.k)

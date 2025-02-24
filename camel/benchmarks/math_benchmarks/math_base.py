@@ -30,7 +30,7 @@ class Mode:
     Attributes:
         VALID_MODES (set): Supported evaluation modes.
         mode (Literal["pass@k", "majority voting"]): Selected evaluation mode.
-        k (Optional[int]): Parameter defining the number of attempts or votes required.
+        k (Optional[int]): Parameter defining attempts or votes required.
     """
 
     VALID_MODES: ClassVar[set[str]] = {"pass@k", "majority voting"}
@@ -45,8 +45,8 @@ class Mode:
 
         Args:
             mode (Literal["pass@k", "majority voting"]): The evaluation mode.
-            k (Optional[int]): Parameter defining the number of attempts (for "pass@k")
-                               or votes (for "majority voting").
+            k (Optional[int]): Number of attempts (for "pass@k") or votes
+                (for "majority voting").
 
         Raises:
             ValueError: If `k` is not valid for the selected mode.
@@ -81,7 +81,7 @@ class MathBenchmark(BaseBenchmark):
 
     r"""
     Benchmark class for evaluating mathematical problem-solving capabilities.
-    
+
     Inherits from:
         BaseBenchmark
     """
@@ -96,7 +96,8 @@ class MathBenchmark(BaseBenchmark):
             name (str): Name of the benchmark.
             data_dir (str): Directory containing the dataset.
             save_to (str): Path to save the benchmark results.
-            processes (int, optional): Number of parallel processes. Defaults to 1.
+            processes (int, optional): Number of parallel processes.
+                Defaults to 1.
         """
         super().__init__(name, data_dir, save_to, processes)
 
@@ -116,9 +117,12 @@ class MathBenchmark(BaseBenchmark):
         Args:
             agent (ChatAgent): The agent used to generate answers.
             on (Literal["train", "valid", "test"]): The dataset split to use.
-            randomize (bool, optional): Whether to randomize dataset order. Defaults to False.
-            subset (Optional[int], optional): Number of problems to process. Defaults to None (all).
-            mode (Mode, optional): The evaluation mode. Defaults to Mode("pass@k", 1).
+            randomize (bool, optional): Whether to randomize dataset order.
+                Defaults to False.
+            subset (Optional[int], optional): Number of problems to process.
+                Defaults to None (all).
+            mode (Mode, optional): The evaluation mode. Defaults to
+                Mode("pass@k", 1).
 
         Returns:
             MathBenchmark: The benchmark instance with results.
@@ -135,7 +139,8 @@ class MathBenchmark(BaseBenchmark):
 
         if on not in ["train", "test", "valid"]:
             raise ValueError(
-                f"Invalid dataset split '{on}'. Use 'train', 'valid' (empty), or 'test'."
+                f"Invalid dataset split '{on}'. Use 'train', 'valid' (empty), "
+                f"or 'test'."
             )
 
         if not self._data:
@@ -190,7 +195,9 @@ class MathBenchmark(BaseBenchmark):
         return self
 
     def _evaluate(self, row: pd.Series, mode: Mode) -> bool:
-        """Evaluate model predictions based on the chosen evaluation mode."""
+        r"""
+        Evaluate model predictions based on the chosen evaluation mode.
+        """
         answers = row["answers"]
         solution = row["solution"]
 
@@ -211,7 +218,8 @@ class MathBenchmark(BaseBenchmark):
     @abstractmethod
     def _prepare_dataset(self, dataset: List[Dict[str, Any]]) -> pd.DataFrame:
         r"""
-        Method to further prepare the dataset, like renaming or normalizing columns.
+        Method to further prepare the dataset, like renaming or normalizing
+        columns.
         """
         pass
 
