@@ -14,7 +14,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from camel.messages.conversion import (
+from camel.data_schemas import (
     ToolCall,
     ToolResponse,
 )

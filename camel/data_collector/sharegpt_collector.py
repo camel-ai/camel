@@ -13,27 +13,17 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-from typing import Any, ClassVar, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
 from typing_extensions import Self
 
 from camel.agents import ChatAgent
 from camel.data_collector.base import BaseDataCollector
+from camel.data_schemas import ShareGPTData
 from camel.messages import BaseMessage
-from camel.messages.conversion.conversation_models import (
-    ShareGPTConversation,
-    ShareGPTMessage,
-)
 from camel.schemas import OpenAISchemaConverter
 from camel.toolkits import FunctionTool
 
-FROM_HASH = {
-    "human": "human",
-    "gpt": "gpt",
-    "observation": "human",
-    "function_call": "gpt",
-}
 # ruff: noqa: E501
 DEFAULT_CONVERTER_PROMPTS = """
     Extract key entities and attributes from the conversations
@@ -53,24 +43,6 @@ DEFAULT_CONVERTER_PROMPTS = """
         ]
     }
 """
-
-
-class ConversationItem(BaseModel):
-    from_: Literal["human", "gpt", "function_call", "observation"]
-    value: str
-
-    class Config:
-        fields: ClassVar[Dict[str, str]] = {"from_": "from"}
-        extra = "forbid"
-
-
-class ShareGPTData(BaseModel):
-    system: str
-    tools: str
-    conversations: List[ConversationItem]
-
-    class Config:
-        extra = "forbid"
 
 
 class ShareGPTDataCollector(BaseDataCollector):
@@ -187,19 +159,7 @@ class ShareGPTDataCollector(BaseDataCollector):
             else:
                 context.append(prefix + str(message.message))
         return converter.convert(
-            "\n".join(context), ShareGPTData, prompt
+            "\n".join(context),
+            ShareGPTData,
+            prompt,  ##Boer:OldShareGPTData!!!
         ).model_dump()
-
-    @staticmethod
-    def to_sharegpt_conversation(data: Dict[str, Any]) -> ShareGPTConversation:
-        messages = [
-            ShareGPTMessage(from_="system", value=data["system"])  # type: ignore[call-arg]
-        ]
-        for item in data["conversations"]:
-            messages.append(
-                ShareGPTMessage(  # type: ignore[call-arg]
-                    from_=FROM_HASH[item["from"]],
-                    value=item["value"],
-                )
-            )
-        return ShareGPTConversation(root=messages)

@@ -24,10 +24,6 @@ from camel.types import (
 from .conversion import (
     AlpacaItem,
     HermesFunctionFormatter,
-    ShareGPTMessage,
-)
-from .conversion.conversation_models import (
-    ShareGPTConversation,
 )
 from .conversion.sharegpt.function_call_formatter import (
     FunctionCallFormatter,
@@ -55,8 +51,6 @@ __all__ = [
     'OpenAIMessage',
     'FunctionCallFormatter',
     'HermesFunctionFormatter',
-    'ShareGPTConversation',
-    'ShareGPTMessage',
     'BaseMessage',
     'FunctionCallingMessage',
     'AlpacaItem',
