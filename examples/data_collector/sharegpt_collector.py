@@ -48,13 +48,120 @@ response = agent.step("Call tools to calculate 17 * 19 = ?")
 
 print(json.dumps(collector.convert(), indent=4))
 print(json.dumps(collector.llm_convert(), indent=4))
-print(collector.to_sharegpt_conversation(collector.convert()))
 
 # ruff: noqa: E501
 """
 {
     "system": "You are a helpful assistant",
-    "tools": "[{\"name\": \"add\", \"description\": \"Adds two numbers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The first number to be added.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The second number to be added.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}, {\"name\": \"sub\", \"description\": \"Do subtraction between two numbers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The minuend in subtraction.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The subtrahend in subtraction.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}, {\"name\": \"mul\", \"description\": \"Multiplies two integers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The multiplier in the multiplication.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The multiplicand in the multiplication.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}]",
+    "tools": [
+        {
+            "name": "add",
+            "description": "Adds two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The first number to be added."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The second number to be added."
+                    }
+                },
+                "required": ["a", "b"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "sub",
+            "description": "Do subtraction between two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The minuend in subtraction."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The subtrahend in subtraction."
+                    }
+                },
+                "required": ["a", "b"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "multiply",
+            "description": "Multiplies two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The multiplier in multiplication."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The multiplicand in multiplication."
+                    },
+                    "decimal_places": {
+                        "type": "integer",
+                        "description": "The number of decimal places to "
+                                       "round to. Defaults to 2."
+                    }
+                },
+                "required": ["a", "b", "decimal_places"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "divide",
+            "description": "Divides two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The dividend in division."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The divisor in division."
+                    },
+                    "decimal_places": {
+                        "type": "integer",
+                        "description": "The number of decimal places to "
+                                       "round to. Defaults to 2."
+                    }
+                },
+                "required": ["a", "b", "decimal_places"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "round",
+            "description": "Rounds a number to a specified number of decimal "
+                           "places.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The number to be rounded."
+                    },
+                    "decimal_places": {
+                        "type": "integer",
+                        "description": "The number of decimal places to "
+                                       "round to. Defaults to 0."
+                    }
+                },
+                "required": ["a", "decimal_places"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        }
+    ],
     "conversations": [
         {
             "from": "human",
@@ -62,7 +169,14 @@ print(collector.to_sharegpt_conversation(collector.convert()))
         },
         {
             "from": "function_call",
-            "value": "{\"name\": \"mul\", \"arguments\": {\"a\": 17, \"b\": 19}}"
+            "value": {
+                "name": "multiply",
+                "arguments": {
+                    "a": 17,
+                    "b": 19,
+                    "decimal_places": 0
+                }
+            }
         },
         {
             "from": "observation",
@@ -70,27 +184,147 @@ print(collector.to_sharegpt_conversation(collector.convert()))
         },
         {
             "from": "gpt",
-            "value": "The result of \\( 17 \\times 19 \\) is \\( 323 \\)."
+            "value": "The result of 17 times 19 is 323."
         }
     ]
 }
+
 {
     "system": "You are a helpful assistant",
-    "tools": "[{\"name\": \"add\", \"description\": \"Adds two numbers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The first number to be added.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The second number to be added.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}, {\"name\": \"sub\", \"description\": \"Do subtraction between two numbers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The minuend in subtraction.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The subtrahend in subtraction.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}, {\"name\": \"mul\", \"description\": \"Multiplies two integers.\", \"parameters\": {\"properties\": {\"a\": {\"type\": \"integer\", \"description\": \"The multiplier in the multiplication.\"}, \"b\": {\"type\": \"integer\", \"description\": \"The multiplicand in the multiplication.\"}}, \"required\": [\"a\", \"b\"], \"type\": \"object\"}}]",
+    "tools": [
+        {
+            "name": "add",
+            "description": "Adds two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The first number to be added."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The second number to be added."
+                    }
+                },
+                "required": ["a", "b"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "sub",
+            "description": "Do subtraction between two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The minuend in subtraction."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The subtrahend in subtraction."
+                    }
+                },
+                "required": ["a", "b"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "multiply",
+            "description": "Multiplies two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The multiplier in multiplication."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The multiplicand in multiplication."
+                    },
+                    "decimal_places": {
+                        "type": "integer",
+                        "description": "The number of decimal places to "
+                                       "round to. Defaults to 2."
+                    }
+                },
+                "required": ["a", "b", "decimal_places"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "divide",
+            "description": "Divides two numbers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The dividend in division."
+                    },
+                    "b": {
+                        "type": "number",
+                        "description": "The divisor in division."
+                    },
+                    "decimal_places": {
+                        "type": "integer",
+                        "description": "The number of decimal places to "
+                                       "round to. Defaults to 2."
+                    }
+                },
+                "required": ["a", "b", "decimal_places"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "round",
+            "description": "Rounds a number to a specified number of decimal "
+                           "places.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "number",
+                        "description": "The number to be rounded."
+                    },
+                    "decimal_places": {
+                        "type": "integer",
+                        "description": "The number of decimal places to "
+                                       "round to. Defaults to 0."
+                    }
+                },
+                "required": ["a", "decimal_places"],
+                "type": "object",
+                "additionalProperties": false
+            }
+        }
+    ],
     "conversations": [
         {
-            "from_": "human",
-            "value": "Tools calling operator: Call tools to calculate 17 * 19 = ?"
+            "from": "human",
+            "value": "Call tools to calculate 17 * 19 = ?"
         },
         {
-            "from_": "function_call",
-            "value": "{\"name\": \"mul\", \"arguments\": {\"a\": 17, \"b\": 19}}"
+            "from": "function_call",
+            "value": {
+                "name": "multiply",
+                "arguments": {
+                    "a": 17,
+                    "b": 19,
+                    "decimal_places": 0
+                }
+            }
         },
         {
-            "from_": "gpt",
-            "value": "The result of \\( 17 \\times 19 \\) is \\( 323 \\)."
+            "from": "observation",
+            "value": "323"
+        },
+        {
+            "from": "gpt",
+            "value": "The result of 17 times 19 is 323."
         }
     ]
 }
-root=[ShareGPTMessage(from_='system', value='You are a helpful assistant'), ShareGPTMessage(from_='human', value='Call tools to calculate 17 * 19 = ?'), ShareGPTMessage(from_='gpt', value='{"name": "multiply", "arguments": "{\'a\': 17, \'b\': 19}"}'), ShareGPTMessage(from_='human', value='"{\'result\': {\'323\'}}"'), ShareGPTMessage(from_='gpt', value='The result of \\( 17 \\times 19 \\) is \\( 323 \\).')]
+
 """
