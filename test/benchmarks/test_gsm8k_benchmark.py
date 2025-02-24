@@ -58,6 +58,7 @@ def test_preprocess_answers(benchmark):
     processed = benchmark._preprocess_answers(raw_answers)
     assert list(processed) == ["12", "24", "-7"]
 
+
 def test_download():
     r"""Test that GSM8KBenchmark downloads
     the dataset to the data/ directory."""

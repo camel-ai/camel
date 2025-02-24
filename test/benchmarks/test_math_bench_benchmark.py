@@ -67,6 +67,7 @@ def test_generate_solutions(benchmark):
     assert "answers" in result_df.columns
     assert result_df["answers"].apply(lambda x: x[0] == "\boxed{2}").all()
 
+
 def test_download_math():
     """Test that MATHBenchmark downloads the dataset to the data/ directory."""
 
