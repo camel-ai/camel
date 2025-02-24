@@ -11,10 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from typing import Optional
+
 from camel.agents import ReActAgent
 from camel.messages import BaseMessage
-from camel.toolkits import SearchToolkit
+from camel.toolkits import FunctionTool, SearchToolkit
 from camel.types import RoleType
+
+
+def search(query: str) -> Optional[str]:
+    r"""Search for information using DuckDuckGo.
+
+    Args:
+        query: The search query string to look up information
+
+    Returns:
+        Optional[str]: The search results or None if no results found
+    """
+    toolkit = SearchToolkit()
+    return toolkit.search_duckduckgo(query=query)
 
 
 def main() -> None:
@@ -26,16 +41,16 @@ def main() -> None:
         content=(
             "You are a helpful assistant that can search information online. "
             "Use the search tool to find accurate information and "
-            "provide detailed answers. "
+            "provide detailed answers. Always verify information"
+            "from multiple sources when possible before providing"
+            "a final answer."
         ),
     )
 
-    # Initialize toolkit and agent with search_duckduckgo tool
-    search_tool = SearchToolkit().search_duckduckgo
-    agent = ReActAgent(
-        system_message=system_message,
-        tools=[search_tool],
-        max_steps=5,
+    # Initialize search tool with proper schema
+    search_tool = FunctionTool(
+        func=search,  # Use our documented function
+        synthesize_schema=True,  # Let the tool auto-generate proper schema
     )
 
     # Example queries that require search
@@ -48,42 +63,36 @@ def main() -> None:
     for query in queries:
         print(f"\nQuery: {query}")
         print("-" * 50)
+
+        # Create a fresh agent for each query to avoid state mixing
+        agent = ReActAgent(
+            system_message=system_message,
+            tools=[search_tool],
+            max_steps=5,
+        )
+
+        # Track steps
+        step_num = 1
         response = agent.step(query)
-        print(f"Response:\n{response.info}")
+
+        # Show intermediate steps from scratchpad
+        for step in agent.scratchpad:
+            print(f"Step {step_num}:")
+            print(f"Thought: {step.get('Thought', '')}")
+            print(f"Action: {step.get('Action', '')}")
+            print(f"Observation: {step.get('Observation', '')}")
+            print()
+            step_num += 1
+
+        # Show final response
+        print("Final Response:")
+        print("{")
+        print(f"    \"thought\": \"{response.info['thought']}\",")
+        print(f"    \"action\": \"{response.info['action']}\",")
+        print(f"    \"observation\": \"{response.info['observation']}\"")
+        print("}")
         print("-" * 50)
 
 
 if __name__ == "__main__":
     main()
-
-"""
-Example output:
-
-Query: What is the current population of Paris?
---------------------------------------------------
-Response:
-{
-    "thought": "I found several sources that provide population estimates for 
-                Paris. The most relevant ones indicate that the population of 
-                Paris in 2023 is approximately 2.1 million for the city proper,
-                while the metropolitan area is around 11.2 million. I need to 
-                summarize this information clearly.",
-    "action": "Finish",
-    "observation": "Task completed."
-}
---------------------------------------------------
-
-Query: Who won the Nobel Prize in Physics in 2024? 
---------------------------------------------------
-Response:
-{
-    "thought": "I found multiple sources confirming the winners of the 2024 
-                Nobel Prize in Physics. The prize was awarded to John J. 
-                Hopfield and Geoffrey E. Hinton for their contributions 
-                to machine learning and artificial neural networks. 
-                I will summarize this information.",
-    "action": "Finish", 
-    "observation": "Task completed."
-}
---------------------------------------------------
-"""
