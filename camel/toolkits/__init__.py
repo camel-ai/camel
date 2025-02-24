@@ -48,6 +48,12 @@ from .image_analysis_toolkit import ImageAnalysisToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
 from .video_downloader_toolkit import VideoDownloaderToolkit
 from .dappier_toolkit import DappierToolkit
+from .networkx_toolkit import NetworkXToolkit
+from .semantic_scholar_toolkit import SemanticScholarToolkit
+from .zapier_toolkit import ZapierToolkit
+from .sympy_toolkit import SymPyToolkit
+from .mineru_toolkit import MinerUToolkit
+
 
 __all__ = [
     'BaseToolkit',
@@ -83,4 +89,9 @@ __all__ = [
     'MeshyToolkit',
     'OpenBBToolkit',
     'DappierToolkit',
+    'NetworkXToolkit',
+    'SemanticScholarToolkit',
+    'ZapierToolkit',
+    'SymPyToolkit',
+    'MinerUToolkit',
 ]
