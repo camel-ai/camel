@@ -27,8 +27,13 @@ class RetrievalToolkit(BaseToolkit):
     storage system based on a specified query.
     """
 
-    def __init__(self, auto_retriever: Optional[AutoRetriever] = None) -> None:
+    def __init__(
+        self,
+        auto_retriever: Optional[AutoRetriever] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
         r"""Initializes a new instance of the RetrievalToolkit class."""
+        super().__init__(timeout=timeout)
         self.ar = auto_retriever or AutoRetriever(
             vector_storage_local_path="camel/temp_storage",
             storage_type=StorageType.QDRANT,

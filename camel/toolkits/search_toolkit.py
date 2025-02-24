@@ -580,6 +580,18 @@ class SearchToolkit(BaseToolkit):
                 "image_url": image_url,
             }
 
+            # For Results pod, collect all plaintext values from subpods
+            if pod.get("@title") == "Results":
+                results_text = []
+                if isinstance(subpod_data, list):
+                    for subpod in subpod_data:
+                        if subpod.get("plaintext"):
+                            results_text.append(subpod["plaintext"])
+                else:
+                    if description:
+                        results_text.append(description)
+                pod_info["description"] = "\n".join(results_text)
+
             # Add to steps list
             output["pod_info"].append(pod_info)
 
