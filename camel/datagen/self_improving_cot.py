@@ -85,8 +85,7 @@ class SelfImprovingCoTPipeline:
         problems: List[Dict],
         max_iterations: int = 3,
         score_threshold: Union[float, Dict[str, float]] = 0.7,
-        rejection_sampling: Optional[bool] = False,
-        rejection_sampling_n: int = 5,
+        rejection_sampling_n: Optional[int] = None,
         evaluate_agent: Optional[ChatAgent] = None,
         reward_model: Optional[BaseRewardModel] = None,
         output_path: Optional[str] = None,
@@ -113,17 +112,11 @@ class SelfImprovingCoTPipeline:
                 "coherence": 0.7}. If using reward model and threshold for a
                 dimension is not specified, will use the default value 0.7.
                 (default: :obj:`0.7`)
-            rejection_sampling (Optional[bool]):  An optional boolean flag that
-                enables the pipeline to generate multiple candidate traces for
-                each problem, evaluate all candidates against quality
-                criteria, select the best one(s), and reject the others.
-                If disabled (False), the pipeline generates a single candidate
-                trace without additional filtering.
             rejection_sampling_n (int, optional): Specifies the number of
                 samples to be drawn using the rejection sampling
                 method, where samples are accepted or rejected based on
                 a predefined condition to achieve a desired distribution.
-                (default: :obj: `5`)
+                (default: :obj: `None`)
             evaluate_agent (Optional[ChatAgent]): The chat agent used for
                 evaluating reasoning traces. (default: :obj:`None`)
             reward_model (BaseRewardModel, optional): Model used to evaluate
@@ -152,8 +145,7 @@ class SelfImprovingCoTPipeline:
         self.output_path = output_path
         self.max_iterations = max_iterations
         self.score_threshold = score_threshold
-        self.rejection_sampling = rejection_sampling
-        self.rejection_sampling_n = 5
+        self.rejection_sampling_n = rejection_sampling_n
         self.reward_model = reward_model
         self.evaluator = (
             Evaluator(reward_model=reward_model) if reward_model else None
@@ -509,19 +501,29 @@ class SelfImprovingCoTPipeline:
 
         Args:
             problem (str): The problem text for generating a reasoning trace.
-            max_attempts (int): The number of candidate traces to generate.
 
         Returns:
             str: The best candidate trace that meets quality criteria, or the
             first candidate if none qualify.
         """
-        candidate_traces = []
-        for _i in range(self.rejection_sampling_n):
-            trace = self.generate_reasoning_trace(problem)
-            candidate_traces.append(trace)
+        self.reason_agent.model_backend.model_config_dict['n'] = (
+            self.rejection_sampling_n
+        )
+        few_shot_examples = (
+            f"Examples: {self.few_shot_examples}"
+            if self.few_shot_examples
+            else ""
+        )
+        prompt = self.REASONING_TEMPLATE.format(
+            problem=problem, few_shot_examples=few_shot_examples
+        )
+        # Generate multiple condidate traces in one call using parameter n
+        responses = self.reason_agent.step(prompt)
+        # Extract cancidate traces
+        candidate_traces = [choice.content for choice in responses.msgs]
 
         best_trace = None
-        best_avg_score = -1.0
+        best_avg_score = 0.01
         for trace in candidate_traces:
             eval_results = self.evaluate_trace(problem, trace)
             # Remove feedback from scores
@@ -659,7 +661,7 @@ class SelfImprovingCoTPipeline:
         problem_text = problem["problem"]
         solution_text = problem.get("solution", "")
         current_trace = None
-        if self.rejection_sampling:
+        if self.rejection_sampling_n:
             current_trace = self.generate_reasoning_trace_rejection(
                 problem_text
             )
