@@ -51,22 +51,55 @@ class TestInstructionFilter(unittest.TestCase):
     def test_all_pass_filters(self):
         filters_config = {"pass_filter": {}}
         instruction_filter = InstructionFilter(filters_config)
-        self.assertTrue(instruction_filter.filter("Any instruction"))
+        self.assertTrue(
+            instruction_filter.filter(prompt="", instruction="Any instruction")
+        )
         result, failed_filters = instruction_filter.filter(
-            "Any instruction", return_details=True
+            prompt="", instruction="Any instruction", return_details=True
         )
         self.assertTrue(result)
         self.assertEqual(len(failed_filters), 0)
 
-    @patch.dict(FILTER_REGISTRY, {"fail_filter": lambda _: DummyFailFilter()})
+    @patch.dict(
+        FILTER_REGISTRY,
+        {
+            "first_fail_filter": lambda _: DummyFailFilter(),
+            "second_fail_filter": lambda _: DummyFailFilter(),
+        },
+    )
     def test_all_fail_filters(self):
-        filters_config = {"fail_filter": {}}
+        filters_config = {"first_fail_filter": {}, "second_fail_filter": {}}
         instruction_filter = InstructionFilter(filters_config)
-        self.assertFalse(instruction_filter.filter("Any instruction"))
+        self.assertFalse(
+            instruction_filter.filter(prompt="", instruction="Any instruction")
+        )
         result, failed_filters = instruction_filter.filter(
-            "Any instruction", return_details=True
+            prompt="", instruction="Any instruction", return_details=True
         )
         self.assertFalse(result)
+        self.assertEqual(len(failed_filters), 2)
+        self.assertIn("DummyFailFilter", failed_filters)
+
+    @patch.dict(
+        FILTER_REGISTRY,
+        {
+            "first_fail_filter": lambda _: DummyFailFilter(),
+            "second_fail_filter": lambda _: DummyFailFilter(),
+        },
+    )
+    def test_all_fail_filters_early_stop(self):
+        filters_config = {"first_fail_filter": {}, "second_fail_filter": {}}
+        instruction_filter = InstructionFilter(
+            filters_config, stop_on_first_failure=True
+        )
+        self.assertFalse(
+            instruction_filter.filter(prompt="", instruction="Any instruction")
+        )
+        result, failed_filters = instruction_filter.filter(
+            prompt="", instruction="Any instruction", return_details=True
+        )
+        self.assertFalse(result)
+        self.assertEqual(len(failed_filters), 1)
         self.assertIn("DummyFailFilter", failed_filters)
 
     @patch.dict(
@@ -85,27 +118,36 @@ class TestInstructionFilter(unittest.TestCase):
     def test_mixed_filters(self):
         instruction_filter = InstructionFilter(self.config_mixed)
 
-        self.assertTrue(instruction_filter.filter("This is valid"))
+        self.assertTrue(
+            instruction_filter.filter(prompt="", instruction="This is valid")
+        )
         result, failed_filters = instruction_filter.filter(
-            "This is valid", return_details=True
+            prompt="", instruction="This is valid", return_details=True
         )
         self.assertTrue(result)
         self.assertEqual(len(failed_filters), 0)
 
         self.assertFalse(
             instruction_filter.filter(
-                "This instruction is definitely too long"
+                prompt="",
+                instruction="This instruction is definitely too long",
             )
         )
         result, failed_filters = instruction_filter.filter(
-            "This instruction is definitely too long", return_details=True
+            prompt="",
+            instruction="This instruction is definitely too long",
+            return_details=True,
         )
         self.assertFalse(result)
         self.assertIn("MagicMock", failed_filters)
 
-        self.assertFalse(instruction_filter.filter("This is forbidden"))
+        self.assertFalse(
+            instruction_filter.filter(
+                prompt="", instruction="This is forbidden"
+            )
+        )
         result, failed_filters = instruction_filter.filter(
-            "This is forbidden", return_details=True
+            prompt="", instruction="This is forbidden", return_details=True
         )
         self.assertFalse(result)
         self.assertIn("MagicMock", failed_filters)
@@ -119,12 +161,20 @@ class TestInstructionFilter(unittest.TestCase):
     def test_add_custom_filter(self):
         filters_config = {"pass_filter": {}}
         instruction_filter = InstructionFilter(filters_config)
-        self.assertTrue(instruction_filter.filter("Some instruction"))
+        self.assertTrue(
+            instruction_filter.filter(
+                prompt="", instruction="Some instruction"
+            )
+        )
 
         instruction_filter.add_filter(DummyFailFilter())
-        self.assertFalse(instruction_filter.filter("Some instruction"))
+        self.assertFalse(
+            instruction_filter.filter(
+                prompt="", instruction="Some instruction"
+            )
+        )
         result, failed_filters = instruction_filter.filter(
-            "Some instruction", return_details=True
+            prompt="", instruction="Some instruction", return_details=True
         )
         self.assertFalse(result)
         self.assertIn("DummyFailFilter", failed_filters)

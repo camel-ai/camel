@@ -204,6 +204,10 @@ class ModelType(UnifiedModelType, Enum):
     SILICONFLOW_THUDM_GLM_4_9B_CHAT = "THUDM/glm-4-9b-chat"
     SILICONFLOW_PRO_THUDM_GLM_4_9B_CHAT = "Pro/THUDM/glm-4-9b-chat"
 
+    # AIML models support tool calling
+    AIML_MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    AIML_MISTRAL_7B_INSTRUCT = "mistralai/Mistral-7B-Instruct-v0.1"
+
     def __str__(self):
         return self.value
 
@@ -218,7 +222,11 @@ class ModelType(UnifiedModelType, Enum):
 
     @property
     def support_native_structured_output(self) -> bool:
-        return self.is_openai
+        return any(
+            [
+                self.is_openai,
+            ]
+        )
 
     @property
     def support_native_tool_calling(self) -> bool:
@@ -238,6 +246,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_moonshot,
                 self.is_siliconflow,
                 self.is_zhipuai,
+                self.is_aiml,
             ]
         )
 
@@ -514,6 +523,13 @@ class ModelType(UnifiedModelType, Enum):
         }
 
     @property
+    def is_aiml(self) -> bool:
+        return self in {
+            ModelType.AIML_MIXTRAL_8X7B,
+            ModelType.AIML_MISTRAL_7B_INSTRUCT,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -586,6 +602,8 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.TOGETHER_MIXTRAL_8_7B,
             ModelType.SGLANG_MISTRAL_7B,
             ModelType.MOONSHOT_V1_32K,
+            ModelType.AIML_MIXTRAL_8X7B,
+            ModelType.AIML_MISTRAL_7B_INSTRUCT,
         }:
             return 32_768
         elif self in {
@@ -864,6 +882,7 @@ class ModelPlatformType(Enum):
     INTERNLM = "internlm"
     MOONSHOT = "moonshot"
     SILICONFLOW = "siliconflow"
+    AIML = "aiml"
 
     @property
     def is_openai(self) -> bool:
@@ -980,6 +999,11 @@ class ModelPlatformType(Enum):
     def is_siliconflow(self) -> bool:
         r"""Returns whether this platform is SiliconFlow."""
         return self is ModelPlatformType.SILICONFLOW
+
+    @property
+    def is_aiml(self) -> bool:
+        r"""Returns whether this platform is AIML."""
+        return self is ModelPlatformType.AIML
 
 
 class AudioModelType(Enum):

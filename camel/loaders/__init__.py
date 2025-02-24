@@ -18,6 +18,7 @@ from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
 from .jina_url_reader import JinaURLReader
 from .multi_source_parser import MultiSourceParser, parse_sources
+from .mineru_extractor import MinerU
 from .panda_reader import PandaReader
 from .unstructured_io import UnstructuredIO
 
@@ -33,4 +34,5 @@ __all__ = [
     'PandaReader',
     'MultiSourceParser',
     'parse_sources',
+    'MinerU',
 ]
