@@ -27,7 +27,6 @@ from scenedetect.detectors import (  # type: ignore[import-untyped]
     ContentDetector,
 )
 
-from camel.agents import ChatAgent
 from camel.configs import QwenConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory, OpenAIAudioModels
@@ -102,6 +101,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         self,
         download_directory: Optional[str] = None,
     ) -> None:
+        from camel.agents import ChatAgent
+
         self._cleanup = download_directory is None
 
         self._download_directory = Path(
