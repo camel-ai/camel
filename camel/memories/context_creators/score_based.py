@@ -126,7 +126,8 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # than token limit
         truncate_idx = None
         for i, unit in enumerate(context_units):
-            if unit.record.score == 1:
+            if i == len(context_units) - 1:
+                # If we reach the end of the list and still exceed the token
                 raise RuntimeError(
                     "Cannot create context: exceed token limit.", total_tokens
                 )

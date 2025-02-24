@@ -100,4 +100,6 @@ class ContextRecord(BaseModel):
 
     memory_record: MemoryRecord
     score: float
-    timestamp: float
+    timestamp: float = Field(
+        default_factory=lambda: datetime.now().timestamp()
+    )
