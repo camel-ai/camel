@@ -86,32 +86,50 @@ def memory_and_message(request):
             "messages": [
                 {
                     "user": "What is renewable energy?",
-                    "assistant": "Renewable energy is energy that is collected from renewable resources, which are naturally replenished on a human timescale, such as sunlight, wind, rain, tides, waves, and geothermal heat.",
+                    "assistant": "Renewable energy is energy that is "
+                    "collected from renewable resources, "
+                    "which are naturally replenished on a human "
+                    "timescale, such as sunlight, wind, rain, "
+                    "tides, waves, and geothermal heat.",
                     "category": "energy",
                 },
                 {
-                    "user": "How does renewable energy impact the environment?",
-                    "assistant": "Renewable energy has a positive impact on the environment as it produces little to no greenhouse gas emissions, reduces air and water pollution, and conserves natural resources.",
+                    "user": "How does renewable energy impact the "
+                    "environment?",
+                    "assistant": "Renewable energy has a positive impact on "
+                    "the environment as it produces little to no "
+                    "greenhouse gas emissions, reduces air and "
+                    "water pollution, and conserves natural "
+                    "resources.",
                     "category": "energy",
                 },
                 {
                     "user": "How can I improve my study efficiency",
-                    "assistant": "You can improve your study efficiency by setting goals, creating a study schedule, taking breaks, and using active learning techniques.",
+                    "assistant": "You can improve your study efficiency by "
+                    "setting goals, creating a study schedule, "
+                    "taking breaks, and using active learning "
+                    "techniques.",
                     "category": "education",
                 },
                 {
                     "user": "What strategies can help with language learning?",
-                    "assistant": "Strategies that can help with language learning include practicing regularly, immersing yourself in the language, using flashcards, and speaking with native speakers.",
+                    "assistant": "Strategies that can help with language "
+                    "learning include practicing regularly, "
+                    "immersing yourself in the language, using "
+                    "flashcards, and speaking with native "
+                    "speakers.",
                     "category": "education",
                 },
             ],
             "questions": [
                 {
-                    "user": "What are the advantages of using solar energy over fossil fuels?",
+                    "user": "What are the advantages of using solar energy "
+                    "over fossil fuels?",
                     "category": "energy",
                 },
                 {
-                    "user": "How do cultural immersion programs contribute to language learning success?",
+                    "user": "How do cultural immersion programs contribute to "
+                    "language learning success?",
                     "category": "education",
                 },
             ],
