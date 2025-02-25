@@ -133,23 +133,25 @@ class OpenAIModel(BaseModelBackend):
 
     def preprocess_messages(
         self, messages: Union[List[OpenAIMessage], str]
-    ) -> Union[List[OpenAIMessage], str]:
-        # If messages is a string, it indicates a JSONL file path or
-        # content, so no preprocessing is needed.
+    ) -> Union[List[OpenAIMessage], str]:  # type: ignore[override]
+        # If messages is a string, it indicates a JSONL file path 
+        # or content,
+        # so no preprocessing is needed.
         if isinstance(messages, str):
             return messages
-        # Otherwise, call the parent class implementation for
+        # Otherwise, call the parent class implementation for 
         # preprocessing.
         return super().preprocess_messages(messages)
 
-    def _process_batch_messages(self, batch_str: str) -> Dict[str, Any]:
+
+    def _process_batch_messages(self, batch_str: str) -> Any:
         """Process batch messages using the OpenAI Batch API.
 
         Args:
             batch_str (str): A JSONL file path or a JSONL string.
 
         Returns:
-            Dict[str, Any]: The metadata of the batch job.
+            Any: The metadata of the batch job as a Batch object.
         """
         import io
         import os
@@ -179,6 +181,7 @@ class OpenAIModel(BaseModelBackend):
             metadata={"description": "Batch job"},
         )
         return batch_job
+
 
     def check_batch_process_status(
         self, batch_response: Any
@@ -217,26 +220,30 @@ class OpenAIModel(BaseModelBackend):
         messages: Union[List[OpenAIMessage], str],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk], Dict[str, Any]]:
+    ) -> Union[
+        ChatCompletion, 
+        Stream[ChatCompletionChunk]
+    ]:  # type: ignore[override]
         r"""Run inference of OpenAI chat completion.
 
-        If `messages` is a string, it is treated as a JSONL file (path or cont
-        ent) for batch processing via OpenAI's Batch API. Otherwise, if it is
-        a list of OpenAIMessage, the original single-request logic is used.
+        If `messages` is a string, it is treated as a JSONL file 
+        (path or content) for batch processing via OpenAI's Batch API. 
+        Otherwise, if it is a list of OpenAIMessage, the original 
+        single-request logic is used.
 
         Args:
             messages (Union[List[OpenAIMessage], str]): Either a list of
-                OpenAIMessage for a single query, or a string representing a
-                JSONL file (path or JSONL string) for batch processing.
+                OpenAIMessage for a single query, or a string representing
+                a JSONL file (path or JSONL string) for batch processing.
             response_format (Optional[Type[BaseModel]]): The format of the
                 response.
             tools (Optional[List[Dict[str, Any]]]): The tools schema for the
                 request.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk], Dict[str, Any]]:
-                For single queries, returns ChatCompletion or Stream; for
-                batch, returns batch job metadata.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                For single queries, returns ChatCompletion or Stream;
+                for batch, returns batch job metadata.
         """
         # If messages is a string, process it as a batch.
         if isinstance(messages, str):
@@ -248,6 +255,7 @@ class OpenAIModel(BaseModelBackend):
             return self._request_parse(messages, response_format, tools)
         else:
             return self._request_chat_completion(messages, tools)
+
 
     async def _arun(
         self,
