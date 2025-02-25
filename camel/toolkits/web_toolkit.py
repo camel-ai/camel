@@ -18,7 +18,6 @@ from typing import Any, Dict, List, Optional
 
 from PIL import Image
 
-
 from camel.configs import ChatGPTConfig
 from camel.interpreters.subprocess_interpreter import SubprocessInterpreter
 from camel.messages import BaseMessage
@@ -511,9 +510,8 @@ class WebToolkit:
         headless_mode=True,
         debug=False,
     ):
-        
         from camel.agents import ChatAgent
-        
+
         self.model_platform = model_platform
         self.model_type = model_type
         self.model_config_dict = model_config_dict

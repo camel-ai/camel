@@ -32,9 +32,9 @@ class SubprocessInterpreter(BaseInterpreter):
     strings in a subprocess.
 
     This class handles the execution of code in different scripting languages
-    (currently Python, Bash, Node.js and R) within a subprocess, capturing their
-    stdout and stderr streams, and allowing user checking before executing code
-    strings.
+    (currently Python, Bash, Node.js and R) within a subprocess, capturing
+    their stdout and stderr streams, and allowing user checking before
+    executing code strings.
 
     Args:
         require_confirm (bool, optional): If True, prompt user before running
