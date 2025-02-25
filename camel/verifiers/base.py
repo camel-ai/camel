@@ -22,8 +22,31 @@ from .models import Response, VerificationResult, VerificationStatus
 logger = get_logger(__name__)
 
 class Verifier(ABC):
-    r"""Base verifier class with optional setup, 
-    teardown, and batch verification."""
+    r"""Base verifier class providing a framework for verifying responses.
+
+    This class serves as a foundation for implementing verification logic. 
+    It supports:
+    
+    - **Single verification** via `verify()`, with automatic retries and timeout handling.
+    - **Optional batch verification** via `batch_verify()`, which can be overridden for parallel processing.
+    - **Logging & Error Handling:** Logs failures and exceptions for better debugging.
+    - **Customizability:** Subclasses must implement `_verify_implementation()` to define the actual verification logic.
+
+    ## Features:
+    - **Retries:** Retries failed verifications up to `max_retries` times.
+    - **Timeout:** Enforces a time limit per verification if specified.
+    - **Batch Support:** Sequential by default, can be overridden for parallel execution.
+
+    ## Example Usage:
+
+    class ExampleVerifier(Verifier):
+        async def _verify_implementation(self, result: Response) -> VerificationResult:
+            return VerificationResult(status=VerificationStatus.SUCCESS)
+
+    verifier = ExampleVerifier(timeout=5, max_retries=2)
+    result = await verifier.verify(Response())
+    print(result.status)  # Output: SUCCESS
+    """
 
     def __init__(
         self,
