@@ -737,7 +737,7 @@ class Neo4jGraph(BaseGraphStorage):
         obj: Optional[str] = None,
         rel: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """
+        r"""
         Query triplet information. If subj, obj, or rel is
         not specified, returns all matching triplets.
 
