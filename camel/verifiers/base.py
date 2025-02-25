@@ -17,30 +17,38 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from camel.logger import get_logger
+
 from .models import Response, VerificationResult, VerificationStatus
 
 logger = get_logger(__name__)
 
+
 class Verifier(ABC):
     r"""Base verifier class providing a framework for verifying responses.
 
-    This class serves as a foundation for implementing verification logic. 
+    This class serves as a foundation for implementing verification logic.
     It supports:
-    
-    - **Single verification** via `verify()`, with automatic retries and timeout handling.
-    - **Optional batch verification** via `batch_verify()`, which can be overridden for parallel processing.
-    - **Logging & Error Handling:** Logs failures and exceptions for better debugging.
-    - **Customizability:** Subclasses must implement `_verify_implementation()` to define the actual verification logic.
+
+    - **Single verification** via `verify()`, with automatic retries and
+    timeout handling.
+    - **Optional batch verification** via `batch_verify()`, which can be
+    overridden for parallel processing.
+    - **Logging & Error Handling:** Logs failures and exceptions for better
+    debugging.
+    - **Customizability:** Subclasses must implement `_verify_implementation()`
+     to define the actual verification logic.
 
     ## Features:
     - **Retries:** Retries failed verifications up to `max_retries` times.
     - **Timeout:** Enforces a time limit per verification if specified.
-    - **Batch Support:** Sequential by default, can be overridden for parallel execution.
+    - **Batch Support:** Sequential by default, can be overridden for
+        parallel execution.
 
     ## Example Usage:
 
     class ExampleVerifier(Verifier):
-        async def _verify_implementation(self, result: Response) -> VerificationResult:
+        async def _verify_implementation(self, result: Response)
+                                        -> VerificationResult:
             return VerificationResult(status=VerificationStatus.SUCCESS)
 
     verifier = ExampleVerifier(timeout=5, max_retries=2)
@@ -102,7 +110,9 @@ class Verifier(ABC):
                         timeout=self._timeout,
                     )
                 else:
-                    verification_result = await self._verify_implementation(result)
+                    verification_result = await self._verify_implementation(
+                        result
+                    )
 
                 verification_result.duration = time.time() - start_time
                 return verification_result
@@ -134,23 +144,29 @@ class Verifier(ABC):
         )
 
     @abstractmethod
-    async def _verify_implementation(self, result: Response) -> VerificationResult:
+    async def _verify_implementation(
+        self, result: Response
+    ) -> VerificationResult:
         r"""Subclasses must implement the verification logic."""
         raise NotImplementedError()
 
-    async def batch_verify(self, results: List[Response]) -> List[VerificationResult]:
+    async def batch_verify(
+        self, results: List[Response]
+    ) -> List[VerificationResult]:
         r"""Optional batch verification.
 
-        This method can be overridden in subclasses to process 
-        multiple verifications in parallel. By default, it just 
+        This method can be overridden in subclasses to process
+        multiple verifications in parallel. By default, it just
         calls `verify()` sequentially.
         """
         return [await self.verify(result) for result in results]
 
+    @abstractmethod
     async def _setup(self) -> None:
         """Optional setup for subclasses."""
         pass
 
+    @abstractmethod
     async def _teardown(self) -> None:
         """Optional teardown for subclasses."""
         pass

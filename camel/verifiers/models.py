@@ -17,8 +17,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, root_validator
 
-from camel.configs import BaseConfig
-from camel.types import ModelType
+# from camel.configs import BaseConfig
+# from camel.types import ModelType
 
 
 class VerificationStatus(Enum):
@@ -156,7 +156,7 @@ class MachineInfo(BaseModel):
         return values
 
 
-#class Response(BaseModel):
+# class Response(BaseModel):
 #    r"""Response schema for LLM generations with metadata and verification
 #    info.
 #
@@ -185,7 +185,8 @@ class MachineInfo(BaseModel):
 #        None, description="Reference solution if available"
 #    )
 #    verification_info: Dict[str, Any] = Field(
-#        default_factory=dict, description="Information needed for verification"
+#        default_factory=dict, description="Information needed
+# for verification"
 #    )
 #    verification_config: Optional[VerifierConfig] = Field(
 #        None, description="Configuration for verification behavior"
@@ -208,11 +209,13 @@ class MachineInfo(BaseModel):
 #        description="When the response was generated (UTC)",
 #    )
 
+
 class Response(BaseModel):
     """
-    A minimal response schema containing only the generated response 
+    A minimal response schema containing only the generated response
     and an optional ground truth answer for comparison.
     """
+
     llm_response: str = Field(description="Generated response from the LLM")
     ground_truth: Optional[str] = Field(
         None, description="Reference solution if available"
