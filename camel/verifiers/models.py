@@ -156,54 +156,64 @@ class MachineInfo(BaseModel):
         return values
 
 
+#class Response(BaseModel):
+#    r"""Response schema for LLM generations with metadata and verification
+#    info.
+#
+#    Contains the input context, generated output, and metadata for
+#    verification.
+#
+#    Attributes:
+#        problem_id: Unique identifier for the problem
+#        source: Source of the problem/task
+#        task_type: Type of task being performed
+#        gold_standard_solution: Reference solution if available
+#        verification_info: Additional info needed for verification
+#        metadata: General purpose metadata about the generation
+#        prompt: Input prompt for the LLM
+#        llm_response: Generated response from the LLM
+#        model_type: Type of the LLM used
+#        generation_config: Configuration used for generation
+#        machine_info: Information about the execution environment
+#        timestamp: When the response was generated (UTC)
+#    """
+#
+#    problem_id: str = Field(description="Unique identifier for the problem")
+#    source: str = Field(description="Source of the problem/task")
+#    task_type: TaskType = Field(description="Type of task being performed")
+#    gold_standard_solution: Optional[str] = Field(
+#        None, description="Reference solution if available"
+#    )
+#    verification_info: Dict[str, Any] = Field(
+#        default_factory=dict, description="Information needed for verification"
+#    )
+#    verification_config: Optional[VerifierConfig] = Field(
+#        None, description="Configuration for verification behavior"
+#    )
+#    metadata: Dict[str, Any] = Field(
+#        default_factory=dict,
+#        description="Additional metadata about the generation",
+#    )
+#    prompt: str = Field(description="Input prompt for the LLM")
+#    llm_response: str = Field(description="Generated response from the LLM")
+#    model_type: ModelType = Field(description="Type of the LLM used")
+#    generation_config: BaseConfig = Field(
+#        description="Generation parameters used"
+#    )
+#    machine_info: Optional[MachineInfo] = Field(
+#        None, description="Execution environment info"
+#    )
+#    timestamp: datetime = Field(
+#        default_factory=datetime.utcnow,
+#        description="When the response was generated (UTC)",
+#    )
+
 class Response(BaseModel):
-    r"""Response schema for LLM generations with metadata and verification
-    info.
-
-    Contains the input context, generated output, and metadata for
-    verification.
-
-    Attributes:
-        problem_id: Unique identifier for the problem
-        source: Source of the problem/task
-        task_type: Type of task being performed
-        gold_standard_solution: Reference solution if available
-        verification_info: Additional info needed for verification
-        metadata: General purpose metadata about the generation
-        prompt: Input prompt for the LLM
-        llm_response: Generated response from the LLM
-        model_type: Type of the LLM used
-        generation_config: Configuration used for generation
-        machine_info: Information about the execution environment
-        timestamp: When the response was generated (UTC)
     """
-
-    problem_id: str = Field(description="Unique identifier for the problem")
-    source: str = Field(description="Source of the problem/task")
-    task_type: TaskType = Field(description="Type of task being performed")
-    gold_standard_solution: Optional[str] = Field(
-        None, description="Reference solution if available"
-    )
-    verification_info: Dict[str, Any] = Field(
-        default_factory=dict, description="Information needed for verification"
-    )
-    verification_config: Optional[VerifierConfig] = Field(
-        None, description="Configuration for verification behavior"
-    )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata about the generation",
-    )
-    prompt: str = Field(description="Input prompt for the LLM")
+    A minimal response schema containing only the generated response 
+    and an optional ground truth answer for comparison.
+    """
     llm_response: str = Field(description="Generated response from the LLM")
-    model_type: ModelType = Field(description="Type of the LLM used")
-    generation_config: BaseConfig = Field(
-        description="Generation parameters used"
-    )
-    machine_info: Optional[MachineInfo] = Field(
-        None, description="Execution environment info"
-    )
-    timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="When the response was generated (UTC)",
+    ground_truth: Optional[str] = Field(
+        None, description="Reference solution if available"
     )
