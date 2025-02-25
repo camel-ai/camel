@@ -15,10 +15,13 @@ from typing import List, Tuple
 
 from pydantic import BaseModel
 
+from camel.logger import get_logger
 from camel.memories.base import BaseContextCreator
 from camel.memories.records import ContextRecord
 from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
+
+logger = get_logger(__name__)
 
 
 class _ContextUnit(BaseModel):
@@ -102,6 +105,12 @@ class ScoreBasedContextCreator(BaseContextCreator):
         total_tokens = sum([unit.num_tokens for unit in context_units])
         if total_tokens <= self.token_limit:
             return self._create_output(context_units)
+
+        # Log warning about token limit being exceeded
+        logger.warning(
+            f"Token limit reached ({total_tokens} > {self.token_limit}). "
+            f"Some messages will be pruned from memory to meet the limit."
+        )
 
         # Sort by score
         context_units = sorted(

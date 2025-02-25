@@ -79,6 +79,7 @@ class NotionToolkit(BaseToolkit):
     def __init__(
         self,
         notion_token: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes the NotionToolkit.
 
@@ -86,6 +87,7 @@ class NotionToolkit(BaseToolkit):
             notion_token (Optional[str], optional): The optional notion_token
                 used to interact with notion APIs.(default: :obj:`None`)
         """
+        super().__init__(timeout=timeout)
         from notion_client import Client
 
         self.notion_token = notion_token or os.environ.get("NOTION_TOKEN")

@@ -39,7 +39,10 @@ class GithubToolkit(BaseToolkit):
 
     @dependencies_required('github')
     def __init__(
-        self, repo_name: str, access_token: Optional[str] = None
+        self,
+        repo_name: str,
+        access_token: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         r"""Initializes a new instance of the GitHubToolkit class.
 
@@ -49,6 +52,7 @@ class GithubToolkit(BaseToolkit):
                 with GitHub. If not provided, it will be obtained using the
                 `get_github_access_token` method.
         """
+        super().__init__(timeout=timeout)
         from github import Auth, Github
 
         if access_token is None:
