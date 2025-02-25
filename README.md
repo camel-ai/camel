@@ -351,12 +351,11 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 
 ## Contributing to CAMEL
 
-> [!CONTRIBUTING]
 > For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
 >
 > We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
->
 
+<br>
 
 ## Community & Contact
 For more information please contact camel-ai@eigent.ai
