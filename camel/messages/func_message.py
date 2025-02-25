@@ -54,8 +54,6 @@ class FunctionCallingMessage(BaseMessage):
             associated with the message, defining sender details.
         parsed (Optional[Union[Type[BaseModel], dict]]): An optional parsed
             object extracted from the content.
-        message_id (UUID4): A unique identifier for the message, generated
-            automatically and not set by the user.
         func_name (Optional[str]): The name of the function used.
             (default: :obj:`None`)
         args (Optional[Dict]): The dictionary of arguments passed to the
@@ -74,7 +72,6 @@ class FunctionCallingMessage(BaseMessage):
         acl_parameter: Optional[ACLParameter] = None,
         meta_dict: Optional[Dict[str, Any]] = None,
         parsed: Optional[Union[BaseModel, dict]] = None,
-        message_id: Optional[str] = None,
         func_name: Optional[str] = None,
         args: Optional[Dict] = None,
         result: Optional[Any] = None,
@@ -88,7 +85,6 @@ class FunctionCallingMessage(BaseMessage):
             acl_parameter=acl_parameter,
             meta_dict=meta_dict,
             parsed=parsed,
-            message_id=message_id,
         )
 
         # Initialize function-specific attributes

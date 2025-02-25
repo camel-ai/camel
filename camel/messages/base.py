@@ -55,8 +55,6 @@ class BaseMessage:
             associated with the message, defining sender details.
         parsed (Optional[Union[Type[BaseModel], dict]]): An optional parsed
             object extracted from the content.
-        message_id (UUID4): A unique identifier for the message, generated
-            automatically and not set by the user.
     """
 
     def __init__(
