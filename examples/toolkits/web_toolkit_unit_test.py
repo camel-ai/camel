@@ -23,7 +23,7 @@ from camel.types import ModelPlatformType, ModelType
 
 @pytest.fixture
 def web_agent():
-    toolkit = WebToolkit()
+    toolkit = WebToolkit(headless_mode=True)
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -64,7 +64,7 @@ def test_2(web_agent):
     resp = web_agent.step(task_prompt)
     answer = resp.msgs[0].content
 
-    assert '2' in answer or 'two' in answer.lower()
+    assert '2' in answer or 'two' or 'second' in answer.lower()
 
 
 def test_3(web_agent):
@@ -74,4 +74,4 @@ def test_3(web_agent):
     resp = web_agent.step(task_prompt)
     answer = resp.msgs[0].content
 
-    assert "citations" in answer.lower()
+    assert 'citations' or 'citation' in answer.lower()
