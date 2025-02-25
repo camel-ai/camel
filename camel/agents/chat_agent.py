@@ -489,6 +489,7 @@ class ChatAgent(BaseAgent):
         tool_call_records: List[ToolCallingRecord] = []
         external_tool_call_request: Optional[ToolCallRequest] = None
 
+        enforce_no_tools = False
         max_retries = self.tools_max_retries
         while True:
             max_retries -= 1
@@ -496,11 +497,7 @@ class ChatAgent(BaseAgent):
             if max_retries == -1:
                 # TODO: need changes!  Review after Wendong
                 logger.info("Max retries reached, terminating the session.")
-                original_model_dict = self.model_backend.model_config_dict
-                # Replace the original tools with empty tools
-                self.model_backend.model_config_dict = original_model_dict.copy()
-                if "tools" in self.model_backend.model_config_dict:
-                    del self.model_backend.model_config_dict["tools"]
+                enforce_no_tools = True
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -508,13 +505,22 @@ class ChatAgent(BaseAgent):
                 return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
-            # Get response from model backend
-            response = self._get_model_response(
-                openai_messages,
-                num_tokens,
-                response_format,
-                self._get_full_tool_schemas(),
-            )
+            if enforce_no_tools:
+                # Get response from model backend which enforce no tools
+                response = self._get_model_response(
+                    openai_messages,
+                    num_tokens,
+                    response_format,
+                    [],
+                )
+            else:
+                # Get response from model backend
+                response = self._get_model_response(
+                    openai_messages,
+                    num_tokens,
+                    response_format,
+                    self._get_full_tool_schemas(),
+                )
 
             if self.single_iteration:
                 break
