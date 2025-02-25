@@ -548,8 +548,8 @@ class ChatAgent(BaseAgent):
         choices = reason_params.get("choices", 3)
         threshold = reason_params.get("threshold", 0.5)
 
-        input_message.content += f"""First, come up with potential {choices} 
-        choices/candidates. 
+        input_message.content.text += f"""First, come up with potential 
+        {choices} choices/candidates. 
         Next, assign a probability/credibility between 0 and 1 to each choice 
         (make sure they add up to 1). 
         Finally, if only one choice has a probability/credibility greater than
@@ -1104,7 +1104,7 @@ class ChatAgent(BaseAgent):
         """
         encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         completion_tokens = sum(
-            len(encoding.encode(message.content))
+            len(encoding.encode(message.content.text))
             for message in output_messages
         )
         return dict(
