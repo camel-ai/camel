@@ -133,16 +133,13 @@ class OpenAIModel(BaseModelBackend):
 
     def preprocess_messages(
         self, messages: Union[List[OpenAIMessage], str]
-    ) -> Union[List[OpenAIMessage], str]:  # type: ignore[override]
-        # If messages is a string, it indicates a JSONL file path 
-        # or content,
+    ) -> Any:  # type: ignore[override]
+        # If messages is a string, it indicates a JSONL file path or content,
         # so no preprocessing is needed.
         if isinstance(messages, str):
             return messages
-        # Otherwise, call the parent class implementation for 
-        # preprocessing.
+        # Otherwise, call the parent class implementation for preprocessing.
         return super().preprocess_messages(messages)
-
 
     def _process_batch_messages(self, batch_str: str) -> Any:
         """Process batch messages using the OpenAI Batch API.
@@ -182,7 +179,6 @@ class OpenAIModel(BaseModelBackend):
         )
         return batch_job
 
-
     def check_batch_process_status(
         self, batch_response: Any
     ) -> Union[str, Dict[str, Any]]:
@@ -220,15 +216,12 @@ class OpenAIModel(BaseModelBackend):
         messages: Union[List[OpenAIMessage], str],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[
-        ChatCompletion, 
-        Stream[ChatCompletionChunk]
-    ]:  # type: ignore[override]
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:  # type: ignore[override]
         r"""Run inference of OpenAI chat completion.
 
-        If `messages` is a string, it is treated as a JSONL file 
-        (path or content) for batch processing via OpenAI's Batch API. 
-        Otherwise, if it is a list of OpenAIMessage, the original 
+        If `messages` is a string, it is treated as a JSONL file
+        (path or content) for batch processing via OpenAI's Batch API.
+        Otherwise, if it is a list of OpenAIMessage, the original
         single-request logic is used.
 
         Args:
@@ -255,7 +248,6 @@ class OpenAIModel(BaseModelBackend):
             return self._request_parse(messages, response_format, tools)
         else:
             return self._request_chat_completion(messages, tools)
-
 
     async def _arun(
         self,
