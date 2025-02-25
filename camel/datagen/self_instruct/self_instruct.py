@@ -45,6 +45,8 @@ class SelfInstructPipeline:
         filter_config (Optional[Dict[str, Dict[str, Any]]]): configuration
             for the filter functions registered in FILE_REGISTRY.
             (default::obj:`None`)
+        stop_on_first_failure (bool): If True, stops checking filters after
+            the first failure.
     """
 
     def __init__(
@@ -56,6 +58,7 @@ class SelfInstructPipeline:
         human_to_machine_ratio: tuple = (6, 2),
         instruction_filter: Optional[InstructionFilter] = None,
         filter_config: Optional[Dict[str, Dict[str, Any]]] = None,
+        stop_on_first_failure: bool = False,
     ):
         self.agent = agent
         self.num_machine_instructions = num_machine_instructions
@@ -80,7 +83,9 @@ class SelfInstructPipeline:
             config_to_use = (
                 filter_config if filter_config is not None else default_config
             )
-            self.instruction_filter = InstructionFilter(config_to_use)
+            self.instruction_filter = InstructionFilter(
+                config_to_use, stop_on_first_failure
+            )
 
     def load_seed(self, path: str):
         r"""Load seed tasks from a file. Defaults to a predefined seed file if
