@@ -187,7 +187,7 @@ Installing CAMEL is a breeze thanks to its availability on PyPI. Simply open you
 pip install camel-ai
 ```
 
-For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel#installation).
+For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/INSTALLATION.md).
 
 After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://www.docs.camel-ai.org) to build powerful multi-agent systems.
 
@@ -204,8 +204,6 @@ Explore different types of agents, their roles, and their applications.
 
 Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you encounter any issue set up CAMEL.
 
-> If you would like to contribute to CAMEL refer to our [Contributing Guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md).
-
 <br>
 
 ## Tech Stack
@@ -216,7 +214,7 @@ Please reachout to us on [CAMEL discord](https://discord.camel-ai.org/) if you e
   </a>
 </div>
 
-### 1. Key Modules
+### Key Modules
 Core components and utilities to build, operate, and enhance CAMEL-AI agents and societies.
 
 | Module | Description |
@@ -236,7 +234,51 @@ Core components and utilities to build, operate, and enhance CAMEL-AI agents and
 | **[Human-in-the-Loop](https://docs.camel-ai.org/cookbooks/advanced_features/agents_with_human_in_loop_and_tool_approval.html)** | Interactive components for human oversight and intervention. |
 ---
 
-### 2. Utilize Various LLMs as Backends
+## Research
+
+We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks.
+
+**Explore our research projects:**
+
+<div align="center">
+  <a href="https://crab.camel-ai.org/">
+    <img src="docs/images/crab.png" alt="CRAB">
+  </a>
+</div>
+
+<div align="center">
+  <a href="https://www.agent-trust.camel-ai.org/">
+    <img src="docs/images/agent_trust.png" alt="Agent Trust">
+  </a>
+</div>
+
+<div align="center">
+  <a href="https://oasis.camel-ai.org/">
+    <img src="docs/images/oasis.png" alt="OASIS">
+  </a>
+</div>
+
+<div align="center">
+  <a href="https://emos-project.github.io/">
+    <img src="docs/images/emos.png" alt="Emos">
+  </a>
+</div>
+
+>### Research with US
+>
+>We warmly invite you to use CAMEL for your impactful research. 
+>
+> Rigorous research takes time and resources. We are a community-driven research collective with 100+ researchers exploring the frontier research of Multi-agent Systems. Join our ongoing projects or test new ideas with us, [reach out via email](mailto:camel-ai@eigent.ai) for more information.
+>
+><div align="center">
+>    <img src="docs/images/partners.png" alt="Partners">
+></div>
+
+<br>
+
+## Syenthetic Datasets
+
+### 1. Utilize Various LLMs as Backends
 
 For more details, please see our [`Models Documentation`](https://docs.camel-ai.org/key_modules/models.html#).
 
@@ -251,188 +293,13 @@ For more details, please see our [`Models Documentation`](https://docs.camel-ai.
 | **Chemistry**  | [Chat format](https://huggingface.co/datasets/camel-ai/chemistry)                                   | x                                                                                                                | x                                                                                          |
 | **Biology**    | [Chat format](https://huggingface.co/datasets/camel-ai/biology)                                     | x                                                                                                                | x                                                                                          |
 
-### 3. Visualizations of Instructions and Tasks
+### 2. Visualizations of Instructions and Tasks
 
 | Dataset          | Instructions                                                                                                         | Tasks                                                                                                         |
 |------------------|----------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | **AI Society**   | [Instructions](https://atlas.nomic.ai/map/3a559a06-87d0-4476-a879-962656242452/db961915-b254-48e8-8e5c-917f827b74c6) | [Tasks](https://atlas.nomic.ai/map/cb96f41b-a6fd-4fe4-ac40-08e101714483/ae06156c-a572-46e9-8345-ebe18586d02b) |
 | **Code**         | [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457) | [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd) |
 | **Misalignment** | [Instructions](https://atlas.nomic.ai/map/5c491035-a26e-4a05-9593-82ffb2c3ab40/2bd98896-894e-4807-9ed8-a203ccb14d5e) | [Tasks](https://atlas.nomic.ai/map/abc357dd-9c04-4913-9541-63e259d7ac1f/825139a4-af66-427c-9d0e-f36b5492ab3f) |
-
-<br>
-
-## Installation
-
-### 1. From PyPI
-
-To install the base CAMEL library:
-```bash
-pip install camel-ai
-```
-
-> **Note**: Some features may not work without their required dependencies. Install `camel-ai[all]` to ensure all dependencies are available, or install specific extras based on the features you need.
-
-```bash
-pip install 'camel-ai[all]'  # Replace with options below
-```
-
-Available extras:
-- `all`: Includes all features below
-- `model_platforms`: OpenAI, Google, Mistral, Anthropic Claude, Cohere etc.
-- `huggingface`: Transformers, Diffusers, Accelerate, Datasets, PyTorch etc.
-- `rag`: Sentence Transformers, Qdrant, Milvus, BM25 etc.
-- `storage`: Neo4j, Redis, Azure Blob, Google Cloud Storage, AWS S3  etc.
-- `web_tools`: DuckDuckGo, Wikipedia, WolframAlpha, Google Maps, Weather API etc.
-- `document_tools`: PDF, Word, OpenAPI, BeautifulSoup, Unstructured etc.
-- `media_tools`: Image Processing, Audio Processing, YouTube Download, FFmpeg etc.
-- `communication_tools`: Slack, Discord, Telegram, GitHub, Reddit, Notion etc.
-- `data_tools`: Pandas, TextBlob, DataCommons, OpenBB, Stripe etc.
-- `research_tools`: arXiv, Google Scholar etc.
-- `dev_tools`: Docker, Jupyter, Tree-sitter, Code Interpreter etc.
-
-Multiple extras can be combined using commas:
-```bash
-pip install 'camel-ai[rag,web_tools,document_tools]'  # Example: RAG system with web search and document processing
-```
-
-### 2. From Docker
-
-Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
-
-
-By default, the agent uses the `ModelType.DEFAULT` model from the `ModelPlatformType.DEFAULT`. You can configure the default model platform and model type using environment variables. If these are not set, the agent will fall back to the default settings:
-
-```bash
-ModelPlatformType.DEFAULT = "openai"
-ModelType.DEFAULT = "gpt-4o-mini"
-```
-
-### 3. From Source with Poetry
-```bash
-# Clone github repo
-git clone https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# If you didn't install peotry before
-pip install poetry  # (Optional)
-
-# We suggest using python 3.10
-poetry env use python3.10  # (Optional)
-
-# Activate CAMEL virtual environment
-poetry shell
-
-# Install the base CAMEL library
-# It takes about 90 seconds
-poetry install
-
-# Install CAMEL with all dependencies
-poetry install -E all  # (Optional)
-
-# Exit the virtual environment
-exit
-```
-
-### 4. Setting Default Model Platform and Model Type (Optional)
-
-You can customize the default model platform and model type by setting the following environment variables:
-```bash
-export DEFAULT_MODEL_PLATFORM_TYPE=<your preferred platform>  # e.g., openai, anthropic, etc.
-export DEFAULT_MODEL_TYPE=<your preferred model>  # e.g., gpt-3.5-turbo, gpt-4o-mini, etc.
-```
-
-### 5. Setting Your Model API Key (Using OpenAI as an Example)
-
-**For Bash shell (Linux, macOS, Git Bash on Windows):**
-
-```bash
-# Export your OpenAI API key
-export OPENAI_API_KEY=<insert your OpenAI API key>
-OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
-```
-
-**For Windows Command Prompt:**
-
-```cmd
-REM export your OpenAI API key
-set OPENAI_API_KEY=<insert your OpenAI API key>
-set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
-```
-
-**For Windows PowerShell:**
-
-```powershell
-# Export your OpenAI API key
-$env:OPENAI_API_KEY="<insert your OpenAI API key>"
-$env:OPENAI_API_BASE_URL="<inert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
-```
-
-Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case.
-
-
-Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
-
-**For `.env` File:**
-
-To simplify the process of managing API Keys, you can use store information in a `.env` file and load them into your application dynamically.
-
-1. Modify .env file in the root directory of CAMEL and fill the following lines:
-
-```bash
-OPENAI_API_KEY=<fill your API KEY here>
-```
-
-Replace <fill your API KEY here> with your actual API key.
-
-2. Load the .env file in your Python script: Use the load_dotenv() function from the dotenv module to load the variables from the .env file into the environment. Here's an example:
-
-```python
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from the .env file
-load_dotenv()
-```
-For more details about the key names in project and how to apply key, 
-you can refer to [here](https://github.com/camel-ai/camel/.env).
-
-> [!TIP]
-> By default, the load_dotenv() function does not overwrite existing environment variables that are already set in your system. It only populates variables that are missing.
-If you need to overwrite existing environment variables with the values from your `.env` file, use the `override=True` parameter:
-> ```python
-> load_dotenv(override=True)
-> ```
-
-After setting the OpenAI API key, you can run the `role_playing.py` script. Find tasks for various assistant-user roles [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
-
-```bash
-# You can change the role pair and initial prompt in role_playing.py
-python examples/ai_society/role_playing.py
-```
-
-Also feel free to run any scripts below that interest you:
-
-```bash
-# You can change the role pair and initial prompt in these python files
-
-# Examples of two agents role-playing
-python examples/ai_society/role_playing.py
-
-# The agent answers questions by utilizing code execution tools.
-python examples/toolkits/code_execution_toolkit.py
-
-# Generating a knowledge graph with an agent
-python examples/knowledge_graph/knowledge_graph_agent_example.py  
-
-# Multiple agents collaborating to decompose and solve tasks
-python examples/workforce/multiple_single_agents.py 
-
-# Use agent to generate creative image
-python examples/vision/image_crafting.py
-```
-For additional feature examples, see the [`examples`](https://github.com/camel-ai/camel/tree/master/examples) directory.
 
 <br>
 
@@ -482,33 +349,25 @@ Practical guides and tutorials for implementing specific functionalities in CAME
 <br>
 
 
-## Research
+## Contributing to CAMEL
 
-### We warmly invite you to use CAMEL for your impactful research. 🙌
+> [!CONTRIBUTING]
+> For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
+>
+> We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
+>
 
-<div align="center">
-  <a href="https://crab.camel-ai.org/">
-    <img src="docs/images/crab.png" alt="CRAB">
-  </a>
-</div>
 
-<div align="center">
-  <a href="https://www.agent-trust.camel-ai.org/">
-    <img src="docs/images/agent_trust.png" alt="Agent Trust">
-  </a>
-</div>
+## Community & Contact
+For more information please contact camel-ai@eigent.ai
 
-<div align="center">
-  <a href="https://oasis.camel-ai.org/">
-    <img src="docs/images/oasis.png" alt="OASIS">
-  </a>
-</div>
+- **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
 
-<div align="center">
-  <a href="https://emos-project.github.io/">
-    <img src="docs/images/emos.png" alt="Emos">
-  </a>
-</div>
+- **Discord:** Get real-time support, chat with the community, and stay updated. [Join us](https://discord.camel-ai.org/)
+
+- **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
+
+- **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
 
 <br>
 
@@ -538,26 +397,6 @@ We implemented amazing research ideas from other works for you to build, compare
 ## License
 
 The source code is licensed under Apache 2.0.
-
-<br>
-
-## Contributing to CAMEL
-
->For those who'd like to contribute code, we appreciate your interest in contributing to our open-source initiative. Please take a moment to review our [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) to get started on a smooth collaboration journey.🚀
->
->We also welcome you to help CAMEL grow by sharing it on social media, at events, or during conferences. Your support makes a big difference!
-
-
-## Community & Contact
-For more information please contact camel-ai@eigent.ai
-
-- **GitHub Issues:** Report bugs, request features, and track development. [Submit an issue](https://github.com/camel-ai/camel/issues)
-
-- **Discord:** Get real-time support, chat with the community, and stay updated. [Join us](https://discord.camel-ai.org/)
-
-- **X (Twitter):** Follow for updates, AI insights, and key announcements. [Follow us](https://x.com/CamelAIOrg)
-
-- **Ambassador Project:** Advocate for CAMEL-AI, host events, and contribute content. [Learn more](https://www.camel-ai.org/community)
 
 <br>
 
