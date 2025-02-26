@@ -495,8 +495,7 @@ class SelfImprovingCoTPipeline:
 
     @retry_on_error()
     def generate_reasoning_trace_rejection(self, problem: str) -> str:
-        r"""
-        Generate multiple candidate reasoning traces for a problem and
+        r"""Generate multiple candidate reasoning traces for a problem and
         select the best one based on evaluation.
 
         Args:
@@ -504,11 +503,8 @@ class SelfImprovingCoTPipeline:
 
         Returns:
             str: The best candidate trace that meets quality criteria, or the
-            first candidate if none qualify.
+                first candidate if none qualify.
         """
-        self.reason_agent.model_backend.model_config_dict['n'] = (
-            self.rejection_sampling_n
-        )
         few_shot_examples = (
             f"Examples: {self.few_shot_examples}"
             if self.few_shot_examples
@@ -517,13 +513,28 @@ class SelfImprovingCoTPipeline:
         prompt = self.REASONING_TEMPLATE.format(
             problem=problem, few_shot_examples=few_shot_examples
         )
-        # Generate multiple condidate traces in one call using parameter n
-        responses = self.reason_agent.step(prompt)
-        # Extract cancidate traces
-        candidate_traces = [choice.content for choice in responses.msgs]
+        responses, candidate_traces = None, []
+        if 'n' in self.reason_agent.model_backend.model_config_dict:
+            self.reason_agent.model_backend.model_config_dict['n'] = (
+                self.rejection_sampling_n
+            )
+            # Generate multiple condidate traces in one call using parameter n
+            responses = self.reason_agent.step(prompt)
+            # Extract cancidate traces
+            candidate_traces = [choice.content for choice in responses.msgs]
+        else:
+            sampling_n = (
+                self.rejection_sampling_n
+                if self.rejection_sampling_n is not None
+                else 1
+            )
+            for _i in range(sampling_n):
+                trace = self.generate_reasoning_trace(problem)
+                candidate_traces.append(trace)
 
         best_trace = None
         best_avg_score = 0.01
+        candidate_avg_scores = []
         for trace in candidate_traces:
             eval_results = self.evaluate_trace(problem, trace)
             # Remove feedback from scores
@@ -533,6 +544,7 @@ class SelfImprovingCoTPipeline:
                 avg_score = sum(scores.values()) / len(scores)
             else:
                 avg_score = 0.0
+            candidate_avg_scores.append(avg_score)
             # If the candidate meets the threshold and is the best, select it
             if (
                 self._check_score_threshold(scores)
@@ -541,7 +553,9 @@ class SelfImprovingCoTPipeline:
                 best_trace = trace
                 best_avg_score = avg_score
         if best_trace is None:
-            best_trace = candidate_traces[0]
+            best_trace = candidate_traces[
+                candidate_avg_scores.index(max(candidate_avg_scores))
+            ]
         return best_trace
 
     @retry_on_error()
