@@ -64,6 +64,12 @@ class Verifier(ABC):
     ):
         r"""Initialize the verifier.
 
+        Verifies:
+        1. Code solution correctness via execution
+        2. Final answer matches expected output
+        3. Chain of thought reasoning is valid
+        4. Symbolic solver verification matches code execution
+
         Args:
             timeout: Max time in seconds for verification.
             max_retries: Number of times to retry on failure.
