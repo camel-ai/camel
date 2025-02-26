@@ -28,7 +28,9 @@ class DataPoint(BaseModel):
     r"""A single data point in the dataset.
 
     Attributes:
-        question (str): The question to pose to the LLM.
+        question (str): The primary question or issue to be addressed.
+        rationale (str): Logical reasoning or explanation behind the 
+            answer.
         final_answer (str): The final answer.
         verified (bool): Whether this chain-of-thought is verified.
             (default: :obj:`False`)
@@ -38,13 +40,11 @@ class DataPoint(BaseModel):
             rewards/hints. (default: :obj:`None`)
         difficulty (Optional[str]): Difficulty level of the question.
             (default: :obj:`None`)
-        chain_of_thought (Optional[str]): Long chain-of-thought reasoning.
-            (default: :obj:`None`)
         metadata Optional[Dict[str, Any]]: Additional metadata about the data
             point. (default: :obj:`None`)
     """
 
-    question: str = Field(..., description="The question to pose to the LLM.")
+    question: str = Field(..., description="The primary question or issue to be addressed.")
     final_answer: str = Field(..., description="The final answer.")
     verified: bool = Field(
         False, description="Whether this chain-of-thought is verified."
