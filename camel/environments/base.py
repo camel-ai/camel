@@ -335,7 +335,7 @@ class BaseEnvironment(ABC):
                 'ground_truth',
                 'final_answer',
                 'difficulty',
-                'chain_of_thought',
+                'rationale',
             ]
 
             # Validate required attributes
@@ -354,7 +354,7 @@ class BaseEnvironment(ABC):
                     'ground_truth': datapoint.ground_truth,
                     'final_answer': datapoint.final_answer,
                     'difficulty': datapoint.difficulty,
-                    'chain_of_thought': datapoint.chain_of_thought,
+                    'rationale': datapoint.rationale,
                 },
                 metadata={
                     'step': self._current_step,

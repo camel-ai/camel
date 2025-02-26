@@ -168,7 +168,7 @@ class Response(BaseModel):
         problem_id: Unique identifier for the problem
         source: Source of the problem/task
         task_type: Type of task being performed
-        gold_standard_solution: Reference solution if available
+        ground_truth: Reference solution if available
         verification_info: Additional info needed for verification
         metadata: General purpose metadata about the generation
         prompt: Input prompt for the LLM
@@ -182,7 +182,7 @@ class Response(BaseModel):
     problem_id: str = Field(description="Unique identifier for the problem")
     source: str = Field(description="Source of the problem/task")
     task_type: TaskType = Field(description="Type of task being performed")
-    gold_standard_solution: Optional[str] = Field(
+    ground_truth: Optional[str] = Field(
         None, description="Reference solution if available"
     )
     verification_info: Dict[str, Any] = Field(

@@ -14,12 +14,14 @@
 
 import os
 import random
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+from torch.utils.data import Dataset
 
+from camel.agents import ChatAgent
 from camel.logger import get_logger
+from camel.verifiers import BaseVerifier
 
 logger = get_logger(__name__)
 
@@ -29,7 +31,7 @@ class DataPoint(BaseModel):
 
     Attributes:
         question (str): The primary question or issue to be addressed.
-        rationale (str): Logical reasoning or explanation behind the 
+        rationale (str): Logical reasoning or explanation behind the
             answer.
         final_answer (str): The final answer.
         verified (bool): Whether this chain-of-thought is verified.
@@ -44,7 +46,12 @@ class DataPoint(BaseModel):
             point. (default: :obj:`None`)
     """
 
-    question: str = Field(..., description="The primary question or issue to be addressed.")
+    question: str = Field(
+        ..., description="The primary question or issue to be addressed."
+    )
+    rationale: str = Field(
+        None, description="Logical reasoning or explanation behind the answer."
+    )
     final_answer: str = Field(..., description="The final answer.")
     verified: bool = Field(
         False, description="Whether this chain-of-thought is verified."
@@ -58,16 +65,12 @@ class DataPoint(BaseModel):
     difficulty: Optional[str] = Field(
         None, description="Difficulty level of the question."
     )
-
-    chain_of_thought: Optional[str] = Field(
-        None, description="Long chain-of-thought reasoning."
-    )
     metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Additional metadata about the data point."
     )
 
 
-class BaseDataset(ABC):
+class BaseDataset(Dataset):
     r"""A dataset contains questions and ground truth data for training.
     It can be either static (e.g., MATH dataset) or generative
     (using an LLM to generate questions).
@@ -75,6 +78,7 @@ class BaseDataset(ABC):
 
     def __init__(
         self,
+        data: List[Dict[str, str]],
         cache_dir: Optional[str] = None,
         max_cache_size: int = int(1e9),  # 1GB default
         preload: bool = False,
@@ -84,6 +88,8 @@ class BaseDataset(ABC):
         r"""Initialize the dataset.
 
         Args:
+            data (List[Dict[str, str]]): List of dictionary items to
+                create the dataset from.
             cache_dir (Optional[str]): Directory to cache dataset files.
                 (default: :obj:`None`)
             max_cache_size (int): Maximum cache size in bytes.
@@ -103,6 +109,7 @@ class BaseDataset(ABC):
         self._current_index = 0
         self._is_setup = False
         self._cache: Dict[int, DataPoint] = {}
+        self._raw_data: List[Dict[str, str]] = data if data is not None else []
 
         # Store configuration parameters
         self._cache_dir = str(cache_dir) if cache_dir is not None else None
@@ -122,14 +129,17 @@ class BaseDataset(ABC):
         if self._max_cache_size < 0:
             raise ValueError("max_cache_size must be positive")
 
+        self.data: List[DataPoint] = []  # Will be populated in setup()
+
     async def setup(self) -> None:
         r"""Set up the dataset with necessary resources.
 
         This method:
         1. Creates cache directory if needed
-        2. Preloads data if configured
-        3. Initializes shuffling if enabled
-        4. Validates dataset integrity
+        2. Processes raw data into DataPoint objects
+        3. Preloads data if configured
+        4. Initializes shuffling if enabled
+        5. Validates dataset integrity
 
         Raises:
             OSError: If cache directory creation fails.
@@ -151,6 +161,35 @@ class BaseDataset(ABC):
                         f"{self._cache_dir}: {e}"
                     )
                     raise
+
+            # Process raw data into DataPoint objects
+            self.data = []  # Clear any existing data
+            data_points: List[
+                DataPoint
+            ] = []  # Explicitly annotated temporary list
+            for i, item in enumerate(self._raw_data):
+                try:
+                    # Convert dictionary to DataPoint with all required fields
+                    dp = DataPoint(
+                        question=item.get('question', ''),
+                        rationale=item.get('rationale', ''),
+                        final_answer=item.get('final_answer', ''),
+                        verified=bool(item.get('verified', False)),
+                        metadata=item.get('metadata', {})  # type: ignore[arg-type]
+                        if isinstance(item.get('metadata'), dict)
+                        else {},
+                        ground_truth='',
+                        raw_markdown='',
+                        difficulty='',
+                    )
+                    data_points.append(dp)
+                except ValidationError as e:
+                    logger.error(f"Sample {i} validation error: {e}")
+                    raise ValueError(f"Sample {i} validation error: {e}")
+
+            # Update self.data after all points are successfully processed
+            self.data = data_points
+            logger.debug(f"Processed {len(self.data)} data points")
 
             # Preload dataset if configured
             if self._preload:
@@ -253,26 +292,31 @@ class BaseDataset(ABC):
         self._current_index = (self._current_index + 1) % len(self)
         return self[idx]
 
-    @abstractmethod
     def __len__(self) -> int:
         r"""Return the size of the dataset."""
-        pass
+        return len(self.data)
 
-    @abstractmethod
     def __getitem__(self, idx: int) -> DataPoint:
         r"""Get an item from the dataset.
 
         Args:
             idx (int): Index of the item to get.
 
+        Returns:
+            DataPoint: DataPoint from the dataset with the given index.
+
         Raises:
             IndexError: If idx is out of bounds.
-            ValidationError: If data point is invalid.
-
-        Returns:
-            DataPoint: DataPoint from the dataset with the set index.
         """
-        pass
+        if idx < 0 or idx >= len(self):
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of size {len(self)}"
+            )
+
+        if idx in self._cache:
+            return self._cache[idx]
+
+        return self.data[idx]
 
     def __iter__(self) -> Iterator[DataPoint]:
         r"""Create an iterator over the dataset."""
@@ -297,3 +341,255 @@ class BaseDataset(ABC):
         self._current_index = 0
         if self._shuffle and self._is_setup:
             random.shuffle(self._shuffle_indices)
+
+
+class SeedDataset(BaseDataset):
+    r"""A dataset containing validated seed examples for data generation.
+    Ensures that all items adhere to the DataPoint schema.
+
+    This class is used to initialize a dataset from a list of dictionary items,
+    validating each against the DataPoint schema.
+    """
+
+    def __init__(
+        self,
+        data: List[Dict[str, str]],
+        cache_dir: Optional[str] = None,
+        max_cache_size: int = int(1e9),
+        preload: bool = False,
+        shuffle: bool = True,
+        min_samples: int = 1,
+        **kwargs,
+    ):
+        r"""Initialize the seed dataset.
+
+        Args:
+            data (List[Dict[str, str]]): List of dictionary items to create the
+                dataset from.
+            cache_dir (Optional[str]): Directory to cache dataset files.
+                (default: :obj:`None`)
+            max_cache_size (int): Maximum cache size in bytes.
+                (default: :obj:`1e9` (1GB))
+            preload (bool): Whether to preload dataset into memory.
+                (default: :obj:`False`)
+            shuffle (bool): Whether to shuffle dataset on load.
+                (default: :obj:`True`)
+            min_samples (int): Minimum number of samples required.
+                (default: :obj:`1`)
+            **kwargs: Additional dataset parameters.
+
+        Raises:
+            ValueError: If dataset size is less than min_samples or if sample
+                validation fails.
+        """
+        if len(data) < min_samples:
+            raise ValueError(
+                f"Seed dataset must contain at least {min_samples} samples."
+            )
+
+        super().__init__(
+            data=data,
+            cache_dir=cache_dir,
+            max_cache_size=max_cache_size,
+            preload=preload,
+            shuffle=shuffle,
+            **kwargs,
+        )
+
+
+class SyntheticDataset(BaseDataset):
+    r"""A dataset for storing synthetically generated data points.
+
+    This class is used to store datapoints that are generated through
+    a generative process, such as using an agent.
+    """
+
+    def __init__(
+        self,
+        data: Optional[List[Dict[str, str]]] = None,
+        cache_dir: Optional[str] = None,
+        max_cache_size: int = int(1e9),
+        preload: bool = False,
+        shuffle: bool = True,
+        **kwargs,
+    ):
+        r"""Initialize the synthetic dataset.
+
+        Args:
+            data (Optional[List[Dict[str, str]]]): List of dictionary items to
+                create the dataset from. (default: :obj:`None`)
+            cache_dir (Optional[str]): Directory to cache dataset files.
+                (default: :obj:`None`)
+            max_cache_size (int): Maximum cache size in bytes.
+                (default: :obj:`1e9` (1GB))
+            preload (bool): Whether to preload dataset into memory.
+                (default: :obj:`False`)
+            shuffle (bool): Whether to shuffle dataset on load.
+                (default: :obj:`True`)
+            **kwargs: Additional dataset parameters.
+        """
+        super().__init__(
+            data=data if data is not None else [],
+            cache_dir=cache_dir,
+            max_cache_size=max_cache_size,
+            preload=preload,
+            shuffle=shuffle,
+            **kwargs,
+        )
+        self.data: List[DataPoint] = []
+
+    def add(self, item: DataPoint) -> None:
+        r"""Add a new data point to the dataset.
+
+        Args:
+            item (DataPoint): The datapoint to add to the dataset.
+        """
+        self.data.append(item)
+
+
+class GenerativeDataset(BaseDataset):
+    r"""A dataset for generating synthetic datapoints using external agents and
+    verifiers.
+
+    This class leverages a seed dataset and external components to generate
+    new synthetic datapoints on demand.
+    """
+
+    def __init__(
+        self,
+        seed_dataset: SeedDataset,
+        verifier: BaseVerifier,
+        agent: ChatAgent,
+        cache_dir: Optional[str] = None,
+        max_cache_size: int = int(1e9),
+        preload: bool = False,
+        shuffle: bool = True,
+        seed: int = 42,
+        **kwargs,
+    ):
+        r"""Initialize the generative dataset.
+
+        Args:
+            seed_dataset (SeedDataset): Validated dataset to use for examples.
+            verifier (BaseVerifier): Verifier to validate generated content.
+            agent (ChatAgent): Agent to generate new datapoints.
+            cache_dir (Optional[str]): Directory to cache dataset files.
+                (default: :obj:`None`)
+            max_cache_size (int): Maximum cache size in bytes.
+                (default: :obj:`1e9` (1GB))
+            preload (bool): Whether to preload dataset into memory.
+                (default: :obj:`False`)
+            shuffle (bool): Whether to shuffle dataset on load.
+                (default: :obj:`True`)
+            seed (int): Random seed for reproducibility. (default: :obj:`42`)
+            **kwargs: Additional dataset parameters.
+        """
+        # Initialize with empty data since we'll generate content dynamically
+        super().__init__(
+            data=[],
+            cache_dir=cache_dir,
+            max_cache_size=max_cache_size,
+            preload=preload,
+            shuffle=shuffle,
+            **kwargs,
+        )
+
+        self.seed_dataset = seed_dataset
+        self.verifier = verifier
+        self.agent = agent
+
+        self.seed = seed
+        random.seed(self.seed)
+
+    def _construct_prompt(self, examples: List[DataPoint]) -> str:
+        r"""Construct a prompt for generating new datapoints.
+
+        Args:
+            examples (List[DataPoint]): Examples to include in the prompt.
+
+        Returns:
+            str: Formatted prompt with examples.
+        """
+        prompt = (
+            "Generate a new datapoint similar to the following examples:\n\n"
+        )
+        for i, example in enumerate(examples, 1):
+            prompt += f"Example {i}:\n"
+            prompt += f"Question: {example.question}\n"
+            prompt += f"Rationale: {example.rationale}\n"
+            prompt += f"Final Answer: {example.final_answer}\n\n"
+        prompt += "New datapoint:"
+        return prompt
+
+    async def generate_new(self, n: int) -> None:
+        r"""Generate n new datapoints and add them to the dataset.
+
+        Args:
+            n (int): Number of valid datapoints to generate.
+
+        This method generates new datapoints by:
+        1. Sampling examples from the seed dataset
+        2. Constructing a prompt for the agent
+        3. Generating a new datapoint using the agent
+        4. Verifying the generated datapoint with the verifier
+        5. Adding valid datapoints to the dataset
+        """
+        valid_data_points: List[DataPoint] = []
+
+        while len(valid_data_points) < n:
+            try:
+                indices = random.sample(range(len(self.seed_dataset)), 3)
+                examples = [self.seed_dataset[i] for i in indices]
+                prompt = self._construct_prompt(examples)
+
+                # Get agent response
+                agent_output = (
+                    self.agent.step(prompt, response_format=DataPoint)
+                    .msgs[0]
+                    .parsed
+                )
+
+                if not isinstance(agent_output, dict):
+                    raise TypeError("Agent output must be a dictionary")
+                if (
+                    'question' not in agent_output
+                    or 'rationale' not in agent_output
+                ):
+                    raise KeyError(
+                        "Agent output missing required keys: "
+                        "'question' or 'rationale'"
+                    )
+
+                rationale = agent_output['rationale']
+
+                # Verify the generated content
+                verifier_response = await self.verifier.verify(rationale)
+                if not hasattr(verifier_response, 'content'):
+                    raise AttributeError(
+                        "Verifier response missing 'content' attribute"
+                    )
+
+                if not verifier_response.result:
+                    continue
+
+                final_answer = verifier_response.sub_results[0]
+
+                # Create and validate the new datapoint
+                new_datapoint = {
+                    'question': agent_output['question'],
+                    'rationale': rationale,
+                    'final_answer': final_answer,
+                }
+
+                datapoint = DataPoint(**new_datapoint)
+                valid_data_points.append(datapoint)
+
+            except (TypeError, KeyError, AttributeError, ValidationError) as e:
+                logger.warning(
+                    f"Error encountered during generation: {e}, retrying..."
+                )
+
+        # Add all valid datapoints to the dataset
+        for datapoint in valid_data_points:
+            self.data.append(datapoint)
+            logger.debug("Added new datapoint to dataset")

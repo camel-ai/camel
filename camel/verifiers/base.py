@@ -116,13 +116,12 @@ class BaseVerifier(ABC):
             # Initialize metrics and lock
             self._metrics = VerificationMetrics()
             self._metrics_lock = asyncio.Lock()
+            self._start_time = time.time()
 
             # Set up batch processor with validated parameters
             batch_size = max(1, self._initial_batch_size or 10)
             max_parallel = max(1, self._max_parallel or 1)
             self._batch_processor = BatchProcessor()
-            if hasattr(self._batch_processor, 'setup'):
-                await self._batch_processor.setup()
 
             self._is_setup = True
             logger.info(
@@ -229,6 +228,12 @@ class BaseVerifier(ABC):
             asyncio.TimeoutError: If verification times out and max retries
                 exceeded.
         """
+        if not self._is_setup:
+            logger.warning(
+                f"{self.__class__.__name__} not set up, calling setup()"
+            )
+            await self.setup()
+
         attempt = 0
         start_time = time.time()
 
@@ -269,6 +274,7 @@ class BaseVerifier(ABC):
                         error_message="Verification timed out after "
                         "all retries.",
                         duration=duration,
+                        metadata={"attempt": attempt},
                     )
                 logger.warning(
                     f"Verification timeout on attempt {attempt}, retrying..."
@@ -292,6 +298,7 @@ class BaseVerifier(ABC):
                         score=None,
                         error_message=error_msg,
                         duration=duration,
+                        metadata={"attempt": attempt},
                     )
                 logger.warning(
                     f"Verification error on attempt {attempt}: "
@@ -309,6 +316,7 @@ class BaseVerifier(ABC):
             score=None,
             error_message="Unexpected code path reached",
             duration=duration,
+            metadata={"attempt": attempt},
         )
 
     @abstractmethod
@@ -348,10 +356,21 @@ class BaseVerifier(ABC):
             asyncio.TimeoutError: If verifications time out and max retries
                 exceeded.
         """
-        # Get current batch parameters from processor
-        max_workers = getattr(self._batch_processor, 'max_workers', 1)
-        batch_size = getattr(self._batch_processor, 'batch_size', 1)
-        semaphore = asyncio.Semaphore(max_workers)
+        if not self._is_setup:
+            logger.warning(
+                f"{self.__class__.__name__} not set up, calling setup()"
+            )
+            await self.setup()
+
+        # Get current batch parameters from processor with defaults if not
+        #  present
+        max_workers = getattr(
+            self._batch_processor, 'max_workers', self._max_parallel or 1
+        )
+        batch_size = getattr(
+            self._batch_processor, 'batch_size', self._initial_batch_size or 10
+        )
+        semaphore = asyncio.Semaphore(max(1, max_workers))
 
         async def _verify_with_semaphore(
             response: Response,
@@ -376,6 +395,7 @@ class BaseVerifier(ABC):
                     status=VerificationStatus.ERROR,
                     result="",
                     error_message=str(e),
+                    metadata={"error_type": type(e).__name__},
                 )
 
         # Process in batches
