@@ -65,16 +65,6 @@ class VerificationResult(BaseModel):
         description="Status of the verification"
     )
     result: str = Field(description="Verification result")
-    score: Optional[Dict[str, float]] = Field(
-        default=None, description="Optional score metrics"
-    )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata about the verification",
-    )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if verification failed"
-    )
     duration: float = Field(
         default=0.0, description="Duration of verification in seconds"
     )
@@ -82,7 +72,17 @@ class VerificationResult(BaseModel):
         default_factory=datetime.now,
         description="When the verification was performed",
     )
-    sub_results: List['VerificationResult'] = Field(
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata about the verification",
+    )
+    score: Optional[Dict[str, float]] = Field(
+        default_factory=dict, description="Optional score metrics"
+    )
+    error_message: Optional[str] = Field(
+        default=None, description="Error message if verification failed"
+    )
+    sub_results: Optional[List['VerificationResult']] = Field(
         default_factory=list, description="Results from composite verifiers"
     )
 

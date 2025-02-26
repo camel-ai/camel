@@ -572,7 +572,7 @@ class GenerativeDataset(BaseDataset):
                 if not verifier_response.result:
                     continue
 
-                final_answer = verifier_response.sub_results[0]
+                final_answer = verifier_response.result
 
                 # Create and validate the new datapoint
                 new_datapoint = {
