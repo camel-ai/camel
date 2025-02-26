@@ -14,6 +14,8 @@
 import json
 import unittest
 
+from sympy.geometry import Line, Point  # type: ignore[import-untyped]
+
 from camel.toolkits.sympy_toolkit import SymPyToolkit
 
 
@@ -148,6 +150,104 @@ class TestSymPyToolkit(unittest.TestCase):
         response = self.toolkit.compute_rank(matrix)
         result = json.loads(response)["result"]
         self.assertEqual(result, 2)
+
+    def test_create_point(self):
+        response = self.toolkit.create_point(1, 2)
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Point2D(1, 2)")
+
+    def test_create_line(self):
+        response = self.toolkit.create_line([1, 2], [3, 4])
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Line2D(Point2D(1, 2), Point2D(3, 4))")
+
+    def test_create_segment(self):
+        response = self.toolkit.create_segment([1, 2], [3, 4])
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Segment2D(Point2D(1, 2), Point2D(3, 4))")
+
+    def test_create_circle(self):
+        response = self.toolkit.create_circle([1, 2], 5)
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Circle(Point2D(1, 2), 5)")
+
+    def test_create_ellipse(self):
+        response = self.toolkit.create_ellipse([1, 2], 5, 3)
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Ellipse(Point2D(1, 2), 5, 3)")
+
+    def test_create_polygon(self):
+        response = self.toolkit.create_polygon(
+            [[0, 0], [4, 0], [2, 3], [3, 5]]
+        )
+        result = json.loads(response)["result"]
+        self.assertEqual(
+            result,
+            """
+            "Polygon(Point2D(0, 0), Point2D(4, 0),
+            Point2D(2, 3), Point2D(3, 5))",
+            """,
+        )
+
+    def test_create_triangle(self):
+        response = self.toolkit.create_triangle([0, 0], [4, 0], [2, 3])
+        result = json.loads(response)["result"]
+        self.assertEqual(
+            result, "Triangle(Point2D(0, 0), Point2D(4, 0), Point2D(2, 3))"
+        )
+
+    def test_compute_line_bisectors(self):
+        line1 = Line(Point(1, 2), Point(3, 4))
+        line2 = Line(Point(5, 6), Point(7, 8))
+        response = self.toolkit.compute_line_bisectors(line1, line2)
+        result = json.loads(response)["result"]
+        self.assertIsInstance(result, list)
+
+    def test_compute_centroid(self):
+        response = self.toolkit.compute_centroid(
+            Point(0, 0), Point(4, 0), Point(2, 3)
+        )
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Point2D(2, 1)")
+
+    def test_compute_orthocenter(self):
+        response = self.toolkit.compute_orthocenter(
+            Point(0, 0), Point(4, 0), Point(2, 3)
+        )
+        result = json.loads(response)["result"]
+        self.assertIsInstance(result, str)
+
+    def test_compute_midpoint_GH(self):
+        G = Point(1, 2)
+        H = Point(3, 4)
+        response = self.toolkit.compute_midpoint_GH(G, H)
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "Point2D(2, 3)")
+
+    def test_compute_point_distance(self):
+        response = self.toolkit.compute_point_distance(
+            Point(1, 2), Point(3, 4)
+        )
+        result = json.loads(response)["result"]
+        self.assertEqual(result, "2*sqrt(2)")
+
+    def test_check_points_collinear(self):
+        p1, p2, p3 = Point(0, 0), Point(1, 1), Point(2, 2)
+        response = self.toolkit.check_points_collinear(p1, p2, p3)
+        result = json.loads(response)["result"]
+        self.assertEqual(result, True)
+
+        p4 = Point(1, 2)
+        response = self.toolkit.check_points_collinear(p1, p2, p4)
+        result = json.loads(response)["result"]
+        self.assertEqual(result, False)
+
+    def test_compute_angle_between(self):
+        line1 = Line(Point(1, 2), Point(3, 4))
+        line2 = Line(Point(5, 6), Point(7, 8))
+        response = self.toolkit.compute_angle_between(line1, line2)
+        result = json.loads(response)["result"]
+        self.assertIsInstance(result, str)
 
 
 if __name__ == "__main__":

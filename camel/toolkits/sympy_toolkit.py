@@ -52,8 +52,6 @@ class SymPyToolkit(BaseToolkit):
         self.logger.info(f"Default variable set to: {default_variable}")
 
     def _rewrite_expression(self, expression: str) -> str:
-
-
         r"""Rewrites a mathematical expression in a canonical form.
 
         Args:
@@ -79,10 +77,9 @@ class SymPyToolkit(BaseToolkit):
         else:
             return expression
 
-
-
     def simplify_expression(self, expression: str) -> str:
-        r"""Simplifies a mathematical expression. Also can be used to carry out simple computation
+        r"""Simplifies a mathematical expression. Also can be used to
+            carry out simple computation
 
         Args:
             expression (str): The mathematical expression to simplify,
@@ -103,46 +100,15 @@ class SymPyToolkit(BaseToolkit):
             expression = self._rewrite_expression(expression)
             expr = sp.parse_expr(expression)
             simplified = sp.simplify(expr)
-            self.logger.info(f"Result of simplified expression: {str(simplified)}")
+            self.logger.info(
+                f"Result of simplified expression: {simplified!s}"
+            )
             return json.dumps({"status": "success", "result": str(simplified)})
         except Exception as e:
             self.logger.error(
                 f"Error simplifying expression: {expression} - {e}"
             )
             return json.dumps({"status": "error", "message": str(e)})
-        
-
-    # def numerical_evaluation(self, expression: str) -> str:
-    #     r"""Evaluates a mathematical expression numerically.
-
-    #     Args:
-    #         expression (str): The mathematical expression to evaluate numerically,
-    #             provided as a string.
-
-    #     Returns:
-    #         str: JSON string containing the numerical evaluation of the
-    #             mathematical expression in the `"result"` field.
-    #             If an error occurs, the `"status"` field will be set to `"error"`
-    #             with a corresponding `"message"`.
-
-    #     Raises:
-    #         Exception: If there is an error during the evaluation process,
-    #                 such as invalid input or unsupported syntax.
-    #     """
-    #     try:
-    #         self.logger.info(f"Evaluating numerical expression: {expression}")
-    #         # Optionally rewrite the expression if needed
-    #         expression = self._rewrite_expression(expression)
-    #         # Parse the expression using sympy
-    #         expr = sp.parse_expr(expression)
-    #         # Evaluate the expression numerically
-    #         numerical_result = sp.N(expr, 20)
-    #         self.logger.info(f"Result of numerical evaluation: {str(numerical_result)}")
-    #         return json.dumps({"status": "success", "result": str(numerical_result)})
-    #     except Exception as e:
-    #         self.logger.error(f"Error evaluating numerical expression: {expression} - {e}")
-    #         return json.dumps({"status": "error", "message": str(e)})
-
 
     def expand_expression(self, expression: str) -> str:
         r"""Expands an algebraic expression.
@@ -166,7 +132,9 @@ class SymPyToolkit(BaseToolkit):
             expression = self._rewrite_expression(expression)
             expr = sp.parse_expr(expression)
             expanded_expr = sp.expand(expr)
-            self.logger.info(f"Result of expanded expression: {str(expanded_expr)}")
+            self.logger.info(
+                f"Result of expanded expression: {expanded_expr!s}"
+            )
             return json.dumps({"result": str(expanded_expr)})
         except Exception as e:
             return self.handle_exception("expand_expression", e)
@@ -193,12 +161,16 @@ class SymPyToolkit(BaseToolkit):
             expression = self._rewrite_expression(expression)
             expr = sp.parse_expr(expression)
             factored_expr = sp.factor(expr)
-            self.logger.info(f"Result of factored expression: {str(factored_expr)}")
+            self.logger.info(
+                f"Result of factored expression: {factored_expr!s}"
+            )
             return json.dumps({"result": str(factored_expr)})
         except Exception as e:
             return self.handle_exception("factor_expression", e)
 
-    def solve_linear_system(self, equations: List[str], variables: List[str]) -> str:
+    def solve_linear_system(
+        self, equations: List[str], variables: List[str]
+    ) -> str:
         r"""Solves a system of linear equations.
 
         Args:
@@ -228,17 +200,23 @@ class SymPyToolkit(BaseToolkit):
             eqs = [sp.parse_expr(eq) for eq in equations]
             vars = sp.symbols(variables)
             solution = sp.linsolve(eqs, vars)
-            self.logger.info(f"Result of linear system: {[str(sol) for sol in solution]}")
+            self.logger.info(
+                f"Result of linear system: {[str(sol) for sol in solution]}"
+            )
             return json.dumps({"result": [str(sol) for sol in solution]})
         except Exception as e:
             return self.handle_exception("solve_linear_system", e)
 
-    def solve_nonlinear_system(self, sympy_equations: List[str], variables: List[str]) -> str:
+    def solve_nonlinear_system(
+        self, sympy_equations: List[str], variables: List[str]
+    ) -> str:
         r"""Solves a system of nonlinear equations.
 
         Args:
-            sympy_equations (List[str]): A list of strings representing the nonlinear
-                equations to be solved. The equation to solve, must be compatible with SymPy, provided as a string.
+            sympy_equations (List[str]): A list of strings representing
+                the nonlinear
+                equations to be solved. The equation to solve, must be
+                compatible with SymPy, provided as a string.
 
             variables (List[str]): A list of strings representing the variables
                 involved in the equations.
@@ -261,11 +239,15 @@ class SymPyToolkit(BaseToolkit):
                 f"""Solving nonlinear system: {sympy_equations}
                 with variables: {variables}"""
             )
-            sympy_equations = [self._rewrite_expression(eq) for eq in sympy_equations]
+            sympy_equations = [
+                self._rewrite_expression(eq) for eq in sympy_equations
+            ]
             eqs = [sp.parse_expr(eq) for eq in sympy_equations]
             vars = sp.symbols(variables)
             solution = sp.nonlinsolve(eqs, vars)
-            self.logger.info(f"Result of nonlinear system: {[str(sol) for sol in solution]}")
+            self.logger.info(
+                f"Result of nonlinear system: {[str(sol) for sol in solution]}"
+            )
             return json.dumps({"result": [str(sol) for sol in solution]})
         except Exception as e:
             return self.handle_exception("solve_nonlinear_system", e)
@@ -300,7 +282,7 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             ineq = sp.parse_expr(inequality)
             solution = sp.solve_univariate_inequality(ineq, var)
-            self.logger.info(f"Result of univariate inequality: {str(solution)}")
+            self.logger.info(f"Result of univariate inequality: {solution!s}")
             return json.dumps({"result": str(solution)})
         except Exception as e:
             return self.handle_exception("solve_univariate_inequality", e)
@@ -328,7 +310,7 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Reducing inequalities: {inequalities}")
             ineqs = [sp.parse_expr(ineq) for ineq in inequalities]
             solution = sp.reduce_inequalities(ineqs)
-            self.logger.info(f"Result of reduced inequality: {str(solution)}")
+            self.logger.info(f"Result of reduced inequality: {solution!s}")
             return json.dumps({"result": str(solution)})
         except Exception as e:
             return self.handle_exception("reduce_inequalities", e)
@@ -362,7 +344,7 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             poly = sp.Poly(expr, var)
-            self.logger.info(f"Polynomial representation solution: {str(poly)}")
+            self.logger.info(f"Polynomial representation solution: {poly!s}")
             return json.dumps({"result": str(poly)})
         except Exception as e:
             return self.handle_exception("polynomial_representation", e)
@@ -396,7 +378,7 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             degree = int(sp.degree(expr, var))
-            self.logger.info(f"Result of polynomial degree: {str(degree)}")
+            self.logger.info(f"Result of polynomial degree: {degree!s}")
             return json.dumps({"result": degree})
         except Exception as e:
             return self.handle_exception("polynomial_degree", e)
@@ -423,15 +405,10 @@ class SymPyToolkit(BaseToolkit):
                 expression is not a valid polynomial.
         """
         try:
-            self.logger.info(
-                f"""Getting coefficients of polynomial: {expression} 
-                with variable: {variable}"""
-            )
             expression = self._rewrite_expression(expression)
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             coeffs = sp.Poly(expr, var).all_coeffs()
-            self.logger.info(f"Result of polynomial coefficients: {[str(coeff) for coeff in coeffs]}")
             return json.dumps({"result": [str(coeff) for coeff in coeffs]})
         except Exception as e:
             return self.handle_exception("polynomial_coefficients", e)
@@ -442,7 +419,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Solves an equation for a specific variable.
 
         Args:
-            sympy_equation(str): The equation to solve, must be compatible with SymPy, provided as a string.
+            sympy_equation(str): The equation to solve, must be compatible
+                with SymPy, provided as a string.
             variable (str, optional): The variable to solve for. If not
                 specified, the function will use the default variable.
 
@@ -460,11 +438,15 @@ class SymPyToolkit(BaseToolkit):
             variable = (
                 sp.symbols(variable) if variable else self.default_variable
             )
-            self.logger.info(f"Solving equation: {sympy_equation} for {variable}")
+            self.logger.info(
+                f"Solving equation: {sympy_equation} for {variable}"
+            )
             sympy_equation = self._rewrite_expression(sympy_equation)
             eq = sp.parse_expr(sympy_equation)
             solutions = sp.solve(eq, variable)
-            self.logger.info(f"Result of equation: {[str(sol) for sol in solutions]}")
+            self.logger.info(
+                f"Result of equation: {[str(sol) for sol in solutions]}"
+            )
             return json.dumps({"result": [str(sol) for sol in solutions]})
         except Exception as e:
             return self.handle_exception("solve_equation", e)
@@ -499,7 +481,7 @@ class SymPyToolkit(BaseToolkit):
             expression = self._rewrite_expression(expression)
             expr = sp.parse_expr(expression)
             roots = sp.solve(expr)
-            self.logger.info(f"Result of find roots: {str(roots)}")
+            self.logger.info(f"Result of find roots: {roots!s}")
             return json.dumps({"status": "success", "result": str(roots)})
 
         except Exception as e:
@@ -540,7 +522,7 @@ class SymPyToolkit(BaseToolkit):
             )
             expr = sp.parse_expr(expression)
             derivative = sp.diff(expr, variable)
-            self.logger.info(f"Result of differentiate: {str(derivative)}")
+            self.logger.info(f"Result of differentiate: {derivative!s}")
             return json.dumps({"result": str(derivative)})
         except Exception as e:
             return self.handle_exception("differentiate", e)
@@ -577,7 +559,7 @@ class SymPyToolkit(BaseToolkit):
             )
             expr = sp.parse_expr(expression)
             integral = sp.integrate(expr, variable)
-            self.logger.info(f"Result of integrate: {str(integral)}")
+            self.logger.info(f"Result of integrate: {integral!s}")
             return json.dumps({"result": str(integral)})
         except Exception as e:
             return self.handle_exception("integrate", e)
@@ -616,7 +598,7 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             integral = sp.integrate(expr, (var, lower, upper))
-            self.logger.info(f"Result of definite integral: {str(integral)}")
+            self.logger.info(f"Result of definite integral: {integral!s}")
             return json.dumps({"result": str(integral)})
         except Exception as e:
             return self.handle_exception("definite_integral", e)
@@ -657,7 +639,7 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             series = sp.series(expr, var, point, order)
-            self.logger.info(f"Result of series expansion: {str(series)}")
+            self.logger.info(f"Result of series expansion: {series!s}")
             return json.dumps({"result": str(series)})
         except Exception as e:
             return self.handle_exception("series_expansion", e)
@@ -703,7 +685,7 @@ class SymPyToolkit(BaseToolkit):
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             limit = sp.limit(expr, var, point)
-            self.logger.info(f"Result of compute limit: {str(limit)}")
+            self.logger.info(f"Result of compute limit: {limit!s}")
             return json.dumps({"result": str(limit)})
         except Exception as e:
             return self.handle_exception("compute_limit", e)
@@ -731,16 +713,11 @@ class SymPyToolkit(BaseToolkit):
                 syntax, or issues with the variable or the expression.
         """
         try:
-            self.logger.info(
-                f"""Finding critical points of expression: {expression} 
-                with respect to {variable}"""
-            )
             expression = self._rewrite_expression(expression)
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
             derivative = sp.diff(expr, var)
             critical_points = sp.solve(derivative, var)
-            self.logger.info(f"Result of find_critical_points: {[str(point) for point in critical_points]}")
             return json.dumps(
                 {"result": [str(point) for point in critical_points]}
             )
@@ -773,10 +750,6 @@ class SymPyToolkit(BaseToolkit):
                 issues with the variable or the point.
         """
         try:
-            self.logger.info(
-                f"""Checking continuity of expression: {expression} 
-                at point {point}"""
-            )
             expression = self._rewrite_expression(expression)
             var = sp.symbols(variable)
             expr = sp.parse_expr(expression)
@@ -784,7 +757,6 @@ class SymPyToolkit(BaseToolkit):
             right_limit = sp.limit(expr, var, point, dir='+')
             value_at_point = expr.subs(var, point)
             is_continuous = left_limit == right_limit == value_at_point
-            self.logger.info(f"Result of check continuity: {str(is_continuous)}")
             return json.dumps({"result": str(is_continuous)})
         except Exception as e:
             return self.handle_exception("check_continuity", e)
@@ -793,7 +765,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the determinant of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list
+                representing the matrix for
                 which the determinant is to be computed.
 
         Returns:
@@ -811,7 +784,7 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing determinant of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             determinant = mat.det()
-            self.logger.info(f"Result of compute determinant: {str(determinant)}")
+            self.logger.info(f"Result of compute determinant: {determinant!s}")
             return json.dumps({"result": str(determinant)})
         except Exception as e:
             return self.handle_exception("compute_determinant", e)
@@ -820,7 +793,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the inverse of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list
+                representing the matrix for
                 which the inverse is to be computed.
 
         Returns:
@@ -838,7 +812,7 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing inverse of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             inverse = mat.inv()
-            self.logger.info(f"Result of matrix inverse: {str(inverse)}")
+            self.logger.info(f"Result of matrix inverse: {inverse!s}")
             return json.dumps({"result": str(inverse)})
         except Exception as e:
             return self.handle_exception("compute_inverse", e)
@@ -847,8 +821,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the eigenvalues of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the eigenvalues are to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the eigenvalues are to be computed.
 
         Returns:
             str: JSON string containing the eigenvalues of the matrix in the
@@ -867,7 +841,6 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing eigenvalues of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             eigenvalues = mat.eigenvals()
-            self.logger.info(f"Result of compute eigenvalues: {str(k): str(v) for k, v in eigenvalues.items()}")
             return json.dumps(
                 {"result": {str(k): str(v) for k, v in eigenvalues.items()}}
             )
@@ -878,8 +851,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the eigenvectors of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the eigenvectors are to be computed.
+            matrix (List[List[float]]): A two-dimensional list representing
+                the matrix for which the eigenvectors are to be computed.
 
         Returns:
             str: JSON string containing the eigenvectors of the matrix in the
@@ -920,7 +893,8 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the null space of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
+            matrix (List[List[float]]): A two-dimensional list
+                representing the matrix for
                 which the null space is to be computed.
 
         Returns:
@@ -940,7 +914,6 @@ class SymPyToolkit(BaseToolkit):
             self.logger.info(f"Computing null space of matrix: {matrix}")
             mat = sp.Matrix(matrix)
             nullspace = mat.nullspace()
-            self.logger.info(f"Result of compute nullspace: {[str(vec) for vec in nullspace]}")
             return json.dumps({"result": [str(vec) for vec in nullspace]})
         except Exception as e:
             return self.handle_exception("compute_nullspace", e)
@@ -949,8 +922,9 @@ class SymPyToolkit(BaseToolkit):
         r"""Computes the rank of a matrix.
 
         Args:
-            matrix (List[List[float]]): A two-dimensional list representing the matrix for
-                which the rank is to be computed.
+            matrix (List[List[float]]): A two-dimensional list
+                representing the matrix for which the rank
+                is to be computed.
 
         Returns:
             str: JSON string containing the rank of the matrix in the
@@ -972,8 +946,9 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_rank", e)
 
-
-    def compute_inner_product(self, vector1: List[float], vector2: List[float]) -> str:
+    def compute_inner_product(
+        self, vector1: List[float], vector2: List[float]
+    ) -> str:
         r"""Computes the inner (dot) product of two vectors.
 
         Args:
@@ -981,23 +956,29 @@ class SymPyToolkit(BaseToolkit):
             vector2 (List[float]): The second vector as a list of floats.
 
         Returns:
-            str: JSON string containing the inner product in the `"result"` field.
-                If an error occurs, the JSON string will include an `"error"`
-                field with the corresponding error message.
+            str: JSON string containing the inner product in the
+                `"result"` field. If an error occurs, the JSON
+                string will include an `"error"` field with
+                the corresponding error message.
 
         Raises:
             Exception: If there is an error during the computation process,
                     such as mismatched dimensions.
         """
         try:
-            self.logger.info(f"Computing inner product of vectors: {vector1} and {vector2}")
+            self.logger.info(
+                f"Computing inner product of vectors: {vector1} and {vector2}"
+            )
             # Convert the lists into sympy Matrix objects (column vectors)
             v1 = sp.Matrix(vector1)
             v2 = sp.Matrix(vector2)
 
             # Check that the vectors have the same dimensions.
             if v1.shape != v2.shape:
-                raise ValueError("Vectors must have the same dimensions to compute the inner product.")
+                raise ValueError(
+                    "Vectors must have the same dimensions to compute"
+                    "the inner product."
+                )
 
             # Compute the dot (inner) product.
             inner_product = v1.dot(v2)
@@ -1007,6 +988,434 @@ class SymPyToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_inner_product", e)
 
+    def create_point(self, x: float, y: float) -> str:
+        r"""
+        Creates a Sympy Point with the given x, y coordinates.
+
+        Args:
+            x (float): The x-coordinate of the point.
+            y (float): The y-coordinate of the point.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Point. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during point creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(f"Creating Sympy Point from (x={x}, y={y})")
+            point = sp.Point(x, y)
+            self.logger.info(f"Resulting Point: {point}")
+            return json.dumps({"result": str(point)})
+        except Exception as e:
+            return self.handle_exception("create_point", e)
+
+    def create_line(self, p1: list[float], p2: list[float]) -> str:
+        r"""
+        Creates a Sympy Line from two points.
+
+        Args:
+            p1 (List[float]): Coordinates of the first point [x1, y1].
+            p2 (List[float]): Coordinates of the second point [x2, y2].
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Line. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during line creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(f"Creating Sympy Line from p1={p1}, p2={p2}")
+            line = sp.Line(sp.Point(*p1), sp.Point(*p2))
+            self.logger.info(f"Resulting Line: {line}")
+            return json.dumps({"result": str(line)})
+        except Exception as e:
+            return self.handle_exception("create_line", e)
+
+    def create_segment(self, p1: list[float], p2: list[float]) -> str:
+        r"""
+        Creates a Sympy Segment from two points.
+
+        Args:
+            p1 (List[float]): Coordinates of the first point [x1, y1].
+            p2 (List[float]): Coordinates of the second point [x2, y2].
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Segment. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during segment creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(f"Creating Sympy Segment from p1={p1}, p2={p2}")
+            segment = sp.Segment(sp.Point(*p1), sp.Point(*p2))
+            self.logger.info(f"Resulting Segment: {segment}")
+            return json.dumps({"result": str(segment)})
+        except Exception as e:
+            return self.handle_exception("create_segment", e)
+
+    def create_ellipse(
+        self, center: list[float], hradius: float, vradius: float
+    ) -> str:
+        r"""
+        Creates a Sympy Ellipse.
+
+        Args:
+            center (List[float]): The (x, y) center of the ellipse.
+            hradius (float): Horizontal radius of the ellipse.
+            vradius (float): Vertical radius of the ellipse.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Ellipse. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during ellipse creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(
+                f"Creating Sympy Ellipse with center={center}, "
+                f"hradius={hradius}, vradius={vradius}"
+            )
+            ellipse = sp.Ellipse(sp.Point(*center), hradius, vradius)
+            self.logger.info(f"Resulting Ellipse: {ellipse}")
+            return json.dumps({"result": str(ellipse)})
+        except Exception as e:
+            return self.handle_exception("create_ellipse", e)
+
+    def create_circle(self, center: list[float], radius: float) -> str:
+        r"""
+        Creates a Sympy Circle.
+
+        Args:
+            center (List[float]): The (x, y) center of the circle.
+            radius (float): Radius of the circle.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Circle. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during circle creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(
+                f"Creating Sympy Circle with center={center}, radius={radius}"
+            )
+            circle = sp.Circle(sp.Point(*center), radius)
+            self.logger.info(f"Resulting Circle: {circle}")
+            return json.dumps({"result": str(circle)})
+        except Exception as e:
+            return self.handle_exception("create_circle", e)
+
+    def create_polygon(self, points: list[list[float]]) -> str:
+        r"""
+        Creates a Sympy Polygon from a list of points.
+
+        Args:
+            points (List[List[float]]): A list of (x, y) coordinates
+            representing vertices.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Polygon. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during polygon creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(f"Creating Sympy Polygon from points={points}")
+            point_objects = [sp.Point(*p) for p in points]
+            polygon = sp.Polygon(*point_objects)
+            self.logger.info(f"Resulting Polygon: {polygon}")
+            return json.dumps({"result": str(polygon)})
+        except Exception as e:
+            return self.handle_exception("create_polygon", e)
+
+    def create_triangle(
+        self, p1: list[float], p2: list[float], p3: list[float]
+    ) -> str:
+        r"""
+        Creates a Sympy Triangle from three points.
+
+        Args:
+            p1 (List[float]): Coordinates of the first vertex [x1, y1].
+            p2 (List[float]): Coordinates of the second vertex [x2, y2].
+            p3 (List[float]): Coordinates of the third vertex [x3, y3].
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                 representation of the Triangle. If an error occurs,
+                 it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during triangle creation.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(
+                f"Creating Sympy Triangle from p1={p1}, p2={p2}, p3={p3}"
+            )
+            triangle = sp.Triangle(sp.Point(*p1), sp.Point(*p2), sp.Point(*p3))
+            self.logger.info(f"Resulting Triangle: {triangle}")
+            return json.dumps({"result": str(triangle)})
+        except Exception as e:
+            return self.handle_exception("create_triangle", e)
+
+    def compute_line_bisectors(self, line1, line2) -> str:
+        r"""
+        Computes the bisectors of two Sympy Lines in n-dimensional space.
+
+        Args:
+            line1 (sympy.geometry.Line): The first line.
+            line2 (sympy.geometry.Line): The second line.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                representation of the bisectors. If an error occurs,
+                it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during bisector computation.
+        """
+        try:
+            self.logger.info(
+                f"Computing bisectors for lines {line1} and {line2}"
+            )
+            bisectors = line1.bisectors(line2)
+            bisectors_str = [str(b) for b in bisectors]
+
+            self.logger.info(f"Computed Bisectors: {bisectors_str}")
+            return json.dumps({"result": bisectors_str})
+        except Exception as e:
+            return self.handle_exception("compute_line_bisectors", e)
+
+    def compute_line_projection(self, line, point) -> str:
+        r"""
+        Computes the projection of a point onto a Sympy Line in
+        n-dimensional space.
+
+        Args:
+            line (sympy.geometry.Line): The line.
+            point (sympy.geometry.Point): The point to project.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                representation of the projected point. If an error occurs,
+                it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during projection computation.
+        """
+        try:
+            self.logger.info(
+                f"Computing projection of point {point} onto line {line}"
+            )
+            projection = line.projection(point)
+            projection_str = str(projection)
+
+            self.logger.info(f"Computed Projection: {projection_str}")
+            return json.dumps({"result": projection_str})
+        except Exception as e:
+            return self.handle_exception("compute_line_projection", e)
+
+    def compute_point_distance(self, point1, point2) -> str:
+        r"""
+        Computes the distance between two Sympy Points in n-dimensional space.
+
+        Args:
+            point1 (sympy.geometry.Point): The first point.
+            point2 (sympy.geometry.Point): The second point.
+
+        Returns:
+            str: A JSON string with the "result" field containing the string
+                representation of the distance. If an error occurs,
+                it returns a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during distance computation.
+        """
+        try:
+            self.logger.info(
+                f"Computing distance between points {point1} and {point2}"
+            )
+            distance = point1.distance(point2)
+            distance_str = str(distance)
+
+            self.logger.info(f"Computed Distance: {distance_str}")
+            return json.dumps({"result": distance_str})
+        except Exception as e:
+            return self.handle_exception("compute_point_distance", e)
+
+    def check_points_collinear(self, *points) -> str:
+        r"""
+        Checks if given Sympy Points in n-dimensional space are collinear.
+
+        Args:
+            points (sympy.geometry.Point): A variable number of points.
+
+        Returns:
+            str: A JSON string with the "result" field containing
+                a boolean value. If an error occurs, it returns
+                a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during collinearity check.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(f"Checking if points {points} are collinear")
+            is_collinear = sp.Point.is_collinear(*points)
+            self.logger.info(f"Points are collinear: {is_collinear}")
+            return json.dumps({"result": is_collinear})
+        except Exception as e:
+            return self.handle_exception("check_points_collinear", e)
+
+    def compute_angle_between(self, line1, line2) -> str:
+        r"""
+        Computes the angle between two Sympy Lines in n-dimensional space.
+
+        Args:
+            line1 (sympy.geometry.Line): The first line.
+            line2 (sympy.geometry.Line): The second line.
+
+        Returns:
+            str: A JSON string with the "result" field containing the
+                angle in radians. If an error occurs, it returns
+                a JSON with an "error" field.
+
+        Raises:
+            Exception: If there is an error during angle computation.
+        """
+        try:
+            self.logger.info(
+                f"Computing angle between lines " f"{line1} and {line2}"
+            )
+            angle = line1.angle_between(line2)
+            angle_str = str(angle)
+
+            self.logger.info(f"Computed Angle: {angle_str}")
+            return json.dumps({"result": angle_str})
+        except Exception as e:
+            return self.handle_exception("compute_angle_between", e)
+
+    def compute_centroid(self, A, B, C) -> str:
+        r"""
+        Computes the centroid of a triangle.
+
+        Args:
+            A (sympy.geometry.Point): Vertex A of the triangle.
+            B (sympy.geometry.Point): Vertex B of the triangle.
+            C (sympy.geometry.Point): Vertex C of the triangle.
+
+        Returns:
+            str: A JSON string with the centroid coordinates.
+        """
+        import sympy as sp
+
+        try:
+            self.logger.info(f"Computing centroid for triangle {A}, {B}, {C}")
+            centroid = sp.Triangle(A, B, C).centroid
+
+            return json.dumps({"result": str(centroid)})
+        except Exception as e:
+            return self.handle_exception("compute_centroid", e)
+
+    def compute_orthocenter(self, A, B, C) -> str:
+        r"""
+        Computes the orthocenter of a triangle.
+
+        Args:
+            A (sympy.geometry.Point): Vertex A of the triangle.
+            B (sympy.geometry.Point): Vertex B of the triangle.
+            C (sympy.geometry.Point): Vertex C of the triangle.
+
+        Returns:
+            str: A JSON string with the orthocenter coordinates.
+        """
+        import sympy as sp
+
+        try:
+            import sympy as sp
+
+            self.logger.info(
+                f"Computing orthocenter for triangle" f" {A}, {B}, {C}"
+            )
+            orthocenter = sp.Triangle(A, B, C).orthocenter
+
+            return json.dumps({"result": str(orthocenter)})
+        except Exception as e:
+            return self.handle_exception("compute_orthocenter", e)
+
+    def compute_midpoint_GH(self, G, H) -> str:
+        r"""
+        Computes the midpoint of segment GH, where G is the
+        centroid and H is the orthocenter.
+
+        Args:
+            G (sympy.geometry.Point): The centroid of the triangle.
+            H (sympy.geometry.Point): The orthocenter of the triangle.
+
+        Returns:
+            str: A JSON string with the midpoint coordinates.
+        """
+        try:
+            self.logger.info(f"Computing midpoint of GH for points {G}, {H}")
+            F = H.midpoint(G)
+
+            return json.dumps({"result": str(F)})
+        except Exception as e:
+            return self.handle_exception("compute_midpoint_GH", e)
+
+    def compute_triangle_bisectors(self, A, B, C) -> str:
+        r"""
+        Computes the internal angle bisectors of a triangle.
+
+        Args:
+            A (sympy.geometry.Point): Vertex A of the triangle.
+            B (sympy.geometry.Point): Vertex B of the triangle.
+            C (sympy.geometry.Point): Vertex C of the triangle.
+
+        Returns:
+            str: A JSON string with the bisectors of the triangle.
+        """
+        try:
+            import sympy as sp
+
+            self.logger.info(
+                f"Computing bisectors for triangle "
+                f"with vertices {A}, {B}, {C}"
+            )
+            triangle = sp.Triangle(A, B, C)
+            bisectors = triangle.bisectors()
+            bisectors_str = [str(b) for b in bisectors]
+
+            return json.dumps({"result": bisectors_str})
+        except Exception as e:
+            return self.handle_exception("compute_triangle_bisectors", e)
 
     def handle_exception(self, func_name: str, error: Exception) -> str:
         r"""Handles exceptions by logging and returning error details.
@@ -1029,7 +1438,16 @@ class SymPyToolkit(BaseToolkit):
                 and report exceptions from other methods.
         """
         self.logger.error(f"Error in {func_name}: {error}")
-        return json.dumps({"status": "error", "message": f"Error in {func_name}: {error}. Please check the input. Alternatively, you can try with different tools or directly reason about the problem."})
+        return json.dumps(
+            {
+                "status": "error",
+                "message": (
+                    f"Error in {func_name}: {error}. Please check the "
+                    "input. Alternatively, you can try with different tools or"
+                    "directly reason about the problem."
+                ),
+            }
+        )
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Exposes the tool's methods to the agent framework.
@@ -1038,9 +1456,9 @@ class SymPyToolkit(BaseToolkit):
             List[FunctionTool]: A list of `FunctionTool` objects representing
                 the toolkit's methods, making them accessible to the agent.
         """
+
         return [
             FunctionTool(self.simplify_expression),
-            # FunctionTool(self.numerical_evaluation),
             FunctionTool(self.expand_expression),
             FunctionTool(self.factor_expression),
             FunctionTool(self.solve_linear_system),
@@ -1066,4 +1484,18 @@ class SymPyToolkit(BaseToolkit):
             FunctionTool(self.compute_nullspace),
             FunctionTool(self.compute_rank),
             FunctionTool(self.compute_inner_product),
+            FunctionTool(self.create_point),
+            FunctionTool(self.create_line),
+            FunctionTool(self.create_segment),
+            FunctionTool(self.create_circle),
+            FunctionTool(self.create_ellipse),
+            FunctionTool(self.create_polygon),
+            FunctionTool(self.create_triangle),
+            FunctionTool(self.compute_line_bisectors),
+            FunctionTool(self.compute_centroid),
+            FunctionTool(self.compute_orthocenter),
+            FunctionTool(self.compute_midpoint_GH),
+            FunctionTool(self.compute_point_distance),
+            FunctionTool(self.check_points_collinear),
+            FunctionTool(self.compute_angle_between),
         ]
