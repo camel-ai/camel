@@ -64,9 +64,10 @@ class VerificationResult(BaseModel):
     status: VerificationStatus = Field(
         description="Status of the verification"
     )
-    score: Optional[Dict[str, float]] = Field(
-        default=None, description="Optional score metrics"
-    )
+    result: Optional[str] = Field(
+        default=None, 
+        description="Final output of the verification"
+        )
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata about the verification",
@@ -81,10 +82,6 @@ class VerificationResult(BaseModel):
         default_factory=datetime.now,
         description="When the verification was performed",
     )
-    sub_results: List['VerificationResult'] = Field(
-        default_factory=list, description="Results from composite verifiers"
-    )
-
 
 class TaskType(str, Enum):
     r"""Enumeration of supported task types."""
