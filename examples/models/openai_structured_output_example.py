@@ -53,7 +53,7 @@ search internet to get the most famous peoples in 2024 as their name"""
 
 # Get response information
 response = camel_agent.step(user_msg, response_format=StudentList)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 print(response.msgs[0].parsed)
 '''
 ===============================================================================

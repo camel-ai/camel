@@ -59,7 +59,7 @@ def detect_image_obj(image_list) -> None:
     )
     assistant_response = agent.step(user_msg)
     print("=" * 20 + " RESULT " + "=" * 20)
-    print(assistant_response.msgs[0].content)
+    print(assistant_response.msgs[0].content.text)
     print("=" * 48)
 
 

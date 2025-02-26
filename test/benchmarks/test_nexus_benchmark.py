@@ -16,6 +16,7 @@ import json
 from unittest.mock import MagicMock, mock_open, patch
 
 from camel.benchmarks import NexusBenchmark
+from camel.messages.acl_parameter import Content
 
 # Sample data for the test
 SAMPLE_DATA = [
@@ -55,9 +56,11 @@ def test_nexus_benchmark():
 
         # Mock the ChatAgent's step method to return the expected output
         mock_agent = MagicMock()
-        mock_agent.step.return_value.msgs = [
-            MagicMock(content="nvdlib.query('CVE-2021-12345')")
-        ]
+        mock_content = Content(text="nvdlib.query('CVE-2021-12345')")
+        mock_message = MagicMock()
+        mock_message.content = mock_content  # 让 content 成为 Content 实例
+
+        mock_agent.step.return_value.msgs = [mock_message]
 
         # Run the benchmark
         result = benchmark.run(

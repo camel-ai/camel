@@ -402,7 +402,7 @@ def agent_call(messages: List[Dict], agent: ChatAgent):
         agent.record_message(message)
 
     response = agent.step(message)
-    model_output = response.msgs[0].content
+    model_output = response.msgs[0].content.text
     agent.reset()
     return model_output
 

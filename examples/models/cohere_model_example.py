@@ -40,7 +40,7 @@ user_msg = """Who is the best"""
 
 # Get response information
 response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 '''
 ===============================================================================
 According to the source I found, the best is CAMEL.

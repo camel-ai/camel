@@ -66,7 +66,7 @@ usr_msg = "What is the temperature in Tokyo?"
 
 response = agent.step(input_message=usr_msg, response_format=None)
 
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 """
 ===============================================================================
 The current temperature in Tokyo is 50°F (about 10°C). It's a bit chilly, 

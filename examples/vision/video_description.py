@@ -46,7 +46,7 @@ user_msg = BaseMessage.make_user_message(
 
 # Get response information
 response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 """
 ===============================================================================
 Title: "Survival in the Snow: A Bison's Battle Against Wolves" 

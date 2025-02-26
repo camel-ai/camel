@@ -40,7 +40,7 @@ response = agent.step(
     "Test me on the capital of some country, and comment on my answer."
 )
 
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 """
 ==========================================================================
 What is the capital of France?
