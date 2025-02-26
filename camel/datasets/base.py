@@ -28,33 +28,42 @@ class DataPoint(BaseModel):
     r"""A single data point in the dataset.
 
     Attributes:
-        question: The question to pose to the LLM
-        ground_truth: The ground truth solution
-        final_answer: The final answer
-        raw_markdown: Raw markdown content for generating rewards/hints
-        difficulty: Difficulty level of the question
-        chain_of_thought: Long chain-of-thought reasoning
-        verified: Whether this chain-of-thought is verified
-        metadata: Additional metadata about the data point
+        question (str): The question to pose to the LLM.
+        final_answer (str): The final answer.
+        verified (bool): Whether this chain-of-thought is verified.
+            (default: :obj:`False`)
+        ground_truth (Optional[str]): The ground truth solution.
+            (default: :obj:`None`)
+        raw_markdown (Optional[str]): Raw markdown content for generating
+            rewards/hints. (default: :obj:`None`)
+        difficulty (Optional[str]): Difficulty level of the question.
+            (default: :obj:`None`)
+        chain_of_thought (Optional[str]): Long chain-of-thought reasoning.
+            (default: :obj:`None`)
+        metadata Optional[Dict[str, Any]]: Additional metadata about the data
+            point. (default: :obj:`None`)
     """
 
-    question: str = Field(..., description="The question to pose to the LLM")
-    ground_truth: str = Field(..., description="The ground truth solution")
-    final_answer: Any = Field(..., description="The final answer")
-    raw_markdown: str = Field(
-        ..., description="Raw markdown content for generating rewards/hints"
-    )
-    difficulty: str = Field(
-        ..., description="Difficulty level of the question"
-    )
-    chain_of_thought: Optional[str] = Field(
-        None, description="Long chain-of-thought reasoning"
-    )
+    question: str = Field(..., description="The question to pose to the LLM.")
+    final_answer: str = Field(..., description="The final answer.")
     verified: bool = Field(
-        False, description="Whether this chain-of-thought is verified"
+        False, description="Whether this chain-of-thought is verified."
+    )
+    ground_truth: Optional[str] = Field(
+        None, description="The ground truth solution."
+    )
+    raw_markdown: Optional[str] = Field(
+        None, description="Raw markdown content for generating rewards/hints."
+    )
+    difficulty: Optional[str] = Field(
+        None, description="Difficulty level of the question."
+    )
+
+    chain_of_thought: Optional[str] = Field(
+        None, description="Long chain-of-thought reasoning."
     )
     metadata: Optional[Dict[str, Any]] = Field(
-        default=None, description="Additional metadata about the data point"
+        default=None, description="Additional metadata about the data point."
     )
 
 
@@ -75,21 +84,21 @@ class BaseDataset(ABC):
         r"""Initialize the dataset.
 
         Args:
-            cache_dir: Directory to cache dataset files.
+            cache_dir (Optional[str]): Directory to cache dataset files.
                 (default: :obj:`None`)
-            max_cache_size: Maximum cache size in bytes.
+            max_cache_size (int): Maximum cache size in bytes.
                 (default: :obj:`1e9` (1GB))
-            preload: Whether to preload dataset into memory.
+            preload (bool): Whether to preload dataset into memory.
                 (default: :obj:`False`)
-            shuffle: Whether to shuffle dataset on load.
+            shuffle (bool): Whether to shuffle dataset on load.
                 (default: :obj:`True`)
             **kwargs: Additional dataset parameters.
 
-        Note:
-            The dataset must be initialized by calling setup() before use
-
         Raises:
-            ValueError: If max_cache_size is negative
+            ValueError: If max_cache_size is negative.
+
+        Note:
+            The dataset must be initialized by calling setup() before use.
         """
         self._current_index = 0
         self._is_setup = False
@@ -123,8 +132,8 @@ class BaseDataset(ABC):
         4. Validates dataset integrity
 
         Raises:
-            OSError: If cache directory creation fails
-            Exception: If dataset initialization fails
+            OSError: If cache directory creation fails.
+            Exception: If dataset initialization fails.
         """
         if self._is_setup:
             logger.debug(f"{self.__class__.__name__} already initialized")
@@ -214,10 +223,10 @@ class BaseDataset(ABC):
         r"""Async wrapper around __getitem__ for preloading.
 
         Args:
-            idx: Index of the item to get
+            idx (int): Index of the item to get.
 
         Returns:
-            DataPoint from the dataset
+            DataPoint: DataPoint from the dataset.
         """
         return self[idx]
 
@@ -225,10 +234,10 @@ class BaseDataset(ABC):
         r"""Sample a random datapoint from the dataset.
 
         Returns:
-            A randomly sampled DataPoint
+            DataPoint: A randomly sampled DataPoint.
 
         Raises:
-            RuntimeError: If dataset is not initialized
+            RuntimeError: If dataset is not initialized.
         """
         if not self._is_setup:
             raise RuntimeError(
@@ -254,14 +263,14 @@ class BaseDataset(ABC):
         r"""Get an item from the dataset.
 
         Args:
-            idx: Index of the item to get
-
-        Returns:
-            DataPoint containing question, ground truth, and metadata
+            idx (int): Index of the item to get.
 
         Raises:
-            IndexError: If idx is out of bounds
-            ValidationError: If data point is invalid
+            IndexError: If idx is out of bounds.
+            ValidationError: If data point is invalid.
+
+        Returns:
+            DataPoint: DataPoint from the dataset with the set index.
         """
         pass
 
@@ -274,8 +283,8 @@ class BaseDataset(ABC):
         if self._current_index >= len(self):
             self._current_index = 0
             raise StopIteration
-        item = self[self._current_index]
         self._current_index += 1
+        item = self[self._current_index]
         return item
 
     @property

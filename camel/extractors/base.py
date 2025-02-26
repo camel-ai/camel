@@ -46,20 +46,20 @@ class BaseExtractor(ABC):
         r"""Initialize the extractor.
 
         Args:
-            cache_templates: Whether to cache extraction templates.
+            cache_templates (bool): Whether to cache extraction templates.
                 (default: :obj:`True`)
-            max_cache_size: Maximum number of templates to cache.
+            max_cache_size (int): Maximum number of templates to cache.
                 (default: :obj:`1000`)
-            extraction_timeout: Maximum time for extraction in seconds.
+            extraction_timeout (float): Maximum time for extraction in seconds.
                 (default: :obj:`30.0`)
-            batch_size: Size of batches for parallel extraction.
+            batch_size (int): Size of batches for parallel extraction.
                 (default: :obj:`10`)
-            monitoring_interval: Interval in seconds between resource checks.
-                (default: :obj:`5.0`)
-            cpu_threshold: CPU usage percentage threshold for scaling down.
-                (default: :obj:`80.0`)
-            memory_threshold: Memory usage percentage threshold for scaling
-                down. (default: :obj:`85.0`)
+            monitoring_interval (float): Interval in seconds between resource
+                checks. (default: :obj:`5.0`)
+            cpu_threshold (float): CPU usage percentage threshold for scaling
+                down. (default: :obj:`80.0`)
+            memory_threshold (float): Memory usage percentage threshold for
+                scaling down. (default: :obj:`85.0`)
             **kwargs: Additional extractor parameters.
 
         Raises:
@@ -142,7 +142,7 @@ class BaseExtractor(ABC):
 
         Raises:
             RuntimeError: If cleanup fails (after resetting initialization
-                state)
+                state).
         """
         if not self._is_setup:
             logger.debug(
@@ -203,7 +203,7 @@ class BaseExtractor(ABC):
         r"""Async context manager entry.
 
         Returns:
-            Self reference for context manager usage
+            Self reference for context manager usage.
         """
         await self.setup()
         return self
@@ -217,9 +217,12 @@ class BaseExtractor(ABC):
         r"""Async context manager exit.
 
         Args:
-            exc_type: Exception type if an error occurred
-            exc_val: Exception value if an error occurred
-            exc_tb: Exception traceback if an error occurred
+            exc_type (Optional[Type[BaseException]]): Exception type if an
+                error occurred.
+            exc_val (Optional[BaseException]): Exception value if an error
+                occurred.
+            exc_tb (Optional[TracebackType]): Exception traceback if an error
+                occurred.
         """
         await self.cleanup()
 
@@ -238,14 +241,15 @@ class BaseExtractor(ABC):
         6. Raw markdown for reward/hint generation
 
         Args:
-            response: Raw response from Gurobi examples or agent generation.
-            context: Optional context for extraction including:
-                - source_type: 'gurobi_example' or 'agent_generated'
+            response (str): Raw response from agent generation.
+            context (Optional[Dict[str, Any]]): Optional context for
+            extraction including:
+                - source_type: (e.g. 'agent_generated')
                 - domain: Problem domain (e.g. 'optimization', 'scheduling')
                 - complexity: Expected problem complexity
 
         Returns:
-            Dictionary containing extracted content with keys:
+            Dictionary containing extracted content with keys like:
                 - question: Extracted problem statement
                 - ground_truth: Implementation code
                 - final_answer: Expected output
@@ -254,9 +258,9 @@ class BaseExtractor(ABC):
                 - raw_markdown: Content for reward/hint generation
 
         Raises:
-            ValueError: If response is empty or invalid
-            KeyError: If required content sections are missing
-            RuntimeError: If extractor is not initialized
+            ValueError: If response is empty or invalid.
+            KeyError: If required content sections are missing.
+            RuntimeError: If extractor is not initialized.
         """
         if not self._is_setup:
             raise RuntimeError(
