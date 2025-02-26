@@ -48,6 +48,8 @@ response = agent.step("Call tools to calculate 17 * 19 = ?")
 
 print(json.dumps(collector.convert(), indent=4))
 print(json.dumps(collector.llm_convert(), indent=4))
+print(collector.to_ShareGPTData(collector.convert()))
+
 
 # ruff: noqa: E501
 """
@@ -326,5 +328,7 @@ print(json.dumps(collector.llm_convert(), indent=4))
         }
     ]
 }
+
+system='You are a helpful assistant' tools='[{"name": "add", "description": "Adds two numbers.", "parameters": {"properties": {"a": {"type": "number", "description": "The first number to be added."}, "b": {"type": "number", "description": "The second number to be added."}}, "required": ["a", "b"], "type": "object", "additionalProperties": false}}, {"name": "sub", "description": "Do subtraction between two numbers.", "parameters": {"properties": {"a": {"type": "number", "description": "The minuend in subtraction."}, "b": {"type": "number", "description": "The subtrahend in subtraction."}}, "required": ["a", "b"], "type": "object", "additionalProperties": false}}, {"name": "multiply", "description": "Multiplies two numbers.", "parameters": {"properties": {"a": {"type": "number", "description": "The multiplier in the multiplication."}, "b": {"type": "number", "description": "The multiplicand in the multiplication."}, "decimal_places": {"type": "integer", "description": "The number of decimal\\nplaces to round to. Defaults to 2."}}, "required": ["a", "b", "decimal_places"], "type": "object", "additionalProperties": false}}, {"name": "divide", "description": "Divides two numbers.", "parameters": {"properties": {"a": {"type": "number", "description": "The dividend in the division."}, "b": {"type": "number", "description": "The divisor in the division."}, "decimal_places": {"type": "integer", "description": "The number of\\ndecimal places to round to. Defaults to 2."}}, "required": ["a", "b", "decimal_places"], "type": "object", "additionalProperties": false}}, {"name": "round", "description": "Rounds a number to a specified number of decimal places.", "parameters": {"properties": {"a": {"type": "number", "description": "The number to be rounded."}, "decimal_places": {"type": "integer", "description": "The number of decimal places\\nto round to. Defaults to 0."}}, "required": ["a", "decimal_places"], "type": "object", "additionalProperties": false}}]' conversations=[ShareGPTMessage(from_='human', value='Call tools to calculate 17 * 19 = ?'), ShareGPTMessage(from_='function_call', value='[{"id": "call_4ciQdzdrxytVQFhBQ3qtz3ch", "type": "function", "function": {"name": "multiply", "arguments": "{\\"a\\": 17, \\"b\\": 19, \\"decimal_places\\": 0}"}}]'), ShareGPTMessage(from_='observation', value='"323"'), ShareGPTMessage(from_='gpt', value='The result of \\( 17 \\times 19 \\) is \\( 323 \\).')]
 
 """

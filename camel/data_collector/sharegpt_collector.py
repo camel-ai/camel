@@ -19,7 +19,7 @@ from typing_extensions import Self
 
 from camel.agents import ChatAgent
 from camel.data_collector.base import BaseDataCollector
-from camel.data_schemas import ShareGPTData
+from camel.data_schemas import ShareGPTData, ShareGPTMessage
 from camel.messages import BaseMessage
 from camel.schemas import OpenAISchemaConverter
 from camel.toolkits import FunctionTool
@@ -161,5 +161,17 @@ class ShareGPTDataCollector(BaseDataCollector):
         return converter.convert(
             "\n".join(context),
             ShareGPTData,
-            prompt,  ##Boer:OldShareGPTData!!!
+            prompt,
         ).model_dump()
+
+    @staticmethod
+    def to_ShareGPTData(data: Dict[str, Any]) -> ShareGPTData:
+        r"""Convert collected data into a ShareGPTData."""
+        return ShareGPTData(
+            system=data.get("system", ""),
+            tools=data.get("tools", ""),
+            conversations=[
+                ShareGPTMessage(**{"from": msg["from"], "value": msg["value"]})
+                for msg in data.get("conversations", [])
+            ],
+        )

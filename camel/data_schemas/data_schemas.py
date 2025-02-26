@@ -60,27 +60,22 @@ class ShareGPTMessage(BaseModel):
 
 
 class ShareGPTData(BaseModel):
-    r"""A data model for storing information about a conversation item.
+    r"""A data model for storing conversation details.
 
     Attributes:
-        from_ (Literal["human", "gpt", "function_call", "observation"]):
-            The source of the message, indicating who or what generated
-            the message.
-            - "human": Represents a message from the user.
-            - "gpt": Represents a message from the AI assistant.
-            - "function_call": Represents a function or tool call made by the
-            assistant.
-            - "observation": Represents a response or observation from a tool
-            or function.
-        value (str):
-            The content of the message or the value associated with the
-            conversation item.
+        system (Optional[str]): The system message associated with the
+        conversation.
+        tools (Optional[str]): JSON-encoded string representing tools used in
+        the conversation.
+        conversations (List[ShareGPTMessage]): List of messages exchanged in
+        the conversation.
+
 
     Notes:
         - Originally created by @Xukun Liu under camel/data_collector/
-        sharegpt_collector.py: ConversationItem,
+        sharegpt_collector.py: ShareGPTData,
           and @CaelumF under camel/messages/conversion/
-        conversation_models.py: ShareGPTMessage,
+        conversation_models.py: ShareGPTConversation,
           refactored by @boerz-coding.
     """
 
