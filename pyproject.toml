@@ -50,7 +50,6 @@ reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.42.0", optional = true }
 cohere = { version = "^5.11.0", optional = true }
 fish-audio-sdk = { version = "^2024.12.5", optional = true }
-sglang = { version = "^0.4.0", optional = true }
 
 # Huggingface ecosystem
 transformers = { version = "^4", optional = true }
@@ -258,7 +257,6 @@ model_platforms = [
     "anthropic",
     "cohere",
     "fish-audio-sdk",
-    "sglang",
 ]
 
 # Hugging Face ecosystem
@@ -363,7 +361,6 @@ all = [
     "fish-audio-sdk",
     "anthropic",
     "reka-api",
-    "sglang",
     "redis",
     "azure-storage-blob",
     "google-cloud-storage",
@@ -520,7 +517,6 @@ module = [
     "cohere",
     "fish-audio-sdk",
     "reka-api",
-    "sglang",
     "agentops",
     "botocore.*",
     "asknews",
