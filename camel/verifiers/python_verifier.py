@@ -13,11 +13,12 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-from typing import Optional
+from typing import Optional, List
 import os
 import venv
 import tempfile
 import shutil
+import subprocess
 
 from camel.verifiers import BaseVerifier
 from .models import Response, VerificationResult, VerificationStatus
@@ -26,26 +27,37 @@ from camel.logger import get_logger
 logger = get_logger(__name__)
 
 class PythonVerifier(BaseVerifier):
-    def __init__(self, python_version: str = "python3", timeout: Optional[float] = 5.0):
+    def __init__(self, python_version: str = "python3", timeout: Optional[float] = 30.0, required_packages: Optional[List[str]] = None):
         super().__init__(timeout=timeout)
         self.python_version = python_version
         self.venv_path = None
+        self.required_packages = required_packages or []
 
     async def _setup(self) -> None:
-        """Set up a virtual environment for execution."""
+        r"""Set up a virtual environment for execution 
+        and install required packages."""
         self.venv_path = tempfile.mkdtemp()
         venv.create(self.venv_path, with_pip=True)
         logger.info(f"Virtual environment created at {self.venv_path}")
 
+        venv_pip = os.path.join(self.venv_path, "bin", "pip")
+
+        if self.required_packages:
+            try:
+                subprocess.run([venv_pip, "install"] + self.required_packages, check=True, capture_output=True)
+                logger.info(f"Installed required packages: {', '.join(self.required_packages)}")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to install required packages: {e.stderr.decode().strip()}")
+
     async def _teardown(self) -> None:
-        """Clean up the virtual environment."""
+        r"""Clean up the virtual environment."""
         if self.venv_path:
             shutil.rmtree(self.venv_path)
             logger.info(f"Virtual environment at {self.venv_path} removed")
             self.venv_path = None
 
     async def _verify_implementation(self, result: Response) -> VerificationResult:
-        """Executes the LLM-generated response in a Python virtual environment."""
+        r"""Executes the LLM-generated response in a Python virtual environment."""
         if not self.venv_path:
             return VerificationResult(
                 status=VerificationStatus.ERROR,
@@ -73,13 +85,13 @@ class PythonVerifier(BaseVerifier):
             if process.returncode == 0:
                 return VerificationResult(
                     status=VerificationStatus.SUCCESS,
-                    result=stdout.decode().strip(),  # Capture stdout here
+                    result=stdout.decode().strip(),
                 )
             else:
                 return VerificationResult(
                     status=VerificationStatus.ERROR,
                     error_message=stderr.decode().strip(),
-                    result=stdout.decode().strip(),  # Still capture stdout even if there's an error
+                    result=stdout.decode().strip(),
                 )
 
         except asyncio.TimeoutError:
