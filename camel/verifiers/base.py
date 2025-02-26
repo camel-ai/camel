@@ -23,7 +23,7 @@ from .models import Response, VerificationResult, VerificationStatus
 logger = get_logger(__name__)
 
 
-class Verifier(ABC):
+class BaseVerifier(ABC):
     r"""Base verifier class providing a framework for verifying responses.
 
     This class serves as a foundation for implementing verification logic.
