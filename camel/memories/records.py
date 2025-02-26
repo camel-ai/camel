@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
@@ -48,7 +48,7 @@ class MemoryRecord(BaseModel):
     uuid: UUID = Field(default_factory=uuid4)
     extra_info: Dict[str, str] = Field(default_factory=dict)
     timestamp: float = Field(
-        default_factory=lambda: datetime.now().timestamp()
+        default_factory=lambda: datetime.now(timezone.utc).timestamp()
     )
 
     _MESSAGE_TYPES: ClassVar[dict] = {
@@ -101,5 +101,5 @@ class ContextRecord(BaseModel):
     memory_record: MemoryRecord
     score: float
     timestamp: float = Field(
-        default_factory=lambda: datetime.now().timestamp()
+        default_factory=lambda: datetime.now(timezone.utc).timestamp()
     )
