@@ -16,11 +16,11 @@ import time
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from camel.environments import Response
 from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
 from .models import (
-    Response,
     VerificationMetrics,
     VerificationResult,
     VerificationStatus,
