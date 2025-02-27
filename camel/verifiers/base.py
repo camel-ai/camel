@@ -21,13 +21,11 @@ from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
 from .models import (
-    VerificationMetrics,
     VerificationResult,
-    VerificationStatus,
+    VerificationOutcome,
 )
 
 logger = get_logger(__name__)
-
 
 class BaseVerifier(ABC):
     r"""Base class for all verifiers.
@@ -177,7 +175,7 @@ class BaseVerifier(ABC):
             self._is_setup = False
 
     async def _update_metrics(
-        self, duration: float, status: VerificationStatus
+        self, duration: float, status: VerificationOutcome
     ) -> None:
         r"""Update verification metrics with the results of a verification.
 
@@ -193,13 +191,13 @@ class BaseVerifier(ABC):
                 / self._metrics.total_verifications
             )
 
-            if status == VerificationStatus.SUCCESS:
+            if status == VerificationOutcome.SUCCESS:
                 self._metrics.successful_verifications += 1
-            elif status == VerificationStatus.FAILURE:
+            elif status == VerificationOutcome.FAILURE:
                 self._metrics.failed_verifications += 1
-            elif status == VerificationStatus.TIMEOUT:
+            elif status == VerificationOutcome.TIMEOUT:
                 self._metrics.timeout_verifications += 1
-            elif status == VerificationStatus.ERROR:
+            elif status == VerificationOutcome.ERROR:
                 self._metrics.error_verifications += 1
 
     async def verify(self, result: Response) -> VerificationResult:
@@ -267,10 +265,10 @@ class BaseVerifier(ABC):
                 if attempt == self._max_retries:
                     duration = time.time() - start_time
                     await self._update_metrics(
-                        duration, VerificationStatus.TIMEOUT
+                        duration, VerificationOutcome.TIMEOUT
                     )
                     return VerificationResult(
-                        status=VerificationStatus.TIMEOUT,
+                        status=VerificationOutcome.TIMEOUT,
                         result="",
                         error_message="Verification timed out after "
                         "all retries.",
@@ -287,14 +285,14 @@ class BaseVerifier(ABC):
                 if attempt == self._max_retries:
                     duration = time.time() - start_time
                     await self._update_metrics(
-                        duration, VerificationStatus.ERROR
+                        duration, VerificationOutcome.ERROR
                     )
                     error_msg = (
                         f"Verification failed after {attempt} attempts: {e!s}"
                     )
                     logger.error(error_msg, exc_info=True)
                     return VerificationResult(
-                        status=VerificationStatus.ERROR,
+                        status=VerificationOutcome.ERROR,
                         result="",
                         error_message=error_msg,
                         duration=duration,
@@ -309,9 +307,9 @@ class BaseVerifier(ABC):
         # This is a placeholder return that should never be reached
         # since we always return in one of the above branches
         duration = time.time() - start_time
-        await self._update_metrics(duration, VerificationStatus.ERROR)
+        await self._update_metrics(duration, VerificationOutcome.ERROR)
         return VerificationResult(
-            status=VerificationStatus.ERROR,
+            status=VerificationOutcome.ERROR,
             result="",
             error_message="Unexpected code path reached",
             duration=duration,
@@ -380,7 +378,7 @@ class BaseVerifier(ABC):
                     verification_result = await self.verify(response)
                 processing_time = time.time() - start_time
                 success = (
-                    verification_result.status == VerificationStatus.SUCCESS
+                    verification_result.status == VerificationOutcome.SUCCESS
                 )
                 self._batch_processor.adjust_batch_size(
                     success, processing_time
@@ -391,7 +389,7 @@ class BaseVerifier(ABC):
                 self._batch_processor.adjust_batch_size(False, processing_time)
                 logger.error(f"Verification failed: {e!s}", exc_info=True)
                 return VerificationResult(
-                    status=VerificationStatus.ERROR,
+                    status=VerificationOutcome.ERROR,
                     result="",
                     error_message=str(e),
                     metadata={"error_type": type(e).__name__},
@@ -421,7 +419,7 @@ class BaseVerifier(ABC):
                     ) from e
 
         if raise_on_error and any(
-            r.status in {VerificationStatus.ERROR, VerificationStatus.TIMEOUT}
+            r.status in {VerificationOutcome.ERROR, VerificationOutcome.TIMEOUT}
             for r in all_results
         ):
             error_msg = "One or more verifications failed"

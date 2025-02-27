@@ -29,9 +29,7 @@ from camel.verifiers.base import (
     VerificationResult,
 )
 from camel.verifiers.models import (
-    MachineInfo,
-    TaskType,
-    VerificationStatus,
+    VerificationOutcome,
     VerifierConfig,
 )
 
@@ -476,7 +474,7 @@ class BaseEnvironment(ABC):
 
         # Get success from verification result status
         verification_success = float(
-            verification_result.status == VerificationStatus.SUCCESS
+            verification_result.status == VerificationOutcome.SUCCESS
         )
         rewards["correctness"] = 1.0 if verification_success > 0.5 else 0.0
 
