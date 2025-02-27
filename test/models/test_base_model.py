@@ -66,6 +66,32 @@ class TestBaseModelBackend:
         processed = model.preprocess_messages(messages)
         assert processed[0]['content'] == 'plain message'
 
+        # Test normal thinking sections
+        messages = [
+            {'role': 'user', 'content': 'Start <think>Think</think>End'}
+        ]
+        processed = model.preprocess_messages(messages)
+        assert processed[0]['content'] == 'Start End'
+
+        # Test system messages (should not be processed)
+        messages = [
+            {
+                'role': 'system',
+                'content': 'System <think>thinking</think> message',
+            }
+        ]
+        processed = model.preprocess_messages(messages)
+        assert (
+            processed[0]['content'] == 'System <think>thinking</think> message'
+        )
+
+        # Test empty thinking tags
+        messages = [
+            {'role': 'assistant', 'content': 'Before<think></think>After'}
+        ]
+        processed = model.preprocess_messages(messages)
+        assert processed[0]['content'] == 'BeforeAfter'
+
     def test_metaclass_preprocessing(self):
         r"""Test that metaclass automatically preprocesses messages in run
         method."""

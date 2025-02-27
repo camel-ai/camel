@@ -197,9 +197,6 @@ class OpenAIModel(BaseModelBackend):
         request_config = self.model_config_dict.copy()
 
         if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
             request_config["tools"] = tools
 
         request_config = self._sanitize_config(request_config)
@@ -218,9 +215,6 @@ class OpenAIModel(BaseModelBackend):
         request_config = self.model_config_dict.copy()
 
         if tools:
-            for tool in tools:
-                function_dict = tool.get('function', {})
-                function_dict.pop("strict", None)
             request_config["tools"] = tools
 
         request_config = self._sanitize_config(request_config)
