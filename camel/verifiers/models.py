@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -76,14 +76,8 @@ class VerificationResult(BaseModel):
         default_factory=dict,
         description="Additional metadata about the verification",
     )
-    score: Optional[Dict[str, float]] = Field(
-        default_factory=dict, description="Optional score metrics"
-    )
     error_message: Optional[str] = Field(
         default=None, description="Error message if verification failed"
-    )
-    sub_results: Optional[List['VerificationResult']] = Field(
-        default_factory=list, description="Results from composite verifiers"
     )
 
 

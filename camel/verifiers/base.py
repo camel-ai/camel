@@ -216,11 +216,13 @@ class BaseVerifier(ABC):
                 reasoning.
 
         Returns:
-            VerificationResult: Containing status and metadata including:
-                - code_execution_status: Success/failure of code execution
-                - answer_match: Whether final answer matches ground truth
-                - reasoning_valid: Whether chain of thought is valid
-                - symbolic_match: Whether symbolic solution matches code
+            VerificationResult: A structured result containing:
+                - status: Success/failure/error/timeout status
+                - result: Verification result description
+                - duration: Time taken for verification
+                - timestamp: When verification was performed
+                - metadata: Dictionary with verification details
+                - error_message: Details if verification failed
 
         Raises:
             ValueError: If verification parameters are invalid.
@@ -270,7 +272,6 @@ class BaseVerifier(ABC):
                     return VerificationResult(
                         status=VerificationStatus.TIMEOUT,
                         result="",
-                        score=None,
                         error_message="Verification timed out after "
                         "all retries.",
                         duration=duration,
@@ -295,7 +296,6 @@ class BaseVerifier(ABC):
                     return VerificationResult(
                         status=VerificationStatus.ERROR,
                         result="",
-                        score=None,
                         error_message=error_msg,
                         duration=duration,
                         metadata={"attempt": attempt},
@@ -313,7 +313,6 @@ class BaseVerifier(ABC):
         return VerificationResult(
             status=VerificationStatus.ERROR,
             result="",
-            score=None,
             error_message="Unexpected code path reached",
             duration=duration,
             metadata={"attempt": attempt},
