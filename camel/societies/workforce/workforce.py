@@ -11,11 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""Workforce module with dependency injection for task and coordinator agents.
-
-This module allows users to provide custom agent instances with their preferred
-models rather than defaulting to OpenAI models.
-"""
 
 from __future__ import annotations
 
