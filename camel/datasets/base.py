@@ -47,10 +47,6 @@ class DataPoint(BaseModel):
         rationale (str): Logical reasoning or explanation behind the
             answer.
         final_answer (str): The final answer.
-        verified (bool): Whether this chain-of-thought is verified.
-            (default: :obj:`False`)
-        ground_truth (Optional[str]): The ground truth solution.
-            (default: :obj:`None`)
         raw_markdown (Optional[str]): Raw markdown content for generating
             rewards/hints. (default: :obj:`None`)
         difficulty (Optional[str]): Difficulty level of the question.
@@ -66,12 +62,6 @@ class DataPoint(BaseModel):
         None, description="Logical reasoning or explanation behind the answer."
     )
     final_answer: str = Field(..., description="The final answer.")
-    verified: bool = Field(
-        False, description="Whether this chain-of-thought is verified."
-    )
-    ground_truth: Optional[str] = Field(
-        None, description="The ground truth solution."
-    )
     raw_markdown: Optional[str] = Field(
         None, description="Raw markdown content for generating rewards/hints."
     )
@@ -89,20 +79,6 @@ class DataPoint(BaseModel):
             Dict[str, Any]: Dictionary representation of the DataPoint.
         """
         return self.dict()
-
-    def to_tensor_dict(self) -> Dict[str, torch.Tensor]:
-        r"""Convert DataPoint to a dictionary of tensors.
-
-        Returns:
-            Dict[str, torch.Tensor]: Dictionary of tensors.
-        """
-        # Convert only boolean fields to tensors
-        tensor_dict = {}
-        if self.verified is not None:
-            tensor_dict['verified'] = torch.tensor(
-                self.verified, dtype=torch.bool
-            )
-        return tensor_dict
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'DataPoint':
@@ -197,11 +173,9 @@ class BaseDataset(Dataset):
                                 question=item.get('question', ''),
                                 rationale=item.get('rationale', ''),
                                 final_answer=item.get('final_answer', ''),
-                                verified=bool(item.get('verified', False)),
                                 metadata=item.get('metadata', {})
                                 if isinstance(item.get('metadata'), dict)
                                 else {},
-                                ground_truth='',
                                 raw_markdown='',
                                 difficulty='',
                             )

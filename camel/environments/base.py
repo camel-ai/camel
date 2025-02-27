@@ -332,7 +332,6 @@ class BaseEnvironment(ABC):
             self._state['current_datapoint'] = datapoint
             required_attrs = [
                 'question',
-                'ground_truth',
                 'final_answer',
                 'difficulty',
                 'rationale',
@@ -351,7 +350,6 @@ class BaseEnvironment(ABC):
             observation = Observation(
                 question=datapoint.question,
                 context={
-                    'ground_truth': datapoint.ground_truth,
                     'final_answer': datapoint.final_answer,
                     'difficulty': datapoint.difficulty,
                     'rationale': datapoint.rationale,
