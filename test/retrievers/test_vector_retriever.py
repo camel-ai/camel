@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from camel.embeddings import OpenAIEmbedding
+from camel.loaders import Chunk
 from camel.retrievers import VectorRetriever
 
 # Mock classes for dependencies
@@ -28,6 +29,7 @@ MockUnstructuredIO = Mock()
 def mock_embedding_model():
     mock_instance = MockBaseEmbedding()
     mock_instance.embed.return_value = [0.0, 0.0]
+    mock_instance.embed_list.return_value = [[0.0, 0.0]]
     return mock_instance
 
 
@@ -62,9 +64,26 @@ def test_initialization_with_default_embedding():
     assert isinstance(retriever.embedding_model, OpenAIEmbedding)
 
 
+def test_load_chunks(vector_retriever):
+    mock_chunk1 = Chunk(
+        text="mock text 1", metadata={"mock_key": "mock_value"}
+    )
+    mock_chunk2 = Chunk(
+        text="mock text 2", metadata={"mock_key": "mock_value"}
+    )
+
+    vector_retriever.load_chunks([mock_chunk1, mock_chunk2], 'dummy_path')
+
+    # Assert that the embedding model is called as expected
+    vector_retriever.embedding_model.embed_list.assert_called_once_with(
+        objs=["mock text 1", "mock text 2"]
+    )
+
+
 # Test process method
-def test_process(mock_unstructured_modules):
-    mock_instance = mock_unstructured_modules.return_value
+@patch('camel.loaders.UnstructuredIO')
+def test_process(mock_unstructured_io):
+    mock_instance = mock_unstructured_io.return_value
 
     # Create a mock chunk with metadata
     mock_chunk = MagicMock()

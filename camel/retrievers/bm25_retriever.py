@@ -15,8 +15,9 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from camel.loaders import UnstructuredIO
+from camel.loaders import Chunk
 from camel.retrievers import BaseRetriever
+from camel.types.enums import ChunkToolType
 from camel.utils import dependencies_required
 
 DEFAULT_TOP_K_RESULTS = 1
@@ -49,22 +50,18 @@ class BM25Retriever(BaseRetriever):
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
 
-    def bm25_chunks(
+    def load_chunks(
         self,
-        chunks: Optional[List[Dict[str, Any]]] = None,
+        chunks: Optional[List[Chunk]] = None,
     ) -> None:
-        r"""Build a BM25 index from text chunks. Allows for loading chunks
-        from different chunk tools.
+        r"""Loads chunks into the BM25 model.
 
         Uses BM25Okapi from the rank_bm25 library to create a BM25 model based
         on tokenized text. If no chunks are provided, `self.chunks` is used.
         Raises a ValueError if both are empty.
 
         Args:
-            chunks (Optional[List[Dict[str, Any]]]): A list of chunks, where
-                each chunk is a dict containing:
-                - "text" (str): The text to be embedded.
-                - "metadata" (dict): Additional metadata for the chunk.
+            chunks (Optional[List[Chunk]]): A list of chunks.
         Raises:
             ValueError: If neither `chunks` nor `self.chunks` is available.
         """
@@ -78,64 +75,51 @@ class BM25Retriever(BaseRetriever):
 
         tokenized_corpus = []
         for chunk in chunks:
-            if "text" not in chunk:
-                raise ValueError("Each chunk must have a 'text' key.")
-            assert isinstance(
-                chunk["text"], str
-            ), f"Expected 'text' to be a str, but got {type(chunk['text'])}."
-            tokenized_corpus.append(chunk["text"].split(" "))
+            tokenized_corpus.append(chunk.text.split(" "))
 
         self.bm25 = BM25Okapi(tokenized_corpus)
 
     def process(
         self,
         content_input_path: str,
+        chunk_tool_type: ChunkToolType = ChunkToolType.UNSTRUCTURED_IO,
         chunk_type: str = "chunk_by_title",
         extra_info: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
-        using `Unstructured IO`,then stored internally. This method must be
-        called before executing queries with the retriever.
+        using chunk tool, then stored internally. This method or `load_chunks`
+        must be called before executing queries with the retriever.
 
         Args:
             content_input_path (str): File path or URL of the content to be
                 processed.
-            chunk_type (str): Type of chunking going to apply. Defaults to
-                "chunk_by_title".
+            chunk_tool_type (ChunkToolType): Type of chunking going to apply.
+                Defaults to `ChunkToolType.UNSTRUCTURED_IO`.
+            chunk_type (str): Type of chunking going to apply in
+                `UnstructuredIO`. Defaults to "chunk_by_title".
+            extra_info (Optional[dict]): Additional information to be added to
+                the chunks.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
-        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
-
-        # Load and preprocess documents
         self.content_input_path = content_input_path
-        elements = self.unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs
-        )
-        if elements:
-            uio_chunks = self.unstructured_modules.chunk_elements(
-                chunk_type=chunk_type, elements=elements
-            )
+        if chunk_tool_type == ChunkToolType.UNSTRUCTURED_IO:
+            from camel.loaders import UnstructuredIO
 
-            self.chunks = [
-                {
-                    "text": str(uio_chunk),
-                    "metadata": {
-                        **{
-                            key: value
-                            for key, value in (
-                                uio_chunk.metadata.to_dict().items()
-                            )
-                            if key != "orig_elements"
-                        },
-                        "extra_info": extra_info or {},
-                    },
-                }
-                for uio_chunk in uio_chunks
-            ]
-            self.bm25_chunks()
+            # Load and preprocess documents
+            self.unstructured_modules: UnstructuredIO = UnstructuredIO()
+            elements = self.unstructured_modules.parse_file_or_url(
+                content_input_path, **kwargs
+            )
+            if elements:
+                uio_chunks = self.unstructured_modules.chunk_elements(
+                    chunk_type=chunk_type, elements=elements
+                )
+                self.chunks = Chunk.from_uio_chunks(uio_chunks, extra_info)
         else:
-            self.bm25 = None
+            raise ValueError(f"Unsupported chunk tool type: {chunk_tool_type}")
+
+        self.load_chunks()
 
     def query(
         self,
@@ -178,8 +162,8 @@ class BM25Retriever(BaseRetriever):
             result_dict = {
                 'similarity score': scores[i],
                 'content path': self.content_input_path,
-                'metadata': self.chunks[i]['metadata'],
-                'text': self.chunks[i]['text'],
+                'metadata': self.chunks[i].metadata,
+                'text': self.chunks[i].text,
             }
             formatted_results.append(result_dict)
 
