@@ -164,3 +164,39 @@ task object. You can check the result by:
 ```python
 print(task.result)
 ```
+
+## Advanced Configurations
+
+### Using Custom Agent Instances
+
+The Workforce class supports dependency injection for three key agent roles:
+
+1. **coordinator_agent**: Responsible for assigning tasks to workers and creating new workers when needed.
+2. **task_agent**: Responsible for composing and decomposing tasks.
+3. **new_worker_agent**: Used as a template for creating new worker agents when needed.
+
+This allows you to use your preferred models or custom-configured agents:
+
+```python
+# Create custom agents with your preferred models or configurations
+coordinator_agent = ChatAgent(coordinator_msg, model=your_coordinator_model)
+task_agent = ChatAgent(task_msg, model=your_task_model)
+new_worker_agent = ChatAgent(worker_msg, model=your_worker_model)
+
+# Create workforce with all custom agents
+workforce = Workforce(
+    description="Fully customized workforce",
+    coordinator_agent=coordinator_agent,
+    task_agent=task_agent,
+    new_worker_agent=new_worker_agent
+)
+```
+
+By using dependency injection, you can:
+
+- Use different models for different roles based on their strengths
+- Apply specific system prompts tailored to each role
+- Configure different tools for each agent type
+- Integrate custom logging or monitoring for specific agents
+
+This flexibility enables you to optimize your workforce for specific tasks while maintaining the core workforce architecture.

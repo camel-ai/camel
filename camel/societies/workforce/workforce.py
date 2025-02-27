@@ -11,6 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+"""Workforce module with dependency injection for task and coordinator agents.
+
+This module allows users to provide custom agent instances with their preferred
+models rather than defaulting to OpenAI models.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -58,15 +64,17 @@ class Workforce(BaseNode):
         children (Optional[List[BaseNode]], optional): List of child nodes
             under this node. Each child node can be a worker node or
             another workforce node. (default: :obj:`None`)
-        coordinator_agent_kwargs (Optional[Dict], optional): Keyword
-            arguments for the coordinator agent, e.g. `model`, `api_key`,
-            `tools`, etc. (default: :obj:`None`)
-        task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
-            the task agent, e.g. `model`, `api_key`, `tools`, etc.
+        coordinator_agent (Optional[ChatAgent], optional): The coordinator
+            agent instance to be used for task assignment and worker creation.
+            If None, a default agent will be created using OpenAI Model.
             (default: :obj:`None`)
-        new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
-            for the worker agent that will be created during runtime to
-            handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
+        task_agent (Optional[ChatAgent], optional): The task agent instance
+            to be used for task composition and decomposition. If None, a
+            default agent will be created using OpenAI Model. (default:
+            :obj:`None`)
+        new_worker_agent (Optional[ChatAgent], optional): The new worker agent
+            instance to be used for task composition and decomposition. If
+            None, a default agent will be created using OpenAI Model.
             (default: :obj:`None`)
     """
 
@@ -74,32 +82,36 @@ class Workforce(BaseNode):
         self,
         description: str,
         children: Optional[List[BaseNode]] = None,
-        coordinator_agent_kwargs: Optional[Dict] = None,
-        task_agent_kwargs: Optional[Dict] = None,
-        new_worker_agent_kwargs: Optional[Dict] = None,
+        coordinator_agent: Optional[ChatAgent] = None,
+        task_agent: Optional[ChatAgent] = None,
+        new_worker_agent: Optional[ChatAgent] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
-        self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.new_worker_agent = new_worker_agent
 
-        coord_agent_sys_msg = BaseMessage.make_assistant_message(
-            role_name="Workforce Manager",
-            content="You are coordinating a group of workers. A worker can be "
-            "a group of agents or a single agent. Each worker is "
-            "created to solve a specific kind of task. Your job "
-            "includes assigning tasks to a existing worker, creating "
-            "a new worker for a task, etc.",
-        )
-        self.coordinator_agent = ChatAgent(
-            coord_agent_sys_msg, **(coordinator_agent_kwargs or {})
-        )
+        if coordinator_agent is None:
+            coord_agent_sys_msg = BaseMessage.make_assistant_message(
+                role_name="Workforce Manager",
+                content="You are coordinating a group of workers. A worker "
+                "can be a group of agents or a single agent. Each worker is "
+                "created to solve a specific kind of task. Your job "
+                "includes assigning tasks to a existing worker, creating "
+                "a new worker for a task, etc.",
+            )
+            self.coordinator_agent = ChatAgent(coord_agent_sys_msg)
+        else:
+            self.coordinator_agent = coordinator_agent
 
-        task_sys_msg = BaseMessage.make_assistant_message(
-            role_name="Task Planner",
-            content="You are going to compose and decompose tasks.",
-        )
-        self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
+        if task_agent is None:
+            task_sys_msg = BaseMessage.make_assistant_message(
+                role_name="Task Planner",
+                content="You are going to compose and decompose tasks.",
+            )
+            self.task_agent = ChatAgent(task_sys_msg)
+        else:
+            self.task_agent = task_agent
 
         # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
@@ -342,8 +354,8 @@ class Workforce(BaseNode):
             content=sys_msg,
         )
 
-        if self.new_worker_agent_kwargs is not None:
-            return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
+        if self.new_worker_agent is None:
+            return ChatAgent(worker_sys_msg)
 
         # Default tools for a new agent
         function_list = [
