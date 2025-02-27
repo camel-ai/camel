@@ -21,6 +21,7 @@ from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
 from .models import (
+    VerifierInput,
     VerificationResult,
     VerificationOutcome,
 )
