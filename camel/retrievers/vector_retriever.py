@@ -210,12 +210,14 @@ class VectorRetriever(BaseRetriever):
                 )
 
                 chunks = Chunk.from_uio_chunks(uio_chunks, extra_info)
+        else:
+            raise ValueError(f"Unsupported chunk tool type: {chunk_tool_type}")
 
-            self.load_chunks(
-                chunks=chunks,
-                content_path_info=content_path_info,
-                embed_batch=embed_batch,
-            )
+        self.load_chunks(
+            chunks=chunks,
+            content_path_info=content_path_info,
+            embed_batch=embed_batch,
+        )
 
     def query(
         self,
