@@ -49,7 +49,7 @@ class MedicalVerifier(BaseVerifier):
 
         Args:
             icd_code_pattern: Regex pattern for valid ICD-10 codes
-                (default: r'^[A-Z][0-9]{2}(\.[0-9]{1,2})?$')
+                (default: r'^[A-Z][0-9]{2}([.][0-9]{1,2})?$')
             required_fields: Set of required fields in medical responses
                 (default: None, will use standard medical fields)
             min_confidence_score: Minimum confidence score for validations
@@ -71,6 +71,43 @@ class MedicalVerifier(BaseVerifier):
             ('warfarin', 'aspirin'): 'Increased bleeding risk',
             ('ACE inhibitors', 'potassium supplements'): 'Hyperkalemia risk',
             ('clarithromycin', 'simvastatin'): 'Increased statin toxicity',
+            ('metformin', 'contrast media'): 'Risk of lactic acidosis',
+            ('NSAIDS', 'SSRIs'): 'Increased bleeding risk',
+            ('amiodarone', 'warfarin'): 'Enhanced anticoagulation effect',
+            ('fluoroquinolones', 'steroids'): 'Increased tendon rupture risk',
+        }
+
+        # 添加疾病治疗指南
+        self._treatment_guidelines = {
+            'STEMI': {
+                'required_treatments': ['aspirin', 'pci', 'anticoagulation'],
+                'recommended_timing': 'immediate',
+                'confidence': 0.9,
+            },
+            '高血压危象': {
+                'required_treatments': ['降压', '监测'],
+                'recommended_drugs': ['拉贝洛尔', '硝普钠', '乌拉地尔'],
+                'confidence': 0.85,
+            },
+            '脑梗塞': {
+                'required_treatments': ['溶栓', '抗血小板'],
+                'time_window': '4.5h',
+                'confidence': 0.9,
+            },
+        }
+
+        # 添加症状-诊断关联规则
+        self._symptom_diagnosis_rules = {
+            'STEMI': {
+                'required_symptoms': ['胸痛', 'chest pain'],
+                'supporting_evidence': ['ST抬高', 'ST elevation'],
+                'key_tests': ['troponin', '肌钙蛋白'],
+            },
+            '高血压危象': {
+                'required_symptoms': ['头痛', 'headache', '视物模糊', 'blurred vision'],
+                'supporting_evidence': ['血压升高', 'high blood pressure'],
+                'key_tests': ['眼底检查', 'fundus examination'],
+            },
         }
 
     async def __aenter__(self) -> Self:
@@ -143,8 +180,6 @@ class MedicalVerifier(BaseVerifier):
         Returns:
             Dict[str, Any]: Validation results including compliance score
         """
-        # This would typically connect to a medical guidelines database
-        # For demonstration, we'll use a simple validation
         validation = {
             'compliant': True,
             'confidence': 0.8,
@@ -152,14 +187,107 @@ class MedicalVerifier(BaseVerifier):
             'warnings': [],
         }
         
-        # Example validation logic
-        if 'STEMI' in diagnosis:
-            if not any(x in treatment.lower() for x in ['aspirin', 'pci']):
-                validation.update({
-                    'compliant': False,
-                    'warnings': ['Standard STEMI care not found'],
-                })
+        # 转换为小写以进行比较
+        diagnosis_lower = diagnosis.lower()
+        treatment_lower = treatment.lower()
         
+        # 查找匹配的指南
+        for condition, guide in self._treatment_guidelines.items():
+            if condition.lower() in diagnosis_lower:
+                validation['guidelines_referenced'].append(condition)
+                
+                # 检查必需治疗措施
+                missing_treatments = [
+                    t for t in guide['required_treatments']
+                    if t.lower() not in treatment_lower
+                ]
+                
+                if missing_treatments:
+                    validation.update({
+                        'compliant': False,
+                        'warnings': [
+                            f"Missing required treatments: {', '.join(missing_treatments)}"
+                        ],
+                    })
+                
+                # 更新置信度
+                validation['confidence'] = guide['confidence']
+                
+                # 检查推荐药物（如果有）
+                if 'recommended_drugs' in guide:
+                    recommended = [
+                        d for d in guide['recommended_drugs']
+                        if d.lower() in treatment_lower
+                    ]
+                    if recommended:
+                        validation['confidence'] *= 1.1  # 提高置信度
+                
+                break
+        
+        return validation
+
+    def _validate_diagnosis(
+        self,
+        symptoms: str,
+        diagnosis: str,
+        medical_content: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """验证诊断的准确性。
+
+        Args:
+            symptoms: 症状描述
+            diagnosis: 诊断结果
+            medical_content: 完整的医疗内容
+
+        Returns:
+            Dict[str, Any]: 验证结果
+        """
+        validation = {
+            'accurate': True,
+            'confidence': 0.7,
+            'warnings': [],
+        }
+
+        # 转换为小写以进行比较
+        symptoms_lower = symptoms.lower()
+        diagnosis_lower = diagnosis.lower()
+
+        # 查找匹配的诊断规则
+        for condition, rules in self._symptom_diagnosis_rules.items():
+            if condition.lower() in diagnosis_lower:
+                # 检查必需症状
+                required_symptoms = rules['required_symptoms']
+                found_symptoms = [
+                    s for s in required_symptoms
+                    if s.lower() in symptoms_lower
+                ]
+                
+                if not found_symptoms:
+                    validation.update({
+                        'accurate': False,
+                        'warnings': ['Required symptoms not found'],
+                        'confidence': 0.3,
+                    })
+                
+                # 检查支持证据
+                supporting_evidence = rules['supporting_evidence']
+                found_evidence = [
+                    e for e in supporting_evidence
+                    if any(
+                        e.lower() in str(v).lower()
+                        for v in medical_content.values()
+                    )
+                ]
+                
+                # 根据找到的证据调整置信度
+                if found_evidence:
+                    validation['confidence'] = min(
+                        1.0,
+                        validation['confidence'] + 0.1 * len(found_evidence)
+                    )
+                
+                break
+
         return validation
 
     async def _verify_implementation(
@@ -187,6 +315,7 @@ class MedicalVerifier(BaseVerifier):
         # Track validation results
         validations = []
         error_messages = []
+        avg_confidence = 0.0
         
         # 1. Check required fields
         missing_fields = self._required_fields - set(medical_content.keys())
@@ -224,26 +353,37 @@ class MedicalVerifier(BaseVerifier):
             'validation': protocol_validation,
         })
 
-        # Determine overall verification status
-        if error_messages:
-            status = VerificationStatus.FAILURE
-        else:
-            # Check if all validations meet minimum confidence
-            confidence_scores = [
-                v.get('validation', {}).get('confidence', 0)
-                for v in validations
-                if 'validation' in v
-            ]
-            avg_confidence = (
-                sum(confidence_scores) / len(confidence_scores)
-                if confidence_scores else 0
-            )
-            
-            status = (
-                VerificationStatus.SUCCESS
-                if avg_confidence >= self._min_confidence
-                else VerificationStatus.FAILURE
-            )
+        # 5. Validate diagnosis accuracy
+        symptoms = medical_content.get('symptoms', '')
+        diagnosis_validation = self._validate_diagnosis(
+            symptoms, diagnosis, medical_content
+        )
+        validations.append({
+            'type': 'diagnosis_accuracy',
+            'validation': diagnosis_validation,
+        })
+
+        # Calculate overall confidence score
+        confidence_scores = []
+        
+        # Treatment protocol confidence
+        if protocol_validation.get('compliant'):
+            confidence_scores.append(protocol_validation.get('confidence', 0))
+        
+        # Diagnosis accuracy confidence
+        if diagnosis_validation.get('accurate'):
+            confidence_scores.append(diagnosis_validation.get('confidence', 0))
+        
+        # Calculate average confidence if we have scores
+        if confidence_scores:
+            avg_confidence = sum(confidence_scores) / len(confidence_scores)
+
+        # Determine status
+        status = (
+            VerificationStatus.SUCCESS
+            if not error_messages and avg_confidence >= self._min_confidence
+            else VerificationStatus.FAILURE
+        )
 
         return VerificationResult(
             status=status,
