@@ -51,6 +51,7 @@ from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
 from .math_code_toolkit import MathCodeToolkit
+from .geometry_toolkit import GeometryToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -88,5 +89,6 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'GeometryToolkit',
     'MathCodeToolkit',
 ]
