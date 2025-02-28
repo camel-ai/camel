@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Union, List, Dict, Any
+from typing import Any, Dict, List, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -56,9 +56,9 @@ class SGLangConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-        tools (List[Dict[str, Any]], optional): A list of tool definitions 
-            that the model can dynamically invoke. Each tool should be 
-            defined as a dictionary following OpenAI's function calling 
+        tools (List[Dict[str, Any]], optional): A list of tool definitions
+            that the model can dynamically invoke. Each tool should be
+            defined as a dictionary following OpenAI's function calling
             specification format. See the OpenAI.
     """
 

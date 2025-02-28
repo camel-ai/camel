@@ -67,25 +67,27 @@ weather_tool = [
                 "type": "object",
                 "properties": {
                     "city": {"type": "string"},
-                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+                    "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                    },
                 },
-                "required": ["city"]
-            }
-        }
+                "required": ["city"],
+            },
+        },
     }
 ]
 
 sglang_model_with_tool = ModelFactory.create(
     model_platform=ModelPlatformType.SGLANG,
     model_type="meta-llama/Llama-3.2-1B-Instruct",
-    model_config_dict={
-        "temperature": 0.0,
-        "tools": weather_tool
-    },
+    model_config_dict={"temperature": 0.0, "tools": weather_tool},
     api_key="sglang",
 )
 
-agent = ChatAgent(assistant_sys_msg, model=sglang_model_with_tool, token_limit=4096)
+agent = ChatAgent(
+    assistant_sys_msg, model=sglang_model_with_tool, token_limit=4096
+)
 
 user_msg = "What's the weather in Boston today?"
 

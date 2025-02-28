@@ -56,6 +56,7 @@ def test_sglang_model_unexpected_argument():
     ):
         _ = SGLangModel(model_type, model_config_dict, api_key="sglang")
 
+
 @pytest.mark.model_backend
 def test_sglang_function_call():
     test_tool = {
@@ -63,23 +64,22 @@ def test_sglang_function_call():
         "function": {
             "name": "test_tool",
             "description": "Test function",
-            "parameters": {"type": "object", "properties": {}}
-        }
+            "parameters": {"type": "object", "properties": {}},
+        },
     }
-    
+
     model = SGLangModel(
         ModelType.GPT_4,
         model_config_dict={"tools": [test_tool]},
-        api_key="sglang"
+        api_key="sglang",
     )
-    
-    messages = [{
-        "role": "user",
-        "content": "Use test_tool and respond with result"
-    }]
-    
+
+    messages = [
+        {"role": "user", "content": "Use test_tool and respond with result"}
+    ]
+
     response = model.run(messages=messages)
-    
+
     assert len(response.choices[0].message.tool_calls) > 0
     tool_call = response.choices[0].message.tool_calls[0]
     assert tool_call.function.name == "test_tool"
