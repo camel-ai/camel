@@ -218,6 +218,7 @@ class SGLangModel(BaseModelBackend):
         response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            tools=tools,
             **self.model_config_dict,
         )
 
@@ -256,6 +257,7 @@ class SGLangModel(BaseModelBackend):
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
+            tools=tools,
             **self.model_config_dict,
         )
 

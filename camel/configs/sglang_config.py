@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Sequence, Union
+from typing import Sequence, Union, List, Dict, Any
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -70,6 +70,7 @@ class SGLangConfig(BaseConfig):
     presence_penalty: float = 0.0
     stream: bool = False
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    tools: Union[List[Dict[str, Any]], NotGiven] = NOT_GIVEN
 
 
 SGLANG_API_PARAMS = {param for param in SGLangConfig.model_fields.keys()}

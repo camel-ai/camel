@@ -56,3 +56,41 @@ print(assistant_response.msg.content)
 CAMEL AI ReferentialAction
 ===============================================================================
 """
+
+weather_tool = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string"},
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+                },
+                "required": ["city"]
+            }
+        }
+    }
+]
+
+sglang_model_with_tool = ModelFactory.create(
+    model_platform=ModelPlatformType.SGLANG,
+    model_type="meta-llama/Llama-3.2-1B-Instruct",
+    model_config_dict={
+        "temperature": 0.0,
+        "tools": weather_tool
+    },
+    api_key="sglang",
+)
+
+agent = ChatAgent(assistant_sys_msg, model=sglang_model_with_tool, token_limit=4096)
+
+user_msg = "What's the weather in Boston today?"
+
+assistant_response = agent.step(user_msg)
+if assistant_response.msg.tool_calls:
+    tool_call = assistant_response.msg.tool_calls[0]
+    print(f"Detected tool call: {tool_call['name']}")
+    print(f"Arguments: {tool_call['arguments']}")
