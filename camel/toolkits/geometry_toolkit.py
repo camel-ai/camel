@@ -14,7 +14,7 @@
 
 import json
 import logging
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import sympy as sp  # type: ignore[import]
 
@@ -61,13 +61,13 @@ class GeometryToolkit(BaseToolkit):
         return json.dumps({"status": "error", "message": str(exception)})
 
     def compute_inner_product(
-        self, vector1: List[float], vector2: List[float]
+        self, vector1: Tuple[float, float], vector2: Tuple[float, float]
     ) -> str:
         r"""Computes the inner (dot) product of two vectors.
 
         Args:
-            vector1 (List[float]): The first vector as a list of floats.
-            vector2 (List[float]): The second vector as a list of floats.
+            vector1 (Tuple[float, float]): The first vector as a tuple of floats.
+            vector2 (Tuple[float, float]): The second vector as a tuple of floats.
 
         Returns:
             str: JSON string containing the inner product in the
@@ -83,9 +83,9 @@ class GeometryToolkit(BaseToolkit):
             self.logger.info(
                 f"Computing inner product of vectors: {vector1} and {vector2}"
             )
-            # Convert the lists into sympy Matrix objects (column vectors)
-            v1 = sp.Matrix(vector1)
-            v2 = sp.Matrix(vector2)
+            # Convert the tuples into sympy Matrix objects (column vectors)
+            v1 = sp.Matrix([vector1[0], vector1[1]])
+            v2 = sp.Matrix([vector2[0], vector2[1]])
 
             # Check that the vectors have the same dimensions.
             if v1.shape != v2.shape:
@@ -102,155 +102,12 @@ class GeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_inner_product", e)
 
-    def create_point(self, x: float, y: float) -> str:
-        r"""Creates a Sympy Point with the given x, y coordinates.
-
-        Args:
-            x (float): The x-coordinate of the point.
-            y (float): The y-coordinate of the point.
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Point. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            point = sp.Point(x, y)
-            return json.dumps({"result": str(point)})
-        except Exception as e:
-            return self.handle_exception("create_point", e)
-
-    def create_line(self, point1: str, point2: str) -> str:
-        r"""Creates a line passing through two points.
-
-        Args:
-            point1 (str): First point in the format "Point(x, y)".
-            point2 (str): Second point in the format "Point(x, y)".
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Line. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            p1 = sp.parse_expr(point1)
-            p2 = sp.parse_expr(point2)
-            line = sp.Line(p1, p2)
-            return json.dumps({"result": str(line)})
-        except Exception as e:
-            return self.handle_exception("create_line", e)
-
-    def create_segment(self, point1: str, point2: str) -> str:
-        r"""Creates a line segment between two points.
-
-        Args:
-            point1 (str): First point in the format "Point(x, y)".
-            point2 (str): Second point in the format "Point(x, y)".
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Segment. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            p1 = sp.parse_expr(point1)
-            p2 = sp.parse_expr(point2)
-            segment = sp.Segment(p1, p2)
-            return json.dumps({"result": str(segment)})
-        except Exception as e:
-            return self.handle_exception("create_segment", e)
-
-    def create_circle(self, center: str, radius: float) -> str:
-        r"""Creates a circle with given center and radius.
-
-        Args:
-            center (str): Center point in the format "Point(x, y)".
-            radius (float): Radius of the circle.
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Circle. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            center_point = sp.parse_expr(center)
-            circle = sp.Circle(center_point, radius)
-            return json.dumps({"result": str(circle)})
-        except Exception as e:
-            return self.handle_exception("create_circle", e)
-
-    def create_ellipse(self, center: str, hradius: float, vradius: float) -> str:
-        r"""Creates an ellipse with given center and radii.
-
-        Args:
-            center (str): Center point in the format "Point(x, y)".
-            hradius (float): Horizontal radius of the ellipse.
-            vradius (float): Vertical radius of the ellipse.
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Ellipse. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            center_point = sp.parse_expr(center)
-            ellipse = sp.Ellipse(center_point, hradius, vradius)
-            return json.dumps({"result": str(ellipse)})
-        except Exception as e:
-            return self.handle_exception("create_ellipse", e)
-
-    def create_polygon(self, vertices: List[str]) -> str:
-        r"""Creates a polygon from a list of vertices.
-
-        Args:
-            vertices (List[str]): List of points in the format "Point(x, y)".
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Polygon. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            vertex_points = [sp.parse_expr(v) for v in vertices]
-            polygon = sp.Polygon(*vertex_points)
-            return json.dumps({"result": str(polygon)})
-        except Exception as e:
-            return self.handle_exception("create_polygon", e)
-
-    def create_triangle(self, point1: str, point2: str, point3: str) -> str:
-        r"""Creates a triangle from three points.
-
-        Args:
-            point1 (str): First point in the format "Point(x, y)".
-            point2 (str): Second point in the format "Point(x, y)".
-            point3 (str): Third point in the format "Point(x, y)".
-
-        Returns:
-            str: A JSON string with the "result" field containing the string
-                representation of the Triangle. If an error occurs,
-                the JSON string will include an "error" field with
-                the corresponding error message.
-        """
-        try:
-            p1 = sp.parse_expr(point1)
-            p2 = sp.parse_expr(point2)
-            p3 = sp.parse_expr(point3)
-            triangle = sp.Triangle(p1, p2, p3)
-            return json.dumps({"result": str(triangle)})
-        except Exception as e:
-            return self.handle_exception("create_triangle", e)
-
-    def compute_line_bisectors(self, line: str) -> str:
+    def compute_line_bisectors(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> str:
         r"""Computes the perpendicular bisector of a line segment.
 
         Args:
-            line (str): Line segment in the format "Segment(Point(x1, y1), Point(x2, y2))".
+            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
+            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -259,17 +116,21 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            line_segment = sp.parse_expr(line)
+            p1 = sp.Point(point1[0], point1[1])
+            p2 = sp.Point(point2[0], point2[1])
+            line_segment = sp.Segment(p1, p2)
             bisector = line_segment.perpendicular_bisector()
             return json.dumps({"result": str(bisector)})
         except Exception as e:
             return self.handle_exception("compute_line_bisectors", e)
 
-    def compute_centroid(self, triangle: str) -> str:
+    def compute_centroid(self, point1: Tuple[float, float], point2: Tuple[float, float], point3: Tuple[float, float]) -> str:
         r"""Computes the centroid of a triangle.
 
         Args:
-            triangle (str): Triangle in the format "Triangle(Point(x1, y1), Point(x2, y2), Point(x3, y3))".
+            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
+            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
+            point3 (Tuple[float, float]): Coordinates (x, y) of the third point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -278,17 +139,22 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            tri = sp.parse_expr(triangle)
-            centroid = tri.centroid
+            p1 = sp.Point(point1[0], point1[1])
+            p2 = sp.Point(point2[0], point2[1])
+            p3 = sp.Point(point3[0], point3[1])
+            triangle = sp.Triangle(p1, p2, p3)
+            centroid = triangle.centroid
             return json.dumps({"result": str(centroid)})
         except Exception as e:
             return self.handle_exception("compute_centroid", e)
 
-    def compute_orthocenter(self, triangle: str) -> str:
+    def compute_orthocenter(self, point1: Tuple[float, float], point2: Tuple[float, float], point3: Tuple[float, float]) -> str:
         r"""Computes the orthocenter of a triangle.
 
         Args:
-            triangle (str): Triangle in the format "Triangle(Point(x1, y1), Point(x2, y2), Point(x3, y3))".
+            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
+            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
+            point3 (Tuple[float, float]): Coordinates (x, y) of the third point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -297,18 +163,21 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            tri = sp.parse_expr(triangle)
-            orthocenter = tri.orthocenter
+            p1 = sp.Point(point1[0], point1[1])
+            p2 = sp.Point(point2[0], point2[1])
+            p3 = sp.Point(point3[0], point3[1])
+            triangle = sp.Triangle(p1, p2, p3)
+            orthocenter = triangle.orthocenter
             return json.dumps({"result": str(orthocenter)})
         except Exception as e:
             return self.handle_exception("compute_orthocenter", e)
 
-    def compute_midpoint_GH(self, point1: str, point2: str) -> str:
+    def compute_midpoint_GH(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> str:
         r"""Computes the midpoint between two points.
 
         Args:
-            point1 (str): First point in the format "Point(x, y)".
-            point2 (str): Second point in the format "Point(x, y)".
+            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
+            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -317,19 +186,19 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            p1 = sp.parse_expr(point1)
-            p2 = sp.parse_expr(point2)
+            p1 = sp.Point(point1[0], point1[1])
+            p2 = sp.Point(point2[0], point2[1])
             midpoint = p1.midpoint(p2)
             return json.dumps({"result": str(midpoint)})
         except Exception as e:
             return self.handle_exception("compute_midpoint_GH", e)
 
-    def compute_point_distance(self, point1: str, point2: str) -> str:
+    def compute_point_distance(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> str:
         r"""Computes the Euclidean distance between two points.
 
         Args:
-            point1 (str): First point in the format "Point(x, y)".
-            point2 (str): Second point in the format "Point(x, y)".
+            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
+            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
 
         Returns:
             str: A JSON string with the "result" field containing the distance.
@@ -337,18 +206,18 @@ class GeometryToolkit(BaseToolkit):
                 field with the corresponding error message.
         """
         try:
-            p1 = sp.parse_expr(point1)
-            p2 = sp.parse_expr(point2)
+            p1 = sp.Point(point1[0], point1[1])
+            p2 = sp.Point(point2[0], point2[1])
             distance = p1.distance(p2)
             return json.dumps({"result": str(distance)})
         except Exception as e:
             return self.handle_exception("compute_point_distance", e)
 
-    def check_points_collinear(self, points: List[str]) -> str:
+    def check_points_collinear(self, points: List[Tuple[float, float]]) -> str:
         r"""Checks if a set of points are collinear.
 
         Args:
-            points (List[str]): List of points in the format "Point(x, y)".
+            points (List[Tuple[float, float]]): List of (x, y) coordinates for each point.
 
         Returns:
             str: A JSON string with the "result" field containing True if
@@ -357,18 +226,21 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            pts = [sp.parse_expr(p) for p in points]
+            pts = [sp.Point(point[0], point[1]) for point in points]
             collinear = sp.Point.is_collinear(*pts)
             return json.dumps({"result": str(collinear)})
         except Exception as e:
             return self.handle_exception("check_points_collinear", e)
 
-    def compute_angle_between(self, line1: str, line2: str) -> str:
+    def compute_angle_between(self, line1_point1: Tuple[float, float], line1_point2: Tuple[float, float], 
+                             line2_point1: Tuple[float, float], line2_point2: Tuple[float, float]) -> str:
         r"""Computes the angle between two lines.
 
         Args:
-            line1 (str): First line in the format "Line(Point(x1, y1), Point(x2, y2))".
-            line2 (str): Second line in the format "Line(Point(x1, y1), Point(x2, y2))".
+            line1_point1 (Tuple[float, float]): Coordinates (x, y) of the first point of the first line.
+            line1_point2 (Tuple[float, float]): Coordinates (x, y) of the second point of the first line.
+            line2_point1 (Tuple[float, float]): Coordinates (x, y) of the first point of the second line.
+            line2_point2 (Tuple[float, float]): Coordinates (x, y) of the second point of the second line.
 
         Returns:
             str: A JSON string with the "result" field containing the angle in radians.
@@ -376,8 +248,12 @@ class GeometryToolkit(BaseToolkit):
                 field with the corresponding error message.
         """
         try:
-            l1 = sp.parse_expr(line1)
-            l2 = sp.parse_expr(line2)
+            p1 = sp.Point(line1_point1[0], line1_point1[1])
+            p2 = sp.Point(line1_point2[0], line1_point2[1])
+            p3 = sp.Point(line2_point1[0], line2_point1[1])
+            p4 = sp.Point(line2_point2[0], line2_point2[1])
+            l1 = sp.Line(p1, p2)
+            l2 = sp.Line(p3, p4)
             angle = l1.angle_between(l2)
             return json.dumps({"result": str(angle)})
         except Exception as e:
@@ -392,13 +268,6 @@ class GeometryToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.compute_inner_product),
-            FunctionTool(self.create_point),
-            FunctionTool(self.create_line),
-            FunctionTool(self.create_segment),
-            FunctionTool(self.create_circle),
-            FunctionTool(self.create_ellipse),
-            FunctionTool(self.create_polygon),
-            FunctionTool(self.create_triangle),
             FunctionTool(self.compute_line_bisectors),
             FunctionTool(self.compute_centroid),
             FunctionTool(self.compute_orthocenter),
