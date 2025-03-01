@@ -35,7 +35,7 @@ from camel.verifiers.models import (
 
 logger = get_logger(__name__)
 
-
+# TODO: rename response and integrate behavior into environment
 class Response(BaseModel):
     r"""Response schema for LLM generations with metadata and verification
     info.
