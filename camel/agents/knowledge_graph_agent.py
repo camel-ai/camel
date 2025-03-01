@@ -226,7 +226,8 @@ class KnowledgeGraphAgent(ChatAgent):
         node_pattern = r"Node\(id='(.*?)', type='(.*?)'\)"
         rel_pattern = (
             r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
-            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)'\)"
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), "
+            r"type='(.*?)'(?:, timestamp='(.*?)')?\)"
         )
 
         nodes = {}
@@ -243,13 +244,24 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_id, subj_type, obj_id, obj_type, rel_type = match.groups()
+            groups = match.groups()
+            if len(groups) == 6:
+                subj_id, subj_type, obj_id, obj_type, rel_type, timestamp = (
+                    groups
+                )
+            else:
+                subj_id, subj_type, obj_id, obj_type, rel_type = groups
+                timestamp = None
             properties = {'source': 'agent_created'}
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
                 relationship = Relationship(
-                    subj=subj, obj=obj, type=rel_type, properties=properties
+                    subj=subj,
+                    obj=obj,
+                    type=rel_type,
+                    timestamp=timestamp,
+                    properties=properties,
                 )
                 if self._validate_relationship(relationship):
                     relationships.append(relationship)
