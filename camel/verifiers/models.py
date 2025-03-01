@@ -17,14 +17,16 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
+
 class VerifierInput(BaseModel):
     llm_response: str = Field(
-        description="The LLM response to be verified." 
+        description="The LLM response to be verified."
         "Needs to be in a format that the verifier can handle."
-        )
+    )
     ground_truth: Optional[str] = Field(
         description="The ground truth data, if available."
-        )
+    )
+
 
 class VerificationOutcome(Enum):
     r"""Enum representing the status of a verification."""
@@ -33,6 +35,7 @@ class VerificationOutcome(Enum):
     FAILURE = "failure"
     ERROR = "error"
     TIMEOUT = "timeout"
+
 
 class VerificationResult(BaseModel):
     r"""Structured result from a verification."""
@@ -55,6 +58,7 @@ class VerificationResult(BaseModel):
     error_message: Optional[str] = Field(
         default=None, description="Error message if verification failed"
     )
+
 
 class VerifierConfig(BaseModel):
     r"""Configuration for verifier behavior."""
