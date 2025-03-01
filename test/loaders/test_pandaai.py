@@ -55,6 +55,7 @@ def test_topk():
         "United Kingdom",
     ]
 
+
 def test_topk_pure_pandas():
     reader = PandaReader(pure_pandas=True)
     sales_by_country = {
@@ -83,8 +84,10 @@ def test_topk_pure_pandas():
             7000,
         ],
     }
-    doc = reader.load(pd.DataFrame(sales_by_country))
-    resp: pd.DataFrame = reader.query("Which are the top 5 countries by sales?")
+    reader.load(pd.DataFrame(sales_by_country))
+    resp: pd.DataFrame = reader.query(
+        "Which are the top 5 countries by sales?"
+    )
     assert resp["country"].tolist() == [
         "China",
         "United States",
@@ -92,6 +95,7 @@ def test_topk_pure_pandas():
         "Germany",
         "United Kingdom",
     ]
+
 
 def test_multi_rows():
     reader = PandaReader()
