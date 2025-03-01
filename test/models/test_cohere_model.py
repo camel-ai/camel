@@ -11,13 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-"""
-please set the below os environment variable:
-export COHERE_API_KEY="xxx"
-export AGENTOPS_API_KEY="xxx"
-"""
 
-import os
 import re
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -28,6 +22,7 @@ from cohere.types.chat_message_v2 import (
     SystemChatMessageV2,
     UserChatMessageV2,
 )
+from pydantic import BaseModel
 
 from camel.configs import CohereConfig
 from camel.models import CohereModel
@@ -85,6 +80,34 @@ model_types = [
 ]
 
 
+class ResponseFormat(BaseModel):
+    short_response: str
+    explaining: str
+    example: str
+
+
+@pytest.fixture
+def mock_cohere_client():
+    with patch("cohere.ClientV2") as mock_cohere:
+        mock_client = MagicMock()
+        mock_cohere.return_value = mock_client
+        mock_client.chat.return_value = cohere_model_response
+        yield mock_client
+
+
+@pytest.fixture
+def mock_async_cohere_client():
+    with patch("cohere.AsyncClientV2") as mock_async_cohere:
+        mock_client = MagicMock()
+        mock_async_cohere.return_value = mock_client
+
+        async def async_get_cohere_model_response():
+            return cohere_model_response
+
+        mock_client.chat.return_value = async_get_cohere_model_response
+        yield mock_client
+
+
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
@@ -122,20 +145,14 @@ def test_cohere_model_unexpected_argument():
     "model_type",
     model_types,
 )
-@patch("cohere.ClientV2")
-def test_cohere_model_run(mock_cohere, model_type):
-    # Mock the Cohere create client function
-    mock_cohere_client = MagicMock()
-    mock_cohere.return_value = mock_cohere_client
-    mock_cohere_client.chat.return_value = cohere_model_response
+def test_cohere_model_run(mock_cohere_client, model_type):
     model_config_dict = CohereConfig().as_dict()
     model_config_dict.update(
         {"tools": [{"function": {"strict": True, "another_function": True}}]}
     )
-    if os.getenv("AGENTOPS_API_KEY") is not None:
-        mock_record = patch("camel.models.cohere_model.record").start()
+    mock_record = patch("camel.models.cohere_model.record").start()
     model = CohereModel(model_type, model_config_dict)
-    model_inferance = model.run(
+    model_inference = model.run(
         [system_role_message, user_role_message, assistant_role_message]
     )
     mock_cohere_client.chat.assert_called_once_with(
@@ -158,22 +175,17 @@ def test_cohere_model_run(mock_cohere, model_type):
         model=model_type,
         tools=[{'function': {'another_function': True}}],
         temperature=0.2,
-        documents=None,
-        max_tokens=None,
-        stop_sequences=None,
-        seed=None,
         frequency_penalty=0.0,
         presence_penalty=0.0,
         k=0,
         p=0.75,
     )
-    assert isinstance(model_inferance, ChatCompletion)
+    assert isinstance(model_inference, ChatCompletion)
     assert (
-        model_inferance.choices[0].message.content
+        model_inference.choices[0].message.content
         == "The capital of Morocco is Rabat"
     )
-    if os.getenv("AGENTOPS_API_KEY") is not None:
-        mock_record.assert_called()
+    mock_record.assert_called()
 
 
 @pytest.mark.model_backend
@@ -181,12 +193,100 @@ def test_cohere_model_run(mock_cohere, model_type):
     "model_type",
     model_types,
 )
-@patch("cohere.ClientV2")
-def test_cohere_model_run_unsupported_role(mock_cohere, model_type):
-    # Mock the Cohere create client function
-    mock_cohere_client = MagicMock()
-    mock_cohere.return_value = mock_cohere_client
-    mock_cohere_client.chat.return_value = cohere_model_response
+def test_cohere_model_run_with_response_format(mock_cohere_client, model_type):
+    model_config_dict = CohereConfig().as_dict()
+    model = CohereModel(model_type, model_config_dict)
+    model_inference = model.run(
+        messages=[
+            system_role_message,
+            assistant_role_message,
+            user_role_message,
+        ],
+        response_format=ResponseFormat,
+    )
+    mock_cohere_client.chat.assert_called_once_with(
+        messages=[
+            SystemChatMessageV2(
+                role='system',
+                content="Answer the user's question with 6 words maximum",
+            ),
+            AssistantChatMessageV2(
+                role='assistant',
+                tool_calls=None,
+                tool_plan=None,
+                content='Morocco is a country in North Africa',
+                citations=None,
+            ),
+            UserChatMessageV2(
+                role='user',
+                content="What is the capital of Morocco ?\n\nPlease generate a JSON response adhering to the following JSON schema:\n{'properties': {'short_response': {'title': 'Short Response', 'type': 'string'}, 'explaining': {'title': 'Explaining', 'type': 'string'}, 'example': {'title': 'Example', 'type': 'string'}}, 'required': ['short_response', 'explaining', 'example'], 'title': 'ResponseFormat', 'type': 'object'}\nMake sure the JSON response is valid and matches the EXACT structure defined in the schema.Your result should ONLY be a valid json object, WITHOUT ANY OTHER TEXT OR COMMENTS.\n",  # noqa: E501
+            ),
+        ],
+        model=model_type,
+        temperature=0.2,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        k=0,
+        p=0.75,
+        response_format={'type': 'json_object'},
+    )
+    assert isinstance(model_inference, ChatCompletion)
+    assert (
+        model_inference.choices[0].message.content
+        == "The capital of Morocco is Rabat"
+    )
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    model_types,
+)
+@pytest.mark.asyncio
+async def test_cohere_model_arun(mock_async_cohere_client, model_type):
+    model_config_dict = CohereConfig().as_dict()
+    model = CohereModel(model_type, model_config_dict)
+    model_inference = await model.arun(
+        [system_role_message, user_role_message, assistant_role_message]
+    )
+    mock_async_cohere_client.chat.assert_called_once_with(
+        messages=[
+            SystemChatMessageV2(
+                role='system',
+                content="Answer the user's question with 6 words maximum",
+            ),
+            UserChatMessageV2(
+                role='user', content='What is the capital of Morocco ?'
+            ),
+            AssistantChatMessageV2(
+                role='assistant',
+                tool_calls=None,
+                tool_plan=None,
+                content='Morocco is a country in North Africa',
+                citations=None,
+            ),
+        ],
+        model=model_type,
+        tools=[{'function': {'another_function': True}}],
+        temperature=0.2,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        k=0,
+        p=0.75,
+    )
+    assert isinstance(model_inference, ChatCompletion)
+    assert (
+        model_inference.choices[0].message.content
+        == "The capital of Morocco is Rabat"
+    )
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    model_types,
+)
+def test_cohere_model_run_unsupported_role(mock_cohere_client, model_type):
     model = CohereModel(model_type)
     with pytest.raises(
         ValueError,
