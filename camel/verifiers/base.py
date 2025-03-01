@@ -38,11 +38,12 @@ class BaseVerifier(ABC):
         result = await verifier.verify(response)
         await verifier.cleanup()
         ```
+    
     Key Features:
-    - Async and sync verification support
+    - Async verification with retry logic
     - Comprehensive error handling and logging
-    - Configurable retry logic
-    - Batch verification capabilities
+    - Configurable batch processing
+    - Resource monitoring for adaptive scaling
     """
 
     def __init__(
@@ -60,24 +61,21 @@ class BaseVerifier(ABC):
 
         Args:
             max_parallel: Maximum number of parallel verifications. If None,
-                will be determined dynamically based on system resources.
+                determined dynamically based on system resources.
                 (default: :obj:`None`)
-            timeout: Timeout in seconds for each verification.  (default:
+            timeout: Timeout in seconds for each verification. (default:
                 :obj:`None`)
-            max_retries: Maximum number of retry attempts.  (default: :obj:`3`)
-            retry_delay: Delay between retries in seconds.  (default:
+            max_retries: Maximum number of retry attempts. (default: :obj:`3`)
+            retry_delay: Delay between retries in seconds. (default:
                 :obj:`1.0`)
             initial_batch_size: Initial size for batch processing. If None,
                 defaults to 10. (default: :obj:`None`)
-            monitoring_interval: Interval in seconds between resource checks.
-                (default: :obj:`5.0`)
             cpu_threshold: CPU usage percentage threshold for scaling down.
                 (default: :obj:`80.0`)
             memory_threshold: Memory usage percentage threshold for scaling
                 down. (default: :obj:`85.0`)
             **kwargs: Additional verifier parameters.
         """
-        # Configuration parameters
         self._is_setup: bool = False
         self._max_parallel: Optional[int] = max_parallel
         self._timeout: Optional[float] = timeout
@@ -91,20 +89,18 @@ class BaseVerifier(ABC):
     async def setup(self) -> None:
         r"""Set up the verifier with necessary resources.
 
-        This method initializes:
-        1. Resource monitoring
-        2. Batch processor
-        3. Any verifier-specific resources
+        Initializes:
+        1. Batch processor with validated parameters
+        2. Any verifier-specific resources
 
         Raises:
-            RuntimeError: If setup fails or resources cannot be initialized
+            RuntimeError: If setup fails or resources cannot be initialized.
         """
         if self._is_setup:
             logger.debug(f"{self.__class__.__name__} already initialized")
             return
 
         try:
-            # Set up batch processor with validated parameters
             batch_size = max(1, self._initial_batch_size or 10)
             max_parallel = max(1, self._max_parallel or 1)
             self._batch_processor = BatchProcessor()
@@ -114,98 +110,74 @@ class BaseVerifier(ABC):
                 f"batch_size={batch_size}, max_parallel={max_parallel}"
             )
 
-            # Should be implemented by the inheriting class for custom setup behavior
             await self._setup()
-
             self._is_setup = True
 
         except Exception as e:
-            error_msg = (
-                f"Failed to initialize {self.__class__.__name__}: {e!s}"
-            )
+            error_msg = f"Failed to initialize {self.__class__.__name__}: {e!s}"
             logger.error(error_msg, exc_info=True)
-            await self.teardown()
+            await self.cleanup()
             raise RuntimeError(error_msg) from e
 
     @abstractmethod
     async def _setup(self) -> None:
+        r"""Implement verifier-specific setup logic."""
         pass
 
-    async def teardown(self) -> None:
+    async def cleanup(self) -> None:
         r"""Clean up verifier resources.
 
-        This method ensures:
-        1. All resources are properly released
-        2. Batch processor is shut down
-        3. State is reset to initial
+        Ensures:
+        1. Batch processor is reset
+        2. All internal states are cleared
 
         Raises:
-            RuntimeError: If cleanup fails and resources cannot be properly
-                released
+            RuntimeError: If cleanup fails.
         """
         if not self._is_setup:
             return
 
-        error = None
         try:
-            # Reset all internal state
             self._batch_processor = BatchProcessor()
-
-            # Should be implemented by the inheriting class for custom teardown behavior
-            await self._teardown()
-
+            await self._cleanup()
             logger.info(f"{self.__class__.__name__} cleaned up successfully")
 
-
         except Exception as e:
-            error = e
-            logger.error(
-                f"Error during {self.__class__.__name__} cleanup: {e!s}",
-                exc_info=True,
-            )
-            raise RuntimeError(
-                f"Failed to cleanup {self.__class__.__name__}: {error!s}"
-            ) from e
+            error_msg = f"Failed to cleanup {self.__class__.__name__}: {e!s}"
+            logger.error(error_msg, exc_info=True)
+            raise RuntimeError(error_msg) from e
 
         finally:
             self._is_setup = False
 
     @abstractmethod
-    async def _teardown(self) -> None:
+    async def _cleanup(self) -> None:
+        r"""Implement verifier-specific cleanup logic."""
         pass
 
     async def verify(self, result: VerifierInput) -> VerificationResult:
         r"""Perform verification with full error handling.
 
-        Verifies:
-        1. Code solution correctness via execution
-        2. Final answer matches expected output
-        3. Chain of thought reasoning is valid
-        4. Symbolic solver verification matches code execution
+        Verifies correctness, expected output, reasoning, and symbolic
+        consistency.
 
         Args:
-            result: The response to verify containing code, answer and
-                reasoning.
+            result: The response to verify.
 
         Returns:
-            VerificationResult: A structured result containing:
-                - status: Success/failure/error/timeout status
-                - result: Verification result description
+            VerificationResult: Structured result containing:
+                - status: SUCCESS/FAILURE/ERROR/TIMEOUT
+                - result: Verification outcome description
                 - duration: Time taken for verification
-                - timestamp: When verification was performed
-                - metadata: Dictionary with verification details
-                - error_message: Details if verification failed
+                - metadata: Additional details
+                - error_message: Error description if applicable
 
         Raises:
-            ValueError: If verification parameters are invalid.
             RuntimeError: If verification fails unexpectedly.
-            asyncio.TimeoutError: If verification times out and max retries
-                exceeded.
+            asyncio.TimeoutError: If verification times out.
         """
         if not self._is_setup:
-            logger.warning(
-                f"{self.__class__.__name__} not set up, calling setup()"
-            )
+            logger.warning(f"{self.__class__.__name__} not set up, calling setup()")
             await self.setup()
 
         attempt = 0
@@ -213,32 +185,22 @@ class BaseVerifier(ABC):
 
         while attempt < self._max_retries:
             try:
-                # Handle timeout
-                if self._timeout is not None:
-                    verification_result = await asyncio.wait_for(
-                        self._verify_implementation(result),
-                        timeout=self._timeout,
-                    )
-                else:
-                    verification_result = await self._verify_implementation(
-                        result
-                    )
+                verification_result = await asyncio.wait_for(
+                    self._verify_implementation(result), timeout=self._timeout
+                ) if self._timeout else await self._verify_implementation(result)
 
-                duration = time.time() - start_time
-                verification_result.duration = duration
+                verification_result.duration = time.time() - start_time
                 verification_result.metadata["attempt"] = attempt + 1
                 return verification_result
 
             except asyncio.TimeoutError:
                 attempt += 1
                 if attempt == self._max_retries:
-                    duration = time.time() - start_time
                     return VerificationResult(
                         status=VerificationOutcome.TIMEOUT,
                         result="",
-                        error_message="Verification timed out after "
-                        "all retries.",
-                        duration=duration,
+                        error_message="Verification timed out after all retries.",
+                        duration=time.time() - start_time,
                         metadata={"attempt": attempt},
                     )
                 logger.warning(
@@ -249,32 +211,20 @@ class BaseVerifier(ABC):
             except Exception as e:
                 attempt += 1
                 if attempt == self._max_retries:
-                    duration = time.time() - start_time
-                    error_msg = (
-                        f"Verification failed after {attempt} attempts: {e!s}"
-                    )
-                    logger.error(error_msg, exc_info=True)
                     return VerificationResult(
                         status=VerificationOutcome.ERROR,
                         result="",
-                        error_message=error_msg,
-                        duration=duration,
+                        error_message=f"Verification failed: {e!s}",
+                        duration=time.time() - start_time,
                         metadata={"attempt": attempt},
                     )
-                logger.warning(
-                    f"Verification error on attempt {attempt}: "
-                    f"{e!s}, retrying..."
-                )
                 await asyncio.sleep(self._retry_delay)
 
-        # This is a placeholder return that should never be reached
-        # since we always return in one of the above branches
-        duration = time.time() - start_time
         return VerificationResult(
             status=VerificationOutcome.ERROR,
             result="",
             error_message="Unexpected code path reached",
-            duration=duration,
+            duration=time.time() - start_time,
             metadata={"attempt": attempt},
         )
 
@@ -282,7 +232,7 @@ class BaseVerifier(ABC):
     async def _verify_implementation(
         self, result: Response
     ) -> VerificationResult:
-        r"""Implement the actual verification logic in subclasses.
+        r"""Implement the actual verification logic.
 
         Args:
             result: The response to verify.
@@ -291,13 +241,11 @@ class BaseVerifier(ABC):
             VerificationResult: Containing the verification outcome.
 
         Raises:
-            NotImplementedError: This method must be implemented by subclasses.
+            NotImplementedError: Must be implemented in subclasses.
         """
-        raise NotImplementedError(
-            "Subclasses must implement _verify_implementation()"
-        )
+        raise NotImplementedError("Subclasses must implement _verify_implementation()")
 
-    async def verify_batch(
+async def verify_batch(
         self, results: List[Response], raise_on_error: bool = False
     ) -> List[VerificationResult]:
         r"""Verify multiple results in parallel with controlled concurrency.
