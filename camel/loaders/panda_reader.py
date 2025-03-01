@@ -107,7 +107,7 @@ class PandaReader:
             SmartDataframe: The SmartDataframe object.
             DataFrame: if forced to use pure pandas
         """
-        if isinstance(data, DataFrame):
+        if isinstance(data, pd.DataFrame):
             self.df = data
         else:
             file_path = str(data)
