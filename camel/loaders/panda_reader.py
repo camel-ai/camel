@@ -51,8 +51,8 @@ def check_suffix(valid_suffixs: List[str]) -> Callable:
 
 
 class PandaReader:
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
-        r"""Initializes the PandaReader class.
+    def __init__(self, config: Optional[Dict[str, Any]] = None, pure_pandas: bool = False) -> None:
+        r"""Initializes the PandaReader class with support for LLM and pure Pandas modes.
 
         Args:
             config (Optional[Dict[str, Any]], optional): The configuration
@@ -61,14 +61,19 @@ class PandaReader:
                 key from the OPENAI_API_KEY environment variable. You can
                 customize the LLM configuration by providing a 'llm' key in
                 the config dictionary. (default: :obj:`None`)
+            use_pandas (bool, optional): If True, forces pure Pandas mode, disabling LLM usage.
+                Defaults to False.
         """
-        from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
         self.config = config or {}
-        if "llm" not in self.config:
-            self.config["llm"] = OpenAI(
-                api_token=os.getenv("OPENAI_API_KEY"),
-            )
+        self.pure_pandas = pure_pandas
+        self.df = None # The loaded DataFrame
+        if self.pure_pandas and "llm" in self.config:
+            raise ValueError("Cannot use LLM when pure_pandas is True")
+        elif not self.pure_pandas and "llm" not in self.config:
+            api_key = os.getenv("OPENAI_API_KEY")
+            from pandasai.llm import OpenAI
+            self.config["llm"] = OpenAI(api_token=api_key)
 
         self.__LOADER = {
             ".csv": self.read_csv,
@@ -91,9 +96,8 @@ class PandaReader:
         data: Union["DataFrame", str],
         *args: Any,
         **kwargs: Dict[str, Any],
-    ) -> "SmartDataframe":
-        r"""Loads a file or DataFrame and returns a SmartDataframe object.
-
+    ) -> Union["SmartDataframe", "DataFrame"]:
+        r"""Loads data from a DataFrame or file into a SmartDataframe (LLM mode) or DataFrame (pure Pandas mode).
         args:
             data (Union[DataFrame, str]): The data to load.
             *args (Any): Additional positional arguments.
@@ -101,24 +105,54 @@ class PandaReader:
 
         Returns:
             SmartDataframe: The SmartDataframe object.
+            DataFrame: if forced to use pure pandas
         """
-        from pandas import DataFrame
-        from pandasai import SmartDataframe
-
         if isinstance(data, DataFrame):
-            return SmartDataframe(data, config=self.config)
-        file_path = str(data)
-        path = Path(file_path)
-        if not file_path.startswith("http") and not path.exists():
-            raise FileNotFoundError(f"File {file_path} not found")
-        if path.suffix in self.__LOADER:
-            return SmartDataframe(
-                self.__LOADER[path.suffix](file_path, *args, **kwargs),  # type: ignore[operator]
-                config=self.config,
-            )
+            self.df = data
         else:
-            raise ValueError(f"Unsupported file format: {path.suffix}")
+            file_path = str(data)
+            path = Path(file_path)
+            if not file_path.startswith("http") and not path.exists():
+                raise FileNotFoundError(f"File {file_path} not found")
+            if path.suffix in self.__LOADER:
+                self.df = self.__LOADER[path.suffix](file_path, *args, **kwargs)
+            else:
+                raise ValueError(f"Unsupported file format: {path.suffix}")
 
+        if not self.pure_pandas and "llm" in self.config:
+            from pandasai import SmartDataframe
+            return SmartDataframe(self.df, config=self.config)
+        return self.df
+
+    def query(self, question: str) -> "DataFrame":
+        r"""Executes a query on the loaded data using LLM or pure Pandas logic.
+
+                Args:
+                    question (str): Query string (e.g., "Which are the top 5 countries by sales?").
+
+                Returns:
+                    DataFrame: Query result as a pandas DataFrame.
+
+                Raises:
+                    ValueError: If no data is loaded, or if the query is unsupported in pure Pandas mode.
+                """
+        if self.df is None:
+            raise ValueError("No data loaded. Call load() first.")
+
+        if not self.pure_pandas and "llm" in self.config:
+            return self.df.chat(question)
+
+        # Pure Pandas mode
+        question = question.lower().strip()
+        ########################Each query type will need its own parsing
+        if "top" in question and "sales" in question:
+            try:
+                k = int(question.split("top ")[1].split(" ")[0])
+                if k <= 0:
+                    raise ValueError("Number of top items must be positive")
+                return self.df.sort_values(by="sales", ascending=False).head(k)
+            except (IndexError, ValueError) as e:
+                raise ValueError(f"Invalid top-k query: {question}. Use 'top N ...'.") from e
     @check_suffix([".csv"])
     def read_csv(
         self, file_path: str, *args: Any, **kwargs: Dict[str, Any]
