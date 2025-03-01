@@ -43,7 +43,7 @@ camel_agent = ChatAgent(
 usr_msg = "Describe the tools you've added"
 
 response = camel_agent.step(usr_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 
 '''
 ================================================================

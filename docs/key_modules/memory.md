@@ -99,7 +99,7 @@ usr_msg = BaseMessage.make_user_message(
 response = agent.step(usr_msg)
 
 # Check the response (just for illustrative purpose)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 ```
 
 ```markdown

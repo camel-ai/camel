@@ -38,7 +38,7 @@ class JokeResponse(BaseModel):
 
 # Get response information
 response = camel_agent.step("Tell me a joke.", response_format=JokeResponse)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 """
 {'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"
 , 'funny_level': '8'}

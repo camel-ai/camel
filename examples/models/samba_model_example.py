@@ -43,7 +43,7 @@ camel_agent_samba_cloud_api = ChatAgent(
 
 # Get response information
 response = camel_agent_samba_cloud_api.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 '''
 ===============================================================================
 Hello to the CAMEL AI community.  It's great to see open-source communities 
@@ -74,7 +74,7 @@ camel_agent_sambaverse_api = ChatAgent(
 
 # Get response information
 response = camel_agent_sambaverse_api.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 
 '''
 ===============================================================================

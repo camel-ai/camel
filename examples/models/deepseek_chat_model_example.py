@@ -38,7 +38,7 @@ user_msg = """How many Rs are there in the word 'strawberry'?"""
 
 # Get response information
 response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 
 # ruff: noqa: E501
 '''

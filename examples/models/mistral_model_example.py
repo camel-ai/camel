@@ -39,7 +39,7 @@ user_msg = """Say hi to CAMEL AI, one open-source community dedicated to the
 
 # Get response information
 response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 '''
 ===============================================================================
 Hello CAMEL AI! It's great to connect with a community dedicated to the study 
@@ -67,7 +67,7 @@ user_msg = BaseMessage.make_user_message(
 
 # Get response information
 response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 '''
 ===============================================================================
 The image features a logo with a purple camel illustration on the left side 

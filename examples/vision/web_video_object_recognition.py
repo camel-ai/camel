@@ -16,6 +16,7 @@ import argparse
 from camel.agents import ChatAgent
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
+from camel.messages.acl_parameter import Content
 from camel.toolkits.video_toolkit import VideoDownloaderToolkit
 from camel.types import (
     RoleType,
@@ -46,16 +47,19 @@ def detect_image_obj(image_list) -> None:
     print("=" * 49)
 
     agent = ChatAgent(sys_msg)
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="Please start the object detection for the following images!",
+    content = Content(
+        text="Please start the object detection for the \
+                      following images!",
         image_list=image_list,
         image_detail="high",
     )
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=content,
+    )
     assistant_response = agent.step(user_msg)
     print("=" * 20 + " RESULT " + "=" * 20)
-    print(assistant_response.msgs[0].content)
+    print(assistant_response.msgs[0].content.text)
     print("=" * 48)
 
 

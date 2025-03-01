@@ -49,7 +49,7 @@ def extract_original_response(content):
 
 
 # Extract original response
-original_response = extract_original_response(response.msgs[0].content)
+original_response = extract_original_response(response.msgs[0].content.text)
 print("Original Response:")
 print(original_response)
 
@@ -101,7 +101,7 @@ In summary, transformers produce longer sequences via autoregressive decoding, p
 # Extract reasoning content
 reasoning_pattern = r'<think>(.*?)</think>'
 reasoning_match = re.search(
-    reasoning_pattern, response.msgs[0].content, re.DOTALL
+    reasoning_pattern, response.msgs[0].content.text, re.DOTALL
 )
 reasoning_response = (
     reasoning_match.group(1).strip() if reasoning_match else ""

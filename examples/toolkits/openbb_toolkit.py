@@ -296,7 +296,7 @@ Provide a concise summary of strengths and potential concerns.
 
 response = tech_agent.step(input_message=analysis_prompt)
 print("\nFinancial Analysis:")
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 """
 ===============================================================================
 Financial Analysis:
@@ -374,7 +374,7 @@ usr_msg = (
 )
 response = agent.step(input_message=usr_msg)
 print("\nAI Analysis:")
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 """
 ===============================================================================
 AI Analysis:

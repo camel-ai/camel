@@ -56,7 +56,7 @@ DeepSeek Shines: Mathematical reasoning and code generation, thanks to
 RL-driven CoT.; Where OpenAI Has an...
 ===============================================================================
 '''
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 # ruff: noqa: RUF001, E501
 '''
 ===============================================================================

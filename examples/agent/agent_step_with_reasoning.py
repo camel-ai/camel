@@ -34,7 +34,7 @@ openai_agent = ChatAgent(
 # 1st run: the ordinary response
 
 response = openai_agent.step(usr_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 # flake8: noqa: E501
 """
 ===============================================================================
