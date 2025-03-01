@@ -16,7 +16,6 @@ import time
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from camel.environments import Response
 from camel.logger import get_logger
 from camel.utils import BatchProcessor
 
@@ -241,7 +240,7 @@ class BaseVerifier(ABC):
 
     @abstractmethod
     async def _verify_implementation(
-        self, result: Response
+        self, result: VerifierInput
     ) -> VerificationResult:
         r"""Implement the actual verification logic.
 
@@ -260,7 +259,7 @@ class BaseVerifier(ABC):
 
 
 async def verify_batch(
-    self, results: List[Response], raise_on_error: bool = False
+    self, results: List[VerifierInput], raise_on_error: bool = False
 ) -> List[VerificationResult]:
     r"""Verify multiple results in parallel with controlled concurrency.
 
@@ -294,7 +293,7 @@ async def verify_batch(
     semaphore = asyncio.Semaphore(max(1, max_workers))
 
     async def _verify_with_semaphore(
-        response: Response,
+        response: VerifierInput,
     ) -> VerificationResult:
         start_time = time.time()
         try:
