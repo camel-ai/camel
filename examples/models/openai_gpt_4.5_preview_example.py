@@ -17,14 +17,14 @@ from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-o1_model = ModelFactory.create(
+gpt_4_5_preview_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4_5_PREVIEW,
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 # Set agent
-camel_agent = ChatAgent(model=o1_model)
+camel_agent = ChatAgent(model=gpt_4_5_preview_model)
 
 # Set user message
 user_msg = """Please write inspirational poems 
