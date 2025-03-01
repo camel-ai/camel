@@ -52,7 +52,6 @@ class BaseVerifier(ABC):
         max_retries: int = 3,
         retry_delay: float = 1.0,
         initial_batch_size: Optional[int] = None,
-        monitoring_interval: float = 5.0,
         cpu_threshold: float = 80.0,
         memory_threshold: float = 85.0,
         **kwargs,
@@ -85,7 +84,6 @@ class BaseVerifier(ABC):
         self._max_retries: int = max_retries
         self._retry_delay: float = retry_delay
         self._initial_batch_size: Optional[int] = initial_batch_size
-        self._monitoring_interval: float = monitoring_interval
         self._cpu_threshold: float = cpu_threshold
         self._memory_threshold: float = memory_threshold
         self._batch_processor: BatchProcessor = BatchProcessor()
@@ -110,23 +108,30 @@ class BaseVerifier(ABC):
             batch_size = max(1, self._initial_batch_size or 10)
             max_parallel = max(1, self._max_parallel or 1)
             self._batch_processor = BatchProcessor()
-            
 
-            self._is_setup = True
             logger.info(
                 f"{self.__class__.__name__} initialized with "
                 f"batch_size={batch_size}, max_parallel={max_parallel}"
             )
+
+            # Should be implemented by the inheriting class for custom setup behavior
+            await self._setup()
+
+            self._is_setup = True
 
         except Exception as e:
             error_msg = (
                 f"Failed to initialize {self.__class__.__name__}: {e!s}"
             )
             logger.error(error_msg, exc_info=True)
-            await self.cleanup()
+            await self.teardown()
             raise RuntimeError(error_msg) from e
 
-    async def cleanup(self) -> None:
+    @abstractmethod
+    async def _setup(self) -> None:
+        pass
+
+    async def teardown(self) -> None:
         r"""Clean up verifier resources.
 
         This method ensures:
@@ -146,7 +151,11 @@ class BaseVerifier(ABC):
             # Reset all internal state
             self._batch_processor = BatchProcessor()
 
+            # Should be implemented by the inheriting class for custom teardown behavior
+            await self._teardown()
+
             logger.info(f"{self.__class__.__name__} cleaned up successfully")
+
 
         except Exception as e:
             error = e
@@ -160,6 +169,10 @@ class BaseVerifier(ABC):
 
         finally:
             self._is_setup = False
+
+    @abstractmethod
+    async def _teardown(self) -> None:
+        pass
 
     async def verify(self, result: VerifierInput) -> VerificationResult:
         r"""Perform verification with full error handling.
