@@ -77,7 +77,7 @@ class PandaReader:
             raise ValueError("Cannot use LLM when pure_pandas is True")
         elif not self.pure_pandas and "llm" not in self.config:
             api_key = os.getenv("OPENAI_API_KEY")
-            from pandasai.llm import OpenAI
+            from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
             self.config["llm"] = OpenAI(api_token=api_key)
 
