@@ -68,7 +68,7 @@ class GSM8KBenchmark(MathBenchmark):
             GSM8KBenchmark: The benchmark instance after downloading.
         """
         logger.info("Ensuring GSM8K dataset is downloaded...")
-        _ = self.load_dataset(
+        _ = GSM8KBenchmark.load_dataset(
             self.DATASET_REPO, 'main', cache_dir=str(self.data_dir)
             )
 
