@@ -13,18 +13,75 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.configs import BaseConfig
 from camel.datasets.base import BaseDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
-from camel.verifiers.base import BaseVerifier, VerificationResult
-from camel.verifiers.models import Response, TaskType, VerificationStatus
+from camel.types import ModelType
+from camel.verifiers.base import (
+    BaseVerifier,
+    VerificationResult,
+)
+from camel.verifiers.models import (
+    VerificationOutcome,
+    VerifierConfig,
+)
 
 logger = get_logger(__name__)
+
+
+# TODO: rename response and integrate as attributes of environment
+class Response(BaseModel):
+    r"""Response schema for LLM generations with metadata and verification
+    info.
+
+    Contains the input context, generated output, and metadata for
+    verification.
+
+    Attributes:
+        problem_id: Unique identifier for the problem
+        source: Source of the problem/task
+        final_answer: Reference solution if available
+        verification_info: Additional info needed for verification
+        metadata: General purpose metadata about the generation
+        prompt: Input prompt for the LLM
+        llm_response: Generated response from the LLM
+        model_type: Type of the LLM used
+        generation_config: Configuration used for generation
+        timestamp: When the response was generated (UTC)
+    """
+
+    problem_id: str = Field(description="Unique identifier for the problem")
+    source: str = Field(description="Source of the problem/task")
+    final_answer: Optional[str] = Field(
+        None, description="Reference solution if available"
+    )
+    verification_info: Dict[str, Any] = Field(
+        default_factory=dict, description="Information needed for verification"
+    )
+    verification_config: Optional[VerifierConfig] = Field(
+        None, description="Configuration for verification behavior"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata about the generation",
+    )
+    prompt: str = Field(description="Input prompt for the LLM")
+    llm_response: str = Field(description="Generated response from the LLM")
+    model_type: ModelType = Field(description="Type of the LLM used")
+    generation_config: BaseConfig = Field(
+        description="Generation parameters used"
+    )
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When the response was generated (UTC)",
+    )
 
 
 class Observation(BaseModel):
@@ -95,7 +152,6 @@ class BaseEnvironment(ABC):
         verifier: BaseVerifier,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
-        task_type: TaskType = TaskType.SOFTWARE_ENGINEERING,
         teacher_agent: Optional[ChatAgent] = None,
         generator_agent: Optional[ChatAgent] = None,
         curriculum_config: Optional[Dict[str, Any]] = None,
@@ -109,7 +165,6 @@ class BaseEnvironment(ABC):
             verifier: Verifier to check responses.
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
-            task_type: Type of task being performed.
             teacher_agent: Optional agent for reward shaping and hints
             generator_agent: Optional agent for data generation
             curriculum_config: Configuration for curriculum learning including:
@@ -127,7 +182,6 @@ class BaseEnvironment(ABC):
         self.verifier = verifier
         self.extractor = extractor
         self.max_steps = max_steps
-        self.task_type = task_type
         self.teacher_agent = teacher_agent
         self.generator_agent = generator_agent
         self._metadata = kwargs
@@ -332,10 +386,9 @@ class BaseEnvironment(ABC):
             self._state['current_datapoint'] = datapoint
             required_attrs = [
                 'question',
-                'ground_truth',
                 'final_answer',
                 'difficulty',
-                'chain_of_thought',
+                'rationale',
             ]
 
             # Validate required attributes
@@ -351,10 +404,9 @@ class BaseEnvironment(ABC):
             observation = Observation(
                 question=datapoint.question,
                 context={
-                    'ground_truth': datapoint.ground_truth,
                     'final_answer': datapoint.final_answer,
                     'difficulty': datapoint.difficulty,
-                    'chain_of_thought': datapoint.chain_of_thought,
+                    'rationale': datapoint.rationale,
                 },
                 metadata={
                     'step': self._current_step,
@@ -414,7 +466,7 @@ class BaseEnvironment(ABC):
 
         # Get success from verification result status
         verification_success = float(
-            verification_result.status == VerificationStatus.SUCCESS
+            verification_result.status == VerificationOutcome.SUCCESS
         )
         rewards["correctness"] = 1.0 if verification_success > 0.5 else 0.0
 
