@@ -32,9 +32,9 @@ class SubprocessInterpreter(BaseInterpreter):
     strings in a subprocess.
 
     This class handles the execution of code in different scripting languages
-    (currently Python and Bash) within a subprocess, capturing their
-    stdout and stderr streams, and allowing user checking before executing code
-    strings.
+    (currently Python, Bash, Node.js and R) within a subprocess, capturing
+    their stdout and stderr streams, and allowing user checking before
+    executing code strings.
 
     Args:
         require_confirm (bool, optional): If True, prompt user before running
@@ -48,12 +48,14 @@ class SubprocessInterpreter(BaseInterpreter):
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
+        "node": "node {file_name}",
         "r": "Rscript {file_name}",
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
+        "node": "js",
         "r": "R",
     }
 
@@ -65,6 +67,9 @@ class SubprocessInterpreter(BaseInterpreter):
         "shell": "bash",
         "bash": "bash",
         "sh": "bash",
+        "node": "node",
+        "javascript": "node",
+        "js": "node",
         "r": "r",
         "R": "r",
     }
@@ -89,7 +94,7 @@ class SubprocessInterpreter(BaseInterpreter):
         Args:
             file (Path): The path object of the file to run.
             code_type (str): The type of code to execute (e.g., 'python',
-                'bash').
+                'bash', 'node').
 
         Returns:
             str: A string containing the captured stdout and stderr of the
