@@ -107,7 +107,7 @@ class MathBenchmark(BaseBenchmark):
         on: Literal["train", "valid", "test"],
         randomize: bool = False,
         subset: Optional[int] = None,
-        mode: Mode = None,
+        mode: Optional[Mode] = None,
         *args,
         **kwargs,
     ) -> "MathBenchmark":
@@ -131,6 +131,7 @@ class MathBenchmark(BaseBenchmark):
             ValueError: If an invalid dataset split is specified.
             TypeError: If the results are not in the expected format.
         """
+
         if mode is None:
             mode = Mode("pass@k", 1)
 
@@ -188,7 +189,7 @@ class MathBenchmark(BaseBenchmark):
         # Save results as JSON
         save_dir = Path(self.save_to)
         save_dir.mkdir(parents=True, exist_ok=True)
-        
+
         save_path = Path(self.save_to) / f"{self.name}_results.json"
         results.to_json(save_path, orient="records", indent=2)
 

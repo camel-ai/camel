@@ -161,7 +161,7 @@ class MATHBenchmark(MathBenchmark):
             """
             start_seq = r"\boxed{"
             stack = []  # Stack to track `{}` nesting
-            content = []
+            content: List[str] = []
             inside_boxed = False
             i = 0
 
