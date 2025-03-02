@@ -75,12 +75,28 @@ class SingleAgentWorker(Worker):
             response = self.worker.step(prompt, response_format=TaskResult)
             print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
+            print(f"DEBUG - Raw response content: {response.msg.content}")
+
             try:
-                result_dict = json.loads(response.msg.content)
+                if not response.msg.content.strip():
+                    print(f"{Fore.RED}Received empty response{Fore.RESET}")
+                    return TaskState.FAILED
+
+                content = response.msg.content.strip()
+                start_idx = content.find('{')
+                end_idx = content.rfind('}')
+
+                if start_idx != -1 and end_idx != -1 and start_idx < end_idx:
+                    json_str = content[start_idx : end_idx + 1]
+                    print(f"DEBUG - Extracted JSON: {json_str}")
+                    result_dict = json.loads(json_str)
+                else:
+                    result_dict = json.loads(content)
+
             except json.JSONDecodeError as e:
                 print(
-                    f"""{Fore.RED}Failed to parse response as JSON:
-                    {response.msg.content}\n{e}{Fore.RESET}"""
+                    f"{Fore.RED}Failed to parse response as JSON: "
+                    f"{response.msg.content}\n{e}{Fore.RESET}"
                 )
                 return TaskState.FAILED
 
@@ -88,8 +104,8 @@ class SingleAgentWorker(Worker):
                 task_result = TaskResult(**result_dict)
             except Exception as e:
                 print(
-                    f"""{Fore.RED}Failed to create TaskResult from JSON:
-                      {result_dict}\n{e}{Fore.RESET}"""
+                    f"{Fore.RED}Failed to create TaskResult from JSON: "
+                    f"{result_dict}\n{e}{Fore.RESET}"
                 )
                 return TaskState.FAILED
 
