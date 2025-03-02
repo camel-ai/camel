@@ -151,6 +151,11 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         pass
 
     @abstractmethod
+    def _batch_run(self, batch_str: str) -> Any:
+        pass
+
+
+    @abstractmethod
     async def _arun(
         self,
         messages: List[OpenAIMessage],
