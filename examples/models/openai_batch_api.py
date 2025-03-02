@@ -16,7 +16,9 @@ from camel.agents import ChatAgent
 agent = ChatAgent(system_message="You are a helpful assistant.")
 
 # Creating the batch
-response = agent.model_backend.current_model._batch_run(messages="batchinput.jsonl")
+response = agent.model_backend.current_model._batch_run(
+    messages="batchinput.jsonl"
+)
 print(response)
 
 # Example output:

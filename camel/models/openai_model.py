@@ -172,7 +172,6 @@ class OpenAIModel(BaseModelBackend):
         )
         return batch_job
 
-
     def check_batch_process_status(
         self, batch_response: Any
     ) -> Union[str, Dict[str, Any]]:
@@ -389,4 +388,3 @@ class OpenAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
-
