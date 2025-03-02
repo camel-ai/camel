@@ -145,7 +145,7 @@ class OpenAIModel(BaseModelBackend):
         """Process batch messages using the OpenAI Batch API.
 
         Args:
-            batch_str (str): A JSONL file path or a JSONL string.
+            batch_str (str): A JSONL file path.
 
         Returns:
             Any: The metadata of the batch job as a Batch object.
@@ -153,16 +153,19 @@ class OpenAIModel(BaseModelBackend):
         import io
         import os
 
-        # Check if batch_str is a file path.
-        if os.path.exists(batch_str):
+        # Verify that batch_str is a valid file path.
+        if not os.path.isfile(batch_str):
+            raise ValueError(
+                f"The provided batch_str is not a valid file path: {batch_str}"
+            )
+        try:
             with open(batch_str, "rb") as f:
                 file_content = f.read()
-            file_obj = io.BytesIO(file_content)
-            file_obj.name = os.path.basename(batch_str)
-        else:
-            # Treat as JSONL string content.
-            file_obj = io.BytesIO(batch_str.encode("utf-8"))
-            file_obj.name = "batchinput.jsonl"
+        except Exception as e:
+            raise IOError(f"Failed to read the file {batch_str}. Error: {e}")
+
+        file_obj = io.BytesIO(file_content)
+        file_obj.name = os.path.basename(batch_str)
 
         # Upload the JSONL file with purpose "batch".
         batch_input_file = self._client.files.create(
@@ -211,36 +214,45 @@ class OpenAIModel(BaseModelBackend):
         # Otherwise, return the current status and batch metadata.
         return {"status": batch.status, "batch": batch}
 
-    def _run(
-        self,
-        messages: Union[List[OpenAIMessage], str],
-        response_format: Optional[Type[BaseModel]] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:  # type: ignore[override]
-        r"""Run inference of OpenAI chat completion.
+    def _batch_run(self, batch_str: str) -> Any:
+        r"""
+        Runs a batch process for OpenAI chat completion using the Batch API.
 
-        If `messages` is a string, it is treated as a JSONL file
-        (path or content) for batch processing via OpenAI's Batch API.
-        Otherwise, if it is a list of OpenAIMessage, the original
-        single-request logic is used.
+        This method delegates the batch processing to the
+        _process_batch_messages function, which handles a JSONL file
+        (either a file path or a JSONL string) and creates a batch job
+        with a fixed 24-hour completion window.
 
         Args:
-            messages (Union[List[OpenAIMessage], str]): Either a list of
-                OpenAIMessage for a single query, or a string representing
-                a JSONL file (path or JSONL string) for batch processing.
+            batch_str (str): A JSONL file path or a JSONL string containing
+                batch requests.
+
+        Returns:
+            Any: The metadata of the batch job as a Batch object.
+        """
+        return self._process_batch_messages(batch_str)
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
             response_format (Optional[Type[BaseModel]]): The format of the
                 response.
-            tools (Optional[List[Dict[str, Any]]]): The tools schema for the
-                request.
+            tools (Optional[List[Dict[str, Any]]]): The schema of the tools to
+                use for the request.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                For single queries, returns ChatCompletion or Stream;
-                for batch, returns batch job metadata.
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # If messages is a string, process it as a batch.
-        if isinstance(messages, str):
-            return self._process_batch_messages(messages)
         response_format = response_format or self.model_config_dict.get(
             "response_format", None
         )
