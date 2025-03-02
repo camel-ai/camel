@@ -142,20 +142,12 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         ]
 
     @abstractmethod
-    def _batch_run(self, batch_str: str) -> Any:
-        pass
-
-    @abstractmethod
     def _run(
         self,
         messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        pass
-
-    @abstractmethod
-    def _batch_run(self, batch_str: str) -> Any:
         pass
 
     @abstractmethod
@@ -169,34 +161,26 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
 
     def run(
         self,
-        messages: Union[List[OpenAIMessage], str],
+        messages: List[OpenAIMessage],
         response_format: Optional[Type[BaseModel]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
-        r"""
-        Runs the query to the backend model.
-
-        This method dispatches the request to the correct backend
-        based on the type of `messages`. If a list of OpenAIMessage
-        objects is provided, a single query is executed. If a string
-        is provided, it is treated as a JSONL file path or JSONL content
-        for batch processing.
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs the query to the backend model.
 
         Args:
-            messages (Union[List[OpenAIMessage], str]): A list of
-                OpenAIMessage objects for a single query, or a string
-                for batch processing (JSONL file path or content).
-            response_format (Optional[Type[BaseModel]]): The response
-                format to use. (default: None)
-            tools (Optional[List[Dict[str, Any]]]): The schema for tools
-                to use for the request. Overrides the tools in the model
-                configuration. (default: None)
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+            response_format (Optional[Type[BaseModel]]): The response format
+                to use for the model. (default: :obj:`None`)
+            tools (Optional[List[Tool]]): The schema of tools to use for the
+                model for this request. Will override the tools specified in
+                the model configuration (but not change the configuration).
+                (default: :obj:`None`)
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk], Any]:
-                For a single query, returns ChatCompletion or a stream
-                of ChatCompletionChunk. For batch processing, returns the
-                batch job metadata.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
         # None -> use default tools
         if tools is None:
@@ -204,11 +188,6 @@ class BaseModelBackend(ABC, metaclass=ModelBackendMeta):
         # Empty -> use no tools
         elif not tools:
             tools = None
-
-        # If messages is a string, process as batch
-        if isinstance(messages, str):
-            return self._batch_run(messages)
-
         return self._run(messages, response_format, tools)
 
     async def arun(

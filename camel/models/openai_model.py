@@ -131,16 +131,6 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    def preprocess_messages(
-        self, messages: Union[List[OpenAIMessage], str]
-    ) -> Any:  # type: ignore[override]
-        # If messages is a string, it indicates a JSONL file path or content,
-        # so no preprocessing is needed.
-        if isinstance(messages, str):
-            return messages
-        # Otherwise, call the parent class implementation for preprocessing.
-        return super().preprocess_messages(messages)
-
     def _process_batch_messages(self, batch_str: str) -> Any:
         """Process batch messages using the OpenAI Batch API.
 
@@ -181,6 +171,7 @@ class OpenAIModel(BaseModelBackend):
             metadata={"description": "Batch job"},
         )
         return batch_job
+
 
     def check_batch_process_status(
         self, batch_response: Any
@@ -398,3 +389,4 @@ class OpenAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
