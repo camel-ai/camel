@@ -15,6 +15,7 @@
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Literal, Optional, Union
+
 from math_verify import parse, verify
 
 from camel.agents import ChatAgent
@@ -213,13 +214,16 @@ class MathBenchmark(BaseBenchmark):
             )
 
         if mode.mode == "pass@k":
-            responses = row["answers"][:mode.k]
-            return any(verify(parse(response), parse(solution)) for response in responses)
+            responses = row["answers"][: mode.k]
+            return any(
+                verify(parse(response), parse(solution))
+                for response in responses
+            )
 
         elif mode.mode == "majority voting":
             most_common = self.pd.Series(answers).mode().iloc[0]
             return verify(parse(most_common) == parse(solution))
-    
+
         return False  # Default case
 
     @abstractmethod
