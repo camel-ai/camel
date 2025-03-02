@@ -101,6 +101,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
+    CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -315,6 +316,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
         }
 
     @property
@@ -683,6 +685,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000

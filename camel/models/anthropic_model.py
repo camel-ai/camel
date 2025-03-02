@@ -84,7 +84,11 @@ class AnthropicModel(BaseModelBackend):
                     index=0,
                     message={
                         "role": "assistant",
-                        "content": response.content[0].text,
+                        "content": next(
+                            content.text
+                            for content in response.content
+                            if content.type == "text"
+                        ),
                     },
                     finish_reason=response.stop_reason,
                 )
