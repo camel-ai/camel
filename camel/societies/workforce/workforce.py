@@ -282,12 +282,40 @@ class Workforce(BaseNode):
             additional_info=task.additional_info,
         )
 
-        response = self.coordinator_agent.step(
-            prompt, response_format=TaskAssignResult
-        )
-        result_dict = json.loads(response.msg.content)
-        task_assign_result = TaskAssignResult(**result_dict)
-        return task_assign_result.assignee_id
+        try:
+            response = self.coordinator_agent.step(
+                prompt, response_format=TaskAssignResult
+            )
+
+            try:
+                result_dict = json.loads(response.msg.content)
+            except json.JSONDecodeError as e:
+                logger.error(
+                    f"""Failed to parse response as JSON: 
+                    {response.msg.content}\n{e}"""
+                )
+                raise RuntimeError(
+                    "Failed to parse coordinator response as JSON"
+                ) from e
+
+            try:
+                task_assign_result = TaskAssignResult(**result_dict)
+            except Exception as e:
+                logger.error(
+                    f"""Failed to create TaskAssignResult from JSON:
+                      {result_dict}\n{e}"""
+                )
+                raise RuntimeError(
+                    "Failed to create TaskAssignResult from JSON"
+                ) from e
+
+            return task_assign_result.assignee_id
+
+        except Exception as e:
+            logger.error(f"Error in finding assignee for task {task.id}: {e}")
+            raise RuntimeError(
+                f"Failed to find assignee for task {task.id}"
+            ) from e
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         await self._channel.post_task(task, self.node_id, assignee_id)

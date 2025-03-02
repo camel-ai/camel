@@ -73,26 +73,41 @@ class SingleAgentWorker(Worker):
         )
         try:
             response = self.worker.step(prompt, response_format=TaskResult)
+            print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
+
+            try:
+                result_dict = json.loads(response.msg.content)
+            except json.JSONDecodeError as e:
+                print(
+                    f"""{Fore.RED}Failed to parse response as JSON:
+                    {response.msg.content}\n{e}{Fore.RESET}"""
+                )
+                return TaskState.FAILED
+
+            try:
+                task_result = TaskResult(**result_dict)
+            except Exception as e:
+                print(
+                    f"""{Fore.RED}Failed to create TaskResult from JSON:
+                      {result_dict}\n{e}{Fore.RESET}"""
+                )
+                return TaskState.FAILED
+
+            color = Fore.RED if task_result.failed else Fore.GREEN
+            print_text_animated(
+                f"\n{color}{task_result.content}{Fore.RESET}\n======",
+                delay=0.005,
+            )
+
+            if task_result.failed:
+                return TaskState.FAILED
+
+            task.result = task_result.content
+            return TaskState.DONE
+
         except Exception as e:
             print(
                 f"{Fore.RED}Error occurred while processing task {task.id}:"
                 f"\n{e}{Fore.RESET}"
             )
             return TaskState.FAILED
-
-        print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
-
-        result_dict = json.loads(response.msg.content)
-        task_result = TaskResult(**result_dict)
-
-        color = Fore.RED if task_result.failed else Fore.GREEN
-        print_text_animated(
-            f"\n{color}{task_result.content}{Fore.RESET}\n======",
-            delay=0.005,
-        )
-
-        if task_result.failed:
-            return TaskState.FAILED
-
-        task.result = task_result.content
-        return TaskState.DONE
