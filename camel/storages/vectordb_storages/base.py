@@ -30,11 +30,15 @@ class VectorRecord(BaseModel):
             provided, an random uuid will be assigned.
         payload (Optional[Dict[str, Any]], optional): Any additional metadata
             or information related to the vector. (default: :obj:`None`)
+        timestamp (str, optional): The timestamp of the vector. (default: :obj:`None`)
+        agent_id (str, optional): The ID of the agent associated with the vector. (default: :obj:`None`)
     """
 
     vector: List[float]
     id: str = Field(default_factory=lambda: str(uuid4()))
     payload: Optional[Dict[str, Any]] = None
+    timestamp: Optional[str] = None
+    agent_id: Optional[str] = None
 
 
 class VectorDBQuery(BaseModel):
@@ -84,10 +88,18 @@ class VectorDBQueryResult(BaseModel):
         vector: List[float],
         id: str,
         payload: Optional[Dict[str, Any]] = None,
+        timestamp: Optional[str] = None,
+        agent_id: Optional[str] = None,
     ) -> "VectorDBQueryResult":
         r"""A class method to construct a `VectorDBQueryResult` instance."""
         return cls(
-            record=VectorRecord(vector=vector, id=id, payload=payload),
+            record=VectorRecord(
+                vector=vector,
+                id=id,
+                payload=payload,
+                timestamp=timestamp,
+                agent_id=agent_id,
+            ),
             similarity=similarity,
         )
 
@@ -96,7 +108,7 @@ class VectorDBStatus(BaseModel):
     r"""Vector database status.
 
     Attributes:
-        vector_dim (int): The dimention of stored vectors.
+        vector_dim (int): The dimension of stored vectors.
         vector_count (int): The number of stored vectors.
 
     """

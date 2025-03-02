@@ -41,8 +41,13 @@ class BaseKeyValueStorage(ABC):
         pass
 
     @abstractmethod
-    def load(self) -> List[Dict[str, Any]]:
+    def load(self, agent_id: str = None) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
+
+        Args:
+            agent_id (str, optional): The ID of the agent associated with the
+                records. If not provided, all records will be loaded.
+                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, where each dictionary

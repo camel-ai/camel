@@ -39,17 +39,21 @@ class ChatHistoryBlock(MemoryBlock):
             of the message is multiplied by the `keep_rate`. Higher `keep_rate`
             leads to high possiblity to keep history messages during context
             creation.
+        agent_id (str, optional): The ID of the agent associated with the chat
+            history. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         storage: Optional[BaseKeyValueStorage] = None,
         keep_rate: float = 0.9,
+        agent_id: str = None,
     ) -> None:
         if keep_rate > 1 or keep_rate < 0:
             raise ValueError("`keep_rate` should be in [0,1]")
         self.storage = storage or InMemoryKeyValueStorage()
         self.keep_rate = keep_rate
+        self.agent_id = agent_id
 
     def retrieve(
         self,
@@ -67,7 +71,10 @@ class ChatHistoryBlock(MemoryBlock):
         Returns:
             List[ContextRecord]: A list of retrieved records.
         """
-        record_dicts = self.storage.load()
+        if self.agent_id is not None:
+            record_dicts = self.storage.load(self.agent_id)
+        else:
+            record_dicts = self.storage.load()
         if len(record_dicts) == 0:
             warnings.warn("The `ChatHistoryMemory` is empty.")
             return list()

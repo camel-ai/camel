@@ -37,16 +37,20 @@ class VectorDBBlock(MemoryBlock):
         embedding (Optional[BaseEmbedding], optional): Embedding mechanism to
             convert chat messages into vector representations. Defaults to
             :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
+        agent_id (str, optional): The ID of the agent associated with the
+            messages stored in the vector database. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         storage: Optional[BaseVectorStorage] = None,
         embedding: Optional[BaseEmbedding] = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         self.embedding = embedding or OpenAIEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
         self.storage = storage or QdrantStorage(vector_dim=self.vector_dim)
+        self.agent_id = agent_id
 
     def retrieve(
         self,
@@ -67,14 +71,22 @@ class VectorDBBlock(MemoryBlock):
                 vector database based on similarity to :obj:`current_state`.
         """
         query_vector = self.embedding.embed(keyword)
-        results = self.storage.query(
-            VectorDBQuery(query_vector=query_vector, top_k=limit)
-        )
+        if self.agent_id is not None:
+            results = self.storage.query(
+                VectorDBQuery(
+                    query_vector=query_vector,
+                    top_k=limit,
+                    agent_id=self.agent_id,
+                )
+            )
+        else:
+            results = self.storage.query(
+                VectorDBQuery(query_vector=query_vector, top_k=limit)
+            )
         return [
             ContextRecord(
                 memory_record=MemoryRecord.from_dict(result.record.payload),
                 score=result.similarity,
-                timestamp=result.record.payload['timestamp'],
             )
             for result in results
             if result.record.payload is not None
@@ -94,6 +106,8 @@ class VectorDBBlock(MemoryBlock):
                 vector=self.embedding.embed(record.message.content),
                 payload=record.to_dict(),
                 id=str(record.uuid),
+                timestamp=record.timestamp,
+                agent_id=record.agent_id,
             )
             for record in records
         ]
