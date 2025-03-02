@@ -15,10 +15,13 @@ from typing import List, Tuple
 
 from pydantic import BaseModel
 
+from camel.logger import get_logger
 from camel.memories.base import BaseContextCreator
 from camel.memories.records import ContextRecord
 from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
+
+logger = get_logger(__name__)
 
 
 class _ContextUnit(BaseModel):
@@ -101,18 +104,30 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # If not exceed token limit, simply return
         total_tokens = sum([unit.num_tokens for unit in context_units])
         if total_tokens <= self.token_limit:
+            context_units = sorted(
+                context_units,
+                key=lambda unit: (unit.record.timestamp, unit.record.score),
+            )
             return self._create_output(context_units)
+
+        # Log warning about token limit being exceeded
+        logger.warning(
+            f"Token limit reached ({total_tokens} > {self.token_limit}). "
+            f"Some messages will be pruned from memory to meet the limit."
+        )
 
         # Sort by score
         context_units = sorted(
-            context_units, key=lambda unit: unit.record.score
+            context_units,
+            key=lambda unit: (unit.record.timestamp, unit.record.score),
         )
 
         # Remove the least score messages until total token number is smaller
         # than token limit
         truncate_idx = None
         for i, unit in enumerate(context_units):
-            if unit.record.score == 1:
+            if i == len(context_units) - 1:
+                # If we reach the end of the list and still exceed the token
                 raise RuntimeError(
                     "Cannot create context: exceed token limit.", total_tokens
                 )
@@ -135,7 +150,9 @@ class ScoreBasedContextCreator(BaseContextCreator):
         for output, specifically a list of OpenAIMessages and an integer
         representing the total token count.
         """
-        context_units = sorted(context_units, key=lambda unit: unit.idx)
+        context_units = sorted(
+            context_units, key=lambda unit: unit.record.timestamp
+        )
         return [
             unit.record.memory_record.to_openai_message()
             for unit in context_units

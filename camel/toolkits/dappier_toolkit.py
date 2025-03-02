@@ -33,10 +33,11 @@ class DappierToolkit(BaseToolkit):
             (None, "DAPPIER_API_KEY"),
         ]
     )
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initialize the DappierTookit with API clients.The API keys and
         credentials are retrieved from environment variables.
         """
+        super().__init__(timeout=timeout)
         from dappier import Dappier
 
         dappier_api_key = os.environ.get("DAPPIER_API_KEY")
