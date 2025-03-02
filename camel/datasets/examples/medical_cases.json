@@ -1,0 +1,67 @@
+{
+    "cases": [
+        {
+            "id": "CASE001",
+            "description": "A 45-year-old male presents with persistent headache for 3 weeks, accompanied by morning nausea and blurred vision. Blood pressure reading shows 180/110mmHg. He has a 5-year history of type 2 diabetes mellitus. What is your diagnosis and management plan?",
+            "solution": "Hypertensive crisis with end-organ damage risk.",
+            "verified_solution": "Diagnosis: Hypertensive Emergency\n\nManagement Plan:\n1. Immediate BP reduction with IV labetalol or nicardipine\n2. Target BP reduction: 20-25% in first hour, then to 160/100mmHg within 2-6 hours\n3. Continuous BP monitoring\n4. Assess for end-organ damage\n5. Adjust diabetes medication\n6. Initiate oral antihypertensive therapy once stable",
+            "clinical_reasoning": "1. Key Symptoms Analysis:\n- Persistent headache (3 weeks)\n- Morning nausea\n- Blurred vision\nThese symptoms suggest end-organ effects of severe hypertension\n\n2. Critical Findings:\n- BP 180/110mmHg\n- Comorbid T2DM (5 years)\nIndicates severe hypertension with increased cardiovascular risk\n\n3. Risk Assessment:\n- End-organ damage risk high due to:\n  * Neurological symptoms\n  * Visual disturbance\n  * Prolonged duration\n\n4. Differential Diagnosis:\n- Primary hypertensive crisis\n- Secondary hypertension\n- Diabetic complications\n\n5. Treatment Rationale:\n- Immediate BP reduction needed\n- Careful rate of reduction to prevent organ hypoperfusion\n- Concurrent diabetes management essential",
+            "complexity": "intermediate",
+            "raw_content": "# Case Description\nA 45-year-old male with headache for 3 weeks...\n\n# Physical Examination\nBlood pressure: 180/110mmHg...\n\n# Treatment Plan\nEmergency blood pressure reduction...",
+            "is_verified": true,
+            "category": "diagnosis",
+            "medical_speciality": "cardiology",
+            "expertise_level": "specialist",
+            "medical_references": [
+                "2023 ESC/ESH Guidelines for Hypertension",
+                "Journal of Hypertension 2022;40(2):235-242"
+            ],
+            "medical_keywords": ["hypertensive emergency", "diabetes mellitus", "end-organ damage", "antihypertensive therapy"],
+            "icd_codes": ["I10", "E11"],
+            "evidence_level": "A",
+            "last_updated": "2024-02-27"
+        },
+        {
+            "id": "CASE002",
+            "description": "A 28-year-old female presents with recurrent fever, joint pain, and malar rash. Laboratory tests show positive ANA and low complement levels (C3, C4). What is your diagnosis and treatment approach?",
+            "solution": "Systemic Lupus Erythematosus (SLE) with active disease.",
+            "verified_solution": "Diagnosis: Active Systemic Lupus Erythematosus (SLE)\n\nTreatment Plan:\n1. Hydroxychloroquine 200mg BID as baseline therapy\n2. Prednisone 1mg/kg/day for acute symptoms\n3. Regular monitoring of CBC and renal function\n4. Sun protection measures\n5. Vitamin D supplementation\n6. Regular assessment of disease activity using SLEDAI score",
+            "clinical_reasoning": "1. Diagnostic Criteria Analysis:\n- Age and gender: typical for SLE\n- Clinical features:\n  * Malar rash (specific for SLE)\n  * Arthritis\n  * Fever\n\n2. Laboratory Confirmation:\n- Positive ANA\n- Low complement levels\n  * Indicates active disease\n  * Suggests immune complex formation\n\n3. Disease Activity Assessment:\n- Multiple organ systems involved\n- Active serology\n- Constitutional symptoms present\n\n4. Treatment Strategy:\n- Immunomodulation needed\n- Balance between disease control and side effects\n- Long-term organ protection\n\n5. Monitoring Plan:\n- Regular disease activity assessment\n- Screening for complications\n- Prevention of flares",
+            "complexity": "advanced",
+            "raw_content": "# Case Description\nA young female with typical SLE manifestations...\n\n# Laboratory Tests\nANA: 1:320...\n\n# Treatment Plan\nImmunosuppression...",
+            "is_verified": true,
+            "category": "rheumatology",
+            "medical_speciality": "rheumatology",
+            "expertise_level": "specialist",
+            "medical_references": [
+                "2023 EULAR Recommendations",
+                "Lancet Rheumatology 2023;5:e134-e146"
+            ],
+            "medical_keywords": ["SLE", "autoimmune", "immunosuppression", "hydroxychloroquine"],
+            "icd_codes": ["M32.1"],
+            "evidence_level": "A",
+            "last_updated": "2024-02-27"
+        },
+        {
+            "id": "CASE003",
+            "description": "A 65-year-old male presents with chronic cough with sputum for 3 years, worsening over the past month. He has a 40 pack-year smoking history. Spirometry shows FEV1/FVC < 70% and FEV1 45% predicted. What is your diagnosis and management strategy?",
+            "solution": "Acute exacerbation of Chronic Obstructive Pulmonary Disease (COPD).",
+            "verified_solution": "Diagnosis: COPD with Acute Exacerbation (GOLD Stage 3)\n\nManagement Plan:\n1. Bronchodilator therapy:\n   - LABA/ICS (salmeterol/fluticasone)\n   - SABA (salbutamol) as needed\n2. Short course systemic corticosteroids\n3. Consider antibiotics if purulent sputum\n4. Smoking cessation counseling\n5. Pulmonary rehabilitation referral\n6. Vaccination status review",
+            "clinical_reasoning": "1. Risk Factor Analysis:\n- 40 pack-year smoking history\n- Age > 65 years\n\n2. Diagnostic Criteria:\n- Chronic symptoms > 3 years\n- Obstructive pattern on spirometry:\n  * FEV1/FVC < 70% confirms obstruction\n  * FEV1 45% indicates severe disease\n\n3. Severity Assessment:\n- GOLD Stage 3 (Severe)\n- Acute exacerbation based on:\n  * Worsening symptoms\n  * Increased dyspnea\n\n4. Treatment Rationale:\n- Bronchodilation for symptom relief\n- Anti-inflammatory therapy\n- Address modifiable risk factors\n\n5. Long-term Management:\n- Smoking cessation crucial\n- Pulmonary rehabilitation\n- Regular follow-up",
+            "complexity": "basic",
+            "raw_content": "# Case Description\nAn elderly male with chronic cough...\n\n# Test Results\nPulmonary function: severe obstructive...\n\n# Treatment Plan\nBronchodilators...",
+            "is_verified": true,
+            "category": "pulmonology",
+            "medical_speciality": "respiratory",
+            "expertise_level": "general",
+            "medical_references": [
+                "GOLD Guidelines 2024",
+                "Eur Respir J 2023;62:2201606"
+            ],
+            "medical_keywords": ["COPD", "spirometry", "bronchodilators", "smoking cessation"],
+            "icd_codes": ["J44.1"],
+            "evidence_level": "A",
+            "last_updated": "2024-02-27"
+        }
+    ]
+}
