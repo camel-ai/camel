@@ -88,7 +88,7 @@ class GSM8KBenchmark(MathBenchmark):
         """
         logger.info("Loading GSM8K dataset...")
 
-        dataset = self.load_dataset(
+        dataset = GSM8KBenchmark.load_dataset(
             self.DATASET_REPO,
             'main',
             cache_dir=str(self.data_dir),
