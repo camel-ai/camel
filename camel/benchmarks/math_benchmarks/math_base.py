@@ -131,11 +131,12 @@ class MathBenchmark(BaseBenchmark):
             ValueError: If an invalid dataset split is specified.
             TypeError: If the results are not in the expected format.
         """
+        if mode is None:
+            mode = Mode("pass@k", 1)
+
         logger.info(
             f"Running {mode.mode} evaluation on {on} set with k={mode.k}"
         )
-
-        mode = Mode("pass@k", 1)
 
         if on not in ["train", "test", "valid"]:
             raise ValueError(
