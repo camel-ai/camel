@@ -212,7 +212,7 @@ class MathBenchmark(BaseBenchmark):
             )
 
         if mode.mode == "pass@k":
-            return self.np.any(self.np.array(answers[: mode.k]) == solution)
+            return bool(self.np.any(self.np.array(answers[: mode.k]) == solution))
 
         elif mode.mode == "majority voting":
             most_common = self.pd.Series(answers).mode().iloc[0]
