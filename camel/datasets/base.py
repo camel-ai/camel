@@ -59,12 +59,9 @@ class DataPoint(BaseModel):
         ..., description="The primary question or issue to be addressed."
     )
     rationale: str = Field(
-        None, description="Logical reasoning or explanation behind the answer."
+        ..., description="Logical reasoning or explanation behind the answer."
     )
     final_answer: str = Field(..., description="The final answer.")
-    raw_markdown: Optional[str] = Field(
-        None, description="Raw markdown content for generating rewards/hints."
-    )
     difficulty: Optional[str] = Field(
         None, description="Difficulty level of the question."
     )
