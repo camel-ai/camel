@@ -15,7 +15,7 @@
 from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
-from camel.benchmarks import MathBenchmark, Mode
+from camel.benchmarks.math_benchmarks.math_base import MathBenchmark, Mode
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
@@ -70,7 +70,8 @@ class GSM8KBenchmark(MathBenchmark):
         logger.info("Ensuring GSM8K dataset is downloaded...")
         _ = self.load_dataset(
             self.DATASET_REPO, 'main', cache_dir=str(self.data_dir)
-        )
+            )
+
         logger.info("GSM8K dataset is ready.")
         return self
 
