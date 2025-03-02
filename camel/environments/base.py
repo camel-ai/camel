@@ -35,7 +35,8 @@ from camel.verifiers.models import (
 
 logger = get_logger(__name__)
 
-# TODO: rename response and integrate behavior into environment
+
+# TODO: rename response and integrate as attributes of environment
 class Response(BaseModel):
     r"""Response schema for LLM generations with metadata and verification
     info.
@@ -46,7 +47,6 @@ class Response(BaseModel):
     Attributes:
         problem_id: Unique identifier for the problem
         source: Source of the problem/task
-        task_type: Type of task being performed
         final_answer: Reference solution if available
         verification_info: Additional info needed for verification
         metadata: General purpose metadata about the generation
@@ -54,13 +54,11 @@ class Response(BaseModel):
         llm_response: Generated response from the LLM
         model_type: Type of the LLM used
         generation_config: Configuration used for generation
-        machine_info: Information about the execution environment
         timestamp: When the response was generated (UTC)
     """
 
     problem_id: str = Field(description="Unique identifier for the problem")
     source: str = Field(description="Source of the problem/task")
-    task_type: TaskType = Field(description="Type of task being performed")
     final_answer: Optional[str] = Field(
         None, description="Reference solution if available"
     )
@@ -79,9 +77,6 @@ class Response(BaseModel):
     model_type: ModelType = Field(description="Type of the LLM used")
     generation_config: BaseConfig = Field(
         description="Generation parameters used"
-    )
-    machine_info: Optional[MachineInfo] = Field(
-        None, description="Execution environment info"
     )
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
@@ -157,7 +152,6 @@ class BaseEnvironment(ABC):
         verifier: BaseVerifier,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
-        task_type: TaskType = TaskType.SOFTWARE_ENGINEERING,
         teacher_agent: Optional[ChatAgent] = None,
         generator_agent: Optional[ChatAgent] = None,
         curriculum_config: Optional[Dict[str, Any]] = None,
@@ -171,7 +165,6 @@ class BaseEnvironment(ABC):
             verifier: Verifier to check responses.
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
-            task_type: Type of task being performed.
             teacher_agent: Optional agent for reward shaping and hints
             generator_agent: Optional agent for data generation
             curriculum_config: Configuration for curriculum learning including:
@@ -189,7 +182,6 @@ class BaseEnvironment(ABC):
         self.verifier = verifier
         self.extractor = extractor
         self.max_steps = max_steps
-        self.task_type = task_type
         self.teacher_agent = teacher_agent
         self.generator_agent = generator_agent
         self._metadata = kwargs
