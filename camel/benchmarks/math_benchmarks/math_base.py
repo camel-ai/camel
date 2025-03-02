@@ -186,6 +186,9 @@ class MathBenchmark(BaseBenchmark):
         )
 
         # Save results as JSON
+        save_dir = Path(self.save_to)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        
         save_path = Path(self.save_to) / f"{self.name}_results.json"
         results.to_json(save_path, orient="records", indent=2)
 
