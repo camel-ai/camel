@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseVerifier
-from .python_verifier import PythonVerifier
-from .models import Response
+from .models import VerificationOutcome, VerifierInput
 
-__all__ = ["BaseVerifier", "PythonVerifier", "Response"]
+__all__ = ["BaseVerifier", "VerificationOutcome", "VerifierInput"]
