@@ -24,14 +24,14 @@ benchmark = GSM8KBenchmark(
 )
 benchmark.download()
 
-result = benchmark.run(agent, on="test", subset=10)
-all_results = result.results
-total = len(all_results)
+# Run the benchmark to get results
+benchmark = benchmark.run(agent, on="test", subset=10)
 
-correct_count = sum(row["correct"] for row in all_results)
+total_answers = len(benchmark.results)
+correct_answers = sum(row["correct"] for row in benchmark.results)
 
-print("Total:", total)
-print("Correct:", correct_count)
+print("Total:", total_answers)
+print("Correct:", correct_answers)
 '''
 ===============================================================================
 Total: 10
