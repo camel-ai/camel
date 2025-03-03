@@ -15,10 +15,23 @@ from camel.agents import ChatAgent
 
 agent = ChatAgent(system_message="You are a helpful assistant.")
 
+# Example of jsonl file for batch processing
+"""
+Here's an example of an input file with 2 requests. Note that each input
+file can only include requests to a single model.
+
+{"custom_id": "request-1", "method": "POST", "url": "/v1/chat/completions",
+ "body": {"model": "gpt-3.5-turbo-0125", "messages": [{"role": "system",
+ "content": "You are a helpful assistant."}, {"role": "user", "content":
+ "Hello world!"}], "max_tokens": 1000}}
+{"custom_id": "request-2", "method": "POST", "url": "/v1/chat/completions",
+ "body": {"model": "gpt-3.5-turbo-0125", "messages": [{"role": "system",
+ "content": "You are an unhelpful assistant."}, {"role": "user", "content":
+ "Hello world!"}], "max_tokens": 1000}}
+"""
+
 # Creating the batch
-response = agent.model_backend.current_model._batch_run(
-    messages="batchinput.jsonl"
-)
+response = agent.step("batchinput.jsonl")
 print(response)
 
 # Example output:
@@ -38,9 +51,7 @@ Batch(id='batch_67b782b2641c819084d89d7ca8579677',
 """
 
 # Checking the status of the batch
-response_status = agent.model_backend.current_model.check_batch_process_status(
-    response
-)
+response_status = agent.get_batch_status(response)
 print(response_status)
 
 # Example output:

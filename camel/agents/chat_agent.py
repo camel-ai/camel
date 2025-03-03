@@ -442,6 +442,16 @@ class ChatAgent(BaseAgent):
             message.content = response.output_messages[0].content
             self._try_format_message(message, response_format)
 
+    def get_batch_status(self, response: Any) -> Union[str, Dict[str, Any]]:
+        """
+        Returns the batch process status by checking the batch response.
+        Args:
+            response (Any): The batch response object from a batch run.
+        """
+        return self.model_backend.current_model.check_batch_process_status(
+            response
+        )
+
     def step(
         self,
         input_message: Union[BaseMessage, str],
@@ -471,6 +481,13 @@ class ChatAgent(BaseAgent):
             ChatAgentResponse: Contains output messages, a termination status
                 flag, and session information.
         """
+
+        # If input_message is a JSONL file (indicated by a '.jsonl' suffix),
+        # directly run the batch process
+        if isinstance(input_message, str) and input_message.endswith('.jsonl'):
+            return self.model_backend.current_model._batch_run(
+                batch_str=input_message
+            )
 
         # Convert input message to BaseMessage if necessary
         if isinstance(input_message, str):
