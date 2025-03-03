@@ -15,7 +15,6 @@
 import os
 import random
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -28,9 +27,7 @@ from typing import (
 import torch
 from datasets import Dataset as HFDataset
 from pydantic import BaseModel, Field, ValidationError
-
-if TYPE_CHECKING:
-    from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
