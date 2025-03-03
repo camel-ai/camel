@@ -15,9 +15,9 @@
 
 import pandas as pd
 
-from camel.loaders import PandaReader
+from camel.loaders import PandasReader
 
-reader = PandaReader()
+reader = PandasReader()
 sales_by_country = pd.DataFrame(
     {
         "country": [

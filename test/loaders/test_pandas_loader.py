@@ -12,13 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import pandas as pd  # type: ignore[import-untyped]
 
-from camel.loaders import PandaReader
+import pandas as pd
+
+from camel.agents.pandas_dataframe_agent import PandasDataFrameAgent
+from camel.loaders import PandasReader
 
 
 def test_topk():
-    reader = PandaReader()
+    reader = PandasReader()
     sales_by_country = {
         "country": [
             "United States",
@@ -46,7 +48,8 @@ def test_topk():
         ],
     }
     doc = reader.load(pd.DataFrame(sales_by_country))
-    resp: pd.DataFrame = doc.chat("Which are the top 5 countries by sales?")
+    agent = PandasDataFrameAgent(doc)
+    resp: pd.DataFrame = agent.chat("Which are the top 5 countries by sales?")
     assert resp["country"].tolist() == [
         "China",
         "United States",
@@ -56,8 +59,40 @@ def test_topk():
     ]
 
 
+def test_pure_pandas():
+    reader = PandasReader()
+    sales_by_country = {
+        "country": [
+            "United States",
+            "United Kingdom",
+            "France",
+            "Germany",
+            "Italy",
+            "Spain",
+            "Canada",
+            "Australia",
+            "Japan",
+            "China",
+        ],
+        "sales": [
+            5000,
+            3200,
+            2900,
+            4100,
+            2300,
+            2100,
+            2500,
+            2600,
+            4500,
+            7000,
+        ],
+    }
+    df = reader.load(pd.DataFrame(sales_by_country))
+    assert df is not None
+
+
 def test_multi_rows():
-    reader = PandaReader()
+    reader = PandasReader()
     sales_by_country = {
         "country": [
             "United States",
@@ -97,7 +132,8 @@ def test_multi_rows():
         ],
     }
     doc = reader.load(pd.DataFrame(sales_by_country))
-    resp: pd.DataFrame = doc.chat(
+    agent = PandasDataFrameAgent(doc)
+    resp: pd.DataFrame = agent.chat(
         "Calculate the profit margin for each country."
     )
     assert "profit_margin" in resp.columns
@@ -105,7 +141,7 @@ def test_multi_rows():
 
 
 def test_load_from_url():
-    reader = PandaReader()
     url = "https://raw.githubusercontent.com/cs109/2014_data/master/countries.csv"
-    doc = reader.load(url)
-    assert doc is not None
+    agent = PandasDataFrameAgent(url)
+    assert agent.df is not None
+    assert "Country" in agent.df.columns
