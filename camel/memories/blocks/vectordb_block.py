@@ -73,11 +73,8 @@ class VectorDBBlock(MemoryBlock):
         query_vector = self.embedding.embed(keyword)
         if self.agent_id is not None:
             results = self.storage.query(
-                VectorDBQuery(
-                    query_vector=query_vector,
-                    top_k=limit,
-                    agent_id=self.agent_id,
-                )
+                VectorDBQuery(query_vector=query_vector, top_k=limit),
+                agent_id=self.agent_id,
             )
         else:
             results = self.storage.query(
@@ -106,8 +103,6 @@ class VectorDBBlock(MemoryBlock):
                 vector=self.embedding.embed(record.message.content),
                 payload=record.to_dict(),
                 id=str(record.uuid),
-                timestamp=record.timestamp,
-                agent_id=record.agent_id,
             )
             for record in records
         ]

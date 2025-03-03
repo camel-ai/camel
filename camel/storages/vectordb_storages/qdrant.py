@@ -416,6 +416,7 @@ class QdrantStorage(BaseVectorStorage):
     def query(
         self,
         query: VectorDBQuery,
+        agent_id: Optional[str] = None,
         filter_conditions: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
@@ -425,6 +426,8 @@ class QdrantStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            agent_id (str, optional): The ID of the agent associated with the
+                query. (default: :obj:`None`)
             filter_conditions (Optional[Dict[str, Any]], optional): A
                 dictionary specifying conditions to filter the query results.
             **kwargs (Any): Additional keyword arguments.
@@ -441,13 +444,29 @@ class QdrantStorage(BaseVectorStorage):
         )
 
         # Construct filter if filter_conditions is provided
-        search_filter = None
+        must_conditions = []
+
         if filter_conditions:
-            must_conditions = [
-                FieldCondition(key=key, match=MatchValue(value=value))
-                for key, value in filter_conditions.items()
-            ]
-            search_filter = Filter(must=cast(List[Condition], must_conditions))
+            must_conditions.extend(
+                [
+                    FieldCondition(key=key, match=MatchValue(value=value))
+                    for key, value in filter_conditions.items()
+                ]
+            )
+
+        if agent_id:
+            # agent_id filtering without overriding existing filters
+            must_conditions.append(
+                FieldCondition(
+                    key="agent_id", match=MatchValue(value=agent_id)
+                )
+            )
+
+        search_filter = (
+            Filter(must=cast(List[Condition], must_conditions))
+            if must_conditions
+            else None
+        )
 
         # Execute the search with optional filter
         search_result = self._client.search(

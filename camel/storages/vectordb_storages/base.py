@@ -30,17 +30,11 @@ class VectorRecord(BaseModel):
             provided, an random uuid will be assigned.
         payload (Optional[Dict[str, Any]], optional): Any additional metadata
             or information related to the vector. (default: :obj:`None`)
-        timestamp (float, optional): The timestamp of the vector.
-            (default: :obj:`None`)
-        agent_id (str, optional): The ID of the agent associated with the
-            vector. (default: :obj:`None`)
     """
 
     vector: List[float]
     id: str = Field(default_factory=lambda: str(uuid4()))
     payload: Optional[Dict[str, Any]] = None
-    timestamp: Optional[float] = None
-    agent_id: Optional[str] = None
 
 
 class VectorDBQuery(BaseModel):
@@ -90,18 +84,10 @@ class VectorDBQueryResult(BaseModel):
         vector: List[float],
         id: str,
         payload: Optional[Dict[str, Any]] = None,
-        timestamp: Optional[float] = None,
-        agent_id: Optional[str] = None,
     ) -> "VectorDBQueryResult":
         r"""A class method to construct a `VectorDBQueryResult` instance."""
         return cls(
-            record=VectorRecord(
-                vector=vector,
-                id=id,
-                payload=payload,
-                timestamp=timestamp,
-                agent_id=agent_id,
-            ),
+            record=VectorRecord(vector=vector, id=id, payload=payload),
             similarity=similarity,
         )
 
@@ -170,6 +156,7 @@ class BaseVectorStorage(ABC):
     def query(
         self,
         query: VectorDBQuery,
+        agent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided
@@ -178,6 +165,8 @@ class BaseVectorStorage(ABC):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            agent_id (str, optional): The ID of the agent associated with the
+                query. (default: :obj:`None`)
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
