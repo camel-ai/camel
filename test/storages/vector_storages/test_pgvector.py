@@ -19,8 +19,8 @@ import pytest
 from camel.storages.vectordb_storages import (
     PgVectorStorage,
     VectorDBQuery,
-    VectorRecord,
     VectorDBStatus,
+    VectorRecord,
 )
 
 
@@ -56,7 +56,8 @@ def setup_mock_storage(mock_storage, vectors, query_result_id, payload):
     mock_storage.add.return_value = None
     vector_dim = len(vectors[0].vector)
     mock_storage.status.return_value = VectorDBStatus(
-        vector_count=len(vectors), vector_dim=vector_dim)
+        vector_count=len(vectors), vector_dim=vector_dim
+    )
 
 
 def test_add_and_query_vectors(mock_pg_storage):
@@ -65,7 +66,7 @@ def test_add_and_query_vectors(mock_pg_storage):
         VectorRecord(vector=[0.2, 0.2, 0.2, 0.2], payload={"label": "A"}),
         VectorRecord(vector=[-0.2, -0.2, -0.2, -0.2], payload={"label": "B"}),
     ]
-    
+
     setup_mock_storage(mock_pg_storage, vectors, vectors[0].id, {"label": "A"})
     mock_pg_storage.add(records=vectors)
     assert mock_pg_storage.status().vector_count == 2
@@ -80,14 +81,15 @@ def test_delete_vectors(mock_pg_storage):
     r"""Tests deleting vectors from storage."""
     vectors = [
         VectorRecord(vector=[0.6, 0.6, 0.6, 0.6], payload={"group": "X"}),
-        VectorRecord(vector=[-0.6, -0.6, -0.6, -0.6], payload={"group": "Y"})
+        VectorRecord(vector=[-0.6, -0.6, -0.6, -0.6], payload={"group": "Y"}),
     ]
-    
+
     setup_mock_storage(
-        mock_pg_storage, vectors[1:], vectors[1].id, {"group": "Y"})
+        mock_pg_storage, vectors[1:], vectors[1].id, {"group": "Y"}
+    )
     mock_pg_storage.add(records=vectors)
     mock_pg_storage.delete(ids=[vectors[0].id])
-    
+
     query = VectorDBQuery(query_vector=[0.0, 0.0, 0.0, 0.0], top_k=2)
     results = mock_pg_storage.query(query)
     assert len(results) == 1
@@ -98,9 +100,9 @@ def test_clear_storage(mock_pg_storage):
     r"""Tests clearing all vectors from storage."""
     vectors = [
         VectorRecord(vector=[1.0, 1.0, 1.0, 1.0]),
-        VectorRecord(vector=[-1.0, -1.0, -1.0, -1.0])
+        VectorRecord(vector=[-1.0, -1.0, -1.0, -1.0]),
     ]
-    
+
     setup_mock_storage(mock_pg_storage, vectors, vectors[0].id, {})
     mock_pg_storage.add(records=vectors)
     assert mock_pg_storage.status().vector_count == 2
@@ -108,5 +110,6 @@ def test_clear_storage(mock_pg_storage):
     mock_pg_storage.clear()
     vector_dim = len(vectors[0].vector)
     mock_pg_storage.status.return_value = VectorDBStatus(
-        vector_dim=vector_dim, vector_count=0)
+        vector_dim=vector_dim, vector_count=0
+    )
     assert mock_pg_storage.status().vector_count == 0

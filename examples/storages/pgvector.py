@@ -13,8 +13,8 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.storages.vectordb_storages import (
-    PgVectorStorage,
     PgVectorDistance,
+    PgVectorStorage,
     VectorDBQuery,
     VectorRecord,
 )
@@ -23,8 +23,8 @@ connection_params = {
     'host': 'localhost',
     'port': 5432,
     'dbname': 'postgres',
-    'user': 'postgres',   
-    'password': 'postgres'   
+    'user': 'postgres',
+    'password': 'postgres',
 }
 
 vector_storage = PgVectorStorage(
@@ -37,15 +37,15 @@ vector_storage = PgVectorStorage(
 vectors = [
     VectorRecord(
         vector=[1.0, 0.0, 0.0],
-        payload={"label": "X", "description": "X axis direction"}
+        payload={"label": "X", "description": "X axis direction"},
     ),
     VectorRecord(
         vector=[0.0, 1.0, 0.0],
-        payload={"label": "Y", "description": "Y axis direction"}
+        payload={"label": "Y", "description": "Y axis direction"},
     ),
     VectorRecord(
         vector=[0.0, 0.0, 1.0],
-        payload={"label": "Z", "description": "Z axis direction"}
+        payload={"label": "Z", "description": "Z axis direction"},
     ),
 ]
 
@@ -56,10 +56,7 @@ status = vector_storage.status()
 print(f"Current status: {status.vector_count} vectors stored")
 print(f"Vector dimension: {status.vector_dim}")
 
-query = VectorDBQuery(
-    query_vector=[1.0, 0.0, 0.0],
-    top_k=3
-)
+query = VectorDBQuery(query_vector=[1.0, 0.0, 0.0], top_k=3)
 results = vector_storage.query(query)
 
 print("\nQuery results:")
