@@ -54,9 +54,7 @@ class ChatHistoryMemory(AgentMemory):
         self._agent_id = agent_id
 
     def retrieve(self) -> List[ContextRecord]:
-        records = self._chat_history_block.retrieve(
-            self._window_size, self._agent_id
-        )
+        records = self._chat_history_block.retrieve(self._window_size)
         if self._window_size is not None and len(records) == self._window_size:
             warnings.warn(
                 f"Chat history window size limit ({self._window_size}) "
