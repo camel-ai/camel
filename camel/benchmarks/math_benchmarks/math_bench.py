@@ -77,7 +77,7 @@ class MATHBenchmark(MathBenchmark):
         """
         logger.info("Ensuring MATH dataset is downloaded...")
         for config in self.DATASET_CONFIGS:
-            _ = self.load_dataset(
+            _ = MATHBenchmark.load_dataset(
                 self.DATASET_REPO, config, cache_dir=str(self.data_dir)
             )
         logger.info("MATH dataset is ready.")
@@ -99,7 +99,7 @@ class MATHBenchmark(MathBenchmark):
         self._data = {"train": [], "test": []}
 
         for config in self.DATASET_CONFIGS:
-            dataset = self.load_dataset(
+            dataset = MATHBenchmark.load_dataset(
                 self.DATASET_REPO,
                 config,
                 cache_dir=str(self.data_dir),
@@ -221,5 +221,5 @@ class MATHBenchmark(MathBenchmark):
                 agent.step(question).msgs[0].content for _ in range(mode.k)
             ]
 
-        dataset["answers"] = dataset["question"].apply(generate_answer)
+        dataset["answers"] = dataset["questions"].apply(generate_answer)
         return dataset
