@@ -45,7 +45,7 @@ def memory_and_message(request):
                     content="You are a helpful assistant",
                 ),
                 role_at_backend=OpenAIBackendRole.SYSTEM,
-                timestamp=datetime.now(),
+                timestamp=float(datetime.now()),
                 agent_id="system_agent",
             )
         ]
@@ -66,7 +66,7 @@ def memory_and_message(request):
                     content=conv["user"],
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
-                timestamp=datetime.now(),
+                timestamp=float(datetime.now()),
                 agent_id=f"user_agent_{i}",
             ),
             MemoryRecord(
@@ -77,7 +77,7 @@ def memory_and_message(request):
                     content=conv["assistant"],
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
-                timestamp=datetime.now(),
+                timestamp=float(datetime.now()),
                 agent_id=f"assistant_agent_{i}",
             ),
         ]
@@ -161,7 +161,7 @@ def test_vector_db_memory(
                 MemoryRecord(
                     message=user_msg,
                     role_at_backend=OpenAIBackendRole.USER,
-                    timestamp=datetime.now(),
+                    timestamp=float(datetime.now()),
                     agent_id=f"user_agent_{i}",
                 )
             ]

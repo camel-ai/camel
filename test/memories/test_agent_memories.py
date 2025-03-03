@@ -96,7 +96,7 @@ class TestLongtermAgentMemory:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
-                timestamp=datetime.now(),
+                timestamp=float(datetime.now()),
                 agent_id=f"test_agent_{i}",
             )
             for i in range(5)
