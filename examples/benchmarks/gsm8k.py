@@ -20,17 +20,21 @@ agent = ChatAgent()
 
 # Set up the Gradeschool Math Benchmark
 benchmark = GSM8KBenchmark(
-    data_dir="GSM8KDataset", save_to="GSM8KResults.jsonl"
+    data_dir="GSM8K-Data", save_to="GSM8KResults"
 )
 benchmark.download()
 
-# TODO run benchmark with API Key to get the value for correct answers
-result = benchmark.run(agent, on="test", subset=20)
-print("Total:", result["total"])
-print("Correct:", result["correct"])
+result = benchmark.run(agent, on="test", subset=10)
+all_results = result.results
+total = len(all_results)
+
+correct_count = sum(row["correct"] for row in all_results)
+
+print("Total:", total)
+print("Correct:", correct_count)
 '''
 ===============================================================================
-Total: 20
-Correct: ?
+Total: 10
+Correct: 9
 ===============================================================================
 '''
