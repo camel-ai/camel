@@ -101,6 +101,8 @@ class TestChatHistoryBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]
@@ -176,6 +178,8 @@ class TestVectorDBBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]

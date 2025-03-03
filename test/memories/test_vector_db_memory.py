@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import random
+from datetime import datetime
 from typing import Dict, List, Tuple
 
 import pytest
@@ -44,6 +45,8 @@ def memory_and_message(request):
                     content="You are a helpful assistant",
                 ),
                 role_at_backend=OpenAIBackendRole.SYSTEM,
+                timestamp=datetime.now(),
+                agent_id="system_agent",
             )
         ]
     )
@@ -53,7 +56,7 @@ def memory_and_message(request):
     random.shuffle(messages)
 
     # Process each conversation
-    for conv in messages:
+    for i, conv in enumerate(messages):
         records = [
             MemoryRecord(
                 message=BaseMessage(
@@ -63,6 +66,8 @@ def memory_and_message(request):
                     content=conv["user"],
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now(),
+                agent_id=f"user_agent_{i}",
             ),
             MemoryRecord(
                 message=BaseMessage(
@@ -72,6 +77,8 @@ def memory_and_message(request):
                     content=conv["assistant"],
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
+                timestamp=datetime.now(),
+                agent_id=f"assistant_agent_{i}",
             ),
         ]
         memory.write_records(records)
@@ -144,7 +151,7 @@ def test_vector_db_memory(
 ):
     memory, messages, questions = memory_and_message
 
-    for question in questions:
+    for i, question in enumerate(questions):
         # Add user question to memory
         user_msg = BaseMessage(
             "AI user", RoleType.USER, None, question["user"]
@@ -152,7 +159,10 @@ def test_vector_db_memory(
         memory.write_records(
             [
                 MemoryRecord(
-                    message=user_msg, role_at_backend=OpenAIBackendRole.USER
+                    message=user_msg,
+                    role_at_backend=OpenAIBackendRole.USER,
+                    timestamp=datetime.now(),
+                    agent_id=f"user_agent_{i}",
                 )
             ]
         )
