@@ -14,11 +14,13 @@
 
 import os
 import time
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
 from camel.utils import api_keys_required
+
+from .base_loader import BaseLoader
 
 
 class MinerU:
@@ -248,3 +250,54 @@ class MinerU:
                 raise
 
             time.sleep(check_interval)
+
+
+class MinerULoader(BaseLoader):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        api_key: Optional[str] = None,
+        api_url: Optional[str] = "https://mineru.net/api/v4",
+        is_ocr: bool = False,
+        enable_formula: bool = False,
+        enable_table: bool = True,
+        layout_model: str = "doclayout_yolo",
+        language: str = "en",
+    ) -> None:
+        super().__init__(config)
+        self.mineru = MinerU(
+            api_key=api_key,
+            api_url=api_url,
+            is_ocr=is_ocr,
+            enable_formula=enable_formula,
+            enable_table=enable_table,
+            layout_model=layout_model,
+            language=language,
+        )
+
+    def load(self, source: str, **kwargs: Any) -> Dict:
+        return self.mineru.extract_url(source)
+
+    def batch_extract(self, files: List[Dict[str, Union[str, bool]]]) -> str:
+        return self.mineru.batch_extract_urls(files)
+
+    def get_status(self, task_id: str, is_batch: bool = False) -> Dict:
+        if is_batch:
+            return self.mineru.get_batch_status(task_id)
+        else:
+            return self.mineru.get_task_status(task_id)
+
+    def wait_for_completion(
+        self,
+        task_id: str,
+        is_batch: bool = False,
+        timeout: float = 100,
+        check_interval: float = 5,
+    ) -> Dict:
+        return self.mineru.wait_for_completion(
+            task_id, is_batch, timeout, check_interval
+        )
+
+    @property
+    def supported_formats(self) -> set:
+        return {"url", "pdf", "doc", "docx", "txt", "html"}

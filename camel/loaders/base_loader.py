@@ -14,14 +14,15 @@
 
 from abc import ABC, abstractmethod
 
+from typing import Any, Dict, Optional
 
 class BaseLoader(ABC):
-    def __init__(self, config):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         r"""Common configuration initialization.
         Args:
             config: A configuration object or dictionary.
         """
-        self.config = config
+        self.config = config if config is not None else {}
 
     @abstractmethod
     def load(self, source, **kwargs):

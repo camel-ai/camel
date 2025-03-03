@@ -12,12 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 if TYPE_CHECKING:
     from apify_client.clients import DatasetClient
 
 from camel.utils import api_keys_required
+
+from .base_loader import BaseLoader
 
 
 class Apify:
@@ -225,3 +227,65 @@ class Apify:
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get datasets: {e}") from e
+
+
+class ApifyLoader(BaseLoader):
+    def __init__(self, config) -> None:
+        super().__init__(config)
+        # Initialize the underlying Apify class.
+        self.api = config.get("api_key") or os.environ.get("APIFY_API_KEY")
+        self.apify = Apify(api_key=self.api)
+
+    def load(self, source: str, **kwargs: Any) -> Union[dict, List[dict]]:
+        functionality = kwargs.get("functionality", "run_actor")
+
+        if functionality == "run_actor":
+            result = self.apify.run_actor(
+                actor_id=source,
+                run_input=kwargs.get("run_input"),
+                content_type=kwargs.get("content_type"),
+                build=kwargs.get("build"),
+                max_items=kwargs.get("max_items"),
+                memory_mbytes=kwargs.get("memory_mbytes"),
+                timeout_secs=kwargs.get("timeout_secs"),
+                webhooks=kwargs.get("webhooks"),
+                wait_secs=kwargs.get("wait_secs"),
+            )
+            return result if result else {}
+
+        elif functionality == "get_dataset":
+            dataset_id = kwargs.get("dataset_id")
+            if not dataset_id:
+                raise ValueError(
+                    "dataset_id is required for get_dataset functionality."
+                )
+            result = self.apify.get_dataset(dataset_id)
+            return result if result else {}
+
+        elif functionality == "update_dataset":
+            dataset_id = kwargs.get("dataset_id")
+            name = kwargs.get("name")
+            if not dataset_id or not name:
+                raise ValueError("Both dataset_id and name are required.")
+            return self.apify.update_dataset(dataset_id, name)
+
+        elif functionality == "get_dataset_items":
+            dataset_id = kwargs.get("dataset_id")
+            if not dataset_id:
+                raise ValueError(
+                    "dataset_id is required for get_dataset_items."
+                )
+            return self.apify.get_dataset_items(dataset_id)
+        elif functionality == "get_datasets":
+            return self.apify.get_datasets(
+                unnamed=kwargs.get("unnamed"),
+                limit=kwargs.get("limit"),
+                offset=kwargs.get("offset"),
+                desc=kwargs.get("desc"),
+            )
+        else:
+            raise ValueError(f"Unsupported functionality: {functionality}")
+
+    @property
+    def supported_formats(self) -> set:
+        return {"apify"}

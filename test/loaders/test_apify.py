@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from camel.loaders.apify_reader import Apify
+from camel.loaders.apify_reader import ApifyLoader
 
 
 @pytest.fixture
@@ -33,14 +33,14 @@ def set_env_vars():
 
 def test_init(apify_client_mock):
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     assert apify._api_key == api_key
     apify_client_mock.assert_called_once_with(token=api_key)
 
 
 def test_run_actor():
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     actor_id = "test_actor_id"
     run_input = {"key": "value"}
     mock_actor = Mock()
@@ -63,7 +63,7 @@ def test_run_actor():
 
 def test_get_dataset_client():
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     dataset_id = "test_dataset_id"
     mock_dataset = Mock()
     apify.client.dataset = Mock(return_value=mock_dataset)
@@ -74,7 +74,7 @@ def test_get_dataset_client():
 
 def test_get_dataset():
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     dataset_id = "test_dataset_id"
     mock_client = Mock()
     mock_client.get.return_value = {"data": "dataset"}
@@ -86,7 +86,7 @@ def test_get_dataset():
 
 def test_update_dataset():
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     dataset_id = "test_dataset_id"
     name = "new_name"
     mock_client = Mock()
@@ -99,7 +99,7 @@ def test_update_dataset():
 
 def test_get_dataset_items():
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     dataset_id = "test_dataset_id"
     mock_client = Mock()
     mock_client.list_items.return_value.items = ["item1", "item2"]
@@ -111,7 +111,7 @@ def test_get_dataset_items():
 
 def test_get_datasets():
     api_key = "test_api_key"
-    apify = Apify(api_key=api_key)
+    apify = ApifyLoader(api_key=api_key)
     mock_client = Mock()
     mock_client.datasets.return_value.list.return_value.items = [
         {"name": "dataset1"},

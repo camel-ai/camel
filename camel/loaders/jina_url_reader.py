@@ -18,6 +18,8 @@ from warnings import warn
 
 from camel.types.enums import JinaReturnFormat
 
+from .base_loader import BaseLoader
+
 JINA_ENDPOINT = "https://r.jina.ai/"
 
 
@@ -97,3 +99,48 @@ class JinaURLReader:
             raise ValueError(f"Failed to read content from {url}: {e}") from e
 
         return resp.text
+
+
+class JinaURLLoader(BaseLoader):
+    def __init__(
+        self,
+        config,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config)
+        self.api_key = config.get("api_key") or os.getenv('JINA_API_KEY')
+
+        self.return_format = config.get(
+            "return_format", JinaReturnFormat.DEFAULT
+        )
+        self.json_response = config.get("json_response", False)
+        self.timeout = config.get("timeout", 30)
+        # if the following field not provided, it will be None
+        api_field = f"Bearer {self.api_key}" if self.api_key else None
+        json_field = "application/json" if self.json_response else None
+
+        raw_headers = {
+            "Authorization": api_field,
+            "X-Return-Format": self.return_format.value,
+            "Accept": json_field,
+            "X-Timeout": str(self.timeout),
+            **kwargs,
+        }
+
+        # eliminate None values
+        self._headers = {k: v for k, v in raw_headers.items() if v}
+
+        self.reader = JinaURLReader(
+            api_key=self.api_key,
+            return_format=self.return_format,
+            json_response=self.json_response,
+            timeout=self.timeout,
+            **kwargs,
+        )
+
+    def load(self, source: str, **kwargs: Any) -> str:
+        return self.reader.read_content(source)
+
+    @property
+    def supported_formats(self) -> set:
+        return {"url", "html"}

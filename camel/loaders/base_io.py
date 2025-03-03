@@ -56,6 +56,14 @@ class BaseIOLoader(BaseLoader):
         filename = kwargs.get("filename", "unknown")
         return create_file(file_obj, filename)
 
+    @property
+    def supported_formats(self) -> set:
+        r"""Return the set of file formats that this loader supports
+
+        Returns:
+            set: A set of supported file extensions.
+        """
+        return {"docx", "pdf", "txt", "json", "html"}
 
 def create_file(file: BytesIO, filename: str) -> "File":
     r"""Reads an uploaded file and returns a File object.

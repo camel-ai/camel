@@ -22,6 +22,8 @@ import requests
 
 from camel.utils import api_keys_required
 
+from .base_loader import BaseLoader
+
 logger = logging.getLogger(__name__)
 
 
@@ -165,3 +167,47 @@ class ChunkrReader:
             str: Formatted JSON as a string.
         """
         return json.dumps(response_json, indent=4)
+
+
+class ChunkrLoader(BaseLoader):
+    def __init__(
+        self,
+        config,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(config)
+        self._api_key = config.get("api_key") or os.getenv("CHUNKR_API_KEY")
+        if not self._api_key:
+            raise ValueError("API key is required for ChunkrLoader.")
+        self._url = config.get("url", "https://api.chunkr.ai/api/v1/task")
+        self.timeout = config.get("timeout", 30)
+
+        self._headers = {
+            "Authorization": f"{self._api_key}",
+            **config.get(
+                "headers", {}
+            ),  # Allow additional headers if provided
+        }
+
+        self.chunkr = ChunkrReader(
+            api_key=self._api_key,
+            url=self._url,
+            timeout=self.timeout,
+            **kwargs,
+        )
+
+    def load(self, source: str, **kwargs: Any) -> str:
+        # Submit the task and retrieve the task ID.
+        task_id = self.chunkr.submit_task(
+            file_path=source,
+            model=kwargs.get("model", "Fast"),
+            ocr_strategy=kwargs.get("ocr_strategy", "Auto"),
+            target_chunk_length=kwargs.get("target_chunk_length", "512"),
+        )
+        # Wait for and return the task output.
+        max_retries = kwargs.get("max_retries", 5)
+        return self.chunkr.get_task_output(task_id, max_retries=max_retries)
+
+    @property
+    def supported_formats(self) -> set:
+        return {"txt", "docx", "ppt", "pdf", "jpeg", "png", "tiff"}

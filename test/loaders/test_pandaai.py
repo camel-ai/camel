@@ -14,11 +14,11 @@
 
 import pandas as pd  # type: ignore[import-untyped]
 
-from camel.loaders import PandaReader
+from camel.loaders import PandasLoader
 
 
 def test_topk():
-    reader = PandaReader()
+    reader = PandasLoader()
     sales_by_country = {
         "country": [
             "United States",
@@ -57,7 +57,7 @@ def test_topk():
 
 
 def test_multi_rows():
-    reader = PandaReader()
+    reader = PandasLoader()
     sales_by_country = {
         "country": [
             "United States",
@@ -105,7 +105,7 @@ def test_multi_rows():
 
 
 def test_load_from_url():
-    reader = PandaReader()
+    reader = PandasLoader()
     url = "https://raw.githubusercontent.com/cs109/2014_data/master/countries.csv"
     doc = reader.load(url)
     assert doc is not None
