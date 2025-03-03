@@ -21,6 +21,41 @@ from typing import Any, Dict, List, Optional
 
 from camel.utils import dependencies_required
 
+from .base_loader import BaseLoader
+
+
+class BaseIOLoader(BaseLoader):
+    def __init__(self, config):
+        super().__init__(config)
+
+    def load(self, source, **kwargs) -> "File":
+        r"""Load files from different source types.
+
+        Args:
+            source: A source object that respresent the contents of the file.
+            The format can be BytesIO, raw bytes or text with diffent
+            extentions.
+            **kwargs: Additional keyword argments.
+
+        Return:
+            File: A File object.
+        """
+        if isinstance(source, BytesIO):
+            file_obj = source
+        elif isinstance(source, bytes):
+            file_obj = BytesIO(source)
+        elif isinstance(source, str):
+            # If a string is provided, assume it's a file path and read
+            # the file's binary content.
+            with open(source, 'rb') as f:
+                file_obj = BytesIO(f.read())
+        else:
+            raise ValueError("Unsupported source type.")
+        # Extract the filename from kwargs; default to 'unknown' if
+        # filename is not provided.
+        filename = kwargs.get("filename", "unknown")
+        return create_file(file_obj, filename)
+
 
 def create_file(file: BytesIO, filename: str) -> "File":
     r"""Reads an uploaded file and returns a File object.
