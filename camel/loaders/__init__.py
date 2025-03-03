@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from .apify_reader import Apify
+from .base_chunk import Chunk
 from .base_io import File, create_file, create_file_from_raw_bytes
 from .chunkr_reader import ChunkrReader
 from .firecrawl_reader import Firecrawl
@@ -32,4 +33,5 @@ __all__ = [
     'ChunkrReader',
     'PandaReader',
     'MinerU',
+    'Chunk',
 ]
