@@ -165,7 +165,7 @@ class LongtermAgentMemory(AgentMemory):
         self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator
         self._current_topic: str = ""
-        self._agent_id: str = agent_id
+        self._agent_id = agent_id
 
     def get_context_creator(self) -> BaseContextCreator:
         r"""Returns the context creator used by the memory.
