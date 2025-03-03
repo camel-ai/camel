@@ -19,9 +19,7 @@ from camel.benchmarks import GSM8KBenchmark
 agent = ChatAgent()
 
 # Set up the Gradeschool Math Benchmark
-benchmark = GSM8KBenchmark(
-    data_dir="GSM8K-Data", save_to="GSM8KResults"
-)
+benchmark = GSM8KBenchmark(data_dir="GSM8K-Data", save_to="GSM8KResults")
 benchmark.download()
 
 # Run the benchmark to get results

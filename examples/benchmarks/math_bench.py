@@ -11,19 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from pathlib import Path
 
 from camel.agents import ChatAgent
-from camel.benchmarks import Mode
 from camel.benchmarks.math_benchmarks.math_bench import MATHBenchmark
 
 # Set up the agent to be benchmarked
 agent = ChatAgent()
 
 # Set up the Hendrykson MATH Benchmark
-benchmark = MATHBenchmark(
-    data_dir="MATH-Data", save_to="MATHResults"
-    )
+benchmark = MATHBenchmark(data_dir="MATH-Data", save_to="MATHResults")
 benchmark.download()
 
 # Run the benchmark to get results
