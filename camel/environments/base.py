@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -69,9 +70,10 @@ class Action(BaseModel):
         description="Additional metadata about the generation",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(timezone.utc),
         description="When the response was generated (UTC)",
     )
+
 
 class Observation(BaseModel):
     r"""Environment observation.
@@ -102,7 +104,8 @@ class StepResult(BaseModel):
     """
 
     observation: Observation = Field(..., description="The next observation")
-    reward: Dict[str, float] = Field(
+    reward: float = Field(..., description="Total reward of the action")
+    rewards_dict: Dict[str, float] = Field(
         default_factory=dict,
         description="Dictionary of reward scores for different aspects",
     )
@@ -266,7 +269,8 @@ class BaseEnvironment(ABC):
         if self.max_steps and self._current_step >= self.max_steps:
             return StepResult(
                 observation=self._get_terminal_observation(),
-                reward={},
+                reward=0,
+                rewards_dict={},
                 done=True,
                 info={"reason": "max_steps_reached"},
             )
@@ -286,6 +290,8 @@ class BaseEnvironment(ABC):
         # extract verifiable part from llm response
         extraction_result = await self.extractor.extract(action.llm_response)
 
+        # TODO: extract executable llm response specifically
+
         # verify the extracted
         verification_result = await self.verifier.verify(
             VerifierInput(
@@ -295,7 +301,7 @@ class BaseEnvironment(ABC):
         )
 
         # compute rewards
-        rewards = await self.compute_reward(
+        total_reward, rewards_dict = await self.compute_reward(
             action, extraction_result, verification_result
         )
 
@@ -313,7 +319,8 @@ class BaseEnvironment(ABC):
 
         return StepResult(
             observation=next_obs,
-            reward=rewards,
+            reward=total_reward,
+            rewards_dict=rewards_dict,
             done=done,
             info={
                 "extraction_result": extraction_result,
@@ -343,10 +350,14 @@ class BaseEnvironment(ABC):
             Observation for the next step
         """
         if not self.dataset or len(self.dataset) == 0:
-            logger.warning("Dataset is empty. Attempting to generate new data...")
+            logger.warning(
+                "Dataset is empty. Attempting to generate new data..."
+            )
             if isinstance(self.dataset, GenerativeDataset):
                 try:
-                    self.dataset.generate_new(1)  # Generate at least one datapoint
+                    asyncio.run(
+                        self.dataset.generate_new(1)
+                    )  # Generate at least one datapoint
                     logger.info("Generated new datapoint successfully.")
                 except Exception as e:
                     logger.error(f"Failed to generate new data: {e}")
@@ -380,7 +391,8 @@ class BaseEnvironment(ABC):
 
             if not question or not final_answer:
                 logger.error(
-                    f"Datapoint at index {datapoint_idx} is missing required fields."
+                    f"Datapoint at index {datapoint_idx} "
+                    "is missing required fields."
                 )
                 return self._get_terminal_observation()
 
@@ -399,7 +411,9 @@ class BaseEnvironment(ABC):
                 },
             )
 
-            logger.debug(f"Generated observation for step {self._current_step}")
+            logger.debug(
+                f"Generated observation for step {self._current_step}"
+            )
             return observation
 
         except (IndexError, AttributeError) as e:
@@ -408,7 +422,6 @@ class BaseEnvironment(ABC):
         except Exception as e:
             logger.error(f"Unexpected error getting next observation: {e}")
             return self._get_terminal_observation()
-
 
     @abstractmethod
     def _get_terminal_observation(self) -> Observation:
@@ -423,14 +436,13 @@ class BaseEnvironment(ABC):
             metadata={"terminal": True, "final_step": self._current_step},
         )
 
-    # TODO: Improve this
     @abstractmethod
     async def compute_reward(
         self,
         action: Action,
         extraction_result: Dict[str, Any],
         verification_result: VerificationResult,
-    ) -> Dict[str, float]:
+    ) -> Tuple[float, Dict[str, float]]:
         r"""Compute reward scores for different aspects of the response.
 
         Args:
@@ -439,9 +451,10 @@ class BaseEnvironment(ABC):
             verification_result: Result from the verifier.
 
         Returns:
-            Dictionary of reward scores for different aspects.
+            - Total reward
+            - Dictionary of reward scores for different aspects.
         """
-        rewards = {}
+        rewards: Dict[str, float] = {}
 
         # Get success from verification result status
         verification_success = float(
@@ -457,13 +470,22 @@ class BaseEnvironment(ABC):
             + verification_success
         ) / total_attempts
 
-        # Additional reward aspects can be added here
-        # For example:
-        # - Solution efficiency/structure
-        # - Reasoning quality
-        # ...
+        further_rewards = await self._compute_reward(
+            action, extraction_result, verification_result
+        )
 
-        return rewards
+        rewards = rewards | further_rewards
+
+        return sum(rewards.values()), rewards
+
+    @abstractmethod
+    async def _compute_reward(
+        self,
+        action: Action,
+        extraction_result: Dict[str, Any],
+        verification_result: VerificationResult,
+    ) -> Dict[str, float]:
+        pass
 
     def _is_done(self) -> bool:
         r"""Check if episode should terminate."""
