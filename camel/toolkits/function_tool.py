@@ -782,3 +782,78 @@ class FunctionTool:
         except SchemaError as e:
             raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value
+
+
+def tool(
+    openai_tool_schema: Optional[Dict[str, Any]] = None,
+    synthesize_schema: bool = False,
+    synthesize_schema_model: Optional[BaseModelBackend] = None,
+    synthesize_schema_max_retries: int = 2,
+    synthesize_output: bool = False,
+    synthesize_output_model: Optional[BaseModelBackend] = None,
+    synthesize_output_format: Optional[Type[BaseModel]] = None,
+) -> Callable:
+    r"""A decorator that converts a Python function into a FunctionTool
+            instance.
+
+    Args:
+        openai_tool_schema (Optional[Dict[str, Any]], optional): A
+            user-defined OpenAI tool schema to override the default result.
+            (default: :obj:`None`)
+        synthesize_schema (bool, optional): Whether to enable schema synthesis.
+            (default: :obj:`False`)
+        synthesize_schema_model (Optional[BaseModelBackend], optional):
+            Model to use for schema synthesis. (default: :obj:`None`)
+        synthesize_schema_max_retries (int, optional): Maximum number of
+            retries for schema synthesis. (default: :obj:`2`)
+        synthesize_output (bool, optional): Whether to enable output synthesis.
+            (default: :obj:`False`)
+        synthesize_output_model (Optional[BaseModelBackend], optional):
+            Model to use for output synthesis. (default: :obj:`None`)
+        synthesize_output_format (Optional[Type[BaseModel]], optional):
+            Format for synthesized output. (default: :obj:`None`)
+
+    Returns:
+        Callable: A decorator function that converts the decorated function
+            into a FunctionTool instance.
+
+    Example:
+        >>> @tool()
+        >>> def add(
+        ...     a: int,
+        ...     b: int = 0,
+        ... ) -> int:
+        ...     r'''Add two numbers and return their sum.
+        ...
+        ...     Args:
+        ...         a (int): The first number to add.
+        ...         b (int, optional): The second number to add.
+        ...             (default: :obj:`0`)
+        ...
+        ...     Returns:
+        ...         int: The sum of the two numbers.
+        ...     '''
+        ...     return a + b
+    """
+
+    def decorator(func: Callable) -> FunctionTool:
+        r"""The actual decorator function.
+
+        Args:
+            func (Callable): The function to be converted into a FunctionTool.
+
+        Returns:
+            FunctionTool: The function wrapped as a FunctionTool instance.
+        """
+        return FunctionTool(
+            func=func,
+            openai_tool_schema=openai_tool_schema,
+            synthesize_schema=synthesize_schema,
+            synthesize_schema_model=synthesize_schema_model,
+            synthesize_schema_max_retries=synthesize_schema_max_retries,
+            synthesize_output=synthesize_output,
+            synthesize_output_model=synthesize_output_model,
+            synthesize_output_format=synthesize_output_format,
+        )
+
+    return decorator
