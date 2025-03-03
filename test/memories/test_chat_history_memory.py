@@ -71,19 +71,19 @@ def test_chat_history_memory(memory: ChatHistoryMemory):
     system_record = MemoryRecord(
         message=system_msg,
         role_at_backend=OpenAIBackendRole.SYSTEM,
-        timestamp=float(datetime.now()),
+        timestamp=datetime.now().timestamp(),
         agent_id="system_agent",
     )
     user_record = MemoryRecord(
         message=user_msg,
         role_at_backend=OpenAIBackendRole.USER,
-        timestamp=float(datetime.now()),
+        timestamp=datetime.now().timestamp(),
         agent_id="user_agent",
     )
     assistant_record = MemoryRecord(
         message=assistant_msg,
         role_at_backend=OpenAIBackendRole.ASSISTANT,
-        timestamp=float(datetime.now()),
+        timestamp=datetime.now().timestamp(),
         agent_id="assistant_agent",
     )
     memory.write_records([system_record, user_record, assistant_record])
