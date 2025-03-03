@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 
-import pandas as pd  # type: ignore[import-untyped]
+import pandas as pd
 
 from camel.agents.pandas_dataframe_agent import PandasDataFrameAgent
 from camel.loaders import PandasReader
