@@ -337,6 +337,7 @@ class MilvusStorage(BaseVectorStorage):
     def query(
         self,
         query: VectorDBQuery,
+        agent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided
@@ -345,6 +346,8 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            agent_id (str, optional): The ID of the agent associated with the
+                query. (default: :obj:`None`)
             **kwargs (Any): Additional keyword arguments passed to search.
 
         Returns:
@@ -360,12 +363,23 @@ class MilvusStorage(BaseVectorStorage):
         )
         query_results = []
         for point in search_result:
+            distance = point[0]["distance"]
+            record_id = str(point[0]["id"])
+            payload = point[0]["entity"].get("payload")
+            vector = point[0]["entity"].get("vector")
+
+            # Post-filter by agent_id, if specified
+            if agent_id is not None:
+                # If the result doesn't match agent_id, skip it
+                if payload is None or payload.get("agent_id") != agent_id:
+                    continue
+
             query_results.append(
                 VectorDBQueryResult.create(
-                    similarity=(point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload=(point[0]['entity'].get('payload')),
-                    vector=point[0]['entity'].get('vector'),
+                    similarity=distance,
+                    id=record_id,
+                    payload=payload,
+                    vector=vector,
                 )
             )
 
