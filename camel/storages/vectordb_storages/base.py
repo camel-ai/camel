@@ -30,7 +30,7 @@ class VectorRecord(BaseModel):
             provided, an random uuid will be assigned.
         payload (Optional[Dict[str, Any]], optional): Any additional metadata
             or information related to the vector. (default: :obj:`None`)
-        timestamp (str, optional): The timestamp of the vector.
+        timestamp (float, optional): The timestamp of the vector.
             (default: :obj:`None`)
         agent_id (str, optional): The ID of the agent associated with the
             vector. (default: :obj:`None`)
@@ -39,7 +39,7 @@ class VectorRecord(BaseModel):
     vector: List[float]
     id: str = Field(default_factory=lambda: str(uuid4()))
     payload: Optional[Dict[str, Any]] = None
-    timestamp: Optional[str] = None
+    timestamp: Optional[float] = None
     agent_id: Optional[str] = None
 
 
@@ -90,7 +90,7 @@ class VectorDBQueryResult(BaseModel):
         vector: List[float],
         id: str,
         payload: Optional[Dict[str, Any]] = None,
-        timestamp: Optional[str] = None,
+        timestamp: Optional[float] = None,
         agent_id: Optional[str] = None,
     ) -> "VectorDBQueryResult":
         r"""A class method to construct a `VectorDBQueryResult` instance."""
