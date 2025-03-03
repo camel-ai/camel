@@ -65,6 +65,7 @@ torch = [
 soundfile = { version = "^0.13", optional = true }
 sentencepiece = { version = "^0.2", optional = true }
 opencv-python = { version = "^4", optional = true }
+math-verify = { version = "^0.7", optional = true }
 
 # Core RAG components
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -271,6 +272,7 @@ huggingface = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
+    "math-verify",
 ]
 
 # Storage solutions
@@ -477,6 +479,7 @@ module = [
     "huggingface_hub",
     "huggingface_hub.utils._errors",
     "huggingface_hub.errors",
+    "math-verify",
     "wikipedia",
     "linkup-sdk",
     "duckduckgo_search",
