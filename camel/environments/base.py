@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.datasets.base import BaseDataset
+from camel.datasets.base import BaseDataset, GenerativeDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
@@ -342,66 +342,73 @@ class BaseEnvironment(ABC):
         Returns:
             Observation for the next step
         """
-
         if not self.dataset or len(self.dataset) == 0:
-            logger.error('Dataset is empty or not initialized')
-            return self._get_terminal_observation()
-
-        try:
-            datapoint_idx = self._current_step % len(self.dataset)
-            datapoint = self.dataset[datapoint_idx]
-            if not datapoint:
-                logger.error(f'Invalid datapoint at index {datapoint_idx}')
+            logger.warning("Dataset is empty. Attempting to generate new data...")
+            if isinstance(self.dataset, GenerativeDataset):
+                try:
+                    self.dataset.generate_new(1)  # Generate at least one datapoint
+                    logger.info("Generated new datapoint successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to generate new data: {e}")
+                    return self._get_terminal_observation()
+            else:
+                logger.error("Dataset is empty and not a GenerativeDataset.")
                 return self._get_terminal_observation()
 
-            self._state['current_datapoint'] = datapoint
-            required_attrs = [
-                'question',
-                'final_answer',
-                'difficulty',
-                'rationale',
-            ]
+        try:
+            # Ensure dataset is not empty after generation attempt
+            if len(self.dataset) == 0:
+                logger.error("Dataset is still empty after generation.")
+                return self._get_terminal_observation()
 
-            # Validate required attributes
-            missing_attrs = [
-                attr for attr in required_attrs if not hasattr(datapoint, attr)
-            ]
-            if missing_attrs:
+            # Sample the next datapoint
+            datapoint_idx = self._current_step % len(self.dataset)
+            datapoint = self.dataset[datapoint_idx]
+
+            if not datapoint:
+                logger.error(f"Invalid datapoint at index {datapoint_idx}")
+                return self._get_terminal_observation()
+
+            self._state["current_datapoint"] = datapoint
+
+            # Extract necessary attributes safely
+            question = getattr(datapoint, "question", None)
+            final_answer = getattr(datapoint, "final_answer", None)
+            rationale = getattr(datapoint, "rationale", None)
+            difficulty = getattr(datapoint, "difficulty", None)
+            metadata = getattr(datapoint, "metadata", {})
+
+            if not question or not final_answer:
                 logger.error(
-                    f'Datapoint missing required attributes: {missing_attrs}'
+                    f"Datapoint at index {datapoint_idx} is missing required fields."
                 )
                 return self._get_terminal_observation()
 
             observation = Observation(
-                question=datapoint.question,
+                question=question,
                 context={
-                    'final_answer': datapoint.final_answer,
-                    'difficulty': datapoint.difficulty,
-                    'rationale': datapoint.rationale,
+                    "final_answer": final_answer,
+                    "difficulty": difficulty,
+                    "rationale": rationale,
                 },
                 metadata={
-                    'step': self._current_step,
-                    'datapoint_id': str(datapoint_idx),
-                    'verified': getattr(datapoint, 'verified', False),
-                    **(
-                        datapoint.metadata
-                        if hasattr(datapoint, 'metadata')
-                        and datapoint.metadata
-                        else {}
-                    ),
+                    "step": self._current_step,
+                    "datapoint_id": str(datapoint_idx),
+                    "verified": metadata.get("verified", False),
+                    **metadata,
                 },
             )
-            logger.debug(
-                f'Generated observation for step {self._current_step}'
-            )
+
+            logger.debug(f"Generated observation for step {self._current_step}")
             return observation
 
         except (IndexError, AttributeError) as e:
-            logger.error(f'Error getting next observation: {e}')
+            logger.error(f"Error getting next observation: {e}")
             return self._get_terminal_observation()
         except Exception as e:
-            logger.error(f'Unexpected error getting next observation: {e}')
+            logger.error(f"Unexpected error getting next observation: {e}")
             return self._get_terminal_observation()
+
 
     @abstractmethod
     def _get_terminal_observation(self) -> Observation:
