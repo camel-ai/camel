@@ -50,7 +50,9 @@ class ChatHistoryMemory(AgentMemory):
             raise ValueError("`window_size` must be non-negative.")
         self._context_creator = context_creator
         self._window_size = window_size
-        self._chat_history_block = ChatHistoryBlock(storage=storage)
+        self._chat_history_block = ChatHistoryBlock(
+            storage=storage, agent_id=agent_id
+        )
         self._agent_id = agent_id
 
     def retrieve(self) -> List[ContextRecord]:
