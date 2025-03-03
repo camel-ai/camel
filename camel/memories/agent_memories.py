@@ -42,7 +42,7 @@ class ChatHistoryMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
-        agent_id: str = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         if window_size is not None and not isinstance(window_size, int):
             raise TypeError("`window_size` must be an integer or None.")
@@ -51,7 +51,7 @@ class ChatHistoryMemory(AgentMemory):
         self._context_creator = context_creator
         self._window_size = window_size
         self._chat_history_block = ChatHistoryBlock(storage=storage)
-        self._agent_id: str = agent_id
+        self._agent_id = agent_id
 
     def retrieve(self) -> List[ContextRecord]:
         records = self._chat_history_block.retrieve(
@@ -90,8 +90,8 @@ class VectorDBMemory(AgentMemory):
             (default: :obj:`None`)
         retrieve_limit (int, optional): The maximum number of messages
             to be added into the context.  (default: :obj:`3`)
-        agent_id (str, optional): The ID of the agent associated with the messages
-            stored in the vector database.
+        agent_id (str, optional): The ID of the agent associated with
+            the messages stored in the vector database.
     """
 
     def __init__(
@@ -99,7 +99,7 @@ class VectorDBMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseVectorStorage] = None,
         retrieve_limit: int = 3,
-        agent_id: str = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         self._context_creator = context_creator
         self._retrieve_limit = retrieve_limit
@@ -154,7 +154,7 @@ class LongtermAgentMemory(AgentMemory):
         chat_history_block: Optional[ChatHistoryBlock] = None,
         vector_db_block: Optional[VectorDBBlock] = None,
         retrieve_limit: int = 3,
-        agent_id: str = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         self.chat_history_block = chat_history_block or ChatHistoryBlock(
             agent_id=agent_id

@@ -47,7 +47,7 @@ class ChatHistoryBlock(MemoryBlock):
         self,
         storage: Optional[BaseKeyValueStorage] = None,
         keep_rate: float = 0.9,
-        agent_id: str = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         if keep_rate > 1 or keep_rate < 0:
             raise ValueError("`keep_rate` should be in [0,1]")

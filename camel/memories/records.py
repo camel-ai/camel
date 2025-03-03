@@ -39,7 +39,8 @@ class MemoryRecord(BaseModel):
             key-value pairs that provide more information. If not given, it
             will be an empty `Dict`.
         timestamp (float, optional): The timestamp when the record was created.
-        agent_id (str): The identifier of the agent associated with this memory.
+        agent_id (str): The identifier of the agent associated with this
+            memory.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

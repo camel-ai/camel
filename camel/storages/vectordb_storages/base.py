@@ -30,8 +30,10 @@ class VectorRecord(BaseModel):
             provided, an random uuid will be assigned.
         payload (Optional[Dict[str, Any]], optional): Any additional metadata
             or information related to the vector. (default: :obj:`None`)
-        timestamp (str, optional): The timestamp of the vector. (default: :obj:`None`)
-        agent_id (str, optional): The ID of the agent associated with the vector. (default: :obj:`None`)
+        timestamp (str, optional): The timestamp of the vector.
+            (default: :obj:`None`)
+        agent_id (str, optional): The ID of the agent associated with the
+            vector. (default: :obj:`None`)
     """
 
     vector: List[float]
