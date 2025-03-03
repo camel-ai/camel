@@ -26,6 +26,7 @@ from .vectordb_storages.base import (
     VectorRecord,
 )
 from .vectordb_storages.milvus import MilvusStorage
+from .vectordb_storages.pgvector import PgVectorStorage
 from .vectordb_storages.qdrant import QdrantStorage
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     'BaseGraphStorage',
     'Neo4jGraph',
     'NebulaGraph',
+    'PgVectorStorage',
 ]

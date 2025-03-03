@@ -20,6 +20,7 @@ from .base import (
     VectorRecord,
 )
 from .milvus import MilvusStorage
+from .pgvector import PgVectorDistance, PgVectorStorage
 from .qdrant import QdrantStorage
 
 __all__ = [
@@ -30,4 +31,6 @@ __all__ = [
     'MilvusStorage',
     'VectorRecord',
     'VectorDBStatus',
+    'PgVectorStorage',
+    'PgVectorDistance',
 ]
