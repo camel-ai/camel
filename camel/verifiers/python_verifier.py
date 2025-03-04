@@ -29,8 +29,7 @@ logger = get_logger(__name__)
 
 
 class PythonVerifier(BaseVerifier):
-    r"""
-    The PythonVerifier class verifies Python-based implementations
+    r"""The PythonVerifier class verifies Python-based implementations
     by executing them in an isolated virtual environment.
 
     Features:
@@ -46,34 +45,37 @@ class PythonVerifier(BaseVerifier):
 
     def __init__(
         self,
-        python_version: str = "python3",
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
     ):
         r"""Initializes the PythonVerifier.
 
         Args:
-            python_version (str, optional): The Python version to use for
-                the virtual environment. Defaults to "python3".
             timeout (Optional[float], optional): The execution timeout in
-                seconds. Defaults to 30.0.
+                seconds. (default: :obj:`30.0`)
             required_packages (Optional[List[str]], optional): A list of
                 packages to install in the virtual environment.
-                Defaults to an empty list.
+                (default: :obj:`None`)
         """
+        # TODO: Use CAMEL's Interpreter to execute the code
         super().__init__(timeout=timeout)
-        self.python_version = python_version
         self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
 
+        if os.name == 'nt':  # Windows
+            self.bin_dir = 'Scripts'
+        else:  # Unix-like systems
+            self.bin_dir = 'bin'
+
     async def _setup(self) -> None:
         r"""Set up a virtual environment for execution
-        and install required packages."""
+        and install required packages.
+        """
         self.venv_path = tempfile.mkdtemp()
         venv.create(self.venv_path, with_pip=True)
         logger.info(f"Virtual environment created at {self.venv_path}")
 
-        venv_pip = os.path.join(self.venv_path, "bin", "pip")
+        venv_pip = os.path.join(self.venv_path, self.bin_dir, "pip")
 
         if self.required_packages:
             try:
@@ -102,8 +104,23 @@ class PythonVerifier(BaseVerifier):
     async def _verify_implementation(
         self, result: VerifierInput
     ) -> VerificationResult:
-        r"""Executes the LLM-generated response in a
-        Python virtual environment."""
+        r"""Executes the LLM-generated response in a Python virtual
+        environment.
+
+        Args:
+            result (VerifierInput): Contains the LLM-generated Python code to
+                execute and optional ground truth for comparison.
+
+        Returns:
+            VerificationResult: Contains verification status (SUCCESS/FAILURE/
+                ERROR), execution output, error messages if any, and execution
+                duration.
+
+        Raises:
+            asyncio.TimeoutError: If execution exceeds the configured timeout.
+            Exception: Any unexpected errors during execution are caught and
+                converted to an ERROR verification result.
+        """
         if not self.venv_path:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
@@ -112,7 +129,7 @@ class PythonVerifier(BaseVerifier):
             )
 
         script = result.llm_response.strip()
-        venv_python = os.path.join(self.venv_path, "bin", "python")
+        venv_python = os.path.join(self.venv_path, self.bin_dir, "python")
 
         if not os.path.exists(venv_python):
             return VerificationResult(
@@ -140,7 +157,13 @@ class PythonVerifier(BaseVerifier):
             if process.returncode == 0:
                 # If ground truth is provided, compare it with the result
                 if result.ground_truth is not None:
-                    if output_result == str(result.ground_truth).strip():
+                    # Normalize both strings by removing extra whitespace
+                    normalized_output = ' '.join(output_result.strip().split())
+                    normalized_truth = ' '.join(
+                        str(result.ground_truth).strip().split()
+                    )
+
+                    if normalized_output == normalized_truth:
                         return VerificationResult(
                             status=VerificationOutcome.SUCCESS,
                             result=output_result,
