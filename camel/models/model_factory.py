@@ -52,8 +52,8 @@ class ModelFactory:
 
     @staticmethod
     def create(
-        model_platform: ModelPlatformType,
-        model_type: Union[ModelType, str],
+        model_platform: Union[ModelPlatformType, str],
+        model_type: Union[ModelType, str, UnifiedModelType],
         model_config_dict: Optional[Dict] = None,
         token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
@@ -62,10 +62,12 @@ class ModelFactory:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
-            model_platform (ModelPlatformType): Platform from which the model
-                originates.
-            model_type (Union[ModelType, str]): Model for which a
-                backend is created. Can be a `str` for open source platforms.
+            model_platform (Union[ModelPlatformType, str]): Platform from
+                which the model originates. Can be a string or
+                ModelPlatformType enum.
+            model_type (Union[ModelType, str, UnifiedModelType]): Model for
+                which a backend is created. Can be a string, ModelType enum, or
+                UnifiedModelType.
             model_config_dict (Optional[Dict]): A dictionary that will be fed
                 into the backend constructor. (default: :obj:`None`)
             token_counter (Optional[BaseTokenCounter], optional): Token
@@ -84,6 +86,21 @@ class ModelFactory:
         Raises:
             ValueError: If there is no backend for the model.
         """
+        # Convert string to ModelPlatformType enum if needed
+        if isinstance(model_platform, str):
+            try:
+                model_platform = ModelPlatformType(model_platform)
+            except ValueError:
+                raise ValueError(f"Unknown model platform: {model_platform}")
+
+        # Convert string to ModelType enum or UnifiedModelType if needed
+        if isinstance(model_type, str):
+            try:
+                model_type = ModelType(model_type)
+            except ValueError:
+                # If not in ModelType, create a UnifiedModelType
+                model_type = UnifiedModelType(model_type)
+
         model_class: Optional[Type[BaseModelBackend]] = None
         model_type = UnifiedModelType(model_type)
 
