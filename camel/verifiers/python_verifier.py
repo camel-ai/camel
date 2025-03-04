@@ -50,8 +50,7 @@ class PythonVerifier(BaseVerifier):
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
     ):
-        r"""
-        Initializes the PythonVerifier.
+        r"""Initializes the PythonVerifier.
 
         Args:
             python_version (str, optional): The Python version to use for
