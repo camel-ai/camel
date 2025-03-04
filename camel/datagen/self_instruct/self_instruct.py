@@ -13,8 +13,10 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
+import logging
 import os
 import random
+import time
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -24,6 +26,8 @@ from camel.agents import ChatAgent
 from .filter import RougeSimilarityFilter
 from .filter.instruction_filter import InstructionFilter
 from .templates import SelfInstructTemplates
+
+logger = logging.getLogger(__name__)
 
 
 class SelfInstructPipeline:
@@ -210,7 +214,7 @@ class SelfInstructPipeline:
             )
             return structured_response.answer
         except ValueError as e:
-            print(f"Error parsing agent response: {e}")
+            logger.error(f"Error parsing agent response: {e}")
             return False
 
     def generate_machine_instances(self):
@@ -368,11 +372,30 @@ class SelfInstructPipeline:
         with open(self.data_output_path, 'w') as f:
             json.dump(self.machine_tasks, f, indent=4, ensure_ascii=False)
 
-    def generate(self):
+    def generate(self, timeout_minutes=600):
         r"""Execute the entire pipeline to generate machine instructions
         and instances.
+
+        Args:
+            timeout_minutes (int): Maximum time in minutes to run the
+                generation process before timing out. (default: 600)
         """
+        start_time = time.time()
+        timeout_seconds = timeout_minutes * 60
+        logger.info(
+            f"Starting instruction generation: target "
+            f"{self.num_machine_instructions} instructions"
+        )
         while len(self.machine_tasks) < self.num_machine_instructions:
+            # Check for timeout
+            elapsed = time.time() - start_time
+            if elapsed > timeout_seconds:
+                logger.info(
+                    f"Generation timed out after {elapsed / 60:.1f} minutes. "
+                    f"Generated {len(self.machine_tasks)}/"
+                    f"{self.num_machine_instructions} instructions."
+                )
+                break
             prompt, instruction = self.generate_machine_instruction()
             existing_instructions = [
                 t["instruction"] for t in self.human_tasks
@@ -389,6 +412,17 @@ class SelfInstructPipeline:
                     ),
                 }
                 self.machine_tasks.append(instruction_dict)
+                logger.info(
+                    f"Attempt[Instruction]: Progress "
+                    f"{len(self.machine_tasks)}/"
+                    f"{self.num_machine_instructions} "
+                    f"instructions"
+                )
+            else:
+                logger.warning(
+                    f"Instruction failed filters. Skipping instruction: "
+                    f"{instruction}"
+                )
         self.generate_machine_instances()
         self.construct_data()
 
