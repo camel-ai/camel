@@ -229,37 +229,28 @@ class BaseExtractor(ABC):
     @abstractmethod
     async def extract(
         self, response: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    ) -> str:
         r"""Extract relevant parts from a response.
 
         Extracts:
-        1. Question and problem description
-        2. Solution code and implementation details
-        3. Final answer or output
-        4. Chain of thought reasoning steps
-        5. Difficulty assessment
-        6. Raw markdown for reward/hint generation
+        1. Final answer or output
+        2. Chain of thought reasoning steps
+        3. Difficulty assessment
 
         Args:
             response (str): Raw response from agent generation.
             context (Optional[Dict[str, Any]]): Optional context for
-            extraction including:
-                - source_type: (e.g. 'agent_generated')
-                - domain: Problem domain (e.g. 'optimization', 'scheduling')
-                - complexity: Expected problem complexity
+            extraction like:
+                - final_answer
+                - rationale
+                - complexity
 
         Returns:
-            Dictionary containing extracted content with keys like:
-                - question: Extracted problem statement
-                - ground_truth: Implementation code
-                - final_answer: Expected output
-                - chain_of_thought: Reasoning steps
-                - difficulty: Assessed difficulty
-                - raw_markdown: Content for reward/hint generation
+            str: Extracted content string.
 
         Raises:
             ValueError: If response is empty or invalid.
-            KeyError: If required content sections are missing.
+            NotImplementedError: If no implementation is provided.
             RuntimeError: If extractor is not initialized.
         """
         if not self._is_setup:
