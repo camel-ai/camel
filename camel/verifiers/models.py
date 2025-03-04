@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 
 class VerifierInput(BaseModel):
+    r"""Structured input to the verifier"""
     llm_response: str = Field(
         description="The LLM response to be verified."
         "Needs to be in a format that the verifier can handle."
@@ -37,7 +38,7 @@ class VerificationOutcome(Enum):
     TIMEOUT = "timeout"
 
     def __bool__(self):
-        """Only VerificationOutcome.SUCCESS is truthy; others are falsy."""
+        r"""Only VerificationOutcome.SUCCESS is truthy; others are falsy."""
         return self is VerificationOutcome.SUCCESS
 
 
