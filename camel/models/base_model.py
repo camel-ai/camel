@@ -46,7 +46,12 @@ class ModelBackendMeta(abc.ABCMeta):
             def wrapped_run(
                 self, messages: List[OpenAIMessage], *args, **kwargs
             ):
-                messages = self.preprocess_messages(messages)
+                has_multimedia = any(
+                    isinstance(msg.get('content'), list) for msg in messages
+                )
+                
+                if not has_multimedia:
+                    messages = self.preprocess_messages(messages)
                 return original_run(self, messages, *args, **kwargs)
 
             namespace['run'] = wrapped_run
