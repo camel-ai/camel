@@ -43,6 +43,7 @@ class PythonVerifier(BaseVerifier):
     The verification process ensures that the code runs in a controlled
     environment, minimizing external dependencies and conflicts.
     """
+
     def __init__(
         self,
         python_version: str = "python3",
@@ -50,16 +51,16 @@ class PythonVerifier(BaseVerifier):
         required_packages: Optional[List[str]] = None,
     ):
         r"""
-            Initializes the PythonVerifier.
+        Initializes the PythonVerifier.
 
-            Args:
-                python_version (str, optional): The Python version to use for
-                    the virtual environment. Defaults to "python3".
-                timeout (Optional[float], optional): The execution timeout in
-                    seconds. Defaults to 30.0.
-                required_packages (Optional[List[str]], optional): A list of 
-                    packages to install in the virtual environment. Defaults to an 
-                    empty list.
+        Args:
+            python_version (str, optional): The Python version to use for
+                the virtual environment. Defaults to "python3".
+            timeout (Optional[float], optional): The execution timeout in
+                seconds. Defaults to 30.0.
+            required_packages (Optional[List[str]], optional): A list of
+                packages to install in the virtual environment.
+                Defaults to an empty list.
         """
         super().__init__(timeout=timeout)
         self.python_version = python_version
