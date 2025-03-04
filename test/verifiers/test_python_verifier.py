@@ -1,11 +1,25 @@
-import pytest
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
 
-from camel.verifiers.python_verifier import PythonVerifier
+import pytest
+
 from camel.verifiers.models import (
     VerificationOutcome,
     VerifierInput,
 )
+from camel.verifiers.python_verifier import PythonVerifier
 
 
 @pytest.fixture
@@ -20,9 +34,11 @@ async def test_python_verifier_setup_and_cleanup(python_verifier):
     await python_verifier._setup()
     assert python_verifier.venv_path is not None
     assert os.path.exists(python_verifier.venv_path)
-    
+
     await python_verifier._cleanup()
-    assert python_verifier.venv_path is None or not os.path.exists(python_verifier.venv_path)
+    assert python_verifier.venv_path is None or not os.path.exists(
+        python_verifier.venv_path
+    )
 
 
 @pytest.mark.asyncio
@@ -123,12 +139,12 @@ async def test_python_verifier_no_venv_error():
 async def test_python_verifier_with_numpy(python_verifier):
     r"""Test execution with numpy installed in the virtual environment."""
     await python_verifier._setup()
-    
+
     script = 'import numpy as np; print(np.array([1, 2, 3]))'
     result = await python_verifier._verify_implementation(
         VerifierInput(llm_response=script)
     )
-    
+
     assert result.status == VerificationOutcome.SUCCESS
     assert "[1 2 3]" in result.result
     await python_verifier._cleanup()
