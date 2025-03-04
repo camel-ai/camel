@@ -26,8 +26,9 @@ class SemanticScholarToolkit(BaseToolkit):
     API to fetch paper and author data.
     """
 
-    def __init__(self):
+    def __init__(self, timeout: Optional[float] = None):
         r"""Initializes the SemanticScholarToolkit."""
+        super().__init__(timeout=timeout)
         self.base_url = "https://api.semanticscholar.org/graph/v1"
 
     def fetch_paper_data_title(
