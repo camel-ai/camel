@@ -229,7 +229,7 @@ class BaseExtractor(ABC):
     @abstractmethod
     async def extract(
         self, response: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    ) -> str:
         r"""Extract relevant parts from a response.
 
         Extracts:
@@ -246,7 +246,7 @@ class BaseExtractor(ABC):
                 - complexity
 
         Returns:
-            Dictionary containing extracted content with keys.
+            str: Extracted content string.
 
         Raises:
             ValueError: If response is empty or invalid.

@@ -41,8 +41,7 @@ logger = get_logger(__name__)
 
 
 class Action(BaseModel):
-    r"""
-    Represents an action taken in an environment.
+    r"""Represents an action taken in an environment.
 
     This class defines the input context, the LLM-generated output, and
     metadata required for verification and tracking within an RL
@@ -440,7 +439,7 @@ class BaseEnvironment(ABC):
     async def compute_reward(
         self,
         action: Action,
-        extraction_result: Dict[str, Any],
+        extraction_result: str,
         verification_result: VerificationResult,
     ) -> Tuple[float, Dict[str, float]]:
         r"""Compute reward scores for different aspects of the response.
@@ -482,7 +481,7 @@ class BaseEnvironment(ABC):
     async def _compute_reward(
         self,
         action: Action,
-        extraction_result: Dict[str, Any],
+        extraction_result: str,
         verification_result: VerificationResult,
     ) -> Dict[str, float]:
         pass
