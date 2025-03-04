@@ -221,11 +221,21 @@ class SelfInstructPipeline:
         r"""Generate instances for each machine task based on its
         classification status.
         """
+        logger.info(
+            f"Starting output generation: target {len(self.machine_tasks)} "
+            f"instructions"
+        )
+        attempt_count = 0
         for instruction in self.machine_tasks:
             instance = self.generate_machine_instance(
                 instruction['instruction'], instruction['is_classification']
             )
             instruction['instances'] = instance
+            attempt_count += 1
+            logger.info(
+                f"Attempt[Output]: Progress {attempt_count}/"
+                f"{len(self.machine_tasks)} instructions"
+            )
 
     def generate_machine_instance(
         self, instruction: str, classification: bool
