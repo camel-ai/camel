@@ -29,12 +29,38 @@ logger = get_logger(__name__)
 
 
 class PythonVerifier(BaseVerifier):
+    r"""
+    The PythonVerifier class verifies Python-based implementations
+    by executing them in an isolated virtual environment.
+
+    Features:
+    - Creates a virtual environment with a specified Python version.
+    - Installs required packages before executing the provided script.
+    - Executes the script and compares the output against a ground truth,
+      if supplied.
+    - Automatically cleans up the virtual environment after execution.
+
+    The verification process ensures that the code runs in a controlled
+    environment, minimizing external dependencies and conflicts.
+    """
     def __init__(
         self,
         python_version: str = "python3",
         timeout: Optional[float] = 30.0,
         required_packages: Optional[List[str]] = None,
     ):
+        r"""
+            Initializes the PythonVerifier.
+
+            Args:
+                python_version (str, optional): The Python version to use for
+                    the virtual environment. Defaults to "python3".
+                timeout (Optional[float], optional): The execution timeout in
+                    seconds. Defaults to 30.0.
+                required_packages (Optional[List[str]], optional): A list of 
+                    packages to install in the virtual environment. Defaults to an 
+                    empty list.
+        """
         super().__init__(timeout=timeout)
         self.python_version = python_version
         self.venv_path: Optional[str] = None
