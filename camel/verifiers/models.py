@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 class VerifierInput(BaseModel):
     r"""Structured input to the verifier"""
+
     llm_response: str = Field(
         description="The LLM response to be verified."
         "Needs to be in a format that the verifier can handle."
