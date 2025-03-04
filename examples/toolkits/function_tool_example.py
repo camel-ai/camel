@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import Dict, Any
+from typing import Any, Dict
 
 from camel.agents import ChatAgent
 from camel.toolkits import tool
@@ -32,7 +32,7 @@ def calculate_bmi(
         Dict[str, Any]: Dictionary containing BMI value and health status.
     """
     bmi = weight / (height * height)
-    
+
     if bmi < 18.5:
         status = "Underweight"
     elif 18.5 <= bmi < 24.9:
@@ -41,11 +41,8 @@ def calculate_bmi(
         status = "Overweight"
     else:
         status = "Obese"
-    
-    return {
-        "bmi": round(bmi, 2),
-        "status": status
-    }
+
+    return {"bmi": round(bmi, 2), "status": status}
 
 
 def main():
@@ -76,6 +73,7 @@ def main():
             print("\nTool Calls:")
             for call in response.info["tool_calls"]:
                 print(call)
+
 
 if __name__ == "__main__":
     main()

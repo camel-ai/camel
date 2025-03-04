@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import pytest
 
-from camel.toolkits import tool, FunctionTool
+from camel.toolkits import FunctionTool, tool
 
 
 @tool()
@@ -63,7 +63,7 @@ def test_tool_schema_generation():
 
     assert schema["type"] == "function"
     assert "function" in schema
-    
+
     func_schema = schema["function"]
     assert func_schema["name"] == "add"
     assert "description" in func_schema
@@ -97,10 +97,10 @@ def test_custom_schema():
                 "type": "object",
                 "properties": {
                     "a": {"type": "integer", "description": "First number"},
-                    "b": {"type": "integer", "description": "Second number"}
-                }
-            }
-        }
+                    "b": {"type": "integer", "description": "Second number"},
+                },
+            },
+        },
     }
 
     @tool(openai_tool_schema=custom_schema)
