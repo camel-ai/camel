@@ -11,8 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseVerifier
-from .python_verifier import PythonVerifier
-from .models import VerificationOutcome, VerifierInput
+import asyncio
 
-__all__ = ["BaseVerifier", "VerificationOutcome", "VerifierInput", "PythonVerifier"]
+from camel.verifiers import PythonVerifier, VerifierInput
+
+verifier = PythonVerifier(required_packages=["numpy", "pandas"])
+asyncio.run(verifier._setup())
+
+numpy_test_code = """
+import numpy as np
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+result = np.dot(a, b)
+print(result)
+"""
+
+response = VerifierInput(llm_response=numpy_test_code, ground_truth="40")
+result = asyncio.run(verifier._verify_implementation(response))
+
+print(f"Result: {result}")
+
+asyncio.run(verifier.cleanup())
