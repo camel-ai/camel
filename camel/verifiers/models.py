@@ -19,12 +19,14 @@ from pydantic import BaseModel, Field
 
 
 class VerifierInput(BaseModel):
+    r"""Structured input to the verifier"""
+
     llm_response: str = Field(
         description="The LLM response to be verified."
         "Needs to be in a format that the verifier can handle."
     )
     ground_truth: Optional[str] = Field(
-        description="The ground truth data, if available."
+        None, description="The ground truth data, if available."
     )
 
 
@@ -35,6 +37,10 @@ class VerificationOutcome(Enum):
     FAILURE = "failure"
     ERROR = "error"
     TIMEOUT = "timeout"
+
+    def __bool__(self):
+        r"""Only VerificationOutcome.SUCCESS is truthy; others are falsy."""
+        return self is VerificationOutcome.SUCCESS
 
 
 class VerificationResult(BaseModel):
