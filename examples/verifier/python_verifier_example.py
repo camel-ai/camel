@@ -15,8 +15,8 @@ import asyncio
 
 from camel.verifiers import PythonVerifier, VerifierInput
 
-verifier = PythonVerifier(required_packages=["numpy", "pandas"])
-asyncio.run(verifier._setup())
+verifier = PythonVerifier(required_packages=["numpy"])
+asyncio.run(verifier.setup())
 
 numpy_test_code = """
 import numpy as np
@@ -26,9 +26,18 @@ result = np.dot(a, b)
 print(result)
 """
 
-response = VerifierInput(llm_response=numpy_test_code, ground_truth="40")
-result = asyncio.run(verifier._verify_implementation(response))
 
-print(f"Result: {result}")
+# Since the output of the above numpy code evaluates to 32,
+# we expect the verification outcome to be a success.
+response = VerifierInput(llm_response=numpy_test_code, ground_truth="32")
+result = asyncio.run(verifier.verify(response))
+print(f"Result: {result.status}")
+
+response = VerifierInput(llm_response=numpy_test_code, ground_truth="40")
+result = asyncio.run(verifier.verify(response))
+
+# Now we expect the VerificationOutcome to be a failure,
+# because the answer is wrong.
+print(f"Result: {result.status}")
 
 asyncio.run(verifier.cleanup())
