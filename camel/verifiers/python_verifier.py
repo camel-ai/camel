@@ -13,28 +13,35 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-from typing import Optional, List
 import os
-import venv
-import tempfile
 import shutil
 import subprocess
+import tempfile
+import venv
+from typing import List, Optional
 
-from camel.verifiers import BaseVerifier
-from .models import VerifierInput, VerificationResult, VerificationOutcome
 from camel.logger import get_logger
+from camel.verifiers import BaseVerifier
+
+from .models import VerificationOutcome, VerificationResult, VerifierInput
 
 logger = get_logger(__name__)
 
+
 class PythonVerifier(BaseVerifier):
-    def __init__(self, python_version: str = "python3", timeout: Optional[float] = 30.0, required_packages: Optional[List[str]] = None):
+    def __init__(
+        self,
+        python_version: str = "python3",
+        timeout: Optional[float] = 30.0,
+        required_packages: Optional[List[str]] = None,
+    ):
         super().__init__(timeout=timeout)
         self.python_version = python_version
-        self.venv_path = None
+        self.venv_path: Optional[str] = None
         self.required_packages = required_packages or []
 
     async def _setup(self) -> None:
-        r"""Set up a virtual environment for execution 
+        r"""Set up a virtual environment for execution
         and install required packages."""
         self.venv_path = tempfile.mkdtemp()
         venv.create(self.venv_path, with_pip=True)
@@ -44,10 +51,20 @@ class PythonVerifier(BaseVerifier):
 
         if self.required_packages:
             try:
-                subprocess.run([venv_pip, "install"] + self.required_packages, check=True, capture_output=True)
-                logger.info(f"Installed required packages: {', '.join(self.required_packages)}")
+                subprocess.run(
+                    [venv_pip, "install", *self.required_packages],
+                    check=True,
+                    capture_output=True,
+                )
+                logger.info(
+                    "Installed required packages:"
+                    f"{', '.join(self.required_packages)}"
+                )
             except subprocess.CalledProcessError as e:
-                logger.error(f"Failed to install required packages: {e.stderr.decode().strip()}")
+                logger.error(
+                    "Failed to install required packages: "
+                    f"{e.stderr.decode().strip()}"
+                )
 
     async def _cleanup(self) -> None:
         r"""Clean up the virtual environment."""
@@ -56,11 +73,15 @@ class PythonVerifier(BaseVerifier):
             logger.info(f"Virtual environment at {self.venv_path} removed")
             self.venv_path = None
 
-    async def _verify_implementation(self, result: VerifierInput) -> VerificationResult:
-        r"""Executes the LLM-generated response in a Python virtual environment."""
+    async def _verify_implementation(
+        self, result: VerifierInput
+    ) -> VerificationResult:
+        r"""Executes the LLM-generated response in a
+        Python virtual environment."""
         if not self.venv_path:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
+                result="",
                 error_message="Virtual environment is not set up.",
             )
 
@@ -70,17 +91,22 @@ class PythonVerifier(BaseVerifier):
         if not os.path.exists(venv_python):
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
-                error_message="Python binary not found in virtual environment.",
+                result="",
+                error_message="Python binary not found in virtual environment",
             )
 
         try:
             process = await asyncio.create_subprocess_exec(
-                venv_python, "-c", script,
+                venv_python,
+                "-c",
+                script,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
 
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=self._timeout)
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(), timeout=self._timeout
+            )
 
             output_result = stdout.decode().strip()
             error_output = stderr.decode().strip()
@@ -96,7 +122,7 @@ class PythonVerifier(BaseVerifier):
                     else:
                         return VerificationResult(
                             status=VerificationOutcome.FAILURE,
-                            error_message="Output does not match ground truth.",
+                            error_message="Output doesn't match ground truth",
                             result=output_result,
                         )
                 else:
@@ -115,12 +141,13 @@ class PythonVerifier(BaseVerifier):
         except asyncio.TimeoutError:
             return VerificationResult(
                 status=VerificationOutcome.TIMEOUT,
+                result="",
                 error_message="Execution timed out.",
             )
 
         except Exception as e:
             return VerificationResult(
                 status=VerificationOutcome.ERROR,
+                result="",
                 error_message=f"Execution error: {e}",
             )
-
