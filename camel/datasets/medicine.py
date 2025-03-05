@@ -12,23 +12,21 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-r"""Medical dataset module that provides specialized classes for handling medical data.
-Inherits from base dataset module classes and adds medical domain-specific functionality.
-"""
 
-from typing import Dict, Optional, List, Any
-import random
 import json
-import os
+from typing import Any, Dict, List
+
 from camel.datasets.base import BaseDataset, DataPoint
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
+
 class MedicalDataPoint(DataPoint):
     r"""Medical domain data point class, inheriting from base DataPoint class.
-    
-    Extends DataPoint class to accommodate medical data specific needs with additional
+
+    Extends DataPoint class to accommodate
+    medical data specific needs with additional
     medical-specific fields and validation.
 
     Attributes:
@@ -36,20 +34,23 @@ class MedicalDataPoint(DataPoint):
         rationale (str): Reasoning behind the diagnosis.
         final_answer (str): The medical diagnosis.
         difficulty (Optional[str]): Difficulty level of the medical case.
-        metadata (Dict[str, Any]): Additional medical case information including
-            patient demographics.
+        metadata (Dict[str, Any]): Additional medical case information
+            including patient demographics.
     """
+
     pass
+
 
 class MedicalDataset(BaseDataset):
     r"""Medical domain dataset class, inheriting from base BaseDataset class.
-    
+
     Provides specific functionality for handling medical datasets, including
     specialized data processing and validation for medical records.
     """
-    
+
     async def setup(self) -> None:
-        r"""Set up the dataset by processing raw data into MedicalDataPoint objects.
+        r"""Set up the dataset by processing raw data into
+        MedicalDataPoint objects.
 
         This method:
         1. Calls parent setup for initialization
@@ -58,7 +59,7 @@ class MedicalDataset(BaseDataset):
         """
         # Call parent setup to handle initialization flags
         await super().setup()
-        
+
         if not self._raw_data:
             self.data = []
             return
@@ -67,7 +68,8 @@ class MedicalDataset(BaseDataset):
         self.data = [
             MedicalDataPoint(
                 # Combine case_report and test_results as the question
-                question=f"{item.get('case_report', '')}\nTest Results: {item.get('test_results', '')}",
+                question=f""""{item.get('case_report', '')}\n
+                Test Results: {item.get('test_results', '')}""",
                 # Empty rationale or generate one if needed
                 rationale=self._generate_rationale(item),
                 # Use diagnosis as the final answer
@@ -76,9 +78,18 @@ class MedicalDataset(BaseDataset):
                 difficulty=item.get("difficulty", None),
                 # Include all other fields as metadata
                 metadata={
-                    **{k: v for k, v in item.items()
-                       if k not in ["case_report", "test_results", "diagnosis", "difficulty"]}
-                }
+                    **{
+                        k: v
+                        for k, v in item.items()
+                        if k
+                        not in [
+                            "case_report",
+                            "test_results",
+                            "diagnosis",
+                            "difficulty",
+                        ]
+                    }
+                },
             )
             for item in self._raw_data
         ]
@@ -109,16 +120,18 @@ class MedicalDataset(BaseDataset):
         return [
             MedicalDataPoint(**point.dict())
             for point in self.data
-            if point.metadata and "Orpha_name" in point.metadata and 
-            point.metadata["Orpha_name"].lower() == disease_name.lower()
+            if point.metadata
+            and "Orpha_name" in point.metadata
+            and point.metadata["Orpha_name"].lower() == disease_name.lower()
         ]
+
 
 def load_json_data(file_path: str) -> List[Dict[str, Any]]:
     r"""Load and parse JSON data file, handling potential formatting issues.
-    
+
     Args:
         file_path (str): Path to the JSON file.
-        
+
     Returns:
         List[Dict[str, Any]]: Parsed JSON data as a list of dictionaries.
     """
@@ -134,11 +147,13 @@ def load_json_data(file_path: str) -> List[Dict[str, Any]]:
         # If that fails, try to fix common JSON formatting issues
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            
+
         # Try to fix JSONL (one JSON object per line) format
         try:
             # Split by lines and parse each line separately
-            lines = [line.strip() for line in content.split('\n') if line.strip()]
+            lines = [
+                line.strip() for line in content.split('\n') if line.strip()
+            ]
             data = []
             for line in lines:
                 try:
@@ -149,14 +164,17 @@ def load_json_data(file_path: str) -> List[Dict[str, Any]]:
                 return data
         except Exception:
             pass
-            
-        # Try to fix by wrapping in array brackets if it looks like multiple objects
+
+        # Try to fix by wrapping in array brackets
+        # if it looks like multiple objects
         try:
             if content.strip().startswith('{') and '}' in content:
                 # Split by closing braces and try to parse each object
                 parts = content.split('}')
                 data = []
-                for i, part in enumerate(parts[:-1]):  # Skip the last empty part
+                for i, part in enumerate(
+                    parts[:-1]
+                ):  # Skip the last empty part
                     try:
                         if i > 0:
                             part = '{' + part
@@ -168,7 +186,10 @@ def load_json_data(file_path: str) -> List[Dict[str, Any]]:
                     return data
         except Exception:
             pass
-            
+
         # If all else fails, return an empty list
-        print(f"Warning: Could not parse JSON data from {file_path}. Using empty dataset.")
+        print(
+            f"""Warning: Could not parse JSON data from {file_path}.
+             Using empty dataset."""
+        )
         return []

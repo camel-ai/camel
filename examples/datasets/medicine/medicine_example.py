@@ -16,28 +16,29 @@ import asyncio
 import os
 from pathlib import Path
 
-from camel.datasets.medicine import MedicalDataset, MedicalDataPoint, load_json_data
+from camel.datasets import MedicalDataset, load_json_data
 
 # Get the current directory path
 current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
 
 # Load example data from RDC.json
-data_path = current_dir / "medicine_example_data" / "RDC.json"
+data_path = current_dir / "example_data" / "RDC.json"
 print(f"Attempting to load data from: {data_path}")
 sourcedata = load_json_data(str(data_path))
 
 # Create medical dataset instance
 dataset = MedicalDataset(data=sourcedata)
 
+
 async def main():
     r"""Main async function to demonstrate dataset usage.
-    
+
     Initializes the dataset, displays its size, and samples a random data point
     to demonstrate basic functionality.
     """
     # Initialize the dataset
     await dataset.setup()
-    
+
     # Check dataset statistics
     print(f"Dataset size: {len(dataset)}")
     if len(dataset) > 0:
@@ -47,6 +48,7 @@ async def main():
         print(sampled_datapoint)
     else:
         print("Dataset is empty, cannot sample data points")
+
 
 # Run the async main function
 if __name__ == "__main__":
