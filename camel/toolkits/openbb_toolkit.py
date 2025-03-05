@@ -46,7 +46,7 @@ class OpenBBToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
         import os
 
-        from openbb import obb
+        from openbb import obb  # type: ignore[import-not-found]
 
         self.client = obb
         # Initialize OpenBB Hub account with access token

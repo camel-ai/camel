@@ -67,7 +67,10 @@ class AskNewsToolkit(BaseToolkit):
         credentials are retrieved from environment variables.
         """
         super().__init__(timeout=timeout)
-        from asknews_sdk import AskNewsSDK
+
+        from asknews_sdk import (
+            AskNewsSDK,  # type: ignore[import-not-found]
+        )
 
         client_id = os.environ.get("ASKNEWS_CLIENT_ID")
         client_secret = os.environ.get("ASKNEWS_CLIENT_SECRET")

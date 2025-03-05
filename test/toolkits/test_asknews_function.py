@@ -15,7 +15,16 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from camel.toolkits.ask_news_toolkit import AskNewsToolkit, _process_response
+# Create a mock for the asknews_sdk module
+mock_asknews_sdk = MagicMock()
+mock_asknews_sdk.AskNewsSDK = MagicMock()
+
+# Apply the mock to sys.modules
+with patch.dict('sys.modules', {'asknews_sdk': mock_asknews_sdk}):
+    from camel.toolkits.ask_news_toolkit import (
+        AskNewsToolkit,
+        _process_response,
+    )
 
 
 class TestAskNewsToolkit(unittest.TestCase):
@@ -31,6 +40,7 @@ class TestAskNewsToolkit(unittest.TestCase):
         # Setup for tests
         self.mock_sdk = MockAskNewsSDK.return_value
         self.toolkit = AskNewsToolkit()
+        self.toolkit.asknews_client = self.mock_sdk  # Ensure we use our mock
 
     def test_get_news_success(self):
         # Mock the API response for a successful get_news call
