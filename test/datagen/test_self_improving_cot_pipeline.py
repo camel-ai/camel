@@ -469,9 +469,8 @@ class TestSelfImprovingCoTPipeline(unittest.TestCase):
         for result in results:
             problem_text = result["problem"]
             self.assertIn(problem_text, expected_traces)
-            self.assertEqual(
-                result["final_trace"], expected_traces[problem_text]
-            )
+            expected_trace = expected_traces[problem_text]
+            self.assertEqual(result["final_trace"], expected_trace)
 
 
 if __name__ == "__main__":
