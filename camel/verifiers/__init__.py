@@ -12,11 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseVerifier
+from .medical_verifier import MedicalVerifier
 from .models import VerificationOutcome, VerifierInput
 from .python_verifier import PythonVerifier
 
 __all__ = [
     "BaseVerifier",
+    "MedicalVerifier",
     "VerificationOutcome",
     "VerifierInput",
     "PythonVerifier",
