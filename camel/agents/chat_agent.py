@@ -694,10 +694,17 @@ class ChatAgent(BaseAgent):
                 f"index: {self.model_backend.current_model_index}",
                 exc_info=exc,
             )
-        if not response:
+            error_info = str(exc)
+
+        if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
                 "run succesfully."
+            )
+        elif not response:
+            raise ModelProcessingError(
+                f"Unable to process messages: the only provided model "
+                f"did not run succesfully. Error: {error_info}"
             )
 
         logger.info(
@@ -732,10 +739,19 @@ class ChatAgent(BaseAgent):
                 f"index: {self.model_backend.current_model_index}",
                 exc_info=exc,
             )
-        if not response:
+            error_info = str(exc)
+        else:
+            error_info = "Unknown error"
+
+        if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
                 "run succesfully."
+            )
+        elif not response:
+            raise ModelProcessingError(
+                f"Unable to process messages: the only provided model "
+                f"did not run succesfully. Error: {error_info}"
             )
 
         logger.info(
