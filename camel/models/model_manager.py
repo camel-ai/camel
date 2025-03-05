@@ -118,6 +118,15 @@ class ModelManager:
         return self.models.index(self.current_model)
 
     @property
+    def num_models(self) -> int:
+        r"""Return the number of models in the manager.
+
+        Returns:
+            int: The number of models available in the model manager.
+        """
+        return len(self.models)
+
+    @property
     def token_limit(self):
         r"""Returns the maximum token limit for current model.
 
