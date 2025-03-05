@@ -794,14 +794,17 @@ class TaskType(Enum):
 class VectorDistance(Enum):
     r"""Distance metrics used in a vector database."""
 
-    DOT = "dot"
-    r"""Dot product. https://en.wikipedia.org/wiki/Dot_product"""
+    EUCLIDEAN = "euclidean"
+    r"""Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance"""
+
+    MANHATTAN = "manhattan"
+    r"""Manhattan distance. https://en.wikipedia.org/wiki/Taxicab_geometry"""
 
     COSINE = "cosine"
     r"""Cosine similarity. https://en.wikipedia.org/wiki/Cosine_similarity"""
 
-    EUCLIDEAN = "euclidean"
-    r"""Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance"""
+    DOT = "dot"
+    r"""Dot product. https://en.wikipedia.org/wiki/Dot_product"""
 
 
 class OpenAIBackendRole(Enum):
