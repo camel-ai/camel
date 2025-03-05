@@ -13,5 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseVerifier
 from .models import VerificationOutcome, VerifierInput
+from .python_verifier import PythonVerifier
 
-__all__ = ["BaseVerifier", "VerificationOutcome", "VerifierInput"]
+__all__ = [
+    "BaseVerifier",
+    "VerificationOutcome",
+    "VerifierInput",
+    "PythonVerifier",
+]
