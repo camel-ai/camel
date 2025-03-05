@@ -11,15 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-
-from camel.logger import disable_logging, enable_logging, set_log_level
-
-__version__ = '0.2.23a0'
+from .base import (
+    BaseDataset,
+    DataPoint,
+    GenerativeDataset,
+    SeedDataset,
+    SyntheticDataset,
+)
 
 __all__ = [
-    '__version__',
-    'camel',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
+    "DataPoint",
+    "BaseDataset",
+    "SeedDataset",
+    "GenerativeDataset",
+    "SyntheticDataset",
 ]
