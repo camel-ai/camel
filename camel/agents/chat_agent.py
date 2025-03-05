@@ -740,8 +740,6 @@ class ChatAgent(BaseAgent):
                 exc_info=exc,
             )
             error_info = str(exc)
-        else:
-            error_info = "Unknown error"
 
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
