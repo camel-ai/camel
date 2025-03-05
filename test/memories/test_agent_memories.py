@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -95,6 +96,8 @@ class TestLongtermAgentMemory:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]
