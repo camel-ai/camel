@@ -14,7 +14,7 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import sympy as sp  # type: ignore[import]
 
@@ -61,13 +61,13 @@ class GeometryToolkit(BaseToolkit):
         return json.dumps({"status": "error", "message": str(exception)})
 
     def compute_inner_product(
-        self, vector1: Tuple[float, float], vector2: Tuple[float, float]
+        self, vector1: List[float], vector2: List[float]
     ) -> str:
         r"""Computes the inner (dot) product of two vectors.
 
         Args:
-            vector1 (Tuple[float, float]): The first vector as a tuple of floats.
-            vector2 (Tuple[float, float]): The second vector as a tuple of floats.
+            vector1 (List[float]): The first vector as a list of floats.
+            vector2 (List[float]): The second vector as a list of floats.
 
         Returns:
             str: JSON string containing the inner product in the
@@ -83,9 +83,9 @@ class GeometryToolkit(BaseToolkit):
             self.logger.info(
                 f"Computing inner product of vectors: {vector1} and {vector2}"
             )
-            # Convert the tuples into sympy Matrix objects (column vectors)
-            v1 = sp.Matrix([vector1[0], vector1[1]])
-            v2 = sp.Matrix([vector2[0], vector2[1]])
+            # Convert the lists into sympy Matrix objects (column vectors)
+            v1 = sp.Matrix([float(x) for x in vector1])
+            v2 = sp.Matrix([float(x) for x in vector2])
 
             # Check that the vectors have the same dimensions.
             if v1.shape != v2.shape:
@@ -102,12 +102,12 @@ class GeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_inner_product", e)
 
-    def compute_line_bisectors(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> str:
+    def compute_line_bisectors(self, point1: List[float], point2: List[float]) -> str:
         r"""Computes the perpendicular bisector of a line segment.
 
         Args:
-            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
-            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
+            point1 (List[float]): Coordinates [x, y] of the first point.
+            point2 (List[float]): Coordinates [x, y] of the second point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -116,21 +116,21 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            p1 = sp.Point(point1[0], point1[1])
-            p2 = sp.Point(point2[0], point2[1])
+            p1 = sp.Point(float(point1[0]), float(point1[1]))
+            p2 = sp.Point(float(point2[0]), float(point2[1]))
             line_segment = sp.Segment(p1, p2)
             bisector = line_segment.perpendicular_bisector()
             return json.dumps({"result": str(bisector)})
         except Exception as e:
             return self.handle_exception("compute_line_bisectors", e)
 
-    def compute_centroid(self, point1: Tuple[float, float], point2: Tuple[float, float], point3: Tuple[float, float]) -> str:
+    def compute_centroid(self, point1: List[float], point2: List[float], point3: List[float]) -> str:
         r"""Computes the centroid of a triangle.
 
         Args:
-            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
-            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
-            point3 (Tuple[float, float]): Coordinates (x, y) of the third point.
+            point1 (List[float]): Coordinates [x, y] of the first point.
+            point2 (List[float]): Coordinates [x, y] of the second point.
+            point3 (List[float]): Coordinates [x, y] of the third point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -139,22 +139,22 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            p1 = sp.Point(point1[0], point1[1])
-            p2 = sp.Point(point2[0], point2[1])
-            p3 = sp.Point(point3[0], point3[1])
+            p1 = sp.Point(float(point1[0]), float(point1[1]))
+            p2 = sp.Point(float(point2[0]), float(point2[1]))
+            p3 = sp.Point(float(point3[0]), float(point3[1]))
             triangle = sp.Triangle(p1, p2, p3)
             centroid = triangle.centroid
             return json.dumps({"result": str(centroid)})
         except Exception as e:
             return self.handle_exception("compute_centroid", e)
 
-    def compute_orthocenter(self, point1: Tuple[float, float], point2: Tuple[float, float], point3: Tuple[float, float]) -> str:
+    def compute_orthocenter(self, point1: List[float], point2: List[float], point3: List[float]) -> str:
         r"""Computes the orthocenter of a triangle.
 
         Args:
-            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
-            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
-            point3 (Tuple[float, float]): Coordinates (x, y) of the third point.
+            point1 (List[float]): Coordinates [x, y] of the first point.
+            point2 (List[float]): Coordinates [x, y] of the second point.
+            point3 (List[float]): Coordinates [x, y] of the third point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -163,21 +163,21 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            p1 = sp.Point(point1[0], point1[1])
-            p2 = sp.Point(point2[0], point2[1])
-            p3 = sp.Point(point3[0], point3[1])
+            p1 = sp.Point(float(point1[0]), float(point1[1]))
+            p2 = sp.Point(float(point2[0]), float(point2[1]))
+            p3 = sp.Point(float(point3[0]), float(point3[1]))
             triangle = sp.Triangle(p1, p2, p3)
             orthocenter = triangle.orthocenter
             return json.dumps({"result": str(orthocenter)})
         except Exception as e:
             return self.handle_exception("compute_orthocenter", e)
 
-    def compute_midpoint_GH(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> str:
+    def compute_midpoint_GH(self, point1: List[float], point2: List[float]) -> str:
         r"""Computes the midpoint between two points.
 
         Args:
-            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
-            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
+            point1 (List[float]): Coordinates [x, y] of the first point.
+            point2 (List[float]): Coordinates [x, y] of the second point.
 
         Returns:
             str: A JSON string with the "result" field containing the string
@@ -186,19 +186,19 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            p1 = sp.Point(point1[0], point1[1])
-            p2 = sp.Point(point2[0], point2[1])
+            p1 = sp.Point(float(point1[0]), float(point1[1]))
+            p2 = sp.Point(float(point2[0]), float(point2[1]))
             midpoint = p1.midpoint(p2)
             return json.dumps({"result": str(midpoint)})
         except Exception as e:
             return self.handle_exception("compute_midpoint_GH", e)
 
-    def compute_point_distance(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> str:
+    def compute_point_distance(self, point1: List[float], point2: List[float]) -> str:
         r"""Computes the Euclidean distance between two points.
 
         Args:
-            point1 (Tuple[float, float]): Coordinates (x, y) of the first point.
-            point2 (Tuple[float, float]): Coordinates (x, y) of the second point.
+            point1 (List[float]): Coordinates [x, y] of the first point.
+            point2 (List[float]): Coordinates [x, y] of the second point.
 
         Returns:
             str: A JSON string with the "result" field containing the distance.
@@ -206,18 +206,18 @@ class GeometryToolkit(BaseToolkit):
                 field with the corresponding error message.
         """
         try:
-            p1 = sp.Point(point1[0], point1[1])
-            p2 = sp.Point(point2[0], point2[1])
+            p1 = sp.Point(float(point1[0]), float(point1[1]))
+            p2 = sp.Point(float(point2[0]), float(point2[1]))
             distance = p1.distance(p2)
             return json.dumps({"result": str(distance)})
         except Exception as e:
             return self.handle_exception("compute_point_distance", e)
 
-    def check_points_collinear(self, points: List[Tuple[float, float]]) -> str:
+    def check_points_collinear(self, points: List[List[float]]) -> str:
         r"""Checks if a set of points are collinear.
 
         Args:
-            points (List[Tuple[float, float]]): List of (x, y) coordinates for each point.
+            points (List[List[float]]): List of [x, y] coordinates for each point.
 
         Returns:
             str: A JSON string with the "result" field containing True if
@@ -226,21 +226,21 @@ class GeometryToolkit(BaseToolkit):
                 the corresponding error message.
         """
         try:
-            pts = [sp.Point(point[0], point[1]) for point in points]
+            pts = [sp.Point(float(point[0]), float(point[1])) for point in points]
             collinear = sp.Point.is_collinear(*pts)
             return json.dumps({"result": str(collinear)})
         except Exception as e:
             return self.handle_exception("check_points_collinear", e)
 
-    def compute_angle_between(self, line1_point1: Tuple[float, float], line1_point2: Tuple[float, float], 
-                             line2_point1: Tuple[float, float], line2_point2: Tuple[float, float]) -> str:
+    def compute_angle_between(self, line1_point1: List[float], line1_point2: List[float], 
+                             line2_point1: List[float], line2_point2: List[float]) -> str:
         r"""Computes the angle between two lines.
 
         Args:
-            line1_point1 (Tuple[float, float]): Coordinates (x, y) of the first point of the first line.
-            line1_point2 (Tuple[float, float]): Coordinates (x, y) of the second point of the first line.
-            line2_point1 (Tuple[float, float]): Coordinates (x, y) of the first point of the second line.
-            line2_point2 (Tuple[float, float]): Coordinates (x, y) of the second point of the second line.
+            line1_point1 (List[float]): Coordinates [x, y] of the first point of the first line.
+            line1_point2 (List[float]): Coordinates [x, y] of the second point of the first line.
+            line2_point1 (List[float]): Coordinates [x, y] of the first point of the second line.
+            line2_point2 (List[float]): Coordinates [x, y] of the second point of the second line.
 
         Returns:
             str: A JSON string with the "result" field containing the angle in radians.
@@ -248,10 +248,10 @@ class GeometryToolkit(BaseToolkit):
                 field with the corresponding error message.
         """
         try:
-            p1 = sp.Point(line1_point1[0], line1_point1[1])
-            p2 = sp.Point(line1_point2[0], line1_point2[1])
-            p3 = sp.Point(line2_point1[0], line2_point1[1])
-            p4 = sp.Point(line2_point2[0], line2_point2[1])
+            p1 = sp.Point(float(line1_point1[0]), float(line1_point1[1]))
+            p2 = sp.Point(float(line1_point2[0]), float(line1_point2[1]))
+            p3 = sp.Point(float(line2_point1[0]), float(line2_point1[1]))
+            p4 = sp.Point(float(line2_point2[0]), float(line2_point2[1]))
             l1 = sp.Line(p1, p2)
             l2 = sp.Line(p3, p4)
             angle = l1.angle_between(l2)
@@ -259,12 +259,138 @@ class GeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_angle_between", e)
 
+    def compute_triangle_area_vertices(self, point1: List[float], point2: List[float], point3: List[float]) -> str:
+        r"""Computes the area of a triangle given its three vertices.
+
+        Args:
+            point1 (List[float]): Coordinates [x, y] of the first vertex.
+            point2 (List[float]): Coordinates [x, y] of the second vertex.
+            point3 (List[float]): Coordinates [x, y] of the third vertex.
+
+        Returns:
+            str: A JSON string with the "result" field containing the area of the triangle.
+                If an error occurs, the JSON string will include an "error"
+                field with the corresponding error message.
+        """
+        try:
+            p1 = sp.Point(float(point1[0]), float(point1[1]))
+            p2 = sp.Point(float(point2[0]), float(point2[1]))
+            p3 = sp.Point(float(point3[0]), float(point3[1]))
+            triangle = sp.Triangle(p1, p2, p3)
+            area = abs(triangle.area)  # Use absolute value to ensure positive area
+            return json.dumps({"result": str(area)})
+        except Exception as e:
+            return self.handle_exception("compute_triangle_area_vertices", e)
+
+    def compute_point_to_line_distance(self, point: List[float], line_point1: List[float], line_point2: List[float]) -> str:
+        r"""Computes the shortest distance from a point to a line.
+
+        Args:
+            point (List[float]): Coordinates [x, y] of the point.
+            line_point1 (List[float]): Coordinates [x, y] of the first point on the line.
+            line_point2 (List[float]): Coordinates [x, y] of the second point on the line.
+
+        Returns:
+            str: A JSON string with the "result" field containing the shortest distance.
+                If an error occurs, the JSON string will include an "error"
+                field with the corresponding error message.
+        """
+        try:
+            # Create SymPy Point objects
+            p = sp.Point(float(point[0]), float(point[1]))
+            p1 = sp.Point(float(line_point1[0]), float(line_point1[1]))
+            p2 = sp.Point(float(line_point2[0]), float(line_point2[1]))
+            
+            # Check if the two points defining the line are the same
+            if p1 == p2:
+                # If the points are the same, calculate distance to the point
+                distance = p.distance(p1)
+                return json.dumps({"result": str(distance)})
+            
+            # Create a line passing through p1 and p2
+            line = sp.Line(p1, p2)
+            
+            # Calculate the distance from point p to the line
+            distance = line.distance(p)
+            
+            return json.dumps({"result": str(distance)})
+        except Exception as e:
+            return self.handle_exception("compute_point_to_line_distance", e)
+
+    def compute_triangle_area_sides(self, side1: float, side2: float, side3: float) -> str:
+        r"""Computes the area of a triangle given the lengths of its three sides using Heron's formula.
+
+        Args:
+            side1 (float): Length of the first side of the triangle.
+            side2 (float): Length of the second side of the triangle.
+            side3 (float): Length of the third side of the triangle.
+
+        Returns:
+            str: A JSON string with the "result" field containing the area of the triangle.
+                If an error occurs, the JSON string will include an "error"
+                field with the corresponding error message.
+        """
+        try:
+            # Convert inputs to float
+            a = float(side1)
+            b = float(side2)
+            c = float(side3)
+            
+            # Check if the sides can form a triangle (triangle inequality)
+            if a + b <= c or a + c <= b or b + c <= a:
+                raise ValueError("The given sides cannot form a triangle (triangle inequality violated).")
+            
+            # Calculate semi-perimeter
+            s = (a + b + c) / 2
+            
+            # Calculate area using Heron's formula
+            area = sp.sqrt(s * (s - a) * (s - b) * (s - c))
+            
+            # Area is already positive due to the square root, but adding abs for consistency
+            area = abs(area)
+            
+            return json.dumps({"result": str(area)})
+        except Exception as e:
+            return self.handle_exception("compute_triangle_area_sides", e)
+
+    def compute_polygon_area(self, vertices: List[List[float]]) -> str:
+        r"""Computes the area of an arbitrary polygon given its vertices.
+
+        This function uses the Shoelace formula (also known as the surveyor's formula or
+        Gauss's area formula) to calculate the area of a simple polygon.
+
+        Args:
+            vertices (List[List[float]]): A list of points representing the vertices of the polygon.
+                Each point should be a list of coordinates [x, y].
+
+        Returns:
+            str: A JSON string with the "result" field containing the area of the polygon.
+                If an error occurs, the JSON string will include an "error"
+                field with the corresponding error message.
+        """
+        try:
+            # Check if we have at least 3 vertices to form a polygon
+            if len(vertices) < 3:
+                raise ValueError("A polygon must have at least 3 vertices.")
+            
+            # Convert vertices to SymPy Points
+            points = [sp.Point(float(vertex[0]), float(vertex[1])) for vertex in vertices]
+            
+            # Create a SymPy Polygon
+            polygon = sp.Polygon(*points)
+            
+            # Calculate the area and take absolute value to ensure positive result
+            area = abs(polygon.area)
+            
+            return json.dumps({"result": str(area)})
+        except Exception as e:
+            return self.handle_exception("compute_polygon_area", e)
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of available tools in the toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects representing
-                              the available tools.
+            List[FunctionTool]: A list of available tools in the toolkit.
         """
         return [
             FunctionTool(self.compute_inner_product),
@@ -275,4 +401,8 @@ class GeometryToolkit(BaseToolkit):
             FunctionTool(self.compute_point_distance),
             FunctionTool(self.check_points_collinear),
             FunctionTool(self.compute_angle_between),
+            FunctionTool(self.compute_triangle_area_vertices),
+            FunctionTool(self.compute_point_to_line_distance),
+            FunctionTool(self.compute_triangle_area_sides),
+            FunctionTool(self.compute_polygon_area),
         ]
