@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.2.22"
+version = "0.2.23a0"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -39,8 +39,7 @@ docstring-parser = "^0.15"
 pydantic = ">=1.9,<2.10"
 eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
-pandoc = "^2.4"
-httpx = ">=0.23.0,<0.27.3"
+httpx = ">=0.28.0,<1.0.0dev"
 psutil = "^5.9.8"
 
 # Model platforms
@@ -84,7 +83,7 @@ botocore = { version = "^1.35.3", optional = true }
 beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
-unstructured = { extras = ["all-docs"], version = "0.16.20", optional = true }
+unstructured = {version = "0.16.20", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 pandasai = { version = "^2.3.0", optional = true }
@@ -108,7 +107,6 @@ requests_oauthlib = { version = "^1.3.1", optional = true }
 firecrawl-py = { version = "^1.0.0", optional = true }
 apify_client = { version = "^1.8.1", optional = true }
 tavily-python = { version = "^0.5.0", optional = true }
-asknews = { version = "^0.7.54", optional = true }
 dappier = { version = "^0.3.3", optional = true }
 sympy = { version = "^1.13.3", optional = true }
 
@@ -128,7 +126,6 @@ textblob = { version = "^0.17.1", optional = true }
 datacommons = { version = "^1.4.3", optional = true }
 datacommons_pandas = { version = "^0.0.3", optional = true }
 pandas = { version = "^1.5.3", optional = true }
-openbb = { version = "^4.3.5", optional = true }
 stripe = { version = "^11.3.0", optional = true }
 networkx = { version = "^3.4.2", optional = true }
 
@@ -180,7 +177,6 @@ web_tools = [
     "wolframalpha",
     "tavily-python",
     "dappier",
-    "asknews",
     "newspaper3k",
     "pyowm",
     "googlemaps",
@@ -227,7 +223,6 @@ data_tools = [
     "datacommons_pandas",
     "rouge",
     "aiosqlite",
-    "openbb",
     "stripe",
     "networkx",
 ]
@@ -258,7 +253,6 @@ model_platforms = [
     "anthropic",
     "cohere",
     "fish-audio-sdk",
-    "sglang",
 ]
 
 # Hugging Face ecosystem
@@ -336,7 +330,6 @@ all = [
     "agentops",
     "praw",
     "textblob",
-    "asknews",
     "scholarly",
     "notion-client",
     "yt-dlp",
@@ -349,7 +342,6 @@ all = [
     "pandas",
     "tree-sitter-python",
     "tree-sitter",
-    "openbb",
     "networkx",
     "qdrant-client",
     "pymilvus",
@@ -363,7 +355,6 @@ all = [
     "fish-audio-sdk",
     "anthropic",
     "reka-api",
-    "sglang",
     "redis",
     "azure-storage-blob",
     "google-cloud-storage",
@@ -520,10 +511,8 @@ module = [
     "cohere",
     "fish-audio-sdk",
     "reka-api",
-    "sglang",
     "agentops",
     "botocore.*",
-    "asknews",
     "arxiv",
     "arxiv2text",
     "praw",
