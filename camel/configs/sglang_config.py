@@ -56,7 +56,7 @@ class SGLangConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-        tools (List[Dict[str, Any]], optional): A list of tool definitions
+        tools (list[Dict[str, Any]], optional): A list of tool definitions
             that the model can dynamically invoke. Each tool should be
             defined as a dictionary following OpenAI's function calling
             specification format. See the OpenAI.

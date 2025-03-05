@@ -50,7 +50,7 @@ reka-api = { version = "^3.0.8", optional = true }
 anthropic = { version = "^0.42.0", optional = true }
 cohere = { version = "^5.11.0", optional = true }
 fish-audio-sdk = { version = "^2024.12.5", optional = true }
-sglang = { version = "^0.4.0", optional = true }
+sglang = { version = "^0.4.3.post2", optional = true }
 
 # Huggingface ecosystem
 transformers = { version = "^4", optional = true }
