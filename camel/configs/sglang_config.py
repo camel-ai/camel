@@ -70,7 +70,7 @@ class SGLangConfig(BaseConfig):
     presence_penalty: float = 0.0
     stream: bool = False
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    tools: Union[List[Dict[str, Any]], NotGiven] = NOT_GIVEN
+    tools: Union[List[Dict[str, Any]], None] = None
 
 
 SGLANG_API_PARAMS = {param for param in SGLangConfig.model_fields.keys()}
