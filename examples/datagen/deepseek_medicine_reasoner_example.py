@@ -12,6 +12,26 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+r"""Example demonstrating the use
+of DeepSeek Reasoner model for medical diagnosis.
+
+This example shows how to:
+1. Set up a medical diagnosis environment with retry mechanism
+2. Use the DeepSeek Reasoner model for diagnosis
+3. Extract and verify diagnoses
+4. Track and analyze retry performance
+5. Generate detailed performance statistics
+
+The model is prompted to provide a diagnosis for medical cases, with the
+diagnosis being extracted from boxed text in the response. The extracted
+diagnosis is verified against ground truth, with retries for low-quality
+responses.
+
+Environment Variables Required:
+    DEEPSEEK_API_KEY: API key for DeepSeek platform
+    GET_REASONING_CONTENT: Set to "true" to include reasoning content
+"""
+
 import asyncio
 import os
 
@@ -25,22 +45,21 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from camel.verifiers import MedicalVerifier
 
-"""
-This example demonstrates how to use the DeepSeek Reasoner model
-for medical diagnosis.
-The model is prompted to provide a diagnosis for a medical case, 
-and the diagnosis
-is extracted from the boxed text in the response. 
-The extracted diagnosis is then
-verified against the ground truth.
 
-Please set the below environment variables:
-export DEEPSEEK_API_KEY=""
-export GET_REASONING_CONTENT="true"
-"""
+async def main() -> None:
+    r"""Main execution function.
 
+    Sets up the medical diagnosis environment, runs diagnosis attempts with
+    retry mechanism, and reports performance statistics.
 
-async def main():
+    The function:
+    1. Loads the medical dataset
+    2. Configures the DeepSeek model
+    3. Sets up the diagnosis environment
+    4. Processes multiple medical cases
+    5. Handles retries for low-quality diagnoses
+    6. Reports detailed performance metrics
+    """
     # Load medical dataset
     data_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -59,28 +78,36 @@ async def main():
         print(f"Dataset size: {len(dataset)}")
     except Exception as e:
         print(f"Error loading dataset: {e}")
+        return
 
-    # Create DeepSeek Reasoner model
+    # Create DeepSeek Reasoner model with quality-focused configuration
     model = ModelFactory.create(
         model_platform=ModelPlatformType.DEEPSEEK,
         model_type=ModelType.DEEPSEEK_REASONER,
         model_config_dict=DeepSeekConfig(temperature=0.2).as_dict(),
     )
 
-    # Define system message for medical reasoning
-    reason_agent_system_message = """You are a medical expert tasked 
+    # Define system message for medical reasoning with retry handling
+    reason_agent_system_message = r"""You are a medical expert tasked 
     with diagnosing medical conditions based on case reports and test results.
 Analyze the provided information carefully and provide your diagnosis.
-Give your final answer within \\boxed{} notation.
+Give your final answer within \boxed{} notation.
 For example, if your diagnosis is 'Common Cold', 
-write your final answer as: \\boxed{Common Cold}"""
+write your final answer as: \boxed{Common Cold}
 
-    # Create agent
+If you receive retry feedback:
+1. Review the previous attempt's feedback carefully
+2. Consider why the previous diagnosis might have been incorrect
+3. Pay special attention to any verification feedback provided
+4. Provide a more detailed explanation for your new diagnosis
+"""
+
+    # Create agent with enhanced reasoning capabilities
     reason_agent = ChatAgent(
         system_message=reason_agent_system_message, model=model
     )
 
-    # Create extractor, verifier, and environment
+    # Create environment components with quality control parameters
     extractor = BoxedTextExtractor()
     verifier = MedicalVerifier(exact_match=False, case_sensitive=False)
     environment = MedicalEnvironment(
@@ -90,6 +117,9 @@ write your final answer as: \\boxed{Common Cold}"""
         reward_correct=1.0,
         reward_incorrect=-0.5,
         reward_no_answer=-0.2,
+        max_retries=3,
+        quality_threshold=0.7,
+        retry_delay=1.0,
     )
 
     # Setup components
@@ -98,19 +128,20 @@ write your final answer as: \\boxed{Common Cold}"""
     await environment.setup()
 
     try:
-        # Run a few examples
+        # Process examples with retry mechanism
         num_examples = min(5, len(dataset))
         total_reward = 0.0
         correct_count = 0
+        retry_stats = {
+            "total_retries": 0,
+            "successful_retries": 0,  # Retries that improved the result
+            "failed_retries": 0,  # Retries that didn't meet quality threshold
+        }
 
         for i in range(num_examples):
-            # Reset environment to get a new medical case
+            # Initialize new case
             observation = await environment.reset()
-
-            # Get the medical case
             medical_case = observation.question
-
-            # Get the ground truth
             ground_truth = environment._current_data_point.final_answer
 
             print(f"\n\n{'='*80}")
@@ -120,52 +151,122 @@ write your final answer as: \\boxed{Common Cold}"""
             print(f"{'='*80}")
             print(f"Ground Truth: {ground_truth}")
 
-            # Get response from the agent
-            response = reason_agent.step(medical_case)
-            agent_response = response.msgs[0].content
+            # Process diagnosis with retry mechanism
+            initial_reward = None
+            best_reward = None
+            step_result = None
 
-            print(f"{'='*80}")
-            print(f"Agent Response:\n{agent_response}")
+            while True:
+                # Handle retry feedback if available
+                if "retry_feedback" in observation.context:
+                    retry_feedback = observation.context["retry_feedback"]
+                    verification_feedback = retry_feedback[
+                        "verification_feedback"
+                    ]
+                    print(f"\nRetry Attempt #{retry_feedback['retry_count']}")
+                    print("Previous attempt:")
+                    print(
+                        f"  - Reward: {retry_feedback['previous_reward']:.2f}"
+                    )
+                    print(f"  - Status: {verification_feedback['status']}")
+                    print(f"  - Feedback: {verification_feedback['message']}")
+                    print(f"  - Expected: {verification_feedback['expected']}")
+                    print(f""""Quality threshold: 
+                          {retry_feedback['quality_threshold']}""")
+                    if retry_feedback['best_reward_so_far'] is not None:
+                        print(
+                            f"""Best reward so far: 
+                            {retry_feedback['best_reward_so_far']:.2f}"""
+                        )
+                    print(f"{'='*80}")
 
-            # Create action
-            action = Action(
-                problem_statement=medical_case,
-                llm_response=agent_response,
-                final_answer=ground_truth,
-            )
+                # Get model's diagnosis
+                response = reason_agent.step(medical_case)
+                agent_response = response.msgs[0].content
 
-            # Take a step in the environment
-            step_result = await environment.step(action)
+                print(f"{'='*80}")
+                print(f"Agent Response:\n{agent_response}")
 
-            # Extract diagnosis
-            extracted_diagnosis = await extractor.extract(agent_response)
+                # Process the diagnosis
+                action = Action(
+                    problem_statement=medical_case,
+                    llm_response=agent_response,
+                    final_answer=ground_truth,
+                )
 
-            print(f"{'='*80}")
-            print(f"Extracted Diagnosis: {extracted_diagnosis}")
-            print(f"Reward: {step_result.reward}")
-            print(f"{'='*80}\n")
+                # Evaluate the diagnosis
+                step_result = await environment.step(action)
 
-            # Update statistics
-            total_reward += step_result.reward
-            if (
-                "diagnosis_accuracy" in step_result.rewards_dict
-                and step_result.rewards_dict["diagnosis_accuracy"] > 0
-            ):
+                # Track performance metrics
+                if initial_reward is None:
+                    initial_reward = step_result.reward
+
+                if best_reward is None or step_result.reward > best_reward:
+                    best_reward = step_result.reward
+
+                # Display current results
+                extracted_diagnosis = await extractor.extract(agent_response)
+                print(f"{'='*80}")
+                print(f"Extracted Diagnosis: {extracted_diagnosis}")
+                print(f"Reward: {step_result.reward}")
+
+                # Update retry statistics
+                if step_result.info.get("is_retry", False):
+                    retry_stats["total_retries"] += 1
+                    if step_result.reward > initial_reward:
+                        retry_stats["successful_retries"] += 1
+                    elif step_result.reward < environment.quality_threshold:
+                        retry_stats["failed_retries"] += 1
+
+                # Check if further retries needed
+                if step_result.done or not step_result.info.get(
+                    "is_retry", False
+                ):
+                    break
+
+                # Prepare for next retry
+                observation = step_result.observation
+
+            # Update overall statistics
+            total_reward += best_reward
+            if best_reward >= environment.quality_threshold:
                 correct_count += 1
 
-        # Print summary
+            # Display case results
+            print(f"Final reward: {best_reward}")
+            if initial_reward != best_reward:
+                print(
+                    f"""Improvement from retries: 
+                    {best_reward - initial_reward:.2f}"""
+                )
+
+        # Generate comprehensive performance report
         print(f"\n{'='*80}")
-        print("Summary:")
+        print("Performance Summary:")
         print(f"{'='*80}")
-        print(f"Total examples: {num_examples}")
-        print(f"""Correct diagnoses: {correct_count}/{num_examples} 
-        ({correct_count/num_examples*100:.2f}%)""")
-        print(f"Total reward: {total_reward}")
-        print(f"Average reward: {total_reward/num_examples:.2f}")
+        print(f"Total examples processed: {num_examples}")
+        print(
+            f"""Correct diagnoses:
+              {correct_count}/{num_examples} 
+              ({correct_count/num_examples*100:.2f}%)"""
+        )
+        print(f"Total reward accumulated: {total_reward}")
+        print(f"Average reward per case: {total_reward/num_examples:.2f}")
+        print("\nRetry Performance Analysis:")
+        print(f"Total retry attempts: {retry_stats['total_retries']}")
+        print(f"Successful retries: {retry_stats['successful_retries']}")
+        print(f"Failed retries: {retry_stats['failed_retries']}")
+        if retry_stats['total_retries'] > 0:
+            success_rate = (
+                retry_stats['successful_retries']
+                / retry_stats['total_retries']
+                * 100
+            )
+            print(f"Retry success rate: {success_rate:.2f}%")
         print(f"{'='*80}")
 
     finally:
-        # Clean up
+        # Cleanup resources
         await extractor.cleanup()
         await verifier.cleanup()
         await environment.teardown()
