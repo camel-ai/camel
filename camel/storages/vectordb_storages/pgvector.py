@@ -99,93 +99,119 @@ class PgVectorStorage(BaseVectorStorage):
         return f"vectors_{datetime.now().isoformat()}"
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
-        """Get collection information."""
+        r"""Get collection information."""
         try:
-            cur = self._conn.cursor()
-            cur.execute(
-                """
-                SELECT a.atttypmod
-                FROM pg_attribute a
-                JOIN pg_class c ON a.attrelid = c.oid
-                JOIN pg_type t ON a.atttypid = t.oid
-                WHERE c.relname = %s
-                AND a.attname = 'vector'
-                AND t.typname = 'vector';
-            """,
-                (collection_name,),
-            )
-            result = cur.fetchone()
-
-            if result is None or result[0] is None:
-                raise RuntimeError(
-                    f"No vector column in collection {collection_name}"
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT a.atttypmod
+                    FROM pg_attribute a
+                    JOIN pg_class c ON a.attrelid = c.oid
+                    JOIN pg_type t ON a.atttypid = t.oid
+                    WHERE c.relname = %s
+                    AND a.attname = 'vector'
+                    AND t.typname = 'vector';
+                    """,
+                    (collection_name,),
                 )
+                result = cur.fetchone()
 
-            vector_dim = int(result[0])
+                if result is None or result[0] is None:
+                    raise RuntimeError(
+                        f"No vector column in collection {collection_name}"
+                    )
 
-            return {"name": collection_name, "vector_dim": vector_dim}
+                vector_dim = int(result[0])
+
+                return {"name": collection_name, "vector_dim": vector_dim}
         except Exception as e:
             if isinstance(e, RuntimeError):
                 raise
             raise RuntimeError(f"Failed to get collection info: {e}")
 
     def _check_and_create_collection(self) -> None:
-        """Check if collection exists and create it if not."""
+        r"""Check if collection exists and create it if not."""
         try:
-            cur = self._conn.cursor()
-            cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+            exists = False
+            vector_dim = None
 
-            cur.execute(
-                """
-                SELECT EXISTS (
+            # First check if table exists
+            with self._conn.cursor() as cur:
+                cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+                cur.execute(
+                    """
+                    SELECT EXISTS (
                     SELECT FROM pg_tables
                     WHERE schemaname = 'public'
                     AND tablename = %s
-                );
-            """,
-                (self.collection_name,),
-            )
-            result = cur.fetchone()
-            exists = bool(result[0]) if result is not None else False
-
-            if not exists:
-                cur.execute(
-                    f"""
-                    CREATE TABLE IF NOT EXISTS {self.collection_name} (
-                        id TEXT PRIMARY KEY,
-                        vector vector({self.vector_dim}),
-                        metadata JSONB
                     );
-                    """
+                    """,
+                    (self.collection_name,),
                 )
-                self._conn.commit()
-            else:
-                info = self._get_collection_info(self.collection_name)
-                if info["vector_dim"] != self.vector_dim:
-                    raise RuntimeError(
-                        f"Vector dimension mismatch: "
-                        f"expected {self.vector_dim}, got {info['vector_dim']}"
+                result = cur.fetchone()
+                exists = bool(result[0]) if result is not None else False
+
+            # If table exists, check vector dimension
+            if exists:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT a.atttypmod
+                        FROM pg_attribute a
+                        JOIN pg_class c ON a.attrelid = c.oid
+                        JOIN pg_type t ON a.atttypid = t.oid
+                        WHERE c.relname = %s
+                        AND a.attname = 'vector'
+                        AND t.typname = 'vector';
+                        """,
+                        (self.collection_name,),
                     )
+                    result = cur.fetchone()
+                    if result is None or result[0] is None:
+                        raise RuntimeError(
+                            f"No vector column in collection "
+                            f"{self.collection_name}"
+                        )
+                    vector_dim = int(result[0])
+
+                    if vector_dim != self.vector_dim:
+                        raise RuntimeError(
+                            f"Vector dimension mismatch: "
+                            f"expected {self.vector_dim}, got {vector_dim}"
+                        )
+            # If table doesn't exist, create it
+            else:
+                with self._conn.cursor() as cur:
+                    cur.execute(
+                        f"""
+                        CREATE TABLE IF NOT EXISTS {self.collection_name} (
+                            id TEXT PRIMARY KEY,
+                            vector vector({self.vector_dim}),
+                            metadata JSONB
+                        );
+                        """
+                    )
+                    self._conn.commit()
 
         except Exception as e:
             self._conn.rollback()
             raise RuntimeError(f"Failed to create collection: {e}")
 
     def add(self, records: List[VectorRecord], **kwargs: Any) -> None:
-        """Add records to the collection."""
+        r"""Add records to the collection."""
         try:
-            cur = self._conn.cursor()
-            cur.executemany(
-                f"""
-                INSERT INTO {self.collection_name} (id, vector, metadata)
-                VALUES (%s, %s::vector, %s::jsonb)
-                ON CONFLICT (id) DO UPDATE 
-                SET vector = EXCLUDED.vector,
-                    metadata = EXCLUDED.metadata
-                """,
-                [(r.id, r.vector, json.dumps(r.payload)) for r in records],
-            )
-            self._conn.commit()
+            with self._conn.cursor() as cur:
+                cur.executemany(
+                    f"""
+                    INSERT INTO {self.collection_name} (id, vector, metadata)
+                    VALUES (%s, %s::vector, %s::jsonb)
+                    ON CONFLICT (id) DO UPDATE 
+                    SET vector = EXCLUDED.vector,
+                        metadata = EXCLUDED.metadata
+                    """,
+                    [(r.id, r.vector, json.dumps(r.payload)) for r in records],
+                )
+                self._conn.commit()
         except Exception as e:
             self._conn.rollback()
             raise RuntimeError(f"Failed to add records: {e}")
@@ -216,6 +242,7 @@ class PgVectorStorage(BaseVectorStorage):
                 )
                 self._conn.commit()
         except Exception as e:
+            self._conn.rollback()
             raise RuntimeError(f"Failed to delete records: {e}")
 
     def query(
@@ -234,8 +261,14 @@ class PgVectorStorage(BaseVectorStorage):
             List[VectorDBQueryResult]: A list of vectors retrieved from
                 PostgreSQL based on similarity to the query vector.
 
-        Raises:
-            RuntimeError: If there is an error during the query process.
+            Note:
+                The similarity values are normalized to [0, 1] range where
+                1 means most similar:
+                - For COSINE: Returns cosine similarity in [0, 1]
+                - For L2: Returns 1/(1 + distance) in (0, 1]
+                - For L1: Returns 1/(1 + distance) in (0, 1]
+                - For INNER_PRODUCT: Returns -distance in [0, 1] for normalized
+                    vectors
         """
         try:
             with self._conn.cursor() as cur:
@@ -245,11 +278,10 @@ class PgVectorStorage(BaseVectorStorage):
                     SELECT id, vector, metadata, 
                     (vector {operator} %s::vector) as distance
                     FROM {self.collection_name}
-                    ORDER BY vector {operator} %s::vector
+                    ORDER BY distance
                     LIMIT %s;
                     """,
                     (
-                        query.query_vector,
                         query.query_vector,
                         query.top_k,
                     ),
@@ -263,19 +295,24 @@ class PgVectorStorage(BaseVectorStorage):
                         vector=vector,
                         payload=metadata,
                     )
-                    if self.distance == PgVectorDistance.INNER_PRODUCT:
-                        distance *= -1
-                    elif self.distance == PgVectorDistance.COSINE:
-                        distance = 1 - distance
+                    if self.distance == PgVectorDistance.COSINE:
+                        similarity = 1 - distance
+                    elif self.distance == PgVectorDistance.INNER_PRODUCT:
+                        similarity = (-distance + 1) / 2
+                    else:
+                        similarity = 1 / (1 + distance)
+
                     results.append(
-                        VectorDBQueryResult(record=record, similarity=distance)
+                        VectorDBQueryResult(
+                            record=record, similarity=similarity
+                        )
                     )
                 return results
         except Exception as e:
             raise RuntimeError(f"Failed to query records: {e}")
 
     def status(self) -> VectorDBStatus:
-        """Returns status of the vector database."""
+        r"""Returns status of the vector database."""
         try:
             with self._conn.cursor() as cur:
                 cur.execute(
@@ -305,6 +342,7 @@ class PgVectorStorage(BaseVectorStorage):
                 cur.execute(f"TRUNCATE TABLE {self.collection_name};")
                 self._conn.commit()
         except Exception as e:
+            self._conn.rollback()
             raise RuntimeError(f"Failed to clear collection: {e}")
 
     def load(self) -> None:
@@ -324,7 +362,22 @@ class PgVectorStorage(BaseVectorStorage):
         """
         return self._conn
 
-    def __del__(self):
-        r"""Closes the PostgreSQL connection when the object is destroyed."""
+    def __enter__(self):
+        r"""Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        r"""Context manager exit."""
         if self._conn:
             self._conn.close()
+            self._conn = None
+
+    def close(self):
+        r"""Explicitly close the connection."""
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+
+    def __del__(self):
+        r"""Closes the PostgreSQL connection when the object is destroyed."""
+        self.close()
