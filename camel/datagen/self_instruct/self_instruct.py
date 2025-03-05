@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import logging
 import os
 import random
 import time
@@ -22,12 +21,13 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
+from camel.logger import get_logger
 
 from .filter import RougeSimilarityFilter
 from .filter.instruction_filter import InstructionFilter
 from .templates import SelfInstructTemplates
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SelfInstructPipeline:
@@ -388,7 +388,7 @@ class SelfInstructPipeline:
 
         Args:
             timeout_minutes (int): Maximum time in minutes to run the
-                generation process before timing out. (default: 600)
+                generation process before timing out. (default: :obj:`600`)
         """
         start_time = time.time()
         timeout_seconds = timeout_minutes * 60
