@@ -14,7 +14,6 @@
 
 import json
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from camel.storages.vectordb_storages import (
@@ -24,20 +23,8 @@ from camel.storages.vectordb_storages import (
     VectorDBStatus,
     VectorRecord,
 )
+from camel.types.enums import VectorDistance
 from camel.utils import dependencies_required
-
-
-class PgVectorDistance(str, Enum):
-    r"""Supported distance metrics in pgvector 0.8.0.
-
-    Reference:
-        https://github.com/pgvector/pgvector/
-    """
-
-    L2 = "L2"  # Euclidean distance
-    INNER_PRODUCT = "INNER_PRODUCT"  # Inner product
-    COSINE = "COSINE"  # Cosine similarity
-    L1 = "L1"  # Manhattan distance
 
 
 class PgVectorStorage(BaseVectorStorage):
@@ -54,8 +41,8 @@ class PgVectorStorage(BaseVectorStorage):
         collection_name (Optional[str], optional): Name for the collection in
             PostgreSQL. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
-        distance (PgVectorDistance, optional): The distance metric for vector
-            comparison (default: :obj:`PgVectorDistance.COSINE`)
+        distance (VectorDistance, optional): The distance metric for vector
+            comparison (default: :obj:`VectorDistance.COSINE`)
         **kwargs (Any): Additional keyword arguments for initializing
             PostgreSQL connection.
 
@@ -69,7 +56,7 @@ class PgVectorStorage(BaseVectorStorage):
         vector_dim: int,
         connection_params: Dict[str, Any],
         collection_name: Optional[str] = None,
-        distance: PgVectorDistance = PgVectorDistance.COSINE,
+        distance: VectorDistance = VectorDistance.COSINE,
     ) -> None:
         """Initialize PgVectorStorage."""
         self.vector_dim = vector_dim
@@ -80,10 +67,10 @@ class PgVectorStorage(BaseVectorStorage):
         )
         self.distance = distance
         self._distance_operators = {
-            PgVectorDistance.COSINE: "<=>",
-            PgVectorDistance.L2: "<->",
-            PgVectorDistance.INNER_PRODUCT: "<#>",
-            PgVectorDistance.L1: "<+>",
+            VectorDistance.COSINE: "<=>",
+            VectorDistance.EUCLIDEAN: "<->",
+            VectorDistance.DOT: "<#>",
+            VectorDistance.MANHATTAN: "<+>",
         }
         import psycopg
 
@@ -295,9 +282,9 @@ class PgVectorStorage(BaseVectorStorage):
                         vector=vector,
                         payload=metadata,
                     )
-                    if self.distance == PgVectorDistance.COSINE:
+                    if self.distance == VectorDistance.COSINE:
                         similarity = 1 - distance
-                    elif self.distance == PgVectorDistance.INNER_PRODUCT:
+                    elif self.distance == VectorDistance.DOT:
                         similarity = (-distance + 1) / 2
                     else:
                         similarity = 1 / (1 + distance)

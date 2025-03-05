@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from camel.storages.vectordb_storages import (
-    PgVectorDistance,
     PgVectorStorage,
     VectorDBQuery,
     VectorRecord,
@@ -31,7 +30,6 @@ vector_storage = PgVectorStorage(
     vector_dim=3,
     connection_params=connection_params,
     collection_name='example_vectors',
-    distance=PgVectorDistance.COSINE,
 )
 
 vectors = [
@@ -68,3 +66,25 @@ for result in results:
 
 print("Clearing collection...")
 vector_storage.clear()
+"""
+==============================================================================
+Adding vectors...
+Current status: 3 vectors stored
+Vector dimension: 3
+
+Query results:
+Label: X
+Similarity: 1.000
+Description: X axis direction
+
+Label: Y
+Similarity: 0.000
+Description: Y axis direction
+
+Label: Z
+Similarity: 0.000
+Description: Z axis direction
+
+Clearing collection...
+==============================================================================
+"""
