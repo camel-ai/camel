@@ -33,6 +33,8 @@ class ChatHistoryMemory(AgentMemory):
         window_size (int, optional): The number of recent chat messages to
             retrieve. If not provided, the entire chat history will be
             retrieved.  (default: :obj:`None`)
+        agent_id (str, optional): The ID of the agent associated with the chat
+            history.
     """
 
     def __init__(
@@ -40,6 +42,7 @@ class ChatHistoryMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
+        agent_id: Optional[str] = None,
     ) -> None:
         if window_size is not None and not isinstance(window_size, int):
             raise TypeError("`window_size` must be an integer or None.")
@@ -47,7 +50,10 @@ class ChatHistoryMemory(AgentMemory):
             raise ValueError("`window_size` must be non-negative.")
         self._context_creator = context_creator
         self._window_size = window_size
-        self._chat_history_block = ChatHistoryBlock(storage=storage)
+        self._chat_history_block = ChatHistoryBlock(
+            storage=storage, agent_id=agent_id
+        )
+        self._agent_id = agent_id
 
     def retrieve(self) -> List[ContextRecord]:
         records = self._chat_history_block.retrieve(self._window_size)
@@ -84,6 +90,8 @@ class VectorDBMemory(AgentMemory):
             (default: :obj:`None`)
         retrieve_limit (int, optional): The maximum number of messages
             to be added into the context.  (default: :obj:`3`)
+        agent_id (str, optional): The ID of the agent associated with
+            the messages stored in the vector database.
     """
 
     def __init__(
@@ -91,6 +99,7 @@ class VectorDBMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseVectorStorage] = None,
         retrieve_limit: int = 3,
+        agent_id: Optional[str] = None,
     ) -> None:
         self._context_creator = context_creator
         self._retrieve_limit = retrieve_limit
@@ -133,6 +142,8 @@ class LongtermAgentMemory(AgentMemory):
             (default: :obj:`None`)
         retrieve_limit (int, optional): The maximum number of messages
             to be added into the context.  (default: :obj:`3`)
+        agent_id (str, optional): The ID of the agent associated with the chat
+            history and the messages stored in the vector database.
     """
 
     def __init__(
@@ -141,12 +152,16 @@ class LongtermAgentMemory(AgentMemory):
         chat_history_block: Optional[ChatHistoryBlock] = None,
         vector_db_block: Optional[VectorDBBlock] = None,
         retrieve_limit: int = 3,
+        agent_id: Optional[str] = None,
     ) -> None:
-        self.chat_history_block = chat_history_block or ChatHistoryBlock()
+        self.chat_history_block = chat_history_block or ChatHistoryBlock(
+            agent_id=agent_id
+        )
         self.vector_db_block = vector_db_block or VectorDBBlock()
         self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator
         self._current_topic: str = ""
+        self._agent_id = agent_id
 
     def get_context_creator(self) -> BaseContextCreator:
         r"""Returns the context creator used by the memory.
@@ -166,7 +181,8 @@ class LongtermAgentMemory(AgentMemory):
         """
         chat_history = self.chat_history_block.retrieve()
         vector_db_retrieve = self.vector_db_block.retrieve(
-            self._current_topic, self.retrieve_limit
+            self._current_topic,
+            self.retrieve_limit,
         )
         return chat_history[:1] + vector_db_retrieve + chat_history[1:]
 

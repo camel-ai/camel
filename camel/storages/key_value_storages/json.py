@@ -78,18 +78,32 @@ class JsonStorage(BaseKeyValueStorage):
                 [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records]
             )
 
-    def load(self) -> List[Dict[str, Any]]:
+    def load(self, agent_id: Optional[str] = None) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
+        If agent_id is provided, only records associated with the specified
+        agent will be returned.
+
+        Args:
+            agent_id (str, optional): The ID of the agent associated with the
+                records. If not provided, all records will be loaded.
+                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, where each dictionary
                 represents a stored record.
         """
         with self.json_path.open("r") as f:
-            return [
+            all_records = [
                 json.loads(r, object_hook=self._json_object_hook)
                 for r in f.readlines()
             ]
+
+        if agent_id is not None:
+            all_records = [
+                r for r in all_records if r.get("agent_id") == agent_id
+            ]
+
+        return all_records
 
     def clear(self) -> None:
         r"""Removes all records from the key-value storage system."""
