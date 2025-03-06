@@ -45,7 +45,9 @@ def vector_retriever(mock_embedding_model, mock_vector_storage):
 
 @pytest.fixture
 def mock_unstructured_modules():
-    with patch('camel.retrievers.vector_retriever.UnstructuredIO') as mock:
+    with patch(
+        'camel.retrievers.vector_retriever.UnstructuredIOLoader'
+    ) as mock:
         yield mock
 
 

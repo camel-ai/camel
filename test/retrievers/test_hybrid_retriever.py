@@ -28,7 +28,7 @@ def mock_hybrid_retriever(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', MagicMock(return_value=True))
     monkeypatch.setattr(
         UnstructuredIOLoader,
-        'parse_file_or_url',
+        'load',
         MagicMock(return_value=[mock_element]),
     )
     # Create an instance of HybridRetriever
