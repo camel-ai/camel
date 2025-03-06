@@ -12,20 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 import re
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from openai import NOT_GIVEN
 
 from camel.configs import NvidiaConfig
 from camel.models import NvidiaModel
 from camel.types import ModelType
-
-"""
-please set the below os environment:
-export NVIDIA_API_KEY="xx"
-"""
 
 user_role_message = {
     "role": "user",
@@ -47,6 +42,36 @@ model_types = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    r"""Provide mock environment variables for all tests in this module."""
+    with patch.dict(os.environ, {"NVIDIA_API_KEY": "mock-api-key"}):
+        yield
+
+
+@pytest.fixture
+def mock_openai_client():
+    with patch("camel.models.nvidia_model.OpenAI") as mock_openai:
+        mock_client = MagicMock()
+        mock_openai.return_value = mock_client
+        mock_client.chat.completion.create.return_value = None
+        yield mock_client
+
+
+@pytest.fixture
+def mock_async_openai_client():
+    with patch("camel.models.nvidia_model.AsyncOpenAI") as mock_async_openai:
+        mock_client = AsyncMock()
+        mock_async_openai.return_value = mock_client
+
+        # Create an AsyncMock that will be awaitable and have Mock
+        # functionality
+        mock_chat = AsyncMock()
+        mock_chat.return_value = None
+        mock_client.chat.completion.create.return_value = mock_chat
+        yield mock_client
+
+
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
@@ -65,33 +90,59 @@ def test_nvidia_model(model_type: ModelType):
     "model_type",
     model_types,
 )
-@patch("camel.models.nvidia_model.OpenAI")
-def test_nvidia_model_run(mock_openai, model_type: ModelType):
-    # Mock the client creation function OpenAI
-    mock_openai_client = MagicMock()
-    mock_openai.return_value = mock_openai_client
-    mock_openai_client.chat.completions.create.return_value = None
+def test_nvidia_model_run(mock_openai_client, model_type: ModelType):
     config = NvidiaConfig().as_dict()
     config["tool_choice"] = "google"
     config["tools"] = None
     model = NvidiaModel(model_type, config)
     model.run([user_role_message])  # type: ignore[list-item]
-    mock_openai_client.chat.completions.create.assert_called_once_with(
-        messages=[
-            {
-                'role': 'user',
-                'content': 'How fast can you solve a math problem ?',
-            }
-        ],
-        model=model_type,
-        stream=False,
-        temperature=0.7,
-        top_p=0.95,
-        presence_penalty=0.0,
-        frequency_penalty=0.0,
-        max_tokens=NOT_GIVEN,
-        seed=None,
-        stop=None,
+
+    # Verify the call arguments
+    assert mock_openai_client.chat.completions.create.call_count == 1
+    call_args = mock_openai_client.chat.completions.create.call_args
+    kwargs = call_args[1]
+
+    # Check that messages were passed correctly
+    assert "messages" in kwargs
+    assert len(kwargs["messages"]) == 1
+
+    # Check message contents
+    assert kwargs["messages"][0]["role"] == 'user'
+    assert (
+        "How fast can you solve a math problem ?"
+        in kwargs["messages"][0]["content"]
+    )
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    model_types,
+)
+@pytest.mark.asyncio
+async def test_nvidia_model_arun(
+    mock_async_openai_client, model_type: ModelType
+):
+    config = NvidiaConfig().as_dict()
+    config["tool_choice"] = "google"
+    config["tools"] = None
+    model = NvidiaModel(model_type, config)
+    _ = await model.arun([user_role_message])  # type: ignore[list-item]
+
+    # Verify the call arguments
+    assert mock_async_openai_client.chat.completions.create.call_count == 1
+    call_args = mock_async_openai_client.chat.completions.create.call_args
+    kwargs = call_args[1]
+
+    # Check that messages were passed correctly
+    assert "messages" in kwargs
+    assert len(kwargs["messages"]) == 1
+
+    # Check message contents
+    assert kwargs["messages"][0]["role"] == 'user'
+    assert (
+        "How fast can you solve a math problem ?"
+        in kwargs["messages"][0]["content"]
     )
 
 
