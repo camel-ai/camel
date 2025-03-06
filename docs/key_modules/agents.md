@@ -62,7 +62,48 @@ agent = ChatAgent(system_message="You are a helpful assistant.")
 response = agent.step("Hello, can you help me?")
 ```
 
-### 3.2. Using Tools with Chat Agent
+### 3.2. Simplified Agent Creation
+The `ChatAgent` supports multiple ways to specify the model:
+
+```python
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+# Method 1: Using just a string for the model name (uses default platform)
+agent1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
+
+# Method 2: Using a ModelType enum
+agent2 = ChatAgent("You are a helpful assistant.", model=ModelType.GPT_4O_MINI)
+
+# Method 3: Using a tuple of strings (platform, model)
+agent3 = ChatAgent("You are a helpful assistant.", model=("openai", "gpt-4o-mini"))
+
+# Method 4: Using a tuple of enums
+agent4 = ChatAgent(
+    "You are a helpful assistant.",
+    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+)
+
+# Method 5: Using default model when none is specified
+agent5 = ChatAgent("You are a helpful assistant.")
+
+# Method 6: Using a pre-created model with ModelFactory (original approach)
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,  # Using enum
+    model_type=ModelType.GPT_4O_MINI,         # Using enum
+)
+agent6 = ChatAgent("You are a helpful assistant.", model=model)
+
+# Method 7: Using ModelFactory with string parameters
+model = ModelFactory.create(
+    model_platform="openai",     # Using string
+    model_type="gpt-4o-mini",    # Using string
+)
+agent7 = ChatAgent("You are a helpful assistant.", model=model)
+```
+
+### 3.3. Using Tools with Chat Agent
 ```python
 from camel.agents import ChatAgent
 from camel.functions import FunctionTool
@@ -78,7 +119,7 @@ agent = ChatAgent(tools=[calculator])
 response = agent.step("What is 5 + 3?")
 ```
 
-### 3.3. Structured Output
+### 3.4. Structured Output
 ```python
 from pydantic import BaseModel
 from typing import List
@@ -108,6 +149,12 @@ response = agent.step("List benefits of exercise", response_format=ResponseForma
 - Implement appropriate response terminators for conversation control
 - Use structured outputs when specific response formats are needed
 - Handle async operations properly when dealing with long-running tasks
+
+### 4.4. Model Specification
+- Use the simplified model specification methods for cleaner code
+- For default platform models, just specify the model name as a string
+- For specific platforms, use the tuple format (platform, model)
+- Use enums for better type safety and IDE support
 
 ## 5. Advanced Features
 
