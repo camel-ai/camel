@@ -181,18 +181,14 @@ class ChatAgent(BaseAgent):
         # Assign unique ID
         self.agent_id = agent_id if agent_id else str(uuid.uuid4())
 
-        self.token_limit = token_limit
-        self.message_window_size = message_window_size
-
         # Set up memory
-        self.context_creator = ScoreBasedContextCreator(
+        context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
-            self.token_limit or self.model_backend.token_limit,
+            token_limit or self.model_backend.token_limit,
         )
         self.memory: AgentMemory = memory or ChatHistoryMemory(
-            self.context_creator,
-            window_size=self.message_window_size,
-            agent_id=self.agent_id,
+            context_creator, window_size=message_window_size, 
+            agent_id=self.agent_id
         )
 
         # Set up system message and initialize messages
