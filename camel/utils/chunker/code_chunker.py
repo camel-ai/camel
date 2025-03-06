@@ -1,8 +1,23 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import re
-from typing import Optional, List
+from typing import List, Optional
 
 from camel.utils import get_model_encoding
+
 from .base import BaseChunker
+
 
 class CodeChunker(BaseChunker):
     r"""A class for chunking code or text while respecting structure
@@ -21,9 +36,10 @@ class CodeChunker(BaseChunker):
     """
 
     def __init__(
-        self, chunk_size: int=8192,
-        model_name: str="cl100k_base",
-        remove_image: Optional[bool]=True,
+        self,
+        chunk_size: int = 8192,
+        model_name: str = "cl100k_base",
+        remove_image: Optional[bool] = True,
     ):
         self.chunk_size = chunk_size
         self.tokenizer = get_model_encoding(model_name)

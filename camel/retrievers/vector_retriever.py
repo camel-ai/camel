@@ -27,8 +27,7 @@ from camel.storages import (
     VectorRecord,
 )
 from camel.utils import Constants
-from camel.utils.chunker import BaseChunker
-from camel.utils.chunker import UioChunker
+from camel.utils.chunker import BaseChunker, UioChunker
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -106,11 +105,12 @@ class VectorRetriever(BaseRetriever):
         """
         if chunker is None:
             chunker = UioChunker(
-                chunk_type = chunk_type,
-                max_characters = max_characters,
-                metadata_filename = metadata_filename,
+                chunk_type=chunk_type,
+                max_characters=max_characters,
+                metadata_filename=metadata_filename,
             )
         from unstructured.documents.elements import Element
+
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IOBase):
@@ -147,11 +147,7 @@ class VectorRetriever(BaseRetriever):
             )
         else:
             # Chunk the content if required
-            chunks = (
-                chunker.chunk(text=elements)
-                if should_chunk
-                else elements
-            )
+            chunks = chunker.chunk(text=elements) if should_chunk else elements
 
             # Process chunks in batches and store embeddings
             for i in range(0, len(chunks), embed_batch):
