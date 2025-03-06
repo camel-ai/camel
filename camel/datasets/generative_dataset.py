@@ -1,3 +1,17 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 import os
 import random
 from typing import Iterator, List
@@ -14,6 +28,7 @@ from camel.verifiers import BaseVerifier
 from .base import DataPoint, SeedDataset
 
 logger = get_logger(__name__)
+
 
 class GenerativeDataset(IterableDataset):
     r"""A dataset that generates and stores data points in Parquet.
@@ -90,6 +105,7 @@ class GenerativeDataset(IterableDataset):
             on_demand_gen (bool): Generate new data if dataset is exhausted.
         """
         import asyncio
+
         dataset = pq.ParquetDataset(self.cache_path)
         yielded_fragments = 0
 
@@ -150,14 +166,18 @@ class GenerativeDataset(IterableDataset):
             "rationale": [dp.rationale for dp in new_data],
             "final_answer": [dp.final_answer for dp in new_data],
         }
-        new_table = pa.Table.from_pandas(pd.DataFrame(data_dict), schema=self.schema)
+        new_table = pa.Table.from_pandas(
+            pd.DataFrame(data_dict), schema=self.schema
+        )
         if os.path.exists(self.cache_path):
             existing_table = pq.read_table(self.cache_path)
             combined_table = pa.concat_tables([existing_table, new_table])
         else:
             combined_table = new_table
         pq.write_table(combined_table, self.cache_path)
-        logger.info(f"Appended {len(new_data)} new data points to {self.cache_path}")
+        logger.info(
+            f"Appended {len(new_data)} new data points to {self.cache_path}"
+        )
 
     async def generate_new(self, n: int) -> List[DataPoint]:
         r"""Generate new data points asynchronously.
@@ -176,12 +196,17 @@ class GenerativeDataset(IterableDataset):
                     indices = random.sample(range(len(self.seed_dataset)), 3)
                     examples = [self.seed_dataset[i] for i in indices]
                     prompt = self._construct_prompt(examples)
-                    agent_output = self.agent.step(
-                        prompt, response_format=DataPoint
-                    ).msgs[0].parsed
+                    agent_output = (
+                        self.agent.step(prompt, response_format=DataPoint)
+                        .msgs[0]
+                        .parsed
+                    )
                     if not isinstance(agent_output, dict):
                         raise TypeError("Agent output must be a dict")
-                    if "question" not in agent_output or "rationale" not in agent_output:
+                    if (
+                        "question" not in agent_output
+                        or "rationale" not in agent_output
+                    ):
                         raise KeyError("Missing required keys in agent output")
                     rationale = agent_output["rationale"]
                     verifier_response = await self.verifier.verify(rationale)
@@ -198,7 +223,9 @@ class GenerativeDataset(IterableDataset):
                     logger.warning(f"Error in generation: {e}, retrying...")
                 attempts += 1
             if attempts == self.chunk_size:
-                logger.warning(f"Failed to generate after {self.chunk_size} tries.")
+                logger.warning(
+                    f"Failed to generate after {self.chunk_size} tries."
+                )
         return valid_data_points
 
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
