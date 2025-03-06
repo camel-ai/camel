@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+from datetime import datetime
 
 from camel.memories import (
     ContextRecord,
@@ -33,11 +34,12 @@ def test_score_based_context_creator():
                     "test",
                     RoleType.ASSISTANT,
                     meta_dict=None,
-                    content="Hello world!",  # 10
+                    content="Nice to meet you.",  # 12
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
-            score=0.9,
+            timestamp=datetime.now().timestamp(),
+            score=0.3,
         ),
         ContextRecord(
             memory_record=MemoryRecord(
@@ -45,11 +47,12 @@ def test_score_based_context_creator():
                     "test",
                     RoleType.ASSISTANT,
                     meta_dict=None,
-                    content="Nice to meet you.",  # 12
+                    content="Hello world!",  # 10
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
-            score=0.3,
+            timestamp=datetime.now().timestamp() + 1,
+            score=0.9,
         ),
         ContextRecord(
             memory_record=MemoryRecord(
@@ -61,13 +64,14 @@ def test_score_based_context_creator():
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
+            timestamp=datetime.now().timestamp() + 2,
             score=0.7,
         ),
     ]
 
     expected_output = [
         r.memory_record.to_openai_message()
-        for r in [context_records[0], context_records[2]]
+        for r in [context_records[1], context_records[2]]
     ]
     output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output

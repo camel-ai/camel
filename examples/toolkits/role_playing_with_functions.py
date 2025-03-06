@@ -17,7 +17,6 @@ from typing import List
 from colorama import Fore
 
 from camel.agents.chat_agent import ToolCallingRecord
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import (
@@ -29,8 +28,8 @@ from camel.utils import print_text_animated
 
 
 def main(
-    model_platform=ModelPlatformType.DEFAULT,
-    model_type=ModelType.DEFAULT,
+    model_platform=ModelPlatformType.NVIDIA,
+    model_type=ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
     chat_turn_limit=10,
 ) -> None:
     task_prompt = (
@@ -38,18 +37,13 @@ def main(
         "estimate the current age of University of Oxford "
         "and then add 10 more years to this age, "
         "and get the current weather of the city where "
-        "the University is located."
+        "the University is located. You must use tool to solve the task."
     )
-
-    user_model_config = ChatGPTConfig(temperature=0.0)
 
     tools_list = [
         *MathToolkit().get_tools(),
-        *SearchToolkit().get_tools(),
+        SearchToolkit().search_duckduckgo,
     ]
-    assistant_model_config = ChatGPTConfig(
-        temperature=0.0,
-    )
 
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
@@ -58,7 +52,6 @@ def main(
             model=ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
-                model_config_dict=assistant_model_config.as_dict(),
             ),
             tools=tools_list,
         ),
@@ -66,7 +59,6 @@ def main(
             model=ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
-                model_config_dict=user_model_config.as_dict(),
             ),
         ),
         task_prompt=task_prompt,

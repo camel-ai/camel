@@ -13,12 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Type, Union
+from typing import Dict, Optional, Sequence, Type, Union
 
 from pydantic import BaseModel, Field
 
 from camel.configs.base_config import BaseConfig
-from camel.types import NOT_GIVEN, NotGiven
 
 
 class ChatGPTConfig(BaseConfig):
@@ -95,45 +94,28 @@ class ChatGPTConfig(BaseConfig):
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present.
+        reasoning_effort(str, optional): A parameter specifying the level of
+            reasoning used by certain model types. Valid values are :obj:
+            `"low"`, :obj:`"medium"`, or :obj:`"high"`. If set, it is only
+            applied to the model types that support it (e.g., :obj:`o1`,
+            :obj:`o1mini`, :obj:`o1preview`, :obj:`o3mini`). If not provided
+            or if the model type does not support it, this parameter is
+            ignored. (default: :obj:`None`)
     """
 
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
-    max_tokens: Union[int, NotGiven] = NOT_GIVEN
+    stop: Optional[Union[str, Sequence[str]]] = None
+    max_tokens: Optional[int] = None
     presence_penalty: float = 0.0
-    response_format: Union[Type[BaseModel], dict, NotGiven] = NOT_GIVEN
+    response_format: Optional[Union[Type[BaseModel], Dict]] = None
     frequency_penalty: float = 0.0
-    logit_bias: dict = Field(default_factory=dict)
+    logit_bias: Dict = Field(default_factory=dict)
     user: str = ""
-    tool_choice: Optional[Union[dict[str, str], str]] = None
-
-    def as_dict(self) -> dict[str, Any]:
-        r"""Convert the current configuration to a dictionary.
-
-        This method converts the current configuration object to a dictionary
-        representation, which can be used for serialization or other purposes.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the current
-                configuration.
-        """
-        config_dict = self.model_dump()
-        if self.tools:
-            from camel.toolkits import FunctionTool
-
-            tools_schema = []
-            for tool in self.tools:
-                if not isinstance(tool, FunctionTool):
-                    raise ValueError(
-                        f"The tool {tool} should "
-                        "be an instance of `FunctionTool`."
-                    )
-                tools_schema.append(tool.get_openai_tool_schema())
-        config_dict["tools"] = NOT_GIVEN
-        return config_dict
+    tool_choice: Optional[Union[Dict[str, str], str]] = None
+    reasoning_effort: Optional[str] = None
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

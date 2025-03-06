@@ -12,11 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
+import subprocess
 import threading
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from openai import OpenAI, Stream
+from openai import AsyncOpenAI, AsyncStream, OpenAI, Stream
+from pydantic import BaseModel
 
 from camel.configs import SGLANG_API_PARAMS, SGLangConfig
 from camel.messages import OpenAIMessage
@@ -85,13 +87,14 @@ class SGLangModel(BaseModelBackend):
                 api_key="Set-but-ignored",  # required but ignored
                 base_url=self._url,
             )
+            self._async_client = AsyncOpenAI(
+                timeout=180,
+                max_retries=3,
+                api_key="Set-but-ignored",  # required but ignored
+                base_url=self._url,
+            )
 
     def _start_server(self) -> None:
-        from sglang.utils import (  # type: ignore[import-untyped]
-            execute_shell_command,
-            wait_for_server,
-        )
-
         try:
             if not self._url:
                 cmd = (
@@ -101,10 +104,10 @@ class SGLangModel(BaseModelBackend):
                     f"--host 0.0.0.0"
                 )
 
-                server_process = execute_shell_command(cmd)
-                wait_for_server("http://localhost:30000")
+                server_process = _execute_shell_command(cmd)
+                _wait_for_server("http://localhost:30000")
                 self._url = "http://127.0.0.1:30000/v1"
-                self.server_process = server_process
+                self.server_process = server_process  # type: ignore[assignment]
                 # Start the inactivity monitor in a background thread
                 self._inactivity_thread = threading.Thread(
                     target=self._monitor_inactivity, daemon=True
@@ -131,8 +134,6 @@ class SGLangModel(BaseModelBackend):
         r"""Monitor whether the server process has been inactive for over 10
         minutes.
         """
-        from sglang.utils import terminate_process
-
         while True:
             # Check every 10 seconds
             time.sleep(10)
@@ -143,7 +144,7 @@ class SGLangModel(BaseModelBackend):
                     time.time() - self.last_run_time > 600
                 ):
                     if self.server_process:
-                        terminate_process(self.server_process)
+                        _terminate_process(self.server_process)
                         self.server_process = None
                         self._client = None  # Invalidate the client
                         logging.info(
@@ -178,9 +179,49 @@ class SGLangModel(BaseModelBackend):
                     "input into SGLang model backend."
                 )
 
-    def run(
+    async def _arun(
         self,
         messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `AsyncStream[ChatCompletionChunk]` in the stream mode.
+        """
+
+        # Ensure server is running
+        self._ensure_server_running()
+
+        with self._lock:
+            # Update last run time
+            self.last_run_time = time.time()
+
+        if self._client is None:
+            raise RuntimeError(
+                "Client is not initialized. Ensure the server is running."
+            )
+
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            model=self.model_type,
+            **self.model_config_dict,
+        )
+
+        return response
+
+    def _run(
+        self,
+        messages: List[OpenAIMessage],
+        response_format: Optional[Type[BaseModel]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
@@ -223,3 +264,101 @@ class SGLangModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+
+# Below are helper functions from sglang.utils
+def _terminate_process(process):
+    _kill_process_tree(process.pid)
+
+
+def _kill_process_tree(
+    parent_pid, include_parent: bool = True, skip_pid: Optional[int] = None
+):
+    r"""Kill the process and all its child processes."""
+    import os
+    import signal
+
+    import psutil
+
+    if parent_pid is None:
+        parent_pid = os.getpid()
+        include_parent = False
+
+    try:
+        itself = psutil.Process(parent_pid)
+    except psutil.NoSuchProcess:
+        return
+
+    children = itself.children(recursive=True)
+    for child in children:
+        if child.pid == skip_pid:
+            continue
+        try:
+            child.kill()
+        except psutil.NoSuchProcess:
+            pass
+
+    if include_parent:
+        try:
+            itself.kill()
+
+            # Sometime processes cannot be killed with SIGKILL
+            # so we send an additional signal to kill them.
+            itself.send_signal(signal.SIGQUIT)
+        except psutil.NoSuchProcess:
+            pass
+
+
+def _execute_shell_command(command: str) -> subprocess.Popen:
+    r"""Execute a shell command and return the process handle
+
+    Args:
+        command: Shell command as a string (can include \\ line continuations)
+    Returns:
+        subprocess.Popen: Process handle
+    """
+    import subprocess
+
+    # Replace \ newline with space and split
+    command = command.replace("\\\n", " ").replace("\\", " ")
+    parts = command.split()
+
+    return subprocess.Popen(parts, text=True, stderr=subprocess.STDOUT)
+
+
+def _wait_for_server(base_url: str, timeout: Optional[int] = None) -> None:
+    r"""Wait for the server to be ready by polling the /v1/models endpoint.
+
+    Args:
+        base_url: The base URL of the server
+        timeout: Maximum time to wait in seconds. None means wait forever.
+    """
+    import requests
+
+    start_time = time.time()
+    while True:
+        try:
+            response = requests.get(
+                f"{base_url}/v1/models",
+                headers={"Authorization": "Bearer None"},
+            )
+            if response.status_code == 200:
+                time.sleep(5)
+                print(
+                    """\n
+                    NOTE: Typically, the server runs in a separate terminal.
+                    In this notebook, we run the server and notebook code 
+                    together, so their outputs are combined.
+                    To improve clarity, the server logs are displayed in the 
+                    original black color, while the notebook outputs are 
+                    highlighted in blue.
+                    """
+                )
+                break
+
+            if timeout and time.time() - start_time > timeout:
+                raise TimeoutError(
+                    "Server did not become ready within timeout period"
+                )
+        except requests.exceptions.RequestException:
+            time.sleep(1)
