@@ -35,7 +35,7 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
-from camel.models import ModelFactory
+from camel.models import AnthropicModel, ModelFactory, OpenAIModel
 from camel.terminators import ResponseWordsTerminator
 from camel.toolkits import (
     FunctionTool,
@@ -1149,3 +1149,47 @@ def test_chat_agent_vision(step_call_count=3):
         assert (
             agent_response.msgs[0].content == "Yes."
         ), f"Error in calling round {i+1}"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_creation_methods():
+    """Test different ways to create a ChatAgent with various model specifications."""  # noqa: E501
+    # Method 1: Initialize with just a string (model name)
+    agent1 = ChatAgent("You are a helpful assistant.", model="gpt-4o-mini")
+    assert agent1.model_type.value == "gpt-4o-mini"
+    assert isinstance(agent1.model_backend.models[0], OpenAIModel)
+
+    # Method 2: Initialize with just a ModelType enum
+    agent2 = ChatAgent(
+        "You are a helpful assistant.", model=ModelType.GPT_4O_MINI
+    )
+    assert agent2.model_type.value == "gpt-4o-mini"
+    assert isinstance(agent2.model_backend.models[0], OpenAIModel)
+
+    # Method 3: Initialize with a tuple of strings (platform, model)
+    agent3 = ChatAgent(
+        "You are a helpful assistant.",
+        model=("anthropic", "claude-3-5-sonnet-latest"),
+    )
+    assert agent3.model_type.value == "claude-3-5-sonnet-latest"
+    assert (
+        agent3.model_backend.models[0].model_type.value
+        == "claude-3-5-sonnet-latest"
+    )
+    assert isinstance(agent3.model_backend.models[0], AnthropicModel)
+
+    # Method 4: Initialize with a tuple of enums
+    agent4 = ChatAgent(
+        "You are a helpful assistant.",
+        model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
+    )
+    assert agent4.model_type.value == "claude-3-5-sonnet-latest"
+    assert isinstance(agent4.model_backend.models[0], AnthropicModel)
+
+    # Method 5: Default model when none is specified
+    agent5 = ChatAgent("You are a helpful assistant.")
+    assert agent5.model_type.value == ModelType.DEFAULT.value
+
+    # All agents should have the same system message
+    for agent in [agent1, agent2, agent3, agent4, agent5]:
+        assert "You are a helpful assistant." in agent.system_message.content

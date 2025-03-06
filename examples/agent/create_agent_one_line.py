@@ -28,13 +28,14 @@ agent2 = ChatAgent(
 
 # Method 3: Initialize the agent with a tuple (platform, model)
 agent3 = ChatAgent(
-    "You are a helpful assistant.", model=("openai", "gpt-4o-mini")
+    "You are a helpful assistant.",
+    model=("anthropic", "claude-3-5-sonnet-latest"),
 )
 
 # Method 4: Initialize the agent with a `tuple` of `enum`
 agent4 = ChatAgent(
     "You are a helpful assistant.",
-    model=(ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI),
+    model=(ModelPlatformType.ANTHROPIC, ModelType.CLAUDE_3_5_SONNET),
 )
 
 # Method 5: Default model when none is specified.
@@ -55,19 +56,14 @@ model = ModelFactory.create(
 agent7 = ChatAgent("You are a helpful assistant.", model=model)
 
 
-# Test with a simple question
-user_msg = "What is the capital of France?"
+# Test with a simple question with agent3(Anthropic, claude-3-5-sonnet-latest)
+user_msg = "Which model are you?"
 
 # Get the response from one of the agents
-response = agent1.step(user_msg)
-print("Response from agent1 (string model):")
+response = agent3.step(user_msg)
+print("Response from agent3:")
 print(response.msgs[0].content)
 """
-Response from agent1 (string model):
-The capital of France is Paris.
-"""
-
-# You can test other agents similarly:
-# response = agent2.step(user_msg)
-# print("Response from agent2 (tuple model):")
-# print(response.msgs[0].content)
+Response from agent3:
+I am Claude, an AI assistant created by Anthropic. I aim to be direct and honest about what I am.
+"""  # noqa: E501
