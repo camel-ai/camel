@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, List
 
 from camel.utils import get_model_encoding
 from .base import BaseChunker
@@ -12,11 +12,12 @@ class CodeChunker(BaseChunker):
         classes, and regions are not arbitrarily split across chunks.
         It also handles oversized lines and Base64-encoded images.
 
-    Args:
+    Attributes:
         chunk_size (int, optional): The maximum token size per chunk.
             (default: :obj:`8192`)
         model_name (str, optional): The tokenizer model name used
             for token counting. (default: :obj:`"cl100k_base"`)
+        remove_image: (bool, optional): If the chunker should skip the images.
     """
 
     def __init__(
@@ -48,11 +49,10 @@ class CodeChunker(BaseChunker):
         """
         return len(self.tokenizer.encode(text, disallowed_special=()))
 
-    def _split_oversized(self, line):
+    def _split_oversized(self, line) -> List[str]:
         r"""Splits an oversized line into multiple chunks based on token limits
 
         Args:
-            chunk (List[str]): The current chunk being built.
             line (str): The oversized line to be split.
 
         Returns:
@@ -77,19 +77,12 @@ class CodeChunker(BaseChunker):
             chunks.append(self.tokenizer.decode(buffer))
         return chunks
 
-    def chunk(self, input_text: str):
-        r"""Splits the input text into smaller chunks while preserving
+    def chunk(self, content: str) -> List[str]:
+        r"""Splits the content into smaller chunks while preserving
         structure and adhering to token constraints.
 
-        This method:
-        - Avoids splitting structured elements such as functions, classes,
-          and regions.
-        - Removes Base64-encoded images if self.remove_image is true.
-        - Splits oversized lines into smaller pieces.
-        - Ensures the final chunks stay within the `chunk_size` token limit.
-
         Args:
-            input_text (str): The input text to be chunked.
+            content (str): The content to be chunked.
 
         Returns:
             List[str]: A list of chunked text segments.
@@ -100,7 +93,7 @@ class CodeChunker(BaseChunker):
         struct_buffer: list[str] = []
         struct_tokens = 0
 
-        for line in input_text.splitlines(keepends=True):
+        for line in content.splitlines(keepends=True):
             if self.remove_image:
                 if self.image_pattern.match(line):
                     continue

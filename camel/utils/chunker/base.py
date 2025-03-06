@@ -9,7 +9,7 @@ class BaseChunker(ABC):
     @abstractmethod
     def chunk(
         self,
-        text: Union[str, Element, List[Element]]
+        content: Union[str, Element, List[Element]]
     ) -> List[Union[str, Element]]:
-        r"""Performs a single step of the agent."""
+        r"""Chunk the given content"""
         pass
