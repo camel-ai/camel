@@ -1,25 +1,40 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
-import json
-from camel.agents import ChatAgent
-from camel.memories import AgentMemory, ChatHistoryMemory, MemoryRecord
-from camel.messages import BaseMessage
-from camel.memories.context_creators.score_based import ScoreBasedContextCreator
-from camel.types import ModelType
-from camel.utils import OpenAITokenCounter
-from camel.models.model_factory import ModelFactory
-from camel.types import ModelPlatformType
 from pathlib import Path
+
+from camel.agents import ChatAgent
+from camel.memories import ChatHistoryMemory
+from camel.memories.context_creators.score_based import (
+    ScoreBasedContextCreator,
+)
+from camel.messages import BaseMessage
+from camel.models.model_factory import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.types.enums import OpenAIBackendRole
+from camel.utils import OpenAITokenCounter
+
 
 def test_chat_agent_memory():
-
     context_creator = ScoreBasedContextCreator(
-    token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
-    token_limit=1024
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_limit=1024,
     )
-    
+
     model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI, model_type=ModelType.GPT_4O_MINI
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
     )
 
     # 1. Instantiate a ChatAgent with system_message & agent_id
@@ -27,18 +42,28 @@ def test_chat_agent_memory():
     agent = ChatAgent(
         system_message="You are a helpful assistant",
         agent_id="001",
-        model=model
+        model=model,
     )
 
     # 2. Perform steps so that some MemoryRecords accumulate
     #    - We'll just send a message and read the response to populate memory
-    user_input_1 = "Hello, can you remember these instructions?: Banana is a country."
+    user_input_1 = (
+        "Hello, can you remember these instructions?: Banana is a country."
+    )
     response_1 = agent.step(user_input_1)
-    print("Assistant response 1:", response_1.msgs[0].content if response_1.msgs else "No response")
+    print(
+        "Assistant response 1:",
+        response_1.msgs[0].content if response_1.msgs else "No response",
+    )
 
-    user_input_2 = "Please store and recall this next time: CAMEL lives in Banana."
+    user_input_2 = (
+        "Please store and recall this next time: CAMEL lives in Banana."
+    )
     response_2 = agent.step(user_input_2)
-    print("Assistant response 2:", response_2.msgs[0].content if response_2.msgs else "No response")
+    print(
+        "Assistant response 2:",
+        response_2.msgs[0].content if response_2.msgs else "No response",
+    )
 
     # 3. Save the agent’s memory to a JSON file
     save_path = Path("./chat_agent_memory.json")
@@ -50,7 +75,7 @@ def test_chat_agent_memory():
     new_agent = ChatAgent(
         system_message="You are a helpful assistant",
         agent_id="001",
-        model=model
+        model=model,
     )
 
     # Load the memory from our file
@@ -59,22 +84,28 @@ def test_chat_agent_memory():
     # Test that the memory is loaded by requesting a response
     user_input_3 = "What were we talking about?"
     response_3 = new_agent.step(user_input_3)
-    print("New Agent response (after loading memory):", 
-          response_3.msgs[0].content if response_3.msgs else "No response")
+    print(
+        "New Agent response (after loading memory):",
+        response_3.msgs[0].content if response_3.msgs else "No response",
+    )
 
     # 5. Demonstrate loading memory from an existing AgentMemory
     #    Suppose we had another agent with some different or combined memory:
     another_agent = ChatAgent(
         system_message="Another system message",
         agent_id="002",
-        memory=ChatHistoryMemory(agent_id="002", context_creator=context_creator )
+        memory=ChatHistoryMemory(
+            agent_id="002", context_creator=context_creator
+        ),
     )
 
     # Add some record to the second agent's memory
     message = BaseMessage.make_user_message(
         role_name="User", content="This is memory from a second agent"
     )
-    another_agent.update_memory(message, role=OpenAIBackendRole.USER)  # role passed for demonstration
+    another_agent.update_memory(
+        message, role=OpenAIBackendRole.USER
+    )  # role passed for demonstration
 
     # Extract the memory object from the second agent
     second_agent_memory = another_agent.memory
@@ -90,6 +121,7 @@ def test_chat_agent_memory():
     # Clean up: remove the saved file if desired
     if os.path.exists(save_path):
         os.remove(save_path)
+
 
 if __name__ == "__main__":
     test_chat_agent_memory()
