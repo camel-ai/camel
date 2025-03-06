@@ -109,9 +109,9 @@ class ChatAgent(BaseAgent):
         system_message (Union[BaseMessage, str], optional): The system message
             for the chat agent.
         model (Union[BaseModelBackend, List[BaseModelBackend], Tuple[str, str],
-            str], optional): The model backend to use for
-            generating responses. (default: :obj:`ModelPlatformType.DEFAULT`
-            with `ModelType.DEFAULT`)
+            str, Tuple[ModelPlatformType, ModelType]] ModelType, optional):
+            The model backend to use for generating responses. (default:
+            :obj:`ModelPlatformType.DEFAULT` with `ModelType.DEFAULT`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -147,7 +147,12 @@ class ChatAgent(BaseAgent):
         system_message: Optional[Union[BaseMessage, str]] = None,
         model: Optional[
             Union[
-                BaseModelBackend, List[BaseModelBackend], Tuple[str, str], str
+                BaseModelBackend,
+                List[BaseModelBackend],
+                Tuple[str, str],
+                str,
+                ModelType,
+                Tuple[ModelPlatformType, ModelType],
             ]
         ] = None,
         memory: Optional[AgentMemory] = None,
@@ -162,8 +167,9 @@ class ChatAgent(BaseAgent):
         scheduling_strategy: str = "round_robin",
         single_iteration: bool = False,
     ) -> None:
-        # Handle string model specification (just the model type)
-        if isinstance(model, str):
+        # Handle single enum model or string model specification
+        # e.g. ModelType.GPT_4O_MINI or "gpt-4o-mini"
+        if isinstance(model, (ModelType, str)):
             # Default to OpenAI platform
             model_platform = ModelPlatformType.DEFAULT
             model_type = model
@@ -172,6 +178,8 @@ class ChatAgent(BaseAgent):
                 model_type=model_type,
             )
         # Handle tuple-based model specification
+        # e.g. (ModelPlatformType.OPENAI, ModelType.GPT_4O_MINI)
+        # or ("openai", "gpt-4o-mini")
         elif isinstance(model, tuple) and len(model) == 2:
             model_platform, model_type = model  # type: ignore[assignment]
             model = ModelFactory.create(
