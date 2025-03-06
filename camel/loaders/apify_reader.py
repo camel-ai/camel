@@ -233,8 +233,10 @@ class ApifyLoader(BaseLoader):
     def __init__(self, config) -> None:
         super().__init__(config)
         # Initialize the underlying Apify class.
-        self.api = config.get("api_key") or os.environ.get("APIFY_API_KEY")
-        self.apify = Apify(api_key=self.api)
+        self._api_key = config.get("api_key") or os.environ.get(
+            "APIFY_API_KEY"
+        )
+        self.apify = Apify(api_key=self._api_key)
 
     def load(self, source: str, **kwargs: Any) -> Union[dict, List[dict]]:
         functionality = kwargs.get("functionality", "run_actor")
@@ -254,7 +256,7 @@ class ApifyLoader(BaseLoader):
             return result if result else {}
 
         elif functionality == "get_dataset":
-            dataset_id = kwargs.get("dataset_id")
+            dataset_id = source
             if not dataset_id:
                 raise ValueError(
                     "dataset_id is required for get_dataset functionality."
@@ -263,14 +265,14 @@ class ApifyLoader(BaseLoader):
             return result if result else {}
 
         elif functionality == "update_dataset":
-            dataset_id = kwargs.get("dataset_id")
+            dataset_id = source
             name = kwargs.get("name")
             if not dataset_id or not name:
                 raise ValueError("Both dataset_id and name are required.")
             return self.apify.update_dataset(dataset_id, name)
 
         elif functionality == "get_dataset_items":
-            dataset_id = kwargs.get("dataset_id")
+            dataset_id = source
             if not dataset_id:
                 raise ValueError(
                     "dataset_id is required for get_dataset_items."
