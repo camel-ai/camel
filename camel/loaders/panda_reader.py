@@ -369,7 +369,7 @@ class PandasLoader(BaseLoader):
         source: Union[pd.DataFrame, str],
         *args: Any,
         **kwargs: Dict[str, Any],
-    ) -> SmartDataframe:
+    ) -> "SmartDataframe":
         if isinstance(source, pd.DataFrame):
             return SmartDataframe(source, config=self.config)
         file_path = str(source)
