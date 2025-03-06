@@ -65,7 +65,7 @@ def test_chat_agent_memory():
         response_2.msgs[0].content if response_2.msgs else "No response",
     )
 
-    # 3. Save the agent’s memory to a JSON file
+    # 3. Save the agent's memory to a JSON file
     save_path = Path("./chat_agent_memory.json")
     agent.save_memory(save_path)
     print(f"Agent memory saved to {save_path}.")
@@ -110,7 +110,7 @@ def test_chat_agent_memory():
     # Extract the memory object from the second agent
     second_agent_memory = another_agent.memory
 
-    # Now load that memory into new_agent. We override new_agent’s memory.
+    # Now load that memory into new_agent. We override new_agent's memory.
     new_agent.load_memory(second_agent_memory)
 
     # Confirm it's loaded by printing some details:
