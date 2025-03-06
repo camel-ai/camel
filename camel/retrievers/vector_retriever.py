@@ -27,6 +27,8 @@ from camel.storages import (
     VectorRecord,
 )
 from camel.utils import Constants
+from camel.utils.chunker import BaseChunker
+from camel.utils.chunker import UioChunker
 
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
@@ -78,6 +80,7 @@ class VectorRetriever(BaseRetriever):
         should_chunk: bool = True,
         extra_info: Optional[dict] = None,
         metadata_filename: Optional[str] = None,
+        chunker: Optional[BaseChunker] = None,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from local file path, remote URL, string
@@ -101,8 +104,13 @@ class VectorRetriever(BaseRetriever):
                 used for storing metadata. Defaults to None.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
+        if chunker is None:
+            chunker = UioChunker(
+                chunk_type = chunk_type,
+                max_characters = max_characters,
+                metadata_filename = metadata_filename,
+            )
         from unstructured.documents.elements import Element
-
         if isinstance(content, Element):
             elements = [content]
         elif isinstance(content, IOBase):
@@ -140,11 +148,7 @@ class VectorRetriever(BaseRetriever):
         else:
             # Chunk the content if required
             chunks = (
-                self.uio.chunk_elements(
-                    chunk_type=chunk_type,
-                    elements=elements,
-                    max_characters=max_characters,
-                )
+                chunker.chunk(text=elements)
                 if should_chunk
                 else elements
             )
