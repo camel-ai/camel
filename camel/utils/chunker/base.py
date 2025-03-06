@@ -12,17 +12,13 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from abc import ABC, abstractmethod
-from typing import List, Union
-
-from unstructured.documents.elements import Element
+from typing import Any
 
 
 class BaseChunker(ABC):
     r"""An abstract base class for all CAMEL chunkers."""
 
     @abstractmethod
-    def chunk(
-        self, content: Union[str, Element, List[Element]]
-    ) -> List[Union[str, Element]]:
+    def chunk(self, content: Any) -> Any:
         r"""Chunk the given content"""
         pass
