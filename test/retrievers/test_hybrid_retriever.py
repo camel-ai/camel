@@ -16,16 +16,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from camel.loaders.unstructured_io import UnstructuredIO
+from camel.loaders.unstructured_io import UnstructuredIOLoader
 from camel.retrievers.hybrid_retrival import HybridRetriever
 
 
 @pytest.fixture
 def mock_hybrid_retriever(monkeypatch):
-    mock_element = UnstructuredIO.create_element_from_text(text='mock element')
+    mock_element = UnstructuredIOLoader.create_element_from_text(
+        text='mock element'
+    )
     monkeypatch.setattr(os.path, 'exists', MagicMock(return_value=True))
     monkeypatch.setattr(
-        UnstructuredIO,
+        UnstructuredIOLoader,
         'parse_file_or_url',
         MagicMock(return_value=[mock_element]),
     )

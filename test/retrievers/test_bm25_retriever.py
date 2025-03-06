@@ -21,7 +21,7 @@ from camel.retrievers import BM25Retriever
 
 @pytest.fixture
 def mock_unstructured_modules():
-    with patch('camel.retrievers.bm25_retriever.UnstructuredIO') as mock:
+    with patch('camel.retrievers.bm25_retriever.UnstructuredIOLoader') as mock:
         yield mock
 
 
