@@ -12,311 +12,163 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import os
-from typing import Any, Dict, List, Union
+import asyncio
+from typing import Optional
 
-from datasets import Dataset
+from camel.interpreters import BaseInterpreter, SubprocessInterpreter
+from camel.logger import get_logger
+from camel.verifiers.base import BaseVerifier
+from camel.verifiers.models import (
+    VerificationOutcome,
+    VerificationResult,
+    VerifierInput,
+)
 
-from camel.interpreters import BaseInterpreter, InterpreterError
-from camel.logger import logging
-
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-class CodeVerifier:
-    r"""Verifier for code solutions.
+class CodeVerifier(BaseVerifier):
+    r"""Verifier for code solutions using an interpreter.
 
-    This verifier checks code solutions by:
-    1. Validating syntax
-    2. Running test cases
-    3. Verifying outputs against expected results
+    This verifier executes code through an interpreter and verifies the output
+    against an expected ground truth.
     """
 
     def __init__(
         self,
-        interpreter: BaseInterpreter,
-        require_confirmation: bool = False,
-    ) -> None:
+        interpreter: Optional[BaseInterpreter] = None,
+        max_parallel: Optional[int] = None,
+        timeout: Optional[float] = 30.0,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        initial_batch_size: Optional[int] = None,
+        **kwargs,
+    ):
         r"""Initialize the code verifier.
 
         Args:
-            interpreter (BaseInterpreter): The interpreter instance to use for
-                code execution
-            require_confirmation (bool, optional): Whether to require user
-                confirmation before execution. (default: :obj:`False`)
+            interpreter (Optional[BaseInterpreter]): The interpreter to use for
+                code execution.If None, a SubprocessInterpreter will be created
+                (default: None)
+            max_parallel (Optional[int]): Max number of parallel verifications
+            timeout (Optional[float]): Execution timeout in seconds
+                (default: 30.0)
+            max_retries (int): Max number of retries for failed verifications
+            retry_delay (float): Delay between retries in seconds
+            initial_batch_size (Optional[int]): Initial batch size for
+                parallel processing
+            **kwargs: Additional parameters for the base verifier
         """
-        super().__init__()
-        self.interpreter = interpreter
+        super().__init__(
+            max_parallel=max_parallel,
+            timeout=timeout,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+            initial_batch_size=initial_batch_size,
+            **kwargs,
+        )
+
+        self.interpreter: BaseInterpreter
+        if interpreter is None:
+            self.interpreter = SubprocessInterpreter(
+                require_confirm=False,
+            )
+        else:
+            self.interpreter = interpreter
+
         logger.info(
-            "Initialized CodeVerifier with interpreter %s", interpreter
+            f"Initialized CodeVerifier with interpreter"
+            f"{self.interpreter.__class__.__name__}"
         )
 
-    def verify(self, data: Union[Dataset, Dict[str, Any]]) -> Dataset:
-        r"""Verify code solutions.
+    async def _setup(self) -> None:
+        r"""Set up the verifier and the interpreter if needed."""
+        pass
+
+    async def _cleanup(self) -> None:
+        r"""Clean up the verifier and the interpreter if needed."""
+        pass
+
+    async def _verify_implementation(
+        self, result: VerifierInput
+    ) -> VerificationResult:
+        r"""Execute code and verify the output against ground truth.
 
         Args:
-            data (Union[Dataset, Dict[str, Any]]): Data containing code to
-                verify
+            result (VerifierInput): Contains the code to execute and optional
+                ground truth for comparison.
 
         Returns:
-            Dataset: Dataset with verification results added
+            VerificationResult: Contains verification status, execution output,
+                and error messages if any.
         """
-        if isinstance(data, dict):
-            data = Dataset.from_dict(data)
+        script = result.llm_response.strip()
+        language = "python"
 
-        logger.info("Starting verification of %d examples", len(data))
-
-        def verify_single(example: Dict[str, Any]) -> Dict[str, Any]:
-            r"""Verify a single code example.
-
-            Args:
-                example (Dict[str, Any]): Example containing code to verify
-
-            Returns:
-                Dict[str, Any]: Example with verification results added
-            """
-            code = example.get("code", "")
-            language = example.get("language", "python")
-
-            # Validate language is supported by interpreter
-            supported_languages = self.interpreter.supported_code_types()
-            if language not in supported_languages:
-                logger.warning(
-                    "Language %s not supported by interpreter %s. "
-                    "Supported languages: %s",
-                    language,
-                    self.interpreter.__class__.__name__,
-                    supported_languages,
-                )
-                return self._handle_execution_error(
-                    example,
-                    InterpreterError(f"Language {language} not supported"),
-                )
-
-            test_cases = example.get("test_cases", [])
-
-            try:
-                self._validate_test_cases(test_cases)
-            except ValueError as e:
-                logger.warning("Invalid test cases: %s", e)
-                return self._handle_execution_error(
-                    example, ValueError(f"Invalid test cases: {e!s}")
-                )
-
-            logger.debug(
-                "Verifying code in %s with %d test cases",
-                language,
-                len(test_cases),
+        try:
+            # Run the code using the interpreter
+            output_result = await asyncio.wait_for(
+                self._run_code(script, language), timeout=self._timeout
             )
 
-            # Check syntax first
-            try:
-                if language == "python":
-                    compile(code, '<string>', 'exec')
-            except SyntaxError as e:
-                logger.warning("Syntax error in code: %s", e)
-                return self._handle_syntax_error(example, e)
-
-            try:
-                return self._run_test_cases(
-                    example, code, language, test_cases
+            # If ground truth is provided, compare it with the result
+            if result.ground_truth is not None:
+                # Normalize both strings by removing extra whitespace
+                normalized_output = ' '.join(output_result.strip().split())
+                normalized_truth = ' '.join(
+                    str(result.ground_truth).strip().split()
                 )
-            except Exception as e:
-                logger.error("Execution error: %s", e)
-                return self._handle_execution_error(example, e)
 
-        # For Parallelization
-        default_cpus = max(1, min(8, (os.cpu_count() or 1) // 2))
-        num_proc = min(default_cpus, len(data))
-        logger.info("Using %d processes for parallel verification", num_proc)
+                if normalized_output == normalized_truth:
+                    return VerificationResult(
+                        status=VerificationOutcome.SUCCESS,
+                        result=output_result,
+                    )
+                else:
+                    return VerificationResult(
+                        status=VerificationOutcome.FAILURE,
+                        error_message="Output doesn't match ground truth",
+                        result=output_result,
+                    )
+            else:
+                return VerificationResult(
+                    status=VerificationOutcome.SUCCESS,
+                    result=output_result,
+                )
 
-        return data.map(
-            verify_single, num_proc=num_proc, desc="Verifying code"
-        )
-
-    def _prepare_test_code(
-        self,
-        code: str,
-        test_case: Dict[str, Any],
-    ) -> str:
-        r"""Prepare code with test case inputs and assertions.
-
-        Args:
-            code (str): Original code to test
-            test_case (Dict[str, Any]): Test case configuration
-
-        Returns:
-            str: Complete test code with assertions
-        """
-        logger.debug(
-            "Preparing test code with inputs: %s", test_case.get("inputs")
-        )
-        full_code = [code]
-
-        # Add test case setup
-        test_setup = [
-            f"{k} = {v!r}" for k, v in test_case.get("inputs", {}).items()
-        ]
-        if test_setup:
-            full_code.extend(test_setup)
-
-        # Add test assertions
-        test_assertions = []
-        for expr, expected in test_case.get("expected", {}).items():
-            test_assertions.append(
-                f"""
-result = {expr}
-if result != {expected!r}:
-    raise AssertionError(
-        f"Test failed:\\n  Expression: {expr}\\n  "
-        f"Expected: {expected!r}\\n  Got: {{result}}"
-    )
-print(f"Test passed: {{result}}")
-"""
+        except asyncio.TimeoutError:
+            return VerificationResult(
+                status=VerificationOutcome.TIMEOUT,
+                result="",
+                error_message="Execution timed out.",
+            )
+        except Exception as e:
+            return VerificationResult(
+                status=VerificationOutcome.ERROR,
+                result="",
+                error_message=f"Execution error: {e}",
             )
 
-        if test_assertions:
-            full_code.extend(test_assertions)
-
-        return "\n".join(full_code)
-
-    def _validate_test_cases(self, test_cases: List[Dict[str, Any]]) -> None:
-        """Validate test cases structure.
+    async def _run_code(self, code: str, language: str) -> str:
+        """Run code using the interpreter.
 
         Args:
-            test_cases (List[Dict[str, Any]]): List of test cases to validate
+            code (str): Code to execute
+            language (str): Programming language
 
-        Raises:
-            ValueError: If test cases are malformed
+        Returns:
+            str: Output from code execution
         """
-        if not isinstance(test_cases, list):
-            raise ValueError("Test cases must be provided as a list")
-
-        for i, test_case in enumerate(test_cases):
-            if not isinstance(test_case, dict):
-                raise ValueError(f"Test case {i} must be a dictionary")
-            if not test_case.get("expected"):
-                raise ValueError(
-                    f"Test case {i} must contain 'expected' results"
+        try:
+            # Handle both sync and async interpreters
+            if hasattr(self.interpreter, "run_async"):
+                return await self.interpreter.run_async(code, language)
+            else:
+                # Run synchronously but in a thread to avoid blocking
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(
+                    None, self.interpreter.run, code, language
                 )
-
-    def _handle_syntax_error(
-        self,
-        example: Dict[str, Any],
-        error: SyntaxError,
-    ) -> Dict[str, Any]:
-        r"""Handle syntax errors in code verification.
-
-        Args:
-            example (Dict[str, Any]): The example being verified
-            error (SyntaxError): The syntax error that occurred
-
-        Returns:
-            Dict[str, Any]: Updated example with error information
-        """
-        logger.warning(
-            "Handling syntax error: %s at line %d", error, error.lineno
-        )
-        return {
-            **example,
-            "verification_result": {
-                "passed": False,
-                "test_results": [],
-                "error": f"Syntax error: {error!s}",
-                "details": {
-                    "type": "syntax_error",
-                    "line": error.lineno,
-                    "offset": error.offset,
-                    "text": error.text,
-                },
-            },
-        }
-
-    def _handle_execution_error(
-        self,
-        example: Dict[str, Any],
-        error: Exception,
-    ) -> Dict[str, Any]:
-        r"""Handle execution errors in code verification.
-
-        Args:
-            example (Dict[str, Any]): The example being verified
-            error (Exception): The execution error that occurred
-
-        Returns:
-            Dict[str, Any]: Updated example with error information
-        """
-        logger.error("Handling execution error: %s", error)
-        example["verification_result"] = {
-            "passed": False,
-            "test_results": [],
-            "error": str(error),
-            "details": {
-                "type": "execution_error",
-                "message": str(error),
-            },
-        }
-        return example
-
-    def _run_test_cases(
-        self,
-        example: Dict[str, Any],
-        code: str,
-        language: str,
-        test_cases: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
-        r"""Run test cases for code verification.
-
-        Args:
-            example (Dict[str, Any]): The example being verified
-            code (str): The code to test
-            language (str): Programming language of the code
-            test_cases (List[Dict[str, Any]]): List of test cases to run
-
-        Returns:
-            Dict[str, Any]: Updated example with test results
-        """
-        test_results = []
-        test_details = []
-
-        if test_cases:
-            logger.info("Running %d test cases", len(test_cases))
-            for i, test_case in enumerate(test_cases):
-                logger.debug("Running test case %d", i + 1)
-                test_code = self._prepare_test_code(code, test_case)
-                try:
-                    output = self.interpreter.run(test_code, language)
-                    test_results.append(True)
-                    test_details.append(
-                        {
-                            "test_case": i + 1,
-                            "status": "passed",
-                            "output": output,
-                        }
-                    )
-                    logger.debug("Test case %d passed", i + 1)
-                except Exception as e:
-                    test_results.append(False)
-                    test_details.append(
-                        {
-                            "test_case": i + 1,
-                            "status": "failed",
-                            "error": str(e),
-                        }
-                    )
-                    logger.warning("Test case %d failed: %s", i + 1, e)
-
-        passed = all(test_results) if test_results else True
-        logger.info("All test cases %s", "passed" if passed else "failed")
-
-        example["verification_result"] = {
-            "passed": passed,
-            "test_results": test_results,
-            "error": None,
-            "details": {
-                "test_count": len(test_results),
-                "tests": test_details,
-            },
-        }
-
-        return example
+        except Exception as e:
+            logger.error(f"Error running code: {e}")
+            raise

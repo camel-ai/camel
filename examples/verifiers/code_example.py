@@ -12,271 +12,203 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 from pprint import pprint
 
-from datasets import Dataset
-
-from camel.interpreters import SubprocessInterpreter
-from camel.verifiers import CodeVerifier
+from camel.verifiers import CodeVerifier, VerifierInput
 
 
-def main():
+async def run_example_1():
     print("\nExample 1: Basic Function Test")
-    interpreter = SubprocessInterpreter(require_confirm=False)
-    verifier = CodeVerifier(interpreter=interpreter)
-    result = verifier.verify(
+    verifier = CodeVerifier()
+    await verifier.setup()
+
+    code = """
+def add(a, b): 
+    return a + b
+    
+print(add(1, 2))
+print(add(-1, 1))
+"""
+    verifier_input = VerifierInput(llm_response=code, ground_truth="3\n0")
+    result = await verifier.verify(verifier_input)
+    pprint(
         {
-            "code": ["def add(a, b): return a + b"],
-            "language": ["python"],
-            "test_cases": [
-                [
-                    {"inputs": {"a": 1, "b": 2}, "expected": {"add(a, b)": 3}},
-                    {
-                        "inputs": {"a": -1, "b": 1},
-                        "expected": {"add(a, b)": 0},
-                    },
-                ]
-            ],
+            "status": result.status.value,
+            "result": result.result,
+            "error": result.error_message,
         }
     )
-    pprint(result[0]["verification_result"])
 
-    # Example 2: Multiple Solutions
+    await verifier.cleanup()
+
+
+async def run_example_2():
     print("\nExample 2: Multiple Solutions")
-    data = Dataset.from_dict(
-        {
-            "code": [
-                "def factorial(n): return 1 if n <= 1 else n * factorial(n-1)",
-                "def factorial(n): return n * factorial(n-1) if n > 1 else 1",
-            ],
-            "language": ["python", "python"],
-            "test_cases": [
-                [{"inputs": {"n": 5}, "expected": {"factorial(n)": 120}}],
-                [{"inputs": {"n": 5}, "expected": {"factorial(n)": 120}}],
-            ],
-        }
-    )
-    results = verifier.verify(data)
-    for i, result in enumerate(results):
-        print(f"Solution {i+1} result:", result["verification_result"])
+    verifier = CodeVerifier()
+    await verifier.setup()
 
-    # Example 3: Using subprocess interpreter
+    codes = [
+        """
+def factorial(n): 
+    return 1 if n <= 1 else n * factorial(n-1)
+    
+print(factorial(5))
+""",
+        """
+def factorial(n): 
+    return n * factorial(n-1) if n > 1 else 1
+    
+print(factorial(5))
+""",
+    ]
+
+    for i, code in enumerate(codes):
+        verifier_input = VerifierInput(llm_response=code, ground_truth="120")
+        result = await verifier.verify(verifier_input)
+        print(
+            f"Solution {i+1} result:",
+            {"status": result.status.value, "result": result.result},
+        )
+
+    await verifier.cleanup()
+
+
+async def run_example_3():
     print("\nExample 3: External Imports")
-    interpreter = SubprocessInterpreter(require_confirm=False)
-    verifier = CodeVerifier(interpreter=interpreter)
-    result = verifier.verify(
-        {
-            "code": [
-                """
+    verifier = CodeVerifier()
+    await verifier.setup()
+
+    code = """
 import numpy as np
 def process_array():
     arr = np.array([1, 2, 3])
     return arr.mean()
-        """
-            ],
-            "language": ["python"],
-            "test_cases": [
-                [{"inputs": {}, "expected": {"process_array()": 2.0}}]
-            ],
-        }
+    
+print(process_array())
+"""
+    verifier_input = VerifierInput(llm_response=code, ground_truth="2.0")
+    result = await verifier.verify(verifier_input)
+    print(
+        "Result:",
+        {
+            "status": result.status.value,
+            "result": result.result,
+            "error": result.error_message,
+        },
     )
-    print("Result:", result[0]["verification_result"])
 
-    # Example 4: Multi-threaded verification
+    await verifier.cleanup()
+
+
+async def run_example_4():
     print("\nExample 4: Multi-threaded verification")
-    interpreter = SubprocessInterpreter(require_confirm=False)
-    verifier = CodeVerifier(interpreter=interpreter)
-    results = verifier.verify(
-        {
-            "code": [
-                "def square(x):\n    return x * x\nresult = square(4)",
-                "def cube(x):\n    return x * x * x\nresult = cube(3)",
-                "def double(x):\n    return x + x\nresult = double(5)",
-                "def half(x):\n    return x / 2\nresult = half(8)",
-            ],
-            "language": ["python"] * 4,
-            "test_cases": [
-                [{"inputs": {}, "expected": {"result": 16}}],
-                [{"inputs": {}, "expected": {"result": 27}}],
-                [{"inputs": {}, "expected": {"result": 10}}],
-                [{"inputs": {}, "expected": {"result": 4.0}}],
-            ],
-        }
-    )
-    for i, result in enumerate(results):
-        print(f"\nFunction {i+1} result:", result["verification_result"])
+    verifier = CodeVerifier()
+    await verifier.setup()
 
-    # Example 5: Syntax Error
+    codes = [
+        """
+def square(x):
+    return x * x
+result = square(4)
+print(result)
+""",
+        """
+def cube(x):
+    return x * x * x
+result = cube(3)
+print(result)
+""",
+        """
+def double(x):
+    return x + x
+result = double(5)
+print(result)
+""",
+        """
+def half(x):
+    return x / 2
+result = half(8)
+print(result)
+""",
+    ]
+    expected_outputs = ["16", "27", "10", "4.0"]
+
+    for i, (code, expected) in enumerate(zip(codes, expected_outputs)):
+        verifier_input = VerifierInput(
+            llm_response=code, ground_truth=expected
+        )
+        result = await verifier.verify(verifier_input)
+        print(
+            f"\nFunction {i+1} result:",
+            {"status": result.status.value, "result": result.result},
+        )
+
+    await verifier.cleanup()
+
+
+async def run_example_5():
     print("\nExample 5: Syntax Error")
-    result = verifier.verify(
-        {
-            "code": ["def broken_function(x: return x"],  # Syntax error
-            "language": ["python"],
-        }
-    )
-    print("Result:", result[0]["verification_result"])
+    verifier = CodeVerifier()
+    await verifier.setup()
 
-    # Example 6: Test Case Validation
-    print("\nExample 6: Test Case Validation")
-    # Invalid test case (not a list)
-    result = verifier.verify(
+    code = "def broken_function(x: return x"  # Syntax error
+    verifier_input = VerifierInput(llm_response=code, ground_truth=None)
+    result = await verifier.verify(verifier_input)
+    print(
+        "Result:",
         {
-            "code": ["def add(a, b): return a + b"],
-            "language": ["python"],
-            "test_cases": {"not": "a list"},  # Invalid: not a list
-        }
+            "status": result.status.value,
+            "result": result.result,
+            "error": result.error_message,
+        },
     )
-    print("Invalid test case (not a list):", result[0]["verification_result"])
+
+    await verifier.cleanup()
+
+
+async def main():
+    await run_example_1()
+    await run_example_2()
+    await run_example_3()
+    await run_example_4()
+    await run_example_5()
 
 
 if __name__ == "__main__":
-    main()
-
+    asyncio.run(main())
 
 """
-Example Output:
-
 Example 1: Basic Function Test
-Verifying code: 100%|██████████| 1/1 [00:00<00:00, 16.84 examples/s]
-{
-    'details': {
-        'test_count': 2,
-        'tests': [
-            {
-                'output': 'Test passed: 3\n',
-                'status': 'passed',
-                'test_case': 1
-            },
-            {
-                'output': 'Test passed: 0\n',
-                'status': 'passed',
-                'test_case': 2
-            }
-        ]
-    },
-    'error': None,
-    'passed': True,
-    'test_results': [True, True]
-}
+{'error': None, 'result': '3\n0\n', 'status': 'success'}
 
 Example 2: Multiple Solutions
-Verifying code (num_proc=2):100%|██████████| 2/2 [00:00<00:00,15.64 examples/s]
-Solution 1 result: {
-    'details': {
-        'test_count': 1,
-        'tests': [
-            {
-                'output': 'Test passed: 120\n',
-                'status': 'passed',
-                'test_case': 1
-            }
-        ]
-    },
-    'error': None,
-    'passed': True,
-    'test_results': [True]
-}
-Solution 2 result: {
-    'details': {
-        'test_count': 1,
-        'tests': [
-            {
-                'output': 'Test passed: 120\n',
-                'status': 'passed',
-                'test_case': 1
-            }
-        ]
-    },
-    'error': None,
-    'passed': True,
-    'test_results': [True]
-}
+Solution 1 result: {'status': 'success', 'result': '120\n'}
+Solution 2 result: {'status': 'success', 'result': '120\n'}
 
 Example 3: External Imports
-Verifying code: 100%|██████████| 1/1 [00:00<00:00,  9.29 examples/s]
-Result: {
-    'details': {
-        'test_count': 1,
-        'tests': [
-            {
-                'output': 'Test passed: 2.0\n',
-                'status': 'passed',
-                'test_case': 1
-            }
-        ]
-    },
-    'error': None,
-    'passed': True,
-    'test_results': [True]
-}
+Result: {'status': 'success', 'result': '2.0\n', 'error': None}
 
 Example 4: Multi-threaded verification
-Verifying code(num_proc=4):100%|██████████| 4/4 [00:00<00:00, 35.86 examples/s]
 
-Function 1 result: {
-    'details': {
-        'test_count': 1,
-        'tests': [
-            {
-                'output': 'Test passed: 120\n',
-                'status': 'passed',
-                'test_case': 1
-            }
-        ]
-    },
-    'error': None,
-    'passed': True,
-    'test_results': [True]
-}
+Function 1 result: {'status': 'success', 'result': '16\n'}
 
-Function 2 result: {
-    'details': {
-        'test_count': 1,
-        'tests': [
-            {
-                'output': 'Test passed: 120\n',
-                'status': 'passed',
-                'test_case': 1
-            }
-        ]
-    },
-    'error': None,
-    'passed': True,
-    'test_results': [True]
-}
+Function 2 result: {'status': 'success', 'result': '27\n'}
+
+Function 3 result: {'status': 'success', 'result': '10\n'}
+
+Function 4 result: {'status': 'success', 'result': '4.0\n'}
 
 Example 5: Syntax Error
-Verifying code: 100%|██████████| 1/1 [00:00<00:00, 504.24 examples/s]
+======stderr======
+File "/var/folders/rt/x73bp_zj6rl9vm2jc06jd5zm0000gn/T/tmp8vjh5z1s.py", line 1
+    def broken_function(x: return x
+                           ^^^^^^
+SyntaxError: invalid syntax
+
+==================
 Result: {
-    'details': {
-        'line': 1,
-        'offset': 24,
-        'text': 'def broken_function(x: return x\n',
-        'type': 'syntax_error'
-    },
-    'error': 'Syntax error: invalid syntax (<string>, line 1)',
-    'passed': False,
-    'test_results': []
-}
-
-Example 6: Test Case Validation
-Verifying code:   0%|         | 0/1 [00:00<?, ? examples/s]
-
-2025-02-10 07:41:14,094 - 
-camel.verifiers.code_verifier - WARNING - Invalid test cases: Test cases must 
-be a list
-2025-02-10 07:41:14,094 - 
-camel.verifiers.code_verifier - ERROR - Handling execution error: Invalid test 
-cases: Test cases must be a list
-
-Verifying code: 100%|██████████| 1/1 [00:00<00:00, 662.71 examples/s]
-Result: {
-    'details': {
-        'message': 'Invalid test cases: Test cases must be provided as a list',
-        'type': 'execution_error'
-    },
-    'error': 'Invalid test cases: Test cases must be provided as a list',
-    'passed': False,
-    'test_results': []
-}
+    'status': 'success', 
+    'result': '(Execution failed with return code 1)', 
+    'error': None}
 """
