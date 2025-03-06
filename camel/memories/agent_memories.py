@@ -71,9 +71,9 @@ class ChatHistoryMemory(AgentMemory):
     def write_records(self, records: List[MemoryRecord]) -> None:
         for record in records:
             # assign the agent_id to the record
-            if record.agent_id is None:
+            if record.agent_id == "":
                 # if the agent memory has an agent_id, use it
-                if self.agent_id == "":
+                if self.agent_id is not None:
                     record.agent_id = self.agent_id
         self._chat_history_block.write_records(records)
 
