@@ -53,7 +53,7 @@ class ChatHistoryMemory(AgentMemory):
         self._chat_history_block = ChatHistoryBlock(
             storage=storage, agent_id=agent_id
         )
-        self._agent_id = agent_id
+        self.agent_id = agent_id
 
     def retrieve(self) -> List[ContextRecord]:
         records = self._chat_history_block.retrieve(self._window_size)
@@ -69,6 +69,12 @@ class ChatHistoryMemory(AgentMemory):
         return records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
+        for record in records:
+            # assign the agent_id to the record
+            if record.agent_id is None:
+                # if the agent memory has an agent_id, use it
+                if self.agent_id == "":
+                    record.agent_id = self.agent_id
         self._chat_history_block.write_records(records)
 
     def get_context_creator(self) -> BaseContextCreator:

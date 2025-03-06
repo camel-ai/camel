@@ -394,7 +394,6 @@ def test_chat_agent_messages_window():
             MemoryRecord(
                 message=user_msg,
                 role_at_backend=OpenAIBackendRole.USER,
-                agent_id=assistant.agent_id,
             )
             for _ in range(5)
         ]
@@ -1151,14 +1150,3 @@ def test_chat_agent_vision(step_call_count=3):
         assert (
             agent_response.msgs[0].content == "Yes."
         ), f"Error in calling round {i+1}"
-
-
-def main():
-    """Entry point when running the script with Python."""
-    print("Running script directly with Python...")
-
-    test_chat_agent_messages_window()
-
-
-if __name__ == "__main__":
-    main()
