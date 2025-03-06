@@ -157,6 +157,7 @@ class VectorRetriever(BaseRetriever):
                 )
 
                 records = []
+                offset = 0
                 # Prepare the payload for each vector record, includes the
                 # content path, chunk metadata, and chunk text
                 for vector, chunk in zip(batch_vectors, batch_chunks):
@@ -178,6 +179,7 @@ class VectorRetriever(BaseRetriever):
                     chunk_metadata["metadata"].pop("orig_elements", "")
                     chunk_metadata["extra_info"] = extra_info or {}
                     chunk_text = {"text": str(chunk)}
+                    chunk_metadata["metadata"]["piece_num"] = i + offset + 1
                     combined_dict = {
                         **content_path_info,
                         **chunk_metadata,
@@ -187,6 +189,7 @@ class VectorRetriever(BaseRetriever):
                     records.append(
                         VectorRecord(vector=vector, payload=combined_dict)
                     )
+                    offset += 1
 
                 self.storage.add(records=records)
 
