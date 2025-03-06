@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import asyncio
-from typing import Optional
+from typing import List, Optional
 
 from camel.interpreters import BaseInterpreter, SubprocessInterpreter
 from camel.logger import get_logger
@@ -88,6 +88,75 @@ class CodeVerifier(BaseVerifier):
     async def _cleanup(self) -> None:
         r"""Clean up the verifier and the interpreter if needed."""
         pass
+
+    async def verify_batch(
+        self, inputs: List[VerifierInput], raise_on_error: bool = False
+    ) -> List[VerificationResult]:
+        r"""Verify multiple inputs in parallel with controlled concurrency.
+
+        Args:
+            inputs: List of inputs to verify.
+            raise_on_error: Whether to raise an exception if any verification
+                fails. (default: :obj:`False`)
+
+        Returns:
+            List[VerificationResult]: One for each input.
+
+        Raises:
+            RuntimeError: If any verification fails and raise_on_error is True.
+            asyncio.TimeoutError: If verifications time out and max retries
+                exceeded.
+        """
+        if not self._is_setup:
+            logger.warning(
+                f"{self.__class__.__name__} not set up, calling setup()"
+            )
+            await self.setup()
+
+        # Get current batch params from processor with defaults if not present
+        max_workers = getattr(
+            self._batch_processor, 'max_workers', self._max_parallel or 1
+        )
+        batch_size = getattr(
+            self._batch_processor, 'batch_size', self._initial_batch_size or 10
+        )
+        semaphore = asyncio.Semaphore(max(1, max_workers))
+
+        async def _verify_with_semaphore(
+            input_data: VerifierInput,
+        ) -> VerificationResult:
+            async with semaphore:
+                return await self.verify(input_data)
+
+        # Process in batches
+        all_results: List[VerificationResult] = []
+        for i in range(0, len(inputs), batch_size):
+            batch = inputs[i : i + batch_size]
+            verification_tasks = [
+                _verify_with_semaphore(input_data) for input_data in batch
+            ]
+            try:
+                batch_results = await asyncio.gather(*verification_tasks)
+                all_results.extend(batch_results)
+            except Exception as e:
+                logger.error(
+                    f"Batch verification failed: {e!s}", exc_info=True
+                )
+                if raise_on_error:
+                    raise RuntimeError(
+                        f"Batch verification failed: {e!s}"
+                    ) from e
+
+        if raise_on_error and any(
+            r.status
+            in {VerificationOutcome.ERROR, VerificationOutcome.TIMEOUT}
+            for r in all_results
+        ):
+            error_msg = "One or more verifications failed"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        return all_results
 
     async def _verify_implementation(
         self, result: VerifierInput

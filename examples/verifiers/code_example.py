@@ -103,7 +103,7 @@ print(process_array())
 
 async def run_example_4():
     print("\nExample 4: Multi-threaded verification")
-    verifier = CodeVerifier()
+    verifier = CodeVerifier(max_parallel=2)
     await verifier.setup()
 
     codes = [
@@ -134,11 +134,16 @@ print(result)
     ]
     expected_outputs = ["16", "27", "10", "4.0"]
 
-    for i, (code, expected) in enumerate(zip(codes, expected_outputs)):
-        verifier_input = VerifierInput(
-            llm_response=code, ground_truth=expected
-        )
-        result = await verifier.verify(verifier_input)
+    inputs = [
+        VerifierInput(llm_response=code, ground_truth=expected)
+        for code, expected in zip(codes, expected_outputs)
+    ]
+
+    # Use batch verification
+    results = await verifier.verify_batch(inputs)
+
+    # Display results
+    for i, result in enumerate(results):
         print(
             f"\nFunction {i+1} result:",
             {"status": result.status.value, "result": result.result},
