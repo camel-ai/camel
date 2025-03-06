@@ -25,6 +25,8 @@ from typing import (
     Union,
 )
 
+from .base_loader import BaseLoader
+
 if TYPE_CHECKING:
     from unstructured.documents.elements import Element
 
@@ -470,3 +472,119 @@ class UnstructuredIO:
 
         # Format chunks into a list of dictionaries (or your preferred format)
         return chunking_functions[chunk_type](elements, **kwargs)
+
+
+class UnstructuredIOLoader(BaseLoader):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__(config)
+
+    def load(self, source, **kwargs) -> Union[List["Element"], None]:
+        r"""Load unstructured data by delegating to the
+        appropriate static parsing method
+
+        Args:
+            source: The file path, URL, or raw bytes to load.
+            **kwargs: additional keyword arguments
+
+        Returns:
+            A list of Element objects.
+        """
+        if isinstance(source, str):
+            elements = UnstructuredIO.parse_file_or_url(source, **kwargs)
+        elif isinstance(source, bytes):
+            from io import BytesIO
+
+            elements = UnstructuredIO.parse_bytes(BytesIO(source), **kwargs)
+        else:
+            raise ValueError(
+                "Unsupported source type. Expected a file path (str) or \
+                raw bytes."
+            )
+        if not elements:
+            raise ValueError(f"Unable to parse elements from source: {source}")
+        return elements
+
+    @staticmethod
+    def create_element_from_text(
+        text: str,
+        element_id: Optional[str] = None,
+        embeddings: Optional[List[float]] = None,
+        filename: Optional[str] = None,
+        file_directory: Optional[str] = None,
+        last_modified: Optional[str] = None,
+        filetype: Optional[str] = None,
+        parent_id: Optional[str] = None,
+    ) -> "Element":
+        return UnstructuredIO.create_element_from_text(
+            text,
+            element_id,
+            embeddings,
+            filename,
+            file_directory,
+            last_modified,
+            filetype,
+            parent_id,
+        )
+
+    @staticmethod
+    def clean_text_data(
+        text: str,
+        clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
+    ) -> str:
+        r"""Clean the text using UnstructuredIO's cleaning utility."""
+        return UnstructuredIO.clean_text_data(text, clean_options)
+
+    @staticmethod
+    def extract_data_from_text(
+        text: str,
+        extract_type: Literal[
+            'extract_datetimetz',
+            'extract_email_address',
+            'extract_ip_address',
+            'extract_ip_address_name',
+            'extract_mapi_id',
+            'extract_ordered_bullets',
+            'extract_text_after',
+            'extract_text_before',
+            'extract_us_phone_number',
+        ],
+        **kwargs,
+    ) -> Any:
+        return UnstructuredIO.extract_data_from_text(
+            text, extract_type, **kwargs
+        )
+
+    @staticmethod
+    def stage_elements(
+        elements: List[Any],
+        stage_type: Literal[
+            'convert_to_csv',
+            'convert_to_dataframe',
+            'convert_to_dict',
+            'dict_to_elements',
+            'stage_csv_for_prodigy',
+            'stage_for_prodigy',
+            'stage_for_baseplate',
+            'stage_for_datasaur',
+            'stage_for_label_box',
+            'stage_for_label_studio',
+            'stage_for_weaviate',
+        ],
+        **kwargs,
+    ) -> Union[str, List[Dict], Any]:
+        return UnstructuredIO.stage_elements(elements, stage_type, **kwargs)
+
+    @staticmethod
+    def chunk_elements(
+        elements: List["Element"], chunk_type: str, **kwargs
+    ) -> List["Element"]:
+        return UnstructuredIO.chunk_elements(elements, chunk_type, **kwargs)
+
+    @property
+    def supported_formats(self) -> set:
+        r"""Return the set of file formats that this loader supports
+
+        Returns:
+            set: A set of supported file extensions.
+        """
+        return {"txt", "html"}

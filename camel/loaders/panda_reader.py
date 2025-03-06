@@ -22,6 +22,8 @@ if TYPE_CHECKING:
     from pandas import DataFrame
     from pandasai import SmartDataframe
 
+from .base_loader import BaseLoader
+
 
 def check_suffix(valid_suffixs: List[str]) -> Callable:
     r"""A decorator to check the file suffix of a given file path.
@@ -335,3 +337,52 @@ class PandaReader:
             DataFrame: The DataFrame object.
         """
         return pd.read_orc(file_path, *args, **kwargs)
+
+
+class PandasLoader(BaseLoader):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        super().__init__(config)
+        if "llm" not in self.config:
+            from pandasai.llm import OpenAI
+
+            self.config["llm"] = OpenAI(api_token=os.getenv("OPENAI_API_KEY"))
+        self.reader = PandaReader(config)
+
+        self._loader_map = {
+            ".csv": pd.read_csv,
+            ".xlsx": pd.read_excel,
+            ".xls": pd.read_excel,
+            ".json": pd.read_json,
+            ".parquet": pd.read_parquet,
+            ".sql": pd.read_sql,
+            ".html": pd.read_html,
+            ".feather": pd.read_feather,
+            ".dta": pd.read_stata,
+            ".sas": pd.read_sas,
+            ".pkl": pd.read_pickle,
+            ".h5": pd.read_hdf,
+            ".orc": pd.read_orc,
+        }
+
+    def load(
+        self,
+        source: Union[pd.DataFrame, str],
+        *args: Any,
+        **kwargs: Dict[str, Any],
+    ) -> SmartDataframe:
+        if isinstance(source, pd.DataFrame):
+            return SmartDataframe(source, config=self.config)
+        file_path = str(source)
+        path = Path(file_path)
+        if not file_path.startswith("http") and not path.exists():
+            raise FileNotFoundError(f"File {file_path} not found")
+
+        suffix = path.suffix.lower()
+        if suffix not in self._loader_map:
+            raise ValueError(f"Unsupported file format: {suffix}")
+        df = self._loader_map[suffix](file_path, *args, **kwargs)
+        return SmartDataframe(df, config=self.config)
+
+    @property
+    def supported_formats(self) -> set:
+        return set(self._loader_map.keys())

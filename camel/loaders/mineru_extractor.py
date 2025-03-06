@@ -14,11 +14,13 @@
 
 import os
 import time
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
 from camel.utils import api_keys_required
+
+from .base_loader import BaseLoader
 
 
 class MinerU:
@@ -248,3 +250,63 @@ class MinerU:
                 raise
 
             time.sleep(check_interval)
+
+
+class MinerULoader(BaseLoader):
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]],
+    ) -> None:
+        super().__init__(config)
+        self.config = config if config else {}
+        self.api_key = self.config.get("api_key") or os.environ.get(
+            "MINERU_API_KEY"
+        )
+        self.api_url = self.config.get("api_url", "https://mineru.net/api/v4")
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+        }
+        self.is_ocr = self.config.get("is_ocr", False)
+        self.enable_formula = self.config.get("enable_formula", False)
+        self.enable_table = self.config.get("enable_table", True)
+        self.layout_model = self.config.get("layout_model", "doclayout_yolo")
+        self.language = self.config.get("language", "en")
+
+        self.mineru = MinerU(
+            api_key=self.api_key,
+            api_url=self.api_url,
+            is_ocr=self.is_ocr,
+            enable_formula=self.enable_formula,
+            enable_table=self.enable_table,
+            layout_model=self.layout_model,
+            language=self.language,
+        )
+
+    def load(self, source: str, **kwargs: Any) -> Dict:
+        return self.mineru.extract_url(source)
+
+    def batch_extract(self, files: List[Dict[str, Union[str, bool]]]) -> str:
+        return self.mineru.batch_extract_urls(files)
+
+    def get_status(self, task_id: str, is_batch: bool = False) -> Dict:
+        if is_batch:
+            return self.mineru.get_batch_status(task_id)
+        else:
+            return self.mineru.get_task_status(task_id)
+
+    def wait_for_completion(
+        self,
+        task_id: str,
+        is_batch: bool = False,
+        timeout: float = 100,
+        check_interval: float = 5,
+    ) -> Dict:
+        return self.mineru.wait_for_completion(
+            task_id, is_batch, timeout, check_interval
+        )
+
+    @property
+    def supported_formats(self) -> set:
+        return {"url", "pdf", "doc", "docx", "txt", "html"}

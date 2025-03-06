@@ -17,6 +17,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from .base_loader import BaseLoader
+
 
 class Firecrawl:
     r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
@@ -170,3 +172,71 @@ class Firecrawl:
             return self.app.map_url(url=url, params=params)
         except Exception as e:
             raise RuntimeError(f"Failed to map the site: {e}")
+
+
+class FirecrawlLoader(BaseLoader):
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]],
+    ) -> None:
+        super().__init__(config)
+        self.config = config if config else {}
+        self.api_key = self.config.get("api_key") or os.environ.get(
+            "FIRECRAWL_API_KEY"
+        )
+        self.api_url = self.config.get("api_url") or os.environ.get(
+            "FIRECRAWL_API_URL"
+        )
+
+        self.firecrawl = Firecrawl(api_key=self.api_key, api_url=self.api_url)
+
+    def load(self, source: str, **kwargs: Any) -> Any:
+        r"""Load website data using Firecrawl.
+
+        Args:
+            source (str): The URL to load.
+            **kwargs: Additional parameters for the scrape function.
+
+        Returns:
+            The scraped data.
+        """
+        functionality = kwargs.get("functionality", "scrape")
+        if functionality == "crawl":
+            return self.crawl(source, params=kwargs.get("params"), **kwargs)
+        elif functionality == "structured_scrape":
+            response_format = kwargs.get("response_format")
+            if response_format is None:
+                raise ValueError(
+                    "For structured_scrape, 'response_format' must \
+                    be provided."
+                )
+            return self.structured_scrape(source, response_format)
+        elif functionality == "map_site":
+            return self.map_site(source, params=kwargs.get("params"))
+        else:  # Default is scrape.
+            return self.scrape(source, params=kwargs.get("params"))
+
+    def crawl(
+        self, url: str, params: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Any:
+        return self.firecrawl.crawl(url=url, params=params, **kwargs)
+
+    def check_crawl_job(self, job_id: str) -> Dict:
+        return self.firecrawl.check_crawl_job(job_id)
+
+    def scrape(
+        self, url: str, params: Optional[Dict[str, Any]] = None
+    ) -> Dict:
+        return self.firecrawl.scrape(url=url, params=params)
+
+    def structured_scrape(self, url: str, response_format: BaseModel) -> Dict:
+        return self.firecrawl.structured_scrape(url, response_format)
+
+    def map_site(
+        self, url: str, params: Optional[Dict[str, Any]] = None
+    ) -> list:
+        return self.firecrawl.map_site(url=url, params=params)
+
+    @property
+    def supported_formats(self) -> set:
+        return {'html', 'url'}
