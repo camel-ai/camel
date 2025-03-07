@@ -1,14 +1,26 @@
-# vector_db_memory_test.py
-
-import os
-from pathlib import Path
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from camel.agents import ChatAgent
 from camel.memories import VectorDBMemory
-from camel.memories.context_creators.score_based import ScoreBasedContextCreator
+from camel.memories.context_creators.score_based import (
+    ScoreBasedContextCreator,
+)
 from camel.models.model_factory import ModelFactory
 from camel.storages.vectordb_storages import QdrantStorage
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
+
 
 def test_chat_agent_vectordb_memory():
     # Shared vector storage
@@ -71,18 +83,31 @@ def test_chat_agent_vectordb_memory():
     response_1 = agent1.step("What did I tell you about whales or elephants?")
     response_2 = agent2.step("What have I told you about stars and moons?")
 
-    print("Agent 1 response:", response_1.msgs[0].content if response_1.msgs else "No response")
-    print("Agent 2 response:", response_2.msgs[0].content if response_2.msgs else "No response")
+    print(
+        "Agent 1 response:",
+        response_1.msgs[0].content if response_1.msgs else "No response",
+    )
+    print(
+        "Agent 2 response:",
+        response_2.msgs[0].content if response_2.msgs else "No response",
+    )
 
     # Retrieve and print agent-specific records
     print("\nAgent 1's memory records:")
     for ctx_record in vectordb_memory_agent1.retrieve():
-        print(f"Score: {ctx_record.score:.2f} | Content: {ctx_record.memory_record.message.content}")
+        print(
+            f"""Score: {ctx_record.score:.2f} | 
+            Content: {ctx_record.memory_record.message.content}"""
+        )
 
     print("\nAgent 2's memory records:")
     retrieved_context_agent2 = vectordb_memory_agent2.retrieve()
     for ctx_record in retrieved_context_agent2:
-        print(f"Score: {ctx_record.score:.2f} | Content: {ctx_record.memory_record.message.content}")
+        print(
+            f"""Score: {ctx_record.score:.2f} |
+            Content: {ctx_record.memory_record.message.content}"""
+        )
+
 
 if __name__ == "__main__":
     test_chat_agent_vectordb_memory()

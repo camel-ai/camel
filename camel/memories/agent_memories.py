@@ -51,7 +51,15 @@ class ChatHistoryMemory(AgentMemory):
         self._context_creator = context_creator
         self._window_size = window_size
         self._chat_history_block = ChatHistoryBlock(storage=storage)
-        self.agent_id = agent_id
+        self._agent_id = agent_id
+
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
 
     def retrieve(self) -> List[ContextRecord]:
         records = self._chat_history_block.retrieve(self._window_size)
@@ -108,9 +116,17 @@ class VectorDBMemory(AgentMemory):
         self._context_creator = context_creator
         self._retrieve_limit = retrieve_limit
         self._vectordb_block = VectorDBBlock(storage=storage)
-        self.agent_id = agent_id
+        self._agent_id = agent_id
 
         self._current_topic: str = ""
+
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
 
     def retrieve(self) -> List[ContextRecord]:
         return self._vectordb_block.retrieve(
@@ -172,6 +188,14 @@ class LongtermAgentMemory(AgentMemory):
         self._context_creator = context_creator
         self._current_topic: str = ""
         self._agent_id = agent_id
+
+    @property
+    def agent_id(self) -> Optional[str]:
+        return self._agent_id
+
+    @agent_id.setter
+    def agent_id(self, val: Optional[str]) -> None:
+        self._agent_id = val
 
     def get_context_creator(self) -> BaseContextCreator:
         r"""Returns the context creator used by the memory.

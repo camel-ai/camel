@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.messages import OpenAIMessage
@@ -111,6 +111,16 @@ class AgentMemory(MemoryBlock, ABC):
     and "get_context_creator", are used for generating model context based on
     the memory records stored within the AgentMemory.
     """
+
+    @property
+    @abstractmethod
+    def agent_id(self) -> Optional[str]:
+        pass
+
+    @agent_id.setter
+    @abstractmethod
+    def agent_id(self, val: Optional[str]) -> None:
+        pass
 
     @abstractmethod
     def retrieve(self) -> List[ContextRecord]:
