@@ -28,7 +28,7 @@ class SymPyToolkit(BaseToolkit):
     and Linear Algebra
     """
 
-    def __init__(self, default_variable: str = 'x', log_level=logging.INFO):
+    def __init__(self, default_variable: str = 'x', log_level=logging.INFO, timeout: int = 180):
         r"""
         Initializes the toolkit with a default variable and logging.
 
@@ -37,7 +37,7 @@ class SymPyToolkit(BaseToolkit):
             operations (default: 'x').
             log_level (int): The logging level (default: logging.INFO).
         """
-
+        self.timeout = timeout
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(log_level)
         handler = logging.StreamHandler()

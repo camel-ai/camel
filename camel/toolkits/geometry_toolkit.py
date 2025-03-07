@@ -28,7 +28,7 @@ class GeometryToolkit(BaseToolkit):
     like points, lines, circles, and polygons.
     """
 
-    def __init__(self, log_level=logging.INFO):
+    def __init__(self, log_level=logging.INFO, timeout: int = 180):
         r"""
         Initializes the toolkit with logging.
 
@@ -42,6 +42,7 @@ class GeometryToolkit(BaseToolkit):
             '%(asctime)s - %(levelname)s - %(message)s'
         )
         handler.setFormatter(formatter)
+        self.timeout = timeout
         if not self.logger.handlers:
             self.logger.addHandler(handler)
 

@@ -44,11 +44,13 @@ class MathCodeToolkit(BaseToolkit):
         import_white_list: Optional[List[str]] = None,
         require_confirm: bool = False,
         output_cap: int = 5000,
+        timeout: int = 180,
     ) -> None:
         self.verbose = verbose
         self.unsafe_mode = unsafe_mode
         self.import_white_list = import_white_list or list()
         self.output_cap = output_cap
+        self.timeout = timeout
 
         # Type annotation for interpreter to allow all possible types
         self.interpreter: Union[
