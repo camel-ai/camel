@@ -186,11 +186,16 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
+        
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
             agent_id=self.agent_id,
         )
+
+        # So we don't have to pass agent_id when we define memory
+        if memory is not None:
+            memory.agent_id = self.agent_id
 
         # Set up system message and initialize messages
         self._original_system_message = (

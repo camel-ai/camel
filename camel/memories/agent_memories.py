@@ -110,6 +110,7 @@ class VectorDBMemory(AgentMemory):
         self._context_creator = context_creator
         self._retrieve_limit = retrieve_limit
         self._vectordb_block = VectorDBBlock(storage=storage)
+        self.agent_id = agent_id
 
         self._current_topic: str = ""
 
@@ -124,6 +125,13 @@ class VectorDBMemory(AgentMemory):
         for record in records:
             if record.role_at_backend == OpenAIBackendRole.USER:
                 self._current_topic = record.message.content
+                
+            # assign the agent_id to the record
+            if record.agent_id == "":
+                # if the agent memory has an agent_id, use it
+                if self.agent_id is not None:
+                    record.agent_id = self.agent_id
+                    
         self._vectordb_block.write_records(records)
 
     def get_context_creator(self) -> BaseContextCreator:
