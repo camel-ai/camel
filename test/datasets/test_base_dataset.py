@@ -12,12 +12,14 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 import tempfile
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import torch
 from datasets import Dataset as HFDataset
+from datasets import load_dataset
 from pydantic import ValidationError
 
 from camel.datasets.base import (
@@ -211,9 +213,163 @@ def test_seed_dataset_init(sample_data):
         exc_info.value
     ), "Should raise ValueError for insufficient samples"
 
-    # Test with empty data and min_samples=0
     dataset_empty = SeedDataset(data=[], min_samples=0)
     assert len(dataset_empty.data) == 0, "Empty dataset should have no items"
+
+
+# Test the conversion of different dataset formats
+
+
+def test_seed_dataset_init_hf_dataset():
+    r"""Test SeedDataset initialization with a Hugging Face Dataset."""
+
+    hf_dataset = load_dataset("emotion", split="train[:2]")
+
+    mapped_dataset = hf_dataset.map(
+        lambda example: {
+            "question": example["text"],
+            # Dummy value since "emotion" lacks this
+            "rationale": "Sample rationale",
+            "final_answer": str(example["label"]),
+        }
+    )
+
+    dataset = SeedDataset(data=mapped_dataset, min_samples=1)
+
+    assert len(dataset.data) == 2, "Should have 2 items from the HF dataset"
+    assert isinstance(
+        dataset.data[0], DataPoint
+    ), "Items should be DataPoint instances"
+    assert (
+        dataset.data[0].question == mapped_dataset[0]["question"]
+    ), "Question should match the mapped dataset"
+    assert (
+        dataset.data[0].rationale == "Sample rationale"
+    ), "Rationale should be set correctly"
+    assert dataset.data[0].final_answer == str(
+        mapped_dataset[0]["label"]
+    ), "Final answer should match the label"
+
+
+def test_seed_dataset_init_pytorch_dataset():
+    r"""Test SeedDataset initialization with a real PyTorch Dataset (MNIST)."""
+    import tempfile
+
+    import torchvision
+    import torchvision.transforms as transforms
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        transform = transforms.Compose([transforms.ToTensor()])
+
+        # Load the MNIST dataset
+        mnist_dataset = torchvision.datasets.MNIST(
+            root=temp_dir,
+            train=True,
+            download=True,
+            transform=transform,
+        )
+
+        def map_mnist_to_datapoint(dataset, idx):
+            image, label = dataset[idx]
+            return {
+                "question": f"What is the digit in this image?"
+                f"(MNIST sample {idx})",
+                "rationale": "Analyzing the image to identify the digit."
+                f"(MNIST sample {idx})",
+                "final_answer": str(label),
+            }
+
+        mapped_data = [
+            map_mnist_to_datapoint(mnist_dataset, i) for i in range(2)
+        ]
+
+        dataset = SeedDataset(data=mapped_data, min_samples=1)
+
+        assert (
+            len(dataset.data) == 2
+        ), "Should have 2 items from the mapped MNIST dataset"
+        assert isinstance(
+            dataset.data[0], DataPoint
+        ), "Items should be DataPoint instances"
+        assert dataset.data[0].question.startswith(
+            "What is the digit in this image?"
+        ), "Question should be set correctly"
+        assert dataset.data[0].rationale.startswith(
+            "Analyzing the image to identify the digit."
+        ), "Rationale should be set correctly"
+        assert dataset.data[
+            0
+        ].final_answer.isdigit(), "Final answer should be a digit string"
+
+
+def test_seed_dataset_init_list_extended(sample_data):
+    r"""Test SeedDataset initialization with a list of dictionaries,
+    including optional fields and invalid data."""
+    data_with_optional = [
+        *sample_data,
+        {
+            "question": "What is 5-3?",
+            "rationale": "Subtraction",
+            "final_answer": "2",
+            "difficulty": "easy",
+            "metadata": {"topic": "math"},
+        },
+    ]
+    dataset = SeedDataset(data=data_with_optional, min_samples=1)
+    assert len(dataset.data) == 3, "Should have 3 items from the list"
+    assert (
+        dataset.data[2].difficulty == "easy"
+    ), "Optional difficulty field should be preserved"
+    assert dataset.data[2].metadata == {
+        "topic": "math"
+    }, "Optional metadata field should be preserved"
+
+    # Test with invalid data (missing required field)
+    invalid_data = [{"question": "What is 2+2?", "rationale": "Addition"}]
+    with pytest.raises(ValueError) as exc_info:
+        SeedDataset(data=invalid_data, min_samples=1)
+    assert "Sample at index 0 validation error" in str(
+        exc_info.value
+    ), "Should raise ValueError for invalid data"
+
+
+def test_seed_dataset_init_json_file():
+    r"""Test SeedDataset initialization with a JSON file path."""
+    # Create temp JSON file
+    sample_data = [
+        {
+            "question": "What is 2+2?",
+            "rationale": "Addition",
+            "final_answer": "4",
+        },
+        {
+            "question": "What is 3×3?",
+            "rationale": "Multiplication",
+            "final_answer": "9",
+        },
+    ]
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as temp_file:
+        json.dump(sample_data, temp_file)
+        temp_file.flush()
+
+        dataset = SeedDataset(data=temp_file.name, min_samples=1)
+
+        assert len(dataset.data) == 2, "Should have 2 items from the JSON file"
+        assert isinstance(
+            dataset.data[0], DataPoint
+        ), "Items should be DataPoint instances"
+        assert (
+            dataset.data[0].question == "What is 2+2?"
+        ), "Question should match the JSON data"
+        assert (
+            dataset.data[1].final_answer == "9"
+        ), "Final answer should match the JSON data"
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as invalid_file:
+        invalid_file.write("Invalid JSON")
+        invalid_file.flush()
+        with pytest.raises(json.JSONDecodeError):
+            SeedDataset(data=invalid_file.name, min_samples=1)
 
 
 def test_synthetic_dataset_init():
