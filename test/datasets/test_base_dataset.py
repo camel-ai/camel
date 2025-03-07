@@ -197,13 +197,19 @@ def test_seed_dataset_init(sample_data):
     dataset = SeedDataset(data=sample_data, min_samples=1)
     assert dataset._raw_data == sample_data, "Raw data should match input list"
     assert len(dataset.data) == 2, "Processed data should have 2 items"
-    assert isinstance(dataset.data[0], DataPoint), "Items should be DataPoint instances"
-    assert dataset.data[0].question == 'What is 2+2?', "DataPoint content should match input"
+    assert isinstance(
+        dataset.data[0], DataPoint
+    ), "Items should be DataPoint instances"
+    assert (
+        dataset.data[0].question == 'What is 2+2?'
+    ), "DataPoint content should match input"
 
     # Test min_samples validation
     with pytest.raises(ValueError) as exc_info:
         SeedDataset(data=sample_data, min_samples=3)
-    assert "must have at least 3 samples, got 2" in str(exc_info.value), "Should raise ValueError for insufficient samples"
+    assert "must have at least 3 samples, got 2" in str(
+        exc_info.value
+    ), "Should raise ValueError for insufficient samples"
 
     # Test with empty data and min_samples=0
     dataset_empty = SeedDataset(data=[], min_samples=0)

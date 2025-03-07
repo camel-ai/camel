@@ -428,7 +428,7 @@ class SeedDataset(Dataset):
         """
         if len(self._raw_data) < min_samples:
             raise ValueError(
-                f"Dataset must have at least {min_samples} samples,"
+                f"Dataset must have at least {min_samples} samples, "
                 f"got {len(self._raw_data)}"
             )
 
