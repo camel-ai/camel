@@ -94,13 +94,11 @@ class AnthropicConfig(BaseConfig):
             and self.thinking["type"] == "enabled"
         )
         if thinking_enabled:
-            # `top_p` and `top_k` must be unset when thinking is enabled.
-            if config_dict["top_k"] is not None:
-                del config_dict["top_k"]
-            if config_dict["top_p"] is not None:
-                del config_dict["top_p"]
-            if config_dict["temperature"] is not None:
-                del config_dict["temperature"]
+            # `top_p`, `top_k`, `temperature` must be unset when thinking is
+            # enabled.
+            config_dict.pop("top_k", None)
+            config_dict.pop("top_p", None)
+            config_dict.pop("temperature", None)
         return config_dict
 
 
