@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class BaseKeyValueStorage(ABC):
@@ -41,13 +41,8 @@ class BaseKeyValueStorage(ABC):
         pass
 
     @abstractmethod
-    def load(self, agent_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def load(self) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
-
-        Args:
-            agent_id (str, optional): The ID of the agent associated with the
-                records. If not provided, all records will be loaded.
-                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, where each dictionary
