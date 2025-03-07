@@ -50,9 +50,7 @@ class ChatHistoryMemory(AgentMemory):
             raise ValueError("`window_size` must be non-negative.")
         self._context_creator = context_creator
         self._window_size = window_size
-        self._chat_history_block = ChatHistoryBlock(
-            storage=storage, agent_id=agent_id
-        )
+        self._chat_history_block = ChatHistoryBlock(storage=storage)
         self.agent_id = agent_id
 
     def retrieve(self) -> List[ContextRecord]:
@@ -125,13 +123,13 @@ class VectorDBMemory(AgentMemory):
         for record in records:
             if record.role_at_backend == OpenAIBackendRole.USER:
                 self._current_topic = record.message.content
-                
+
             # assign the agent_id to the record
             if record.agent_id == "":
                 # if the agent memory has an agent_id, use it
                 if self.agent_id is not None:
                     record.agent_id = self.agent_id
-                    
+
         self._vectordb_block.write_records(records)
 
     def get_context_creator(self) -> BaseContextCreator:
@@ -168,9 +166,7 @@ class LongtermAgentMemory(AgentMemory):
         retrieve_limit: int = 3,
         agent_id: Optional[str] = None,
     ) -> None:
-        self.chat_history_block = chat_history_block or ChatHistoryBlock(
-            agent_id=agent_id
-        )
+        self.chat_history_block = chat_history_block or ChatHistoryBlock()
         self.vector_db_block = vector_db_block or VectorDBBlock()
         self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator

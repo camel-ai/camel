@@ -186,7 +186,7 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             token_limit or self.model_backend.token_limit,
         )
-        
+
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
@@ -372,7 +372,7 @@ class ChatAgent(BaseAgent):
                 (optional check; commented out below).
         """
         json_store = JsonStorage(Path(path))
-        all_records = json_store.load(agent_id=self.agent_id)
+        all_records = json_store.load()
 
         if not all_records:
             raise ValueError(
