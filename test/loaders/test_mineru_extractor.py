@@ -101,7 +101,7 @@ def test_extract_url(mock_post, mock_response):
             }
         )
         result = mineru.load(
-            url='https://arxiv.org/pdf/2311.10993.pdf',
+            source='https://arxiv.org/pdf/2311.10993.pdf',
         )
 
     assert result == mock_response['data']

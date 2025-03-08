@@ -184,11 +184,13 @@ class FirecrawlLoader(BaseLoader):
         self._api_key = self.config.get("api_key") or os.environ.get(
             "FIRECRAWL_API_KEY"
         )
-        self.api_url = self.config.get("api_url") or os.environ.get(
+        self._api_url = self.config.get("api_url") or os.environ.get(
             "FIRECRAWL_API_URL"
         )
 
-        self.firecrawl = Firecrawl(api_key=self._api_key, api_url=self.api_url)
+        self.firecrawl = Firecrawl(
+            api_key=self._api_key, api_url=self._api_url
+        )
 
     def load(self, source: str, **kwargs: Any) -> Any:
         r"""Load website data using Firecrawl.

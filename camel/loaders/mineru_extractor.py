@@ -290,11 +290,11 @@ class MinerULoader(BaseLoader):
     def batch_load(self, files: List[Dict[str, Union[str, bool]]]) -> str:
         return self.mineru.batch_extract_urls(files)
 
-    def get_task_status(self, task_id: str, is_batch: bool = False) -> Dict:
-        if is_batch:
-            return self.mineru.get_batch_status(task_id)
-        else:
-            return self.mineru.get_task_status(task_id)
+    def get_task_status(self, task_id: str) -> Dict:
+        return self.mineru.get_task_status(task_id)
+
+    def get_batch_status(self, batch_id: str) -> Dict:
+        return self.mineru.get_batch_status(batch_id)
 
     def wait_for_completion(
         self,
