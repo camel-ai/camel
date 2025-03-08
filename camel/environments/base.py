@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.datasets.base import BaseDataset, GenerativeDataset
-from camel.extractors.base import BaseExtractor
+from camel.extractors.base import Extractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
@@ -141,7 +141,7 @@ class BaseEnvironment(ABC):
         self,
         dataset: BaseDataset,
         verifier: BaseVerifier,
-        extractor: BaseExtractor,
+        extractor: Extractor,
         max_steps: Optional[int] = None,
         teacher_agent: Optional[ChatAgent] = None,
         curriculum_config: Optional[Dict[str, Any]] = None,
