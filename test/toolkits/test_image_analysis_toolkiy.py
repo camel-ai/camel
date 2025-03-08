@@ -49,17 +49,17 @@ def mock_agent():
 
 
 # --------------------------
-# Test _open_image method
+# Test _load_image method
 # --------------------------
-def test_open_image_local_success(image_toolkit):
+def test_load_image_local_success(image_toolkit):
     mock_image = MagicMock()
     with patch('PIL.Image.open') as mock_open:
         mock_open.return_value.__enter__.return_value = mock_image
-        result = image_toolkit._open_image("valid.jpg")
+        result = image_toolkit._load_image("valid.jpg")
         assert isinstance(result, MagicMock)
 
 
-def test_open_image_url_success(image_toolkit):
+def test_load_image_url_success(image_toolkit):
     mock_response = MagicMock()
     mock_response.content = b"fake_image_data"
 
@@ -70,23 +70,23 @@ def test_open_image_url_success(image_toolkit):
         mock_img = Image.new('RGB', (100, 100))
         mock_img_open.return_value = mock_img
 
-        result = image_toolkit._open_image("http://valid.com/image.jpg")
+        result = image_toolkit._load_image("http://valid.com/image.jpg")
         assert isinstance(result, Image.Image)
 
 
-def test_open_image_url_failure(image_toolkit):
+def test_load_image_url_failure(image_toolkit):
     with patch(
         'requests.get',
         side_effect=requests.exceptions.RequestException("Failed"),
     ):
         with pytest.raises(requests.exceptions.RequestException):
-            image_toolkit._open_image("http://invalid.com/image.jpg")
+            image_toolkit._load_image("http://invalid.com/image.jpg")
 
 
-def test_open_image_local_failure(image_toolkit):
+def test_load_image_local_failure(image_toolkit):
     with patch('PIL.Image.open', side_effect=IOError("Corrupt file")):
         with pytest.raises(ValueError):
-            image_toolkit._open_image("invalid.jpg")
+            image_toolkit._load_image("invalid.jpg")
 
 
 # --------------------------
@@ -142,7 +142,7 @@ def test_ask_question_custom_instructions(image_toolkit):
 # --------------------------
 def test_analyze_image_handling_failure(image_toolkit):
     with patch.object(
-        image_toolkit, '_open_image', side_effect=ValueError("Corrupt file")
+        image_toolkit, '_load_image', side_effect=ValueError("Corrupt file")
     ):
         result = image_toolkit.image_to_text("bad.jpg")
         assert "Image error" in result
@@ -150,7 +150,7 @@ def test_analyze_image_handling_failure(image_toolkit):
 
 def test_unexpected_error_handling(image_toolkit):
     with patch.object(
-        image_toolkit, '_open_image', side_effect=Exception("Random failure")
+        image_toolkit, '_load_image', side_effect=Exception("Random failure")
     ):
         result = image_toolkit.ask_question_about_image("bad.jpg", "Why?")
         assert "Analysis failed" in result
@@ -161,7 +161,7 @@ def test_unexpected_error_handling(image_toolkit):
 # --------------------------
 def test_empty_image_path(image_toolkit):
     with patch.object(
-        image_toolkit, '_open_image', side_effect=ValueError("Empty path")
+        image_toolkit, '_load_image', side_effect=ValueError("Empty path")
     ):
         result = image_toolkit.image_to_text("")
         assert "Image error: Empty path" in result

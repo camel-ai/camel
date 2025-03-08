@@ -25,7 +25,6 @@ model = ModelFactory.create(
 
 image_analysis_toolkit = ImageAnalysisToolkit(model=model)
 
-# Test Agent with the human toolkit
 agent = ChatAgent(
     system_message="You are a helpful assistant.",
     model=model,

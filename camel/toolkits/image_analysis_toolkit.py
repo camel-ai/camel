@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import logging
+
 from io import BytesIO
 from typing import List, Optional
 from urllib.parse import urlparse
@@ -19,43 +19,59 @@ from urllib.parse import urlparse
 import requests
 from PIL import Image
 
+from camel.logger import get_logger
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend
+from camel.models import BaseModelBackend, ModelFactory
 from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
+from camel.types import ModelPlatformType, ModelType
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ImageAnalysisToolkit(BaseToolkit):
-    r"""A class representing a toolkit for image comprehension operations.
-
-    This class provides methods for understanding images, such as identifying
-    objects, text in images.
+    r"""A toolkit for comprehensive image analysis and understanding.
+    The toolkit uses vision-capable language models to perform these tasks.
     """
 
-    def __init__(self, model: BaseModelBackend):
-        self.model = model
+    def __init__(self, model: Optional[BaseModelBackend] = None):
+        r"""Initialize the ImageAnalysisToolkit.
+
+        Args:
+            model (Optional[BaseModelBackend]): The model backend to use for
+                image analysis tasks. This model should support processing
+                images for tasks like image description and visual question
+                answering. If None, a default model will be created using
+                ModelFactory. (default: :obj:`None`)
+        """
+        if model:
+            self.model = model
+        else:
+            self.model = ModelFactory.create(
+                model_platform=ModelPlatformType.DEFAULT,
+                model_type=ModelType.DEFAULT,
+            )
 
     def image_to_text(
-        self, image_path: str, content: Optional[str] = None
+        self, image_path: str, sys_prompt: Optional[str] = None
     ) -> str:
         r"""Generates textual description of an image with optional custom
-            prompt.
+        prompt.
+
         Args:
-            image_path (str): Local path or URL to an image file
-                content (Optional[str]): Custom description prompt. Defaults
-                to None.
+            image_path (str): Local path or URL to an image file.
+            sys_prompt (Optional[str]): Custom system prompt for the analysis.
+                (default: :obj:`None`)
 
         Returns:
-            str: Natural language description
+            str: Natural language description of the image.
         """
         default_content = '''You are an image analysis expert. Provide a 
             detailed description including text if present.'''
 
         system_msg = BaseMessage.make_assistant_message(
             role_name="Senior Computer Vision Analyst",
-            content=content if content else default_content,
+            content=sys_prompt if sys_prompt else default_content,
         )
 
         return self._analyze_image(
@@ -65,15 +81,15 @@ class ImageAnalysisToolkit(BaseToolkit):
         )
 
     def ask_question_about_image(
-        self, image_path: str, question: str, content: Optional[str] = None
+        self, image_path: str, question: str, sys_prompt: Optional[str] = None
     ) -> str:
         r"""Answers image questions with optional custom instructions.
 
         Args:
-            image_path (str): Local path or URL to an image file
-            question (str): Query about the image content
-            content (Optional[str]): Custom analysis instructions. Defaults to
-                None.
+            image_path (str): Local path or URL to an image file.
+            question (str): Query about the image content.
+            sys_prompt (Optional[str]): Custom system prompt for the analysis.
+                (default: :obj:`None`)
 
         Returns:
             str: Detailed answer based on visual understanding
@@ -86,7 +102,7 @@ class ImageAnalysisToolkit(BaseToolkit):
 
         system_msg = BaseMessage.make_assistant_message(
             role_name="Visual QA Specialist",
-            content=content if content else default_content,
+            content=sys_prompt if sys_prompt else default_content,
         )
 
         return self._analyze_image(
@@ -95,7 +111,7 @@ class ImageAnalysisToolkit(BaseToolkit):
             system_message=system_msg,
         )
 
-    def _open_image(self, image_path: str) -> Image.Image:
+    def _load_image(self, image_path: str) -> Image.Image:
         r"""Loads an image from either local path or URL.
 
         Args:
@@ -141,13 +157,14 @@ class ImageAnalysisToolkit(BaseToolkit):
         Args:
             image_path (str): Image location.
             prompt (str): Analysis query/instructions.
-            system_message (BaseMessage): Agent role definition.
+            system_message (BaseMessage): Custom system prompt for the
+                analysis.
 
         Returns:
             str: Analysis result or error message.
         """
         try:
-            image = self._open_image(image_path)
+            image = self._load_image(image_path)
             logger.info(f"Analyzing image: {image_path}")
 
             from camel.agents.chat_agent import ChatAgent
@@ -164,6 +181,7 @@ class ImageAnalysisToolkit(BaseToolkit):
             )
 
             response = agent.step(user_msg)
+            agent.reset()
             return response.msgs[0].content
 
         except (ValueError, requests.exceptions.RequestException) as e:
