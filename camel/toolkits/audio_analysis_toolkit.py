@@ -12,22 +12,20 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import base64
-import logging
 import os
 from typing import List, Optional
 from urllib.parse import urlparse
 
-import openai
 import requests
 
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.models import BaseModelBackend, OpenAIAudioModels
-from camel.messages import BaseMessage
-from camel.agents import ChatAgent
+from camel.logger import get_logger
 
-# logger = logging.getLogger(__name__)
-from loguru import logger
+logger = get_logger(__name__)
 
 
 class AudioAnalysisToolkit(BaseToolkit):
@@ -36,7 +34,7 @@ class AudioAnalysisToolkit(BaseToolkit):
     This class provides methods for processing and understanding audio data.
 
     Args:
-        cache_dir (Optional[str]): Directory path for caching audio files. 
+        cache_dir (Optional[str]): Directory path for caching audio files.
             Defaults to 'tmp/' if not specified.
         transcribe_model (Optional[OpenAIAudioModels]): Model used for audio transcription.
             Must be provided, otherwise raises ValueError.
@@ -45,12 +43,12 @@ class AudioAnalysisToolkit(BaseToolkit):
     """
 
     def __init__(
-            self,
-            cache_dir: Optional[str] = None,
-            # reasoning: Optional[bool] = False,
-            transcribe_model: Optional[OpenAIAudioModels] = None,
-            audio_reasoning_model: Optional[BaseModelBackend] = None,
-            ):
+        self,
+        cache_dir: Optional[str] = None,
+        # reasoning: Optional[bool] = False,
+        transcribe_model: Optional[OpenAIAudioModels] = None,
+        audio_reasoning_model: Optional[BaseModelBackend] = None,
+    ):
         self.cache_dir = 'tmp/'
         if cache_dir:
             self.cache_dir = cache_dir
@@ -69,7 +67,6 @@ class AudioAnalysisToolkit(BaseToolkit):
                 "No audio reasoning model provided. Using default model in"
                 " ChatAgent."
             )
-
 
     def audio2text(self, audio_path: str) -> str:
         r"""Transcribe audio to text.
@@ -143,8 +140,7 @@ class AudioAnalysisToolkit(BaseToolkit):
         <question>{question}</question>
         """
         msg = BaseMessage.make_user_message(
-            role_name="User",
-            content=reasoning_prompt
+            role_name="User", content=reasoning_prompt
         )
         # response = self.audio_reasoning_model.chat_completion(msg)
         response = self.audio_agent.step(msg)
@@ -189,9 +185,9 @@ class AudioAnalysisToolkit(BaseToolkit):
         #         ],
         #     )  # type: ignore[misc]
 
-            # response: str = str(completion.choices[0].message.content)
-            # logger.debug(f"Response: {response}")
-            # return str(response)
+        # response: str = str(completion.choices[0].message.content)
+        # logger.debug(f"Response: {response}")
+        # return str(response)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
@@ -203,5 +199,5 @@ class AudioAnalysisToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.ask_question_about_audio),
-            FunctionTool(self.audio2text)
-            ]
+            FunctionTool(self.audio2text),
+        ]

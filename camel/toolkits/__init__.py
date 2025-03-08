@@ -90,6 +90,6 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
-    'AudioAnalysisToolkit'
+    'AudioAnalysisToolkit',
     'ImageAnalysisToolkit',
 ]
