@@ -51,6 +51,7 @@ from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
 from .audio_analysis_toolkit import AudioAnalysisToolkit
+from .image_analysis_toolkit import ImageAnalysisToolkit
 
 
 __all__ = [
@@ -90,4 +91,5 @@ __all__ = [
     'SymPyToolkit',
     'MinerUToolkit',
     'AudioAnalysisToolkit'
+    'ImageAnalysisToolkit',
 ]
