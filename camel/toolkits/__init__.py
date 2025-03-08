@@ -52,6 +52,7 @@ from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
 from .excel_toolkit import ExcelToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
+from .image_analysis_toolkit import ImageAnalysisToolkit
 
 
 __all__ = [
@@ -92,4 +93,5 @@ __all__ = [
     'MinerUToolkit',
     'ExcelToolkit',
     'VideoAnalysisToolkit',
+    'ImageAnalysisToolkit',
 ]
