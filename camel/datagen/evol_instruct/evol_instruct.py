@@ -257,7 +257,7 @@ class EvolInstructPipeline:
         num_evolutions: int = 1,
         keep_original: bool = True,
         scorer: str = "uniform",
-        chunk_size: int = 2,
+        num_chunks: int = 1, 
         retry_limit: int = 3,
         retry_delay: int = 30,  # in seconds
     ) -> List[Dict[int, List[Tuple[str, str]]]]:
@@ -266,7 +266,8 @@ class EvolInstructPipeline:
         iterate through each chunk sequentially,
         then process the prompts within each chunk in parallel
 
-        :param chunk_size: The number of prompts to process in each chunk.
+        :param num_chunks: The number of chunks to process batch of prompts.
+            specify a larger number of chunks to avoid hitting RPM limits for API requests.
         :param retry_limit: The maximum number of retries for failed requests.
         :param retry_delay: The delay between retries in seconds.
 
@@ -291,22 +292,20 @@ class EvolInstructPipeline:
                     )
                 except Exception as e:
                     if retries < retry_limit:
-                        logger.info(f"Error: {e}. Retrying in {retry_delay}s... (Attempt {retries + 1}/{retry_limit})")
+                        logger.info(f"Error: {e}. Retry in {retry_delay}s... (Attempt {retries + 1}/{retry_limit})")
                         time.sleep(retry_delay)
                         retries += 1
                     else:
                         logger.info(f"Failed to process prompt after {retry_limit} attempts: {e}")
                         return {}
 
-        # Split prompts into chunks
-        num_chunks = ceil(len(prompts) / chunk_size)
-        chunks = [
-            prompts[i * chunk_size: (i + 1) * chunk_size]
-            for i in range(num_chunks)
-        ]
+        # split prompts into chunks
+        num_chunks = max(1, min(num_chunks, len(prompts)))
+        chunk_size = ceil(len(prompts) / num_chunks)
+        chunks = [prompts[i: i + chunk_size] for i in range(0, len(prompts), chunk_size)]
 
+        # generate prompts
         results = []
-
         for chunk in chunks:
             with ThreadPoolExecutor() as executor:
                 chunk_results = list(executor.map(process_prompt, chunk))
