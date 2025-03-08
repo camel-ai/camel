@@ -14,7 +14,7 @@
 
 import json
 import logging
-from typing import Any, Dict, List
+from typing import List
 
 import sympy as sp  # type: ignore[import]
 
@@ -67,10 +67,79 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
     # ====================== CORE GEOMETRIC FUNCTIONS ======================
 
+    def compute_distance_point_to_line(
+        self,
+        point_x: float,
+        point_y: float,
+        line_point1_x: float,
+        line_point1_y: float,
+        line_point2_x: float,
+        line_point2_y: float,
+    ) -> str:
+        """Computes the shortest distance from a point to a line.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
+            line_point1_x: x-coordinate of the first point on the line
+            line_point1_y: y-coordinate of the first point on the line
+            line_point2_x: x-coordinate of the second point on the line
+            line_point2_y: y-coordinate of the second point on the line
+
+        Returns:
+            str: JSON string with the computed distance
+        """
+        try:
+            # Convert to float to ensure precision
+            px, py = float(point_x), float(point_y)
+            x1, y1 = float(line_point1_x), float(line_point1_y)
+            x2, y2 = float(line_point2_x), float(line_point2_y)
+
+            # Check if the two points defining the line are the same
+            if x1 == x2 and y1 == y2:
+                # Calculate distance to a point
+                distance = sp.sqrt((px - x1) ** 2 + (py - y1) ** 2)
+                return json.dumps(
+                    {
+                        "result": {
+                            "distance": str(float(distance)),
+                            "note": (
+                                "The line is defined by two identical points, "
+                                "so this is the distance to that point."
+                            ),
+                        }
+                    }
+                )
+
+            # Calculate the distance using the formula:
+            # d = |Ax + By + C| / sqrt(A^2 + B^2)
+            # where Ax + By + C = 0 is the line equation
+
+            # Convert to the form Ax + By + C = 0
+            A = y2 - y1
+            B = x1 - x2
+            C = x2 * y1 - x1 * y2
+
+            # Calculate distance
+            numerator = abs(A * px + B * py + C)
+            denominator = sp.sqrt(A**2 + B**2)
+            distance = numerator / denominator
+
+            return json.dumps(
+                {
+                    "result": {
+                        "distance": str(float(distance)),
+                        "line_equation": f"{A}x + {B}y + {C} = 0",
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_distance_point_to_line", e)
+
     def compute_distance(
         self,
-        object1: Any,
-        object2: Any,
+        object1: List[float],
+        object2: List[float],
         object_type1: str = "point",
         object_type2: str = "point",
     ) -> str:
@@ -103,8 +172,16 @@ class EnhancedGeometryToolkit(BaseToolkit):
             # Point to line distance
             elif object_type1 == "point" and object_type2 == "line":
                 p = sp.Point(float(object1[0]), float(object1[1]))
-                p1 = sp.Point(float(object2[0][0]), float(object2[0][1]))
-                p2 = sp.Point(float(object2[1][0]), float(object2[1][1]))
+                # Extract coordinates from the line endpoints
+                if not isinstance(object2, (list, tuple)) or len(object2) != 2:
+                    raise ValueError("Line must be defined by two points")
+                line_start, line_end = object2
+                if not isinstance(line_start, (list, tuple)) or not isinstance(
+                    line_end, (list, tuple)
+                ):
+                    raise ValueError("Line endpoints must be coordinate pairs")
+                p1 = sp.Point(float(line_start[0]), float(line_start[1]))
+                p2 = sp.Point(float(line_end[0]), float(line_end[1]))
 
                 # Check if the two points defining the line are the same
                 if p1 == p2:
@@ -221,85 +298,144 @@ class EnhancedGeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_vector_operations", e)
 
-    def compute_area(self, geometry_type: str, *args) -> str:
-        r"""Unified area calculation function for different geometric shapes.
+    def compute_area_triangle_vertices(
+        self, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float
+    ) -> str:
+        """Computes the area of a triangle given its vertices.
 
         Args:
-            geometry_type: Type of geometry ("triangle_vertices",
-                           "triangle_sides", "polygon")
-            *args: Arguments specific to the geometry type
-                - "triangle_vertices": Three points [[x1,y1], [x2,y2], [x3,y3]]
-                - "triangle_sides": Three side lengths [a, b, c]
-                - "polygon": List of vertices [[x1,y1], [x2,y2], ..., [xn,yn]]
+            x1: x-coordinate of the first vertex
+            y1: y-coordinate of the first vertex
+            x2: x-coordinate of the second vertex
+            y2: y-coordinate of the second vertex
+            x3: x-coordinate of the third vertex
+            y3: y-coordinate of the third vertex
 
         Returns:
-            str: JSON string with the computed area in the "result" field
+            str: JSON string with the computed area
         """
         try:
-            self.logger.info(f"Computing area of {geometry_type}")
+            # Convert to float to ensure precision
+            x1, y1 = float(x1), float(y1)
+            x2, y2 = float(x2), float(y2)
+            x3, y3 = float(x3), float(y3)
 
-            if geometry_type == "triangle_vertices":
-                if len(args) != 3:
-                    raise ValueError(
-                        "Triangle vertices area calculation requires 3 points"
-                    )
+            # Calculate area using the Shoelace formula
+            area = 0.5 * abs(
+                (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+            )
 
-                point1, point2, point3 = args
-                p1 = sp.Point(float(point1[0]), float(point1[1]))
-                p2 = sp.Point(float(point2[0]), float(point2[1]))
-                p3 = sp.Point(float(point3[0]), float(point3[1]))
-
-                triangle = sp.Triangle(p1, p2, p3)
-                area = abs(triangle.area)
-
-            elif geometry_type == "triangle_sides":
-                if len(args) != 3:
-                    raise ValueError(
-                        "Triangle sides area calculation requires 3 side len"
-                    )
-
-                a, b, c = float(args[0]), float(args[1]), float(args[2])
-
-                # Check if the sides can form a triangle (triangle inequality)
-                if a + b <= c or a + c <= b or b + c <= a:
-                    raise ValueError(
-                        "The given sides cannot form a triangle"
-                        "(triangle inequality violated)."
-                    )
-
-                # Calculate semi-perimeter
-                s = (a + b + c) / 2
-
-                # Calculate area using Heron's formula
-                area = sp.sqrt(s * (s - a) * (s - b) * (s - c))
-                area = abs(area)
-
-            elif geometry_type == "polygon":
-                if len(args) < 1 or len(args[0]) < 3:
-                    raise ValueError(
-                        "A polygon must have at least 3 vertices."
-                    )
-
-                vertices = args[0]  # Expecting a list of vertices
-
-                # Convert vertices to SymPy Points
-                points = [
-                    sp.Point(float(vertex[0]), float(vertex[1]))
-                    for vertex in vertices
-                ]
-
-                # Create a SymPy Polygon
-                polygon = sp.Polygon(*points)
-
-                # Calculate the area
-                area = abs(polygon.area)
-
-            else:
-                raise ValueError(f"Unsupported geometry type: {geometry_type}")
-
-            return json.dumps({"result": str(area)})
+            return json.dumps(
+                {
+                    "result": {
+                        "area": str(area),
+                        "vertices": [[x1, y1], [x2, y2], [x3, y3]],
+                    }
+                }
+            )
         except Exception as e:
-            return self.handle_exception("compute_area", e)
+            return self.handle_exception("compute_area_triangle_vertices", e)
+
+    def compute_area_triangle_sides(
+        self, side1: float, side2: float, side3: float
+    ) -> str:
+        """Computes the area of a triangle given its side lengths.
+
+        Args:
+            side1: Length of the first side
+            side2: Length of the second side
+            side3: Length of the third side
+
+        Returns:
+            str: JSON string with the computed area
+        """
+        try:
+            # Convert to float to ensure precision
+            a, b, c = float(side1), float(side2), float(side3)
+
+            # Check if the sides can form a triangle
+            if a + b <= c or a + c <= b or b + c <= a:
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": (
+                            "The given side lengths cannot form a triangle. "
+                            "The sum of the lengths of any two sides must be "
+                            "greater than the length of the third side."
+                        ),
+                    }
+                )
+
+            # Calculate semi-perimeter
+            s = (a + b + c) / 2
+
+            # Calculate area using Heron's formula
+            area = sp.sqrt(s * (s - a) * (s - b) * (s - c))
+
+            return json.dumps(
+                {
+                    "result": {
+                        "area": str(area),
+                        "sides": [a, b, c],
+                        "semi_perimeter": str(s),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_area_triangle_sides", e)
+
+    def compute_area_polygon(self, vertices: List[List[float]]) -> str:
+        """Computes the area of a polygon given its vertices.
+
+        Args:
+            vertices: List of [x, y] coordinates of the polygon vertices
+                in order
+
+        Returns:
+            str: JSON string with the computed area
+        """
+        try:
+            # Check if we have at least 3 vertices
+            if len(vertices) < 3:
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": "A polygon must have at least 3 vertices.",
+                    }
+                )
+
+            # Extract x and y coordinates
+            x_coords = [float(vertex[0]) for vertex in vertices]
+            y_coords = [float(vertex[1]) for vertex in vertices]
+
+            # Ensure the polygon is closed (last point = first point)
+            if x_coords[0] != x_coords[-1] or y_coords[0] != y_coords[-1]:
+                x_coords.append(x_coords[0])
+                y_coords.append(y_coords[0])
+
+            # Calculate area using the Shoelace formula (Gauss's area formula)
+            n = len(x_coords)
+            area = 0.0
+
+            for i in range(n - 1):
+                area += (
+                    x_coords[i] * y_coords[i + 1]
+                    - x_coords[i + 1] * y_coords[i]
+                )
+
+            area = abs(area) / 2.0
+
+            return json.dumps(
+                {
+                    "result": {
+                        "area": str(area),
+                        "vertices": vertices,
+                        "vertex_count": len(vertices),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_area_polygon", e)
 
     def compute_midpoint(
         self, point1: List[float], point2: List[float]
@@ -1150,968 +1286,3019 @@ class EnhancedGeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("solve_quadratic", e)
 
-    def generate_conic_equation(
-        self, conic_type: str, parameters: Dict[str, Any]
+    def generate_circle_equation(
+        self, center_x: float, center_y: float, radius: float
     ) -> str:
-        r"""Generates the standard form equation for a conic section.
+        """Generates the equation of a circle.
 
         Args:
-            conic_type: Type of conic ("circle", "ellipse", "parabola",
-                          "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            radius: radius of the circle
 
         Returns:
-            str: JSON string with the standard form equation
+            str: JSON string with the equation in standard and general form
         """
         try:
-            self.logger.info(f"Generating equation for {conic_type}")
             x, y = sp.symbols('x y')
+            h, k = float(center_x), float(center_y)
+            r = float(radius)
 
-            def expand_equation(equation):
-                return sp.expand(equation)
+            # Standard form: (x - h)² + (y - k)² = r²
+            standard_form = f"(x - {h})² + (y - {k})² = {r}²"
 
-            if conic_type == "circle":
-                h, k = parameters.get("center", [0, 0])
-                r = parameters.get("radius", 1)
-
-                equation = (x - h) ** 2 + (y - k) ** 2 - r**2
-                standard_form = f"(x - {h})² + (y - {k})² = {r}²"
-
-            elif conic_type == "ellipse":
-                h, k = parameters.get("center", [0, 0])
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-                rotation = parameters.get("rotation", 0)
-
-                if rotation in [0, sp.pi]:
-                    equation = (
-                        ((x - h) ** 2 / a**2) + ((y - k) ** 2 / b**2) - 1
-                    )
-                    standard_form = f"(x - {h})²/{a}² + (y - {k})²/{b}² = 1"
-                elif rotation in [sp.pi / 2, 3 * sp.pi / 2]:
-                    equation = (
-                        ((x - h) ** 2 / b**2) + ((y - k) ** 2 / a**2) - 1
-                    )
-                    standard_form = f"(x - {h})²/{b}² + (y - {k})²/{a}² = 1"
-                else:
-                    cos_t, sin_t = sp.cos(rotation), sp.sin(rotation)
-                    X, Y = (
-                        (x - h) * cos_t + (y - k) * sin_t,
-                        -(x - h) * sin_t + (y - k) * cos_t,
-                    )
-                    equation = (X**2 / a**2) + (Y**2 / b**2) - 1
-                    standard_form = (
-                        f"Rotated ellipse with center ({h},{k}), "
-                        f"semi-major {a}, semi-minor {b}, rotation {rotation}"
-                    )
-
-            elif conic_type == "parabola":
-                h, k = parameters.get("vertex", [0, 0])
-                orientation = parameters.get("orientation", "vertical")
-
-                if "focus" in parameters:
-                    p, q = parameters["focus"]
-                    c = abs(q - k) if orientation == "vertical" else abs(p - h)
-                    equation = (
-                        (x - h) ** 2 - 4 * c * (y - k)
-                        if orientation == "vertical"
-                        else (y - k) ** 2 - 4 * c * (x - h)
-                    )
-                    standard_form = (
-                        f"(x - {h})² = 4({c})(y - {k})"
-                        if orientation == "vertical"
-                        else f"(y - {k})² = 4({c})(x - {h})"
-                    )
-                elif "coefficient" in parameters:
-                    a = parameters["coefficient"]
-                    equation = (
-                        (y - k) - a * (x - h) ** 2
-                        if orientation == "vertical"
-                        else (x - h) - a * (y - k) ** 2
-                    )
-                    standard_form = (
-                        f"y - {k} = {a}(x - {h})²"
-                        if orientation == "vertical"
-                        else f"x - {h} = {a}(y - {k})²"
-                    )
-                else:
-                    raise ValueError(
-                        "Insufficient parameters for parabola equation"
-                    )
-
-            elif conic_type == "hyperbola":
-                h, k = parameters.get("center", [0, 0])
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-                orientation = parameters.get("orientation", "x")
-                rotation = parameters.get("rotation", 0)
-
-                if rotation in [0, sp.pi]:
-                    equation = (
-                        ((x - h) ** 2 / a**2) - ((y - k) ** 2 / b**2) - 1
-                        if orientation == "x"
-                        else ((y - k) ** 2 / a**2) - ((x - h) ** 2 / b**2) - 1
-                    )
-                    standard_form = (
-                        f"(x - {h})²/{a}² - (y - {k})²/{b}² = 1"
-                        if orientation == "x"
-                        else f"(y - {k})²/{a}² - (x - {h})²/{b}² = 1"
-                    )
-                else:
-                    cos_t, sin_t = sp.cos(rotation), sp.sin(rotation)
-                    X, Y = (
-                        (x - h) * cos_t + (y - k) * sin_t,
-                        -(x - h) * sin_t + (y - k) * cos_t,
-                    )
-                    equation = (
-                        (X**2 / a**2) - (Y**2 / b**2) - 1
-                        if orientation == "x"
-                        else (Y**2 / a**2) - (X**2 / b**2) - 1
-                    )
-                    standard_form = (
-                        f"Rotated hyperbola with center ({h},{k}), "
-                        f"semi-major {a}, semi-minor {b}, "
-                        f"orientation {orientation}, rotation {rotation}"
-                    )
-
-            else:
-                raise ValueError(f"Unsupported conic type: {conic_type}")
-
-            general_form = expand_equation(equation)
-
-            return json.dumps(
-                {
-                    "standard_form": standard_form,
-                    "general_form": str(general_form) + " = 0",
-                    "coefficients": {
-                        "A": float(general_form.coeff(x, 2)),
-                        "B": float(general_form.coeff(x, 1).coeff(y, 1)),
-                        "C": float(general_form.coeff(y, 2)),
-                        "D": float(general_form.coeff(x, 1).subs(y, 0)),
-                        "E": float(general_form.coeff(y, 1).subs(x, 0)),
-                        "F": float(general_form.subs({x: 0, y: 0})),
-                    },
-                }
+            # General form: x² + y² - 2hx - 2ky + (h² + k² - r²) = 0
+            general_form = (
+                f"x² + y² - {2*h}x - {2*k}y + {h**2 + k**2 - r**2} = 0"
             )
-        except Exception as e:
-            return self.handle_exception("generate_conic_equation", e)
-
-    # ====================== CONIC PROPERTY CALCULATORS ======================
-
-    def compute_conic_properties(
-        self, conic_type: str, parameters: Dict[str, Any], property_name: str
-    ) -> str:
-        r"""Computes various properties of conic sections.
-
-        Args:
-            conic_type: Type of conic ("circle", "ellipse", "parabola"...)
-            parameters: Dictionary of parameters specific to the conic type
-            property_name: Property to compute ("eccentricity", "foci",
-                           "directrix", "asymptotes")
-
-        Returns:
-            str: JSON string with the computed property
-        """
-        try:
-            self.logger.info(f"Computing {property_name} for {conic_type}")
-
-            if property_name == "eccentricity":
-                return self.compute_eccentricity(conic_type, parameters)
-            elif property_name == "foci":
-                return self.compute_foci(conic_type, parameters)
-            elif property_name == "directrix":
-                return self.compute_directrix(conic_type, parameters)
-            elif property_name == "asymptotes" and conic_type == "hyperbola":
-                return self.compute_asymptotes(parameters)
-            else:
-                raise ValueError(
-                    f"Unsupported property {property_name} for conic type "
-                    f"{conic_type}"
-                )
-
-        except Exception as e:
-            return self.handle_exception("compute_conic_properties", e)
-
-    def compute_eccentricity(
-        self, conic_type: str, parameters: Dict[str, Any]
-    ) -> str:
-        r"""Computes the eccentricity of a conic section.
-
-        Args:
-            conic_type: Type of conic ("ellipse", "parabola", "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
-
-        Returns:
-            str: JSON string with the eccentricity value
-        """
-        try:
-            self.logger.info(f"Computing eccentricity for {conic_type}")
-
-            if conic_type == "circle":
-                eccentricity = 0
-
-            elif conic_type == "ellipse":
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-
-                if a <= 0 or b <= 0:
-                    raise ValueError(
-                        "Semi-major and semi-minor axes must be positive"
-                    )
-
-                if a < b:
-                    a, b = b, a  # Ensure a is the semi-major axis
-
-                eccentricity = sp.sqrt(1 - (b**2 / a**2))
-
-            elif conic_type == "parabola":
-                eccentricity = 1
-
-            elif conic_type == "hyperbola":
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-
-                if a <= 0 or b <= 0:
-                    raise ValueError(
-                        "Semi-major and semi-minor axes must be positive"
-                    )
-
-                eccentricity = sp.sqrt(1 + (b**2 / a**2))
-
-            else:
-                raise ValueError(f"Unsupported conic type: {conic_type}")
-
-            return json.dumps({"result": float(eccentricity)})
-        except Exception as e:
-            return self.handle_exception("compute_eccentricity", e)
-
-    def compute_foci(self, conic_type: str, parameters: Dict[str, Any]) -> str:
-        r"""Computes the foci of a conic section.
-
-        Args:
-            conic_type: Type of conic ("ellipse", "parabola", "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
-
-        Returns:
-            str: JSON string with the coordinates of the foci
-        """
-        try:
-            self.logger.info(f"Computing foci for {conic_type}")
-
-            if conic_type == "circle":
-                h = parameters.get("center", [0, 0])[0]
-                k = parameters.get("center", [0, 0])[1]
-                foci = [[h, k]]  # Circle has a single focus at its center
-
-            elif conic_type == "ellipse":
-                h = parameters.get("center", [0, 0])[0]
-                k = parameters.get("center", [0, 0])[1]
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-                rotation = parameters.get("rotation", 0)
-
-                if a < b:
-                    a, b = b, a  # Ensure a is the semi-major axis
-                    rotation = rotation + sp.pi / 2 if rotation == 0 else 0
-
-                c = sp.sqrt(a**2 - b**2)  # Distance from center to focus
-
-                if rotation == 0 or rotation == sp.pi:
-                    # Foci along x-axis
-                    f1 = [h - c, k]
-                    f2 = [h + c, k]
-                elif rotation == sp.pi / 2 or rotation == 3 * sp.pi / 2:
-                    # Foci along y-axis
-                    f1 = [h, k - c]
-                    f2 = [h, k + c]
-                else:
-                    # Rotated ellipse
-                    cos_t = sp.cos(rotation)
-                    sin_t = sp.sin(rotation)
-                    f1 = [h - c * cos_t, k - c * sin_t]
-                    f2 = [h + c * cos_t, k + c * sin_t]
-
-                foci = [
-                    [float(f1[0]), float(f1[1])],
-                    [float(f2[0]), float(f2[1])],
-                ]
-
-            elif conic_type == "parabola":
-                h = parameters.get("vertex", [0, 0])[0]
-                k = parameters.get("vertex", [0, 0])[1]
-                orientation = parameters.get("orientation", "vertical")
-
-                if "focus" in parameters:
-                    focus = parameters["focus"]
-                    foci = [[float(focus[0]), float(focus[1])]]
-                elif "coefficient" in parameters:
-                    a = parameters["coefficient"]
-                    if orientation == "vertical":
-                        p = 1 / (4 * a)  # Distance from vertex to focus
-                        foci = [[float(h), float(k + p)]]
-                    else:
-                        p = 1 / (4 * a)  # Distance from vertex to focus
-                        foci = [[float(h + p), float(k)]]
-                else:
-                    raise ValueError(
-                        "Insufficient parameters for parabola foci"
-                    )
-
-            elif conic_type == "hyperbola":
-                h = parameters.get("center", [0, 0])[0]
-                k = parameters.get("center", [0, 0])[1]
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-                orientation = parameters.get("orientation", "x")
-                rotation = parameters.get("rotation", 0)
-
-                c = sp.sqrt(a**2 + b**2)  # Distance from center to focus
-
-                if rotation == 0 or rotation == sp.pi:
-                    if orientation == "x":
-                        # Foci along x-axis
-                        f1 = [h - c, k]
-                        f2 = [h + c, k]
-                    else:
-                        # Foci along y-axis
-                        f1 = [h, k - c]
-                        f2 = [h, k + c]
-                else:
-                    # Rotated hyperbola
-                    cos_t = sp.cos(rotation)
-                    sin_t = sp.sin(rotation)
-
-                    if orientation == "x":
-                        f1 = [h - c * cos_t, k - c * sin_t]
-                        f2 = [h + c * cos_t, k + c * sin_t]
-                    else:
-                        f1 = [h - c * sin_t, k + c * cos_t]
-                        f2 = [h + c * sin_t, k - c * cos_t]
-
-                foci = [
-                    [float(f1[0]), float(f1[1])],
-                    [float(f2[0]), float(f2[1])],
-                ]
-
-            else:
-                raise ValueError(f"Unsupported conic type: {conic_type}")
-
-            return json.dumps({"result": foci})
-        except Exception as e:
-            return self.handle_exception("compute_foci", e)
-
-    def compute_directrix(
-        self, conic_type: str, parameters: Dict[str, Any]
-    ) -> str:
-        r"""Computes the directrix of a conic section.
-
-        Args:
-            conic_type: Type of conic ("ellipse", "parabola", "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
-
-        Returns:
-            str: JSON string with the equation of the directrix
-        """
-        try:
-            self.logger.info(f"Computing directrix for {conic_type}")
-            x, y = sp.symbols('x y')
-
-            if conic_type == "parabola":
-                h = parameters.get("vertex", [0, 0])[0]
-                k = parameters.get("vertex", [0, 0])[1]
-                orientation = parameters.get("orientation", "vertical")
-
-                if "focus" in parameters:
-                    focus = parameters["focus"]
-                    p = (
-                        abs(focus[1] - k)
-                        if orientation == "vertical"
-                        else abs(focus[0] - h)
-                    )
-
-                    if orientation == "vertical":
-                        # Directrix is horizontal line
-                        _ = f"y = {k - p}"
-                    else:
-                        # Directrix is vertical line
-                        _ = f"x = {h - p}"
-
-                elif "coefficient" in parameters:
-                    a = parameters["coefficient"]
-                    p = 1 / (4 * a)  # Distance from vertex to focus
-
-                    if orientation == "vertical":
-                        # Directrix is horizontal line
-                        _ = f"y = {k - p}"
-                    else:
-                        # Directrix is vertical line
-                        _ = f"x = {h - p}"
-                else:
-                    raise ValueError(
-                        "Insufficient parameters for parabola directrix"
-                    )
-
-            elif conic_type in ["ellipse", "hyperbola"]:
-                h = parameters.get("center", [0, 0])[0]
-                k = parameters.get("center", [0, 0])[1]
-                a = parameters.get("semi_major", 2)
-                b = parameters.get("semi_minor", 1)
-                rotation = parameters.get("rotation", 0)
-
-                if conic_type == "ellipse":
-                    if a < b:
-                        a, b = b, a  # Ensure a is the semi-major axis
-                        rotation = rotation + sp.pi / 2 if rotation == 0 else 0
-
-                    c = sp.sqrt(a**2 - b**2)  # Distance from center to focus
-                    e = c / a  # Eccentricity
-                    d = a / e  # Distance from center to directrix
-
-                else:  # hyperbola
-                    c = sp.sqrt(a**2 + b**2)  # Distance from center to focus
-                    e = c / a  # Eccentricity
-                    d = a / e  # Distance from center to directrix
-
-                    # For simplicity, we'll only handle non-rotated cases fully
-                if rotation == 0 or rotation == sp.pi:
-                    # Directrices are vertical lines
-                    directrix1_eq = x - (h - d)
-                    directrix2_eq = x - (h + d)
-                    directrix_lines: List[str] = [
-                        f"x = {h - d}",
-                        f"x = {h + d}",
-                    ]
-                elif rotation == sp.pi / 2 or rotation == 3 * sp.pi / 2:
-                    # Directrices are horizontal lines
-                    directrix1_eq = y - (k - d)
-                    directrix2_eq = y - (k + d)
-                    directrix_lines_horiz: List[str] = [
-                        f"y = {k - d}",
-                        f"y = {k + d}",
-                    ]
-                else:
-                    # Rotated case - more complex
-
-                    # Parametric form of directrices
-                    directrix1_eq = (
-                        f"Rotated directrix 1 with center ({h}, {k}), "
-                        f"distance {d}, rotation {rotation}"
-                    )
-                    directrix2_eq = (
-                        f"Rotated directrix 2 with center ({h}, {k}), "
-                        f"distance {d}, rotation {rotation}"
-                    )
-                    directrix_lines_rot: List[Any] = [
-                        directrix1_eq,
-                        directrix2_eq,
-                    ]
-            else:
-                raise ValueError(
-                    f"Directrix not defined for conic type: {conic_type}"
-                )
-
-            # Format the result based on conic type
-            if conic_type == "parabola":
-                if rotation == 0 or rotation == sp.pi:
-                    result = {
-                        "equation": (
-                            str(directrix_lines[0]) if directrix_lines else ""
-                        )
-                    }
-                elif rotation == sp.pi / 2 or rotation == 3 * sp.pi / 2:
-                    result = {
-                        "equation": str(directrix_lines_horiz[0])
-                        if directrix_lines_horiz
-                        else ""
-                    }
-                else:
-                    result = {
-                        "equation": str(directrix_lines_rot[0])
-                        if directrix_lines_rot
-                        else ""
-                    }
-            else:
-                if rotation == 0 or rotation == sp.pi:
-                    result = {
-                        "equations": (
-                            str([str(eq) for eq in directrix_lines])
-                            if directrix_lines
-                            else ""
-                        )
-                    }
-                elif rotation == sp.pi / 2 or rotation == 3 * sp.pi / 2:
-                    result = {
-                        "equations": (
-                            str([str(eq) for eq in directrix_lines_horiz])
-                            if directrix_lines_horiz
-                            else ""
-                        )
-                    }
-                else:
-                    result = {
-                        "equations": (
-                            str([str(eq) for eq in directrix_lines_rot])
-                            if directrix_lines_rot
-                            else ""
-                        )
-                    }
-
-            return json.dumps({"result": result})
-        except Exception as e:
-            return self.handle_exception("compute_directrix", e)
-
-    def compute_asymptotes(self, parameters: Dict[str, Any]) -> str:
-        r"""Computes the asymptotes of a hyperbola.
-
-        Args:
-            parameters: Dictionary of parameters for the hyperbola
-
-        Returns:
-            str: JSON string with the equations of the asymptotes
-        """
-        try:
-            self.logger.info("Computing asymptotes for hyperbola")
-            x, y = sp.symbols('x y')
-
-            h = parameters.get("center", [0, 0])[0]
-            k = parameters.get("center", [0, 0])[1]
-            a = parameters.get("semi_major", 2)
-            b = parameters.get("semi_minor", 1)
-            orientation = parameters.get("orientation", "x")
-            rotation = parameters.get("rotation", 0)
-
-            if rotation == 0 or rotation == sp.pi:
-                if orientation == "x":
-                    # y = ±(b/a)(x-h) + k
-                    slope = b / a
-                    asymptote1_line = f"y = {k} + {slope}(x - {h})"
-                    asymptote2_line = f"y = {k} - {slope}(x - {h})"
-                else:
-                    # x = ±(b/a)(y-k) + h
-                    slope = b / a
-                    asymptote1_line = f"x = {h} + {slope}(y - {k})"
-                    asymptote2_line = f"x = {h} - {slope}(y - {k})"
-            else:
-                # Rotated hyperbola - more complex
-
-                if orientation == "x":
-                    # Rotated asymptotes
-                    slope = b / a
-                    # These are approximate representations for rotated case
-                    asymptote1_line_x: str = (
-                        f"Rotated asymptote 1: slope={slope}, "
-                        f"center=({h}, {k}), "
-                        f"rotation={rotation} radians"
-                    )
-                    asymptote2_line_x: str = (
-                        f"Rotated asymptote 2: slope={-slope}, "
-                        f"center=({h}, {k}),"
-                        f"rotation={rotation} radians"
-                    )
-                else:
-                    slope = a / b
-                    asymptote1_line_y: str = (
-                        f"Rotated asymptote 1: slope={slope}, "
-                        f"center=({h}, {k}),"
-                        f"rotation={rotation} radians"
-                    )
-                    asymptote2_line_y: str = (
-                        f"Rotated asymptote 2: slope={-slope}, "
-                        f"center=({h}, {k}),"
-                        f"rotation={rotation} radians"
-                    )
-
-            # Determine which asymptote lines to use based on orientation
-            if rotation == 0 or rotation == sp.pi:
-                asymptote_lines = [asymptote1_line, asymptote2_line]
-            else:
-                if orientation == "x":
-                    asymptote_lines = [asymptote1_line_x, asymptote2_line_x]
-                else:
-                    asymptote_lines = [asymptote1_line_y, asymptote2_line_y]
-
-            return json.dumps({"result": {"equations": asymptote_lines}})
-        except Exception as e:
-            return self.handle_exception("compute_asymptotes", e)
-
-    # ====================== GEOMETRIC OPERATIONS ======================
-
-    def compute_line_conic_intersection(
-        self,
-        line_points: List[List[float]],
-        conic_type: str,
-        parameters: Dict[str, Any],
-    ) -> str:
-        r"""Computes the intersection points of a line and a conic section.
-
-        Args:
-            line_points: Two points defining the line [[x1,y1], [x2,y2]]
-            conic_type: Type of conic ("circle", "ellipse", "parabola",
-                        "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
-
-        Returns:
-            str: JSON string with the coordinates of intersection points
-        """
-        try:
-            self.logger.info(
-                f"Computing intersection of line and {conic_type}"
-            )
-            x, y = sp.symbols('x y')
-
-            # Ensure distinct points
-            if line_points[0] == line_points[1]:
-                raise ValueError("Line points must be distinct")
-
-            x1, y1 = map(float, line_points[0])
-            x2, y2 = map(float, line_points[1])
-
-            # Compute line equation coefficients
-            a, b, c = y2 - y1, x1 - x2, x2 * y1 - x1 * y2
-
-            # Determine line type
-            is_vertical = abs(b) < 1e-10
-            is_horizontal = abs(a) < 1e-10
-
-            # Generate conic equation
-            conic_result = json.loads(
-                self.generate_conic_equation(conic_type, parameters)
-            )
-            conic_expr = sp.sympify(
-                conic_result["general_form"].replace(" = 0", "")
-            )
-
-            # Solve for intersection points
-            if is_vertical:
-                intersection_eq = conic_expr.subs(x, x1)
-                solutions = sp.solve(intersection_eq, y)
-                intersection_points = [
-                    [x1, float(sol)] for sol in solutions if sol.is_real
-                ]
-            elif is_horizontal:
-                intersection_eq = conic_expr.subs(y, y1)
-                solutions = sp.solve(intersection_eq, x)
-                intersection_points = [
-                    [float(sol), y1] for sol in solutions if sol.is_real
-                ]
-            else:
-                m, d = -a / b, -c / b
-                intersection_eq = conic_expr.subs(y, m * x + d)
-                solutions = sp.solve(intersection_eq, x)
-                intersection_points = [
-                    [float(sol), float(m * sol + d)]
-                    for sol in solutions
-                    if sol.is_real
-                ]
-
-            return json.dumps({"result": intersection_points})
-        except Exception as e:
-            return self.handle_exception("compute_line_conic_intersection", e)
-
-    def check_point_position(
-        self, point: List[float], conic_type: str, parameters: Dict[str, Any]
-    ) -> str:
-        r"""Determines if a point is inside, on, or outside a conic section.
-
-        Args:
-            point: Coordinates [x,y] of the point
-            conic_type: Type of conic ("circle", "ellipse", "parabola",
-                          "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
-
-        Returns:
-            str: JSON string with the position ("inside", "on", "outside")
-        """
-        try:
-            self.logger.info(
-                f"Checking position of point relative to {conic_type}"
-            )
-            x, y = sp.symbols('x y')
-
-            # Generate conic equation
-            conic_result = json.loads(
-                self.generate_conic_equation(conic_type, parameters)
-            )
-            conic_expr = sp.sympify(
-                conic_result["general_form"].replace(" = 0", "")
-            )
-
-            # Evaluate the expression at the given point
-            px, py = map(float, point)
-            result_value = float(conic_expr.subs({x: px, y: py}))
-
-            # Define tolerance for floating-point comparisons
-            tolerance = 1e-10
-
-            # Determine position based on the value and conic type
-            if abs(result_value) < tolerance:
-                position = "on"
-            elif conic_type in {"circle", "ellipse"}:
-                position = "inside" if result_value < 0 else "outside"
-            elif conic_type == "hyperbola":
-                position = "outside" if result_value > 0 else "inside"
-            elif conic_type == "parabola":
-                orientation = parameters.get("orientation", "vertical")
-                position = (
-                    "inside"
-                    if (
-                        result_value > 0
-                        if orientation == "vertical"
-                        else result_value > 0
-                    )
-                    else "outside"
-                )
-            else:
-                raise ValueError(f"Unsupported conic type: {conic_type}")
-
-            return json.dumps({"result": position})
-        except Exception as e:
-            return self.handle_exception("check_point_position", e)
-
-    def compute_tangent_line(
-        self, point: List[float], conic_type: str, parameters: Dict[str, Any]
-    ) -> str:
-        r"""Computes the tangent line to a conic section at a given point.
-
-        Args:
-            point: Coordinates [x,y] of the point
-            conic_type: Type of conic ("circle", "ellipse", "parabola",
-                        "hyperbola")
-            parameters: Dictionary of parameters specific to the conic type
-
-        Returns:
-            str: JSON string with the equation of the tangent line
-        """
-        try:
-            self.logger.info(
-                f"Computing tangent line to {conic_type} at point {point}"
-            )
-            x, y = sp.symbols('x y')
-
-            # Check if the point is on the conic
-            position_result = json.loads(
-                self.check_point_position(point, conic_type, parameters)
-            )
-            if position_result["result"] != "on":
-                raise ValueError(
-                    "The point must be on the conic section"
-                    "to compute a tangent line"
-                )
-
-            # Generate conic equation
-            conic_result = json.loads(
-                self.generate_conic_equation(conic_type, parameters)
-            )
-            conic_general_form = conic_result["general_form"].replace(
-                " = 0", ""
-            )
-            conic_expr = sp.sympify(conic_general_form)
-
-            # Get the point coordinates
-            px, py = float(point[0]), float(point[1])
-
-            # Compute partial derivatives at the point
-            df_dx = sp.diff(conic_expr, x).subs({x: px, y: py})
-            df_dy = sp.diff(conic_expr, y).subs({x: px, y: py})
-
-            # Tangent line equation: df_dx*(x-px) + df_dy*(y-py) = 0
-
-            # Convert to standard form: ax + by + c = 0
-            a = float(df_dx)
-            b = float(df_dy)
-            c = -a * px - b * py
-
-            # Format the equation as a string
-            if abs(b) < 1e-10:  # Vertical line
-                tangent_str = f"x = {px}"
-            elif abs(a) < 1e-10:  # Horizontal line
-                tangent_str = f"y = {py}"
-            else:
-                # y = mx + d
-                m = -a / b
-                d = -c / b
-                tangent_str = f"y = {m}x + {d}"
 
             return json.dumps(
                 {
                     "result": {
-                        "equation": tangent_str,
-                        "coefficients": {"a": a, "b": b, "c": c},
+                        "standard_form": standard_form,
+                        "general_form": general_form,
                     }
                 }
             )
         except Exception as e:
-            return self.handle_exception("compute_tangent_line", e)
+            return self.handle_exception("generate_circle_equation", e)
+
+    def generate_ellipse_equation(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Generates the equation of an ellipse.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the equation in standard and general form
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            if orientation.lower() == "x":
+                # Standard form: (x-h)²/a² + (y-k)²/b² = 1
+                standard_form = f"(x-{h})²/{a}² + (y-{k})²/{b}² = 1"
+                # General form: b²(x-h)² + a²(y-k)² = a²b²
+                general_form = f"{b}²(x-{h})² + {a}²(y-{k})² = {a}²{b}²"
+            else:  # orientation == "y"
+                # Standard form: (x-h)²/b² + (y-k)²/a² = 1
+                standard_form = f"(x-{h})²/{b}² + (y-{k})²/{a}² = 1"
+                # General form: a²(x-h)² + b²(y-k)² = a²b²
+                general_form = f"{a}²(x-{h})² + {b}²(y-{k})² = {a}²{b}²"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("generate_ellipse_equation", e)
+
+    def generate_parabola_equation(
+        self,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        """Generates the equation of a parabola.
+
+        Args:
+            vertex_x: x-coordinate of the vertex
+            vertex_y: y-coordinate of the vertex
+            coefficient: coefficient of the squared term (determines how
+                wide/narrow the parabola is)
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+
+        Returns:
+            str: JSON string with the equation in standard and general form
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(vertex_x), float(vertex_y)
+            a = float(coefficient)
+
+            if orientation.lower() == "right":
+                # Standard form: (y-k)² = 4a(x-h)
+                standard_form = f"(y-{k})² = {4*a}(x-{h})"
+                # General form: y² - 2ky + k² - 4ax + 4ah = 0
+                general_form = f"y² - {2*k}y + {k**2} - {4*a}x + {4*a*h} = 0"
+            elif orientation.lower() == "left":
+                # Standard form: (y-k)² = -4a(x-h)
+                standard_form = f"(y-{k})² = -{4*a}(x-{h})"
+                # General form: y² - 2ky + k² + 4ax - 4ah = 0
+                general_form = f"y² - {2*k}y + {k**2} + {4*a}x - {4*a*h} = 0"
+            elif orientation.lower() == "up":
+                # Standard form: (x-h)² = 4a(y-k)
+                standard_form = f"(x-{h})² = {4*a}(y-{k})"
+                # General form: x² - 2hx + h² - 4ay + 4ak = 0
+                general_form = f"x² - {2*h}x + {h**2} - {4*a}y + {4*a*k} = 0"
+            else:  # orientation == "down"
+                # Standard form: (x-h)² = -4a(y-k)
+                standard_form = f"(x-{h})² = -{4*a}(y-{k})"
+                # General form: x² - 2hx + h² + 4ay - 4ak = 0
+                general_form = f"x² - {2*h}x + {h**2} + {4*a}y - {4*a*k} = 0"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("generate_parabola_equation", e)
+
+    def generate_hyperbola_equation(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Generates the equation of a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis (distance from center
+                to vertex)
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the equation in standard and general form
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            if orientation.lower() == "x":
+                # Standard form: (x-h)²/a² - (y-k)²/b² = 1
+                standard_form = f"(x-{h})²/{a}² - (y-{k})²/{b}² = 1"
+                # General form: b²(x-h)² - a²(y-k)² = a²b²
+                general_form = f"{b}²(x-{h})² - {a}²(y-{k})² = {a}²{b}²"
+            else:  # orientation == "y"
+                # Standard form: (y-k)²/a² - (x-h)²/b² = 1
+                standard_form = f"(y-{k})²/{a}² - (x-{h})²/{b}² = 1"
+                # General form: b²(y-k)² - a²(x-h)² = a²b²
+                general_form = f"{b}²(y-{k})² - {a}²(x-{h})² = {a}²{b}²"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("generate_hyperbola_equation", e)
+
+    # ====================== CONIC PROPERTY CALCULATORS ======================
+
+    def compute_circle_properties(
+        self, center_x: float, center_y: float, radius: float
+    ) -> str:
+        """Computes properties of a circle.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            radius: radius of the circle
+
+        Returns:
+            str: JSON string with the computed properties
+        """
+        try:
+            r = float(radius)
+
+            # Calculate properties
+            area = sp.pi * r**2
+            circumference = 2 * sp.pi * r
+
+            properties = {
+                "area": str(area),
+                "circumference": str(circumference),
+                "center": [float(center_x), float(center_y)],
+                "radius": float(radius),
+            }
+
+            return json.dumps({"result": properties})
+        except Exception as e:
+            return self.handle_exception("compute_circle_properties", e)
+
+    def compute_ellipse_properties(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes properties of an ellipse.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed properties
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Calculate properties
+            area = sp.pi * a * b
+            # Approximation of perimeter using Ramanujan's formula
+            perimeter = sp.pi * (
+                3 * (a + b) - sp.sqrt((3 * a + b) * (a + 3 * b))
+            )
+            eccentricity = sp.sqrt(1 - (b**2 / a**2))
+
+            # Calculate foci
+            c = sp.sqrt(a**2 - b**2)
+            if orientation.lower() == "x":
+                foci = [
+                    [float(center_x) + c, float(center_y)],
+                    [float(center_x) - c, float(center_y)],
+                ]
+            else:  # orientation == "y"
+                foci = [
+                    [float(center_x), float(center_y) + c],
+                    [float(center_x), float(center_y) - c],
+                ]
+
+            properties = {
+                "area": str(area),
+                "perimeter_approx": str(perimeter),
+                "eccentricity": str(eccentricity),
+                "center": [float(center_x), float(center_y)],
+                "semi_major_axis": float(semi_major),
+                "semi_minor_axis": float(semi_minor),
+                "foci": foci,
+            }
+
+            return json.dumps({"result": properties})
+        except Exception as e:
+            return self.handle_exception("compute_ellipse_properties", e)
+
+    def compute_parabola_properties(
+        self,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        """Computes properties of a parabola.
+
+        Args:
+            vertex_x: x-coordinate of the vertex
+            vertex_y: y-coordinate of the vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+
+        Returns:
+            str: JSON string with the computed properties
+        """
+        try:
+            a = float(coefficient)
+
+            # Calculate focus
+            if orientation.lower() in ["right", "left"]:
+                focus_distance = abs(1 / (4 * a))
+                if orientation.lower() == "right":
+                    focus = [float(vertex_x) + focus_distance, float(vertex_y)]
+                else:  # orientation == "left"
+                    focus = [float(vertex_x) - focus_distance, float(vertex_y)]
+            else:  # orientation in ["up", "down"]
+                focus_distance = abs(1 / (4 * a))
+                if orientation.lower() == "up":
+                    focus = [float(vertex_x), float(vertex_y) + focus_distance]
+                else:  # orientation == "down"
+                    focus = [float(vertex_x), float(vertex_y) - focus_distance]
+
+            properties = {
+                "vertex": [float(vertex_x), float(vertex_y)],
+                "focus": focus,
+                "coefficient": float(coefficient),
+                "orientation": orientation,
+            }
+
+            return json.dumps({"result": properties})
+        except Exception as e:
+            return self.handle_exception("compute_parabola_properties", e)
+
+    def compute_hyperbola_properties(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes properties of a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed properties
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Calculate properties
+            c = sp.sqrt(a**2 + b**2)
+            eccentricity = c / a
+
+            # Calculate foci and asymptotes
+            if orientation.lower() == "x":
+                foci = [
+                    [float(center_x) + c, float(center_y)],
+                    [float(center_x) - c, float(center_y)],
+                ]
+                asymptote1 = (
+                    f"y = {float(center_y)} + {b/a}(x - {float(center_x)})"
+                )
+                asymptote2 = (
+                    f"y = {float(center_y)} - {b/a}(x - {float(center_x)})"
+                )
+            else:  # orientation == "y"
+                foci = [
+                    [float(center_x), float(center_y) + c],
+                    [float(center_x), float(center_y) - c],
+                ]
+                asymptote1 = (
+                    f"y = {float(center_y)} + {a/b}(x - {float(center_x)})"
+                )
+                asymptote2 = (
+                    f"y = {float(center_y)} - {a/b}(x - {float(center_x)})"
+                )
+
+            properties = {
+                "center": [float(center_x), float(center_y)],
+                "semi_major_axis": float(semi_major),
+                "semi_minor_axis": float(semi_minor),
+                "eccentricity": str(eccentricity),
+                "foci": foci,
+                "asymptotes": [asymptote1, asymptote2],
+            }
+
+            return json.dumps({"result": properties})
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_properties", e)
+
+    def compute_circle_eccentricity(self) -> str:
+        """Computes the eccentricity of a circle.
+
+        Returns:
+            str: JSON string with the eccentricity (always 0 for a circle)
+        """
+        try:
+            return json.dumps({"result": "0"})
+        except Exception as e:
+            return self.handle_exception("compute_circle_eccentricity", e)
+
+    def compute_ellipse_eccentricity(
+        self, semi_major: float, semi_minor: float
+    ) -> str:
+        """Computes the eccentricity of an ellipse.
+
+        Args:
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+
+        Returns:
+            str: JSON string with the computed eccentricity
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Ensure a > b
+            if b > a:
+                a, b = b, a
+
+            eccentricity = sp.sqrt(1 - (b**2 / a**2))
+
+            return json.dumps({"result": str(eccentricity)})
+        except Exception as e:
+            return self.handle_exception("compute_ellipse_eccentricity", e)
+
+    def compute_parabola_eccentricity(self) -> str:
+        """Computes the eccentricity of a parabola.
+
+        Returns:
+            str: JSON string with the eccentricity (always 1 for a parabola)
+        """
+        try:
+            return json.dumps({"result": "1"})
+        except Exception as e:
+            return self.handle_exception("compute_parabola_eccentricity", e)
+
+    def compute_hyperbola_eccentricity(
+        self, semi_major: float, semi_minor: float
+    ) -> str:
+        """Computes the eccentricity of a hyperbola.
+
+        Args:
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+
+        Returns:
+            str: JSON string with the computed eccentricity
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            c = sp.sqrt(a**2 + b**2)
+            eccentricity = c / a
+
+            return json.dumps({"result": str(eccentricity)})
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_eccentricity", e)
+
+    def compute_circle_foci(self, center_x: float, center_y: float) -> str:
+        """Computes the focus/foci of a circle.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+
+        Returns:
+            str: JSON string with the focus (same as center for a circle)
+        """
+        try:
+            center = [float(center_x), float(center_y)]
+            return json.dumps({"result": {"foci": [center]}})
+        except Exception as e:
+            return self.handle_exception("compute_circle_foci", e)
+
+    def compute_ellipse_foci(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the foci of an ellipse.
+
+        Args:
+            center_x: x-coordinate of the ellipse center
+            center_y: y-coordinate of the ellipse center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed foci
+        """
+        try:
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Ensure a > b (semi-major > semi-minor)
+            if b > a:
+                a, b = b, a
+                # Adjust orientation if we swapped a and b
+                orientation = "y" if orientation.lower() == "x" else "x"
+
+            # Calculate focal distance
+            c = float(sp.sqrt(a**2 - b**2))
+
+            # Calculate foci positions
+            if orientation.lower() == "x":
+                focus1 = [h + c, k]
+                focus2 = [h - c, k]
+            else:  # orientation == "y"
+                focus1 = [h, k + c]
+                focus2 = [h, k - c]
+
+            # Convert to float to ensure JSON serialization
+            focus1 = [float(focus1[0]), float(focus1[1])]
+            focus2 = [float(focus2[0]), float(focus2[1])]
+
+            return json.dumps(
+                {
+                    "result": {
+                        "foci": [focus1, focus2],
+                        "focal_distance": float(c),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_ellipse_foci", e)
+
+    def compute_parabola_foci(
+        self,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        """Computes the focus of a parabola.
+
+        Args:
+            vertex_x: x-coordinate of the vertex
+            vertex_y: y-coordinate of the vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+
+        Returns:
+            str: JSON string with the computed focus
+        """
+        try:
+            a = float(coefficient)
+
+            # Calculate focus position
+            p = 1 / (4 * abs(a))  # focal distance
+
+            if orientation.lower() == "right":
+                focus = [float(vertex_x) + p, float(vertex_y)]
+            elif orientation.lower() == "left":
+                focus = [float(vertex_x) - p, float(vertex_y)]
+            elif orientation.lower() == "up":
+                focus = [float(vertex_x), float(vertex_y) + p]
+            else:  # orientation == "down"
+                focus = [float(vertex_x), float(vertex_y) - p]
+
+            return json.dumps({"result": {"foci": [focus]}})
+        except Exception as e:
+            return self.handle_exception("compute_parabola_foci", e)
+
+    def compute_hyperbola_foci(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the foci of a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed foci
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Calculate focal distance
+            c = sp.sqrt(a**2 + b**2)
+
+            # Calculate foci positions
+            if orientation.lower() == "x":
+                focus1 = [float(center_x) + c, float(center_y)]
+                focus2 = [float(center_x) - c, float(center_y)]
+            else:  # orientation == "y"
+                focus1 = [float(center_x), float(center_y) + c]
+                focus2 = [float(center_x), float(center_y) - c]
+
+            return json.dumps({"result": {"foci": [focus1, focus2]}})
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_foci", e)
+
+    def compute_circle_directrix(self) -> str:
+        """Computes the directrix/directrices of a circle.
+
+        Returns:
+            str: JSON string explaining that circles don't have directrices
+        """
+        try:
+            return json.dumps(
+                {
+                    "result": {
+                        "message": (
+                            "Circles do not have directrices. The concept of "
+                            "directrix applies to ellipses, parabolas, "
+                            "and hyperbolas."
+                        )
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_circle_directrix", e)
+
+    def compute_ellipse_directrices(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the directrices of an ellipse.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed directrices
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Calculate eccentricity
+            e = sp.sqrt(1 - (b**2 / a**2))
+
+            # Calculate directrix distance from center
+            d = a**2 / (a * e)
+
+            # Define directrices
+            if orientation.lower() == "x":
+                directrix1 = f"x = {float(center_x) + d}"
+                directrix2 = f"x = {float(center_x) - d}"
+            else:  # orientation == "y"
+                directrix1 = f"y = {float(center_y) + d}"
+                directrix2 = f"y = {float(center_y) - d}"
+
+            return json.dumps(
+                {"result": {"directrices": [directrix1, directrix2]}}
+            )
+        except Exception as e:
+            return self.handle_exception("compute_ellipse_directrices", e)
+
+    def compute_parabola_directrix(
+        self,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        """Computes the directrix of a parabola.
+
+        Args:
+            vertex_x: x-coordinate of the vertex
+            vertex_y: y-coordinate of the vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+
+        Returns:
+            str: JSON string with the computed directrix
+        """
+        try:
+            a = float(coefficient)
+
+            # Calculate directrix distance from vertex
+            p = 1 / (4 * abs(a))  # focal distance
+
+            # Define directrix
+            if orientation.lower() == "right":
+                directrix = f"x = {float(vertex_x) - p}"
+            elif orientation.lower() == "left":
+                directrix = f"x = {float(vertex_x) + p}"
+            elif orientation.lower() == "up":
+                directrix = f"y = {float(vertex_y) - p}"
+            else:  # orientation == "down"
+                directrix = f"y = {float(vertex_y) + p}"
+
+            return json.dumps({"result": {"directrix": directrix}})
+        except Exception as e:
+            return self.handle_exception("compute_parabola_directrix", e)
+
+    def compute_hyperbola_directrices(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the directrices of a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed directrices
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Calculate eccentricity
+            c = sp.sqrt(a**2 + b**2)
+            e = c / a
+
+            # Calculate directrix distance from center
+            d = a**2 / (a * e)
+
+            # Define directrices
+            if orientation.lower() == "x":
+                directrix1 = f"x = {float(center_x) + d}"
+                directrix2 = f"x = {float(center_x) - d}"
+            else:  # orientation == "y"
+                directrix1 = f"y = {float(center_y) + d}"
+                directrix2 = f"y = {float(center_y) - d}"
+
+            return json.dumps(
+                {"result": {"directrices": [directrix1, directrix2]}}
+            )
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_directrices", e)
+
+    def compute_circle_asymptotes(self) -> str:
+        """Computes the asymptotes of a circle.
+
+        Returns:
+            str: JSON string explaining that circles don't have asymptotes
+        """
+        try:
+            return json.dumps(
+                {
+                    "result": {
+                        "message": (
+                            "Circles do not have asymptotes. "
+                            "Only hyperbolas have asymptotes."
+                        )
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_circle_asymptotes", e)
+
+    def compute_ellipse_asymptotes(self) -> str:
+        """Computes the asymptotes of an ellipse.
+
+        Returns:
+            str: JSON string explaining that ellipses don't have asymptotes
+        """
+        try:
+            return json.dumps(
+                {
+                    "result": {
+                        "message": (
+                            "Ellipses do not have asymptotes. "
+                            "Only hyperbolas have asymptotes."
+                        )
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_ellipse_asymptotes", e)
+
+    def compute_parabola_asymptotes(self) -> str:
+        """Computes the asymptotes of a parabola.
+
+        Returns:
+            str: JSON string explaining that parabolas don't have asymptotes
+        """
+        try:
+            return json.dumps(
+                {
+                    "result": {
+                        "message": (
+                            "Parabolas do not have asymptotes. "
+                            "Only hyperbolas have asymptotes."
+                        )
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_parabola_asymptotes", e)
+
+    def compute_hyperbola_asymptotes(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the asymptotes of a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the center
+            center_y: y-coordinate of the center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the computed asymptotes
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+            h = float(center_x)
+            k = float(center_y)
+
+            # Calculate asymptotes
+            if orientation.lower() == "x":
+                slope = b / a
+                asymptote1 = f"y = {k} + {slope}(x - {h})"
+                asymptote2 = f"y = {k} - {slope}(x - {h})"
+
+                # Alternative form
+                asymptote1_alt = f"y = {slope}x + {k - slope*h}"
+                asymptote2_alt = f"y = -{slope}x + {k + slope*h}"
+            else:  # orientation == "y"
+                slope = a / b
+                asymptote1 = f"y = {k} + {slope}(x - {h})"
+                asymptote2 = f"y = {k} - {slope}(x - {h})"
+
+                # Alternative form
+                asymptote1_alt = f"y = {slope}x + {k - slope*h}"
+                asymptote2_alt = f"y = -{slope}x + {k + slope*h}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "asymptotes": [asymptote1, asymptote2],
+                        "alternative_form": [asymptote1_alt, asymptote2_alt],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_asymptotes", e)
+
+    # ====================== GEOMETRIC OPERATIONS ======================
+
+    def compute_line_circle_intersection(
+        self,
+        center_x: float,
+        center_y: float,
+        radius: float,
+        line_slope: float,
+        line_y_intercept: float,
+    ) -> str:
+        """Computes the intersection points of a line and a circle.
+
+        Args:
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+            line_slope: slope of the line (m in y = mx + b)
+            line_y_intercept: y-intercept of the line (b in y = mx + b)
+
+        Returns:
+            str: JSON string with the computed intersection points
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(center_x), float(center_y)
+            r = float(radius)
+            m = float(line_slope)
+            b = float(line_y_intercept)
+
+            # Circle equation: (x - h)² + (y - k)² = r²
+            # Line equation: y = mx + b
+
+            # Substitute line equation into circle equation
+            # (x - h)² + (mx + b - k)² = r²
+            circle_eq = (x - h) ** 2 + (m * x + b - k) ** 2 - r**2
+
+            # Solve for x
+            x_solutions = sp.solve(circle_eq, x)
+
+            # Calculate corresponding y values
+            intersection_points = []
+            for x_sol in x_solutions:
+                x_val = float(x_sol)
+                y_val = float(m * x_val + b)
+                intersection_points.append([x_val, y_val])
+
+            return json.dumps(
+                {
+                    "result": {
+                        "intersection_points": intersection_points,
+                        "count": len(intersection_points),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_line_circle_intersection", e)
+
+    def compute_line_ellipse_intersection(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+        line_slope: float,
+        line_y_intercept: float,
+    ) -> str:
+        """Computes the intersection points of a line and an ellipse.
+
+        Args:
+            center_x: x-coordinate of the ellipse center
+            center_y: y-coordinate of the ellipse center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+            line_slope: slope of the line (m in y = mx + b)
+            line_y_intercept: y-intercept of the line (b in y = mx + b)
+
+        Returns:
+            str: JSON string with the computed intersection points
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+            m = float(line_slope)
+            c = float(
+                line_y_intercept
+            )  # Using c for y-intercept to avoid confusion with axis b
+
+            # Ellipse equation depends on orientation
+            if orientation.lower() == "x":
+                # (x-h)²/a² + (y-k)²/b² = 1
+                ellipse_eq = (
+                    (x - h) ** 2 / a**2 + (m * x + c - k) ** 2 / b**2 - 1
+                )
+            else:  # orientation == "y"
+                # (x-h)²/b² + (y-k)²/a² = 1
+                ellipse_eq = (
+                    (x - h) ** 2 / b**2 + (m * x + c - k) ** 2 / a**2 - 1
+                )
+
+            # Solve for x
+            x_solutions = sp.solve(ellipse_eq, x)
+
+            # Calculate corresponding y values
+            intersection_points = []
+            for x_sol in x_solutions:
+                try:
+                    x_val = float(x_sol)
+                    y_val = float(m * x_val + c)
+                    intersection_points.append([x_val, y_val])
+                except Exception:
+                    # Skip complex solutions
+                    continue
+
+            return json.dumps(
+                {
+                    "result": {
+                        "intersection_points": intersection_points,
+                        "count": len(intersection_points),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_line_ellipse_intersection", e
+            )
+
+    def compute_line_parabola_intersection(
+        self,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+        line_slope: float,
+        line_y_intercept: float,
+    ) -> str:
+        """Computes the intersection points of a line and a parabola.
+
+        Args:
+            vertex_x: x-coordinate of the parabola vertex
+            vertex_y: y-coordinate of the parabola vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+            line_slope: slope of the line (m in y = mx + b)
+            line_y_intercept: y-intercept of the line (b in y = mx + b)
+
+        Returns:
+            str: JSON string with the computed intersection points
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(vertex_x), float(vertex_y)
+            a = float(coefficient)
+            m = float(line_slope)
+            b = float(line_y_intercept)
+
+            # Parabola equation depends on orientation
+            if orientation.lower() == "right":
+                # y - k = a(x - h)²
+                parabola_eq = m * x + b - (k + a * (x - h) ** 2)
+            elif orientation.lower() == "left":
+                # y - k = a(x - h)²
+                parabola_eq = m * x + b - (k + a * (x - h) ** 2)
+            elif orientation.lower() == "up":
+                # x - h = a(y - k)²
+                parabola_eq = x - h - a * (m * x + b - k) ** 2
+            else:  # orientation == "down"
+                # x - h = a(y - k)²
+                parabola_eq = x - h - a * (m * x + b - k) ** 2
+
+            # Solve for x
+            x_solutions = sp.solve(parabola_eq, x)
+
+            # Calculate corresponding y values
+            intersection_points = []
+            for x_sol in x_solutions:
+                try:
+                    x_val = float(x_sol)
+                    y_val = float(m * x_val + b)
+                    intersection_points.append([x_val, y_val])
+                except Exception:
+                    # Skip complex solutions
+                    continue
+
+            return json.dumps(
+                {
+                    "result": {
+                        "intersection_points": intersection_points,
+                        "count": len(intersection_points),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_line_parabola_intersection", e
+            )
+
+    def compute_line_hyperbola_intersection(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+        line_slope: float,
+        line_y_intercept: float,
+    ) -> str:
+        """Computes the intersection points of a line and a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+            line_slope: slope of the line (m in y = mx + b)
+            line_y_intercept: y-intercept of the line (b in y = mx + b)
+
+        Returns:
+            str: JSON string with the computed intersection points
+        """
+        try:
+            x, y = sp.symbols('x y')
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+            m = float(line_slope)
+            c = float(
+                line_y_intercept
+            )  # Using c for y-intercept to avoid confusion with axis b
+
+            # Hyperbola equation depends on orientation
+            if orientation.lower() == "x":
+                # (x-h)²/a² - (y-k)²/b² = 1
+                hyperbola_eq = (
+                    (x - h) ** 2 / a**2 - (m * x + c - k) ** 2 / b**2 - 1
+                )
+            else:  # orientation == "y"
+                # (y-k)²/a² - (x-h)²/b² = 1
+                hyperbola_eq = (
+                    (m * x + c - k) ** 2 / a**2 - (x - h) ** 2 / b**2 - 1
+                )
+
+            # Solve for x
+            x_solutions = sp.solve(hyperbola_eq, x)
+
+            # Calculate corresponding y values
+            intersection_points = []
+            for x_sol in x_solutions:
+                try:
+                    x_val = float(x_sol)
+                    y_val = float(m * x_val + c)
+                    intersection_points.append([x_val, y_val])
+                except Exception:
+                    # Skip complex solutions
+                    continue
+
+            return json.dumps(
+                {
+                    "result": {
+                        "intersection_points": intersection_points,
+                        "count": len(intersection_points),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_line_hyperbola_intersection", e
+            )
+
+    def check_point_position_circle(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        radius: float,
+    ) -> str:
+        """Checks the position of a point relative to a circle.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+
+        Returns:
+            str: JSON string with the position ("inside", "outside", or "on")
+        """
+        try:
+            p = sp.Point(float(point_x), float(point_y))
+            c = sp.Point(float(center_x), float(center_y))
+            r = float(radius)
+
+            # Calculate distance from point to center
+            distance = p.distance(c)
+
+            # Determine position
+            if (
+                abs(distance - r) < 1e-10
+            ):  # Account for floating-point precision
+                position = "on"
+            elif distance < r:
+                position = "inside"
+            else:
+                position = "outside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "distance_from_center": str(distance),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("check_point_position_circle", e)
+
+    def check_point_position_ellipse(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Checks the position of a point relative to an ellipse.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
+            center_x: x-coordinate of the ellipse center
+            center_y: y-coordinate of the ellipse center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the position ("inside", "outside", or "on")
+        """
+        try:
+            x = float(point_x)
+            y = float(point_y)
+            h = float(center_x)
+            k = float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Evaluate the ellipse equation at the point
+            if orientation.lower() == "x":
+                # (x-h)²/a² + (y-k)²/b² = 1
+                value = (x - h) ** 2 / a**2 + (y - k) ** 2 / b**2
+            else:  # orientation == "y"
+                # (x-h)²/b² + (y-k)²/a² = 1
+                value = (x - h) ** 2 / b**2 + (y - k) ** 2 / a**2
+
+            # Determine position
+            if abs(value - 1) < 1e-10:  # Account for floating-point precision
+                position = "on"
+            elif value < 1:
+                position = "inside"
+            else:
+                position = "outside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "equation_value": str(value),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("check_point_position_ellipse", e)
+
+    def check_point_position_parabola(
+        self,
+        point_x: float,
+        point_y: float,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        """Checks the position of a point relative to a parabola.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
+            vertex_x: x-coordinate of the parabola vertex
+            vertex_y: y-coordinate of the parabola vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+
+        Returns:
+            str: JSON string with the position ("on", "inside", or "outside")
+        """
+        try:
+            x = float(point_x)
+            y = float(point_y)
+            h = float(vertex_x)
+            k = float(vertex_y)
+            a = float(coefficient)
+
+            # Evaluate the parabola equation at the point
+            if orientation.lower() == "right":
+                # y - k = a(x - h)²
+                expected_y = k + a * (x - h) ** 2
+                value = y - expected_y
+            elif orientation.lower() == "left":
+                # y - k = a(x - h)²
+                expected_y = k + a * (x - h) ** 2
+                value = y - expected_y
+            elif orientation.lower() == "up":
+                # x - h = a(y - k)²
+                expected_x = h + a * (y - k) ** 2
+                value = x - expected_x
+            else:  # orientation == "down"
+                # x - h = a(y - k)²
+                expected_x = h + a * (y - k) ** 2
+                value = x - expected_x
+
+            # Determine position
+            if abs(value) < 1e-10:  # Account for floating-point precision
+                position = "on"
+            else:
+                # For parabolas, "inside" and "outside" depend
+                # on the orientation
+                if orientation.lower() == "right":
+                    position = "inside" if value < 0 else "outside"
+                elif orientation.lower() == "left":
+                    position = "inside" if value > 0 else "outside"
+                elif orientation.lower() == "up":
+                    position = "inside" if value < 0 else "outside"
+                else:  # orientation == "down"
+                    position = "inside" if value > 0 else "outside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "equation_value": str(value),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("check_point_position_parabola", e)
+
+    def check_point_position_hyperbola(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Checks the position of a point relative to a hyperbola.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the position ("on", "inside", or "outside")
+        """
+        try:
+            x = float(point_x)
+            y = float(point_y)
+            h = float(center_x)
+            k = float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Evaluate the hyperbola equation at the point
+            if orientation.lower() == "x":
+                # (x-h)²/a² - (y-k)²/b² = 1
+                value = (x - h) ** 2 / a**2 - (y - k) ** 2 / b**2
+            else:  # orientation == "y"
+                # (y-k)²/a² - (x-h)²/b² = 1
+                value = (y - k) ** 2 / a**2 - (x - h) ** 2 / b**2
+
+            # Determine position
+            if abs(value - 1) < 1e-10:  # Account for floating-point precision
+                position = "on"
+            else:
+                # For hyperbolas, there's no clear "inside" or "outside"
+                # "inside" for points between branches, "outside" otherwise
+                position = (
+                    "between branches" if value < 1 else "on branch side"
+                )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "equation_value": str(value),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("check_point_position_hyperbola", e)
+
+    def compute_tangent_line_circle(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        radius: float,
+    ) -> str:
+        """Computes the tangent line(s) to a circle from a point.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+
+        Returns:
+            str: JSON string with the tangent line equation(s)
+        """
+        try:
+            p = sp.Point(float(point_x), float(point_y))
+            c = sp.Point(float(center_x), float(center_y))
+            r = float(radius)
+
+            # Calculate distance from point to center
+            distance = p.distance(c)
+
+            # Check if point is inside the circle
+            if distance < r:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": (
+                                "No tangent lines exist from a point "
+                                "inside the circle."
+                            )
+                        }
+                    }
+                )
+
+            # Check if point is on the circle
+            if (
+                abs(distance - r) < 1e-10
+            ):  # Account for floating-point precision
+                # Point is on circle - one tangent line perpendicular to radius
+                # Calculate the slope of the radius
+                if abs(p.x - c.x) < 1e-10:  # Vertical radius
+                    # Tangent is horizontal
+                    tangent_eq = f"y = {float(p.y)}"
+                else:
+                    radius_slope = (p.y - c.y) / (p.x - c.x)
+                    # Tangent slope is negative reciprocal of radius slope
+                    tangent_slope = -1 / radius_slope
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {float(p.y)} = {float(tangent_slope)}"
+                        f"(x - {float(p.x)})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_slope_val = float(tangent_slope)
+                    tangent_y_intercept = float(p.y - tangent_slope * p.x)
+                    tangent_eq_simplified = (
+                        f"y = {tangent_slope_val}x + " f"{tangent_y_intercept}"
+                    )
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "tangent_lines": [tangent_eq],
+                            "simplified_form": [tangent_eq_simplified]
+                            if 'tangent_eq_simplified' in locals()
+                            else None,
+                            "count": 1,
+                        }
+                    }
+                )
+
+            # Point is outside the circle, so there are two tangent lines
+            # This is more complex and requires solving a system of equations
+            # We'll use the power of a point theorem
+
+            # First, find the power of the point
+            power = distance**2 - r**2
+
+            # Calculate the points of tangency
+            x, y = sp.symbols('x y')
+
+            # Equation of the circle
+            circle_eq = (x - c.x) ** 2 + (y - c.y) ** 2 - r**2
+
+            # Points where line from p to (x,y) is tangent to circle
+            # Dot product of (x-c.x, y-c.y) and (x-p.x, y-p.y) = 0
+            tangent_condition = (x - c.x) * (x - p.x) + (y - c.y) * (y - p.y)
+
+            # Solve the system of equations
+            tangent_points = sp.solve([circle_eq, tangent_condition], [x, y])
+
+            # Calculate the tangent lines
+            tangent_lines = []
+            tangent_lines_simplified = []
+
+            for point in tangent_points:
+                t_x, t_y = float(point[0]), float(point[1])
+
+                # Check if the tangent line is vertical
+                if abs(t_x - p.x) < 1e-10:
+                    tangent_eq = f"x = {float(p.x)}"
+                    tangent_lines.append(tangent_eq)
+                    tangent_lines_simplified.append(tangent_eq)
+                else:
+                    # Calculate the slope of the tangent line
+                    tangent_slope = (t_y - p.y) / (t_x - p.x)
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {float(p.y)} = {float(tangent_slope)}"
+                        f"(x - {float(p.x)})"
+                    )
+                    # Simplify to y = mx + b form
+                    b_value = float(p.y - tangent_slope * p.x)
+                    tangent_eq_simplified = f"y = {float(tangent_slope)}x + "
+                    tangent_eq_simplified += f"{b_value}"
+
+                    tangent_lines.append(tangent_eq)
+                    tangent_lines_simplified.append(tangent_eq_simplified)
+
+            return json.dumps(
+                {
+                    "result": {
+                        "tangent_lines": tangent_lines,
+                        "simplified_form": tangent_lines_simplified,
+                        "tangent_points": [
+                            [float(point[0]), float(point[1])]
+                            for point in tangent_points
+                        ],
+                        "count": len(tangent_lines),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_tangent_line_circle", e)
+
+    def compute_tangent_line_at_point_circle(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        radius: float,
+    ) -> str:
+        """Computes the tangent line to a circle at a specific point
+            on the circle.
+
+        Args:
+            point_x: x-coordinate of the point on the circle
+            point_y: y-coordinate of the point on the circle
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+
+        Returns:
+            str: JSON string with the tangent line equation
+        """
+        try:
+            p = sp.Point(float(point_x), float(point_y))
+            c = sp.Point(float(center_x), float(center_y))
+            r = float(radius)
+
+            # Check if the point is on the circle
+            distance = p.distance(c)
+            if abs(distance - r) > 1e-10:  # Not on the circle
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"The point ({float(p.x)},{float(p.y)})"
+                            f"is not on the circle. Distance from "
+                            f"center: {float(distance)}, "
+                            f"radius: {float(r)}."
+                        }
+                    }
+                )
+
+            # Calculate the tangent line (perpendicular to the radius)
+            if abs(p.x - c.x) < 1e-10:  # Vertical radius
+                # Tangent is horizontal
+                tangent_eq = f"y = {float(p.y)}"
+                tangent_eq_simplified = tangent_eq
+            else:
+                radius_slope = (p.y - c.y) / (p.x - c.x)
+                # Tangent slope is negative reciprocal of radius slope
+                tangent_slope = -1 / radius_slope
+                # y - y1 = m(x - x1)
+                tangent_eq = f"y - {float(p.y)} = {float(tangent_slope)}(x - "
+                tangent_eq += f"{float(p.x)})"
+                # Simplify to y = mx + b form
+                b_value = float(p.y - tangent_slope * p.x)
+                tangent_eq_simplified = f"y = {float(tangent_slope)}x + "
+                tangent_eq_simplified += f"{b_value}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "tangent_line": tangent_eq,
+                        "simplified_form": tangent_eq_simplified,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_tangent_line_at_point_circle", e
+            )
+
+    def compute_tangent_line_at_point_ellipse(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the tangent line to an ellipse at a specific point
+            on the ellipse.
+
+        Args:
+            point_x: x-coordinate of the point on the ellipse
+            point_y: y-coordinate of the point on the ellipse
+            center_x: x-coordinate of the ellipse center
+            center_y: y-coordinate of the ellipse center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the tangent line equation
+        """
+        try:
+            x, y = sp.symbols('x y')
+            p_x = float(point_x)
+            p_y = float(point_y)
+            h = float(center_x)
+            k = float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Check if the point is on the ellipse
+            if orientation.lower() == "x":
+                # (x-h)²/a² + (y-k)²/b² = 1
+                value = (p_x - h) ** 2 / a**2 + (p_y - k) ** 2 / b**2
+            else:  # orientation == "y"
+                # (x-h)²/b² + (y-k)²/a² = 1
+                value = (p_x - h) ** 2 / b**2 + (p_y - k) ** 2 / a**2
+
+            if abs(value - 1) > 1e-10:  # Not on the ellipse
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"The point ({p_x}, {p_y}) is not on"
+                            f"the ellipse. Equation value: "
+                            f"{float(value)}, expected: 1."
+                        }
+                    }
+                )
+
+            # Calculate the tangent line
+            if orientation.lower() == "x":
+                # Derivative of ellipse equation:
+                # 2(x-h)/a² + 2(y-k)/b² * dy/dx = 0
+                # Solve for dy/dx: dy/dx = -b²(x-h)/(a²(y-k))
+                if (
+                    abs(p_y - k) < 1e-10
+                ):  # Point is at the top or bottom of the ellipse
+                    tangent_eq = f"y = {p_y}"
+                    tangent_eq_simplified = tangent_eq
+                else:
+                    tangent_slope = -(b**2) * (p_x - h) / (a**2 * (p_y - k))
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_slope_val = float(tangent_slope)
+                    tangent_y_intercept = float(p_y - tangent_slope * p_x)
+                    tangent_eq_simplified = (
+                        f"y = {tangent_slope_val}x + {tangent_y_intercept}"
+                    )
+            else:  # orientation == "y"
+                # Derivative of ellipse equation:
+                # 2(x-h)/b² + 2(y-k)/a² * dy/dx = 0
+                # Solve for dy/dx: dy/dx = -b²(x-h)/(a²(y-k))
+                if (
+                    abs(p_y - k) < 1e-10
+                ):  # Point is at the left or right of the ellipse
+                    tangent_eq = f"x = {p_x}"
+                    tangent_eq_simplified = tangent_eq
+                else:
+                    tangent_slope = -(b**2) * (p_x - h) / (a**2 * (p_y - k))
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_slope_val = float(tangent_slope)
+                    tangent_y_intercept = float(p_y - tangent_slope * p_x)
+                    tangent_eq_simplified = (
+                        f"y = {tangent_slope_val}x + {tangent_y_intercept}"
+                    )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "tangent_line": tangent_eq,
+                        "simplified_form": tangent_eq_simplified,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_tangent_line_at_point_ellipse", e
+            )
+
+    def compute_tangent_line_at_point_parabola(
+        self,
+        point_x: float,
+        point_y: float,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        """Computes the tangent line to a parabola at a specific point
+            on the parabola.
+
+        Args:
+            point_x: x-coordinate of the point on the parabola
+            point_y: y-coordinate of the point on the parabola
+            vertex_x: x-coordinate of the parabola vertex
+            vertex_y: y-coordinate of the parabola vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+
+        Returns:
+            str: JSON string with the tangent line equation
+        """
+        try:
+            p_x = float(point_x)
+            p_y = float(point_y)
+            h = float(vertex_x)
+            k = float(vertex_y)
+            a = float(coefficient)
+
+            # Check if the point is on the parabola
+            if orientation.lower() == "right":
+                # y - k = a(x - h)²
+                expected_y = k + a * (p_x - h) ** 2
+                on_parabola = abs(p_y - expected_y) < 1e-10
+            elif orientation.lower() == "left":
+                # y - k = a(x - h)²
+                expected_y = k + a * (p_x - h) ** 2
+                on_parabola = abs(p_y - expected_y) < 1e-10
+            elif orientation.lower() == "up":
+                # x - h = a(y - k)²
+                expected_x = h + a * (p_y - k) ** 2
+                on_parabola = abs(p_x - expected_x) < 1e-10
+            else:  # orientation == "down"
+                # x - h = a(y - k)²
+                expected_x = h + a * (p_y - k) ** 2
+                on_parabola = abs(p_x - expected_x) < 1e-10
+
+            if not on_parabola:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"The point ({p_x}, {p_y}) is not"
+                            f"on the parabola."
+                        }
+                    }
+                )
+
+            # Calculate the tangent line
+            if orientation.lower() == "right":
+                # Derivative: dy/dx = 2a(x - h)
+                tangent_slope = 2 * a * (p_x - h)
+                # y - y1 = m(x - x1)
+                tangent_eq = f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                # Simplify to y = mx + b form
+                tangent_eq_simplified = (
+                    f"y = {float(tangent_slope)}x + "
+                    f"{float(p_y - tangent_slope*p_x)}"
+                )
+            elif orientation.lower() == "left":
+                # Derivative: dy/dx = 2a(x - h)
+                tangent_slope = 2 * a * (p_x - h)
+                # y - y1 = m(x - x1)
+                tangent_eq = f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                # Simplify to y = mx + b form
+                tangent_eq_simplified = (
+                    f"y = {float(tangent_slope)}x + "
+                    f"{float(p_y - tangent_slope*p_x)}"
+                )
+            elif orientation.lower() == "up":
+                # Derivative: dx/dy = 2a(y - k)
+                # Convert to dy/dx = 1/(2a(y - k))
+                if abs(p_y - k) < 1e-10:  # At vertex
+                    tangent_eq = f"x = {p_x}"
+                    tangent_eq_simplified = tangent_eq
+                else:
+                    tangent_slope = 1 / (2 * a * (p_y - k))
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_eq_simplified = (
+                        f"y = {float(tangent_slope)}x + "
+                        f"{float(p_y - tangent_slope*p_x)}"
+                    )
+            else:  # orientation == "down"
+                # Derivative: dx/dy = 2a(y - k)
+                # Convert to dy/dx = 1/(2a(y - k))
+                if abs(p_y - k) < 1e-10:  # At vertex
+                    tangent_eq = f"x = {p_x}"
+                    tangent_eq_simplified = tangent_eq
+                else:
+                    tangent_slope = 1 / (2 * a * (p_y - k))
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_eq_simplified = (
+                        f"y = {float(tangent_slope)}x + "
+                        f"{float(p_y - tangent_slope*p_x)}"
+                    )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "tangent_line": tangent_eq,
+                        "simplified_form": tangent_eq_simplified,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_tangent_line_at_point_parabola", e
+            )
+
+    def compute_tangent_line_at_point_hyperbola(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        """Computes the tangent line to a hyperbola at a specific point
+            on the hyperbola.
+
+        Args:
+            point_x: x-coordinate of the point on the hyperbola
+            point_y: y-coordinate of the point on the hyperbola
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+
+        Returns:
+            str: JSON string with the tangent line equation
+        """
+        try:
+            p_x = float(point_x)
+            p_y = float(point_y)
+            h = float(center_x)
+            k = float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Check if the point is on the hyperbola
+            if orientation.lower() == "x":
+                # (x-h)²/a² - (y-k)²/b² = 1
+                value = (p_x - h) ** 2 / a**2 - (p_y - k) ** 2 / b**2
+            else:  # orientation == "y"
+                # (y-k)²/a² - (x-h)²/b² = 1
+                value = (p_y - k) ** 2 / a**2 - (p_x - h) ** 2 / b**2
+
+            if abs(value - 1) > 1e-10:  # Not on the hyperbola
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"The point ({p_x}, {p_y}) is not on"
+                            f"the hyperbola. Equation value: "
+                            f"{float(value)}, expected: 1."
+                        }
+                    }
+                )
+
+            # Calculate the tangent line
+            if orientation.lower() == "x":
+                # Derivative of hyperbola equation:
+                # 2(x-h)/a² - 2(y-k)/b² * dy/dx = 0
+                # Solve for dy/dx: dy/dx = b²(x-h)/(a²(y-k))
+                if (
+                    abs(p_y - k) < 1e-10
+                ):  # This shouldn't happen for a hyperbola
+                    return json.dumps(
+                        {
+                            "result": {
+                                "message": f"The point ({p_x}, {p_y}) cannot"
+                                f"be on the hyperbola with center"
+                                f"({h}, {k}) and orientation 'x'."
+                            }
+                        }
+                    )
+                else:
+                    tangent_slope = b**2 * (p_x - h) / (a**2 * (p_y - k))
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_eq_simplified = (
+                        f"y = {float(tangent_slope)}x + "
+                        f"{float(p_y - tangent_slope*p_x)}"
+                    )
+            else:  # orientation == "y"
+                # Derivative of hyperbola equation:
+                # -2(x-h)/b² + 2(y-k)/a² * dy/dx = 0
+                # Solve for dy/dx: dy/dx = b²(x-h)/(a²(y-k))
+                if (
+                    abs(p_x - h) < 1e-10
+                ):  # This shouldn't happen for a hyperbola
+                    return json.dumps(
+                        {
+                            "result": {
+                                "message": f"The point ({p_x}, {p_y}) cannot"
+                                f"be on the hyperbola with center"
+                                f"({h}, {k}) and orientation 'y'."
+                            }
+                        }
+                    )
+                else:
+                    tangent_slope = a**2 * (p_y - k) / (b**2 * (p_x - h))
+                    # y - y1 = m(x - x1)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_eq_simplified = (
+                        f"y = {float(tangent_slope)}x + "
+                        f"{float(p_y - tangent_slope*p_x)}"
+                    )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "tangent_line": tangent_eq,
+                        "simplified_form": tangent_eq_simplified,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_tangent_line_at_point_hyperbola", e
+            )
 
     # ====================== PROBLEM SOLVER LAYER ======================
 
-    def solve_conic_problem(
-        self, problem_type: str, parameters: Dict[str, Any]
+    def solve_circle_problem(
+        self,
+        problem_type: str,
+        center_x: float = 0,
+        center_y: float = 0,
+        radius: float = 0,
+        point_x: float = 0,
+        point_y: float = 0,
+        line_slope: float = 0,
+        line_y_intercept: float = 0,
     ) -> str:
-        r"""Solves complex conic section problems by orchestrating
-            multiple operations.
+        """Solves a specific type of circle problem.
 
         Args:
             problem_type: Type of problem to solve
-            parameters: Dictionary of parameters specific to the problem
+                        ("area", "circumference", "contains_point",
+                         "tangent_lines", etc.)
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+            point_x: x-coordinate of a point (if applicable)
+            point_y: y-coordinate of a point (if applicable)
+            line_slope: slope of a line (if applicable)
+            line_y_intercept: y-intercept of a line (if applicable)
 
         Returns:
             str: JSON string with the solution
         """
         try:
-            self.logger.info(f"Solving conic problem of type: {problem_type}")
+            h, k = float(center_x), float(center_y)
+            r = float(radius)
 
-            if problem_type == "find_parameter_from_condition":
-                conic_type = parameters.get("conic_type")
-                condition_type = parameters.get("condition_type")
-
-                if (
-                    conic_type == "hyperbola"
-                    and condition_type == "asymptote_slope"
-                ):
-                    slope = parameters.get("slope", 1.0)
-                    if slope is None:
-                        slope = 1.0
-                    center = parameters.get("center", [0, 0])
-                    semi_major = parameters.get("semi_major", 1.0)
-                    if semi_major is None:
-                        semi_major = 1.0
-
-                    semi_minor = abs(float(slope) * float(semi_major))
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "semi_minor": float(semi_minor),
-                                "parameters": {
-                                    "center": center,
-                                    "semi_major": float(semi_major),
-                                    "semi_minor": float(semi_minor),
-                                    "orientation": "x",
-                                },
-                            }
+            if problem_type == "area":
+                area = sp.pi * r**2
+                return json.dumps(
+                    {
+                        "result": {
+                            "area": str(area),
+                            "steps": [
+                                "The area of a circle is given by the formula:"
+                                "A = πr²",
+                                f"Substituting r = {r}",
+                                f"A = π * ({r})² = {area!s}",
+                            ],
                         }
-                    )
+                    }
+                )
 
-                elif (
-                    conic_type == "ellipse"
-                    and condition_type == "eccentricity"
-                ):
-                    eccentricity = parameters.get("eccentricity", 0.5)
-                    if eccentricity is None:
-                        eccentricity = 0.5
-                    semi_major = parameters.get("semi_major", 1.0)
-                    if semi_major is None:
-                        semi_major = 1.0
-
-                    semi_minor = float(semi_major) * sp.sqrt(
-                        1 - float(eccentricity) ** 2
-                    )
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "semi_minor": float(semi_minor),
-                                "parameters": {
-                                    "semi_major": float(semi_major),
-                                    "semi_minor": float(semi_minor),
-                                    "eccentricity": float(eccentricity),
-                                },
-                            }
+            elif problem_type == "circumference":
+                circumference = 2 * sp.pi * r
+                return json.dumps(
+                    {
+                        "result": {
+                            "circumference": str(circumference),
+                            "steps": [
+                                "The circumference of a circle is given by"
+                                "the formula: C = 2πr",
+                                f"Substituting r = {r}",
+                                f"C = 2π * {r} = {circumference!s}",
+                            ],
                         }
-                    )
+                    }
+                )
 
-                elif (
-                    conic_type == "parabola"
-                    and condition_type == "focus_distance"
-                ):
-                    vertex = parameters.get("vertex", [0, 0])
-                    focus_distance = parameters.get("focus_distance", 1.0)
-                    if focus_distance is None:
-                        focus_distance = 1.0
-                    orientation = parameters.get("orientation", "vertical")
+            elif problem_type == "contains_point":
+                p_x, p_y = float(point_x), float(point_y)
+                distance = sp.sqrt((p_x - h) ** 2 + (p_y - k) ** 2)
 
-                    coefficient = 1 / (4 * float(focus_distance))
-
-                    focus_x = (
-                        vertex[0]
-                        if orientation == "vertical"
-                        else vertex[0] + focus_distance
-                    )
-                    focus_y = (
-                        vertex[1] + focus_distance
-                        if orientation == "vertical"
-                        else vertex[1]
-                    )
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "coefficient": float(coefficient),
-                                "parameters": {
-                                    "vertex": vertex,
-                                    "coefficient": float(coefficient),
-                                    "orientation": orientation,
-                                    "focus": [focus_x, focus_y],
-                                },
-                            }
-                        }
-                    )
-
-            elif problem_type == "find_intersection_count":
-                conic1_type = parameters.get("conic1_type")
-                conic1_params = parameters.get("conic1_params", {})
-                conic2_type = parameters.get("conic2_type")
-                conic2_params = parameters.get("conic2_params", {})
-
-                if conic1_type == "circle" and conic2_type == "circle":
-                    center1 = conic1_params.get("center", [0, 0])
-                    radius1 = conic1_params.get("radius", 1)
-                    center2 = conic2_params.get("center", [0, 0])
-                    radius2 = conic2_params.get("radius", 1)
-
-                    distance = sp.sqrt(
-                        (center1[0] - center2[0]) ** 2
-                        + (center1[1] - center2[1]) ** 2
-                    )
-
-                    if distance > radius1 + radius2:
-                        intersection_count = 0
-                    elif abs(distance - (radius1 + radius2)) < 1e-10:
-                        intersection_count = 1
-                    elif distance < radius1 + radius2 and distance > abs(
-                        radius1 - radius2
-                    ):
-                        intersection_count = 2
-                    elif abs(distance - abs(radius1 - radius2)) < 1e-10:
-                        intersection_count = 1
-                    else:
-                        intersection_count = 0
-
-                    return json.dumps(
-                        {"result": {"intersection_count": intersection_count}}
-                    )
+                if distance < r:
+                    result = "inside"
+                elif abs(distance - r) < 1e-10:
+                    result = "on"
                 else:
+                    result = "outside"
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "position": result,
+                            "distance_from_center": str(distance),
+                            "steps": [
+                                f"Calculate the distance from the point"
+                                f"({p_x}, {p_y}) to the center ({h}, {k})",
+                                f"Distance = √[(x₂ - x₁)² + (y₂ - y₁)²] ="
+                                f"√[({p_x} - {h})² + ({p_y} - {k})²] = "
+                                f"{distance!s}",
+                                f"Compare with radius r = {r}",
+                                f"Since distance {result} radius, the point is"
+                                f"{result} the circle",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "line_intersection":
+                m, b = float(line_slope), float(line_y_intercept)
+
+                # Solve the system of equations:
+                # Circle: (x - h)² + (y - k)² = r²
+                # Line: y = mx + b
+
+                # Substitute line equation into circle equation:
+                # (x - h)² + (mx + b - k)² = r²
+
+                # Expand:
+                # x² - 2hx + h² + m²x² + 2mx(b-k) + (b-k)² - r² = 0
+                # (1 + m²)x² + 2(m(b-k) - h)x + (h² + (b-k)² - r²) = 0
+
+                A = 1 + m**2
+                B = 2 * (m * (b - k) - h)
+                C = h**2 + (b - k) ** 2 - r**2
+
+                # Use the quadratic formula
+                discriminant = B**2 - 4 * A * C
+
+                if discriminant < 0:
                     return json.dumps(
                         {
-                            "status": "error",
-                            "message": (
-                                "Intersection count for these conic types "
-                                "is not yet implemented"
-                            ),
+                            "result": {
+                                "intersection_points": [],
+                                "count": 0,
+                                "steps": [
+                                    f"The line y = {m}x + {b} does not"
+                                    f"intersect the circle "
+                                    f"(x - {h})² + (y - {k})² = {r}²",
+                                    (
+                                        f"Discriminant = {discriminant} < 0, "
+                                        f"so there are no real solutions"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+                x1 = (-B + sp.sqrt(discriminant)) / (2 * A)
+                x2 = (-B - sp.sqrt(discriminant)) / (2 * A)
+
+                y1 = m * x1 + b
+                y2 = m * x2 + b
+
+                if abs(discriminant) < 1e-10:  # Tangent case
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [
+                                    [float(x1), float(y1)]
+                                ],
+                                "count": 1,
+                                "steps": [
+                                    f"The line y = {m}x + {b} is tangent to"
+                                    f"circle (x - {h})² + (y - {k})² = {r}²",
+                                    (
+                                        f"Discriminant = {discriminant} ≈ 0, "
+                                        f"so there is one solution"
+                                    ),
+                                    (
+                                        f"Intersection point: "
+                                        f"({float(x1)}, {float(y1)})"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "intersection_points": [
+                                [float(x1), float(y1)],
+                                [float(x2), float(y2)],
+                            ],
+                            "count": 2,
+                            "steps": [
+                                f"The line y = {m}x + {b} intersects circle"
+                                f"(x - {h})² + (y - {k})² = {r}²",
+                                f"Discriminant = {discriminant} > 0,"
+                                f"so there are two solutions",
+                                f"Intersection points:"
+                                f"({float(x1)}, {float(y1)}) and"
+                                f"({float(x2)}, {float(y2)})",
+                            ],
+                        }
+                    }
+                )
+
+            else:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"Problem type '{problem_type}'"
+                            f"not supported for circles."
+                        }
+                    }
+                )
+
+        except Exception as e:
+            return self.handle_exception("solve_circle_problem", e)
+
+    def solve_ellipse_problem(
+        self,
+        problem_type: str,
+        center_x: float = 0,
+        center_y: float = 0,
+        semi_major: float = 0,
+        semi_minor: float = 0,
+        orientation: str = "x",
+        point_x: float = 0,
+        point_y: float = 0,
+    ) -> str:
+        """Solves a specific type of ellipse problem.
+
+        Args:
+            problem_type: Type of problem to solve
+                        ("area", "perimeter", "contains_point",
+                         "eccentricity", etc.)
+            center_x: x-coordinate of the ellipse center
+            center_y: y-coordinate of the ellipse center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+            point_x: x-coordinate of a point (if applicable)
+            point_y: y-coordinate of a point (if applicable)
+
+        Returns:
+            str: JSON string with the solution
+        """
+        try:
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            if problem_type == "area":
+                area = sp.pi * a * b
+                return json.dumps(
+                    {
+                        "result": {
+                            "area": str(area),
+                            "steps": [
+                                "The area of ellipse is given by the formula:"
+                                "A = πab",
+                                f"Substituting a = {a} and b = {b}",
+                                f"A = π * {a} * {b} = {area!s}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "perimeter":
+                # Ramanujan's approximation for the perimeter
+                h = ((a - b) / (a + b)) ** 2
+                perimeter = (
+                    sp.pi * (a + b) * (1 + 3 * h / (10 + sp.sqrt(4 - 3 * h)))
+                )
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "perimeter": str(perimeter),
+                            "note": "This is an approximation",
+                            "steps": [
+                                "The perimeter of an ellipse is approximated"
+                                "using Ramanujan's formula:",
+                                "P ≈ π(a + b)(1 + 3h/(10 + √(4 - 3h))) where"
+                                "h = ((a - b)/(a + b))²",
+                                f"Substituting a = {a} and b = {b}",
+                                f"h = (({a} - {b})/({a} + {b}))² = {float(h)}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "eccentricity":
+                # Ensure a > b
+                if b > a:
+                    a, b = b, a
+
+                eccentricity = sp.sqrt(1 - (b**2 / a**2))
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "eccentricity": str(eccentricity),
+                            "steps": [
+                                "The eccentricity of an ellipse is given by "
+                                "the formula: e = √(1 - (b²/a²))",
+                                f"Substituting a = {a} and b = {b}",
+                                f"e = √(1 - ({b}²/{a}²)) = {eccentricity!s}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "contains_point":
+                p_x, p_y = float(point_x), float(point_y)
+
+                # Evaluate the ellipse equation at the point
+                if orientation.lower() == "x":
+                    # (x-h)²/a² + (y-k)²/b² = 1
+                    value = (p_x - h) ** 2 / a**2 + (p_y - k) ** 2 / b**2
+                else:  # orientation == "y"
+                    # (x-h)²/b² + (y-k)²/a² = 1
+                    value = (p_x - h) ** 2 / b**2 + (p_y - k) ** 2 / a**2
+
+                if abs(value - 1) < 1e-10:
+                    result = "on"
+                elif value < 1:
+                    result = "inside"
+                else:
+                    result = "outside"
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "position": result,
+                            "equation_value": str(value),
+                            "steps": [
+                                f"Evaluate the ellipse equation at the point "
+                                f"({p_x}, {p_y})",
+                                f"For orientation '{orientation}',the equation"
+                                f"Substituting x = {p_x}, y = {p_y}, h = {h},"
+                                f"k = {k}, a = {a}, b = {b}",
+                                f"Value = {value!s}",
+                                f"Since value {result} 1, the point is"
+                                f"{result} the ellipse",
+                            ],
+                        }
+                    }
+                )
+
+            else:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"Problem type '{problem_type}'"
+                            f"not supported for ellipses."
+                        }
+                    }
+                )
+
+        except Exception as e:
+            return self.handle_exception("solve_ellipse_problem", e)
+
+    def solve_parabola_problem(
+        self,
+        problem_type: str,
+        vertex_x: float = 0,
+        vertex_y: float = 0,
+        coefficient: float = 0,
+        orientation: str = "up",
+        point_x: float = 0,
+        point_y: float = 0,
+        line_slope: float = 0,
+        line_y_intercept: float = 0,
+    ) -> str:
+        """Solves a specific type of parabola problem.
+
+        Args:
+            problem_type: Type of problem to solve
+                        ("focus", "directrix", "contains_point",
+                        "axis_of_symmetry", etc.)
+            vertex_x: x-coordinate of the parabola vertex
+            vertex_y: y-coordinate of the parabola vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens - "up", "down",
+                "left", or "right"
+            point_x: x-coordinate of a point (if applicable)
+            point_y: y-coordinate of a point (if applicable)
+            line_slope: slope of a line (if applicable)
+            line_y_intercept: y-intercept of a line (if applicable)
+
+        Returns:
+            str: JSON string with the solution
+        """
+        try:
+            h, k = float(vertex_x), float(vertex_y)
+            a = float(coefficient)
+
+            if problem_type == "focus":
+                # Calculate focal distance
+                p = 1 / (4 * abs(a))
+
+                # Calculate focus position
+                if orientation.lower() == "right":
+                    focus = [h + p, k]
+                elif orientation.lower() == "left":
+                    focus = [h - p, k]
+                elif orientation.lower() == "up":
+                    focus = [h, k + p]
+                else:  # orientation == "down"
+                    focus = [h, k - p]
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "focus": focus,
+                            "steps": [
+                                "The focal distance of a parabola is given"
+                                "by p = 1/(4|a|) where a is the coefficient",
+                                f"Substituting a = {a}",
+                                f"p = 1/(4*|{a}|) = {p}",
+                                f"For a parabola opening {orientation},"
+                                f"the focus is at ({focus[0]}, {focus[1]})",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "directrix":
+                # Calculate focal distance
+                p = 1 / (4 * abs(a))
+
+                # Define directrix
+                if orientation.lower() == "right":
+                    directrix = f"x = {h - p}"
+                elif orientation.lower() == "left":
+                    directrix = f"x = {h + p}"
+                elif orientation.lower() == "up":
+                    directrix = f"y = {k - p}"
+                else:  # orientation == "down"
+                    directrix = f"y = {k + p}"
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "directrix": directrix,
+                            "steps": [
+                                "The focal distance of a parabola is given by"
+                                "p = 1/(4|a|) where a is the coefficient",
+                                f"Substituting a = {a}",
+                                f"p = 1/(4*|{a}|) = {p}",
+                                f"For a parabola opening {orientation}, "
+                                f"the directrix is {directrix}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "axis_of_symmetry":
+                # Define axis of symmetry
+                if orientation.lower() in ["right", "left"]:
+                    axis = f"y = {k}"
+                else:  # orientation in ["up", "down"]
+                    axis = f"x = {h}"
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "axis_of_symmetry": axis,
+                            "steps": [
+                                f"For a parabola with vertex at ({h}, {k}) "
+                                f"opening {orientation}",
+                                f"The axis of symmetry is {axis}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "contains_point":
+                p_x, p_y = float(point_x), float(point_y)
+
+                # Evaluate the parabola equation at the point
+                if orientation.lower() == "right":
+                    # y - k = a(x - h)²
+                    expected_y = k + a * (p_x - h) ** 2
+                    value = p_y - expected_y
+                elif orientation.lower() == "left":
+                    # y - k = a(x - h)²
+                    expected_y = k + a * (p_x - h) ** 2
+                    value = p_y - expected_y
+                elif orientation.lower() == "up":
+                    # x - h = a(y - k)²
+                    expected_x = h + a * (p_y - k) ** 2
+                    value = p_x - expected_x
+                else:  # orientation == "down"
+                    # x - h = a(y - k)²
+                    expected_x = h + a * (p_y - k) ** 2
+                    value = p_x - expected_x
+
+                if abs(value) < 1e-10:
+                    result = "on"
+                else:
+                    # For parabolas, "inside" and "outside" depend
+                    # on the orientation
+                    if orientation.lower() == "right":
+                        result = "inside" if value < 0 else "outside"
+                    elif orientation.lower() == "left":
+                        result = "inside" if value > 0 else "outside"
+                    elif orientation.lower() == "up":
+                        result = "inside" if value < 0 else "outside"
+                    else:  # orientation == "down"
+                        result = "inside" if value > 0 else "outside"
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "position": result,
+                            "equation_value": str(value),
+                            "steps": [
+                                f"Evaluate the parabola equation at the point "
+                                f"({p_x}, {p_y})",
+                                f"For orientation '{orientation}',the equation"
+                                f"Substituting x = {p_x}, y = {p_y}, h = {h},"
+                                f"k = {k}, a = {a}",
+                                f"Value = {value!s}",
+                                f"Since value {result} 0, the point is "
+                                f"{result} the parabola",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "line_intersection":
+                m, b = float(line_slope), float(line_y_intercept)
+
+                # Solve the system of equations
+                if orientation.lower() == "right":
+                    # Parabola: y - k = a(x - h)²
+                    # Line: y = mx + b
+                    # Substitute: mx + b - k = a(x - h)²
+                    # Rearrange: a(x - h)² - mx - b + k = 0
+                    # Expand: ax² - 2ahx + ah² - mx - b + k = 0
+                    # Simplify: ax² - (2ah + m)x + (ah² - b + k) = 0
+
+                    A = a
+                    B = -(2 * a * h + m)
+                    C = a * h**2 - b + k
+
+                elif orientation.lower() == "left":
+                    # Same as "right" case
+                    A = a
+                    B = -(2 * a * h + m)
+                    C = a * h**2 - b + k
+
+                elif orientation.lower() == "up":
+                    # Parabola: x - h = a(y - k)²
+                    # Line: y = mx + b
+                    # Substitute: x - h = a(mx + b - k)²
+                    # Expand: x - h = a(m²x² + 2mx(b-k) + (b-k)²)
+                    # Simplify: x - h = am²x² + 2am(b-k)x + a(b-k)²
+                    # Rearrange: am²x² + 2am(b-k)x + a(b-k)² - x + h = 0
+
+                    A = a * m**2
+                    B = 2 * a * m * (b - k) - 1
+                    C = a * (b - k) ** 2 + h
+
+                else:  # orientation == "down"
+                    # Same as "up" case
+                    A = a * m**2
+                    B = 2 * a * m * (b - k) - 1
+                    C = a * (b - k) ** 2 + h
+
+                # Use the quadratic formula
+                discriminant = B**2 - 4 * A * C
+
+                if abs(discriminant) < 1e-10:  # One solution (tangent)
+                    x1 = -B / (2 * A)
+                    y1 = m * x1 + b
+
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [
+                                    [float(x1), float(y1)]
+                                ],
+                                "count": 1,
+                                "steps": [
+                                    f"The line y = {m}x + {b} is "
+                                    f"tangent to the parabola",
+                                    (
+                                        f"Discriminant = {discriminant} ≈ 0, "
+                                        f"so there is one solution"
+                                    ),
+                                    (
+                                        f"Intersection point: "
+                                        f"({float(x1)}, {float(y1)})"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+                elif discriminant < 0:  # No real solutions
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [],
+                                "count": 0,
+                                "steps": [
+                                    f"The line y = {m}x + {b} does"
+                                    f"not intersect the parabola",
+                                    (
+                                        f"Discriminant = {discriminant} < 0, "
+                                        f"so there are no real solutions"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+                else:  # Two solutions
+                    x1 = (-B + sp.sqrt(discriminant)) / (2 * A)
+                    x2 = (-B - sp.sqrt(discriminant)) / (2 * A)
+
+                    y1 = m * x1 + b
+                    y2 = m * x2 + b
+
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [
+                                    [float(x1), float(y1)],
+                                    [float(x2), float(y2)],
+                                ],
+                                "count": 2,
+                                "steps": [
+                                    f"The line y = {m}x + {b} intersects"
+                                    f"the parabola",
+                                    (
+                                        f"Discriminant = {discriminant} > 0, "
+                                        f"so there are two solutions"
+                                    ),
+                                    (
+                                        f"Intersection points: "
+                                        f"({float(x1)}, {float(y1)}) and "
+                                        f"({float(x2)}, {float(y2)})"
+                                    ),
+                                ],
+                            }
                         }
                     )
 
             else:
-                raise ValueError(f"Unsupported problem type: {problem_type}")
-
-            # Default return if no specific condition is met
-            return json.dumps(
-                {"status": "error", "message": "No matching condition found"}
-            )
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"Problem type '{problem_type}' not"
+                            f"supported for parabolas."
+                        }
+                    }
+                )
 
         except Exception as e:
-            return self.handle_exception("solve_conic_problem", e)
+            return self.handle_exception("solve_parabola_problem", e)
+
+    def solve_hyperbola_problem(
+        self,
+        problem_type: str,
+        center_x: float = 0,
+        center_y: float = 0,
+        semi_major: float = 0,
+        semi_minor: float = 0,
+        orientation: str = "x",
+        point_x: float = 0,
+        point_y: float = 0,
+        line_slope: float = 0,
+        line_y_intercept: float = 0,
+    ) -> str:
+        """Solves a specific type of hyperbola problem.
+
+        Args:
+            problem_type: Type of problem to solve
+                        ("foci", "asymptotes", "eccentricity",
+                        "contains_point", etc.)
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                "y" if along y-axis
+            point_x: x-coordinate of a point (if applicable)
+            point_y: y-coordinate of a point (if applicable)
+            line_slope: slope of a line (if applicable)
+            line_y_intercept: y-intercept of a line (if applicable)
+
+        Returns:
+            str: JSON string with the solution
+        """
+        try:
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            if problem_type == "foci":
+                # Calculate focal distance
+                c = sp.sqrt(a**2 + b**2)
+
+                # Calculate foci positions
+                if orientation.lower() == "x":
+                    focus1 = [h + c, k]
+                    focus2 = [h - c, k]
+                else:  # orientation == "y"
+                    focus1 = [h, k + c]
+                    focus2 = [h, k - c]
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "foci": [focus1, focus2],
+                            "steps": [
+                                "The focal distance of a hyperbola is"
+                                "given by c = √(a² + b²)",
+                                f"Substituting a = {a} and b = {b}",
+                                f"c = √({a}² + {b}²) = {float(c)}",
+                                (
+                                    f"For a hyperbola with orientation"
+                                    f"'{orientation}', "
+                                    f"the foci are at "
+                                    f"({focus1[0]}, {focus1[1]})"
+                                    f" and "
+                                    f"({focus2[0]}, {focus2[1]})"
+                                ),
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "asymptotes":
+                # Calculate asymptotes
+                if orientation.lower() == "x":
+                    slope = b / a
+                    asymptote1 = f"y = {k} + {float(slope)}(x - {h})"
+                    asymptote2 = f"y = {k} - {float(slope)}(x - {h})"
+
+                    # Alternative form
+                    asymptote1_alt = (
+                        f"y = {float(slope)}x + {float(k - slope*h)}"
+                    )
+                    asymptote2_alt = (
+                        f"y = -{float(slope)}x + {float(k + slope*h)}"
+                    )
+                else:  # orientation == "y"
+                    slope = a / b
+                    asymptote1 = f"y = {k} + {float(slope)}(x - {h})"
+                    asymptote2 = f"y = {k} - {float(slope)}(x - {h})"
+
+                    # Alternative form
+                    asymptote1_alt = (
+                        f"y = {float(slope)}x + {float(k - slope*h)}"
+                    )
+                    asymptote2_alt = (
+                        f"y = -{float(slope)}x + {float(k + slope*h)}"
+                    )
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "asymptotes": [asymptote1, asymptote2],
+                            "alternative_form": [
+                                asymptote1_alt,
+                                asymptote2_alt,
+                            ],
+                            "steps": [
+                                (
+                                    f"For a hyperbola with orientation "
+                                    f"'{orientation}', "
+                                    f"the asymptotes have slopes "
+                                    f"± b/a if orientation.lower() == 'x'"
+                                    f"else a/b"
+                                ),
+                                f"The equations of the asymptotes are "
+                                f"{asymptote1} and {asymptote2}",
+                                f"In slope-intercept form: "
+                                f"{asymptote1_alt} and {asymptote2_alt}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "eccentricity":
+                # Calculate eccentricity
+                c = sp.sqrt(a**2 + b**2)
+                eccentricity = c / a
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "eccentricity": str(eccentricity),
+                            "steps": [
+                                "The eccentricity of a hyperbola is given by"
+                                "e = c/a "
+                                "where c = √(a² + b²)",
+                                f"Substituting a = {a} and b = {b}",
+                                f"c = √({a}² + {b}²) = {float(c)}",
+                                f"e = {float(c)}/{a} = {float(eccentricity)}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "contains_point":
+                p_x, p_y = float(point_x), float(point_y)
+
+                # Evaluate the hyperbola equation at the point
+                if orientation.lower() == "x":
+                    # (x-h)²/a² - (y-k)²/b² = 1
+                    value = (p_x - h) ** 2 / a**2 - (p_y - k) ** 2 / b**2
+                else:  # orientation == "y"
+                    # (y-k)²/a² - (x-h)²/b² = 1
+                    value = (p_y - k) ** 2 / a**2 - (p_x - h) ** 2 / b**2
+
+                if abs(value - 1) < 1e-10:
+                    result = "on"
+                else:
+                    # For hyperbolas, there's no clear "inside" or "outside"
+                    # We'll use "between branches" for points where the
+                    # equation value < 1 and "on branch side" for points
+                    # where the equation value > 1
+                    result = (
+                        "between branches" if value < 1 else "on branch side"
+                    )
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "position": result,
+                            "equation_value": str(value),
+                            "steps": [
+                                f"Evaluate the hyperbola equation at the point"
+                                f"({p_x}, {p_y})",
+                                f"For orientation '{orientation}', "
+                                f"the equation is "
+                                + (
+                                    "(x-h)²/a² - (y-k)²/b² = 1"
+                                    if orientation.lower() == "x"
+                                    else "(y-k)²/a² - (x-h)²/b² = 1"
+                                ),
+                                f"Substituting x = {p_x}, y = {p_y}, h = {h}, "
+                                f"k = {k}, a = {a}, b = {b}",
+                                f"Value = {value!s}",
+                                "Since value "
+                                + (
+                                    "= 1 (approximately)"
+                                    if result == "on"
+                                    else "< 1"
+                                    if result == "between branches"
+                                    else "> 1"
+                                )
+                                + f", the point is {result}",
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "line_intersection":
+                m, b_line = float(line_slope), float(line_y_intercept)
+
+                # Solve the system of equations
+                if orientation.lower() == "x":
+                    # Hyperbola: (x-h)²/a² - (y-k)²/b² = 1
+                    # Line: y = mx + b_line
+                    # Substitute: (x-h)²/a² - (mx + b_line - k)²/b² = 1
+                    # Multiply by a²b²: b²(x-h)² - a²(mx + b_line - k)² = a²b²
+                    # Expand: b²x² - 2b²hx + b²h² - a²m²x² - 2a²mx(b_line-k)
+                    #                - a²(b_line-k)² = a²b²
+                    # Rearrange: (b² - a²m²)x² - (2b²h + 2a²m(b_line-k))x +
+                    #            (b²h² - a²(b_line-k)² - a²b²) = 0
+
+                    A = b**2 - a**2 * m**2
+                    B = -2 * b**2 * h - 2 * a**2 * m * (b_line - k)
+                    C = b**2 * h**2 - a**2 * (b_line - k) ** 2 - a**2 * b**2
+
+                else:  # orientation == "y"
+                    # Hyperbola: (y-k)²/a² - (x-h)²/b² = 1
+                    # Line: y = mx + b_line
+                    # Substitute: (mx + b_line - k)²/a² - (x-h)²/b² = 1
+                    # Multiply by a²b²: b²(mx + b_line - k)² - a²(x-h)² = a²b²
+                    # Expand: b²m²x² + 2b²mx(b_line-k) + b²(b_line-k)² - a²x²
+                    #         + 2a²hx - a²h² = a²b²
+                    # Rearrange: (b²m² - a²)x² + (2b²m(b_line-k) + 2a²h)x +
+                    #            (b²(b_line-k)² - a²h² - a²b²) = 0
+
+                    A = b**2 * m**2 - a**2
+                    B = 2 * b**2 * m * (b_line - k) + 2 * a**2 * h
+                    C = b**2 * (b_line - k) ** 2 - a**2 * h**2 - a**2 * b**2
+
+                # Use the quadratic formula
+                discriminant = B**2 - 4 * A * C
+
+                if abs(discriminant) < 1e-10:  # One solution (tangent)
+                    x1 = -B / (2 * A)
+                    y1 = m * x1 + b_line
+
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [
+                                    [float(x1), float(y1)]
+                                ],
+                                "count": 1,
+                                "steps": [
+                                    (
+                                        f"The line y = {m}x + {b_line} "
+                                        f"is tangent to the hyperbola"
+                                    ),
+                                    (
+                                        f"Discriminant = {discriminant} ≈ 0, "
+                                        f"so there is one solution"
+                                    ),
+                                    (
+                                        f"Intersection point: "
+                                        f"({float(x1)}, {float(y1)})"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+                elif discriminant < 0:  # No real solutions
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [],
+                                "count": 0,
+                                "steps": [
+                                    (
+                                        f"The line y = {m}x + {b_line} "
+                                        f"does not intersect the hyperbola"
+                                    ),
+                                    (
+                                        f"Discriminant = {discriminant} < 0, "
+                                        f"so there are no real solutions"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+                else:  # Two solutions
+                    x1 = (-B + sp.sqrt(discriminant)) / (2 * A)
+                    x2 = (-B - sp.sqrt(discriminant)) / (2 * A)
+
+                    y1 = m * x1 + b_line
+                    y2 = m * x2 + b_line
+
+                    return json.dumps(
+                        {
+                            "result": {
+                                "intersection_points": [
+                                    [float(x1), float(y1)],
+                                    [float(x2), float(y2)],
+                                ],
+                                "count": 2,
+                                "steps": [
+                                    (
+                                        f"The line y = {m}x + {b_line} "
+                                        f"intersects the hyperbola"
+                                    ),
+                                    (
+                                        f"Discriminant = {discriminant} > 0, "
+                                        f"so there are two solutions"
+                                    ),
+                                    (
+                                        f"Intersection points: "
+                                        f"({float(x1)}, {float(y1)}) and "
+                                        f"({float(x2)}, {float(y2)})"
+                                    ),
+                                ],
+                            }
+                        }
+                    )
+
+            elif problem_type == "vertices":
+                # Calculate vertices
+                if orientation.lower() == "x":
+                    vertex1 = [h + a, k]
+                    vertex2 = [h - a, k]
+                else:  # orientation == "y"
+                    vertex1 = [h, k + a]
+                    vertex2 = [h, k - a]
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "vertices": [vertex1, vertex2],
+                            "steps": [
+                                (
+                                    f"For a hyperbola with orientation "
+                                    f"'{orientation}', "
+                                    f"the vertices are at a distance "
+                                    f"of {a} from the center"
+                                ),
+                                (
+                                    f"The vertices are at "
+                                    f"({vertex1[0]}, {vertex1[1]}) "
+                                    f"and ({vertex2[0]}, {vertex2[1]})"
+                                ),
+                            ],
+                        }
+                    }
+                )
+
+            elif problem_type == "co_vertices":
+                # Calculate co-vertices
+                if orientation.lower() == "x":
+                    co_vertex1 = [h, k + b]
+                    co_vertex2 = [h, k - b]
+                else:  # orientation == "y"
+                    co_vertex1 = [h + b, k]
+                    co_vertex2 = [h - b, k]
+
+                return json.dumps(
+                    {
+                        "result": {
+                            "co_vertices": [co_vertex1, co_vertex2],
+                            "steps": [
+                                (
+                                    f"For a hyperbola with orientation "
+                                    f"'{orientation}', "
+                                    f"the co-vertices are at a distance "
+                                    f"of {b} from the center"
+                                ),
+                                (
+                                    f"The co-vertices are at "
+                                    f"({co_vertex1[0]}, {co_vertex1[1]}) "
+                                    f"and ({co_vertex2[0]}, {co_vertex2[1]})"
+                                ),
+                            ],
+                        }
+                    }
+                )
+
+            else:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": (
+                                f"Problem type '{problem_type}' not supported "
+                                "for hyperbolas."
+                            )
+                        }
+                    }
+                )
+
+        except Exception as e:
+            return self.handle_exception("solve_hyperbola_problem", e)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of available tools in the toolkit.
@@ -2122,8 +4309,11 @@ class EnhancedGeometryToolkit(BaseToolkit):
         return [
             # Core geometric functions
             FunctionTool(self.compute_distance),
+            FunctionTool(self.compute_distance_point_to_line),
             FunctionTool(self.compute_vector_operations),
-            FunctionTool(self.compute_area),
+            FunctionTool(self.compute_area_triangle_vertices),
+            FunctionTool(self.compute_area_triangle_sides),
+            FunctionTool(self.compute_area_polygon),
             FunctionTool(self.compute_midpoint),
             FunctionTool(self.compute_line_bisector),
             FunctionTool(self.check_points_collinear),
@@ -2131,17 +4321,48 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.parse_conic_equation_new),
             FunctionTool(self.parse_conic_equation),
             FunctionTool(self.solve_quadratic),
-            FunctionTool(self.generate_conic_equation),
+            FunctionTool(self.generate_circle_equation),
+            FunctionTool(self.generate_ellipse_equation),
+            FunctionTool(self.generate_parabola_equation),
+            FunctionTool(self.generate_hyperbola_equation),
             # Conic property calculators
-            FunctionTool(self.compute_conic_properties),
-            FunctionTool(self.compute_eccentricity),
-            FunctionTool(self.compute_foci),
-            FunctionTool(self.compute_directrix),
-            FunctionTool(self.compute_asymptotes),
+            FunctionTool(self.compute_circle_properties),
+            FunctionTool(self.compute_ellipse_properties),
+            FunctionTool(self.compute_parabola_properties),
+            FunctionTool(self.compute_hyperbola_properties),
+            FunctionTool(self.compute_circle_eccentricity),
+            FunctionTool(self.compute_ellipse_eccentricity),
+            FunctionTool(self.compute_parabola_eccentricity),
+            FunctionTool(self.compute_hyperbola_eccentricity),
+            FunctionTool(self.compute_circle_foci),
+            FunctionTool(self.compute_ellipse_foci),
+            FunctionTool(self.compute_parabola_foci),
+            FunctionTool(self.compute_hyperbola_foci),
+            FunctionTool(self.compute_circle_directrix),
+            FunctionTool(self.compute_ellipse_directrices),
+            FunctionTool(self.compute_parabola_directrix),
+            FunctionTool(self.compute_hyperbola_directrices),
+            FunctionTool(self.compute_circle_asymptotes),
+            FunctionTool(self.compute_ellipse_asymptotes),
+            FunctionTool(self.compute_parabola_asymptotes),
+            FunctionTool(self.compute_hyperbola_asymptotes),
             # Geometric operations
-            FunctionTool(self.compute_line_conic_intersection),
-            FunctionTool(self.check_point_position),
-            FunctionTool(self.compute_tangent_line),
+            FunctionTool(self.compute_line_circle_intersection),
+            FunctionTool(self.compute_line_ellipse_intersection),
+            FunctionTool(self.compute_line_parabola_intersection),
+            FunctionTool(self.compute_line_hyperbola_intersection),
+            FunctionTool(self.check_point_position_circle),
+            FunctionTool(self.check_point_position_ellipse),
+            FunctionTool(self.check_point_position_parabola),
+            FunctionTool(self.check_point_position_hyperbola),
+            FunctionTool(self.compute_tangent_line_circle),
+            FunctionTool(self.compute_tangent_line_at_point_circle),
+            FunctionTool(self.compute_tangent_line_at_point_ellipse),
+            FunctionTool(self.compute_tangent_line_at_point_parabola),
+            FunctionTool(self.compute_tangent_line_at_point_hyperbola),
             # Problem solver layer
-            FunctionTool(self.solve_conic_problem),
+            FunctionTool(self.solve_circle_problem),
+            FunctionTool(self.solve_ellipse_problem),
+            FunctionTool(self.solve_parabola_problem),
+            FunctionTool(self.solve_hyperbola_problem),
         ]
