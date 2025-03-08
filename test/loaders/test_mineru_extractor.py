@@ -57,11 +57,13 @@ def test_initialization():
     # Test initialization with API key from environment
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
         mineru = MinerULoader(
-            is_ocr=False,
-            enable_formula=True,
-            enable_table=False,
-            layout_model='layoutlmv3',
-            language='zh',
+            config={
+                "is_ocr": False,
+                "enable_formula": True,
+                "enable_table": False,
+                "layout_model": 'layoutlmv3',
+                "language": 'zh',
+            }
         )
         assert mineru._api_key == 'test_key'
         assert mineru._api_url == 'https://mineru.net/api/v4'
@@ -74,7 +76,7 @@ def test_initialization():
     # Test initialization with custom API URL
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
         custom_url = 'https://custom.mineru.net/api/v4'
-        mineru = MinerULoader(api_url=custom_url)
+        mineru = MinerULoader(config={"api_url": custom_url})
         assert mineru._api_url == custom_url
 
     # Test initialization without API key
@@ -90,11 +92,13 @@ def test_extract_url(mock_post, mock_response):
 
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
         mineru = MinerULoader(
-            is_ocr=False,
-            enable_formula=False,
-            enable_table=False,
-            layout_model='layoutlmv3',
-            language='zh',
+            config={
+                "is_ocr": False,
+                "enable_formula": False,
+                "enable_table": False,
+                "layout_model": 'layoutlmv3',
+                "language": 'zh',
+            }
         )
         result = mineru.extract_url(
             url='https://arxiv.org/pdf/2311.10993.pdf',
@@ -119,11 +123,13 @@ def test_batch_extract_urls(mock_post, mock_batch_response):
 
     with patch.dict('os.environ', {'MINERU_API_KEY': 'test_key'}):
         mineru = MinerULoader(
-            is_ocr=False,
-            enable_formula=False,
-            enable_table=False,
-            layout_model='layoutlmv3',
-            language='zh',
+            config={
+                "is_ocr": False,
+                "enable_formula": False,
+                "enable_table": False,
+                "layout_model": 'layoutlmv3',
+                "language": 'zh',
+            }
         )
         files = [
             {

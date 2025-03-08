@@ -259,12 +259,12 @@ class MinerULoader(BaseLoader):
     ) -> None:
         super().__init__(config)
         self.config = config if config else {}
-        self.api_key = self.config.get("api_key") or os.environ.get(
+        self._api_key = self.config.get("api_key") or os.environ.get(
             "MINERU_API_KEY"
         )
-        self.api_url = self.config.get("api_url", "https://mineru.net/api/v4")
+        self._api_url = self.config.get("api_url", "https://mineru.net/api/v4")
         self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "Accept": "*/*",
         }
@@ -275,8 +275,8 @@ class MinerULoader(BaseLoader):
         self.language = self.config.get("language", "en")
 
         self.mineru = MinerU(
-            api_key=self.api_key,
-            api_url=self.api_url,
+            api_key=self._api_key,
+            api_url=self._api_url,
             is_ocr=self.is_ocr,
             enable_formula=self.enable_formula,
             enable_table=self.enable_table,
@@ -290,7 +290,7 @@ class MinerULoader(BaseLoader):
     def batch_extract(self, files: List[Dict[str, Union[str, bool]]]) -> str:
         return self.mineru.batch_extract_urls(files)
 
-    def get_status(self, task_id: str, is_batch: bool = False) -> Dict:
+    def get_task_status(self, task_id: str, is_batch: bool = False) -> Dict:
         if is_batch:
             return self.mineru.get_batch_status(task_id)
         else:

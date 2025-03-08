@@ -45,7 +45,7 @@ def test_run_actor():
     run_input = {"key": "value"}
     mock_actor = Mock()
     mock_actor.call.return_value = {"result": "success"}
-    apify.client.actor = Mock(return_value=mock_actor)
+    apify.apify.client.actor = Mock(return_value=mock_actor)
     # result = apify.run_actor(actor_id, run_input=run_input)
     result = apify.load(source=actor_id, functionality="run_actor")
     apify.client.actor.assert_called_once_with(actor_id)
@@ -71,13 +71,13 @@ def test_get_dataset_client():
     apify.apify.client.dataset = Mock(return_value=mock_dataset)
     # result = apify.get_dataset_client(dataset_id)
     result = apify.apify.get_dataset_client(dataset_id)
-    apify.client.dataset.assert_called_once_with(dataset_id)
+    apify.apify.client.dataset.assert_called_once_with(dataset_id)
     assert result == mock_dataset
 
 
 def test_get_dataset():
     api_key = "test_api_key"
-    apify = ApifyLoader(api_key=api_key)
+    apify = ApifyLoader(config={"api_key": api_key})
     dataset_id = "test_dataset_id"
     mock_client = Mock()
     mock_client.get.return_value = {"data": "dataset"}
@@ -90,7 +90,7 @@ def test_get_dataset():
 
 def test_update_dataset():
     api_key = "test_api_key"
-    apify = ApifyLoader(api_key=api_key)
+    apify = ApifyLoader(config={"api_key": api_key})
     dataset_id = "test_dataset_id"
     name = "new_name"
     mock_client = Mock()
@@ -105,7 +105,7 @@ def test_update_dataset():
 
 def test_get_dataset_items():
     api_key = "test_api_key"
-    apify = ApifyLoader(api_key=api_key)
+    apify = ApifyLoader(config={"api_key": api_key})
     dataset_id = "test_dataset_id"
     mock_client = Mock()
     mock_client.list_items.return_value.items = ["item1", "item2"]
@@ -119,7 +119,7 @@ def test_get_dataset_items():
 
 def test_get_datasets():
     api_key = "test_api_key"
-    apify = ApifyLoader(api_key=api_key)
+    apify = ApifyLoader(config={"api_key": api_key})
     mock_client = Mock()
     mock_client.datasets.return_value.list.return_value.items = [
         {"name": "dataset1"},

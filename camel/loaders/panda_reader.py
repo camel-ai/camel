@@ -342,11 +342,13 @@ class PandaReader:
 class PandasLoader(BaseLoader):
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(config)
-        if "llm" not in self.config:
-            from pandasai.llm import OpenAI
+        from pandasai.llm import OpenAI  # type: ignore[import-untyped]
 
-            self.config["llm"] = OpenAI(api_token=os.getenv("OPENAI_API_KEY"))
-        self.reader = PandaReader(config)
+        self.config = config or {}
+        if "llm" not in self.config:
+            self.config["llm"] = OpenAI(
+                api_token=os.getenv("OPENAI_API_KEY"),
+            )
 
         self._loader_map = {
             ".csv": pd.read_csv,
@@ -369,7 +371,9 @@ class PandasLoader(BaseLoader):
         source: Union[pd.DataFrame, str],
         *args: Any,
         **kwargs: Dict[str, Any],
-    ) -> "SmartDataframe":
+    ) -> Union["SmartDataframe", "DataFrame"]:
+        from pandasai import SmartDataframe
+
         if isinstance(source, pd.DataFrame):
             return SmartDataframe(source, config=self.config)
         file_path = str(source)
@@ -381,7 +385,7 @@ class PandasLoader(BaseLoader):
         if suffix not in self._loader_map:
             raise ValueError(f"Unsupported file format: {suffix}")
         df = self._loader_map[suffix](file_path, *args, **kwargs)
-        return SmartDataframe(df, config=self.config)
+        return df
 
     @property
     def supported_formats(self) -> set:

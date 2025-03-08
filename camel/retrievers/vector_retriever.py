@@ -108,7 +108,9 @@ class VectorRetriever(BaseRetriever):
         elif isinstance(content, IOBase):
             elements = (
                 self.uio.load(
-                    file=content, metadata_filename=metadata_filename, **kwargs
+                    source=content,
+                    metadata_filename=metadata_filename,
+                    **kwargs,
                 )
                 or []
             )
@@ -119,7 +121,7 @@ class VectorRetriever(BaseRetriever):
             if is_url or os.path.exists(content):
                 elements = (
                     self.uio.load(
-                        input_path=content,
+                        source=content,
                         metadata_filename=metadata_filename,
                         **kwargs,
                     )
