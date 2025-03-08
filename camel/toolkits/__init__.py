@@ -50,6 +50,7 @@ from .semantic_scholar_toolkit import SemanticScholarToolkit
 from .zapier_toolkit import ZapierToolkit
 from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
+from .audio_analysis_toolkit import AudioAnalysisToolkit
 
 
 __all__ = [
@@ -88,4 +89,5 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'AudioAnalysisToolkit'
 ]
