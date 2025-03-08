@@ -52,6 +52,7 @@ from .sympy_toolkit import SymPyToolkit
 from .mineru_toolkit import MinerUToolkit
 from .math_code_toolkit import MathCodeToolkit
 from .geometry_toolkit import GeometryToolkit
+from .geometry_toolkit_new import EnhancedGeometryToolkit
 
 __all__ = [
     'BaseToolkit',
@@ -91,4 +92,5 @@ __all__ = [
     'MinerUToolkit',
     'GeometryToolkit',
     'MathCodeToolkit',
+    'EnhancedGeometryToolkit',
 ]

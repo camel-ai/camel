@@ -22,7 +22,7 @@ from camel.toolkits import FunctionTool
 from camel.toolkits.base import BaseToolkit
 
 
-class GeometryToolkit(BaseToolkit):
+class EnhancedGeometryToolkit(BaseToolkit):
     r"""An enhanced toolkit for performing geometric computations using SymPy.
 
     This toolkit provides functions for working with basic geometric objects
