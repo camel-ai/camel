@@ -12,44 +12,85 @@
 # limitations under the License.
 # ========= Copyright 2023-2025 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os 
+import json
+import logging
 
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.agents import ChatAgent
 from camel.datagen.evol_instruct import EvolInstructPipeline
+from camel.logger import enable_logging, set_log_level, get_logger
+
+os.environ["CAMEL_LOGGING_DISABLED"] = "false" 
+
 
 def main():
     """
     Example usage of EvolInstructPipeline with iterative and parallel evolution.
     """
-    agent = ChatAgent()
     
-    pipeline = EvolInstructPipeline()
+    # Set the agent
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict={
+            "temperature": 0.7,
+            "max_tokens": 2048,
+        },
+    )
+    system_msg = "You are a creative agent for creating new prompts."
+    agent = ChatAgent(system_msg, model=model)
+
+    # Set the prompts
+    prompts = json.load(open("input.json", "r", encoding="utf-8"))
+
+
+    # Set the pipeline
+    pipeline = EvolInstructPipeline(agent=agent)
     
     # Define evolution parameters
-    num_generations = 2  # (width) number of generations per evolution
-    num_evolutions = 3  # (depth) number of iterative evolutions
+    num_evolutions = 4
+    num_generations = 2
+    keep_original = True
+    scorer = "uniform"
+    num_chunks = 1
+    retry_limit = 3
+    retry_delay = 30
+    
+    # Set the method for each evolution
+    # (you can only just use strings not the dict)
+    # (like 'in-depth', 'in-breadth', 'uniform' if you are lazy)
     method_dict = {
         0: 'in-breadth', 
-        1: 'in-breadth', 
-        2: 'in-depth'
-    }
-    keep_original = True  # keep original prompt in results
-    chunk_size = 1  # control processing rate
-    
-    # setup pipeline
-    pipeline = EvolInstructPipeline(
-        agent=agent,
-        seed='seed_tasks.jsonl',
-        data_output_path='./data_output.json',
+        1: 'in-depth', 
+        2: 'in-depth', 
+        3: 'in-breadth'
+    }  
+    assert len(method_dict) == num_evolutions
+
+    # Run the pipeline
+    results = pipeline.generate(
+        prompts=prompts,
         method=method_dict,
         num_generations=num_generations,
         num_evolutions=num_evolutions,
         keep_original=keep_original,
-        chunk_size=chunk_size,
+        num_chunks=num_chunks, 
+        retry_limit=retry_limit,
+        retry_delay=retry_delay,
     )
     
-    # generate instructions
-    pipeline.generate()
+    # Save results
+    with open('results.json', mode="w", encoding="utf-8") as file:
+        json.dump(results, file, indent=4, ensure_ascii=False)
+    logger.critical("Results saved to 'results.json'.")
 
 
 if __name__ == "__main__":
+    enable_logging()  
+    set_log_level(logging.CRITICAL)  
+    logger = get_logger("evol-instruct")
+    logger.critical("let's evolve some ideas.")
+    
     main()

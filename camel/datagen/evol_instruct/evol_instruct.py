@@ -315,7 +315,7 @@ class EvolInstructPipeline:
         # generate prompts
         results = []
         for i, chunk in enumerate(chunks):
-            logger.info(f"Processing chunk {i + 1}/{num_chunks} with {len(chunk)} prompts...")
+            logger.critical(f"Processing chunk {i + 1}/{num_chunks} with {len(chunk)} prompts...")
             with ThreadPoolExecutor() as executor:
                 chunk_results = list(executor.map(process_prompt, chunk))
                 results.extend(chunk_results)
