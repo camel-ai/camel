@@ -12,17 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import logging
-from PIL import Image
-from typing import List
-import requests
-from urllib.parse import urlparse
 from io import BytesIO
-from typing import Optional
+from typing import List, Optional
+from urllib.parse import urlparse
 
-from camel.toolkits.base import BaseToolkit
-from camel.toolkits import FunctionTool
-from camel.models import BaseModelBackend
+import requests
+from PIL import Image
+
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
+from camel.toolkits import FunctionTool
+from camel.toolkits.base import BaseToolkit
 
 logger = logging.getLogger(__name__)
 
@@ -33,32 +33,31 @@ class ImageAnalysisToolkit(BaseToolkit):
     This class provides methods for understanding images, such as identifying
     objects, text in images.
     """
+
     def __init__(self, model: BaseModelBackend):
         self.model = model
 
-
     def image_to_text(
-            self, 
-            image_path: str, 
-            content: Optional[str] = None
-        ) -> str:
-        r"""Generates textual description of an image with optional custom prompt.
-
+        self, image_path: str, content: Optional[str] = None
+    ) -> str:
+        r"""Generates textual description of an image with optional custom
+            prompt.
         Args:
             image_path (str): Local path or URL to an image file
-            content (Optional[str]): Custom description prompt. Defaults to None.
+                content (Optional[str]): Custom description prompt. Defaults
+                to None.
 
         Returns:
             str: Natural language description
         """
         default_content = '''You are an image analysis expert. Provide a 
             detailed description including text if present.'''
-        
+
         system_msg = BaseMessage.make_assistant_message(
             role_name="Senior Computer Vision Analyst",
-            content=content if content else default_content
+            content=content if content else default_content,
         )
-        
+
         return self._analyze_image(
             image_path=image_path,
             prompt="Please describe the contents of this image.",
@@ -66,17 +65,14 @@ class ImageAnalysisToolkit(BaseToolkit):
         )
 
     def ask_question_about_image(
-        self, 
-        image_path: str, 
-        question: str,
-        content: Optional[str] = None
+        self, image_path: str, question: str, content: Optional[str] = None
     ) -> str:
         r"""Answers image questions with optional custom instructions.
 
         Args:
             image_path (str): Local path or URL to an image file
             question (str): Query about the image content
-            content (Optional[str]): Custom analysis instructions. Defaults to 
+            content (Optional[str]): Custom analysis instructions. Defaults to
                 None.
 
         Returns:
@@ -87,12 +83,12 @@ class ImageAnalysisToolkit(BaseToolkit):
             2. Contextual reasoning
             3. Text transcription where relevant
             4. Logical deduction from visual evidence"""
-        
+
         system_msg = BaseMessage.make_assistant_message(
             role_name="Visual QA Specialist",
-            content=content if content else default_content
+            content=content if content else default_content,
         )
-        
+
         return self._analyze_image(
             image_path=image_path,
             prompt=question,
@@ -113,7 +109,7 @@ class ImageAnalysisToolkit(BaseToolkit):
             requests.exceptions.RequestException: For URL fetch failures.
         """
         parsed = urlparse(image_path)
-        
+
         if parsed.scheme in ("http", "https"):
             logger.debug(f"Fetching image from URL: {image_path}")
             try:
@@ -128,12 +124,11 @@ class ImageAnalysisToolkit(BaseToolkit):
             try:
                 with Image.open(image_path) as img:
                     # Load immediately to detect errors
-                    img.load()  
+                    img.load()
                     return img.copy()
             except Exception as e:
                 logger.error(f"Image loading failed: {e}")
                 raise ValueError(f"Invalid image file: {e}")
-            
 
     def _analyze_image(
         self,
@@ -154,8 +149,9 @@ class ImageAnalysisToolkit(BaseToolkit):
         try:
             image = self._open_image(image_path)
             logger.info(f"Analyzing image: {image_path}")
-            
+
             from camel.agents.chat_agent import ChatAgent
+
             agent = ChatAgent(
                 system_message=system_message,
                 model=self.model,
@@ -172,11 +168,10 @@ class ImageAnalysisToolkit(BaseToolkit):
 
         except (ValueError, requests.exceptions.RequestException) as e:
             logger.error(f"Image handling error: {e}")
-            return f"Image error: {str(e)}"
+            return f"Image error: {e!s}"
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-            return f"Analysis failed: {str(e)}"
-
+            return f"Analysis failed: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
@@ -190,5 +185,3 @@ class ImageAnalysisToolkit(BaseToolkit):
             FunctionTool(self.image_to_text),
             FunctionTool(self.ask_question_about_image),
         ]
-    
-

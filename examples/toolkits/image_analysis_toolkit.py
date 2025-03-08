@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
 from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 from camel.toolkits import ImageAnalysisToolkit
-from PIL import Image
-
+from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
@@ -47,8 +46,16 @@ response = agent.step(user_msg)
 print(response.msgs[0].content)
 """"
 ===========================================================================
-The image depicts a serene landscape featuring a wooden boardwalk that leads through a lush, green marsh or meadow. The boardwalk is centrally positioned, extending into the distance and inviting viewers to imagine walking along it. On either side of the boardwalk, tall grass and various vegetation create a vibrant green expanse.
+The image depicts a serene landscape featuring a wooden boardwalk that leads 
+through a lush, green marsh or meadow. The boardwalk is centrally positioned, 
+extending into the distance and inviting viewers to imagine walking along it. 
+On either side of the boardwalk, tall grass and various vegetation create a 
+vibrant green expanse.
 
-In the background, there are clusters of trees and shrubs, adding depth to the scene. The sky above is mostly clear with a few scattered clouds, showcasing a gradient of blue hues. The overall atmosphere is tranquil and natural, suggesting a peaceful outdoor setting, with soft lighting that likely indicates early morning or late afternoon."
+In the background, there are clusters of trees and shrubs, adding depth to the 
+scene. The sky above is mostly clear with a few scattered clouds, showcasing a 
+gradient of blue hues. The overall atmosphere is tranquil and natural, 
+suggesting a peaceful outdoor setting, with soft lighting that likely 
+indicates early morning or late afternoon."
 ============================================================================
 """
