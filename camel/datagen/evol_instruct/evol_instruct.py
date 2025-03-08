@@ -18,8 +18,6 @@ import random
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Field
-
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 
@@ -276,7 +274,6 @@ class EvolInstructPipeline:
         """
         from concurrent.futures import ThreadPoolExecutor
         from math import ceil
-        import time
 
         def process_prompt(prompt):
             retries = 0
