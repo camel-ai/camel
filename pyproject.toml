@@ -86,6 +86,9 @@ unstructured = {version = "0.16.20", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 pandasai = { version = "^2.3.0", optional = true }
+xls2xlsx = { version = "^0.2.0", optional = true }
+tabulate = { version = "^0.9.0", optional = true }
+openpyxl = { version = "^3.1.5", optional = true }
 
 # Media processing tools
 pillow = ">=10.1.0,<11.0.0"
@@ -192,6 +195,9 @@ document_tools = [
     "pandasai",
     "prance",
     "openapi-spec-validator",
+    "xls2xlsx",
+    "tabulate",
+    "openpyxl",
 ]
 
 # Media processing tools
@@ -307,6 +313,9 @@ all = [
     "googlemaps",
     "requests_oauthlib",
     "prance",
+    "xls2xlsx",
+    "tabulate",
+    "openpyxl",
     "openapi-spec-validator",
     "rouge",
     "aiosqlite",
@@ -476,6 +485,9 @@ module = [
     "googlemaps",
     "requests_oauthlib",
     "prance",
+    "xls2xlsx",
+    "tabulate",
+    "openpyxl",
     "openapi-spec-validator",
     "jsonschema.*",
     "bs4.*",
