@@ -100,7 +100,7 @@ def test_extract_url(mock_post, mock_response):
                 "language": 'zh',
             }
         )
-        result = mineru.extract_url(
+        result = mineru.load(
             url='https://arxiv.org/pdf/2311.10993.pdf',
         )
 
@@ -143,7 +143,7 @@ def test_batch_extract_urls(mock_post, mock_batch_response):
                 'data_id': 'doc2',
             },
         ]
-        result = mineru.batch_extract_urls(
+        result = mineru.batch_load(
             files=files,
         )
 

@@ -207,8 +207,10 @@ class ChunkrLoader(BaseLoader):
             ocr_strategy=kwargs.get("ocr_strategy", "Auto"),
             target_chunk_length=kwargs.get("target_chunk_length", "512"),
         )
+        return task_id
+
+    def get_task_output(self, task_id: str, max_retries: int = 5) -> str:
         # Wait for and return the task output.
-        max_retries = kwargs.get("max_retries", 5)
         return self.chunkr.get_task_output(task_id, max_retries=max_retries)
 
     @property

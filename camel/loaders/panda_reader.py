@@ -372,9 +372,10 @@ class PandasLoader(BaseLoader):
         *args: Any,
         **kwargs: Dict[str, Any],
     ) -> Union["SmartDataframe", "DataFrame"]:
+        from pandas import DataFrame
         from pandasai import SmartDataframe
 
-        if isinstance(source, pd.DataFrame):
+        if isinstance(source, DataFrame):
             return SmartDataframe(source, config=self.config)
         file_path = str(source)
         path = Path(file_path)

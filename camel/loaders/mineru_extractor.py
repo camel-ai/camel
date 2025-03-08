@@ -255,7 +255,7 @@ class MinerU:
 class MinerULoader(BaseLoader):
     def __init__(
         self,
-        config: Optional[Dict[str, Any]],
+        config: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(config)
         self.config = config if config else {}
@@ -287,7 +287,7 @@ class MinerULoader(BaseLoader):
     def load(self, source: str, **kwargs: Any) -> Dict:
         return self.mineru.extract_url(source)
 
-    def batch_extract(self, files: List[Dict[str, Union[str, bool]]]) -> str:
+    def batch_load(self, files: List[Dict[str, Union[str, bool]]]) -> str:
         return self.mineru.batch_extract_urls(files)
 
     def get_task_status(self, task_id: str, is_batch: bool = False) -> Dict:

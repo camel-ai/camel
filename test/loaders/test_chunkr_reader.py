@@ -28,7 +28,7 @@ class TestChunkrReader(unittest.TestCase):
         mock_post.return_value.json.return_value = {'task_id': '12345'}
 
         reader = ChunkrLoader(config={"api_key": "test_api_key"})
-        task_id = reader.submit_task('fake_path.txt')
+        task_id = reader.load('fake_path.txt')
 
         self.assertEqual(task_id, '12345')
         mock_post.assert_called_once()
@@ -45,7 +45,7 @@ class TestChunkrReader(unittest.TestCase):
         reader = ChunkrLoader(config={"api_key": "test_api_key"})
 
         with self.assertRaises(ValueError) as context:
-            reader.submit_task('fake_path.txt')
+            reader.load('fake_path.txt')
 
         self.assertEqual(
             str(context.exception),

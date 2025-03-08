@@ -48,8 +48,8 @@ def test_run_actor():
     apify.apify.client.actor = Mock(return_value=mock_actor)
     # result = apify.run_actor(actor_id, run_input=run_input)
     result = apify.load(source=actor_id, functionality="run_actor")
-    apify.client.actor.assert_called_once_with(actor_id)
-    apify.client.actor.return_value.call.assert_called_once_with(
+    apify.apify.client.actor.assert_called_once_with(actor_id)
+    apify.apify.client.actor.return_value.call.assert_called_once_with(
         run_input=run_input,
         content_type=None,
         build=None,
@@ -84,7 +84,7 @@ def test_get_dataset():
     # apify.get_dataset_client = lambda x: mock_client
     apify.apify.get_dataset_client = lambda x: mock_client
 
-    result = apify.get_dataset(dataset_id)
+    result = apify.apify.get_dataset(dataset_id)
     assert result == {"data": "dataset"}
 
 
@@ -98,7 +98,7 @@ def test_update_dataset():
     # apify.get_dataset_client = lambda x: mock_client
     apify.apify.get_dataset_client = lambda x: mock_client
 
-    result = apify.update_dataset(dataset_id, name)
+    result = apify.apify.update_dataset(dataset_id, name)
     result = apify.apify.update_dataset(dataset_id, name)
     assert result == {"name": name}
 
