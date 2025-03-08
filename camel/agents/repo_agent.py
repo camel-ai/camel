@@ -113,7 +113,7 @@ class RepoAgent(ChatAgent):
                 )
 
 
-    def url_parse(self, url: str) -> Tuple[str, str]:
+    def parse_url(self, url: str) -> Tuple[str, str]:
         try:
             url_path = url.replace("https://github.com/", "")
             parts = url_path.split("/")
@@ -159,7 +159,7 @@ class RepoAgent(ChatAgent):
         r"""Load the content of a GitHub repository.
         """
         try:
-            owner, repo_name = self.url_parse(repo_url)
+            owner, repo_name = self.parse_url(repo_url)
             repo = github_client.get_repo(f"{owner}/{repo_name}")
             contents = repo.get_contents("")
         except Exception as e:
@@ -258,8 +258,6 @@ class RepoAgent(ChatAgent):
             self.processing_mode = ProcessingMode.RAG
             for repo in self.repos:
                 for f in repo.contents:
-                    #TODO: Change vector retriever first (construct my own
-                    # chunker)
                     self.vector_retriever.process(
                         content=f.content,
                         chunk_type="chunk_by_title",
@@ -291,6 +289,7 @@ class RepoAgent(ChatAgent):
                         top_k=self.top_k,
                         similarity_threshold=self.similarity,
                     )
+                    # Remove duplicates and retrieve the whole file
                     paths = []
                     for record in raw_rag_content:
                         if record["file_path"] not in paths:
@@ -303,6 +302,7 @@ class RepoAgent(ChatAgent):
                                 }
                             )
                             paths.append(record["file_path"])
+
                     retrieved_content = sorted(
                         retrieved_content,
                         key=lambda x: x["similarity"],
@@ -376,7 +376,6 @@ class RepoAgent(ChatAgent):
                         },
                     ]
                 },
-                # TODO: add metadata to payload in VectorRetriever
                 sort=[{"metadata.piece_num": "asc"}],
                 with_payload=True,
                 with_vectors=False,
