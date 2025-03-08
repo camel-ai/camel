@@ -15,11 +15,12 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from PIL import Image
 
-from camel.agents import ChatAgent
+if TYPE_CHECKING:
+    pass
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, OpenAIAudioModels
@@ -129,9 +130,15 @@ class VideoAnalysisToolkit(BaseToolkit):
         self.vl_model = model
         # Ensure ChatAgent is initialized with a model if provided
         if self.vl_model:
+            # Import ChatAgent at runtime to avoid circular imports
+            from camel.agents import ChatAgent
+
             self.vl_agent = ChatAgent(model=self.vl_model)
         else:
             # If no model is provided, use default model in ChatAgent
+            # Import ChatAgent at runtime to avoid circular imports
+            from camel.agents import ChatAgent
+
             self.vl_agent = ChatAgent()
             logger.warning(
                 "No vision-language model provided. Using default model in"
