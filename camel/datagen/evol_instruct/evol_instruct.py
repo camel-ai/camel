@@ -103,6 +103,7 @@ class EvolInstructPipeline:
         self, 
         prompt: str,  # for a single prompt
         method: str = "uniform",
+        return_method: bool = False,
     ) -> str:
         """
         Generates a single new prompt for a single seed prompt using a specified method.
@@ -113,9 +114,13 @@ class EvolInstructPipeline:
                        - (str) "uniform" for random selection.
         :return: The evolved prompt as a string.
         """
-        # Randomly select a method if uniform
+        # Handle the case when using this method externally
         if method == "uniform":
             method = random.choice(list(EvolInstructTemplates.EVOL_METHODS.keys()))
+        elif method == "in-depth":
+            method = random.choice(EvolInstructTemplates.IN_DEPTH_KEYS)
+        elif method == "in-breadth":
+            method = random.choice(EvolInstructTemplates.IN_BREADTH_KEYS)
 
         # Choose the instruction template based on the method
         instruction = (
@@ -135,7 +140,10 @@ class EvolInstructPipeline:
         response = self.agent.step(instruction)
         generated_prompt = response.msgs[0].content.strip()
         
-        return generated_prompt
+        if not return_method:
+            return generated_prompt
+        else:
+            return generated_prompt, method
 
     def _generate_multiple(
         self, 
@@ -183,7 +191,7 @@ class EvolInstructPipeline:
     def _generate_iter(
         self,
         prompt: str,  # for a single prompt
-        method: Union[str, Dict[int, List[str]]] = "uniform",
+        method: Union[str, Dict[int, List[str]]] = "uniform",  # allowing dict for multiple methods
         num_generations: int = 1,
         num_evolutions: int = 1,
         keep_original: bool = True,
@@ -220,6 +228,9 @@ class EvolInstructPipeline:
         current_prompt = prompt
 
         for iteration in range(num_evolutions):
+            # set the method for the current iteration
+            if isinstance(method, dict):
+                method = method.get(iteration, "uniform")
 
             # generate the batch for the current iteration
             batch_results = self._generate_multiple(
@@ -303,7 +314,8 @@ class EvolInstructPipeline:
 
         # generate prompts
         results = []
-        for chunk in chunks:
+        for i, chunk in enumerate(chunks):
+            logger.info(f"Processing chunk {i + 1}/{num_chunks} with {len(chunk)} prompts...")
             with ThreadPoolExecutor() as executor:
                 chunk_results = list(executor.map(process_prompt, chunk))
                 results.extend(chunk_results)
