@@ -250,6 +250,7 @@ class EvolInstructPipeline:
                 # simulate random scores in range (1, 10) for now
                 scores = [random.randint(1, 10) for _ in batch_results[1:]] if keep_original else [random.randint(1, 10) for _ in batch_results]
             else:
+                # TODO: implement instruction scoring module, e.g., complexity/quality scorer or by reward advantage
                 raise NotImplementedError(f"Scorer '{scorer}' is not implemented.")
 
             # select the prompt with the highest score
