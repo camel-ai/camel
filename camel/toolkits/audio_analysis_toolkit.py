@@ -61,6 +61,7 @@ class AudioAnalysisToolkit(BaseToolkit):
         # self.reasoning = reasoning
         self.transcribe_model = transcribe_model
         self.audio_reasoning_model = audio_reasoning_model
+        from camel.agents import ChatAgent
         if self.audio_reasoning_model:
             self.audio_agent = ChatAgent(model=self.audio_reasoning_model)
         else:
