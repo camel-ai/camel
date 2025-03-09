@@ -400,6 +400,7 @@ class SeedDataset(Dataset):
 
         self.data: List[DataPoint] = []
         self._setup(min_samples)
+        self._length = len(self.data)
 
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the dataset.
@@ -410,9 +411,9 @@ class SeedDataset(Dataset):
         Raises:
             RuntimeError: If the dataset is empty.
         """
-        if not self.data:
+        if self._length == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
-        idx = random.randint(0, len(self) - 1)
+        idx = self._rng.randint(0, self._length - 1)
         return self[idx]
 
     def _setup(self, min_samples: int) -> None:
@@ -495,7 +496,7 @@ class SeedDataset(Dataset):
 
     def __len__(self) -> int:
         r"""Return the size of the dataset."""
-        return len(self.data)
+        return self._length
 
     def __getitem__(self, idx: int) -> DataPoint:
         r"""Get an item from the dataset.
@@ -509,7 +510,7 @@ class SeedDataset(Dataset):
         Raises:
             IndexError: If idx is out of bounds.
         """
-        if idx < 0 or idx >= len(self):
+        if idx < 0 or idx >= self._length:
             raise IndexError(
                 f"Index {idx} out of bounds for dataset of size {len(self)}"
             )
