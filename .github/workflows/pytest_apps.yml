@@ -55,5 +55,5 @@ jobs:
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all]"
+        uv pip install -e ".[all,test]"
         pytest -v examples/
