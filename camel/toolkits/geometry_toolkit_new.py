@@ -4016,307 +4016,277 @@ class EnhancedGeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_ellipse_equation", e)
 
-    def solve_parabola_problem(
-        self,
-        problem_type: str,
-        vertex_x: float = 0,
-        vertex_y: float = 0,
-        coefficient: float = 0,
-        orientation: str = "up",
-        point_x: float = 0,
-        point_y: float = 0,
-        line_slope: float = 0,
-        line_y_intercept: float = 0,
+    ### PARABOLA ###
+
+    def compute_parabola_axis_of_symmetry(
+        self, vertex_x: float, vertex_y: float, orientation: str
     ) -> str:
-        r"""Solves a specific type of parabola problem.
+        r"""Computes the axis of symmetry of a parabola.
 
         Args:
-            problem_type: Type of problem to solve
-                        ("focus", "directrix", "contains_point",
-                        "axis_of_symmetry", etc.)
+            vertex_x: x-coordinate of the parabola vertex
+            vertex_y: y-coordinate of the parabola vertex
+            orientation: direction the parabola opens -
+                        "up", "down", "left", or "right"
+
+        Returns:
+            str: JSON string with the axis of symmetry equation
+        """
+        try:
+            h = float(vertex_x)
+            k = float(vertex_y)
+
+            # Calculate axis of symmetry equation
+            if orientation.lower() in ["right", "left"]:
+                axis = f"y = {k}"
+            else:  # orientation in ["up", "down"]
+                axis = f"x = {h}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "axis_of_symmetry": axis,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_parabola_axis_of_symmetry", e
+            )
+
+    def check_point_position_on_parabola(
+        self,
+        point_x: float,
+        point_y: float,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        r"""Determines if a point is on, inside, or outside a parabola.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
             vertex_x: x-coordinate of the parabola vertex
             vertex_y: y-coordinate of the parabola vertex
             coefficient: coefficient of the squared term
-            orientation: direction the parabola opens - "up", "down",
-                "left", or "right"
-            point_x: x-coordinate of a point (if applicable)
-            point_y: y-coordinate of a point (if applicable)
-            line_slope: slope of a line (if applicable)
-            line_y_intercept: y-intercept of a line (if applicable)
+            orientation: direction the parabola opens -
+                        "up", "down", "left", or "right"
 
         Returns:
-            str: JSON string with the solution
+            str: JSON string with the position ("on", "inside", or "outside")
         """
         try:
+            px, py = float(point_x), float(point_y)
             h, k = float(vertex_x), float(vertex_y)
             a = float(coefficient)
 
-            if problem_type == "focus":
-                # Calculate focal distance
-                p = 1 / (4 * abs(a))
-
-                # Calculate focus position
-                if orientation.lower() == "right":
-                    focus = [h + p, k]
-                elif orientation.lower() == "left":
-                    focus = [h - p, k]
-                elif orientation.lower() == "up":
-                    focus = [h, k + p]
-                else:  # orientation == "down"
-                    focus = [h, k - p]
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "focus": focus,
-                            "steps": [
-                                "The focal distance of a parabola is given"
-                                "by p = 1/(4|a|) where a is the coefficient",
-                                f"Substituting a = {a}",
-                                f"p = 1/(4*|{a}|) = {p}",
-                                f"For a parabola opening {orientation},"
-                                f"the focus is at ({focus[0]}, {focus[1]})",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "directrix":
-                # Calculate focal distance
-                p = 1 / (4 * abs(a))
-
-                # Define directrix
-                if orientation.lower() == "right":
-                    directrix = f"x = {h - p}"
-                elif orientation.lower() == "left":
-                    directrix = f"x = {h + p}"
-                elif orientation.lower() == "up":
-                    directrix = f"y = {k - p}"
-                else:  # orientation == "down"
-                    directrix = f"y = {k + p}"
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "directrix": directrix,
-                            "steps": [
-                                "The focal distance of a parabola is given by"
-                                "p = 1/(4|a|) where a is the coefficient",
-                                f"Substituting a = {a}",
-                                f"p = 1/(4*|{a}|) = {p}",
-                                f"For a parabola opening {orientation}, "
-                                f"the directrix is {directrix}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "axis_of_symmetry":
-                # Define axis of symmetry
-                if orientation.lower() in ["right", "left"]:
-                    axis = f"y = {k}"
-                else:  # orientation in ["up", "down"]
-                    axis = f"x = {h}"
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "axis_of_symmetry": axis,
-                            "steps": [
-                                f"For a parabola with vertex at ({h}, {k}) "
-                                f"opening {orientation}",
-                                f"The axis of symmetry is {axis}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "contains_point":
-                p_x, p_y = float(point_x), float(point_y)
-
-                # Evaluate the parabola equation at the point
-                if orientation.lower() == "right":
-                    # y - k = a(x - h)²
-                    expected_y = k + a * (p_x - h) ** 2
-                    value = p_y - expected_y
-                elif orientation.lower() == "left":
-                    # y - k = a(x - h)²
-                    expected_y = k + a * (p_x - h) ** 2
-                    value = p_y - expected_y
-                elif orientation.lower() == "up":
-                    # x - h = a(y - k)²
-                    expected_x = h + a * (p_y - k) ** 2
-                    value = p_x - expected_x
-                else:  # orientation == "down"
-                    # x - h = a(y - k)²
-                    expected_x = h + a * (p_y - k) ** 2
-                    value = p_x - expected_x
-
-                if abs(value) < 1e-10:
-                    result = "on"
+            # Evaluate the parabola equation at the point
+            if orientation.lower() == "right":
+                # y - k = a(x - h)²
+                expected_y = k + a * (px - h) ** 2
+                if abs(py - expected_y) < 1e-10:
+                    position = "on"
+                elif (px > h and py > expected_y) or (
+                    px > h and py < expected_y
+                ):
+                    position = "outside"
                 else:
-                    # For parabolas, "inside" and "outside" depend
-                    # on the orientation
-                    if orientation.lower() == "right":
-                        result = "inside" if value < 0 else "outside"
-                    elif orientation.lower() == "left":
-                        result = "inside" if value > 0 else "outside"
-                    elif orientation.lower() == "up":
-                        result = "inside" if value < 0 else "outside"
-                    else:  # orientation == "down"
-                        result = "inside" if value > 0 else "outside"
+                    position = "inside"
 
-                return json.dumps(
-                    {
-                        "result": {
-                            "position": result,
-                            "equation_value": str(value),
-                            "steps": [
-                                f"Evaluate the parabola equation at the point "
-                                f"({p_x}, {p_y})",
-                                f"For orientation '{orientation}',the equation"
-                                f"Substituting x = {p_x}, y = {p_y}, h = {h},"
-                                f"k = {k}, a = {a}",
-                                f"Value = {value!s}",
-                                f"Since value {result} 0, the point is "
-                                f"{result} the parabola",
-                            ],
-                        }
+            elif orientation.lower() == "left":
+                # y - k = a(x - h)²
+                expected_y = k + a * (px - h) ** 2
+                if abs(py - expected_y) < 1e-10:
+                    position = "on"
+                elif (px < h and py > expected_y) or (
+                    px < h and py < expected_y
+                ):
+                    position = "outside"
+                else:
+                    position = "inside"
+
+            elif orientation.lower() == "up":
+                # x - h = a(y - k)²
+                expected_x = h + a * (py - k) ** 2
+                if abs(px - expected_x) < 1e-10:
+                    position = "on"
+                elif (py > k and px > expected_x) or (
+                    py > k and px < expected_x
+                ):
+                    position = "outside"
+                else:
+                    position = "inside"
+
+            else:  # orientation == "down"
+                # x - h = a(y - k)²
+                expected_x = h + a * (py - k) ** 2
+                if abs(px - expected_x) < 1e-10:
+                    position = "on"
+                elif (py < k and px > expected_x) or (
+                    py < k and px < expected_x
+                ):
+                    position = "outside"
+                else:
+                    position = "inside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
                     }
-                )
-
-            elif problem_type == "line_intersection":
-                m, b = float(line_slope), float(line_y_intercept)
-
-                # Solve the system of equations
-                if orientation.lower() == "right":
-                    # Parabola: y - k = a(x - h)²
-                    # Line: y = mx + b
-                    # Substitute: mx + b - k = a(x - h)²
-                    # Rearrange: a(x - h)² - mx - b + k = 0
-                    # Expand: ax² - 2ahx + ah² - mx - b + k = 0
-                    # Simplify: ax² - (2ah + m)x + (ah² - b + k) = 0
-
-                    A = a
-                    B = -(2 * a * h + m)
-                    C = a * h**2 - b + k
-
-                elif orientation.lower() == "left":
-                    # Same as "right" case
-                    A = a
-                    B = -(2 * a * h + m)
-                    C = a * h**2 - b + k
-
-                elif orientation.lower() == "up":
-                    # Parabola: x - h = a(y - k)²
-                    # Line: y = mx + b
-                    # Substitute: x - h = a(mx + b - k)²
-                    # Expand: x - h = a(m²x² + 2mx(b-k) + (b-k)²)
-                    # Simplify: x - h = am²x² + 2am(b-k)x + a(b-k)²
-                    # Rearrange: am²x² + 2am(b-k)x + a(b-k)² - x + h = 0
-
-                    A = a * m**2
-                    B = 2 * a * m * (b - k) - 1
-                    C = a * (b - k) ** 2 + h
-
-                else:  # orientation == "down"
-                    # Same as "up" case
-                    A = a * m**2
-                    B = 2 * a * m * (b - k) - 1
-                    C = a * (b - k) ** 2 + h
-
-                # Use the quadratic formula
-                discriminant = B**2 - 4 * A * C
-
-                if abs(discriminant) < 1e-10:  # One solution (tangent)
-                    x1 = -B / (2 * A)
-                    y1 = m * x1 + b
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [
-                                    [float(x1), float(y1)]
-                                ],
-                                "count": 1,
-                                "steps": [
-                                    f"The line y = {m}x + {b} is "
-                                    f"tangent to the parabola",
-                                    (
-                                        f"Discriminant = {discriminant} ≈ 0, "
-                                        f"so there is one solution"
-                                    ),
-                                    (
-                                        f"Intersection point: "
-                                        f"({float(x1)}, {float(y1)})"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
-                elif discriminant < 0:  # No real solutions
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [],
-                                "count": 0,
-                                "steps": [
-                                    f"The line y = {m}x + {b} does"
-                                    f"not intersect the parabola",
-                                    (
-                                        f"Discriminant = {discriminant} < 0, "
-                                        f"so there are no real solutions"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
-                else:  # Two solutions
-                    x1 = (-B + sp.sqrt(discriminant)) / (2 * A)
-                    x2 = (-B - sp.sqrt(discriminant)) / (2 * A)
-
-                    y1 = m * x1 + b
-                    y2 = m * x2 + b
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [
-                                    [float(x1), float(y1)],
-                                    [float(x2), float(y2)],
-                                ],
-                                "count": 2,
-                                "steps": [
-                                    f"The line y = {m}x + {b} intersects"
-                                    f"the parabola",
-                                    (
-                                        f"Discriminant = {discriminant} > 0, "
-                                        f"so there are two solutions"
-                                    ),
-                                    (
-                                        f"Intersection points: "
-                                        f"({float(x1)}, {float(y1)}) and "
-                                        f"({float(x2)}, {float(y2)})"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
-            else:
-                return json.dumps(
-                    {
-                        "result": {
-                            "message": f"Problem type '{problem_type}' not"
-                            f"supported for parabolas."
-                        }
-                    }
-                )
-
+                }
+            )
         except Exception as e:
-            return self.handle_exception("solve_parabola_problem", e)
+            return self.handle_exception("check_point_position_on_parabola", e)
+
+    def compute_parabola_equation(
+        self,
+        vertex_x: float,
+        vertex_y: float,
+        coefficient: float,
+        orientation: str,
+    ) -> str:
+        r"""Computes the equation of a parabola in vertex and standard form.
+
+        Args:
+            vertex_x: x-coordinate of the parabola vertex
+            vertex_y: y-coordinate of the parabola vertex
+            coefficient: coefficient of the squared term
+            orientation: direction the parabola opens -
+                        "up", "down", "left", or "right"
+
+        Returns:
+            str: JSON string with the parabola equations
+        """
+        try:
+            h = float(vertex_x)
+            k = float(vertex_y)
+            a = float(coefficient)
+
+            # Calculate vertex form
+            if orientation.lower() == "right":
+                vertex_form = f"y - {k} = {a}(x - {h})²"
+                # Expand to standard form: y = ax² + bx + c
+                standard_form = f"y = {a}x² + {-2*a*h}x + {a*h**2 + k}"
+
+            elif orientation.lower() == "left":
+                vertex_form = f"y - {k} = {a}(x - {h})²"
+                # Expand to standard form: y = ax² + bx + c
+                standard_form = f"y = {a}x² + {-2*a*h}x + {a*h**2 + k}"
+
+            elif orientation.lower() == "up":
+                vertex_form = f"x - {h} = {a}(y - {k})²"
+                # Expand to standard form: x = ay² + by + c
+                standard_form = f"x = {a}y² + {-2*a*k}y + {a*k**2 + h}"
+
+            else:  # orientation == "down"
+                vertex_form = f"x - {h} = {a}(y - {k})²"
+                # Expand to standard form: x = ay² + by + c
+                standard_form = f"x = {a}y² + {-2*a*k}y + {a*k**2 + h}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "vertex_form": vertex_form,
+                        "standard_form": standard_form,
+                        "vertex": [h, k],
+                        "coefficient": a,
+                        "orientation": orientation,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_parabola_equation", e)
+
+    def compute_parabola_from_focus_directrix(
+        self,
+        focus_x: float,
+        focus_y: float,
+        directrix_type: str,
+        directrix_value: float,
+    ) -> str:
+        r"""Computes the equation of a parabola given its focus and directrix.
+
+        Args:
+            focus_x: x-coordinate of the focus
+            focus_y: y-coordinate of the focus
+            directrix_type: "horizontal" for y = k or "vertical" for x = h
+            directrix_value: the value k or h in the directrix equation
+
+        Returns:
+            str: JSON string with the parabola equation
+        """
+        try:
+            f_x, f_y = float(focus_x), float(focus_y)
+            d_val = float(directrix_value)
+
+            # Determine orientation and vertex
+            if directrix_type.lower() == "horizontal":
+                # Directrix is y = d_val
+                # Parabola opens up if focus is above directrix, down if below
+                orientation = "up" if f_y > d_val else "down"
+
+                # Vertex is halfway between focus and directrix
+                vertex_y = (f_y + d_val) / 2
+                vertex_x = f_x
+
+                # Calculate coefficient
+                p = abs(f_y - d_val) / 2
+                a = 1 / (4 * p)
+
+                if orientation == "down":
+                    a = -a
+
+            else:  # directrix_type == "vertical"
+                # Directrix is x = d_val
+                # Parabola opens right if focus is to the right of directrix,
+                # left if to the left
+                orientation = "right" if f_x > d_val else "left"
+
+                # Vertex is halfway between focus and directrix
+                vertex_x = (f_x + d_val) / 2
+                vertex_y = f_y
+
+                # Calculate coefficient
+                p = abs(f_x - d_val) / 2
+                a = 1 / (4 * p)
+
+                if orientation == "left":
+                    a = -a
+
+            # Calculate equation
+            if orientation in ["up", "down"]:
+                vertex_form = f"x - {vertex_x} = {a}(y - {vertex_y})²"
+                # Expand to standard form: x = ay² + by + c
+                b = -2 * a * vertex_y
+                c = a * vertex_y**2 + vertex_x
+                standard_form = f"x = {a}y² + {b}y + {c}"
+            else:  # orientation in ["right", "left"]
+                vertex_form = f"y - {vertex_y} = {a}(x - {vertex_x})²"
+                # Expand to standard form: y = ax² + bx + c
+                b = -2 * a * vertex_x
+                c = a * vertex_x**2 + vertex_y
+                standard_form = f"y = {a}x² + {b}x + {c}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "vertex_form": vertex_form,
+                        "standard_form": standard_form,
+                        "vertex": [vertex_x, vertex_y],
+                        "coefficient": a,
+                        "orientation": orientation,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_parabola_from_focus_directrix", e
+            )
+
+    ### HYPERBOLA ###
 
     def solve_hyperbola_problem(
         self,
@@ -4785,6 +4755,10 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.check_point_position_on_ellipse),
             FunctionTool(self.compute_ellipse_equation),
             # Parabola Solver
-            FunctionTool(self.solve_parabola_problem),
+            FunctionTool(self.compute_parabola_axis_of_symmetry),
+            FunctionTool(self.check_point_position_on_parabola),
+            FunctionTool(self.compute_parabola_equation),
+            FunctionTool(self.compute_parabola_from_focus_directrix),
+            # Hyperbola Solver
             FunctionTool(self.solve_hyperbola_problem),
         ]
