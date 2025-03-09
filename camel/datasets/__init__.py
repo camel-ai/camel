@@ -18,6 +18,11 @@ from .base import (
     SeedDataset,
     SyntheticDataset,
 )
+from .medicine import (
+    MedicalDataPoint,
+    MedicalDataset,
+    load_json_data,
+)
 
 __all__ = [
     "DataPoint",
@@ -25,4 +30,7 @@ __all__ = [
     "SeedDataset",
     "GenerativeDataset",
     "SyntheticDataset",
+    "MedicalDataPoint",
+    "MedicalDataset",
+    "load_json_data",
 ]

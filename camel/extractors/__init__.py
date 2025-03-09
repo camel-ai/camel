@@ -12,5 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import BaseExtractor
+from .boxed_text_extractor import BoxedTextExtractor
 
-__all__ = ["BaseExtractor"]
+__all__ = ["BaseExtractor", "BoxedTextExtractor"]
