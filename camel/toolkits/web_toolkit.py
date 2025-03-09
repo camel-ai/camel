@@ -991,8 +991,6 @@ Here are some tips for you:
         r"""Get the final answer based on the task prompt and current browser state.
         It is used when the agent thinks that the task can be completed without any further action, and answer can be directly found in the current viewport.
         """
-        # screenshot, _ = self.browser.get_screenshot()
-        # img = _reload_image(screenshot)
 
         prompt = f"""
 We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
