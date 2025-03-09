@@ -407,6 +407,28 @@ class SeedDataset(Dataset):
         self._setup(min_samples)
         self._length = len(self.data)
 
+    def __len__(self) -> int:
+        r"""Return the size of the dataset."""
+        return self._length
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        r"""Get an item from the dataset.
+
+        Args:
+            idx (int): Index of the item to get.
+
+        Returns:
+            DataPoint: DataPoint from the dataset with the given index.
+
+        Raises:
+            IndexError: If idx is out of bounds.
+        """
+        if idx < 0 or idx >= self._length:
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of size {len(self)}"
+            )
+        return self.data[idx]
+
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the dataset.
 
@@ -496,28 +518,6 @@ class SeedDataset(Dataset):
             create_datapoint(item, i) for i, item in enumerate(self._raw_data)
         ]
         logger.debug(f"Processed {len(self.data)} data points")
-
-    def __len__(self) -> int:
-        r"""Return the size of the dataset."""
-        return self._length
-
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Get an item from the dataset.
-
-        Args:
-            idx (int): Index of the item to get.
-
-        Returns:
-            DataPoint: DataPoint from the dataset with the given index.
-
-        Raises:
-            IndexError: If idx is out of bounds.
-        """
-        if idx < 0 or idx >= self._length:
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of size {len(self)}"
-            )
-        return self.data[idx]
 
     @property
     def metadata(self) -> Dict[str, Any]:
