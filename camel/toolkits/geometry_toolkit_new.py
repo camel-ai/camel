@@ -462,532 +462,528 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
     # ====================== CONIC SECTION HELPERS ======================
 
-    def parse_conic_equation(self, problem_statement: str) -> str:
-        r"""Parses a complete conic section problem statement and
-            identifies components.
+    def identify_conic_section_type(self, equation: str) -> str:
+        r"""Identifies the type of conic section from its equation.
 
         Args:
-            problem_statement: Full problem statement as a string
+            equation: The equation of the conic section
+                (e.g., "x^2 + y^2 = 25" or "x^2/9 + y^2/4 = 1")
 
         Returns:
-            str: JSON string with problem type, conic type, parameters,
-                and conditions
+            str: JSON string with the identified conic section type
+                 and properties
         """
         try:
-            self.logger.info(f"Parsing conic problem: {problem_statement}")
+            # Clean up the equation
+            eq = equation.replace(" ", "").replace("^", "**").lower()
 
-            # Initialize result structure
-            result = {
-                "problem_type": "",
-                "conic_type": "",
-                "parameters": {},
-                "conditions": [],
-                "variables": [],
-                "equations": [],
+            # Parse the equation using sympy
+            lhs, rhs = eq.split("=")
+            expr = sp.sympify(lhs) - sp.sympify(rhs)
+
+            # Convert to standard form Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
+            expr = sp.expand(expr)
+
+            # Extract coefficients
+            x, y = sp.symbols('x y')
+            coeffs = {
+                'A': expr.coeff(x, 2),
+                'B': expr.coeff(x * y),
+                'C': expr.coeff(y, 2),
+                'D': expr.coeff(x, 1),
+                'E': expr.coeff(y, 1),
+                'F': expr.subs({x: 0, y: 0}),
             }
 
-            # Split the problem statement into components
-            # Look for common delimiters in math problems
-            parts = problem_statement.lower().replace(".", ". ").split(". ")
+            # Determine the type of conic section
+            discriminant = coeffs['B'] ** 2 - 4 * coeffs['A'] * coeffs['C']
 
-            # Extract equations from the problem statement
-            equations = []
-            equation_pattern = r'([^=]+=[^=,;]+)'
-            for part in parts:
-                import re
+            if abs(discriminant) < 1e-10:  # Discriminant ≈ 0
+                if coeffs['A'] == coeffs['C'] and coeffs['A'] != 0:
+                    if coeffs['F'] == 0:
+                        conic_type = "degenerate (point)"
+                    else:
+                        conic_type = "circle"
+                else:
+                    conic_type = "parabola"
+            elif discriminant < 0:
+                if abs(coeffs['A'] - coeffs['C']) < 1e-10:
+                    conic_type = "circle"
+                else:
+                    conic_type = "ellipse"
+            else:  # discriminant > 0
+                conic_type = "hyperbola"
 
-                eq_matches = re.findall(equation_pattern, part)
-                equations.extend(eq_matches)
-
-            # Identify the main conic equation
-            main_equation = ""
-            for eq in equations:
-                # Look for conic equation patterns
-                if ('x²' in eq or 'x^2' in eq or 'x**2' in eq) and (
-                    'y²' in eq or 'y^2' in eq or 'y**2' in eq
-                ):
-                    main_equation = eq
-                    break
-
-            # If no clear conic equation found, try the first equation
-            if not main_equation and equations:
-                main_equation = equations[0]
-
-            # Parse the main conic equation
-            if main_equation:
-                # Standardize equation format
-                main_equation = main_equation.replace('^2', '²').replace(
-                    '**2', '²'
-                )
-                conic_result = json.loads(
-                    self.parse_conic_equation(main_equation)
-                )
-                result["conic_type"] = conic_result["type"]
-                result["parameters"] = conic_result["parameters"]
-                if isinstance(result["equations"], list):
-                    result["equations"].append(
-                        {"type": "main_conic", "equation": main_equation}
-                    )
-
-            # Identify problem type
-            if "find" in problem_statement.lower():
-                result["problem_type"] = "find_parameter_from_condition"
-
-                # Extract the variable to find
-                find_pattern = r'find\s+([a-zA-Z0-9]+)'
-                import re
-
-                find_match = re.search(find_pattern, problem_statement.lower())
-                if find_match:
-                    variable = find_match.group(1)
-                    if isinstance(result["variables"], list):
-                        result["variables"].append(
-                            {"name": variable, "to_solve": True}
-                        )
-
-            # Identify conditions
-            condition_keywords = {
-                "asymptote": "asymptote_condition",
-                "tangent": "tangent_condition",
-                "passes through": "point_condition",
-                "intersect": "intersection_condition",
-                "focus": "focus_condition",
-                "directrix": "directrix_condition",
-                "eccentricity": "eccentricity_condition",
-            }
-
-            for keyword, condition_type in condition_keywords.items():
-                if keyword in problem_statement.lower():
-                    # Extract the condition details
-                    condition = {"type": condition_type}
-
-                    # For asymptotes
-                    if condition_type == "asymptote_condition":
-                        # Look for asymptote equation
-                        for eq in equations:
-                            if eq != main_equation and (
-                                'x' in eq or 'y' in eq
-                            ):
-                                # This might be an asymptote equation
-                                condition["equation"] = eq
-
-                                # Try to extract slope if it's a line
-                                if 'y' in eq and '=' in eq:
-                                    try:
-                                        # Parse y = mx + b format
-                                        right_side = eq.split('=')[1].strip()
-                                        if 'x' in right_side:
-                                            # Extract coefficient of x as slope
-                                            x_term = right_side.split('x')[
-                                                0
-                                            ].strip()
-                                            if x_term:
-                                                if x_term == '-':
-                                                    slope = -1.0
-                                                else:
-                                                    slope = float(
-                                                        x_term.replace('+', '')
-                                                    )
-                                                if isinstance(condition, dict):
-                                                    condition["slope"] = str(
-                                                        slope
-                                                    )
-                                                # Update problem type
-                                                if (
-                                                    isinstance(result, dict)
-                                                    and "problem_type"
-                                                    in result
-                                                ):
-                                                    result["problem_type"] = (
-                                                        "find_parameter_from_"
-                                                        "condition"
-                                                    )
-                                                if (
-                                                    isinstance(result, dict)
-                                                    and "condition_type"
-                                                    in result
-                                                ):
-                                                    result[
-                                                        "condition_type"
-                                                    ] = "asymptote_" "slope"
-                                    except Exception:
-                                        pass
-                                break
-
-                    # For points
-                    elif condition_type == "point_condition":
-                        # Look for point coordinates
-                        point_pattern = r'\(([^)]+)\)'
-                        import re
-
-                        point_matches = re.findall(
-                            point_pattern, problem_statement
-                        )
-                        if point_matches:
-                            try:
-                                points = []
-                                for point_str in point_matches:
-                                    coords = point_str.split(',')
-                                    if len(coords) == 2:
-                                        x = float(coords[0].strip())
-                                        y = float(coords[1].strip())
-                                        points.append([x, y])
-                                if points and isinstance(condition, dict):
-                                    condition["points"] = str(points)
-                            except Exception:
-                                pass
-
-                    # For eccentricity
-                    elif condition_type == "eccentricity_condition":
-                        # Look for eccentricity value
-                        ecc_pattern = r'eccentricity\s+(?:is|=)\s+([0-9.]+)'
-                        import re
-
-                        ecc_match = re.search(
-                            ecc_pattern, problem_statement.lower()
-                        )
-                        if ecc_match:
-                            try:
-                                eccentricity = float(ecc_match.group(1))
-                                if isinstance(condition, dict):
-                                    condition["eccentricity"] = str(
-                                        eccentricity
-                                    )
-                                if (
-                                    isinstance(result, dict)
-                                    and "problem_type" in result
-                                ):
-                                    result["problem_type"] = (
-                                        "find_parameter_from_condition"
-                                    )
-                                if (
-                                    isinstance(result, dict)
-                                    and "condition_type" in result
-                                ):
-                                    result["condition_type"] = "eccentricity"
-                            except Exception:
-                                pass
-
-                    # For focus
-                    elif condition_type == "focus_condition":
-                        # Look for focus coordinates or distance
-                        focus_pattern = r'focus\s+(?:at|is)\s+\(([^)]+)\)'
-                        import re
-
-                        focus_match = re.search(
-                            focus_pattern, problem_statement.lower()
-                        )
-                        if focus_match:
-                            try:
-                                coords = focus_match.group(1).split(',')
-                                if len(coords) == 2:
-                                    x = float(coords[0].strip())
-                                    y = float(coords[1].strip())
-                                    if isinstance(condition, dict):
-                                        condition["focus"] = str([x, y])
-                            except Exception:
-                                pass
-
-                        # Look for focus distance
-                        distance_pattern = (
-                            r'focus\s+(?:is|at)\s+([0-9.]+)\s+(?:units|unit)'
-                        )
-                        distance_match = re.search(
-                            distance_pattern, problem_statement.lower()
-                        )
-                        if distance_match:
-                            try:
-                                distance = float(distance_match.group(1))
-                                if isinstance(condition, dict):
-                                    condition["focus_distance"] = str(distance)
-                                if (
-                                    isinstance(result, dict)
-                                    and "problem_type" in result
-                                ):
-                                    result["problem_type"] = (
-                                        "find_parameter_from_condition"
-                                    )
-                                if (
-                                    isinstance(result, dict)
-                                    and "condition_type" in result
-                                ):
-                                    result["condition_type"] = "focus_distance"
-                            except Exception:
-                                pass
-
-                    # For directrix
-                    elif condition_type == "directrix_condition":
-                        # Look for directrix equation
-                        for eq in equations:
-                            if eq != main_equation and (
-                                'x' in eq or 'y' in eq
-                            ):
-                                # This might be a directrix equation
-                                if 'x =' in eq or 'x=' in eq:
-                                    # Vertical directrix
-                                    try:
-                                        x_val = float(eq.split('=')[1].strip())
-                                        if isinstance(condition, dict):
-                                            condition["directrix"] = str(
-                                                {
-                                                    "type": "vertical",
-                                                    "x": x_val,
-                                                }
-                                            )
-                                    except ValueError:
-                                        if isinstance(condition, dict):
-                                            condition["directrix_equation"] = (
-                                                eq
-                                            )
-                                    except TypeError:
-                                        if isinstance(condition, dict):
-                                            condition["directrix_equation"] = (
-                                                eq
-                                            )
-                                    except Exception as e:
-                                        if isinstance(condition, dict):
-                                            condition["directrix_equation"] = (
-                                                eq
-                                            )
-                                        self.logger.warning(
-                                            f"Unexpected error parsing"
-                                            f"directrix:{e}"
-                                        )
-                                elif 'y =' in eq or 'y=' in eq:
-                                    # Horizontal directrix
-                                    try:
-                                        y_val = float(eq.split('=')[1].strip())
-                                        if isinstance(condition, dict):
-                                            condition["directrix"] = str(
-                                                {
-                                                    "type": "horizontal",
-                                                    "y": y_val,
-                                                }
-                                            )
-                                    except Exception:
-                                        if isinstance(condition, dict):
-                                            condition["directrix_equation"] = (
-                                                eq
-                                            )
-                                break
-
-                    # For tangent lines
-                    elif condition_type == "tangent_condition":
-                        # Look for tangent point or equation
-                        point_pattern = (
-                            r'tangent\s+(?:at|through)\s+\(([^)]+)\)'
-                        )
-                        import re
-
-                        point_match = re.search(
-                            point_pattern, problem_statement.lower()
-                        )
-                        if point_match:
-                            try:
-                                coords = point_match.group(1).split(',')
-                                if len(coords) == 2:
-                                    x = float(coords[0].strip())
-                                    y = float(coords[1].strip())
-                                    if isinstance(condition, dict):
-                                        condition["tangent_point"] = str(
-                                            [x, y]
-                                        )
-                            except Exception:
-                                pass
-
-                        # Look for tangent equation
-                        for eq in equations:
-                            if eq != main_equation and (
-                                'x' in eq or 'y' in eq
-                            ):
-                                # This might be a tangent line equation
-                                if (
-                                    'tangent' in problem_statement.lower()
-                                    and eq
-                                    not in [
-                                        c.get("equation", "")
-                                        if isinstance(c, dict)
-                                        else ""
-                                        for c in result["conditions"]
-                                        if isinstance(
-                                            result["conditions"], list
-                                        )
-                                    ]
-                                ):
-                                    if isinstance(condition, dict):
-                                        condition["tangent_equation"] = eq
-                                    break
-
-                    # For intersection conditions
-                    elif condition_type == "intersection_condition":
-                        # Look for the second curve equation
-                        for eq in equations:
-                            if eq != main_equation and eq not in [
-                                c.get("equation", "")
-                                if isinstance(c, dict)
-                                else ""
-                                for c in (
-                                    result.get("conditions", [])
-                                    if isinstance(result, dict)
-                                    else []
-                                )
-                            ]:
-                                # This might be the second curve
-                                if isinstance(condition, dict):
-                                    condition["second_curve_equation"] = eq
-
-                                # Try to determine the type of the second curve
-                                if ('x²' in eq or 'x^2' in eq) and (
-                                    'y²' in eq or 'y^2' in eq
-                                ):
-                                    if isinstance(condition, dict):
-                                        condition["second_curve_type"] = (
-                                            "conic"
-                                        )
-                                elif ('x²' in eq or 'x^2' in eq) or (
-                                    'y²' in eq or 'y^2' in eq
-                                ):
-                                    if isinstance(condition, dict):
-                                        condition["second_curve_type"] = (
-                                            "parabola"
-                                        )
-                                elif 'x' in eq and 'y' in eq:
-                                    if isinstance(condition, dict):
-                                        condition["second_curve_type"] = "line"
-
-                                # Look for intersection count
-                                count_pattern = (
-                                    r'intersect\s+(?:at|in)\s+([0-9]+)\s+point'
-                                )
-                                import re
-
-                                count_match = re.search(
-                                    count_pattern, problem_statement.lower()
-                                )
-                                if count_match:
-                                    try:
-                                        count = int(count_match.group(1))
-                                        if isinstance(condition, dict):
-                                            condition["intersection_count"] = (
-                                                str(count)
-                                            )
-                                        if (
-                                            isinstance(result, dict)
-                                            and "problem_type" in result
-                                        ):
-                                            result["problem_type"] = (
-                                                "find_parameter_from_condition"
-                                            )
-                                        if (
-                                            isinstance(result, dict)
-                                            and "condition_type" in result
-                                        ):
-                                            result["condition_type"] = (
-                                                "intersection_count"
-                                            )
-                                    except Exception:
-                                        pass
-                                break
-
-                    if isinstance(result["conditions"], list) and isinstance(
-                        condition, dict
-                    ):
-                        result["conditions"].append(condition)
-
-            # Check for variables in the conic equation parameters
-            if isinstance(result["parameters"], dict):
-                for param_name, param_value in result["parameters"].items():
-                    if isinstance(param_value, str) and param_value.isalpha():
-                        # This parameter contains a variable
-                        if isinstance(result["variables"], list):
-                            result["variables"].append(
-                                {
-                                    "name": param_value,
-                                    "parameter": param_name,
-                                    "to_solve": True,
-                                }
-                            )
-
-            # If we have a hyperbola with an asymptote condition and a variable
+            # Check for degenerate cases
             if (
-                result["conic_type"] == "hyperbola"
-                and any(
-                    c["type"] == "asymptote_condition"
-                    if isinstance(c, dict)
-                    else False
-                    for c in result["conditions"]
-                    if isinstance(result["conditions"], list)
-                )
-                and result["variables"]
+                abs(coeffs['A']) < 1e-10
+                and abs(coeffs['B']) < 1e-10
+                and abs(coeffs['C']) < 1e-10
             ):
-                result["problem_type"] = "find_parameter_from_condition"
-                result["condition_type"] = "asymptote_slope"
+                if abs(coeffs['D']) < 1e-10 and abs(coeffs['E']) < 1e-10:
+                    if abs(coeffs['F']) < 1e-10:
+                        conic_type = "degenerate (all points)"
+                    else:
+                        conic_type = "degenerate (no points)"
+                else:
+                    conic_type = "degenerate (line)"
 
-            # If we have an ellipse with eccentricity condition and variable
-            elif (
-                result["conic_type"] == "ellipse"
-                and any(
-                    c["type"] == "eccentricity_condition"
-                    if isinstance(c, dict)
-                    else False
-                    for c in result["conditions"]
-                    if isinstance(result["conditions"], list)
-                )
-                and result["variables"]
-            ):
-                result["problem_type"] = "find_parameter_from_condition"
-                if isinstance(result, dict) and "condition_type" in result:
-                    result["condition_type"] = "eccentricity"
-
-            # If we have parabola with a focus condition and a variable
-            elif (
-                result["conic_type"] == "parabola"
-                and any(
-                    c["type"] == "focus_condition"
-                    if isinstance(c, dict)
-                    else False
-                    for c in result["conditions"]
-                    if isinstance(result["conditions"], list)
-                )
-                and result["variables"]
-            ):
-                result["problem_type"] = "find_parameter_from_condition"
-                if isinstance(result, dict) and "condition_type" in result:
-                    result["condition_type"] = "focus_distance"
-
-            # If we have any conic with a point condition and a variable
-            elif (
-                any(
-                    c["type"] == "point_condition"
-                    if isinstance(c, dict)
-                    else False
-                    for c in result["conditions"]
-                    if isinstance(result["conditions"], list)
-                )
-                and result["variables"]
-            ):
-                result["problem_type"] = "find_parameter_from_condition"
-                if isinstance(result["condition_type"], str):
-                    result["condition_type"] = "point_on_curve"
-
-            # If we have any conic with intersection condition and variable
-            elif (
-                any(
-                    c["type"] == "intersection_condition"
-                    if isinstance(c, dict)
-                    else False
-                    for c in result["conditions"]
-                    if isinstance(result["conditions"], list)
-                )
-                and result["variables"]
-            ):
-                result["problem_type"] = "find_parameter_from_condition"
-                if isinstance(result["condition_type"], str):
-                    result["condition_type"] = "intersection_count"
-
-            return json.dumps(result)
+            return json.dumps(
+                {
+                    "result": {
+                        "equation": equation,
+                        "conic_type": conic_type,
+                        "coefficients": {
+                            k: float(v) if not v.is_integer else int(v)
+                            for k, v in coeffs.items()
+                        },
+                        "discriminant": float(discriminant),
+                    }
+                }
+            )
         except Exception as e:
-            return self.handle_exception("parse_conic_problem", e)
+            return self.handle_exception("identify_conic_section_type", e)
+
+    def parse_circle_equation(self, equation: str) -> str:
+        r"""Parses a circle equation and extracts its properties.
+
+        Args:
+            equation: The equation of the circle
+                    (e.g., "x^2 + y^2 = 25" or "(x-3)^2 + (y+2)^2 = 16")
+
+        Returns:
+            str: JSON string with the circle properties
+        """
+        try:
+            # Clean up the equation
+            eq = equation.replace(" ", "").replace("^", "**").lower()
+
+            # Parse the equation using sympy
+            lhs, rhs = eq.split("=")
+            expr = sp.sympify(lhs) - sp.sympify(rhs)
+
+            # Convert to standard form x^2 + y^2 + Dx + Ey + F = 0
+            expr = sp.expand(expr)
+
+            # Extract coefficients
+            x, y = sp.symbols('x y')
+            coeffs = {
+                'A': expr.coeff(x, 2),
+                'B': expr.coeff(y, 2),
+                'D': expr.coeff(x, 1),
+                'E': expr.coeff(y, 1),
+                'F': expr.subs({x: 0, y: 0}),
+            }
+
+            # Check if it's a circle (A = B = 1)
+            if abs(coeffs['A'] - 1) > 1e-10 or abs(coeffs['B'] - 1) > 1e-10:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "Not a circle in standard form",
+                            "equation": equation,
+                        }
+                    }
+                )
+
+            # Calculate center and radius
+            h = -coeffs['D'] / 2
+            k = -coeffs['E'] / 2
+            r_squared = h**2 + k**2 - coeffs['F']
+
+            if r_squared < 0:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "equation represents an imaginary circle",
+                            "equation": equation,
+                            "center": [float(h), float(k)],
+                            "radius_squared": float(r_squared),
+                        }
+                    }
+                )
+
+            radius = sp.sqrt(r_squared)
+
+            # Standard form: (x - h)^2 + (y - k)^2 = r^2
+            standard_form = (
+                f"(x - {float(h)})² + (y - {float(k)})² = {float(radius)}²"
+            )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "equation": equation,
+                        "standard_form": standard_form,
+                        "center": [float(h), float(k)],
+                        "radius": float(radius),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("parse_circle_equation", e)
+
+    def parse_ellipse_equation(self, equation: str) -> str:
+        r"""Parses an ellipse equation and extracts its properties.
+
+        Args:
+            equation: The equation of the ellipse
+                    (e.g., "x^2/9 + y^2/4 = 1" or "(x-2)^2/25+(y+3)^2/16 = 1")
+
+        Returns:
+            str: JSON string with the ellipse properties
+        """
+        try:
+            # Clean up the equation
+            eq = equation.replace(" ", "").replace("^", "**").lower()
+
+            # Parse the equation using sympy
+            lhs, rhs = eq.split("=")
+            expr = sp.sympify(lhs) - sp.sympify(rhs)
+
+            # Convert to standard form Ax^2 + Cy^2 + Dx + Ey + F = 0
+            expr = sp.expand(expr)
+
+            # Extract coefficients
+            x, y = sp.symbols('x y')
+            coeffs = {
+                'A': expr.coeff(x, 2),
+                'C': expr.coeff(y, 2),
+                'D': expr.coeff(x, 1),
+                'E': expr.coeff(y, 1),
+                'F': expr.subs({x: 0, y: 0}),
+            }
+
+            # Check if it's an ellipse (A and C have the same sign)
+            if coeffs['A'] * coeffs['C'] <= 0:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "equation does not represent an ellipse",
+                            "equation": equation,
+                        }
+                    }
+                )
+
+            # Calculate center
+            h = -coeffs['D'] / (2 * coeffs['A'])
+            k = -coeffs['E'] / (2 * coeffs['C'])
+
+            # Calculate semi-major and semi-minor axes
+            constant = (
+                coeffs['F']
+                - (coeffs['D'] ** 2 / (4 * coeffs['A']))
+                - (coeffs['E'] ** 2 / (4 * coeffs['C']))
+            )
+
+            if constant == 0:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "equation represents degenerate ellipse",
+                            "equation": equation,
+                            "center": [float(h), float(k)],
+                        }
+                    }
+                )
+
+            a_squared = -constant / coeffs['A']
+            b_squared = -constant / coeffs['C']
+
+            if a_squared <= 0 or b_squared <= 0:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "Not a real ellipse",
+                            "equation": equation,
+                        }
+                    }
+                )
+
+            a = sp.sqrt(a_squared)
+            b = sp.sqrt(b_squared)
+
+            # Determine orientation
+            if a_squared > b_squared:
+                semi_major = a
+                semi_minor = b
+                orientation = "x"
+            else:
+                semi_major = b
+                semi_minor = a
+                orientation = "y"
+
+            # Calculate eccentricity and foci
+            c = sp.sqrt(abs(semi_major**2 - semi_minor**2))
+            e = c / semi_major
+
+            if orientation == "x":
+                focus1 = [float(h + c), float(k)]
+                focus2 = [float(h - c), float(k)]
+            else:
+                focus1 = [float(h), float(k + c)]
+                focus2 = [float(h), float(k - c)]
+
+            return json.dumps(
+                {
+                    "result": {
+                        "equation": equation,
+                        "center": [float(h), float(k)],
+                        "semi_major": float(semi_major),
+                        "semi_minor": float(semi_minor),
+                        "orientation": orientation,
+                        "eccentricity": float(e),
+                        "foci": [focus1, focus2],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("parse_ellipse_equation", e)
+
+    def parse_hyperbola_equation(self, equation: str) -> str:
+        r"""Parses a hyperbola equation and extracts its properties.
+
+        Args:
+            equation: The equation of the hyperbola
+                    (e.g., "x^2/9 - y^2/4 = 1" or "(y-3)^2/16-(x+2)^2/25 = 1")
+
+        Returns:
+            str: JSON string with the hyperbola properties
+        """
+        try:
+            # Clean up the equation
+            eq = equation.replace(" ", "").replace("^", "**").lower()
+
+            # Parse the equation using sympy
+            lhs, rhs = eq.split("=")
+            expr = sp.sympify(lhs) - sp.sympify(rhs)
+
+            # Convert to standard form Ax^2 + Cy^2 + Dx + Ey + F = 0
+            expr = sp.expand(expr)
+
+            # Extract coefficients
+            x, y = sp.symbols('x y')
+            coeffs = {
+                'A': expr.coeff(x, 2),
+                'C': expr.coeff(y, 2),
+                'D': expr.coeff(x, 1),
+                'E': expr.coeff(y, 1),
+                'F': expr.subs({x: 0, y: 0}),
+            }
+
+            # Check if it's a hyperbola (A and C have opposite signs)
+            if coeffs['A'] * coeffs['C'] >= 0:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "equation does not represent a hyperbola",
+                            "equation": equation,
+                        }
+                    }
+                )
+
+            # Calculate center
+            h = (
+                -coeffs['D'] / (2 * coeffs['A'])
+                if coeffs['A'] != 0
+                else -coeffs['D'] / (2 * coeffs['C'])
+            )
+            k = (
+                -coeffs['E'] / (2 * coeffs['C'])
+                if coeffs['C'] != 0
+                else -coeffs['E'] / (2 * coeffs['A'])
+            )
+
+            # Calculate semi-axes
+            constant = (
+                coeffs['F']
+                - (coeffs['D'] ** 2 / (4 * coeffs['A']))
+                - (coeffs['E'] ** 2 / (4 * coeffs['C']))
+            )
+
+            # Determine orientation and calculate semi-axes
+            if coeffs['A'] > 0 and coeffs['C'] < 0:
+                # Transverse axis along x-axis: x²/a² - y²/b² = 1
+                orientation = "x"
+                a_squared = -constant / coeffs['A']
+                b_squared = constant / coeffs['C']
+            else:  # coeffs['A'] < 0 and coeffs['C'] > 0
+                # Transverse axis along y-axis: y²/a² - x²/b² = 1
+                orientation = "y"
+                a_squared = -constant / coeffs['C']
+                b_squared = constant / coeffs['A']
+
+            if a_squared <= 0 or b_squared <= 0:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "Invalid hyperbola equation",
+                            "equation": equation,
+                        }
+                    }
+                )
+
+            a = sp.sqrt(a_squared)
+            b = sp.sqrt(b_squared)
+
+            # Calculate focal distance and eccentricity
+            c = sp.sqrt(a_squared + b_squared)
+            e = c / a
+
+            # Calculate foci
+            if orientation == "x":
+                focus1 = [float(h + c), float(k)]
+                focus2 = [float(h - c), float(k)]
+            else:
+                focus1 = [float(h), float(k + c)]
+                focus2 = [float(h), float(k - c)]
+
+            # Calculate asymptotes
+            if orientation == "x":
+                slope = b / a
+                asymptote1 = f"y = {k} + {float(slope)}(x - {h})"
+                asymptote2 = f"y = {k} - {float(slope)}(x - {h})"
+            else:
+                slope = a / b
+                asymptote1 = f"y = {k} + {float(slope)}(x - {h})"
+                asymptote2 = f"y = {k} - {float(slope)}(x - {h})"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "equation": equation,
+                        "center": [float(h), float(k)],
+                        "semi_major": float(a),
+                        "semi_minor": float(b),
+                        "orientation": orientation,
+                        "eccentricity": float(e),
+                        "foci": [focus1, focus2],
+                        "asymptotes": [asymptote1, asymptote2],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("parse_hyperbola_equation", e)
+
+    def parse_parabola_equation(self, equation: str) -> str:
+        r"""Parses a parabola equation and extracts its properties.
+
+        Args:
+            equation: The equation of the parabola
+                    (e.g., "y = x^2" or "x = 2(y-3)^2 + 1")
+
+        Returns:
+            str: JSON string with the parabola properties
+        """
+        try:
+            # Clean up the equation
+            eq = equation.replace(" ", "").replace("^", "**").lower()
+
+            # Parse the equation using sympy
+            lhs, rhs = eq.split("=")
+            expr = sp.sympify(lhs) - sp.sympify(rhs)
+
+            # Convert to standard form Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
+            expr = sp.expand(expr)
+
+            # Extract coefficients
+            x, y = sp.symbols('x y')
+            coeffs = {
+                'A': expr.coeff(x, 2),
+                'B': expr.coeff(x * y),
+                'C': expr.coeff(y, 2),
+                'D': expr.coeff(x, 1),
+                'E': expr.coeff(y, 1),
+                'F': expr.subs({x: 0, y: 0}),
+            }
+
+            # Check if it's a parabola (one of A or C is zero, but not both)
+            if (abs(coeffs['A']) < 1e-10 and abs(coeffs['C']) < 1e-10) or abs(
+                coeffs['B']
+            ) > 1e-10:
+                return json.dumps(
+                    {
+                        "result": {
+                            "error": "Not a standard form parabola",
+                            "equation": equation,
+                        }
+                    }
+                )
+
+            # Determine orientation and vertex
+            if abs(coeffs['A']) < 1e-10:  # C ≠ 0, A = 0
+                # Parabola opens left or right: x = a(y-k)² + h
+                orientation = "right" if coeffs['C'] > 0 else "left"
+                a = coeffs['C']
+
+                # Complete the square for y
+                # Original: Cy² + Ey + (Dx + F) = 0
+                # Rewrite as: C(y² + (E/C)y) + Dx + F = 0
+                # Complete square: C(y + E/(2C))² - CE²/(4C²) + Dx + F = 0
+                # Simplify: C(y + E/(2C))² + Dx + F - E²/(4C) = 0
+                # Rearrange: x = -(C(y + E/(2C))² + F - E²/(4C))/D
+
+                k = -coeffs['E'] / (2 * coeffs['C'])
+                h = (
+                    -(coeffs['F'] - coeffs['E'] ** 2 / (4 * coeffs['C']))
+                    / coeffs['D']
+                )
+
+            else:  # A ≠ 0, C = 0
+                # Parabola opens up or down: y = a(x-h)² + k
+                orientation = "up" if coeffs['A'] > 0 else "down"
+                a = coeffs['A']
+
+                # Complete the square for x
+                # Original: Ax² + Dx + (Ey + F) = 0
+                # Rewrite as: A(x² + (D/A)x) + Ey + F = 0
+                # Complete square: A(x + D/(2A))² - AD²/(4A²) + Ey + F = 0
+                # Simplify: A(x + D/(2A))² + Ey + F - D²/(4A) = 0
+                # Rearrange: y = -(A(x + D/(2A))² + F - D²/(4A))/E
+
+                h = -coeffs['D'] / (2 * coeffs['A'])
+                k = (
+                    -(coeffs['F'] - coeffs['D'] ** 2 / (4 * coeffs['A']))
+                    / coeffs['E']
+                )
+
+            # Calculate focal distance and focus
+            p = 1 / (4 * abs(a))
+
+            if orientation == "up":
+                focus = [float(h), float(k + p)]
+                directrix = f"y = {float(k - p)}"
+            elif orientation == "down":
+                focus = [float(h), float(k - p)]
+                directrix = f"y = {float(k + p)}"
+            elif orientation == "right":
+                focus = [float(h + p), float(k)]
+                directrix = f"x = {float(h - p)}"
+            else:  # orientation == "left"
+                focus = [float(h - p), float(k)]
+                directrix = f"x = {float(h + p)}"
+
+            # Vertex form
+            if orientation in ["up", "down"]:
+                vertex_form = f"y = {float(a)}(x - {float(h)})² + {float(k)}"
+            else:
+                vertex_form = f"x = {float(a)}(y - {float(k)})² + {float(h)}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "equation": equation,
+                        "vertex": [float(h), float(k)],
+                        "focus": focus,
+                        "directrix": directrix,
+                        "orientation": orientation,
+                        "coefficient": float(a),
+                        "vertex_form": vertex_form,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("parse_parabola_equation", e)
 
     def solve_quadratic(self, a: float, b: float, c: float) -> str:
         r"""Solves a quadratic equation ax² + bx + c = 0.
@@ -4154,7 +4150,11 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.compute_line_bisector),
             FunctionTool(self.check_points_collinear),
             # Conic section helpers
-            FunctionTool(self.parse_conic_equation),
+            FunctionTool(self.identify_conic_section_type),
+            FunctionTool(self.parse_circle_equation),
+            FunctionTool(self.parse_ellipse_equation),
+            FunctionTool(self.parse_hyperbola_equation),
+            FunctionTool(self.parse_parabola_equation),
             FunctionTool(self.solve_quadratic),
             FunctionTool(self.generate_circle_equation),
             FunctionTool(self.generate_ellipse_equation),
