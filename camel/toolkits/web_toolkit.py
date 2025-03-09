@@ -856,7 +856,7 @@ class WebToolkit(BaseToolkit):
 
     def __init__(
         self,
-        headless: bool = True,
+        headless: bool = False,
         cache_dir: Optional[str] = None,
         history_window: int = 5,
         web_agent_model: Optional[BaseModelBackend] = None,
