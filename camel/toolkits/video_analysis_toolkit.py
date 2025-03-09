@@ -15,12 +15,10 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from PIL import Image
 
-if TYPE_CHECKING:
-    pass
 from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, OpenAIAudioModels
@@ -159,7 +157,8 @@ class VideoAnalysisToolkit(BaseToolkit):
 
     def __del__(self):
         r"""Clean up temporary directories and files when the object is
-        destroyed."""
+        destroyed.
+        """
         # Clean up temporary files
         for temp_file in self._temp_files:
             if os.path.exists(temp_file):
@@ -252,12 +251,6 @@ class VideoAnalysisToolkit(BaseToolkit):
             list: A list of PIL.Image.Image objects representing
                 the extracted keyframes.
         """
-        if num_frames <= 0:
-            logger.warning(
-                f"Invalid num_frames: {num_frames}, using default of 1"
-            )
-            num_frames = 1
-
         from scenedetect import (  # type: ignore[import-untyped]
             SceneManager,
             VideoManager,
@@ -265,6 +258,12 @@ class VideoAnalysisToolkit(BaseToolkit):
         from scenedetect.detectors import (  # type: ignore[import-untyped]
             ContentDetector,
         )
+
+        if num_frames <= 0:
+            logger.warning(
+                f"Invalid num_frames: {num_frames}, using default of 1"
+            )
+            num_frames = 1
 
         video_manager = VideoManager([video_path])
         scene_manager = SceneManager()
@@ -333,6 +332,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         Returns:
             str: The answer to the question.
         """
+        from urllib.parse import urlparse
+
         if not question:
             raise ValueError("Question cannot be empty")
 
@@ -341,8 +342,6 @@ class VideoAnalysisToolkit(BaseToolkit):
                 f"Invalid num_frames: {num_frames}, using default of 28"
             )
             num_frames = 28
-
-        from urllib.parse import urlparse
 
         parsed_url = urlparse(video_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])

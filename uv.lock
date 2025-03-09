@@ -643,6 +643,23 @@ data-tools = [
     { name = "stripe" },
     { name = "textblob" },
 ]
+dev = [
+    { name = "gradio" },
+    { name = "mock" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "toml" },
+    { name = "types-colorama" },
+    { name = "types-mock" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "types-setuptools" },
+    { name = "types-tqdm" },
+]
 dev-tools = [
     { name = "agentops" },
     { name = "docker" },
@@ -651,6 +668,14 @@ dev-tools = [
     { name = "jupyter-client" },
     { name = "tree-sitter" },
     { name = "tree-sitter-python" },
+]
+docs = [
+    { name = "docutils" },
+    { name = "myst-parser" },
+    { name = "nbsphinx" },
+    { name = "sphinx" },
+    { name = "sphinx-book-theme" },
+    { name = "sphinxext-rediraffe" },
 ]
 document-tools = [
     { name = "beautifulsoup4" },
@@ -738,33 +763,6 @@ web-tools = [
     { name = "wolframalpha" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "gradio" },
-    { name = "mock" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "toml" },
-    { name = "types-colorama" },
-    { name = "types-mock" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-    { name = "types-setuptools" },
-    { name = "types-tqdm" },
-]
-docs = [
-    { name = "docutils" },
-    { name = "myst-parser" },
-    { name = "nbsphinx" },
-    { name = "sphinx" },
-    { name = "sphinx-book-theme" },
-    { name = "sphinxext-rediraffe" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "accelerate", marker = "extra == 'all'", specifier = ">=0.26.0,<0.27" },
@@ -807,6 +805,7 @@ requires-dist = [
     { name = "docker", marker = "extra == 'all'", specifier = ">=7.1.0,<8" },
     { name = "docker", marker = "extra == 'dev-tools'", specifier = ">=7.1.0,<8" },
     { name = "docstring-parser", specifier = ">=0.15,<0.16" },
+    { name = "docutils", marker = "extra == 'docs'", specifier = "<0.20.0" },
     { name = "docx2txt", marker = "extra == 'all'", specifier = ">=0.8,<0.9" },
     { name = "docx2txt", marker = "extra == 'document-tools'", specifier = ">=0.8,<0.9" },
     { name = "duckduckgo-search", marker = "extra == 'all'", specifier = ">=6.3.5,<7" },
@@ -827,6 +826,7 @@ requires-dist = [
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
     { name = "googlemaps", marker = "extra == 'web-tools'", specifier = ">=4.10.0,<5" },
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
+    { name = "gradio", marker = "extra == 'dev'", specifier = ">=3,<4" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'media-tools'", specifier = ">=2.34.2,<3" },
@@ -842,8 +842,12 @@ requires-dist = [
     { name = "mistralai", marker = "extra == 'all'", specifier = ">=1.1.0,<2" },
     { name = "mistralai", marker = "extra == 'model-platforms'", specifier = ">=1.1.0,<2" },
     { name = "mock", marker = "extra == 'all'", specifier = ">=5,<6" },
+    { name = "mock", marker = "extra == 'dev'", specifier = ">=5,<6" },
     { name = "mock", marker = "extra == 'test'", specifier = ">=5,<6" },
     { name = "mypy", marker = "extra == 'all'", specifier = ">=1.5.1,<2" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.1,<2" },
+    { name = "myst-parser", marker = "extra == 'docs'" },
+    { name = "nbsphinx", marker = "extra == 'docs'" },
     { name = "nebula3-python", marker = "extra == 'all'", specifier = "==3.8.2" },
     { name = "nebula3-python", marker = "extra == 'rag'", specifier = "==3.8.2" },
     { name = "nebula3-python", marker = "extra == 'storage'", specifier = "==3.8.2" },
@@ -877,6 +881,7 @@ requires-dist = [
     { name = "praw", marker = "extra == 'all'", specifier = ">=7.7.1,<8" },
     { name = "praw", marker = "extra == 'communication-tools'", specifier = ">=7.7.1,<8" },
     { name = "pre-commit", marker = "extra == 'all'", specifier = ">=3,<4" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3,<4" },
     { name = "protobuf", specifier = ">=5,<6" },
     { name = "psutil", specifier = ">=5.9.8,<6" },
     { name = "pydantic", specifier = ">=1.9,<2.10" },
@@ -894,10 +899,13 @@ requires-dist = [
     { name = "pytelegrambotapi", marker = "extra == 'all'", specifier = ">=4.18.0,<5" },
     { name = "pytelegrambotapi", marker = "extra == 'communication-tools'", specifier = ">=4.18.0,<5" },
     { name = "pytest", marker = "extra == 'all'", specifier = ">=7,<8" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7,<8" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7,<8" },
     { name = "pytest-asyncio", marker = "extra == 'all'", specifier = ">=0.23.0,<0.24" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
     { name = "pyyaml", specifier = ">=6.0.2,<7" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
@@ -912,6 +920,7 @@ requires-dist = [
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
     { name = "rouge", marker = "extra == 'all'", specifier = ">=1.0.1,<2" },
     { name = "rouge", marker = "extra == 'data-tools'", specifier = ">=1.0.1,<2" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7,<0.8" },
     { name = "scenedetect", marker = "extra == 'all'", specifier = ">=0.6.5.2" },
     { name = "scenedetect", marker = "extra == 'media-tools'", specifier = ">=0.6.5.2" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'all'", specifier = "==1.7.11" },
@@ -926,6 +935,9 @@ requires-dist = [
     { name = "slack-sdk", marker = "extra == 'communication-tools'", specifier = ">=3.27.2,<4" },
     { name = "soundfile", marker = "extra == 'all'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'huggingface'", specifier = ">=0.13,<0.14" },
+    { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7,<8" },
+    { name = "sphinx-book-theme", marker = "extra == 'docs'" },
+    { name = "sphinxext-rediraffe", marker = "extra == 'docs'", specifier = ">=0.2.7,<0.3" },
     { name = "stripe", marker = "extra == 'all'", specifier = ">=11.3.0,<12" },
     { name = "stripe", marker = "extra == 'data-tools'", specifier = ">=11.3.0,<12" },
     { name = "sympy", marker = "extra == 'all'", specifier = ">=1.13.3,<2" },
@@ -937,6 +949,7 @@ requires-dist = [
     { name = "textblob", marker = "extra == 'all'", specifier = ">=0.17.1,<0.18" },
     { name = "textblob", marker = "extra == 'data-tools'", specifier = ">=0.17.1,<0.18" },
     { name = "tiktoken", specifier = ">=0.7.0,<0.8" },
+    { name = "toml", marker = "extra == 'dev'", specifier = ">=0.10.2" },
     { name = "torch", marker = "extra == 'all'" },
     { name = "torch", marker = "extra == 'huggingface'" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=4,<5" },
@@ -946,11 +959,17 @@ requires-dist = [
     { name = "tree-sitter-python", marker = "extra == 'all'", specifier = ">=0.23.6,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'dev-tools'", specifier = ">=0.23.6,<0.24" },
     { name = "types-colorama", marker = "extra == 'all'", specifier = ">=0.4.15,<0.5" },
+    { name = "types-colorama", marker = "extra == 'dev'", specifier = ">=0.4.15,<0.5" },
     { name = "types-mock", marker = "extra == 'all'", specifier = ">=5.1.0,<6" },
+    { name = "types-mock", marker = "extra == 'dev'", specifier = ">=5.1.0,<6" },
     { name = "types-pyyaml", marker = "extra == 'all'", specifier = ">=6.0.12,<7" },
+    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12,<7" },
     { name = "types-requests", marker = "extra == 'all'", specifier = ">=2.31.0,<3" },
+    { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.31.0,<3" },
     { name = "types-setuptools", marker = "extra == 'all'", specifier = ">=69.2.0,<70" },
+    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=69.2.0,<70" },
     { name = "types-tqdm", marker = "extra == 'all'", specifier = ">=4.66.0,<5" },
+    { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.66.0,<5" },
     { name = "unstructured", marker = "extra == 'all'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'document-tools'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'rag'", specifier = "==0.16.20" },
@@ -963,34 +982,7 @@ requires-dist = [
     { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
 ]
-provides-extras = ["test", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "all"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "gradio", specifier = ">=3,<4" },
-    { name = "mock", specifier = ">=5,<6" },
-    { name = "mypy", specifier = ">=1.5.1,<2" },
-    { name = "pre-commit", specifier = ">=3,<4" },
-    { name = "pytest", specifier = ">=7,<8" },
-    { name = "pytest-asyncio", specifier = ">=0.23.0,<0.24" },
-    { name = "pytest-cov", specifier = ">=4,<5" },
-    { name = "ruff", specifier = ">=0.7,<0.8" },
-    { name = "toml", specifier = ">=0.10.2" },
-    { name = "types-colorama", specifier = ">=0.4.15,<0.5" },
-    { name = "types-mock", specifier = ">=5.1.0,<6" },
-    { name = "types-pyyaml", specifier = ">=6.0.12,<7" },
-    { name = "types-requests", specifier = ">=2.31.0,<3" },
-    { name = "types-setuptools", specifier = ">=69.2.0,<70" },
-    { name = "types-tqdm", specifier = ">=4.66.0,<5" },
-]
-docs = [
-    { name = "docutils", specifier = "<0.20.0" },
-    { name = "myst-parser" },
-    { name = "nbsphinx" },
-    { name = "sphinx", specifier = ">=7,<8" },
-    { name = "sphinx-book-theme" },
-    { name = "sphinxext-rediraffe", specifier = ">=0.2.7,<0.3" },
-]
+provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "all"]
 
 [[package]]
 name = "certifi"
