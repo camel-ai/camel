@@ -77,6 +77,9 @@ document_tools = [
     "pandasai>=2.3.0,<3",
     "prance>=23.6.21.0,<24",
     "openapi-spec-validator>=0.7.1,<0.8",
+    "xls2xlsx>=0.2.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.5",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -84,6 +87,7 @@ media_tools = [
     "pydub>=0.25.1,<0.26",
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
+    "scenedetect>=0.6.5.2",
 ]
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
@@ -236,6 +240,10 @@ all = [
     "pytest-asyncio>=0.23.0,<0.24",
     "gradio>=3,<4",
     "mock>=5,<6",
+    "xls2xlsx>=0.2.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.5",
+    "scenedetect>=0.6.5.2",
 ]
 
 [project.urls]
@@ -428,5 +436,9 @@ module = [
     "yaml",
     "mock",
     "uvicorn",
+    "xls2xlsx",
+    "tabulate",
+    "openpyxl",
+    "scenedetect",
 ]
 ignore_missing_imports = true
