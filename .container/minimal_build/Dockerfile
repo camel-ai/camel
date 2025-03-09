@@ -10,6 +10,7 @@ WORKDIR /app/camel
 # Setup virtual environment and install dependencies
 RUN uv venv .venv --python=3.10 && \
     . .venv/bin/activate && \
-    uv pip install -e .
+    uv pip install -e . && \
+    pip install pre-commit
 
 CMD ["tail", "-f", "/dev/null"]
