@@ -11,57 +11,116 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-import base64
 import os
+import uuid
 from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
 
-from camel.agents import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend, OpenAIAudioModels
+from camel.models import BaseAudioModel, BaseModelBackend, OpenAIAudioModels
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class AudioAnalysisToolkit(BaseToolkit):
-    r"""A class representing a toolkit for audio operations.
-
-    This class provides methods for processing and understanding audio data.
+def download_file(url: str, cache_dir: str) -> str:
+    r"""Download a file from a URL to a local cache directory.
 
     Args:
-        cache_dir (Optional[str]): Directory path for caching audio files.
-            Defaults to 'tmp/' if not specified.
-        transcribe_model (Optional[OpenAIAudioModels]): Model used for audio transcription.
-            Must be provided, otherwise raises ValueError.
-        audio_reasoning_model (Optional[BaseModelBackend]): Model used for audio reasoning
-            and question answering. If not provided, uses default model in ChatAgent.
+        url (str): The URL of the file to download.
+        cache_dir (str): The directory to save the downloaded file.
+
+    Returns:
+        str: The path to the downloaded file.
+
+    Raises:
+        Exception: If the download fails.
+    """
+    # Create cache directory if it doesn't exist
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # Extract filename from URL or generate a unique one
+    parsed_url = urlparse(url)
+    filename = os.path.basename(parsed_url.path)
+    if not filename:
+        # Generate a unique filename if none is provided in the URL
+        file_ext = ".mp3"  # Default extension
+        content_type = None
+
+        # Try to get the file extension from the content type
+        try:
+            response = requests.head(url)
+            content_type = response.headers.get('Content-Type', '')
+            if 'audio/wav' in content_type:
+                file_ext = '.wav'
+            elif 'audio/mpeg' in content_type:
+                file_ext = '.mp3'
+            elif 'audio/ogg' in content_type:
+                file_ext = '.ogg'
+        except Exception:
+            pass
+
+        filename = f"{uuid.uuid4()}{file_ext}"
+
+    local_path = os.path.join(cache_dir, filename)
+
+    # Download the file
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+
+    with open(local_path, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+
+    logger.debug(f"Downloaded file from {url} to {local_path}")
+    return local_path
+
+
+class AudioAnalysisToolkit(BaseToolkit):
+    r"""A toolkit for audio processing and analysis.
+
+    This class provides methods for processing, transcribing, and extracting
+    information from audio data, including direct question answering about
+    audio content.
+
+    Args:
+        cache_dir (Optional[str]): Directory path for caching downloaded audio
+            files. If not provided, 'tmp/' will be used. (default: :obj:`None`)
+        transcribe_model (Optional[BaseAudioModel]): Model used for audio
+            transcription. If not provided, OpenAIAudioModels will be used.
+            (default: :obj:`None`)
+        audio_reasoning_model (Optional[BaseModelBackend]): Model used for
+            audio reasoning and question answering. If not provided, uses the
+            default model from ChatAgent. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         cache_dir: Optional[str] = None,
-        # reasoning: Optional[bool] = False,
-        transcribe_model: Optional[OpenAIAudioModels] = None,
+        transcribe_model: Optional[BaseAudioModel] = None,
         audio_reasoning_model: Optional[BaseModelBackend] = None,
     ):
         self.cache_dir = 'tmp/'
         if cache_dir:
             self.cache_dir = cache_dir
 
-        # self.client = openai.OpenAI()
-        if transcribe_model is None:
-            raise ValueError("Transcribe Model not Initialized")
-        # self.reasoning = reasoning
-        self.transcribe_model = transcribe_model
-        self.audio_reasoning_model = audio_reasoning_model
+        if transcribe_model:
+            self.transcribe_model = transcribe_model
+        else:
+            self.transcribe_model = OpenAIAudioModels()
+            logger.warning(
+                "No audio transcription model provided. "
+                "Using OpenAIAudioModels."
+            )
+
         from camel.agents import ChatAgent
-        if self.audio_reasoning_model:
-            self.audio_agent = ChatAgent(model=self.audio_reasoning_model)
+
+        if audio_reasoning_model:
+            self.audio_agent = ChatAgent(model=audio_reasoning_model)
         else:
             self.audio_agent = ChatAgent()
             logger.warning(
@@ -82,10 +141,6 @@ class AudioAnalysisToolkit(BaseToolkit):
             f"Calling transcribe_audio method for audio file `{audio_path}`."
         )
 
-        if self.transcribe_model is None:
-            logger.warning("Audio transcription is disabled or not available")
-            return "No audio transcription available."
-
         try:
             audio_transcript = self.transcribe_model.speech_to_text(audio_path)
             if not audio_transcript:
@@ -98,7 +153,7 @@ class AudioAnalysisToolkit(BaseToolkit):
 
     def ask_question_about_audio(self, audio_path: str, question: str) -> str:
         r"""Ask any question about the audio and get the answer using
-            multimodal model.
+        multimodal model.
 
         Args:
             audio_path (str): The path to the audio file.
@@ -115,80 +170,59 @@ class AudioAnalysisToolkit(BaseToolkit):
 
         parsed_url = urlparse(audio_path)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
-        encoded_string = None
+        local_audio_path = audio_path
 
+        # If the audio is a URL, download it first
         if is_url:
-            res = requests.get(audio_path)
-            res.raise_for_status()
-            audio_data = res.content
-            encoded_string = base64.b64encode(audio_data).decode('utf-8')
-        else:
-            with open(audio_path, "rb") as audio_file:
-                audio_data = audio_file.read()
-            audio_file.close()
-            encoded_string = base64.b64encode(audio_data).decode('utf-8')
+            try:
+                local_audio_path = download_file(audio_path, self.cache_dir)
+            except Exception as e:
+                logger.error(f"Failed to download audio file: {e}")
+                return f"Failed to download audio file: {e!s}"
 
-        file_suffix = os.path.splitext(audio_path)[1]
-        file_format = file_suffix[1:]
-
-        # if self.reasoning:
-        # text_prompt = f"Transcribe all the content in the speech into text."
-        transcript = self.audio2text(audio_path)
-        reasoning_prompt = f"""
-        <speech_transcription_result>{transcript}</speech_transcription_result>
-
-        Please answer the following question based on the speech transcription result above:
-        <question>{question}</question>
-        """
-        msg = BaseMessage.make_user_message(
-            role_name="User", content=reasoning_prompt
-        )
-        # response = self.audio_reasoning_model.chat_completion(msg)
-        response = self.audio_agent.step(msg)
-        # reasoning_result = response.choices[0].message.content
-        if not response or not response.msgs:
-            logger.error("Model returned empty response")
-            return (
-                "Failed to generate an answer. "
-                "The model returned an empty response."
+        # Try direct audio question answering first
+        try:
+            # Check if the transcribe_model supports audio_question_answering
+            if hasattr(self.transcribe_model, 'audio_question_answering'):
+                logger.debug("Using direct audio question answering")
+                response = self.transcribe_model.audio_question_answering(
+                    local_audio_path, question
+                )
+                return response
+        except Exception as e:
+            logger.warning(
+                f"Direct audio question answering failed: {e}. "
+                "Falling back to transcription-based approach."
             )
 
-        answer = response.msgs[0].content
-        return answer
+        # Fallback to transcription-based approach
+        try:
+            transcript = self.audio2text(local_audio_path)
+            reasoning_prompt = f"""
+            <speech_transcription_result>{transcript}</
+            speech_transcription_result>
 
-        # @mengkang: The following part is to answer a question directly use a audio model. We need to refactor the openai_audio_models.py to support this.
-        # else:
-        #     text_prompt = f"""Answer the following question based on the given \
-        #     audio information:\n\n{question}"""
+            Please answer the following question based on the speech 
+            transcription result above:
+            <question>{question}</question>
+            """
+            msg = BaseMessage.make_user_message(
+                role_name="User", content=reasoning_prompt
+            )
+            response = self.audio_agent.step(msg)
 
-        #     completion = self.client.chat.completions.create(
-        #         # model="gpt-4o-audio-preview",
-        #         model = "gpt-4o-mini-audio-preview",
-        #         messages=[
-        #             {
-        #                 "role": "system",
-        #                 "content": "You are a helpful assistant specializing in \
-        #                 audio analysis.",
-        #             },
-        #             {  # type: ignore[list-item, misc]
-        #                 "role": "user",
-        #                 "content": [
-        #                     {"type": "text", "text": text_prompt},
-        #                     {
-        #                         "type": "input_audio",
-        #                         "input_audio": {
-        #                             "data": encoded_string,
-        #                             "format": file_format,
-        #                         },
-        #                     },
-        #                 ],
-        #             },
-        #         ],
-        #     )  # type: ignore[misc]
+            if not response or not response.msgs:
+                logger.error("Model returned empty response")
+                return (
+                    "Failed to generate an answer. "
+                    "The model returned an empty response."
+                )
 
-        # response: str = str(completion.choices[0].message.content)
-        # logger.debug(f"Response: {response}")
-        # return str(response)
+            answer = response.msgs[0].content
+            return answer
+        except Exception as e:
+            logger.error(f"Audio question answering failed: {e}")
+            return f"Failed to answer question about audio: {e!s}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the functions
