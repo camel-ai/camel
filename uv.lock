@@ -558,6 +558,7 @@ all = [
     { name = "google-cloud-storage" },
     { name = "googlemaps" },
     { name = "gradio" },
+    { name = "html2text" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
     { name = "jupyter-client" },
@@ -578,6 +579,7 @@ all = [
     { name = "pandas" },
     { name = "pandasai" },
     { name = "pillow" },
+    { name = "playwright" },
     { name = "prance" },
     { name = "praw" },
     { name = "pre-commit" },
@@ -753,8 +755,10 @@ web-tools = [
     { name = "fastapi" },
     { name = "firecrawl-py" },
     { name = "googlemaps" },
+    { name = "html2text" },
     { name = "linkup-sdk" },
     { name = "newspaper3k" },
+    { name = "playwright" },
     { name = "pyowm" },
     { name = "requests-oauthlib" },
     { name = "sympy" },
@@ -827,6 +831,8 @@ requires-dist = [
     { name = "googlemaps", marker = "extra == 'web-tools'", specifier = ">=4.10.0,<5" },
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
     { name = "gradio", marker = "extra == 'dev'", specifier = ">=3,<4" },
+    { name = "html2text", marker = "extra == 'all'", specifier = ">=2024.2.26" },
+    { name = "html2text", marker = "extra == 'web-tools'", specifier = ">=2024.2.26" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'media-tools'", specifier = ">=2.34.2,<3" },
@@ -876,6 +882,8 @@ requires-dist = [
     { name = "pandasai", marker = "extra == 'rag'", specifier = ">=2.3.0,<3" },
     { name = "pillow", marker = "extra == 'all'", specifier = ">=10.1.0,<11.0.0" },
     { name = "pillow", marker = "extra == 'media-tools'", specifier = ">=10.1.0,<11.0.0" },
+    { name = "playwright", marker = "extra == 'all'", specifier = ">=1.50.0" },
+    { name = "playwright", marker = "extra == 'web-tools'", specifier = ">=1.50.0" },
     { name = "prance", marker = "extra == 'all'", specifier = ">=23.6.21.0,<24" },
     { name = "prance", marker = "extra == 'document-tools'", specifier = ">=23.6.21.0,<24" },
     { name = "praw", marker = "extra == 'all'", specifier = ">=7.7.1,<8" },
@@ -2326,6 +2334,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/2c/48/71de9ed269fdae9c8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/c6/80c95b1b2b94682a72cbdbfb85b81ae2daffa4291fbfa1b1464502ede10d/hpack-4.1.0-py3-none-any.whl", hash = "sha256:157ac792668d995c657d93111f46b4535ed114f0c9c8d672271bbec7eae1b496", size = 34357 },
 ]
+
+[[package]]
+name = "html2text"
+version = "2024.2.26"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/43/e1d53588561e533212117750ee79ad0ba02a41f52a08c1df3396bd466c05/html2text-2024.2.26.tar.gz", hash = "sha256:05f8e367d15aaabc96415376776cdd11afd5127a77fce6e36afc60c563ca2c32", size = 56527 }
 
 [[package]]
 name = "html5lib"
@@ -4175,6 +4189,24 @@ wheels = [
 ]
 
 [[package]]
+name = "playwright"
+version = "1.50.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "greenlet" },
+    { name = "pyee" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/5e/068dea3c96e9c09929b45c92cf7e573403b52a89aa463f89b9da9b87b7a4/playwright-1.50.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:f36d754a6c5bd9bf7f14e8f57a2aea6fd08f39ca4c8476481b9c83e299531148", size = 40277564 },
+    { url = "https://files.pythonhosted.org/packages/78/85/b3deb3d2add00d2a6ee74bf6f57ccefb30efc400fd1b7b330ba9a3626330/playwright-1.50.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:40f274384591dfd27f2b014596250b2250c843ed1f7f4ef5d2960ecb91b4961e", size = 39521844 },
+    { url = "https://files.pythonhosted.org/packages/f3/f6/002b3d98df9c84296fea84f070dc0d87c2270b37f423cf076a913370d162/playwright-1.50.0-py3-none-macosx_11_0_universal2.whl", hash = "sha256:9922ef9bcd316995f01e220acffd2d37a463b4ad10fd73e388add03841dfa230", size = 40277563 },
+    { url = "https://files.pythonhosted.org/packages/b9/63/c9a73736e434df894e484278dddc0bf154312ff8d0f16d516edb790a7d42/playwright-1.50.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:8fc628c492d12b13d1f347137b2ac6c04f98197ff0985ef0403a9a9ee0d39131", size = 45076712 },
+    { url = "https://files.pythonhosted.org/packages/bd/2c/a54b5a64cc7d1a62f2d944c5977fb3c88e74d76f5cdc7966e717426bce66/playwright-1.50.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ffcff35f72db2689a79007aee78f1b0621a22e6e3d6c1f58aaa9ac805bf4497c", size = 44493111 },
+    { url = "https://files.pythonhosted.org/packages/2b/4a/047cbb2ffe1249bd7a56441fc3366fb4a8a1f44bc36a9061d10edfda2c86/playwright-1.50.0-py3-none-win32.whl", hash = "sha256:3b906f4d351260016a8c5cc1e003bb341651ae682f62213b50168ed581c7558a", size = 34784543 },
+    { url = "https://files.pythonhosted.org/packages/bc/2b/e944e10c9b18e77e43d3bb4d6faa323f6cc27597db37b75bc3fd796adfd5/playwright-1.50.0-py3-none-win_amd64.whl", hash = "sha256:1859423da82de631704d5e3d88602d755462b0906824c1debe140979397d2e8d", size = 34784546 },
+]
+
+[[package]]
 name = "pluggy"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4559,6 +4591,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fe/9a/e6bca0eed82db26562c73b5076539a4a08d3cffd19c3cc5913a3e61145fd/pydub-0.25.1.tar.gz", hash = "sha256:980a33ce9949cab2a569606b65674d748ecbca4f0796887fd6f46173a7b0d30f", size = 38326 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl", hash = "sha256:65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6", size = 32327 },
+]
+
+[[package]]
+name = "pyee"
+version = "12.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/37/8fb6e653597b2b67ef552ed49b438d5398ba3b85a9453f8ada0fd77d455c/pyee-12.1.1.tar.gz", hash = "sha256:bbc33c09e2ff827f74191e3e5bbc6be7da02f627b7ec30d86f5ce1a6fb2424a3", size = 30915 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/68/7e150cba9eeffdeb3c5cecdb6896d70c8edd46ce41c0491e12fb2b2256ff/pyee-12.1.1-py3-none-any.whl", hash = "sha256:18a19c650556bb6b32b406d7f017c8f513aceed1ef7ca618fb65de7bd2d347ef", size = 15527 },
 ]
 
 [[package]]
