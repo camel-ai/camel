@@ -462,7 +462,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
     # ====================== CONIC SECTION HELPERS ======================
 
-    def parse_conic_equation_new(self, problem_statement: str) -> str:
+    def parse_conic_equation(self, problem_statement: str) -> str:
         r"""Parses a complete conic section problem statement and
             identifies components.
 
@@ -988,216 +988,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return json.dumps(result)
         except Exception as e:
             return self.handle_exception("parse_conic_problem", e)
-
-    def parse_conic_equation(self, equation: str) -> str:
-        r"""Parses a conic section equation and identifies
-            its type and parameters.
-
-        Args:
-            equation: String representation of the conic equation
-
-        Returns:
-            str: JSON string with conic type and parameters
-        """
-        try:
-            self.logger.info(f"Parsing conic equation: {equation}")
-
-            # Convert the equation string to a SymPy expression
-            x, y = sp.symbols('x y')
-
-            # Remove any "= 0" or "= C" part and
-            # move everything to the left side
-            if '=' in equation:
-                left_side, right_side = equation.split('=', 1)
-                equation = f"({left_side}) - ({right_side})"
-
-            expr = sp.sympify(equation)
-
-            # Expand the expression to get the general form
-            expr = sp.expand(expr)
-
-            # Extract coefficients of the general form:
-            # Ax² + Bxy + Cy² + Dx + Ey + F = 0
-            coeff_x2 = expr.coeff(x, 2)
-            coeff_xy = expr.coeff(x, 1).coeff(y, 1)
-            coeff_y2 = expr.coeff(y, 2)
-            coeff_x = expr.coeff(x, 1).subs(y, 0)
-            coeff_y = expr.coeff(y, 1).subs(x, 0)
-            coeff_const = expr.subs({x: 0, y: 0})
-
-            # Determine the type of conic section based on the coefficients
-            A, B, C = coeff_x2, coeff_xy, coeff_y2
-            D, E, F = coeff_x, coeff_y, coeff_const
-
-            # Calculate the discriminant
-            discriminant = B**2 - 4 * A * C
-
-            # Determine conic type based on discriminant
-            conic_type = ""
-            parameters = {}
-
-            if discriminant.is_zero:
-                # Parabola or degenerate cases
-                if (
-                    (A.is_zero and C.is_zero)
-                    or (A.is_zero and B.is_zero)
-                    or (B.is_zero and C.is_zero)
-                ):
-                    if not (A.is_zero and C.is_zero):
-                        conic_type = "parabola"
-                    else:
-                        conic_type = "degenerate"
-                else:
-                    conic_type = "parabola"
-            elif discriminant > 0:
-                # Hyperbola
-                conic_type = "hyperbola"
-            else:  # discriminant < 0
-                # Ellipse or circle
-                if A == C and B.is_zero:
-                    conic_type = "circle"
-                else:
-                    conic_type = "ellipse"
-
-            # Store the coefficients in the parameters
-            parameters = {
-                "A": float(A) if not A.is_symbol else str(A),
-                "B": float(B) if not B.is_symbol else str(B),
-                "C": float(C) if not C.is_symbol else str(C),
-                "D": float(D) if not D.is_symbol else str(D),
-                "E": float(E) if not E.is_symbol else str(E),
-                "F": float(F) if not F.is_symbol else str(F),
-                "discriminant": float(discriminant)
-                if not discriminant.is_symbol
-                else str(discriminant),
-            }
-
-            # For standard forms, extract additional parameters
-            if conic_type == "circle":
-                # For a circle: (x-h)² + (y-k)² = r²
-                # Rewrite as: x² + y² - 2hx - 2ky + (h² + k² - r²) = 0
-                # So: A=1, C=1, D=-2h, E=-2k, F=h²+k²-r²
-                h = -D / (2 * A)
-                k = -E / (2 * C)
-                r_squared = (D**2 + E**2) / (4 * A) - F
-                r = sp.sqrt(r_squared) if r_squared >= 0 else None
-
-                parameters.update(
-                    {
-                        "center": str([float(h), float(k)]),
-                        "radius": str(float(r)) if r is not None else "",
-                    }
-                )
-
-            elif conic_type == "ellipse":
-                # Convert to standard form and extract parameters
-                # We'll need to handle rotation if B ≠ 0
-                if B.is_zero:
-                    # Standard form: x²/a² + y²/b² = 1
-                    # Rewrite as: (b²)x² + (a²)y² - (a²b²) = 0
-                    # So: A=b², C=a², F=-a²b²
-                    h = -D / (2 * A)
-                    k = -E / (2 * C)
-                    a_squared = -F / C + (E**2) / (4 * C**2)
-                    b_squared = -F / A + (D**2) / (4 * A**2)
-                    a = sp.sqrt(a_squared) if a_squared > 0 else None
-                    b = sp.sqrt(b_squared) if b_squared > 0 else None
-
-                    parameters.update(
-                        {
-                            "center": str([float(h), float(k)]),
-                            "semi_major": str(float(max(a, b)))
-                            if a is not None and b is not None
-                            else "",
-                            "semi_minor": str(float(min(a, b)))
-                            if a is not None and b is not None
-                            else "",
-                            "rotation": str(0) if A <= C else str(sp.pi / 2),
-                        }
-                    )
-                else:
-                    # Rotated ellipse - we need to find the principal axes
-                    parameters.update({"rotated": True})
-
-            elif conic_type == "hyperbola":
-                # Similar to ellipse, but with different sign pattern
-                if B.is_zero:
-                    h = -D / (2 * A)
-                    k = -E / (2 * C)
-
-                    # Determine orientation
-                    # (x²/a² - y²/b² = 1 or y²/a² - x²/b² = 1)
-                    if A > 0 and C < 0:  # x²/a² - y²/b² = 1
-                        a_squared = -F / A + (D**2) / (4 * A**2)
-                        b_squared = F / C - (E**2) / (4 * C**2)
-                        orientation = "x"
-                    else:  # y²/a² - x²/b² = 1
-                        a_squared = -F / C + (E**2) / (4 * C**2)
-                        b_squared = F / A - (D**2) / (4 * A**2)
-                        orientation = "y"
-
-                    a = sp.sqrt(a_squared) if a_squared > 0 else None
-                    b = sp.sqrt(b_squared) if b_squared > 0 else None
-
-                    parameters.update(
-                        {
-                            "center": str([float(h), float(k)]),
-                            "semi_major": (
-                                str(float(a)) if a is not None else ""
-                            ),
-                            "semi_minor": (
-                                str(float(b)) if b is not None else ""
-                            ),
-                            "orientation": orientation,
-                            "rotation": str(0),
-                        }
-                    )
-                else:
-                    # Rotated hyperbola
-                    parameters.update({"rotated": True})
-
-            elif conic_type == "parabola":
-                # For a parabola, we need to determine orientation and vertex
-                # This is a simplified approach for non-rotated parabolas
-                if A.is_zero and B.is_zero:  # y = ax² + bx + c form
-                    a = C
-                    b = E
-                    c = F
-                    h = -b / (2 * a)
-                    k = c - b**2 / (4 * a)
-                    parameters.update(
-                        {
-                            "vertex": str([float(h), float(k)]),
-                            "orientation": "vertical",
-                            "coefficient": str(float(a)),
-                        }
-                    )
-                elif C.is_zero and B.is_zero:  # x = ay² + by + c form
-                    a = A
-                    b = D
-                    c = F
-                    k = -b / (2 * a)
-                    h = c - b**2 / (4 * a)
-                    parameters.update(
-                        {
-                            "vertex": str([float(h), float(k)]),
-                            "orientation": "horizontal",
-                            "coefficient": str(float(a)),
-                        }
-                    )
-                else:
-                    # More complex parabola, possibly rotated
-                    parameters.update({"complex_form": True})
-
-            return json.dumps(
-                {
-                    "type": conic_type,
-                    "parameters": parameters,
-                    "equation": str(expr) + " = 0",
-                }
-            )
-        except Exception as e:
-            return self.handle_exception("parse_conic_equation", e)
 
     def solve_quadratic(self, a: float, b: float, c: float) -> str:
         r"""Solves a quadratic equation ax² + bx + c = 0.
@@ -4288,398 +4078,211 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
     ### HYPERBOLA ###
 
-    def solve_hyperbola_problem(
+    def compute_hyperbola_vertices(
         self,
-        problem_type: str,
-        center_x: float = 0,
-        center_y: float = 0,
-        semi_major: float = 0,
-        semi_minor: float = 0,
-        orientation: str = "x",
-        point_x: float = 0,
-        point_y: float = 0,
-        line_slope: float = 0,
-        line_y_intercept: float = 0,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        orientation: str,
     ) -> str:
-        """Solves a specific type of hyperbola problem.
+        r"""Computes the vertices of a hyperbola.
 
         Args:
-            problem_type: Type of problem to solve
-                        ("foci", "asymptotes", "eccentricity",
-                        "contains_point", "line_intersection",
-                        "vertices", "co_vertices")
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_major: length of the semi-major axis (transverse axis)
+            orientation: "x" if transverse axis is along x-axis,
+                         "y" if along y-axis
+
+        Returns:
+            str: JSON string with the vertex coordinates
+        """
+        try:
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+
+            # Calculate vertices
+            if orientation.lower() == "x":
+                vertex1 = [h + a, k]
+                vertex2 = [h - a, k]
+            else:  # orientation == "y"
+                vertex1 = [h, k + a]
+                vertex2 = [h, k - a]
+
+            return json.dumps(
+                {
+                    "result": {
+                        "vertices": [vertex1, vertex2],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_vertices", e)
+
+    def compute_hyperbola_co_vertices(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        r"""Computes the co-vertices of a hyperbola.
+
+        Args:
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                         "y" if along y-axis
+
+        Returns:
+            str: JSON string with the co-vertex coordinates
+        """
+        try:
+            h, k = float(center_x), float(center_y)
+            b = float(semi_minor)
+
+            # Calculate co-vertices
+            if orientation.lower() == "x":
+                co_vertex1 = [h, k + b]
+                co_vertex2 = [h, k - b]
+            else:  # orientation == "y"
+                co_vertex1 = [h + b, k]
+                co_vertex2 = [h - b, k]
+
+            return json.dumps(
+                {
+                    "result": {
+                        "co_vertices": [co_vertex1, co_vertex2],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_hyperbola_co_vertices", e)
+
+    def check_point_position_on_hyperbola(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        r"""Determines if a point is on, inside, or outside a hyperbola.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
             center_x: x-coordinate of the hyperbola center
             center_y: y-coordinate of the hyperbola center
             semi_major: length of the semi-major axis (transverse axis)
             semi_minor: length of the semi-minor axis (conjugate axis)
             orientation: "x" if transverse axis is along x-axis,
-                "y" if along y-axis
-            point_x: x-coordinate of a point (if applicable)
-            point_y: y-coordinate of a point (if applicable)
-            line_slope: slope of a line (if applicable)
-            line_y_intercept: y-intercept of a line (if applicable)
+                         "y" if along y-axis
 
         Returns:
-            str: JSON string with the solution
+            str: JSON string with the position ("on", "inside", or "outside")
+        """
+        try:
+            px, py = float(point_x), float(point_y)
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Evaluate the hyperbola equation at the point
+            if orientation.lower() == "x":
+                # (x-h)²/a² - (y-k)²/b² = 1
+                value = ((px - h) ** 2 / a**2) - ((py - k) ** 2 / b**2)
+            else:  # orientation == "y"
+                # (y-k)²/a² - (x-h)²/b² = 1
+                value = ((py - k) ** 2 / a**2) - ((px - h) ** 2 / b**2)
+
+            if abs(value - 1) < 1e-10:  # Account for floating-point precision
+                position = "on"
+            elif value > 1:
+                position = "inside"
+            else:
+                position = "outside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "equation_value": float(value),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "check_point_position_on_hyperbola", e
+            )
+
+    def compute_hyperbola_equation(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        r"""Computes the equation of a hyperbola in standard and general form.
+
+        Args:
+            center_x: x-coordinate of the hyperbola center
+            center_y: y-coordinate of the hyperbola center
+            semi_major: length of the semi-major axis (transverse axis)
+            semi_minor: length of the semi-minor axis (conjugate axis)
+            orientation: "x" if transverse axis is along x-axis,
+                         "y" if along y-axis
+
+        Returns:
+            str: JSON string with the hyperbola equations
         """
         try:
             h, k = float(center_x), float(center_y)
             a = float(semi_major)
             b = float(semi_minor)
 
-            if problem_type == "foci":
-                # Calculate focal distance
-                c = sp.sqrt(a**2 + b**2)
+            # Standard form
+            if orientation.lower() == "x":
+                standard_form = f"(x - {h})²/{a}² - (y - {k})²/{b}² = 1"
 
-                # Calculate foci positions
-                if orientation.lower() == "x":
-                    focus1 = [h + c, k]
-                    focus2 = [h - c, k]
-                else:  # orientation == "y"
-                    focus1 = [h, k + c]
-                    focus2 = [h, k - c]
+                # General form: Ax² + By² + Cx + Dy + E = 0
+                A = b**2
+                B = -(a**2)
+                C = -2 * h * b**2
+                D = 2 * k * a**2
+                E = (h**2 * b**2) - (k**2 * a**2) - (a**2 * b**2)
 
-                return json.dumps(
-                    {
-                        "result": {
-                            "foci": [focus1, focus2],
-                            "steps": [
-                                "The focal distance of a hyperbola is"
-                                "given by c = √(a² + b²)",
-                                f"Substituting a = {a} and b = {b}",
-                                f"c = √({a}² + {b}²) = {float(c)}",
-                                (
-                                    f"For a hyperbola with orientation"
-                                    f"'{orientation}', "
-                                    f"the foci are at "
-                                    f"({focus1[0]}, {focus1[1]})"
-                                    f" and "
-                                    f"({focus2[0]}, {focus2[1]})"
-                                ),
-                            ],
-                        }
+                general_form = f"{A}x² + {B}y² + {C}x + {D}y + {E} = 0"
+            else:  # orientation == "y"
+                standard_form = f"(y - {k})²/{a}² - (x - {h})²/{b}² = 1"
+
+                # General form: Ax² + By² + Cx + Dy + E = 0
+                A = -(a**2)
+                B = b**2
+                C = 2 * h * a**2
+                D = -2 * k * b**2
+                E = (k**2 * b**2) - (h**2 * a**2) - (a**2 * b**2)
+
+                general_form = f"{A}x² + {B}y² + {C}x + {D}y + {E} = 0"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                        "center": [h, k],
+                        "semi_major": a,
+                        "semi_minor": b,
+                        "orientation": orientation,
                     }
-                )
-
-            elif problem_type == "asymptotes":
-                # Calculate asymptotes
-                if orientation.lower() == "x":
-                    slope = b / a
-                    asymptote1 = f"y = {k} + {float(slope)}(x - {h})"
-                    asymptote2 = f"y = {k} - {float(slope)}(x - {h})"
-
-                    # Alternative form
-                    asymptote1_alt = (
-                        f"y = {float(slope)}x + {float(k - slope*h)}"
-                    )
-                    asymptote2_alt = (
-                        f"y = -{float(slope)}x + {float(k + slope*h)}"
-                    )
-                else:  # orientation == "y"
-                    slope = a / b
-                    asymptote1 = f"y = {k} + {float(slope)}(x - {h})"
-                    asymptote2 = f"y = {k} - {float(slope)}(x - {h})"
-
-                    # Alternative form
-                    asymptote1_alt = (
-                        f"y = {float(slope)}x + {float(k - slope*h)}"
-                    )
-                    asymptote2_alt = (
-                        f"y = -{float(slope)}x + {float(k + slope*h)}"
-                    )
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "asymptotes": [asymptote1, asymptote2],
-                            "alternative_form": [
-                                asymptote1_alt,
-                                asymptote2_alt,
-                            ],
-                            "steps": [
-                                (
-                                    f"For a hyperbola with orientation "
-                                    f"'{orientation}', "
-                                    f"the asymptotes have slopes "
-                                    f"± b/a if orientation.lower() == 'x'"
-                                    f"else a/b"
-                                ),
-                                f"The equations of the asymptotes are "
-                                f"{asymptote1} and {asymptote2}",
-                                f"In slope-intercept form: "
-                                f"{asymptote1_alt} and {asymptote2_alt}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "eccentricity":
-                # Calculate eccentricity
-                c = sp.sqrt(a**2 + b**2)
-                eccentricity = c / a
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "eccentricity": str(eccentricity),
-                            "steps": [
-                                "The eccentricity of a hyperbola is given by"
-                                "e = c/a "
-                                "where c = √(a² + b²)",
-                                f"Substituting a = {a} and b = {b}",
-                                f"c = √({a}² + {b}²) = {float(c)}",
-                                f"e = {float(c)}/{a} = {float(eccentricity)}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "contains_point":
-                p_x, p_y = float(point_x), float(point_y)
-
-                # Evaluate the hyperbola equation at the point
-                if orientation.lower() == "x":
-                    # (x-h)²/a² - (y-k)²/b² = 1
-                    value = (p_x - h) ** 2 / a**2 - (p_y - k) ** 2 / b**2
-                else:  # orientation == "y"
-                    # (y-k)²/a² - (x-h)²/b² = 1
-                    value = (p_y - k) ** 2 / a**2 - (p_x - h) ** 2 / b**2
-
-                if abs(value - 1) < 1e-10:
-                    result = "on"
-                else:
-                    # For hyperbolas, there's no clear "inside" or "outside"
-                    # We'll use "between branches" for points where the
-                    # equation value < 1 and "on branch side" for points
-                    # where the equation value > 1
-                    result = (
-                        "between branches" if value < 1 else "on branch side"
-                    )
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "position": result,
-                            "equation_value": str(value),
-                            "steps": [
-                                f"Evaluate the hyperbola equation at the point"
-                                f"({p_x}, {p_y})",
-                                f"For orientation '{orientation}', "
-                                f"the equation is "
-                                + (
-                                    "(x-h)²/a² - (y-k)²/b² = 1"
-                                    if orientation.lower() == "x"
-                                    else "(y-k)²/a² - (x-h)²/b² = 1"
-                                ),
-                                f"Substituting x = {p_x}, y = {p_y}, h = {h}, "
-                                f"k = {k}, a = {a}, b = {b}",
-                                f"Value = {value!s}",
-                                "Since value "
-                                + (
-                                    "= 1 (approximately)"
-                                    if result == "on"
-                                    else "< 1"
-                                    if result == "between branches"
-                                    else "> 1"
-                                )
-                                + f", the point is {result}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "line_intersection":
-                m, b_line = float(line_slope), float(line_y_intercept)
-
-                # Solve the system of equations
-                if orientation.lower() == "x":
-                    # Hyperbola: (x-h)²/a² - (y-k)²/b² = 1
-                    # Line: y = mx + b_line
-                    # Substitute: (x-h)²/a² - (mx + b_line - k)²/b² = 1
-                    # Multiply by a²b²: b²(x-h)² - a²(mx + b_line - k)² = a²b²
-                    # Expand: b²x² - 2b²hx + b²h² - a²m²x² - 2a²mx(b_line-k)
-                    #                - a²(b_line-k)² = a²b²
-                    # Rearrange: (b² - a²m²)x² - (2b²h + 2a²m(b_line-k))x +
-                    #            (b²h² - a²(b_line-k)² - a²b²) = 0
-
-                    A = b**2 - a**2 * m**2
-                    B = -2 * b**2 * h - 2 * a**2 * m * (b_line - k)
-                    C = b**2 * h**2 - a**2 * (b_line - k) ** 2 - a**2 * b**2
-
-                else:  # orientation == "y"
-                    # Hyperbola: (y-k)²/a² - (x-h)²/b² = 1
-                    # Line: y = mx + b_line
-                    # Substitute: (mx + b_line - k)²/a² - (x-h)²/b² = 1
-                    # Multiply by a²b²: b²(mx + b_line - k)² - a²(x-h)² = a²b²
-                    # Expand: b²m²x² + 2b²mx(b_line-k) + b²(b_line-k)² - a²x²
-                    #         + 2a²hx - a²h² = a²b²
-                    # Rearrange: (b²m² - a²)x² + (2b²m(b_line-k) + 2a²h)x +
-                    #            (b²(b_line-k)² - a²h² - a²b²) = 0
-
-                    A = b**2 * m**2 - a**2
-                    B = 2 * b**2 * m * (b_line - k) + 2 * a**2 * h
-                    C = b**2 * (b_line - k) ** 2 - a**2 * h**2 - a**2 * b**2
-
-                # Use the quadratic formula
-                discriminant = B**2 - 4 * A * C
-
-                if abs(discriminant) < 1e-10:  # One solution (tangent)
-                    x1 = -B / (2 * A)
-                    y1 = m * x1 + b_line
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [
-                                    [float(x1), float(y1)]
-                                ],
-                                "count": 1,
-                                "steps": [
-                                    (
-                                        f"The line y = {m}x + {b_line} "
-                                        f"is tangent to the hyperbola"
-                                    ),
-                                    (
-                                        f"Discriminant = {discriminant} ≈ 0, "
-                                        f"so there is one solution"
-                                    ),
-                                    (
-                                        f"Intersection point: "
-                                        f"({float(x1)}, {float(y1)})"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
-                elif discriminant < 0:  # No real solutions
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [],
-                                "count": 0,
-                                "steps": [
-                                    (
-                                        f"The line y = {m}x + {b_line} "
-                                        f"does not intersect the hyperbola"
-                                    ),
-                                    (
-                                        f"Discriminant = {discriminant} < 0, "
-                                        f"so there are no real solutions"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
-                else:  # Two solutions
-                    x1 = (-B + sp.sqrt(discriminant)) / (2 * A)
-                    x2 = (-B - sp.sqrt(discriminant)) / (2 * A)
-
-                    y1 = m * x1 + b_line
-                    y2 = m * x2 + b_line
-
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [
-                                    [float(x1), float(y1)],
-                                    [float(x2), float(y2)],
-                                ],
-                                "count": 2,
-                                "steps": [
-                                    (
-                                        f"The line y = {m}x + {b_line} "
-                                        f"intersects the hyperbola"
-                                    ),
-                                    (
-                                        f"Discriminant = {discriminant} > 0, "
-                                        f"so there are two solutions"
-                                    ),
-                                    (
-                                        f"Intersection points: "
-                                        f"({float(x1)}, {float(y1)}) and "
-                                        f"({float(x2)}, {float(y2)})"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
-            elif problem_type == "vertices":
-                # Calculate vertices
-                if orientation.lower() == "x":
-                    vertex1 = [h + a, k]
-                    vertex2 = [h - a, k]
-                else:  # orientation == "y"
-                    vertex1 = [h, k + a]
-                    vertex2 = [h, k - a]
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "vertices": [vertex1, vertex2],
-                            "steps": [
-                                (
-                                    f"For a hyperbola with orientation "
-                                    f"'{orientation}', "
-                                    f"the vertices are at a distance "
-                                    f"of {a} from the center"
-                                ),
-                                (
-                                    f"The vertices are at "
-                                    f"({vertex1[0]}, {vertex1[1]}) "
-                                    f"and ({vertex2[0]}, {vertex2[1]})"
-                                ),
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "co_vertices":
-                # Calculate co-vertices
-                if orientation.lower() == "x":
-                    co_vertex1 = [h, k + b]
-                    co_vertex2 = [h, k - b]
-                else:  # orientation == "y"
-                    co_vertex1 = [h + b, k]
-                    co_vertex2 = [h - b, k]
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "co_vertices": [co_vertex1, co_vertex2],
-                            "steps": [
-                                (
-                                    f"For a hyperbola with orientation "
-                                    f"'{orientation}', "
-                                    f"the co-vertices are at a distance "
-                                    f"of {b} from the center"
-                                ),
-                                (
-                                    f"The co-vertices are at "
-                                    f"({co_vertex1[0]}, {co_vertex1[1]}) "
-                                    f"and ({co_vertex2[0]}, {co_vertex2[1]})"
-                                ),
-                            ],
-                        }
-                    }
-                )
-
-            else:
-                return json.dumps(
-                    {
-                        "result": {
-                            "message": (
-                                f"Problem type '{problem_type}' not supported "
-                                "for hyperbolas. "
-                            )
-                        }
-                    }
-                )
-
+                }
+            )
         except Exception as e:
-            return self.handle_exception("solve_hyperbola_problem", e)
+            return self.handle_exception("compute_hyperbola_equation", e)
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of available tools in the toolkit.
@@ -4699,7 +4302,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.compute_line_bisector),
             FunctionTool(self.check_points_collinear),
             # Conic section helpers
-            FunctionTool(self.parse_conic_equation_new),
             FunctionTool(self.parse_conic_equation),
             FunctionTool(self.solve_quadratic),
             FunctionTool(self.generate_circle_equation),
@@ -4760,5 +4362,8 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.compute_parabola_equation),
             FunctionTool(self.compute_parabola_from_focus_directrix),
             # Hyperbola Solver
-            FunctionTool(self.solve_hyperbola_problem),
+            FunctionTool(self.compute_hyperbola_vertices),
+            FunctionTool(self.compute_hyperbola_co_vertices),
+            FunctionTool(self.check_point_position_on_hyperbola),
+            FunctionTool(self.compute_hyperbola_equation),
         ]
