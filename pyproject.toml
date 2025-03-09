@@ -42,6 +42,31 @@ test = [
     "mock>=5,<6",
     "pytest-asyncio>=0.23.0,<0.24",
 ]
+dev = [
+    "ruff>=0.7,<0.8",
+    "mypy>=1.5.1,<2",
+    "toml>=0.10.2",
+    "pre-commit>=3,<4",
+    "pytest>=7,<8",
+    "pytest-cov>=4,<5",
+    "pytest-asyncio>=0.23.0,<0.24",
+    "gradio>=3,<4",
+    "mock>=5,<6",
+    "types-colorama>=0.4.15,<0.5",
+    "types-PyYAML>=6.0.12,<7",
+    "types-mock>=5.1.0,<6",
+    "types-tqdm>=4.66.0,<5",
+    "types-requests>=2.31.0,<3",
+    "types-setuptools>=69.2.0,<70",
+]
+docs = [
+    "sphinx>=7,<8",
+    "sphinx_book_theme",
+    "docutils<0.20.0",
+    "myst-parser",
+    "nbsphinx",
+    "sphinxext-rediraffe>=0.2.7,<0.3",
+]
 rag = [
     "sentence-transformers>=3.0.1,<4",
     "qdrant-client>=1.9.0,<2",
@@ -77,6 +102,9 @@ document_tools = [
     "pandasai>=2.3.0,<3",
     "prance>=23.6.21.0,<24",
     "openapi-spec-validator>=0.7.1,<0.8",
+    "xls2xlsx>=0.2.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.5",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -84,6 +112,7 @@ media_tools = [
     "pydub>=0.25.1,<0.26",
     "yt-dlp>=2024.11.4,<2025",
     "ffmpeg-python>=0.2.0,<0.3",
+    "scenedetect>=0.6.5.2",
 ]
 communication_tools = [
     "slack-sdk>=3.27.2,<4",
@@ -236,39 +265,16 @@ all = [
     "pytest-asyncio>=0.23.0,<0.24",
     "gradio>=3,<4",
     "mock>=5,<6",
+    "xls2xlsx>=0.2.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.5",
+    "scenedetect>=0.6.5.2",
 ]
 
 [project.urls]
 Homepage = "https://www.camel-ai.org/"
 Repository = "https://github.com/camel-ai/camel"
 Documentation = "https://docs.camel-ai.org"
-
-[dependency-groups]
-dev = [
-    "ruff>=0.7,<0.8",
-    "mypy>=1.5.1,<2",
-    "toml>=0.10.2",
-    "pre-commit>=3,<4",
-    "pytest>=7,<8",
-    "pytest-cov>=4,<5",
-    "pytest-asyncio>=0.23.0,<0.24",
-    "gradio>=3,<4",
-    "mock>=5,<6",
-    "types-colorama>=0.4.15,<0.5",
-    "types-PyYAML>=6.0.12,<7",
-    "types-mock>=5.1.0,<6",
-    "types-tqdm>=4.66.0,<5",
-    "types-requests>=2.31.0,<3",
-    "types-setuptools>=69.2.0,<70",
-]
-docs = [
-    "sphinx>=7,<8",
-    "sphinx_book_theme",
-    "docutils<0.20.0",
-    "myst-parser",
-    "nbsphinx",
-    "sphinxext-rediraffe>=0.2.7,<0.3",
-]
 
 [tool.uv]
 default-groups = [
@@ -364,6 +370,9 @@ module = [
     "requests_oauthlib",
     "fastapi",
     "prance",
+    "xls2xlsx",
+    "tabulate",
+    "openpyxl",
     "openapi-spec-validator",
     "jsonschema.*",
     "bs4.*",
@@ -425,5 +434,9 @@ module = [
     "yaml",
     "mock",
     "uvicorn",
+    "xls2xlsx",
+    "tabulate",
+    "openpyxl",
+    "scenedetect",
 ]
 ignore_missing_imports = true
