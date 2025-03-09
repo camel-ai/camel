@@ -495,7 +495,9 @@ class SeedDataset(Dataset):
             logger.debug("No raw data to process")
             return
 
-        def create_datapoint(item: Dict[str, Any], idx: int) -> DataPoint:
+        def create_datapoint(
+            item: Dict[str, Any], idx: int
+        ) -> Optional[DataPoint]:
             try:
                 return DataPoint(
                     question=item.get('question', ''),
@@ -520,10 +522,14 @@ class SeedDataset(Dataset):
                     )
                     return None
 
-        self.data = [
+        raw_data = [
             create_datapoint(item, i) for i, item in enumerate(self._raw_data)
         ]
-        logger.debug(f"Processed {len(self.data)} data points")
+        self.data = [dp for dp in raw_data if dp is not None]
+        logger.debug(
+            f"Processed {len(raw_data)} data points, of which "
+            f"{len(self.data)} were valid."
+        )
 
     @property
     def metadata(self) -> Dict[str, Any]:
