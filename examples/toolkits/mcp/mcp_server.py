@@ -1,4 +1,18 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Any
+
 import httpx
 import typer
 from mcp.server.fastmcp import FastMCP
@@ -8,12 +22,10 @@ mcp = FastMCP("weather")
 NWS_API_BASE = "https://api.weather.gov"
 USER_AGENT = "weather-app/1.0"
 
+
 async def make_nws_request(url: str) -> dict[str, Any] | None:
-    """Make a request to the NWS API with proper error handling."""
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Accept": "application/geo+json"
-    }
+    r"""Make a request to the NWS API with proper error handling."""
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/geo+json"}
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(url, headers=headers, timeout=30.0)
@@ -22,8 +34,9 @@ async def make_nws_request(url: str) -> dict[str, Any] | None:
         except Exception:
             return None
 
+
 def format_alert(feature: dict) -> str:
-    """Format an alert feature into a readable string."""
+    r"""Format an alert feature into a readable string."""
     props = feature["properties"]
     return f"""
 Event: {props.get('event', 'Unknown')}
@@ -33,9 +46,10 @@ Description: {props.get('description', 'No description available')}
 Instructions: {props.get('instruction', 'No specific instructions provided')}
 """
 
+
 @mcp.tool()
 async def get_alerts(state: str) -> str:
-    """Get weather alerts for a US state.
+    r"""Get weather alerts for a US state.
 
     Args:
         state: Two-letter US state code (e.g. CA, NY)
@@ -52,9 +66,10 @@ async def get_alerts(state: str) -> str:
     alerts = [format_alert(feature) for feature in data["features"]]
     return "\n---\n".join(alerts)
 
+
 @mcp.tool()
 async def get_forecast(latitude: float, longitude: float) -> str:
-    """Get weather forecast for a location.
+    r"""Get weather forecast for a location.
 
     Args:
         latitude: Latitude of the location
@@ -90,8 +105,7 @@ Forecast: {period['detailedForecast']}
 
 
 def main(transport: str = "stdio"):
-    r"""
-    Weather MCP Server
+    r"""Weather MCP Server
 
     This server provides weather-related functionalities implemented via the Model Context Protocol (MCP).
     It demonstrates how to establish interactions between AI models and external tools using MCP.
@@ -111,7 +125,7 @@ def main(transport: str = "stdio"):
        - Runs by default at http://127.0.0.1:8000.
 
        - Example usage: python mcp_server.py --transport sse
-    """
+    """  # noqa: E501
     if transport == 'stdio':
         mcp.run(transport='stdio')
     elif transport == 'sse':

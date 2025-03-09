@@ -26,7 +26,7 @@ async def main(server_transport: str = "stdio"):
     if server_transport == "stdio":
         mcp_toolkit = McpToolkit(
             command_or_url=sys.executable,
-            args=[str(Path(__file__).parent / "mcp_server.py")]
+            args=[str(Path(__file__).parent / "mcp_server.py")],
         )
     else:
         # SSE mode, Must run the server first
