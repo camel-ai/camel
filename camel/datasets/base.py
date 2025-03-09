@@ -339,6 +339,7 @@ class SeedDataset(Dataset):
         cache_dir: Optional[str] = None,
         seed: Optional[int] = None,
         min_samples: int = 1,
+        strict: bool = False,
         **kwargs,
     ):
         r"""Initialize the seed dataset and validate integrity.
@@ -356,6 +357,8 @@ class SeedDataset(Dataset):
                 (default: :obj:`1`)
             min_samples (int): Minimum number of samples required.
                 (default: :obj:`1`)
+            strict (bool): Whether to raise an error on invalid datapoints
+                (True) or skip/filter them (False). (default: False)
             **kwargs: Additional dataset parameters.
 
         Raises:
@@ -373,6 +376,8 @@ class SeedDataset(Dataset):
             **kwargs,
         }
         self._rng = random.Random(seed)
+        self._strict = strict
+
         # Type checking and conversion into list of dicts
 
         if isinstance(data, HFDataset):
@@ -423,14 +428,20 @@ class SeedDataset(Dataset):
         1. Checks if the dataset meets the minimum sample requirement.
         2. Creates the cache directory if specified.
         3. Processes raw data into DataPoint objects
-        for validation and consistency.
+           for validation and consistency.
+
+        In non-strict mode, invalid datapoints are filtered out
+        rather than raising an error.
 
         Args:
             min_samples (int): Minimum number of samples required.
 
         Raises:
-            ValueError: If the dataset size is less than
-            min_samples or if validation fails.
+            ValueError: If the dataset size is less than min_samples or
+                if sample validation fails (in strict mode),
+                or if the dataset size is smaller than
+                min_samples after filtering invalid datapoints
+                (in non-strict mode).
             OSError: If cache directory creation fails.
         """
         if len(self._raw_data) < min_samples:
@@ -456,22 +467,6 @@ class SeedDataset(Dataset):
             logger.debug("No raw data to process")
             return
 
-        if self._cache_dir:
-            try:
-                os.makedirs(self._cache_dir, exist_ok=True)
-                logger.debug(f"Created cache directory: {self._cache_dir}")
-            except OSError as e:
-                logger.error(
-                    f"Failed to create cache directory {self._cache_dir}: {e}"
-                )
-                raise
-
-        if not self._raw_data:
-            if min_samples > 0:
-                raise ValueError("No data provided, but min_samples > 0")
-            logger.debug("No raw data to process")
-            return
-
         def create_datapoint(item: Dict[str, Any], idx: int) -> DataPoint:
             try:
                 return DataPoint(
@@ -484,10 +479,18 @@ class SeedDataset(Dataset):
                     difficulty=item.get('difficulty', ''),  # Match BaseDataset
                     # raw_markdown='' if DataPoint supports it
                 )
+
             except ValidationError as e:
-                raise ValueError(
-                    f"Sample at index {idx} validation error: {e}"
-                )
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} validation error: {e}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping invalid sample at index {idx} "
+                        f"due to validation error: {e}"
+                    )
+                    return None
 
         self.data = [
             create_datapoint(item, i) for i, item in enumerate(self._raw_data)
