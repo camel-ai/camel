@@ -5,6 +5,7 @@ from playwright._impl._errors import TimeoutError
 from loguru import logger
 from typing import Any, Dict, List, TypedDict, Union, BinaryIO
 from PIL import Image, ImageDraw, ImageFont
+from firecrawl import FirecrawlApp
 from html2text import html2text
 from retry import retry
 from copy import deepcopy
@@ -15,7 +16,6 @@ from camel.messages import BaseMessage
 from camel.agents import ChatAgent
 from camel.models import ModelFactory, BaseModelBackend
 from camel.types import ModelType, ModelPlatformType
-from camel.utils import dependencies_required
 
 import io
 import random
@@ -49,8 +49,7 @@ AVAILABLE_ACTIONS_PROMPT = """
 
 ACTION_WITH_FEEDBACK_LIST = [
     'ask_question_about_video',
-    'download_file_id',
-    'find_text_on_page',
+    'download_file_id'
 ]
 
 
@@ -109,47 +108,37 @@ def _get_bool(d: Any, k: str) -> bool:
 def _parse_json_output(text: str) -> Dict[str, Any]:
     """Extract JSON output from a string."""
     
-    # Process markdown format (```json ... ```)
     markdown_pattern = r'```(?:json)?\s*(.*?)\s*```'
     markdown_match = re.search(markdown_pattern, text, re.DOTALL)
     if markdown_match:
         text = markdown_match.group(1).strip()
     
-    # Process triple quotes format ("""json ... """)
     triple_quotes_pattern = r'"""(?:json)?\s*(.*?)\s*"""'
     triple_quotes_match = re.search(triple_quotes_pattern, text, re.DOTALL)
     if triple_quotes_match:
         text = triple_quotes_match.group(1).strip()
     
-    # Replace JavaScript-style backticks with JSON-style double quotes
     text = text.replace("`", '"')
     
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        # Try to extract key fields
         try:
-            # Use regular expressions to extract common fields
             fixed_text = re.sub(r'`([^`]*)`', r'"\1"', text)
             return json.loads(fixed_text)
         except json.JSONDecodeError:
-            # Try to extract key fields
             result = {}
             try:
-                # Use regular expressions to extract common fields
-                # bool fields
                 bool_pattern = r'"(\w+)"\s*:\s*(true|false)'
                 for match in re.finditer(bool_pattern, text, re.IGNORECASE):
                     key, value = match.groups()
                     result[key] = value.lower() == "true"
-                
-                # string fields
+                    
                 str_pattern = r'"(\w+)"\s*:\s*"([^"]*)"'
                 for match in re.finditer(str_pattern, text):
                     key, value = match.groups()
                     result[key] = value
                 
-                # number fields
                 num_pattern = r'"(\w+)"\s*:\s*(-?\d+(?:\.\d+)?)'
                 for match in re.finditer(num_pattern, text):
                     key, value = match.groups()
@@ -158,7 +147,6 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
                     except ValueError:
                         result[key] = float(value)
                 
-                # empty string fields
                 empty_str_pattern = r'"(\w+)"\s*:\s*""'
                 for match in re.finditer(empty_str_pattern, text):
                     key = match.group(1)
@@ -233,6 +221,7 @@ def add_set_of_mark(
     if isinstance(screenshot, bytes):
         screenshot = io.BytesIO(screenshot)
 
+    # TODO: Not sure why this cast was needed, but by this point screenshot is a binary file-like object
     image = Image.open(cast(BinaryIO, screenshot))
     comp, visible_rects, rects_above, rects_below = _add_set_of_mark(image, ROIs)
     image.close()
@@ -311,7 +300,8 @@ def _color(identifier: int) -> Tuple[int, int, int, int]:
 class BaseBrowser:
     def __init__(self, 
                  headless=True, 
-                 cache_dir: Optional[str] = None):
+                 cache_dir: Optional[str] = None,
+                 page_script_path: Optional[str] = None):
         r"""Initialize the WebBrowserToolkit instance.
         
         Args:
@@ -336,23 +326,25 @@ class BaseBrowser:
 
         self.page_history = []           # stores the history of visited pages
         
+        
         # set the cache directory
         self.cache_dir = "tmp/"
         os.makedirs(self.cache_dir, exist_ok=True)
         if cache_dir is not None:
             self.cache_dir = cache_dir
-            
+        
         # load the page script
-        abs_dir_path = os.path.dirname(os.path.abspath(__file__))
-        page_script_path = os.path.join(abs_dir_path, "page_script.js")
+        if page_script_path is None:
+            abs_dir_path = os.path.dirname(os.path.abspath(__file__))
+            page_script_path = os.path.join(abs_dir_path, "page_script.js")
                 
         try:
             with open(page_script_path, "r", encoding='utf-8') as f:
                 self.page_script = f.read()
             f.close()
         except FileNotFoundError:
-            raise FileNotFoundError(f"Page script file not found at path: {page_script_path}")      
-    
+            logger.warning(f"Page script file not found: {page_script_path}")
+
     
     def init(self):
         r"""Initialize the browser."""
@@ -375,7 +367,6 @@ class BaseBrowser:
         # self.page.wait_for_load_state("networkidle", timeout=timeout_ms)
         # self.page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
         time.sleep(2)
-        
     
     def click_blank_area(self):
         r"""Click a blank area of the page to unfocus the current element."""
@@ -423,7 +414,6 @@ class BaseBrowser:
         if save_image:
             # get url name to form a file name
             url_name = self.page_url.split("/")[-1]
-            # replace special characters
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
             
@@ -541,7 +531,7 @@ class BaseBrowser:
                 comp.save(f, "PNG")
             f.close()
         
-        return comp, file_path    
+        return comp, file_path   
             
     
     def scroll_up(self) -> None:
@@ -581,15 +571,15 @@ class BaseBrowser:
                 if new_page:
                     self.page_history.append(deepcopy(self.page.url))
                     self.page = new_page
-                    
         except PlaywrightError:
             pass
-
+        # new_page = self
         self._wait_for_load()
     
     
     def extract_url_content(self):
         r"""Extract the content of the current page."""
+        # TODO: update it using firecrawl
         content = self.page.content()
         return content
     
@@ -767,6 +757,7 @@ class BaseBrowser:
             }
         """)
         
+        
     @retry(requests.RequestException)
     def get_webpage_content(self) -> str:
         self._wait_for_load()
@@ -776,38 +767,31 @@ class BaseBrowser:
         return markdown_content
     
 
+
 class WebToolkit(BaseToolkit):
-    r"""A class for browsing the web and interacting with web pages.
-    
-    This class provides methods for browsing the web and interacting with web pages.
-    """
     def __init__(self,
-                 headless: bool = True,
+                 headless=True,
                  cache_dir: Optional[str] = None,
+                 page_script_path: Optional[str] = None,
                  history_window: int = 5,
                  web_agent_model: Optional[BaseModelBackend] = None,
                  planning_agent_model: Optional[BaseModelBackend] = None,
+                 output_language: str = "en"
                  ): 
-        r"""Initialize the WebToolkit instance.
-        
-        Args:
-            headless (bool): Whether to run the browser in headless mode.
-            cache_dir (Union[str, None]): The directory to store cache files.
-            history_window (int): The window size for storing the history of actions.
-            web_agent_model (Optional[BaseModelBackend]): The model backend for the web agent.
-            planning_agent_model (Optional[BaseModelBackend]): The model backend for the planning agent.
-        """
         
         self.browser = BaseBrowser(
             headless=headless,
-            cache_dir=cache_dir
+            cache_dir=cache_dir,
+            page_script_path=page_script_path
             )
         
         self.history_window = history_window
         self.web_agent_model = web_agent_model
         self.planning_agent_model = planning_agent_model
+        self.output_language = output_language
         
         self.history = []
+        # self.search_toolkit = SearchToolkit()
         self.web_agent, self.planning_agent = self._initialize_agent()
         
     
@@ -845,6 +829,7 @@ Given a high-level task, you can leverage predefined browser tools to help users
         web_agent = ChatAgent(
             system_message=system_prompt,
             model=web_agent_model,
+            output_language=self.output_language
             )
         
         planning_system_prompt = """
@@ -854,6 +839,7 @@ You are a helpful planning agent that can assist users in planning complex tasks
         planning_agent = ChatAgent(
             system_message=planning_system_prompt,
             model=planning_model,
+            output_language=self.output_language
         )
         
         return web_agent, planning_agent
@@ -929,22 +915,6 @@ Here are some tips for you:
         observation_result: str = resp_dict.get("observation", "")
         reasoning_result: str = resp_dict.get("reasoning", "")
         action_code: str = resp_dict.get("action_code", "")
-        
-        if action_code and "(" in action_code and ")" not in action_code:
-            # try to fix the action code
-            action_match = re.search(r'"action_code"\s*:\s*[`"]([^`"]*\([^)]*\))[`"]', resp_content)
-            if action_match:
-                action_code = action_match.group(1)
-            else:
-                #
-                logger.warning(f"Incomplete action_code detected: {action_code}")
-                # try to fix the action code
-                if action_code.startswith("fill_input_id("):
-                    parts = action_code.split(",", 1)
-                    if len(parts) > 1:
-                        id_part = parts[0].replace("fill_input_id(", "").strip()
-                        action_code = f'fill_input_id({id_part}, "Please fill the text here.")'
-        
         action_code = action_code.replace("`", "").strip()
         
         return observation_result, reasoning_result, action_code 
@@ -991,6 +961,8 @@ Here are some tips for you:
         r"""Get the final answer based on the task prompt and current browser state.
         It is used when the agent thinks that the task can be completed without any further action, and answer can be directly found in the current viewport.
         """
+        # screenshot, _ = self.browser.get_screenshot()
+        # img = _reload_image(screenshot)
 
         prompt = f"""
 We are solving a complex web task which needs multi-step browser interaction. After the multi-step observation, reasoning and acting with web browser, we think that the task is currently solved.
@@ -1106,36 +1078,37 @@ Your output should be in json format, including the following fields:
             return False, replanned_schema
     
     
-    @dependencies_required("playwright")
     def browser_simulation(self, 
                            task_prompt: str, 
                            start_url: str,
-                           round_limit: int = 12
                            ) -> str:
         r"""A powerful toolkit which can simulate the browser interaction to solve the task which needs multi-step actions.
 
         Args:
             task_prompt (str): The task prompt to solve.
             start_url (str): The start URL to visit.
-            round_limit (int): The round limit to solve the task (default: 12).
         
         Returns:
             str: The simulation result to the task.
         """
-    
+        
+        ROUND_LIMIT = 12
+        
         self._reset()
         task_completed = False
+        
         detailed_plan = self._task_planning(task_prompt, start_url)
         logger.debug(f"Detailed plan: {detailed_plan}")
         
         self.browser.init()
         self.browser.visit_page(start_url)
         
-        for i in range(round_limit):
+        for i in range(ROUND_LIMIT):
             observation, reasoning, action_code = self._observe(task_prompt, detailed_plan)
             logger.debug(f"Observation: {observation}")
             logger.debug(f"Reasoning: {reasoning}")
             logger.debug(f"Action code: {action_code}")
+            # breakpoint()
             
             if "stop" in action_code:
                 task_completed = True
