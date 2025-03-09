@@ -1,18 +1,17 @@
 FROM python:3.10-bookworm
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
-    ln -s /root/.local/bin/poetry /usr/local/bin/poetry
-
-# Configurate Poetry
-RUN poetry config virtualenvs.create false
+# Install uv
+RUN pip install uv
 
 COPY . /app/camel
 
 WORKDIR /app/camel
 
-RUN poetry install --with dev,docs -E all
-
-RUN pre-commit install
+# Setup virtual environment and install dependencies
+RUN uv venv .venv --python=3.10 && \
+    . .venv/bin/activate && \
+    uv pip install -e ".[all, dev]" && \
+    pip install pre-commit mypy && \
+    pre-commit install
 
 CMD ["tail", "-f", "/dev/null"]
