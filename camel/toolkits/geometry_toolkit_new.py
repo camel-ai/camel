@@ -284,7 +284,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
     def compute_area_triangle_vertices(
         self, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float
     ) -> str:
-        """Computes the area of a triangle given its vertices.
+        r"""Computes the area of a triangle given its vertices.
 
         Args:
             x1: x-coordinate of the first vertex
@@ -315,7 +315,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
     def compute_area_triangle_sides(
         self, side1: float, side2: float, side3: float
     ) -> str:
-        """Computes the area of a triangle given its side lengths.
+        r"""Computes the area of a triangle given its side lengths.
 
         Args:
             side1: Length of the first side
@@ -353,7 +353,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_area_triangle_sides", e)
 
     def compute_area_polygon(self, vertices: List[List[float]]) -> str:
-        """Computes the area of a polygon given its vertices.
+        r"""Computes the area of a polygon given its vertices.
 
         Args:
             vertices: List of [x, y] coordinates of the polygon vertices
@@ -1035,7 +1035,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
     def generate_circle_equation(
         self, center_x: float, center_y: float, radius: float
     ) -> str:
-        """Generates the equation of a circle.
+        r"""Generates the equation of a circle.
 
         Args:
             center_x: x-coordinate of the center
@@ -1077,7 +1077,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Generates the equation of an ellipse.
+        r"""Generates the equation of an ellipse.
 
         Args:
             center_x: x-coordinate of the center
@@ -1124,7 +1124,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         coefficient: float,
         orientation: str,
     ) -> str:
-        """Generates the equation of a parabola.
+        r"""Generates the equation of a parabola.
 
         Args:
             vertex_x: x-coordinate of the vertex
@@ -1182,7 +1182,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Generates the equation of a hyperbola.
+        r"""Generates the equation of a hyperbola.
 
         Args:
             center_x: x-coordinate of the center
@@ -1229,7 +1229,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
     def compute_circle_properties(
         self, center_x: float, center_y: float, radius: float
     ) -> str:
-        """Computes properties of a circle.
+        r"""Computes properties of a circle.
 
         Args:
             center_x: x-coordinate of the center
@@ -1265,7 +1265,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes properties of an ellipse.
+        r"""Computes properties of an ellipse.
 
         Args:
             center_x: x-coordinate of the center
@@ -1323,7 +1323,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         coefficient: float,
         orientation: str,
     ) -> str:
-        """Computes properties of a parabola.
+        r"""Computes properties of a parabola.
 
         Args:
             vertex_x: x-coordinate of the vertex
@@ -1371,7 +1371,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes properties of a hyperbola.
+        r"""Computes properties of a hyperbola.
 
         Args:
             center_x: x-coordinate of the center
@@ -1430,7 +1430,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_hyperbola_properties", e)
 
     def compute_circle_eccentricity(self) -> str:
-        """Computes the eccentricity of a circle.
+        r"""Computes the eccentricity of a circle.
 
         Returns:
             str: JSON string with the eccentricity (always 0 for a circle)
@@ -1443,7 +1443,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
     def compute_ellipse_eccentricity(
         self, semi_major: float, semi_minor: float
     ) -> str:
-        """Computes the eccentricity of an ellipse.
+        r"""Computes the eccentricity of an ellipse.
 
         Args:
             semi_major: length of the semi-major axis
@@ -1467,7 +1467,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_ellipse_eccentricity", e)
 
     def compute_parabola_eccentricity(self) -> str:
-        """Computes the eccentricity of a parabola.
+        r"""Computes the eccentricity of a parabola.
 
         Returns:
             str: JSON string with the eccentricity (always 1 for a parabola)
@@ -1480,7 +1480,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
     def compute_hyperbola_eccentricity(
         self, semi_major: float, semi_minor: float
     ) -> str:
-        """Computes the eccentricity of a hyperbola.
+        r"""Computes the eccentricity of a hyperbola.
 
         Args:
             semi_major: length of the semi-major axis (transverse axis)
@@ -1501,7 +1501,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_hyperbola_eccentricity", e)
 
     def compute_circle_foci(self, center_x: float, center_y: float) -> str:
-        """Computes the focus/foci of a circle.
+        r"""Computes the focus/foci of a circle.
 
         Args:
             center_x: x-coordinate of the center
@@ -1524,7 +1524,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the foci of an ellipse.
+        r"""Computes the foci of an ellipse.
 
         Args:
             center_x: x-coordinate of the ellipse center
@@ -1580,7 +1580,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         coefficient: float,
         orientation: str,
     ) -> str:
-        """Computes the focus of a parabola.
+        r"""Computes the focus of a parabola.
 
         Args:
             vertex_x: x-coordinate of the vertex
@@ -1619,7 +1619,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the foci of a hyperbola.
+        r"""Computes the foci of a hyperbola.
 
         Args:
             center_x: x-coordinate of the center
@@ -1652,7 +1652,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_hyperbola_foci", e)
 
     def compute_circle_directrix(self) -> str:
-        """Computes the directrix/directrices of a circle.
+        r"""Computes the directrix/directrices of a circle.
 
         Returns:
             str: JSON string explaining that circles don't have directrices
@@ -1680,7 +1680,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the directrices of an ellipse.
+        r"""Computes the directrices of an ellipse.
 
         Args:
             center_x: x-coordinate of the center
@@ -1723,7 +1723,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         coefficient: float,
         orientation: str,
     ) -> str:
-        """Computes the directrix of a parabola.
+        r"""Computes the directrix of a parabola.
 
         Args:
             vertex_x: x-coordinate of the vertex
@@ -1763,7 +1763,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the directrices of a hyperbola.
+        r"""Computes the directrices of a hyperbola.
 
         Args:
             center_x: x-coordinate of the center
@@ -1802,7 +1802,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_hyperbola_directrices", e)
 
     def compute_circle_asymptotes(self) -> str:
-        """Computes the asymptotes of a circle.
+        r"""Computes the asymptotes of a circle.
 
         Returns:
             str: JSON string explaining that circles don't have asymptotes
@@ -1822,7 +1822,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_circle_asymptotes", e)
 
     def compute_ellipse_asymptotes(self) -> str:
-        """Computes the asymptotes of an ellipse.
+        r"""Computes the asymptotes of an ellipse.
 
         Returns:
             str: JSON string explaining that ellipses don't have asymptotes
@@ -1842,7 +1842,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             return self.handle_exception("compute_ellipse_asymptotes", e)
 
     def compute_parabola_asymptotes(self) -> str:
-        """Computes the asymptotes of a parabola.
+        r"""Computes the asymptotes of a parabola.
 
         Returns:
             str: JSON string explaining that parabolas don't have asymptotes
@@ -1869,7 +1869,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the asymptotes of a hyperbola.
+        r"""Computes the asymptotes of a hyperbola.
 
         Args:
             center_x: x-coordinate of the center
@@ -1927,7 +1927,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         line_slope: float,
         line_y_intercept: float,
     ) -> str:
-        """Computes the intersection points of a line and a circle.
+        r"""Computes the intersection points of a line and a circle.
 
         Args:
             center_x: x-coordinate of the circle center
@@ -1984,7 +1984,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         line_slope: float,
         line_y_intercept: float,
     ) -> str:
-        """Computes the intersection points of a line and an ellipse.
+        r"""Computes the intersection points of a line and an ellipse.
 
         Args:
             center_x: x-coordinate of the ellipse center
@@ -2056,7 +2056,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         line_slope: float,
         line_y_intercept: float,
     ) -> str:
-        """Computes the intersection points of a line and a parabola.
+        r"""Computes the intersection points of a line and a parabola.
 
         Args:
             vertex_x: x-coordinate of the parabola vertex
@@ -2128,7 +2128,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         line_slope: float,
         line_y_intercept: float,
     ) -> str:
-        """Computes the intersection points of a line and a hyperbola.
+        r"""Computes the intersection points of a line and a hyperbola.
 
         Args:
             center_x: x-coordinate of the hyperbola center
@@ -2200,7 +2200,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         center_y: float,
         radius: float,
     ) -> str:
-        """Checks the position of a point relative to a circle.
+        r"""Checks the position of a point relative to a circle.
 
         Args:
             point_x: x-coordinate of the point
@@ -2251,7 +2251,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Checks the position of a point relative to an ellipse.
+        r"""Checks the position of a point relative to an ellipse.
 
         Args:
             point_x: x-coordinate of the point
@@ -2309,7 +2309,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         coefficient: float,
         orientation: str,
     ) -> str:
-        """Checks the position of a point relative to a parabola.
+        r"""Checks the position of a point relative to a parabola.
 
         Args:
             point_x: x-coordinate of the point
@@ -2384,7 +2384,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Checks the position of a point relative to a hyperbola.
+        r"""Checks the position of a point relative to a hyperbola.
 
         Args:
             point_x: x-coordinate of the point
@@ -2444,7 +2444,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         center_y: float,
         radius: float,
     ) -> str:
-        """Computes the tangent line(s) to a circle from a point.
+        r"""Computes the tangent line(s) to a circle from a point.
 
         Args:
             point_x: x-coordinate of the point
@@ -2586,7 +2586,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         center_y: float,
         radius: float,
     ) -> str:
-        """Computes the tangent line to a circle at a specific point
+        r"""Computes the tangent line to a circle at a specific point
             on the circle.
 
         Args:
@@ -2658,7 +2658,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the tangent line to an ellipse at a specific point
+        r"""Computes the tangent line to an ellipse at a specific point
             on the ellipse.
 
         Args:
@@ -2767,7 +2767,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         coefficient: float,
         orientation: str,
     ) -> str:
-        """Computes the tangent line to a parabola at a specific point
+        r"""Computes the tangent line to a parabola at a specific point
             on the parabola.
 
         Args:
@@ -2896,7 +2896,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         semi_minor: float,
         orientation: str,
     ) -> str:
-        """Computes the tangent line to a hyperbola at a specific point
+        r"""Computes the tangent line to a hyperbola at a specific point
             on the hyperbola.
 
         Args:
