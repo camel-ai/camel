@@ -3031,12 +3031,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                     "result": {
                         "area": str(float(area)),
                         "radius": r,
-                        "steps": [
-                            "The area of a circle is given by the formula:"
-                            "A = πr²",
-                            f"Substituting r = {r}",
-                            f"A = π * ({r})² = {float(area)}",
-                        ],
                     }
                 }
             )
@@ -3060,12 +3054,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                     "result": {
                         "circumference": str(float(circumference)),
                         "radius": r,
-                        "steps": [
-                            "The circumference of a circle is given by"
-                            "the formula: C = 2πr",
-                            f"Substituting r = {r}",
-                            f"C = 2π * {r} = {float(circumference)}",
-                        ],
                     }
                 }
             )
@@ -3113,16 +3101,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                     "result": {
                         "position": position,
                         "distance_from_center": float(distance),
-                        "steps": [
-                            f"Calculate the distance from the point"
-                            f"({px}, {py}) to the center ({cx}, {cy})",
-                            f"Distance = √[(x₂ - x₁)² + (y₂ - y₁)²] = "
-                            f"√[({px} - {cx})² + ({py} - {cy})²] = "
-                            f"{float(distance)}",
-                            f"Compare with radius r = {r}",
-                            f"Since distance {position} radius, the "
-                            f"point is {position} the circle",
-                        ],
                     }
                 }
             )
@@ -3181,23 +3159,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "result": {
                             "intersection_points": [[float(x), float(y)]],
                             "count": 1,
-                            "steps": [
-                                "Substitute the line equation y = mx + b into"
-                                "the circle equation (x - h)²+(y - k)² = r²",
-                                f"This gives "
-                                f"(x - {h})² + ({m}x + {b} - {k})² = {r}²",
-                                "Expanding and rearranging to the form "
-                                "Ax² + Bx + C = 0:",
-                                f"A = 1 + {m}² = {A}",
-                                f"B = 2({m}({b} - {k}) - {h}) = {B}",
-                                f"C = {h}² + ({b} - {k})² - {r}² = {C}",
-                                f"Discriminant = B² - 4AC = "
-                                f"{B}² - 4 * {A} * {C} = {discriminant}",
-                                "Since discriminant ≈ 0, "
-                                "the line is tangent to the circle",
-                                f"The point of tangency is "
-                                f"({float(x)}, {float(y)})",
-                            ],
                         }
                     }
                 )
@@ -3208,21 +3169,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "result": {
                             "intersection_points": [],
                             "count": 0,
-                            "steps": [
-                                "Substitute the line equation y = mx + b into"
-                                "the circle equation (x - h)²+(y - k)² = r²",
-                                f"This gives "
-                                f"(x - {h})² + ({m}x + {b} - {k})² = {r}²",
-                                "Expanding and rearranging to the form "
-                                "Ax² + Bx + C = 0:",
-                                f"A = 1 + {m}² = {A}",
-                                f"B = 2({m}({b} - {k}) - {h}) = {B}",
-                                f"C = {h}² + ({b} - {k})² - {r}² = {C}",
-                                f"Discriminant = B² - 4AC = "
-                                f"{B}² - 4 * {A} * {C} = {discriminant}",
-                                "Since discriminant < 0, "
-                                "the line does not intersect the circle",
-                            ],
                         }
                     }
                 )
@@ -3242,28 +3188,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                                 [float(x2), float(y2)],
                             ],
                             "count": 2,
-                            "steps": [
-                                "Substitute the line equation y = mx + b into"
-                                "the circle equation (x - h)²+(y - k)² = r²",
-                                f"This gives "
-                                f"(x - {h})² + ({m}x + {b} - {k})² = {r}²",
-                                "Expanding and rearranging to the form"
-                                "Ax² + Bx + C = 0:",
-                                f"A = 1 + {m}² = {A}",
-                                f"B = 2({m}({b} - {k}) - {h}) = {B}",
-                                f"C = {h}² + ({b} - {k})² - {r}² = {C}",
-                                f"Discriminant = B² - 4AC = "
-                                f"{B}² - 4 * {A} * {C} = {discriminant}",
-                                "Since discriminant > 0, "
-                                "the line intersects the circle "
-                                "at two points",
-                                f"x₁ = (-B + √(discriminant))/(2A) = "
-                                f"{float(x1)}",
-                                f"y₁ = m * x₁ + b = {float(y1)}",
-                                f"x₂ = (-B - √(discriminant))/(2A) = "
-                                f"{float(x2)}",
-                                f"y₂ = m * x₂ + b = {float(y2)}",
-                            ],
                         }
                     }
                 )
@@ -3305,17 +3229,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "result": {
                             "message": f"The point ({p_x}, {p_y}) is inside"
                             f"circle. No tangent can be drawn.",
-                            "steps": [
-                                f"Calculate the distance from the point "
-                                f"({p_x},{p_y}) to the center ({c_x},{c_y})",
-                                f"Distance = √[(x₂ - x₁)² + (y₂ - y₁)²] = "
-                                f"√[({p_x} - {c_x})² + ({p_y} - {c_y})²] = "
-                                f"{float(distance)}",
-                                f"Since distance {float(distance)} < "
-                                "radius {r}, the point is inside the circle",
-                                "No tangent lines can be drawn from a point"
-                                "inside a circle",
-                            ],
                         }
                     }
                 )
@@ -3354,12 +3267,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                             if 'tangent_eq_simplified' in locals()
                             else [],
                             "count": 1,
-                            "steps": [
-                                f"The point ({p_x}, {p_y}) is on the circle",
-                                "The tangent at a point on a circle is "
-                                "perpendicular to the radius at that point",
-                                f"The tangent line equation is {tangent_eq}",
-                            ],
                         }
                     }
                 )
@@ -3418,22 +3325,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                             [float(t2_x), float(t2_y)],
                         ],
                         "count": 2,
-                        "steps": [
-                            f"The point ({p_x}, {p_y}) is outside the circle",
-                            f"Calculate the distance from the point to the "
-                            f"center: {float(distance)}",
-                            f"Calculate the angle between the line from "
-                            f"center to point and the tangent lines: "
-                            f"cos(θ) = r/d = {float(cos_angle)}",
-                            "Find the tangent points by rotating the "
-                            "vector from center to point by ±θ",
-                            f"Tangent point 1: "
-                            f"({float(t1_x)}, {float(t1_y)})",
-                            f"Tangent point 2: "
-                            f"({float(t2_x)}, {float(t2_y)})",
-                            f"Tangent line 1: {tangent1}",
-                            f"Tangent line 2: {tangent2}",
-                        ],
                     }
                 }
             )
@@ -3476,17 +3367,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "general_form": general_form,
                         "center": [h, k],
                         "radius": r,
-                        "steps": [
-                            f"The standard form of a circle with center"
-                            f"({h}, {k}) and radius {r} is:",
-                            f"(x - {h})² + (y - {k})² = {r}²",
-                            "Expanding to general form "
-                            "x² + y² + Dx + Ey + F = 0:",
-                            f"D = -2h = -2({h}) = {D}",
-                            f"E = -2k = -2({k}) = {E}",
-                            f"F = h² + k² - r² = " f"{h}² + {k}² - {r}² = {F}",
-                            f"Therefore, the general form is: {general_form}",
-                        ],
                     }
                 }
             )
@@ -3523,19 +3403,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "result": {
                             "message": "The three points are collinear."
                             "No circle can be constructed.",
-                            "steps": [
-                                f"Check if the points "
-                                f"({x1}, {y1}), ({x2}, {y2}), and "
-                                f"({x3}, {y3}) are collinear",
-                                "Calculate the area of the triangle "
-                                "formed by these points",
-                                f"Area = 0.5 * |x₁(y₂ - y₃) + x₂(y₃ - y₁) "
-                                f"+ x₃(y₁ - y₂)| = {area}",
-                                "Since the area is approximately 0, "
-                                "the points are collinear",
-                                "Three collinear points cannot "
-                                "determine a unique circle",
-                            ],
                         }
                     }
                 )
@@ -3584,21 +3451,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "general_form": general_form,
                         "center": [float(h), float(k)],
                         "radius": float(r),
-                        "steps": [
-                            f"Set up a system of equations using the "
-                            f"three points: ({x1}, {y1}), ({x2}, {y2}), "
-                            f"and ({x3}, {y3})",
-                            "For a circle in general form "
-                            "x² + y² + Dx + Ey + F = 0, each point must "
-                            "satisfy the equation",
-                            "Solve the system of equations for D, E, and F",
-                            f"D = {float(D)}, E = {float(E)},F = {float(F)}",
-                            "Convert to center-radius form:",
-                            f"h = -D/2 = {float(h)}, k = -E/2 = {float(k)}",
-                            f"r = √(h² + k² - F) = {float(r)}",
-                            f"The circle has center ({float(h)}, {float(k)})"
-                            f"and radius {float(r)}",
-                        ],
                     }
                 }
             )
