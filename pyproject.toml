@@ -254,6 +254,11 @@ model_platforms = [
     "fish-audio-sdk",
 ]
 
+# Audio Toolkit Required
+audio = [
+    "loguru"
+]
+
 # Hugging Face ecosystem
 huggingface = [
     "transformers",
@@ -359,6 +364,7 @@ all = [
     "google-cloud-storage",
     "botocore",
     "dappier",
+    "loguru"
 ]
 
 [tool.poetry.group.dev]
