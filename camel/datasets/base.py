@@ -22,8 +22,10 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sized,
     TypeVar,
     Union,
+    cast,
 )
 
 import torch
@@ -386,7 +388,9 @@ class SeedDataset(Dataset):
             self._raw_data = [dict(item) for item in data]
         elif isinstance(data, Dataset):
             try:
-                self._raw_data = [dict(data[i]) for i in range(len(data))]
+                self._raw_data = [
+                    dict(data[i]) for i in range(len(cast(Sized, data)))
+                ]
             except (TypeError, KeyError, AttributeError) as e:
                 raise TypeError(f"Unsupported PyTorch Dataset: {e}")
 
@@ -427,7 +431,7 @@ class SeedDataset(Dataset):
         """
         if idx < 0 or idx >= self._length:
             raise IndexError(
-                f"Index {idx} out of bounds for dataset of size {len(self)}"
+                f"Index {idx} out of bounds for dataset of size {self._length}"
             )
         return self.data[idx]
 
