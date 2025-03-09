@@ -13,6 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -68,13 +69,22 @@ def test_chat_history_memory(memory: ChatHistoryMemory):
         content="OK",
     )
     system_record = MemoryRecord(
-        message=system_msg, role_at_backend=OpenAIBackendRole.SYSTEM
+        message=system_msg,
+        role_at_backend=OpenAIBackendRole.SYSTEM,
+        timestamp=datetime.now().timestamp(),
+        agent_id="system_agent_1",
     )
     user_record = MemoryRecord(
-        message=user_msg, role_at_backend=OpenAIBackendRole.USER
+        message=user_msg,
+        role_at_backend=OpenAIBackendRole.USER,
+        timestamp=datetime.now().timestamp(),
+        agent_id="user_agent_1",
     )
     assistant_record = MemoryRecord(
-        message=assistant_msg, role_at_backend=OpenAIBackendRole.ASSISTANT
+        message=assistant_msg,
+        role_at_backend=OpenAIBackendRole.ASSISTANT,
+        timestamp=datetime.now().timestamp(),
+        agent_id="assistant_agent_1",
     )
     memory.write_records([system_record, user_record, assistant_record])
     output_messages, _ = memory.get_context()
