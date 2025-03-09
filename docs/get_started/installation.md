@@ -79,7 +79,29 @@ pre-commit install
 deactivate
 ```
 
-### 4. Setting Default Model Platform and Model Type (Optional)
+### 4. Running Tests
+
+To run tests, make sure you have activated the virtual environment first:
+
+```bash
+# Activate the virtual environment
+# For macOS/Linux
+source .venv/bin/activate
+# For Windows
+.venv\Scripts\activate
+
+# Run tests
+pytest --fast-test-mode test/
+
+# Run specific tests
+pytest -v apps/
+pytest -v examples/
+
+# Exit the virtual environment when done
+deactivate
+```
+
+### 5. Setting Default Model Platform and Model Type (Optional)
 
 You can customize the default model platform and model type by setting the following environment variables:
 ```bash
@@ -87,7 +109,7 @@ export DEFAULT_MODEL_PLATFORM_TYPE=<your preferred platform>  # e.g., openai, an
 export DEFAULT_MODEL_TYPE=<your preferred model>  # e.g., gpt-3.5-turbo, gpt-4o-mini, etc.
 ```
 
-### 5. Setting Your Model API Key (Using OpenAI as an Example)
+### 6. Setting Your Model API Key (Using OpenAI as an Example)
 
 **For Bash shell (Linux, macOS, Git Bash on Windows):**
 

@@ -62,7 +62,9 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
-      run: pytest --fast-test-mode test/
+      run: |
+        source .venv/bin/activate
+        pytest --fast-test-mode test/
 
   pytest_package_llm_test:
     runs-on: ubuntu-latest
@@ -113,7 +115,9 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
-      run: pytest --llm-test-only test/
+      run: |
+        source .venv/bin/activate
+        pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
     runs-on: ubuntu-latest
@@ -162,4 +166,6 @@ jobs:
         INTERNLM_API_KEY: "${{ secrets.INTERNLM_API_KEY }}"
         JINA_API_KEY: "${{ secrets.JINA_API_KEY }}"
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
-      run: pytest --very-slow-test-only test/
+      run: |
+        source .venv/bin/activate
+        pytest --very-slow-test-only test/

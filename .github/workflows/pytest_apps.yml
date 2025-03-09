@@ -28,7 +28,9 @@ jobs:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
-      run: pytest -v apps/
+      run: |
+        source .venv/bin/activate
+        pytest -v apps/
 
   pytest_examples:
 
@@ -50,4 +52,6 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
         SILICONFLOW_API_KEY: "${{ secrets.SILICONFLOW_API_KEY }}"
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
-      run: pytest -v examples/
+      run: |
+        source .venv/bin/activate
+        pytest -v examples/
