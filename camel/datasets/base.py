@@ -379,7 +379,7 @@ class SeedDataset(Dataset):
         self._strict = strict
 
         # Type checking and conversion into list of dicts to have a
-        # consistent internal format. Since Seed Dataset should be 
+        # consistent internal format. Since Seed Dataset should be
         # small, we can load it entirely into memmory
 
         if isinstance(data, HFDataset):
