@@ -138,10 +138,7 @@ class ImageAnalysisToolkit(BaseToolkit):
         else:
             logger.debug(f"Loading local image: {image_path}")
             try:
-                with Image.open(image_path) as img:
-                    # Load immediately to detect errors
-                    img.load()
-                    return img.copy()
+                return Image.open(image_path)
             except Exception as e:
                 logger.error(f"Image loading failed: {e}")
                 raise ValueError(f"Invalid image file: {e}")
