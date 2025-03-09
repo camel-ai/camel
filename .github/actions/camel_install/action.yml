@@ -30,7 +30,6 @@ runs:
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all, dev]"
-        uv pip install pre-commit mypy pytest mock
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on uv.lock

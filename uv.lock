@@ -604,6 +604,12 @@ all = [
     { name = "transformers" },
     { name = "tree-sitter" },
     { name = "tree-sitter-python" },
+    { name = "types-colorama" },
+    { name = "types-mock" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "types-setuptools" },
+    { name = "types-tqdm" },
     { name = "unstructured" },
     { name = "wikipedia" },
     { name = "wolframalpha" },
@@ -732,10 +738,7 @@ dev = [
     { name = "toml" },
     { name = "types-colorama" },
     { name = "types-mock" },
-    { name = "types-pillow" },
-    { name = "types-pygments" },
     { name = "types-pyyaml" },
-    { name = "types-regex" },
     { name = "types-requests" },
     { name = "types-setuptools" },
     { name = "types-tqdm" },
@@ -918,6 +921,12 @@ requires-dist = [
     { name = "tree-sitter", marker = "extra == 'dev-tools'", specifier = ">=0.23.2,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'all'", specifier = ">=0.23.6,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'dev-tools'", specifier = ">=0.23.6,<0.24" },
+    { name = "types-colorama", marker = "extra == 'all'", specifier = ">=0.4.15,<0.5" },
+    { name = "types-mock", marker = "extra == 'all'", specifier = ">=5.1.0,<6" },
+    { name = "types-pyyaml", marker = "extra == 'all'", specifier = ">=6.0.12,<7" },
+    { name = "types-requests", marker = "extra == 'all'", specifier = ">=2.31.0,<3" },
+    { name = "types-setuptools", marker = "extra == 'all'", specifier = ">=69.2.0,<70" },
+    { name = "types-tqdm", marker = "extra == 'all'", specifier = ">=4.66.0,<5" },
     { name = "unstructured", marker = "extra == 'all'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'document-tools'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'rag'", specifier = "==0.16.20" },
@@ -941,15 +950,12 @@ dev = [
     { name = "pytest-cov", specifier = ">=4,<5" },
     { name = "ruff", specifier = ">=0.7,<0.8" },
     { name = "toml", specifier = ">=0.10.2" },
-    { name = "types-colorama", specifier = ">=0,<1" },
-    { name = "types-mock" },
-    { name = "types-pillow" },
-    { name = "types-pygments" },
-    { name = "types-pyyaml", specifier = ">=6,<7" },
-    { name = "types-regex" },
-    { name = "types-requests", specifier = ">=2,<3" },
-    { name = "types-setuptools" },
-    { name = "types-tqdm" },
+    { name = "types-colorama", specifier = ">=0.4.15,<0.5" },
+    { name = "types-mock", specifier = ">=5.1.0,<6" },
+    { name = "types-pyyaml", specifier = ">=6.0.12,<7" },
+    { name = "types-requests", specifier = ">=2.31.0,<3" },
+    { name = "types-setuptools", specifier = ">=69.2.0,<70" },
+    { name = "types-tqdm", specifier = ">=4.66.0,<5" },
 ]
 docs = [
     { name = "docutils", specifier = "<0.20.0" },
@@ -6232,42 +6238,12 @@ wheels = [
 ]
 
 [[package]]
-name = "types-docutils"
-version = "0.21.0.20241128"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/dd/df/64e7ab01a4fc5ce46895dc94e31cffc8b8087c8d91ee54c45ac2d8d82445/types_docutils-0.21.0.20241128.tar.gz", hash = "sha256:4dd059805b83ac6ec5a223699195c4e9eeb0446a4f7f2aeff1759a4a7cc17473", size = 26739 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/b6/10ba95739f2cbb9c5bd2f6568148d62b468afe01a94c633e8892a2936d8a/types_docutils-0.21.0.20241128-py3-none-any.whl", hash = "sha256:e0409204009639e9b0bf4521eeabe58b5e574ce9c0db08421c2ac26c32be0039", size = 34677 },
-]
-
-[[package]]
 name = "types-mock"
 version = "5.2.0.20250306"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c1/c8/ca74c1c9c55123eb69e0ec200295f6aedf704572a0be5ff03fe847628f5c/types_mock-5.2.0.20250306.tar.gz", hash = "sha256:15882cb5cf9980587a7607e31890801223801d7997f559686805ce09b6536087", size = 11357 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/21/58/b1f71732279ed35c3e07309d9e0c9eec7716ccebe7b4d047a04a2aea9a38/types_mock-5.2.0.20250306-py3-none-any.whl", hash = "sha256:eb69fec98b8de26be1d7121623d05a2f117d1ea2e01dd30c123d07d204a15c95", size = 10570 },
-]
-
-[[package]]
-name = "types-pillow"
-version = "10.2.0.20240822"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/18/4a/4495264dddaa600d65d68bcedb64dcccf9d9da61adff51f7d2ffd8e4c9ce/types-Pillow-10.2.0.20240822.tar.gz", hash = "sha256:559fb52a2ef991c326e4a0d20accb3bb63a7ba8d40eb493e0ecb0310ba52f0d3", size = 35389 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/23/e81a5354859831fcf54d488d33b80ba6133ea84f874a9c0ec40a4881e133/types_Pillow-10.2.0.20240822-py3-none-any.whl", hash = "sha256:d9dab025aba07aeb12fd50a6799d4eac52a9603488eca09d7662543983f16c5d", size = 54354 },
-]
-
-[[package]]
-name = "types-pygments"
-version = "2.19.0.20250305"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "types-docutils" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/be/88f777c75022b111f9e9fe4cdb430bf92892fe90188b0fd037601ded2ea1/types_pygments-2.19.0.20250305.tar.gz", hash = "sha256:044c50e80ecd4128c00a7268f20355e16f5c55466d3d49dfda09be920af40b4b", size = 18521 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/c6/b6d3ad345b76425e46d25a2da1758603d80c3a59405bdcbbbaa86d8c8070/types_pygments-2.19.0.20250305-py3-none-any.whl", hash = "sha256:ca88aae5ec426f9b107c0f7adc36dc096d2882d930a49f679eaf4b8b643db35d", size = 25638 },
 ]
 
 [[package]]
@@ -6289,15 +6265,6 @@ wheels = [
 ]
 
 [[package]]
-name = "types-regex"
-version = "2024.11.6.20250305"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b8/b4/819c5f42b43f712471929c3730cf6bfd8cbfbe45aa485ffaf520f2f2d22d/types_regex-2024.11.6.20250305.tar.gz", hash = "sha256:28b886bf4eb23400030aa681a2d76b3ee869440c3d458b7017ec168000c1b62f", size = 12283 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/55/a9c86f86577395cf13dc9224d8383745ffd1c30a461fdad828dbbdea3c4b/types_regex-2024.11.6.20250305-py3-none-any.whl", hash = "sha256:bd6b97d2169563c190b9b8c56e0e03caad1e24e0bea2f1c1fdfe5d354772aa42", size = 10462 },
-]
-
-[[package]]
 name = "types-requests"
 version = "2.32.0.20250306"
 source = { registry = "https://pypi.org/simple" }
@@ -6311,14 +6278,11 @@ wheels = [
 
 [[package]]
 name = "types-setuptools"
-version = "75.8.2.20250305"
+version = "69.5.0.20240522"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/18/a996861f5225e7d533a8d8b6aa61bcc9183429a6b8bc93b850aa2e22974d/types_setuptools-75.8.2.20250305.tar.gz", hash = "sha256:a987269b49488f21961a1d99aa8d281b611625883def6392a93855b31544e405", size = 42609 }
+sdist = { url = "https://files.pythonhosted.org/packages/45/dd/dc7fdc8086cb19f081fdc76476a8707c515d0f81abef94b7845b604ceedd/types-setuptools-69.5.0.20240522.tar.gz", hash = "sha256:c5a97601b2d040d3b9fcd0633730f0a8c86ebef208552525c97301427f261549", size = 38273 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/5b/bb33f99239a6d54ed1d8220a088d96d2ccacac7abb317df0d68d2500f3be/types_setuptools-75.8.2.20250305-py3-none-any.whl", hash = "sha256:ba80953fd1f5f49e552285c024f75b5223096a38a5138a54d18ddd3fa8f6a2d4", size = 63727 },
+    { url = "https://files.pythonhosted.org/packages/75/6d/17e28bda9953e0aa4553fe4b5685a509d2f9ff8fe37dbafdd7a5cde37fbb/types_setuptools-69.5.0.20240522-py3-none-any.whl", hash = "sha256:e27231cbc80648cfaee4921d2f1150107fdf8d33666958abf2aba0191a82688b", size = 62183 },
 ]
 
 [[package]]
