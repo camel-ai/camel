@@ -1,5 +1,5 @@
 name: 'camel_install'
-description: 'Setup python environment and install dependencies for CAMEL by poetry.'
+description: 'Setup python environment and install dependencies for CAMEL using uv.'
 inputs:
   python-version:
     description: 'Python version.'
@@ -12,25 +12,28 @@ runs:
       uses: actions/setup-python@v3
       with:
         python-version: '${{ inputs.python-version }}'
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Setup poetry virtual environment
+    - name: Install uv
       run: |
-        poetry config virtualenvs.create true --local
-        poetry config virtualenvs.in-project true --local
+        pip install uv
+      shell: bash
+    - name: Setup virtual environment
+      run: |
+        uv venv .venv --python=${{ inputs.python-version }}
       shell: bash
     - uses: actions/cache/restore@v3
       id: cache-restore
-      name: Restore caches for the virtual environment based on poetry.lock
+      name: Restore caches for the virtual environment based on uv.lock
       with:
         path: ./.venv
-        key: venv-${{ hashFiles('poetry.lock') }}
+        key: venv-${{ hashFiles('uv.lock') }}
     - name: Install the project dependencies
-      run: poetry install --with dev,docs -E all
+      run: |
+        source .venv/bin/activate
+        uv pip install -e ".[all]"
       shell: bash
     - uses: actions/cache/save@v3
-      name: Save caches based on poetry.lock 
+      name: Save caches based on uv.lock
       if: ${{ !steps.cache-restore.outputs.cache-hit }}
       with:
         path: ./.venv
-        key: venv-${{ hashFiles('poetry.lock') }}
+        key: venv-${{ hashFiles('uv.lock') }}

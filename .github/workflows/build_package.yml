@@ -18,32 +18,44 @@ jobs:
           sudo rm -rf $HOME/.cache/pip
           df -h
 
-      - name: Set up Python environment and install dependencies
+      - name: Set up Python environment
         uses: actions/setup-python@v3
         with:
           python-version: "3.10"
 
+      - name: Install uv
+        run: |
+          pip install uv
+
+      - name: Create virtual environment
+        run: |
+          uv venv .venv --python=3.10
+
       - name: Install dependencies
         run: |
-          pip install poetry
-          poetry install
+          source .venv/bin/activate
+          uv pip install -e ".[all]"
 
       - name: Build
-        run: poetry build
+        run: |
+          source .venv/bin/activate
+          uv pip install build
+          python -m build
 
       - name: Set up test environment
         run: |
-          python -m venv venv
-          source venv/bin/activate
+          python -m venv test_venv
+          source test_venv/bin/activate
 
       - name: Install the package
         run: |
+          source test_venv/bin/activate
           WHEEL_FILE=$(ls dist/*.whl)
           pip install "${WHEEL_FILE}[all,test]"
 
       - name: Test import
         run: |
-          source venv/bin/activate
+          source test_venv/bin/activate
           python -c "import camel"
 
       - name: Run tests with Pytest
@@ -85,7 +97,7 @@ jobs:
           AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
           NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
         run: |
-          source venv/bin/activate
+          source test_venv/bin/activate
           pytest --fast-test-mode ./test
 
       - name: Clean up after build
