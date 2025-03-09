@@ -15,6 +15,7 @@
 import json
 import os
 import random
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -334,8 +335,9 @@ class SeedDataset(Dataset):
 
     def __init__(
         self,
-        data: Union[HFDataset, Dataset, str, List[Dict[str, Any]]],
+        data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
         cache_dir: Optional[str] = None,
+        seed: Optional[int] = None,
         min_samples: int = 1,
         **kwargs,
     ):
@@ -346,10 +348,12 @@ class SeedDataset(Dataset):
             Input data, which can be:
                 - A Hugging Face Dataset (HFDataset)
                 - A PyTorch Dataset (torch.utils.data.Dataset)
-                - A string path to a JSON file
+                - A Path object representing the path to a JSON file
                 - A list of dictionaries with DataPoint-compatible fields
             cache_dir (Optional[str]): Directory to cache dataset files.
                 (default: :obj:`None`)
+            seed (Optional[int]): Seed for reproducibility.
+                (default: :obj:`1`)
             min_samples (int): Minimum number of samples required.
                 (default: :obj:`1`)
             **kwargs: Additional dataset parameters.
@@ -368,7 +372,7 @@ class SeedDataset(Dataset):
             'cache_dir': self._cache_dir,
             **kwargs,
         }
-
+        self._rng = random.Random(seed)
         # Type checking and conversion into list of dicts
 
         if isinstance(data, HFDataset):
@@ -378,15 +382,17 @@ class SeedDataset(Dataset):
                 self._raw_data = [dict(data[i]) for i in range(len(data))]
             except (TypeError, KeyError, AttributeError) as e:
                 raise TypeError(f"Unsupported PyTorch Dataset: {e}")
-        elif isinstance(data, str):
-            if not os.path.exists(data):
+
+        elif isinstance(data, Path):
+            if not data.exists():
                 raise FileNotFoundError(f"JSON file not found: {data}")
-            with open(data, 'r') as f:
+            with data.open('r') as f:
                 self._raw_data = json.load(f)
             if not isinstance(self._raw_data, list):
                 raise ValueError(
                     "JSON file must contain a list of dictionaries"
                 )
+
         elif isinstance(data, list):
             self._raw_data = data if data is not None else []
         else:
