@@ -46,7 +46,8 @@ def generate_mock_records(num_records: int):
             },
             "role_at_backend": "user",
             "extra_info": {},
-            "timestamp": datetime.now().timestamp() + i,
+            "timestamp": datetime.now().timestamp(),
+            "agent_id": f"test_agent_{i}",
         }
         for i in range(num_records)
     ]
@@ -101,6 +102,8 @@ class TestChatHistoryBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]
@@ -176,6 +179,8 @@ class TestVectorDBBlock:
                     "test message {}".format(i),
                 ),
                 role_at_backend=OpenAIBackendRole.USER,
+                timestamp=datetime.now().timestamp(),
+                agent_id=f"test_agent_{i}",
             )
             for i in range(5)
         ]

@@ -96,7 +96,7 @@ class VectorDBStatus(BaseModel):
     r"""Vector database status.
 
     Attributes:
-        vector_dim (int): The dimention of stored vectors.
+        vector_dim (int): The dimension of stored vectors.
         vector_count (int): The number of stored vectors.
 
     """
@@ -156,6 +156,7 @@ class BaseVectorStorage(ABC):
     def query(
         self,
         query: VectorDBQuery,
+        agent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided
@@ -164,6 +165,8 @@ class BaseVectorStorage(ABC):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            agent_id (str, optional): The ID of the agent associated with the
+                query. (default: :obj:`None`)
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
