@@ -97,9 +97,17 @@ class SGLangModel(BaseModelBackend):
     def _start_server(self) -> None:
         try:
             if not self._url:
+                tool_call_flag = self.model_config_dict.get('tools')
+                tool_call_arg = (
+                    f"--tool-call-parser {self._api_key} "
+                    if tool_call_flag is not None
+                    else ""
+                )
+                print(tool_call_flag)
                 cmd = (
                     f"python -m sglang.launch_server "
                     f"--model-path {self.model_type} "
+                    f"{tool_call_arg}"
                     f"--port 30000 "
                     f"--host 0.0.0.0"
                 )
