@@ -3815,149 +3815,206 @@ class EnhancedGeometryToolkit(BaseToolkit):
         except Exception as e:
             return self.handle_exception("compute_circle_from_three_points", e)
 
-    def solve_ellipse_problem(
-        self,
-        problem_type: str,
-        center_x: float = 0,
-        center_y: float = 0,
-        semi_major: float = 0,
-        semi_minor: float = 0,
-        orientation: str = "x",
-        point_x: float = 0,
-        point_y: float = 0,
+    def compute_ellipse_area(
+        self, semi_major: float, semi_minor: float
     ) -> str:
-        """Solves a specific type of ellipse problem.
+        r"""Computes the area of an ellipse given its semi-major
+            and semi-minor axes.
 
         Args:
-            problem_type: Type of problem to solve
-                        ("area", "perimeter", "contains_point",
-                         "eccentricity", etc.)
+            semi_major: Length of the semi-major axis
+            semi_minor: Length of the semi-minor axis
+
+        Returns:
+            str: JSON string with the computed area
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+            area = sp.pi * a * b
+            return json.dumps(
+                {
+                    "result": {
+                        "area": str(float(area)),
+                        "semi_major": a,
+                        "semi_minor": b,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_ellipse_area", e)
+
+    def compute_ellipse_perimeter_approximation(
+        self, semi_major: float, semi_minor: float
+    ) -> str:
+        r"""Computes an approximation of the perimeter of an ellipse.
+
+        Args:
+            semi_major: Length of the semi-major axis
+            semi_minor: Length of the semi-minor axis
+
+        Returns:
+            str: JSON string with the approximated perimeter
+        """
+        try:
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Ensure a > b
+            if b > a:
+                a, b = b, a
+
+            # Ramanujan's approximation
+            h = ((a - b) / (a + b)) ** 2
+            perimeter = (
+                sp.pi * (a + b) * (1 + 3 * h / (10 + sp.sqrt(4 - 3 * h)))
+            )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "perimeter": str(float(perimeter)),
+                        "semi_major": a,
+                        "semi_minor": b,
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception(
+                "compute_ellipse_perimeter_approximation", e
+            )
+
+    def check_point_position_on_ellipse(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        r"""Determines if a point is inside, on, or outside an ellipse.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
             center_x: x-coordinate of the ellipse center
             center_y: y-coordinate of the ellipse center
             semi_major: length of the semi-major axis
             semi_minor: length of the semi-minor axis
             orientation: "x" if major axis is along x-axis, "y" if along y-axis
-            point_x: x-coordinate of a point (if applicable)
-            point_y: y-coordinate of a point (if applicable)
 
         Returns:
-            str: JSON string with the solution
+            str: JSON string with the position ("inside", "on", or "outside")
+        """
+        try:
+            px, py = float(point_x), float(point_y)
+            h, k = float(center_x), float(center_y)
+            a = float(semi_major)
+            b = float(semi_minor)
+
+            # Ensure a > b
+            if b > a:
+                a, b = b, a
+                # Adjust orientation if we swapped a and b
+                orientation = "y" if orientation.lower() == "x" else "x"
+
+            # Evaluate the ellipse equation at the point
+            if orientation.lower() == "x":
+                # (x-h)²/a² + (y-k)²/b² = 1
+                value = ((px - h) ** 2 / a**2) + ((py - k) ** 2 / b**2)
+            else:  # orientation == "y"
+                # (x-h)²/b² + (y-k)²/a² = 1
+                value = ((px - h) ** 2 / b**2) + ((py - k) ** 2 / a**2)
+
+            if abs(value - 1) < 1e-10:  # Account for floating-point precision
+                position = "on"
+            elif value < 1:
+                position = "inside"
+            else:
+                position = "outside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "equation_value": float(value),
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("check_point_position_on_ellipse", e)
+
+    def compute_ellipse_equation(
+        self,
+        center_x: float,
+        center_y: float,
+        semi_major: float,
+        semi_minor: float,
+        orientation: str,
+    ) -> str:
+        r"""Computes the equation of an ellipse in standard and general form.
+
+        Args:
+            center_x: x-coordinate of the ellipse center
+            center_y: y-coordinate of the ellipse center
+            semi_major: length of the semi-major axis
+            semi_minor: length of the semi-minor axis
+            orientation: "x" if major axis is along x-axis, "y" if along y-axis
+
+        Returns:
+            str: JSON string with the ellipse equations
         """
         try:
             h, k = float(center_x), float(center_y)
             a = float(semi_major)
             b = float(semi_minor)
 
-            if problem_type == "area":
-                area = sp.pi * a * b
-                return json.dumps(
-                    {
-                        "result": {
-                            "area": str(area),
-                            "steps": [
-                                "The area of ellipse is given by the formula:"
-                                "A = πab",
-                                f"Substituting a = {a} and b = {b}",
-                                f"A = π * {a} * {b} = {area!s}",
-                            ],
-                        }
+            # Ensure a > b
+            if b > a:
+                a, b = b, a
+                # Adjust orientation if we swapped a and b
+                orientation = "y" if orientation.lower() == "x" else "x"
+
+            # Standard form
+            if orientation.lower() == "x":
+                standard_form = f"(x - {h})²/{a}² + (y - {k})²/{b}² = 1"
+
+                # General form: Ax² + By² + Cx + Dy + E = 0
+                A = b**2
+                B = a**2
+                C = -2 * h * b**2
+                D = -2 * k * a**2
+                E = (h**2 * b**2) + (k**2 * a**2) - (a**2 * b**2)
+
+                general_form = f"{A}x² + {B}y² + {C}x + {D}y + {E} = 0"
+            else:  # orientation == "y"
+                standard_form = f"(x - {h})²/{b}² + (y - {k})²/{a}² = 1"
+
+                # General form: Ax² + By² + Cx + Dy + E = 0
+                A = a**2
+                B = b**2
+                C = -2 * h * a**2
+                D = -2 * k * b**2
+                E = (h**2 * a**2) + (k**2 * b**2) - (a**2 * b**2)
+
+                general_form = f"{A}x² + {B}y² + {C}x + {D}y + {E} = 0"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                        "center": [h, k],
+                        "semi_major": a,
+                        "semi_minor": b,
+                        "orientation": orientation,
                     }
-                )
-
-            elif problem_type == "perimeter":
-                # Ramanujan's approximation for the perimeter
-                h = ((a - b) / (a + b)) ** 2
-                perimeter = (
-                    sp.pi * (a + b) * (1 + 3 * h / (10 + sp.sqrt(4 - 3 * h)))
-                )
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "perimeter": str(perimeter),
-                            "note": "This is an approximation",
-                            "steps": [
-                                "The perimeter of an ellipse is approximated"
-                                "using Ramanujan's formula:",
-                                "P ≈ π(a + b)(1 + 3h/(10 + √(4 - 3h))) where"
-                                "h = ((a - b)/(a + b))²",
-                                f"Substituting a = {a} and b = {b}",
-                                f"h = (({a} - {b})/({a} + {b}))² = {float(h)}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "eccentricity":
-                # Ensure a > b
-                if b > a:
-                    a, b = b, a
-
-                eccentricity = sp.sqrt(1 - (b**2 / a**2))
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "eccentricity": str(eccentricity),
-                            "steps": [
-                                "The eccentricity of an ellipse is given by "
-                                "the formula: e = √(1 - (b²/a²))",
-                                f"Substituting a = {a} and b = {b}",
-                                f"e = √(1 - ({b}²/{a}²)) = {eccentricity!s}",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "contains_point":
-                p_x, p_y = float(point_x), float(point_y)
-
-                # Evaluate the ellipse equation at the point
-                if orientation.lower() == "x":
-                    # (x-h)²/a² + (y-k)²/b² = 1
-                    value = (p_x - h) ** 2 / a**2 + (p_y - k) ** 2 / b**2
-                else:  # orientation == "y"
-                    # (x-h)²/b² + (y-k)²/a² = 1
-                    value = (p_x - h) ** 2 / b**2 + (p_y - k) ** 2 / a**2
-
-                if abs(value - 1) < 1e-10:
-                    result = "on"
-                elif value < 1:
-                    result = "inside"
-                else:
-                    result = "outside"
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "position": result,
-                            "equation_value": str(value),
-                            "steps": [
-                                f"Evaluate the ellipse equation at the point "
-                                f"({p_x}, {p_y})",
-                                f"For orientation '{orientation}',the equation"
-                                f"Substituting x = {p_x}, y = {p_y}, h = {h},"
-                                f"k = {k}, a = {a}, b = {b}",
-                                f"Value = {value!s}",
-                                f"Since value {result} 1, the point is"
-                                f"{result} the ellipse",
-                            ],
-                        }
-                    }
-                )
-
-            else:
-                return json.dumps(
-                    {
-                        "result": {
-                            "message": f"Problem type '{problem_type}'"
-                            f"not supported for ellipses."
-                        }
-                    }
-                )
-
+                }
+            )
         except Exception as e:
-            return self.handle_exception("solve_ellipse_problem", e)
+            return self.handle_exception("compute_ellipse_equation", e)
 
     def solve_parabola_problem(
         self,
@@ -3971,7 +4028,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         line_slope: float = 0,
         line_y_intercept: float = 0,
     ) -> str:
-        """Solves a specific type of parabola problem.
+        r"""Solves a specific type of parabola problem.
 
         Args:
             problem_type: Type of problem to solve
@@ -4723,7 +4780,11 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.compute_circle_equation),
             FunctionTool(self.compute_circle_from_three_points),
             # Ellipse Solver
-            FunctionTool(self.solve_ellipse_problem),
+            FunctionTool(self.compute_ellipse_area),
+            FunctionTool(self.compute_ellipse_perimeter_approximation),
+            FunctionTool(self.check_point_position_on_ellipse),
+            FunctionTool(self.compute_ellipse_equation),
+            # Parabola Solver
             FunctionTool(self.solve_parabola_problem),
             FunctionTool(self.solve_hyperbola_problem),
         ]
