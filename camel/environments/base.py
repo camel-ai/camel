@@ -289,6 +289,10 @@ class BaseEnvironment(ABC):
         # extract verifiable part from llm response
         extraction_result = await self.extractor.extract(action.llm_response)
 
+        # Ensure extraction_result is a string
+        if extraction_result is None:
+            extraction_result = ""
+
         # verify the extracted
         verification_result = await self.verifier.verify(
             VerifierInput(
