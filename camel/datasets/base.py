@@ -25,7 +25,6 @@ from typing import (
     Sized,
     TypeVar,
     Union,
-    cast,
 )
 
 import torch
@@ -387,13 +386,17 @@ class SeedDataset(Dataset):
         if isinstance(data, HFDataset):
             self._raw_data = [dict(item) for item in data]
         elif isinstance(data, Dataset):
-            try:
-                self._raw_data = [
-                    dict(data[i]) for i in range(len(cast(Sized, data)))
-                ]
-            except (TypeError, KeyError, AttributeError) as e:
-                raise TypeError(f"Unsupported PyTorch Dataset: {e}")
+            if not isinstance(data, Sized):
+                raise TypeError(
+                    f"{type(data).__name__} does not implement `__len__()`."
+                )
 
+            # Make MyPy happy by ensuring indexability
+            assert callable(
+                getattr(data, "__getitem__", None)
+            ), "Dataset does not support indexing."
+
+            self._raw_data = [dict(data[i]) for i in range(len(data))]
         elif isinstance(data, Path):
             if not data.exists():
                 raise FileNotFoundError(f"JSON file not found: {data}")
@@ -403,7 +406,6 @@ class SeedDataset(Dataset):
                 raise ValueError(
                     "JSON file must contain a list of dictionaries"
                 )
-
         elif isinstance(data, list):
             self._raw_data = data if data is not None else []
         else:
