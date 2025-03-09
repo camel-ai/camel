@@ -292,7 +292,7 @@ source .venv/bin/activate
 .venv\Scripts\activate
 
 # Install CAMEL with all dependencies
-uv pip install -e ".[all,dev,docs]"
+uv pip install -e ".[all]"
 
 # The following command installs a pre-commit hook into the local git repo,
 # so every commit gets auto-formatted and linted.

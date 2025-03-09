@@ -64,7 +64,7 @@ jobs:
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all,dev,docs]"
+        uv pip install -e ".[all]"
         pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -118,7 +118,7 @@ jobs:
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all,dev,docs]"
+        uv pip install -e ".[all]"
         pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -170,5 +170,5 @@ jobs:
         MOONSHOT_API_KEY: "${{ secrets.MOONSHOT_API_KEY }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all,dev,docs]"
+        uv pip install -e ".[all]"
         pytest --very-slow-test-only test/

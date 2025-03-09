@@ -29,8 +29,8 @@ runs:
     - name: Install the project dependencies
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all,dev,docs]"
-        pip install pre-commit mypy
+        uv pip install -e ".[all]"
+        uv pip install pre-commit mypy pytest
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on uv.lock

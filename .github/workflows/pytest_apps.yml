@@ -30,7 +30,7 @@ jobs:
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all,dev,docs]"
+        uv pip install -e ".[all]"
         pytest -v apps/
 
   pytest_examples:
@@ -55,5 +55,5 @@ jobs:
         AIML_API_KEY: "${{ secrets.AIML_API_KEY }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all,dev,docs]"
+        uv pip install -e ".[all]"
         pytest -v examples/
