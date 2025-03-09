@@ -39,6 +39,7 @@ jobs:
       - name: Build
         run: |
           source .venv/bin/activate
+          uv pip install -e ".[all,dev,docs]"
           uv pip install build
           python -m build
 
