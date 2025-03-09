@@ -101,13 +101,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
                 distance = sp.sqrt((px - x1) ** 2 + (py - y1) ** 2)
                 return json.dumps(
                     {
-                        "result": {
-                            "distance": str(float(distance)),
-                            "note": (
-                                "The line is defined by two identical points, "
-                                "so this is the distance to that point."
-                            ),
-                        }
+                        "result": str(float(distance))
                     }
                 )
 
@@ -127,10 +121,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
             return json.dumps(
                 {
-                    "result": {
-                        "distance": str(float(distance)),
-                        "line_equation": f"{A}x + {B}y + {C} = 0",
-                    }
+                    "result": str(float(distance))
                 }
             )
         except Exception as e:
@@ -327,10 +318,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
             return json.dumps(
                 {
-                    "result": {
-                        "area": str(area),
-                        "vertices": [[x1, y1], [x2, y2], [x3, y3]],
-                    }
+                    "result": str(area)
                 }
             )
         except Exception as e:
@@ -374,11 +362,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
             return json.dumps(
                 {
-                    "result": {
-                        "area": str(area),
-                        "sides": [a, b, c],
-                        "semi_perimeter": str(s),
-                    }
+                    "result": str(area)
                 }
             )
         except Exception as e:
@@ -427,11 +411,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
             return json.dumps(
                 {
-                    "result": {
-                        "area": str(area),
-                        "vertices": vertices,
-                        "vertex_count": len(vertices),
-                    }
+                    "result": str(area)
                 }
             )
         except Exception as e:
@@ -3926,7 +3906,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
         Args:
             problem_type: Type of problem to solve
                         ("foci", "asymptotes", "eccentricity",
-                        "contains_point", etc.)
+                        "contains_point", "line_intersection", "vertices", "co_vertices")
             center_x: x-coordinate of the hyperbola center
             center_y: y-coordinate of the hyperbola center
             semi_major: length of the semi-major axis (transverse axis)
@@ -4291,7 +4271,8 @@ class EnhancedGeometryToolkit(BaseToolkit):
                         "result": {
                             "message": (
                                 f"Problem type '{problem_type}' not supported "
-                                "for hyperbolas."
+                                "for hyperbolas. "
+                                "Supported types: ['foci', 'asymptotes', eccentricity', 'contains_point', 'line_intersection', 'vertices', 'co_vertices']"
                             )
                         }
                     }
