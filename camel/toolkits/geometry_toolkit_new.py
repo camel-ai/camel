@@ -99,11 +99,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             if x1 == x2 and y1 == y2:
                 # Calculate distance to a point
                 distance = sp.sqrt((px - x1) ** 2 + (py - y1) ** 2)
-                return json.dumps(
-                    {
-                        "result": str(float(distance))
-                    }
-                )
+                return json.dumps({"result": str(float(distance))})
 
             # Calculate the distance using the formula:
             # d = |Ax + By + C| / sqrt(A^2 + B^2)
@@ -119,11 +115,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             denominator = sp.sqrt(A**2 + B**2)
             distance = numerator / denominator
 
-            return json.dumps(
-                {
-                    "result": str(float(distance))
-                }
-            )
+            return json.dumps({"result": str(float(distance))})
         except Exception as e:
             return self.handle_exception("compute_distance_point_to_line", e)
 
@@ -316,11 +308,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
                 (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
             )
 
-            return json.dumps(
-                {
-                    "result": str(area)
-                }
-            )
+            return json.dumps({"result": str(area)})
         except Exception as e:
             return self.handle_exception("compute_area_triangle_vertices", e)
 
@@ -360,11 +348,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
             # Calculate area using Heron's formula
             area = sp.sqrt(s * (s - a) * (s - b) * (s - c))
 
-            return json.dumps(
-                {
-                    "result": str(area)
-                }
-            )
+            return json.dumps({"result": str(area)})
         except Exception as e:
             return self.handle_exception("compute_area_triangle_sides", e)
 
@@ -409,11 +393,7 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
             area = abs(area) / 2.0
 
-            return json.dumps(
-                {
-                    "result": str(area)
-                }
-            )
+            return json.dumps({"result": str(area)})
         except Exception as e:
             return self.handle_exception("compute_area_polygon", e)
 
@@ -3244,169 +3224,225 @@ class EnhancedGeometryToolkit(BaseToolkit):
 
     # ====================== PROBLEM SOLVER LAYER ======================
 
-    def solve_circle_problem(
-        self,
-        problem_type: str,
-        center_x: float = 0,
-        center_y: float = 0,
-        radius: float = 0,
-        point_x: float = 0,
-        point_y: float = 0,
-        line_slope: float = 0,
-        line_y_intercept: float = 0,
-    ) -> str:
-        """Solves a specific type of circle problem.
+    def compute_circle_area(self, radius: float) -> str:
+        r"""Computes the area of a circle given its radius.
 
         Args:
-            problem_type: Type of problem to solve
-                        ("area", "circumference", "contains_point",
-                         "tangent_lines", etc.)
+            radius: The radius of the circle
+
+        Returns:
+            str: JSON string with the computed area
+        """
+        try:
+            r = float(radius)
+            area = sp.pi * r**2
+            return json.dumps(
+                {
+                    "result": {
+                        "area": str(float(area)),
+                        "radius": r,
+                        "steps": [
+                            "The area of a circle is given by the formula:"
+                            "A = πr²",
+                            f"Substituting r = {r}",
+                            f"A = π * ({r})² = {float(area)}",
+                        ],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_circle_area", e)
+
+    def compute_circle_circumference(self, radius: float) -> str:
+        r"""Computes the circumference of a circle given its radius.
+
+        Args:
+            radius: The radius of the circle
+
+        Returns:
+            str: JSON string with the computed circumference
+        """
+        try:
+            r = float(radius)
+            circumference = 2 * sp.pi * r
+            return json.dumps(
+                {
+                    "result": {
+                        "circumference": str(float(circumference)),
+                        "radius": r,
+                        "steps": [
+                            "The circumference of a circle is given by"
+                            "the formula: C = 2πr",
+                            f"Substituting r = {r}",
+                            f"C = 2π * {r} = {float(circumference)}",
+                        ],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_circle_circumference", e)
+
+    def check_point_position_on_circle(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        radius: float,
+    ) -> str:
+        r"""Determines if a point is inside, on, or outside a circle.
+
+        Args:
+            point_x: x-coordinate of the point
+            point_y: y-coordinate of the point
             center_x: x-coordinate of the circle center
             center_y: y-coordinate of the circle center
             radius: radius of the circle
-            point_x: x-coordinate of a point (if applicable)
-            point_y: y-coordinate of a point (if applicable)
-            line_slope: slope of a line (if applicable)
-            line_y_intercept: y-intercept of a line (if applicable)
 
         Returns:
-            str: JSON string with the solution
+            str: JSON string with the position ("inside", "on", or "outside")
+        """
+        try:
+            px, py = float(point_x), float(point_y)
+            cx, cy = float(center_x), float(center_y)
+            r = float(radius)
+
+            distance = sp.sqrt((px - cx) ** 2 + (py - cy) ** 2)
+
+            if (
+                abs(distance - r) < 1e-10
+            ):  # Account for floating-point precision
+                position = "on"
+            elif distance < r:
+                position = "inside"
+            else:
+                position = "outside"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "position": position,
+                        "distance_from_center": float(distance),
+                        "steps": [
+                            f"Calculate the distance from the point"
+                            f"({px}, {py}) to the center ({cx}, {cy})",
+                            f"Distance = √[(x₂ - x₁)² + (y₂ - y₁)²] = "
+                            f"√[({px} - {cx})² + ({py} - {cy})²] = "
+                            f"{float(distance)}",
+                            f"Compare with radius r = {r}",
+                            f"Since distance {position} radius, the "
+                            f"point is {position} the circle",
+                        ],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("check_point_position_on_circle", e)
+
+    def compute_circle_line_intersection(
+        self,
+        center_x: float,
+        center_y: float,
+        radius: float,
+        line_slope: float,
+        line_y_intercept: float,
+    ) -> str:
+        r"""Computes the intersection points of a circle and a line.
+
+        Args:
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+            line_slope: slope of the line (m in y = mx + b)
+            line_y_intercept: y-intercept of the line (b in y = mx + b)
+
+        Returns:
+            str: JSON string with the intersection points
         """
         try:
             h, k = float(center_x), float(center_y)
             r = float(radius)
+            m, b = float(line_slope), float(line_y_intercept)
 
-            if problem_type == "area":
-                area = sp.pi * r**2
+            # Solve the system of equations:
+            # Circle: (x - h)² + (y - k)² = r²
+            # Line: y = mx + b
+
+            # Substitute line equation into circle equation:
+            # (x - h)² + (mx + b - k)² = r²
+
+            # Expand:
+            # x² - 2hx + h² + m²x² + 2mx(b-k) + (b-k)² = r²
+
+            # Rearrange to standard form: Ax² + Bx + C = 0
+            A = 1 + m**2
+            B = 2 * (m * (b - k) - h)
+            C = h**2 + (b - k) ** 2 - r**2
+
+            # Calculate discriminant
+            discriminant = B**2 - 4 * A * C
+
+            if abs(discriminant) < 1e-10:  # One solution (tangent)
+                x = -B / (2 * A)
+                y = m * x + b
+
                 return json.dumps(
                     {
                         "result": {
-                            "area": str(area),
+                            "intersection_points": [[float(x), float(y)]],
+                            "count": 1,
                             "steps": [
-                                "The area of a circle is given by the formula:"
-                                "A = πr²",
-                                f"Substituting r = {r}",
-                                f"A = π * ({r})² = {area!s}",
+                                "Substitute the line equation y = mx + b into"
+                                "the circle equation (x - h)²+(y - k)² = r²",
+                                f"This gives "
+                                f"(x - {h})² + ({m}x + {b} - {k})² = {r}²",
+                                "Expanding and rearranging to the form "
+                                "Ax² + Bx + C = 0:",
+                                f"A = 1 + {m}² = {A}",
+                                f"B = 2({m}({b} - {k}) - {h}) = {B}",
+                                f"C = {h}² + ({b} - {k})² - {r}² = {C}",
+                                f"Discriminant = B² - 4AC = "
+                                f"{B}² - 4 * {A} * {C} = {discriminant}",
+                                "Since discriminant ≈ 0, "
+                                "the line is tangent to the circle",
+                                f"The point of tangency is "
+                                f"({float(x)}, {float(y)})",
                             ],
                         }
                     }
                 )
 
-            elif problem_type == "circumference":
-                circumference = 2 * sp.pi * r
+            elif discriminant < 0:  # No real solutions
                 return json.dumps(
                     {
                         "result": {
-                            "circumference": str(circumference),
+                            "intersection_points": [],
+                            "count": 0,
                             "steps": [
-                                "The circumference of a circle is given by"
-                                "the formula: C = 2πr",
-                                f"Substituting r = {r}",
-                                f"C = 2π * {r} = {circumference!s}",
+                                "Substitute the line equation y = mx + b into"
+                                "the circle equation (x - h)²+(y - k)² = r²",
+                                f"This gives "
+                                f"(x - {h})² + ({m}x + {b} - {k})² = {r}²",
+                                "Expanding and rearranging to the form "
+                                "Ax² + Bx + C = 0:",
+                                f"A = 1 + {m}² = {A}",
+                                f"B = 2({m}({b} - {k}) - {h}) = {B}",
+                                f"C = {h}² + ({b} - {k})² - {r}² = {C}",
+                                f"Discriminant = B² - 4AC = "
+                                f"{B}² - 4 * {A} * {C} = {discriminant}",
+                                "Since discriminant < 0, "
+                                "the line does not intersect the circle",
                             ],
                         }
                     }
                 )
 
-            elif problem_type == "contains_point":
-                p_x, p_y = float(point_x), float(point_y)
-                distance = sp.sqrt((p_x - h) ** 2 + (p_y - k) ** 2)
-
-                if distance < r:
-                    result = "inside"
-                elif abs(distance - r) < 1e-10:
-                    result = "on"
-                else:
-                    result = "outside"
-
-                return json.dumps(
-                    {
-                        "result": {
-                            "position": result,
-                            "distance_from_center": str(distance),
-                            "steps": [
-                                f"Calculate the distance from the point"
-                                f"({p_x}, {p_y}) to the center ({h}, {k})",
-                                f"Distance = √[(x₂ - x₁)² + (y₂ - y₁)²] ="
-                                f"√[({p_x} - {h})² + ({p_y} - {k})²] = "
-                                f"{distance!s}",
-                                f"Compare with radius r = {r}",
-                                f"Since distance {result} radius, the point is"
-                                f"{result} the circle",
-                            ],
-                        }
-                    }
-                )
-
-            elif problem_type == "line_intersection":
-                m, b = float(line_slope), float(line_y_intercept)
-
-                # Solve the system of equations:
-                # Circle: (x - h)² + (y - k)² = r²
-                # Line: y = mx + b
-
-                # Substitute line equation into circle equation:
-                # (x - h)² + (mx + b - k)² = r²
-
-                # Expand:
-                # x² - 2hx + h² + m²x² + 2mx(b-k) + (b-k)² - r² = 0
-                # (1 + m²)x² + 2(m(b-k) - h)x + (h² + (b-k)² - r²) = 0
-
-                A = 1 + m**2
-                B = 2 * (m * (b - k) - h)
-                C = h**2 + (b - k) ** 2 - r**2
-
-                # Use the quadratic formula
-                discriminant = B**2 - 4 * A * C
-
-                if discriminant < 0:
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [],
-                                "count": 0,
-                                "steps": [
-                                    f"The line y = {m}x + {b} does not"
-                                    f"intersect the circle "
-                                    f"(x - {h})² + (y - {k})² = {r}²",
-                                    (
-                                        f"Discriminant = {discriminant} < 0, "
-                                        f"so there are no real solutions"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
-
+            else:  # Two solutions
                 x1 = (-B + sp.sqrt(discriminant)) / (2 * A)
                 x2 = (-B - sp.sqrt(discriminant)) / (2 * A)
 
                 y1 = m * x1 + b
                 y2 = m * x2 + b
-
-                if abs(discriminant) < 1e-10:  # Tangent case
-                    return json.dumps(
-                        {
-                            "result": {
-                                "intersection_points": [
-                                    [float(x1), float(y1)]
-                                ],
-                                "count": 1,
-                                "steps": [
-                                    f"The line y = {m}x + {b} is tangent to"
-                                    f"circle (x - {h})² + (y - {k})² = {r}²",
-                                    (
-                                        f"Discriminant = {discriminant} ≈ 0, "
-                                        f"so there is one solution"
-                                    ),
-                                    (
-                                        f"Intersection point: "
-                                        f"({float(x1)}, {float(y1)})"
-                                    ),
-                                ],
-                            }
-                        }
-                    )
 
                 return json.dumps(
                     {
@@ -3417,30 +3453,367 @@ class EnhancedGeometryToolkit(BaseToolkit):
                             ],
                             "count": 2,
                             "steps": [
-                                f"The line y = {m}x + {b} intersects circle"
-                                f"(x - {h})² + (y - {k})² = {r}²",
-                                f"Discriminant = {discriminant} > 0,"
-                                f"so there are two solutions",
-                                f"Intersection points:"
-                                f"({float(x1)}, {float(y1)}) and"
-                                f"({float(x2)}, {float(y2)})",
+                                "Substitute the line equation y = mx + b into"
+                                "the circle equation (x - h)²+(y - k)² = r²",
+                                f"This gives "
+                                f"(x - {h})² + ({m}x + {b} - {k})² = {r}²",
+                                "Expanding and rearranging to the form"
+                                "Ax² + Bx + C = 0:",
+                                f"A = 1 + {m}² = {A}",
+                                f"B = 2({m}({b} - {k}) - {h}) = {B}",
+                                f"C = {h}² + ({b} - {k})² - {r}² = {C}",
+                                f"Discriminant = B² - 4AC = "
+                                f"{B}² - 4 * {A} * {C} = {discriminant}",
+                                "Since discriminant > 0, "
+                                "the line intersects the circle "
+                                "at two points",
+                                f"x₁ = (-B + √(discriminant))/(2A) = "
+                                f"{float(x1)}",
+                                f"y₁ = m * x₁ + b = {float(y1)}",
+                                f"x₂ = (-B - √(discriminant))/(2A) = "
+                                f"{float(x2)}",
+                                f"y₂ = m * x₂ + b = {float(y2)}",
+                            ],
+                        }
+                    }
+                )
+        except Exception as e:
+            return self.handle_exception("compute_circle_line_intersection", e)
+
+    def compute_circle_tangent_from_point(
+        self,
+        point_x: float,
+        point_y: float,
+        center_x: float,
+        center_y: float,
+        radius: float,
+    ) -> str:
+        r"""Computes the tangent line(s) to a circle from an external point.
+
+        Args:
+            point_x: x-coordinate of the external point
+            point_y: y-coordinate of the external point
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+
+        Returns:
+            str: JSON string with the tangent line equations
+        """
+        try:
+            p_x, p_y = float(point_x), float(point_y)
+            c_x, c_y = float(center_x), float(center_y)
+            r = float(radius)
+
+            # Calculate distance from point to center
+            distance = sp.sqrt((p_x - c_x) ** 2 + (p_y - c_y) ** 2)
+
+            # Check if point is inside the circle
+            if distance < r:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": f"The point ({p_x}, {p_y}) is inside"
+                            f"circle. No tangent can be drawn.",
+                            "steps": [
+                                f"Calculate the distance from the point "
+                                f"({p_x},{p_y}) to the center ({c_x},{c_y})",
+                                f"Distance = √[(x₂ - x₁)² + (y₂ - y₁)²] = "
+                                f"√[({p_x} - {c_x})² + ({p_y} - {c_y})²] = "
+                                f"{float(distance)}",
+                                f"Since distance {float(distance)} < "
+                                "radius {r}, the point is inside the circle",
+                                "No tangent lines can be drawn from a point"
+                                "inside a circle",
                             ],
                         }
                     }
                 )
 
-            else:
+            # Check if point is on the circle
+            if abs(distance - r) < 1e-10:
+                # If point is on the circle, there's only one tangent line
+                # (perpendicular to the radius)
+                if (
+                    abs(p_y - c_y) < 1e-10
+                ):  # Point is directly to the right or left of center
+                    tangent_eq = f"y = {p_y}"
+                elif (
+                    abs(p_x - c_x) < 1e-10
+                ):  # Point is directly above or below center
+                    tangent_eq = f"x = {p_x}"
+                else:
+                    # Slope of radius is (p_y - c_y)/(p_x - c_x)
+                    # Slope of tangent is negative reciprocal:
+                    # -(p_x - c_x)/(p_y - c_y)
+                    tangent_slope = -(p_x - c_x) / (p_y - c_y)
+                    tangent_eq = (
+                        f"y - {p_y} = {float(tangent_slope)}(x - {p_x})"
+                    )
+                    # Simplify to y = mx + b form
+                    tangent_eq_simplified = (
+                        f"y = {float(tangent_slope)}x + "
+                        f"{float(p_y - tangent_slope*p_x)}"
+                    )
+
                 return json.dumps(
                     {
                         "result": {
-                            "message": f"Problem type '{problem_type}'"
-                            f"not supported for circles."
+                            "tangent_lines": [tangent_eq],
+                            "simplified_forms": [tangent_eq_simplified]
+                            if 'tangent_eq_simplified' in locals()
+                            else [],
+                            "count": 1,
+                            "steps": [
+                                f"The point ({p_x}, {p_y}) is on the circle",
+                                "The tangent at a point on a circle is "
+                                "perpendicular to the radius at that point",
+                                f"The tangent line equation is {tangent_eq}",
+                            ],
                         }
                     }
                 )
 
+            # Point is outside the circle
+            # Use the power of a point theorem
+            # The tangent points can be found using the formula
+
+            # Calculate the tangent points using the formula
+            # First, find the angle between the line from center to point
+            # and the tangent lines
+            cos_angle = r / distance
+            sin_angle = sp.sqrt(1 - cos_angle**2)
+
+            # Unit vector from center to point
+            dx, dy = (p_x - c_x) / distance, (p_y - c_y) / distance
+
+            # Calculate the tangent points by rotating the scaled unit vector
+            t1_x = c_x + r * (dx * cos_angle - dy * sin_angle)
+            t1_y = c_y + r * (dx * sin_angle + dy * cos_angle)
+
+            t2_x = c_x + r * (dx * cos_angle + dy * sin_angle)
+            t2_y = c_y + r * (dx * sin_angle - dy * cos_angle)
+
+            # Calculate tangent line equations
+            # Line through P and T1
+            if abs(p_x - float(t1_x)) < 1e-10:  # Vertical line
+                tangent1 = f"x = {p_x}"
+                tangent1_simplified = tangent1
+            else:
+                m1 = (p_y - float(t1_y)) / (p_x - float(t1_x))
+                b1 = p_y - m1 * p_x
+                tangent1 = f"y - {p_y} = {float(m1)}(x - {p_x})"
+                tangent1_simplified = f"y = {float(m1)}x + {float(b1)}"
+
+            # Line through P and T2
+            if abs(p_x - float(t2_x)) < 1e-10:  # Vertical line
+                tangent2 = f"x = {p_x}"
+                tangent2_simplified = tangent2
+            else:
+                m2 = (p_y - float(t2_y)) / (p_x - float(t2_x))
+                b2 = p_y - m2 * p_x
+                tangent2 = f"y - {p_y} = {float(m2)}(x - {p_x})"
+                tangent2_simplified = f"y = {float(m2)}x + {float(b2)}"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "tangent_lines": [tangent1, tangent2],
+                        "simplified_forms": [
+                            tangent1_simplified,
+                            tangent2_simplified,
+                        ],
+                        "tangent_points": [
+                            [float(t1_x), float(t1_y)],
+                            [float(t2_x), float(t2_y)],
+                        ],
+                        "count": 2,
+                        "steps": [
+                            f"The point ({p_x}, {p_y}) is outside the circle",
+                            f"Calculate the distance from the point to the "
+                            f"center: {float(distance)}",
+                            f"Calculate the angle between the line from "
+                            f"center to point and the tangent lines: "
+                            f"cos(θ) = r/d = {float(cos_angle)}",
+                            "Find the tangent points by rotating the "
+                            "vector from center to point by ±θ",
+                            f"Tangent point 1: "
+                            f"({float(t1_x)}, {float(t1_y)})",
+                            f"Tangent point 2: "
+                            f"({float(t2_x)}, {float(t2_y)})",
+                            f"Tangent line 1: {tangent1}",
+                            f"Tangent line 2: {tangent2}",
+                        ],
+                    }
+                }
+            )
         except Exception as e:
-            return self.handle_exception("solve_circle_problem", e)
+            return self.handle_exception(
+                "compute_circle_tangent_from_point", e
+            )
+
+    def compute_circle_equation(
+        self, center_x: float, center_y: float, radius: float
+    ) -> str:
+        r"""Computes the equation of a circle in standard and general form.
+
+        Args:
+            center_x: x-coordinate of the circle center
+            center_y: y-coordinate of the circle center
+            radius: radius of the circle
+
+        Returns:
+            str: JSON string with the circle equations
+        """
+        try:
+            h, k = float(center_x), float(center_y)
+            r = float(radius)
+
+            # Standard form: (x - h)² + (y - k)² = r²
+            standard_form = f"(x - {h})² + (y - {k})² = {r}²"
+
+            # General form: x² + y² + Dx + Ey + F = 0
+            D = -2 * h
+            E = -2 * k
+            F = h**2 + k**2 - r**2
+
+            general_form = f"x² + y² + {D}x + {E}y + {F} = 0"
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                        "center": [h, k],
+                        "radius": r,
+                        "steps": [
+                            f"The standard form of a circle with center"
+                            f"({h}, {k}) and radius {r} is:",
+                            f"(x - {h})² + (y - {k})² = {r}²",
+                            "Expanding to general form "
+                            "x² + y² + Dx + Ey + F = 0:",
+                            f"D = -2h = -2({h}) = {D}",
+                            f"E = -2k = -2({k}) = {E}",
+                            f"F = h² + k² - r² = " f"{h}² + {k}² - {r}² = {F}",
+                            f"Therefore, the general form is: {general_form}",
+                        ],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_circle_equation", e)
+
+    def compute_circle_from_three_points(
+        self, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float
+    ) -> str:
+        r"""Computes the equation of a circle passing through three points.
+
+        Args:
+            x1: x-coordinate of the first point
+            y1: y-coordinate of the first point
+            x2: x-coordinate of the second point
+            y2: y-coordinate of the second point
+            x3: x-coordinate of the third point
+            y3: y-coordinate of the third point
+
+        Returns:
+            str: JSON string with the circle equation
+        """
+        try:
+            # Convert to float
+            x1, y1 = float(x1), float(y1)
+            x2, y2 = float(x2), float(y2)
+            x3, y3 = float(x3), float(y3)
+
+            # Check if points are collinear
+            area = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+            if abs(area) < 1e-10:
+                return json.dumps(
+                    {
+                        "result": {
+                            "message": "The three points are collinear."
+                            "No circle can be constructed.",
+                            "steps": [
+                                f"Check if the points "
+                                f"({x1}, {y1}), ({x2}, {y2}), and "
+                                f"({x3}, {y3}) are collinear",
+                                "Calculate the area of the triangle "
+                                "formed by these points",
+                                f"Area = 0.5 * |x₁(y₂ - y₃) + x₂(y₃ - y₁) "
+                                f"+ x₃(y₁ - y₂)| = {area}",
+                                "Since the area is approximately 0, "
+                                "the points are collinear",
+                                "Three collinear points cannot "
+                                "determine a unique circle",
+                            ],
+                        }
+                    }
+                )
+
+            # Set up the system of equations
+            # For each point (x, y) on the circle: (x - h)² + (y - k)² = r²
+            # Expanding: x² + y² - 2hx - 2ky + h² + k² - r² = 0
+            # Let D = -2h, E = -2k, F = h² + k² - r²
+            # Then: x² + y² + Dx + Ey + F = 0
+
+            # For the three points, we get:
+            # x₁² + y₁² + Dx₁ + Ey₁ + F = 0
+            # x₂² + y₂² + Dx₂ + Ey₂ + F = 0
+            # x₃² + y₃² + Dx₃ + Ey₃ + F = 0
+
+            # Set up the matrix equation
+            A = sp.Matrix([[x1, y1, 1], [x2, y2, 1], [x3, y3, 1]])
+
+            b = sp.Matrix(
+                [[-(x1**2 + y1**2)], [-(x2**2 + y2**2)], [-(x3**2 + y3**2)]]
+            )
+
+            # Solve for D, E, F
+            solution = A.solve(b)
+            D, E, F = solution[0], solution[1], solution[2]
+
+            # Convert to center-radius form
+            h = -D / 2
+            k = -E / 2
+            r = sp.sqrt(h**2 + k**2 - F)
+
+            # Standard form: (x - h)² + (y - k)² = r²
+            standard_form = (
+                f"(x - {float(h)})² + (y - {float(k)})² = {float(r)}²"
+            )
+
+            # General form: x² + y² + Dx + Ey + F = 0
+            general_form = (
+                f"x² + y² + {float(D)}x + {float(E)}y + {float(F)} = 0"
+            )
+
+            return json.dumps(
+                {
+                    "result": {
+                        "standard_form": standard_form,
+                        "general_form": general_form,
+                        "center": [float(h), float(k)],
+                        "radius": float(r),
+                        "steps": [
+                            f"Set up a system of equations using the "
+                            f"three points: ({x1}, {y1}), ({x2}, {y2}), "
+                            f"and ({x3}, {y3})",
+                            "For a circle in general form "
+                            "x² + y² + Dx + Ey + F = 0, each point must "
+                            "satisfy the equation",
+                            "Solve the system of equations for D, E, and F",
+                            f"D = {float(D)}, E = {float(E)},F = {float(F)}",
+                            "Convert to center-radius form:",
+                            f"h = -D/2 = {float(h)}, k = -E/2 = {float(k)}",
+                            f"r = √(h² + k² - F) = {float(r)}",
+                            f"The circle has center ({float(h)}, {float(k)})"
+                            f"and radius {float(r)}",
+                        ],
+                    }
+                }
+            )
+        except Exception as e:
+            return self.handle_exception("compute_circle_from_three_points", e)
 
     def solve_ellipse_problem(
         self,
@@ -3906,7 +4279,8 @@ class EnhancedGeometryToolkit(BaseToolkit):
         Args:
             problem_type: Type of problem to solve
                         ("foci", "asymptotes", "eccentricity",
-                        "contains_point", "line_intersection", "vertices", "co_vertices")
+                        "contains_point", "line_intersection",
+                        "vertices", "co_vertices")
             center_x: x-coordinate of the hyperbola center
             center_y: y-coordinate of the hyperbola center
             semi_major: length of the semi-major axis (transverse axis)
@@ -4272,7 +4646,6 @@ class EnhancedGeometryToolkit(BaseToolkit):
                             "message": (
                                 f"Problem type '{problem_type}' not supported "
                                 "for hyperbolas. "
-                                "Supported types: ['foci', 'asymptotes', eccentricity', 'contains_point', 'line_intersection', 'vertices', 'co_vertices']"
                             )
                         }
                     }
@@ -4341,8 +4714,15 @@ class EnhancedGeometryToolkit(BaseToolkit):
             FunctionTool(self.compute_tangent_line_at_point_ellipse),
             FunctionTool(self.compute_tangent_line_at_point_parabola),
             FunctionTool(self.compute_tangent_line_at_point_hyperbola),
-            # Problem solver layer
-            FunctionTool(self.solve_circle_problem),
+            # Circle Solver
+            FunctionTool(self.compute_circle_area),
+            FunctionTool(self.compute_circle_circumference),
+            FunctionTool(self.check_point_position_on_circle),
+            FunctionTool(self.compute_circle_line_intersection),
+            FunctionTool(self.compute_circle_tangent_from_point),
+            FunctionTool(self.compute_circle_equation),
+            FunctionTool(self.compute_circle_from_three_points),
+            # Ellipse Solver
             FunctionTool(self.solve_ellipse_problem),
             FunctionTool(self.solve_parabola_problem),
             FunctionTool(self.solve_hyperbola_problem),
