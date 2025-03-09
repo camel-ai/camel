@@ -231,6 +231,11 @@ all = [
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
     "types-setuptools>=69.2.0,<70",
+    "pytest>=7,<8",
+    "pytest-cov>=4,<5",
+    "pytest-asyncio>=0.23.0,<0.24",
+    "gradio>=3,<4",
+    "mock>=5,<6",
 ]
 
 [project.urls]
