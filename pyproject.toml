@@ -221,6 +221,8 @@ all = [
     "google-cloud-storage>=2.18.0,<3",
     "botocore>=1.35.3,<2",
     "dappier>=0.3.3,<0.4",
+    "mypy>=1.5.1,<2",
+    "pre-commit>=3,<4",
 ]
 
 [project.urls]

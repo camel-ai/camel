@@ -30,7 +30,7 @@ runs:
       run: |
         source .venv/bin/activate
         uv pip install -e ".[all]"
-        pip install pre-commit
+        pip install pre-commit mypy
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on uv.lock

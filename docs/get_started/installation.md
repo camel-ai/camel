@@ -71,8 +71,8 @@ source .venv/bin/activate
 # Install CAMEL with all dependencies
 uv pip install -e ".[all]"
 
-# For developers: Install pre-commit hooks
-pip install pre-commit
+# For developers: Install pre-commit hooks and mypy
+pip install pre-commit mypy
 pre-commit install
 
 # Exit the virtual environment when done

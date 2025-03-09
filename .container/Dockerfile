@@ -11,7 +11,7 @@ WORKDIR /app/camel
 RUN uv venv .venv --python=3.10 && \
     . .venv/bin/activate && \
     uv pip install -e ".[all,dev,docs]" && \
-    pip install pre-commit && \
+    pip install pre-commit mypy && \
     pre-commit install
 
 CMD ["tail", "-f", "/dev/null"]
