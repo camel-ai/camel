@@ -18,11 +18,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build and publish to PyPI
-        uses: JRubics/poetry-publish@v2.0
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python_version: '3.10'
-          pypi_token: ${{ secrets.PYPI_API_KEY }}
+          python-version: '3.10'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Setup virtual environment
+        run: uv venv .venv --python=3.10
+
+      - name: Build package
+        run: |
+          source .venv/bin/activate
+          uv pip install -e ".[all, dev]"
+          uv pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_KEY }}
+        run: |
+          source .venv/bin/activate
+          uv pip install twine
+          twine upload dist/*
 
       - name: Upload built artifacts
         uses: actions/upload-artifact@v4
