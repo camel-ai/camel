@@ -194,8 +194,7 @@ def test_base_dataset_metadata():
 
 
 def test_seed_dataset_init(sample_data):
-    r"""Test SeedDataset initialization with various input types."""
-    # Test with list of dictionaries
+    r"""Test SeedDataset initialization with valid input data."""
     dataset = SeedDataset(data=sample_data, min_samples=1)
     assert dataset._raw_data == sample_data, "Raw data should match input list"
     assert len(dataset.data) == 2, "Processed data should have 2 items"
@@ -205,41 +204,68 @@ def test_seed_dataset_init(sample_data):
     assert (
         dataset.data[0].question == 'What is 2+2?'
     ), "DataPoint content should match input"
-
-    # Test min_samples validation
     with pytest.raises(ValueError) as exc_info:
         SeedDataset(data=sample_data, min_samples=3)
-    assert "must have at least 3 samples, got 2" in str(
+    assert "must have at least 3 samples" in str(
         exc_info.value
     ), "Should raise ValueError for insufficient samples"
 
+    # Test with an empty dataset when min_samples is 0
     dataset_empty = SeedDataset(data=[], min_samples=0)
     assert len(dataset_empty.data) == 0, "Empty dataset should have no items"
 
 
+def test_seed_dataset_strict_mode():
+    r"""Test SeedDataset in strict mode where 
+    invalid datapoints raise errors."""
+    invalid_data = [
+        {
+            "question": "Incomplete sample",
+            "rationale": "Some reasoning",
+        }  # Missing 'final_answer'
+    ]
+    with pytest.raises(ValueError) as exc_info:
+        # strict=True should raise an error on the first invalid datapoint
+        SeedDataset(data=invalid_data, min_samples=1, strict=True)
+    assert "validation error" in str(
+        exc_info.value
+    ), "Strict mode should raise ValueError for invalid datapoint"
+
+
+def test_seed_dataset_non_strict_mode():
+    r"""Test SeedDataset in non-strict mode where 
+    invalid datapoints are skipped."""
+
+    invalid_data = [
+        {"question": "Incomplete sample", "rationale": "Some reasoning"}
+    ]
+    # strict=False should filter out invalid samples
+    dataset = SeedDataset(data=invalid_data, min_samples=0, strict=False)
+    # Expect that the invalid sample is skipped, so 
+    # dataset.data should be empty
+    assert (
+        len(dataset.data) == 0
+    ), "Non-strict mode should filter out invalid samples"
+
+
 def test_seed_dataset_init_hf_dataset():
-    r"""Test SeedDataset initialization with a fake IMDB-style
-    Hugging Face Dataset."""
+    r"""Test SeedDataset initialization with a fake IMDB-style Hugging Face Dataset."""
     # Mock IMDB-style data
     mock_imdb_data = [
         {
-            "text": "This movie was absolutely fantastic, "
-            "a real joy to watch!",
+            "text": "This movie was absolutely fantastic, a real joy to watch!",
             "label": 1,
-            "rationale": "The reviewer uses positive adjectives "
-            "like 'fantastic' and 'joy'.",
+            "rationale": "The reviewer uses positive adjectives like 'fantastic' and 'joy'.",
         },
         {
             "text": "Terrible acting and a boring plot ruined this film.",
             "label": 0,
-            "rationale": "Negative terms like 'terrible' and "
-            "'boring' suggest dissatisfaction.",
+            "rationale": "Negative terms like 'terrible' and 'boring' suggest dissatisfaction.",
         },
         {
             "text": "An incredible cast made this a thrilling experience.",
             "label": 1,
-            "rationale": "Words like 'incredible' and 'thrilling' "
-            "reflect a positive reaction.",
+            "rationale": "Words like 'incredible' and 'thrilling' reflect a positive reaction.",
         },
     ]
 
@@ -247,45 +273,39 @@ def test_seed_dataset_init_hf_dataset():
 
     mapped_dataset = hf_dataset.map(
         lambda example: {
-            "question": "What is the sentiment of this review? "
-            f"{example['text'][:30]}...",
+            "question": "What is the sentiment of this review? " f"{example['text'][:30]}...",
             "rationale": example["rationale"],
-            "final_answer": "positive"
-            if example["label"] == 1
-            else "negative",
+            "final_answer": "positive" if example["label"] == 1 else "negative",
         }
     )
 
-    dataset = SeedDataset(data=mapped_dataset, min_samples=1)
-    assert len(dataset.data) == 3
-    assert isinstance(dataset.data[0], DataPoint)
-    assert dataset.data[0].question == mapped_dataset[0]["question"]
-    assert dataset.data[0].rationale == mapped_dataset[0]["rationale"]
-    assert dataset.data[0].final_answer == mapped_dataset[0]["final_answer"]
+    # Valid data
+    dataset = SeedDataset(data=mapped_dataset, min_samples=1, strict=True)
+    assert len(dataset.data) == 3, "There should be 3 valid data points."
+    assert isinstance(dataset.data[0], DataPoint), "Items should be DataPoint instances."
+    assert dataset.data[0].question == mapped_dataset[0]["question"], "Question should match input."
+    assert dataset.data[0].rationale == mapped_dataset[0]["rationale"], "Rationale should match input."
+    assert dataset.data[0].final_answer == mapped_dataset[0]["final_answer"], "Final answer should match input."
 
+    # Invalid data
     invalid_data_missing = [
         {
-            "question": "What is the sentiment of this review? "
-            "Missing rationale...",
+            "question": "What is the sentiment of this review? Missing rationale...",
             "final_answer": "positive",
             # Missing "rationale"
         }
     ]
     hf_invalid_missing = HFDataset.from_list(invalid_data_missing)
     with pytest.raises(ValueError, match="Sample at index 0 validation error"):
-        SeedDataset(data=hf_invalid_missing, min_samples=1)
+        SeedDataset(data=hf_invalid_missing, min_samples=1, strict=True)
 
-    # Test with empty dataset and min_samples=1
     empty_data = []
     hf_empty = HFDataset.from_list(empty_data)
-    with pytest.raises(
-        ValueError, match="Dataset must have at least 1 samples, got 0"
-    ):
-        SeedDataset(data=hf_empty, min_samples=1)
+    with pytest.raises(ValueError, match="Dataset must have at least 1 samples, got 0"):
+        SeedDataset(data=hf_empty, min_samples=1, strict=True)
 
-    # Test with empty dataset and min_samples=0
-    dataset_empty = SeedDataset(data=hf_empty, min_samples=0)
-    assert len(dataset_empty.data) == 0
+    dataset_empty = SeedDataset(data=hf_empty, min_samples=0, strict=True)
+    assert len(dataset_empty.data) == 0, "Empty dataset should have no valid items."
 
     non_dict_data = [
         "Not a dictionary",
@@ -296,12 +316,11 @@ def test_seed_dataset_init_hf_dataset():
         },
     ]
     with pytest.raises(TypeError, match="Unsupported data type"):
-        SeedDataset(data=non_dict_data, min_samples=1)
+        SeedDataset(data=non_dict_data, min_samples=1, strict=True)
 
     data_with_optional = [
         {
-            "question": "What is the sentiment of this review? "
-            "This movie was awesome!...",
+            "question": "What is the sentiment of this review? This movie was awesome!...",
             "rationale": "Positive sentiment detected.",
             "final_answer": "positive",
             "difficulty": "medium",
@@ -309,9 +328,10 @@ def test_seed_dataset_init_hf_dataset():
         }
     ]
     hf_optional = HFDataset.from_list(data_with_optional)
-    dataset_optional = SeedDataset(data=hf_optional, min_samples=1)
-    assert dataset_optional.data[0].difficulty == "medium"
-    assert dataset_optional.data[0].metadata == {"source": "imdb"}
+    dataset_optional = SeedDataset(data=hf_optional, min_samples=1, strict=True)
+    assert dataset_optional.data[0].difficulty == "medium", "Difficulty field should be 'medium'."
+    assert dataset_optional.data[0].metadata == {"source": "imdb"}, "Metadata should match input."
+
 
 
 def test_seed_dataset_init_pytorch_dataset():
