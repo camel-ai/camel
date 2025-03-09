@@ -69,7 +69,7 @@ source .venv/bin/activate
 .venv\Scripts\activate
 
 # Install CAMEL with all dependencies
-uv pip install -e ".[all]"
+uv pip install -e ".[all,dev,docs]"
 
 # For developers: Install pre-commit hooks and mypy
 pip install pre-commit mypy

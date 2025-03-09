@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: |
           source .venv/bin/activate
-          uv pip install -e ".[all]"
+          uv pip install -e ".[all,dev,docs]"
 
       - name: Build
         run: |
