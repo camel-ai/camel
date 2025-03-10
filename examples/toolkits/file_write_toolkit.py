@@ -92,11 +92,45 @@ tool_call_id='call_2deb164ff8154bb493aae9')]
 '''
 
 response_text = camel_agent.step("Please generate a paragraph that contains multiple occurrences of the word 'future' and save it.")
-print("Agent response (text generation):", response_text.msgs[0].content)
-# Agent response (text generation): The paragraph has been successfully generated and saved to a file named **future_paragraph.txt**.
+print(response_text.msgs[0].content)
+'''
+================================================================
+I have generated a paragraph containing multiple occurrences of 
+the word "future" and saved it to a file named `future_paragraph
+.txt`. You can find the file in the output directory.
 
+Here is the content of the txt file:
+
+The future is a concept that fascinates everyone. As we think 
+about the future, we often wonder what advances in technology 
+will shape our world. The future holds endless possibilities, 
+from exploration of distant planets to the integration of artificial 
+intelligence in our daily lives. Preparing for the future requires 
+us to innovate and adapt. Many believe that the future is bright, 
+with opportunities for growth and progress, while others advocate 
+for a more cautious approach. Regardless, the future remains a topic 
+of great interest and discussion.
+
+================================================================
+'''
 
 response_replace = camel_agent.step(f"Replace 'future' with 'past' in the file future_paragraph.txt")
-print("\nAgent response (replacement):", response_replace.msgs[0].content)
-# Agent response (replacement): The word "future" has been successfully replaced with "past" in the file **future_paragraph.txt**.
+print(response_replace.msgs[0].content)
 
+'''
+================================================================
+I have successfully replaced all occurrences of the word "future" 
+with "past" in the file `future_paragraph.txt`.
+
+================================================================
+'''
+print(response_replace.info['tool_calls'])
+'''
+================================================================
+[ToolCallingRecord(tool_name='file_str_replace', args={'file': 
+'./model_outputs/future_paragraph.txt', 'new_str': 'past', 
+'old_str': 'future', 'sudo': False}, result='Successfully 
+replaced text in file: ./model_outputs/future_paragraph.txt', 
+tool_call_id='call_U7D6BMZImkwU4MyaGFyO8wmZ')]
+================================================================
+'''
