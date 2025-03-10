@@ -46,14 +46,11 @@ class SubprocessInterpreter(BaseInterpreter):
             executed code. (default: :obj:`True`)
     """
 
-    @property
-    def _CODE_EXECUTE_CMD_MAPPING(self) -> Dict[str, str]:
-        """Get the command mapping using the current Python executable."""
-        return {
-            "python": f"{sys.executable} {{file_name}}",
-            "bash": "bash {file_name}",
-            "r": "Rscript {file_name}",
-        }
+    _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
+        "python": "python {file_name}",
+        "bash": "bash {file_name}",
+        "r": "Rscript {file_name}",
+    }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
