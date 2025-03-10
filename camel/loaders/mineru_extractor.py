@@ -263,7 +263,7 @@ class MinerULoader(BaseLoader):
             "MINERU_API_KEY"
         )
         self._api_url = self.config.get("api_url", "https://mineru.net/api/v4")
-        self.headers = {
+        self._headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "Accept": "*/*",

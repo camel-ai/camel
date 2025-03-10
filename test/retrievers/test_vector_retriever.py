@@ -73,7 +73,7 @@ def test_process(mock_unstructured_modules):
     mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
 
     # Setup mock behavior
-    mock_instance.parse_file_or_url.return_value = ["mock_element"]
+    mock_instance.load.return_value = ["mock_element"]
     mock_instance.chunk_elements.return_value = [mock_chunk]
 
     vector_retriever = VectorRetriever()
@@ -81,7 +81,7 @@ def test_process(mock_unstructured_modules):
     vector_retriever.process(content="https://www.camel-ai.org/")
 
     # Assert that methods are called as expected
-    mock_instance.parse_file_or_url.assert_called_once_with(
+    mock_instance.load.assert_called_once_with(
         input_path="https://www.camel-ai.org/", metadata_filename=None
     )
     mock_instance.chunk_elements.assert_called_once()
