@@ -161,7 +161,9 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
         return json.loads(text)
     except json.JSONDecodeError:
         try:
-            fixed_text = re.sub(r'`([^`]*?)`(?=\s*[:,\[\]{}]|$)', r'"\1"', text)
+            fixed_text = re.sub(
+                r'`([^`]*?)`(?=\s*[:,\[\]{}]|$)', r'"\1"', text
+            )
             return json.loads(fixed_text)
         except json.JSONDecodeError:
             result = {}
@@ -192,10 +194,10 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
                 if result:
                     return result
 
-                print(f"Failed to parse JSON output: {text}")
+                logger.warning(f"Failed to parse JSON output: {text}")
                 return {}
             except Exception as e:
-                print(f"Error while extracting fields from JSON: {e}")
+                logger.warning(f"Error while extracting fields from JSON: {e}")
                 return {}
 
 
