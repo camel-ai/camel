@@ -31,7 +31,7 @@ def test_init():
 
         assert firecrawl._api_key == api_key
         assert firecrawl._api_url == api_url
-        assert firecrawl.app == mock_app
+        assert firecrawl.firecrawl.app == mock_app
 
 
 def test_crawl_success():
@@ -204,3 +204,7 @@ def test_map_site_failure():
             firecrawl.map_site(url)
         except RuntimeError as e:
             assert 'Failed to map the site' in str(e)
+
+
+if __name__ == "__main__":
+    test_init()

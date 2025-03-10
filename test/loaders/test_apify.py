@@ -47,7 +47,9 @@ def test_run_actor():
     mock_actor.call.return_value = {"result": "success"}
     apify.apify.client.actor = Mock(return_value=mock_actor)
     # result = apify.run_actor(actor_id, run_input=run_input)
-    result = apify.load(source=actor_id, functionality="run_actor")
+    result = apify.load(
+        source=actor_id, functionality="run_actor", run_input=run_input
+    )
     apify.apify.client.actor.assert_called_once_with(actor_id)
     apify.apify.client.actor.return_value.call.assert_called_once_with(
         run_input=run_input,
