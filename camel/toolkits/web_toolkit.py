@@ -157,16 +157,13 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
     if triple_quotes_match:
         text = triple_quotes_match.group(1).strip()
 
-    text = text.replace("`", '"')
-
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         try:
-            fixed_text = re.sub(r'`([^`]*)`', r'"\1"', text)
+            fixed_text = re.sub(r'`([^`]*?)`(?=\s*[:,\[\]{}]|$)', r'"\1"', text)
             return json.loads(fixed_text)
         except json.JSONDecodeError:
-            # Try to extract key fields
             result = {}
             try:
                 bool_pattern = r'"(\w+)"\s*:\s*(true|false)'
@@ -195,10 +192,10 @@ def _parse_json_output(text: str) -> Dict[str, Any]:
                 if result:
                     return result
 
-                logger.warning(f"Failed to parse JSON output: {text}")
+                print(f"Failed to parse JSON output: {text}")
                 return {}
             except Exception as e:
-                logger.warning(f"Error while extracting fields from JSON: {e}")
+                print(f"Error while extracting fields from JSON: {e}")
                 return {}
 
 
@@ -986,7 +983,7 @@ Here are an example of the output:
 {{
     "observation": [IMAGE_DESCRIPTION],
     "reasoning": [YOUR_REASONING],
-    "action_code": `fill_input_id([ID], [TEXT])`
+    "action_code": "fill_input_id([ID], [TEXT])"
 }}
 
 Here are some tips for you:
