@@ -39,7 +39,7 @@ camel_agent = ChatAgent(
 
 usr_query = "Please generate a simple Python script to analyze the word frequency in a text and save the code to a file. "
 
-response = camel_agent.step(usr_msg)
+response = camel_agent.step(usr_query)
 print(response.msgs[0].content)
 
 '''
@@ -90,3 +90,13 @@ result='Content successfully written to file: ./model_outputs
 tool_call_id='call_2deb164ff8154bb493aae9')]
 ================================================================
 '''
+
+response_text = camel_agent.step("Please generate a paragraph that contains multiple occurrences of the word 'future' and save it.")
+print("Agent response (text generation):", response_text.msgs[0].content)
+# Agent response (text generation): The paragraph has been successfully generated and saved to a file named **future_paragraph.txt**.
+
+
+response_replace = camel_agent.step(f"Replace 'future' with 'past' in the file future_paragraph.txt")
+print("\nAgent response (replacement):", response_replace.msgs[0].content)
+# Agent response (replacement): The word "future" has been successfully replaced with "past" in the file **future_paragraph.txt**.
+
