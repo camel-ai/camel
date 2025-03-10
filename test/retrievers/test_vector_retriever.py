@@ -82,7 +82,7 @@ def test_process(mock_unstructured_modules):
 
     # Assert that methods are called as expected
     mock_instance.load.assert_called_once_with(
-        input_path="https://www.camel-ai.org/", metadata_filename=None
+        source="https://www.camel-ai.org/", metadata_filename=None
     )
     mock_instance.chunk_elements.assert_called_once()
 
