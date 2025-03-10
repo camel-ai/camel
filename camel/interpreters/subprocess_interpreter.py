@@ -161,7 +161,6 @@ class SubprocessInterpreter(BaseInterpreter):
                     temp_file = self._create_temp_file(modified_source, "py")
                     cmd = ["python", str(temp_file)]
             except SyntaxError:
-                # If parsing fails, run the original file using the mapped command
                 base_cmd = self._CODE_EXECUTE_CMD_MAPPING[code_type].split()[0]
                 cmd = [base_cmd, str(file)]
         else:
@@ -173,7 +172,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
         # Get current Python executable's environment
         env = os.environ.copy()
-        
+
         # On Windows, ensure we use the correct Python executable path
         if os.name == 'nt':
             python_path = os.path.dirname(sys.executable)
@@ -188,7 +187,7 @@ class SubprocessInterpreter(BaseInterpreter):
             stderr=subprocess.PIPE,
             text=True,
             env=env,
-            shell=os.name == 'nt'
+            shell=os.name == 'nt',
         )
         stdout, stderr = proc.communicate()
         return_code = proc.returncode
