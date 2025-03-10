@@ -50,7 +50,7 @@ class SubprocessInterpreter(BaseInterpreter):
     def _CODE_EXECUTE_CMD_MAPPING(self) -> Dict[str, str]:
         """Get the command mapping using the current Python executable."""
         return {
-            "python": f"{sys.executable} {{file_name}}",  # 使用当前 Python 解释器
+            "python": f"{sys.executable} {{file_name}}",
             "bash": "bash {file_name}",
             "r": "Rscript {file_name}",
         }
@@ -174,8 +174,24 @@ class SubprocessInterpreter(BaseInterpreter):
             ]  # Get 'python', 'bash', etc.
             cmd = [base_cmd, str(file)]
 
+        # Get current Python executable's environment
+        env = os.environ.copy()
+        
+        # On Windows, ensure we use the correct Python executable path
+        if os.name == 'nt':
+            python_path = os.path.dirname(sys.executable)
+            if 'PATH' in env:
+                env['PATH'] = python_path + os.pathsep + env['PATH']
+            else:
+                env['PATH'] = python_path
+
         proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+            shell=os.name == 'nt'
         )
         stdout, stderr = proc.communicate()
         return_code = proc.returncode
