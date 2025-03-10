@@ -401,9 +401,13 @@ class SeedDataset(Dataset):
     def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
         return [dict(item) for item in data]
 
-    def _init_from_pytorch_dataset(self, data: Dataset) -> List[Dict[str, Any]]:
+    def _init_from_pytorch_dataset(
+        self, data: Dataset
+    ) -> List[Dict[str, Any]]:
         if not isinstance(data, Sized):
-            raise TypeError(f"{type(data).__name__} does not implement `__len__()`.")
+            raise TypeError(
+                f"{type(data).__name__} does not implement `__len__()`."
+            )
         if not callable(getattr(data, "__getitem__", None)):
             raise TypeError("Dataset does not support indexing.")
         return [dict(data[i]) for i in range(len(data))]
@@ -415,22 +419,32 @@ class SeedDataset(Dataset):
             logger.debug(f"Loading JSON from {data}")
             with data.open('r', encoding='utf-8') as f:
                 loaded_data = json.load(f)
-            logger.info(f"Successfully loaded {len(loaded_data)} items from {data}")
+            logger.info(
+                f"Successfully loaded {len(loaded_data)} items from {data}"
+            )
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in file {data}: {e}")
         if not isinstance(loaded_data, list):
             raise ValueError("JSON file must contain a list of dictionaries")
         for i, item in enumerate(loaded_data):
             if not isinstance(item, dict):
-                raise ValueError(f"Expected a dictionary at index {i}, got {type(item).__name__}")
+                raise ValueError(
+                    f"Expected a dictionary at index {i}, "
+                    f"got {type(item).__name__}"
+                )
         return loaded_data
 
-    def _init_from_list(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _init_from_list(
+        self, data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         if data is None:
             return []
         for i, item in enumerate(data):
             if not isinstance(item, dict):
-                raise ValueError(f"Expected a dictionary at index {i}, got {type(item).__name__}")
+                raise ValueError(
+                    f"Expected a dictionary at index {i}, "
+                    f"got {type(item).__name__}"
+                )
         return data
 
     def __len__(self) -> int:
@@ -533,7 +547,7 @@ class SeedDataset(Dataset):
             f"Processed {len(raw_data)} data points, of which "
             f"{len(self.data)} were valid."
         )
-    
+
     def sample(self) -> DataPoint:
         r"""Sample a random datapoint from the dataset.
 
