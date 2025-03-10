@@ -101,8 +101,9 @@ tool_call_id='call_2deb164ff8154bb493aae9')]
 '''
 
 response_text = camel_agent.step(
-f"Please generate a paragraph that contains multiple 
-occurrences of the word 'future' and save it.")
+"""Please generate a paragraph that contains multiple 
+occurrences of the word 'future' and save it."""
+)
 print(response_text.msgs[0].content)
 '''
 ================================================================
@@ -126,8 +127,9 @@ great interest and discussion.
 '''
 
 response_replace = camel_agent.step(
-f"Replace 'future' with 'past' in 
-the file future_paragraph.txt")
+"""Replace 'future' with 'past' in 
+the file future_paragraph.txt"""
+)
 print(response_replace.msgs[0].content)
 
 '''
