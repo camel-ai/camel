@@ -445,5 +445,6 @@ module = [
     "scenedetect",
     "playwright",
     "html2text",
+    "chunkr_ai.*"
 ]
 ignore_missing_imports = true
