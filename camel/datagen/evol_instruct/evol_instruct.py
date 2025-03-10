@@ -39,10 +39,11 @@ class EvolInstructPipeline:
         self, 
         agent: ChatAgent,
     ):
-        """
+        r"""
         Initializes the EvolInstructPipeline with an LLM agent.
         
-        :param agent: The language model agent used for prompt evolution.
+        Args:
+            agent (ChatAgent): The language model agent used for prompt evolution.
         """
         self.agent = agent
     
@@ -51,15 +52,18 @@ class EvolInstructPipeline:
         method: Optional[Union[str, List[str]]] = "uniform",
         num_generations: int = 1,
     ) -> List[str]:
-        """
+        r"""
         Sets the evolution method to use for generating prompts for one iteration.
         
-        :param method: The method(s) to use for evolving the prompt. Can be:
-            - (list) a list of methods with length equal to num_generations.
-            - (str) a single method defined in EvolInstructTemplates, or "uniform".
-        :param num_generations: The number of variations to generate in one iteration.
-                       
-        :return: (list) The list of method to use for generating prompts.
+        Args:
+        method (Optional[Union[str, List[str]]]): 
+            The method(s) to use for evolving the prompt. Can be:
+                - (list) a list of methods with length equal to num_generations.
+                - (str) a single method defined in EvolInstructTemplates, or "uniform".
+        num_generations: The number of variations to generate in one iteration.
+        
+        Returns:
+            methods (list) The list of method to use for generating prompts.
         """
         # Case 1: user provides a list of methods
         if isinstance(method, list):
@@ -105,14 +109,18 @@ class EvolInstructPipeline:
         method: str = "uniform",
         return_method: bool = False,
     ) -> str:
-        """
+        r"""
         Generates a single new prompt for a single seed prompt using a specified method.
         
-        :param prompt: The input prompt to evolve.
-        :param method: The method(s) to use for evolving the prompt. Can be:
-                       - (str) a single method defined in EvolInstructTemplates.
-                       - (str) "uniform" for random selection.
-        :return: The evolved prompt as a string.
+        Args:
+            prompt (str): The input prompt to evolve.
+            method (str): 
+                The method(s) to use for evolving the prompt. Can be:
+                - (str) a single method defined in EvolInstructTemplates.
+                - (str) "uniform" for random selection.
+        
+        Returns:
+            The evolved prompt as a string, optionally with the method
         """
         # Handle the case when using this method externally
         if method == "uniform":
@@ -152,19 +160,23 @@ class EvolInstructPipeline:
         num_generations: int = 1, 
         keep_original: bool = True,
     ) -> List[Tuple[str, str]]:
-        """
+        r"""
         Generates multiple variations of a single seed prompt x.
         Note those variations are directly generated from the same seed,
         that is, [x_1, x_2, ..., x_N] <- LLM( | x, method), where N is the width.
         
-        :param prompt: The input prompt to evolve.
-        :param method: The method(s) to use for evolving the prompt. Can be:
-                       - A single method (str).
-                       - A list of methods with length equal to num_generations.
-                       - "uniform" for random selection.
-        :param num_generations: Number of variations to generate.
-        :param keep_original: Whether to include the original prompt in output.
-        :return: A list of tuples (evolved_prompt, method).
+        Args:
+            prompt (str): The input prompt to evolve.
+            method (Union[str, List[str]]): 
+                The method(s) to use for evolving the prompt. Can be:
+                - A single method (str).
+                - A list of methods with length equal to num_generations.
+                - "uniform" for random selection.
+            num_generations (int): Number of variations to generate.
+            keep_original (bool): Whether to include the original prompt in output.
+        
+        Returns:
+            A list of tuples (evolved_prompt, method).
         """
         from concurrent.futures import ThreadPoolExecutor
         
@@ -197,7 +209,7 @@ class EvolInstructPipeline:
         keep_original: bool = True,
         scorer: str = "uniform"
     ) -> Dict[int, List[Tuple[str, str]]]:
-        """
+        r"""
         Iteratively evolve a prompt over multiple generations.
         Note those variations are iteratively generated from the previous prompt,
         that is, [x_11, x_12, ..., x_1N] <- LLM( | x, method), where N is the width.
@@ -207,21 +219,30 @@ class EvolInstructPipeline:
         We can call this as "TreeBoN", if we choose the best of N prompts in each iteration.
         When N is 1, that is the default EvolInstruct setting.
 
-        :param prompt: The input prompt to evolve.
-        :param method: The method(s) to use for evolving the prompt. Can be:
-                       - "uniform" for random selection.
-                       - A dictionary mapping iteration numbers to lists of methods.
-        :param num_generations: The number of variations to generate in each iteration.
-        :param num_evolutions: The number of iterations to perform.
-        :param keep_original: Whether to include the original prompt in the output of each iteration.
-        :param scorer: The scoring method to select the best prompt for the next iteration.
-                       For now, "uniform" assigns random scores.
-                       
-        :return: A dictionary where keys are iteration numbers and values are lists of tuples (prompt, method).
+        Args:
+            prompt (str): The input prompt to evolve.
+            method (Union[str, Dict[int, List[str]]]): 
+                The method(s) to use for evolving the prompt. Can be:
+                - "uniform" for random selection.
+                - A dictionary mapping iteration numbers to lists of methods.
+            num_generations (int): 
+                The number of variations to generate in each iteration.
+            num_evolutions (int): 
+                The number of iterations to perform.
+            keep_original (bool): 
+                Whether to include the original prompt in the output of each iteration.
+            scorer: 
+                The scoring method to select the best prompt for the next iteration.
+                For now, "uniform" assigns random scores.
+        
+        Returns:
+            Dict[int, List[Tuple[str, str]]]:
+                A dictionary where keys are iteration numbers,
+                and values are lists of tuples (prompt, method).
 
         References:
-        - eva: Evolving Alignment via Asymmetric Self-Play
-               https://ziyu-deep.github.io/files/eva-arxiv.pdf see appendix for details.
+            - eva: Evolving Alignment via Asymmetric Self-Play
+              https://ziyu-deep.github.io/files/eva-arxiv.pdf see appendix for details.
         """
         results = {}
 
@@ -269,20 +290,35 @@ class EvolInstructPipeline:
         scorer: str = "uniform",
         num_chunks: int = 1, 
         retry_limit: int = 3,
-        retry_delay: int = 30,  # in seconds
+        retry_delay: float = 30,  # in seconds
     ) -> List[Dict[int, List[Tuple[str, str]]]]:
-        """
+        r"""
         Divide the list of prompts into chunks,
         iterate through each chunk sequentially,
         then process the prompts within each chunk in parallel
 
-        :param num_chunks: The number of chunks to process batch of prompts.
-            specify a larger number of chunks to avoid hitting RPM limits for API requests.
-        :param retry_limit: The maximum number of retries for failed requests.
-        :param retry_delay: The delay between retries in seconds.
+        Args:
+            prompts (List[str]): A list of prompts to evolve.
+            method (Union[str, Dict[int, List[str]]]):
+                The method(s) to use for evolving the prompt. Can be:
+                - "uniform" for random selection.
+                - A dictionary mapping iteration numbers to lists of methods,
+                  where each list has length equal to num_generations.
+            num_generations (int): The number of variations to generate in each iteration.
+            num_evolutions (int): The number of iterations to perform.
+            keep_original (bool): 
+                Whether to include the original prompt in the output of each iteration.
+            scorer (str): 
+                The scoring method to select the best prompt for the next iteration.
+            num_chunks (int): 
+                The number of chunks to process batch of prompts.
+                specify a larger number of chunks to avoid hitting RPM limits for API requests.
+            retry_limit (int): The maximum number of retries for failed requests.
+            retry_delay (float): The delay between retries in seconds.
 
-        :return: A list of dictionaries,
-                where each dictionary corresponds to the results of one prompt.
+        Returns:
+            List[Dict[int, List[Tuple[str, str]]]]:
+            A list of dictionaries, where each dict corresponds to results of one prompt.
         """
         from concurrent.futures import ThreadPoolExecutor
         from math import ceil

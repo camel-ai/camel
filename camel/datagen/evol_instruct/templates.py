@@ -18,7 +18,7 @@ from dataclasses import dataclass
 # flake8: noqa
 @dataclass(frozen=True)
 class EvolInstructTemplates:
-    """
+    r"""
     Contains templates for EvolInstruct prompt transformations.
     
     References:
