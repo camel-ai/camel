@@ -72,7 +72,7 @@ class TerminalToolkit(BaseToolkit):
         Raises:
             FileNotFoundError: If the specified file does not exist.
             PermissionError: If there are insufficient permissions to read the
-            file.
+                file.
         """
         if not os.path.exists(file):
             raise FileNotFoundError(f"File not found: {file}")
