@@ -58,6 +58,7 @@ dev = [
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
     "types-setuptools>=69.2.0,<70",
+    "uv==0.6.5",
 ]
 docs = [
     "sphinx>=7,<8",
