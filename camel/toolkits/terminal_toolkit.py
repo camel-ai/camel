@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-import platform
 import subprocess
 from typing import Any, Dict, List, Optional
 
@@ -31,16 +30,16 @@ class TerminalToolkit(BaseToolkit):
     searching for files by name or content, executing shell commands, and
     managing terminal sessions.
 
-    Note:
-        Most functions are compatible with Unix-based systems (macOS, Linux).
-        For Windows compatibility, additional implementation details are
-        needed.
-
     Args:
         timeout (Optional[float]): The timeout for terminal operations.
         shell_sessions (Optional[Dict[str, Any]]): A dictionary to store
             shell session information. If None, an empty dictionary will be
             used.
+
+    Note:
+        Most functions are compatible with Unix-based systems (macOS, Linux).
+        For Windows compatibility, additional implementation details are
+        needed.
     """
 
     def __init__(
@@ -48,6 +47,8 @@ class TerminalToolkit(BaseToolkit):
         timeout: Optional[float] = None,
         shell_sessions: Optional[Dict[str, Any]] = None,
     ):
+        import platform
+
         super().__init__(timeout=timeout)
         self.shell_sessions = shell_sessions or {}
         self.os_type = (
@@ -68,17 +69,12 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: Matching content found in the file.
-
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            PermissionError: If there are insufficient permissions to read the
-                file.
         """
         if not os.path.exists(file):
-            raise FileNotFoundError(f"File not found: {file}")
+            return f"File not found: {file}"
 
         if not os.path.isfile(file):
-            raise ValueError(f"The path provided is not a file: {file}")
+            return f"The path provided is not a file: {file}"
 
         command = []
         if sudo:
@@ -108,15 +104,12 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: List of files matching the pattern.
-
-        Raises:
-            FileNotFoundError: If the specified directory does not exist.
         """
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Directory not found: {path}")
+            return f"Directory not found: {path}"
 
         if not os.path.isdir(path):
-            raise ValueError(f"The path provided is not a directory: {path}")
+            return f"The path provided is not a directory: {path}"
 
         command = []
         if self.os_type in ['Darwin', 'Linux']:  # macOS or Linux
@@ -148,16 +141,12 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: Output of the command execution or error message.
-
-        Raises:
-            ValueError: If the exec_dir is not an absolute path or doesn't
-                exist.
         """
         if not os.path.isabs(exec_dir):
-            raise ValueError(f"exec_dir must be an absolute path: {exec_dir}")
+            return f"exec_dir must be an absolute path: {exec_dir}"
 
         if not os.path.exists(exec_dir):
-            raise FileNotFoundError(f"Directory not found: {exec_dir}")
+            return f"Directory not found: {exec_dir}"
 
         # If the session doesn't exist, create a new one
         if id not in self.shell_sessions:
@@ -175,9 +164,8 @@ class TerminalToolkit(BaseToolkit):
                 cwd=exec_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
+                stdin=subprocess.PIPE,
+                text=False,
             )
 
             # Store the process and mark as running
@@ -188,10 +176,13 @@ class TerminalToolkit(BaseToolkit):
             # Get initial output (non-blocking)
             stdout, stderr = "", ""
             try:
-                stdout, stderr = process.communicate(timeout=0.1)
-            except subprocess.TimeoutExpired:
-                # Process is still running, which is fine
-                pass
+                if process.stdout:
+                    stdout = process.stdout.read().decode('utf-8')
+                if process.stderr:
+                    stderr = process.stderr.read().decode('utf-8')
+            except Exception as e:
+                logger.error(f"Error reading initial output: {e}")
+                return f"Error: {e!s}"
 
             output = stdout
             if stderr:
@@ -217,12 +208,9 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: Current output content of the shell session.
-
-        Raises:
-            ValueError: If the specified shell session does not exist.
         """
         if id not in self.shell_sessions:
-            raise ValueError(f"Shell session not found: {id}")
+            return f"Shell session not found: {id}"
 
         session = self.shell_sessions[id]
         process = session.get("process")
@@ -233,25 +221,40 @@ class TerminalToolkit(BaseToolkit):
         # Try to get any new output
         if session["running"] and process.poll() is None:
             try:
-                stdout, stderr = process.communicate(timeout=0.1)
-                if stdout:
-                    session["output"] += stdout
-                if stderr:
-                    session["output"] += f"\nErrors:\n{stderr}"
-            except subprocess.TimeoutExpired:
-                # Process is still running, which is fine
-                pass
+                # Non-blocking read from stdout/stderr
+                stdout_data, stderr_data = "", ""
+                if process.stdout and process.stdout.readable():
+                    stdout_data = process.stdout.read1().decode('utf-8')
+                if process.stderr and process.stderr.readable():
+                    stderr_data = process.stderr.read1().decode('utf-8')
+
+                if stdout_data:
+                    session["output"] += stdout_data
+                if stderr_data:
+                    session["output"] += f"\nErrors:\n{stderr_data}"
             except Exception as e:
                 logger.error(f"Error getting process output: {e}")
+                return f"Error: {e!s}"
 
         # Check if the process has completed
         if process.poll() is not None and session["running"]:
-            stdout, stderr = process.communicate()
-            if stdout:
-                session["output"] += stdout
-            if stderr:
-                session["output"] += f"\nErrors:\n{stderr}"
-            session["running"] = False
+            try:
+                # Get remaining output if any
+                stdout_data, stderr_data = "", ""
+                if process.stdout and process.stdout.readable():
+                    stdout_data = process.stdout.read().decode('utf-8')
+                if process.stderr and process.stderr.readable():
+                    stderr_data = process.stderr.read().decode('utf-8')
+
+                if stdout_data:
+                    session["output"] += stdout_data
+                if stderr_data:
+                    session["output"] += f"\nErrors:\n{stderr_data}"
+            except Exception as e:
+                logger.error(f"Error getting final process output: {e}")
+                return f"Error: {e!s}"
+            finally:
+                session["running"] = False
 
         return session["output"]
 
@@ -266,12 +269,9 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: Final output content after waiting.
-
-        Raises:
-            ValueError: If the specified shell session does not exist.
         """
         if id not in self.shell_sessions:
-            raise ValueError(f"Shell session not found: {id}")
+            return f"Shell session not found: {id}"
 
         session = self.shell_sessions[id]
         process = session.get("process")
@@ -283,12 +283,23 @@ class TerminalToolkit(BaseToolkit):
             return f"Process in session '{id}' is not running"
 
         try:
+            # Use communicate with timeout
             stdout, stderr = process.communicate(timeout=seconds)
 
             if stdout:
-                session["output"] += stdout
+                stdout_str = (
+                    stdout.decode('utf-8')
+                    if isinstance(stdout, bytes)
+                    else stdout
+                )
+                session["output"] += stdout_str
             if stderr:
-                session["output"] += f"\nErrors:\n{stderr}"
+                stderr_str = (
+                    stderr.decode('utf-8')
+                    if isinstance(stderr, bytes)
+                    else stderr
+                )
+                session["output"] += f"\nErrors:\n{stderr_str}"
 
             session["running"] = False
             return (
@@ -317,13 +328,9 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: Status message indicating whether the input was sent.
-
-        Raises:
-            ValueError: If the specified shell session does not exist or is
-                not running.
         """
         if id not in self.shell_sessions:
-            raise ValueError(f"Shell session not found: {id}")
+            return f"Shell session not found: {id}"
 
         session = self.shell_sessions[id]
         process = session.get("process")
@@ -335,10 +342,17 @@ class TerminalToolkit(BaseToolkit):
             return f"Process in session '{id}' is not running"
 
         try:
+            if not process.stdin or process.stdin.closed:
+                return (
+                    f"Cannot write to process in session '{id}': "
+                    f"stdin is closed"
+                )
+
             if press_enter:
                 input = input + "\n"
 
-            process.stdin.write(input)
+            # Write bytes to stdin
+            process.stdin.write(input.encode('utf-8'))
             process.stdin.flush()
 
             return f"Input sent to process in session '{id}'"
@@ -354,12 +368,9 @@ class TerminalToolkit(BaseToolkit):
 
         Returns:
             str: Status message indicating whether the process was terminated.
-
-        Raises:
-            ValueError: If the specified shell session does not exist.
         """
         if id not in self.shell_sessions:
-            raise ValueError(f"Shell session not found: {id}")
+            return f"Shell session not found: {id}"
 
         session = self.shell_sessions[id]
         process = session.get("process")
@@ -371,10 +382,18 @@ class TerminalToolkit(BaseToolkit):
             return f"Process in session '{id}' is not running"
 
         try:
+            # Clean up process resources before termination
+            if process.stdin and not process.stdin.closed:
+                process.stdin.close()
+
             process.terminate()
             try:
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
+                logger.warning(
+                    f"Process in session '{id}' did not terminate gracefully"
+                    f", forcing kill"
+                )
                 process.kill()
 
             session["running"] = False

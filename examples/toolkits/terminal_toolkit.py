@@ -13,143 +13,136 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import List
 
-from colorama import Fore
-
-from camel.agents.chat_agent import ToolCallingRecord
+from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.societies import RolePlaying
 from camel.toolkits import TerminalToolkit
 from camel.types import ModelPlatformType, ModelType
-from camel.utils import print_text_animated
 
+# Get current script directory
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
-def main(
+# Define system message
+sys_msg = (
+    "You are a System Administrator helping with log management tasks. "
+    "You have access to terminal tools that can help you execute "
+    "shell commands and search files. "
+)
+
+# Set model config
+tools = TerminalToolkit().get_tools()
+
+model_config_dict = ChatGPTConfig(
+    temperature=0.0,
+).as_dict()
+
+model = ModelFactory.create(
     model_platform=ModelPlatformType.DEFAULT,
     model_type=ModelType.DEFAULT,
-    chat_turn_limit=10,
-) -> None:
-    # Get the current script directory as base directory
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    task_prompt = (
-        "Complete the following log management tasks:\n\n"
-        "1. Create a log directory:\n"
-        f"   - Create a 'logs' directory in '{base_dir}'\n\n"
-        "2. Create and write log files:\n"
-        "   - Create 'app.log' with content: 'INFO: Application started successfully at 2024-03-10'\n"
-        "   - Create 'error.log' with content: 'ERROR: Database connection timeout at 2024-03-10'\n\n"
-        "3. Search logs:\n"
-        "   - Search for 'ERROR' keyword in 'error.log'\n\n"
-        "4. List files:\n"
-        "   - Find all .log files in the 'logs' directory\n\n"
-        "5. Append new log entries:\n"
-        "   - Append to 'app.log': 'INFO: Processing user request #1234'\n"
-        "   - Append to 'error.log': 'ERROR: Invalid user input for request #1234'\n\n"
-        "6. Search logs again:\n"
-        "   - Search for lines containing '#1234' in both log files\n\n"
-        "7. Clean up:\n"
-        "   - Remove the 'logs' directory and all its contents\n\n"
-        "Important Notes:\n"
-        "1. You have access to TerminalToolkit tools that can help you execute shell commands and search files\n"
-        "2. Think about which shell commands would be appropriate for each task\n"
-        "3. Remember to use absolute paths and handle errors appropriately\n"
-        "4. Verify the results after each operation"
-    )
+    model_config_dict=model_config_dict,
+)
 
-    tools_list = TerminalToolkit().get_tools()
+# Set agent
+camel_agent = ChatAgent(
+    system_message=sys_msg,
+    model=model,
+    tools=tools,
+)
+camel_agent.reset()
 
-    role_play_session = RolePlaying(
-        assistant_role_name="System Administrator",
-        user_role_name="DevOps Manager",
-        assistant_agent_kwargs=dict(
-            model=ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
-            ),
-            tools=tools_list,
-        ),
-        user_agent_kwargs=dict(
-            model=ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
-            ),
-        ),
-        task_prompt=task_prompt,
-        with_task_specify=False,
-    )
+# Define a user message for creating logs directory
+usr_msg = f"Create a 'logs' directory in '{base_dir}'"
 
-    print(
-        Fore.GREEN
-        + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
-    )
-    print(
-        Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
-    )
+# Get response information
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'shell_session_1', 
+'exec_dir': '/Users/enrei/Desktop/camel0302/camel/examples/toolkits', 
+'command': 'mkdir logs'}, result="Command started in session 
+'shell_session_1'. Initial output: ", 
+tool_call_id='call_8xSHligODzyfPOMG81dGxNF2'), ToolCallingRecord
+(tool_name='shell_wait', args={'id': 'shell_session_1', 'seconds': None}, 
+result="Process completed in session 'shell_session_1'. Output: ", 
+tool_call_id='call_3RZ8Pg2BlmfFoYWgmEVONdcE')]
+===============================================================================
+"""
 
-    print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(
-        Fore.CYAN
-        + "Specified task prompt:"
-        + f"\n{role_play_session.specified_task_prompt}\n"
-    )
-    print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
+# Define a user message for creating log files
+usr_msg = f"""Create 'app.log' in the logs directory at '{os.path.join
+(base_dir, 'logs')}' with content: 'INFO: Application started successfully at 
+2024-03-10'"""
 
-    n = 0
-    input_msg = role_play_session.init_chat()
-    while n < chat_turn_limit:
-        n += 1
-        assistant_response, user_response = role_play_session.step(input_msg)
+# Get response information
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'create_log_file', 
+'exec_dir': '/Users/enrei/Desktop/camel0302/camel/examples/toolkits/logs', 
+'command': "echo 'INFO: Application started successfully at 2024-03-10' > app.
+log"}, result="Command started in session 'create_log_file'. Initial output: 
+", tool_call_id='call_IK0vsGszfjw3hn5Jda1R8t4A'), ToolCallingRecord
+(tool_name='shell_wait', args={'id': 'create_log_file', 'seconds': 5}, 
+result="Process completed in session 'create_log_file'. Output: ", 
+tool_call_id='call_ta8ksNQvrPcdvBgmAro692uJ')]
+===============================================================================
+"""
 
-        if assistant_response.terminated:
-            print(
-                Fore.GREEN
-                + (
-                    "AI Assistant terminated. Reason: "
-                    f"{assistant_response.info['termination_reasons']}."
-                )
-            )
-            break
-        if user_response.terminated:
-            print(
-                Fore.GREEN
-                + (
-                    "AI User terminated. "
-                    f"Reason: {user_response.info['termination_reasons']}."
-                )
-            )
-            break
+# Define a user message for searching in logs
+usr_msg = (
+    f"Search for 'INFO' keyword in the log file at "
+    f"'{os.path.join(base_dir, 'logs', 'app.log')}'"
+)
 
-        # Print output from the user
-        print_text_animated(
-            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
-        )
+# Get response information
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(str(response.info['tool_calls'])[:1000])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='file_find_in_content', args={'file': '/Users/
+enrei/Desktop/camel0302/camel/examples/toolkits/logs/app.log', 'regex': 
+'INFO', 'sudo': False}, result='INFO: Application started successfully at 
+2024-03-10', tool_call_id='call_mrrHw9rEwfLwJeSD1j0zooLd')]
+===============================================================================
+"""
 
-        # Print output from the assistant, including any function
-        # execution information
-        print_text_animated(Fore.GREEN + "AI Assistant:")
-        tool_calls: List[ToolCallingRecord] = [
-            ToolCallingRecord(**call.as_dict())
-            for call in assistant_response.info['tool_calls']
-        ]
-        
-        # Track tool usage
-        if tool_calls:
-            print_text_animated(Fore.YELLOW + "\nTool Usage:")
-            for func_record in tool_calls:
-                print_text_animated(f"\nTool Call Record: {func_record}")
-        else:
-            print_text_animated(
-                Fore.RED + "\nWarning: No tools were used in this response!")
-            
-        print_text_animated(f"\n{assistant_response.msg.content}\n")
+# Define a user message for cleaning up logs
+usr_msg = f"Remove the 'logs' directory and all its contents in '{base_dir}'"
 
-        if "CAMEL_TASK_DONE" in user_response.msg.content:
-            break
+# Get response information
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(response.info['tool_calls'])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='shell_exec', args={'id': 'remove_logs', 
+'exec_dir': '/Users/enrei/Desktop/camel0302/camel/examples/toolkits', 
+'command': 'rm -rf logs'}, result="Command started in session 'remove_logs'. 
+Initial output: ", tool_call_id='call_DzBjpYowMmGbUrZ1C24TNuOy'), 
+ToolCallingRecord(tool_name='shell_wait', args={'id': 'remove_logs', 
+'seconds': None}, result="Process completed in session 'remove_logs'. Output: 
+", tool_call_id='call_BchqhziSRi7t3av279Nt1u6E')]
+===============================================================================
+"""
 
-        input_msg = assistant_response.msg
+# Define a user message for find the content of the log file
+usr_msg = "Find all the files under path `examples/bots`"
 
-
-if __name__ == "__main__":
-    main()
+# Get response information
+camel_agent.reset()
+response = camel_agent.step(usr_msg)
+print(response.info['tool_calls'])
+"""
+===============================================================================
+[ToolCallingRecord(tool_name='file_find_by_name', args={'path': 'examples/
+bots', 'glob': '*'}, result='examples/bots\nexamples/bots/discord_bot.
+py\nexamples/bots/discord_bot_installation_management.py\nexamples/bots/
+slack_bot_use_msg_queue.py\nexamples/bots/discord_bot_use_msg_queue.
+py\nexamples/bots/slack_bot.py', tool_call_id='call_PBtQ7qzk2K9fnrtrTASbpeDb')]
+===============================================================================
+"""
