@@ -405,11 +405,11 @@ class SeedDataset(Dataset):
         ) -> Optional[DataPoint]:
             try:
                 return DataPoint(
-                    question=item['question'],
-                    rationale=item['rationale'],
-                    final_answer=item['final_answer'],
+                    question=item.get('question'),
+                    rationale=item.get('rationale'),
+                    final_answer=item.get('final_answer'),
                     metadata=item.get('metadata'),
-                    difficulty=item.get('difficulty', "-1"),
+                    difficulty=item.get('difficulty'),
                 )
             except ValidationError as e:
                 if self._strict:
