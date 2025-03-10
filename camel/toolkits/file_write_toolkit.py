@@ -14,9 +14,12 @@
 
 import os
 from typing import List, Optional
+from camel.logger import get_logger
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
+
+logger = get_logger(__name__)
 
 
 class FileWriteToolkit(BaseToolkit):
@@ -35,6 +38,13 @@ class FileWriteToolkit(BaseToolkit):
         super().__init__(timeout=timeout)
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
+    def _resolve_filepath(self, file: str) -> str:
+        """
+        If the given file path is not absolute, prepend the default output directory.
+        """
+        if not os.path.isabs(file):
+            file = os.path.join(self.output_dir, file)
+        return file
 
     def write_to_file(
         self, content: str, filename: str,
@@ -80,7 +90,11 @@ class FileWriteToolkit(BaseToolkit):
         Returns:
             str: A confirmation message indicating the result.
         """
-        filepath = self._resolve_filepath(file)
+        # Check if the filename contains a path
+        if not os.path.dirname(file):
+            filepath = self._resolve_filepath(file)
+        else:
+            filepath = file
         try:
             if not os.path.exists(filepath):
                 raise FileNotFoundError(f"File {filepath} not found.")
