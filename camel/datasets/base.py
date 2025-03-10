@@ -400,12 +400,27 @@ class SeedDataset(Dataset):
         elif isinstance(data, Path):
             if not data.exists():
                 raise FileNotFoundError(f"JSON file not found: {data}")
-            with data.open('r') as f:
-                self._raw_data = json.load(f)
-            if not isinstance(self._raw_data, list):
+            try:
+                # Explicit encoding to mitigate potential decoding issues
+                with data.open('r', encoding='utf-8') as f:
+                    loaded_data = json.load(f)
+
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in file {data}: {e}")
+
+            if not isinstance(loaded_data, list):
                 raise ValueError(
-                    "JSON file must contain a list of dictionaries"
+                    "JSON file must contain a " "list of dictionaries"
                 )
+
+            for i, item in enumerate(loaded_data):
+                if not isinstance(item, dict):
+                    raise ValueError(
+                        f"Expected a dictionary at index {i}, "
+                        f"got {type(item).__name__}"
+                    )
+
+            self._raw_data = loaded_data
         elif isinstance(data, list):
             self._raw_data = data if data is not None else []
         else:
@@ -502,13 +517,13 @@ class SeedDataset(Dataset):
         ) -> Optional[DataPoint]:
             try:
                 return DataPoint(
-                    question=item.get('question', ''),
-                    rationale=item.get('rationale', ''),
-                    final_answer=item.get('final_answer', ''),
-                    metadata=item.get('metadata', {})
-                    if isinstance(item.get('metadata'), dict)
+                    question=item('question'),
+                    rationale=item('rationale'),
+                    final_answer=item('final_answer'),
+                    metadata=item('metadata', {})
+                    if isinstance(item('metadata'), dict)
                     else {},
-                    difficulty=item.get('difficulty', ''),  # Match BaseDataset
+                    difficulty=item('difficulty'),  # Match BaseDataset
                     # raw_markdown='' if DataPoint supports it
                 )
 
