@@ -37,14 +37,22 @@ camel_agent = ChatAgent(
     tools=tools_list,
 )
 
-usr_query = "Please generate a simple Python script to analyze the word frequency in a text and save the code to a file. "
+usr_query = """Please generate a simple Python script to 
+                analyze the word frequency in a text 
+                and save the code to a file. """
 
 response = camel_agent.step(usr_query)
 print(response.msgs[0].content)
 
 '''
 ================================================================
-I have generated a simple Python script for analyzing word frequency in a text, and the code has been saved to the file `word_frequency_analysis.py`. The script uses the `collections.Counter` class to count the frequency of each word after removing punctuation and converting the text to lowercase. It also includes a `main` function that demonstrates how to use the `word_frequency` function with a sample text.
+I have generated a simple Python script for analyzing word 
+frequency in a text, and the code has been saved to the 
+file `word_frequency_analysis.py`. The script uses the 
+`collections.Counter` class to count the frequency of each word
+after removing punctuation and converting the text to 
+lowercase. It also includes a `main` function that demonstrates
+how to use the `word_frequency` function with a sample text.
 
 Here is the content of the script:
 
@@ -63,7 +71,8 @@ def word_frequency(text):
     return freq
 
 def main():
-    test_text = "Hello world. Hello again, this is a simple text to analyze word frequency."
+    test_text = "Hello world. Hello again, this is 
+    a simple text to analyze word frequency."
     print(word_frequency(test_text()))
 
 if __name__ == "__main__":
@@ -91,7 +100,9 @@ tool_call_id='call_2deb164ff8154bb493aae9')]
 ================================================================
 '''
 
-response_text = camel_agent.step("Please generate a paragraph that contains multiple occurrences of the word 'future' and save it.")
+response_text = camel_agent.step(
+f"Please generate a paragraph that contains multiple 
+occurrences of the word 'future' and save it.")
 print(response_text.msgs[0].content)
 '''
 ================================================================
@@ -104,23 +115,25 @@ Here is the content of the txt file:
 The future is a concept that fascinates everyone. As we think 
 about the future, we often wonder what advances in technology 
 will shape our world. The future holds endless possibilities, 
-from exploration of distant planets to the integration of artificial 
-intelligence in our daily lives. Preparing for the future requires 
-us to innovate and adapt. Many believe that the future is bright, 
-with opportunities for growth and progress, while others advocate 
-for a more cautious approach. Regardless, the future remains a topic 
-of great interest and discussion.
-
+from exploration of distant planets to the integration of 
+artificial intelligence in our daily lives. Preparing for 
+the future requires us to innovate and adapt. Many believe 
+that the future is bright, with opportunities for growth and 
+progress, while others advocate for a more cautious approach.
+Regardless, the future remains a topic of 
+great interest and discussion.
 ================================================================
 '''
 
-response_replace = camel_agent.step(f"Replace 'future' with 'past' in the file future_paragraph.txt")
+response_replace = camel_agent.step(
+f"Replace 'future' with 'past' in 
+the file future_paragraph.txt")
 print(response_replace.msgs[0].content)
 
 '''
 ================================================================
-I have successfully replaced all occurrences of the word "future" 
-with "past" in the file `future_paragraph.txt`.
+I have successfully replaced all occurrences of the 
+word "future" with "past" in the file `future_paragraph.txt`.
 
 ================================================================
 '''
