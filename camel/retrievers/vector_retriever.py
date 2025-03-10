@@ -18,7 +18,7 @@ from typing import IO, TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.loaders import UnstructuredIO
+from camel.loaders import UnstructuredIOLoader
 from camel.retrievers.base import BaseRetriever
 from camel.storages import (
     BaseVectorStorage,
@@ -67,7 +67,7 @@ class VectorRetriever(BaseRetriever):
                 vector_dim=self.embedding_model.get_output_dim()
             )
         )
-        self.uio: UnstructuredIO = UnstructuredIO()
+        self.uio: UnstructuredIOLoader = UnstructuredIOLoader()
 
     def process(
         self,
@@ -107,8 +107,10 @@ class VectorRetriever(BaseRetriever):
             elements = [content]
         elif isinstance(content, IOBase):
             elements = (
-                self.uio.parse_bytes(
-                    file=content, metadata_filename=metadata_filename, **kwargs
+                self.uio.load(
+                    source=content,
+                    metadata_filename=metadata_filename,
+                    **kwargs,
                 )
                 or []
             )
@@ -118,8 +120,8 @@ class VectorRetriever(BaseRetriever):
             is_url = all([parsed_url.scheme, parsed_url.netloc])
             if is_url or os.path.exists(content):
                 elements = (
-                    self.uio.parse_file_or_url(
-                        input_path=content,
+                    self.uio.load(
+                        source=content,
                         metadata_filename=metadata_filename,
                         **kwargs,
                     )
