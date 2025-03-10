@@ -123,6 +123,26 @@ class OpenAICompatibleModel(BaseModelBackend):
         )
         return response
 
+    def parse(
+        self,
+        completion: ChatCompletion,
+        response_format: Type[BaseModel],
+    ) -> Any:
+        r"""Parses the completion response using the specified response format.
+
+        Args:
+            completion (ChatCompletion): The completion response to parse.
+            response_format (Type[BaseModel]): The Pydantic model to parse the
+                completion content into.
+
+        Returns:
+            Any: The parsed content as an instance of the response_format.
+        """
+        content = completion.choices[0].message.content
+        if content is None:
+            raise ValueError("Content is none.")
+        return response_format.model_validate_json(content)
+
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
