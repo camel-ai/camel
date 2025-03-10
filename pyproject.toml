@@ -155,7 +155,7 @@ model_platforms = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
     "reka-api>=3.0.8,<4",
-    "anthropic>=0.42.0,<0.43",
+    "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
     "fish-audio-sdk>=2024.12.5,<2025",
 ]
@@ -249,7 +249,7 @@ all = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
     "fish-audio-sdk>=2024.12.5,<2025",
-    "anthropic>=0.42.0,<0.43",
+    "anthropic>=0.47.0,<0.50.0",
     "reka-api>=3.0.8,<4",
     "redis>=5.0.6,<6",
     "azure-storage-blob>=12.21.0,<13",
