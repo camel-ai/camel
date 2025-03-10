@@ -398,6 +398,7 @@ def test_chat_agent_messages_window():
             for _ in range(5)
         ]
     )
+
     openai_messages, _ = assistant.memory.get_context()
     assert len(openai_messages) == 2
 
