@@ -513,6 +513,7 @@ name = "camel-ai"
 version = "0.2.25"
 source = { editable = "." }
 dependencies = [
+    { name = "chunkr-ai" },
     { name = "colorama" },
     { name = "curl-cffi" },
     { name = "docstring-parser" },
@@ -798,6 +799,7 @@ requires-dist = [
     { name = "beautifulsoup4", marker = "extra == 'document-tools'", specifier = ">=4,<5" },
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
+    { name = "chunkr-ai", specifier = ">=0.0.41" },
     { name = "cohere", marker = "extra == 'all'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'model-platforms'", specifier = ">=5.11.0,<6" },
     { name = "cohere", marker = "extra == 'rag'", specifier = ">=5.11.0,<6" },
@@ -1129,6 +1131,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/21/2b6b5b860781a0b49427309cb8670785aa543fb2178de875b87b9cc97746/charset_normalizer-3.4.1-cp312-cp312-win32.whl", hash = "sha256:9b23ca7ef998bc739bf6ffc077c2116917eabcc901f88da1b9856b210ef63f35", size = 95550 },
     { url = "https://files.pythonhosted.org/packages/21/5b/1b390b03b1d16c7e382b561c5329f83cc06623916aab983e8ab9239c7d5c/charset_normalizer-3.4.1-cp312-cp312-win_amd64.whl", hash = "sha256:6ff8a4a60c227ad87030d76e99cd1698345d4491638dfa6673027c48b3cd395f", size = 102785 },
     { url = "https://files.pythonhosted.org/packages/0e/f6/65ecc6878a89bb1c23a086ea335ad4bf21a588990c3f535a227b9eea9108/charset_normalizer-3.4.1-py3-none-any.whl", hash = "sha256:d98b1668f06378c6dbefec3b92299716b931cd4e6061f3c875a71ced1780ab85", size = 49767 },
+]
+
+[[package]]
+name = "chunkr-ai"
+version = "0.0.41"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "nest-asyncio" },
+    { name = "pillow" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bc/67/37c9f1798e884f12ef0e2a25456536d373c1e72c399ddd9cba47057e79c9/chunkr_ai-0.0.41.tar.gz", hash = "sha256:5781276e70ab50ae5f7eb85707432b1d790acf82d59a83060643915870dd1ff6", size = 14908 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/1d/355a7cdda41ad5fb8a9d9345e586c02491db30d004deccba8a0613406e66/chunkr_ai-0.0.41-py3-none-any.whl", hash = "sha256:7f83c15ae0bad1e37aa4ac880da747667b0b7a08420755e28f4a2f220ed4eb57", size = 14502 },
 ]
 
 [[package]]
