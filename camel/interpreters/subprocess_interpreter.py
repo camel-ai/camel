@@ -12,7 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List
@@ -44,11 +46,14 @@ class SubprocessInterpreter(BaseInterpreter):
             executed code. (default: :obj:`True`)
     """
 
-    _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
-        "python": "python {file_name}",
-        "bash": "bash {file_name}",
-        "r": "Rscript {file_name}",
-    }
+    @property
+    def _CODE_EXECUTE_CMD_MAPPING(self) -> Dict[str, str]:
+        """Get the command mapping using the current Python executable."""
+        return {
+            "python": f"{sys.executable} {{file_name}}",  # 使用当前 Python 解释器
+            "bash": "bash {file_name}",
+            "r": "Rscript {file_name}",
+        }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
