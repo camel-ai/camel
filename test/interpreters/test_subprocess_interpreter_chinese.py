@@ -17,6 +17,29 @@ def subprocess_interpreter():
     )
 
 
+def test_python_environment(subprocess_interpreter):
+    """Test Python environment information."""
+    python_code = '''
+import sys
+import os
+
+print(f"Python 版本: {sys.version}")
+print(f"Python 路径: {sys.executable}")
+print(f"PYTHONPATH: {os.environ.get('PYTHONPATH', '未设置')}")
+print(f"当前工作目录: {os.getcwd()}")
+
+# 列出已安装的包
+import pkg_resources
+print("\n已安装的包:")
+for pkg in pkg_resources.working_set:
+    print(f"{pkg.key} {pkg.version}")
+'''
+
+    result = subprocess_interpreter.run(python_code, "python")
+    print("环境信息:")
+    print(result)
+
+
 def test_chinese_data_visualization(subprocess_interpreter):
     """Test executing Python code with Chinese characters and data visualization."""
     # 准备测试代码
