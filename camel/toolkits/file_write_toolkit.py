@@ -15,60 +15,125 @@
 import os
 from typing import List, Optional
 
+from camel.logger import get_logger
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
 
+logger = get_logger(__name__)
+
 
 class FileWriteToolkit(BaseToolkit):
-    r"""A toolkit for writing text content to files.
+    r"""A toolkit for writing and modifying file content.
 
-    This toolkit provides methods to save text content to files, supporting the creation of new files or appending to existing ones.
+    This toolkit implements two functions:
+    - file_write: Overwrite or append content to a file.
+    - file_str_replace: Replace specified string in a file.
     """
 
-    def __init__(self, output_dir: str = "./", timeout: Optional[float] = None):
+    def __init__(self, output_dir: str = "./model_outputs", timeout: Optional[float] = None):
         r"""Initialize FileWriteToolkit.
 
         Args:
-            output_dir (str): The default directory for output files. (default: :obj:`"./"`)
-            timeout (Optional[float]): The timeout for the toolkit. (default: :obj:`None`)
+            output_dir (str): The default directory for output files. (default: "./model_outputs")
+            timeout (Optional[float]): The timeout for the toolkit. (default: None)
         """
         super().__init__(timeout=timeout)
         self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
 
-    def write_to_file(
-        self, content: str, filename: str,
+    def _resolve_filepath(self, file: str) -> str:
+        """
+        If the given file path is not absolute, prepend the default output directory.
+        """
+        if not os.path.isabs(file):
+            file = os.path.join(self.output_dir, file)
+        return file
+
+    def file_write(
+        self,
+        file: str,
+        content: str,
+        append: bool = False,
+        leading_newline: bool = False,
+        trailing_newline: bool = False,
+        sudo: bool = False,
     ) -> str:
-        r"""A fowerful tool to write content to a file.
+        r"""Overwrite or append content to a file. Use for creating new files, appending content, or modifying existing files.
 
         Args:
-            content (str): The text content to write to the file.
-            filename (str): The name of the file. If it does not contain a path, the default output directory will be used.
+            file (str): Absolute path of the file to write to.
+            content (str): Text content to write.
+            append (bool, optional): Whether to use append mode. Defaults to False.
+            leading_newline (bool, optional): Whether to add a leading newline. Defaults to False.
+            trailing_newline (bool, optional): Whether to add a trailing newline. Defaults to False.
+            sudo (bool, optional): Whether to use sudo privileges. (Not implemented in this demo)
 
         Returns:
-            str: A description of the operation result, including the path of the written file.
+            str: A confirmation message indicating the result.
         """
-        # Check if the filename contains a path
-        if not os.path.dirname(filename):
-            filepath = os.path.join(self.output_dir, filename)
-        else:
-            filepath = filename
-            # Ensure the directory exists
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # 处理前后换行
+        if leading_newline:
+            content = "\n" + content
+        if trailing_newline:
+            content = content + "\n"
 
+        # 如果不是绝对路径，则拼接输出目录
+        filepath = self._resolve_filepath(file)
+        mode = "a" if append else "w"
+        
         try:
-            with open(filepath, "w", encoding="utf-8") as f:
+            with open(filepath, mode, encoding="utf-8") as f:
                 f.write(content)
-            return f"Content successfully written to file: {filepath}"
+            logger.info(f"Successfully wrote content to {filepath}")
+            return f"Successfully wrote content to file: {filepath}"
         except Exception as e:
-            return f"Error occurred while writing to file: {e}"
+            logger.error(f"Failed to write to file {filepath}: {e}")
+            return f"Failed to write to file {filepath}: {e}"
+
+    def file_str_replace(
+        self,
+        file: str,
+        old_str: str,
+        new_str: str,
+        sudo: bool = False,
+    ) -> str:
+        r"""Replace specified string in a file. Use for updating specific content in files or fixing errors in code.
+
+        Args:
+            file (str): Absolute path of the file to perform replacement on.
+            old_str (str): Original string to be replaced.
+            new_str (str): New string to replace with.
+            sudo (bool, optional): Whether to use sudo privileges. (Not implemented in this demo)
+
+        Returns:
+            str: A confirmation message indicating the result.
+        """
+        filepath = self._resolve_filepath(file)
+        try:
+            if not os.path.exists(filepath):
+                raise FileNotFoundError(f"File {filepath} not found.")
+
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            new_content = content.replace(old_str, new_str)
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(new_content)
+
+            logger.info(f"Successfully replaced text in {filepath}")
+            return f"Successfully replaced text in file: {filepath}"
+        except Exception as e:
+            logger.error(f"Failed to replace text in file {filepath}: {e}")
+            return f"Failed to replace text in file {filepath}: {e}"
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Return a list of FunctionTool objects representing the functions in the toolkit.
 
         Returns:
-            List[FunctionTool]: A list of FunctionTool objects representing the functions in the toolkit.
+            List[FunctionTool]: A list of FunctionTool objects.
         """
         return [
-            FunctionTool(self.write_to_file),
+            FunctionTool(self.file_write),
+            FunctionTool(self.file_str_replace),
         ]
