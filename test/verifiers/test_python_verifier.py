@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import contextlib
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -21,7 +21,6 @@ from camel.interpreters import (
     DockerInterpreter,
     E2BInterpreter,
     InternalPythonInterpreter,
-    InterpreterError,
     JupyterKernelInterpreter,
     SubprocessInterpreter,
 )
@@ -36,14 +35,6 @@ from camel.verifiers.python_verifier import PythonVerifier
 def python_verifier():
     r"""Fixture to provide a PythonVerifier instance."""
     return PythonVerifier(timeout=5.0, required_packages=["numpy"])
-
-
-@pytest.fixture
-def interpreter_error_mock():
-    r"""Fixture to provide an interpreter that raises InterpreterError."""
-    interpreter = MagicMock()
-    interpreter.run.side_effect = InterpreterError("Test interpreter error")
-    return interpreter
 
 
 # Context manager for automatic setup and cleanup
@@ -81,7 +72,7 @@ async def test_python_verifier_execution_success(python_verifier):
         )
 
         assert result.status == VerificationOutcome.SUCCESS
-        assert result.result == "Hello, World!"
+        assert result.result == "Hello, World!\n"
 
 
 @pytest.mark.asyncio
@@ -94,7 +85,7 @@ async def test_python_verifier_execution_failure(python_verifier):
         )
 
         assert result.status == VerificationOutcome.ERROR
-        assert "SyntaxError" in result.error_message
+        assert "SyntaxError" in result.result
 
 
 @pytest.mark.asyncio
@@ -136,7 +127,7 @@ async def test_python_verifier_correct_output_matching(python_verifier):
         )
 
         assert result.status == VerificationOutcome.SUCCESS
-        assert result.result == "Expected output"
+        assert result.result == "Expected output\n"
 
 
 @pytest.mark.asyncio
@@ -176,7 +167,7 @@ async def test_python_verifier_with_subprocess_interpreter():
         result = await v.verify(VerifierInput(llm_response=script))
 
         assert result.status == VerificationOutcome.SUCCESS
-        assert result.result == "Using subprocess interpreter"
+        assert result.result == "Using subprocess interpreter\n"
 
 
 @pytest.mark.asyncio
@@ -190,7 +181,7 @@ async def test_python_verifier_with_internal_python_interpreter():
         result = await v.verify(VerifierInput(llm_response=script))
 
         assert result.status == VerificationOutcome.SUCCESS
-        assert result.result == "Using internal Python interpreter"
+        assert result.result == "Using internal Python interpreter\n"
 
 
 @pytest.mark.asyncio
@@ -206,7 +197,7 @@ async def test_python_verifier_with_ipython_interpreter():
         result = await v.verify(VerifierInput(llm_response=script))
 
         assert result.status == VerificationOutcome.SUCCESS
-        assert result.result == "Using IPython interpreter"
+        assert result.result == "Using IPython interpreter\n"
 
 
 @pytest.mark.asyncio
