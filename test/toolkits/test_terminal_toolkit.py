@@ -111,7 +111,7 @@ def test_shell_exec(terminal_toolkit, temp_dir):
         str(temp_dir),
         "nonexistent_command",
     )
-    assert "command not found" in result.lower()
+    assert "not found" in result.lower()
 
     # Test with relative path
     result = terminal_toolkit.shell_exec(
