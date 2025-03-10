@@ -548,6 +548,7 @@ all = [
     { name = "diffusers" },
     { name = "discord-py" },
     { name = "docker" },
+    { name = "docx" },
     { name = "docx2txt" },
     { name = "duckduckgo-search" },
     { name = "e2b-code-interpreter" },
@@ -555,6 +556,7 @@ all = [
     { name = "ffmpeg-python" },
     { name = "firecrawl-py" },
     { name = "fish-audio-sdk" },
+    { name = "fpdf" },
     { name = "google-cloud-storage" },
     { name = "googlemaps" },
     { name = "gradio" },
@@ -681,7 +683,9 @@ docs = [
 ]
 document-tools = [
     { name = "beautifulsoup4" },
+    { name = "docx" },
     { name = "docx2txt" },
+    { name = "fpdf" },
     { name = "openapi-spec-validator" },
     { name = "openpyxl" },
     { name = "pandasai" },
@@ -810,6 +814,8 @@ requires-dist = [
     { name = "docker", marker = "extra == 'dev-tools'", specifier = ">=7.1.0,<8" },
     { name = "docstring-parser", specifier = ">=0.15,<0.16" },
     { name = "docutils", marker = "extra == 'docs'", specifier = "<0.20.0" },
+    { name = "docx", marker = "extra == 'all'", specifier = ">=0.2.4" },
+    { name = "docx", marker = "extra == 'document-tools'", specifier = ">=0.2.4" },
     { name = "docx2txt", marker = "extra == 'all'", specifier = ">=0.8,<0.9" },
     { name = "docx2txt", marker = "extra == 'document-tools'", specifier = ">=0.8,<0.9" },
     { name = "duckduckgo-search", marker = "extra == 'all'", specifier = ">=6.3.5,<7" },
@@ -825,6 +831,8 @@ requires-dist = [
     { name = "firecrawl-py", marker = "extra == 'web-tools'", specifier = ">=1.0.0,<2" },
     { name = "fish-audio-sdk", marker = "extra == 'all'", specifier = ">=2024.12.5,<2025" },
     { name = "fish-audio-sdk", marker = "extra == 'model-platforms'", specifier = ">=2024.12.5,<2025" },
+    { name = "fpdf", marker = "extra == 'all'", specifier = ">=1.7.2" },
+    { name = "fpdf", marker = "extra == 'document-tools'", specifier = ">=1.7.2" },
     { name = "google-cloud-storage", marker = "extra == 'all'", specifier = ">=2.18.0,<3" },
     { name = "google-cloud-storage", marker = "extra == 'storage'", specifier = ">=2.18.0,<3" },
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
@@ -1594,6 +1602,16 @@ wheels = [
 ]
 
 [[package]]
+name = "docx"
+version = "0.2.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/8e/5a01644697b03016de339ef444cfff28367f92984dc74eddaab1ed60eada/docx-0.2.4.tar.gz", hash = "sha256:9d7595eac6e86cda0b7136a2995318d039c1f3eaa368a3300805abbbe5dc8877", size = 54925 }
+
+[[package]]
 name = "docx2txt"
 version = "0.8"
 source = { registry = "https://pypi.org/simple" }
@@ -1915,6 +1933,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6f/e3/5a181a85777f7809076e51f7422e0dc77eb04676c40ec8bf6a49d390d1ff/fonttools-4.56.0-cp312-cp312-win_amd64.whl", hash = "sha256:300c310bb725b2bdb4f5fc7e148e190bd69f01925c7ab437b9c0ca3e1c7cd9ba", size = 2189734 },
     { url = "https://files.pythonhosted.org/packages/bf/ff/44934a031ce5a39125415eb405b9efb76fe7f9586b75291d66ae5cbfc4e6/fonttools-4.56.0-py3-none-any.whl", hash = "sha256:1088182f68c303b50ca4dc0c82d42083d176cba37af1937e1a976a31149d4d14", size = 1089800 },
 ]
+
+[[package]]
+name = "fpdf"
+version = "1.7.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/c6/608a9e6c172bf9124aa687ec8b9f0e8e5d697d59a5f4fad0e2d5ec2a7556/fpdf-1.7.2.tar.gz", hash = "sha256:125840783289e7d12552b1e86ab692c37322e7a65b96a99e0ea86cca041b6779", size = 39504 }
 
 [[package]]
 name = "free-proxy"
