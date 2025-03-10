@@ -12,7 +12,6 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -165,7 +164,9 @@ class SubprocessInterpreter(BaseInterpreter):
                 cmd = [base_cmd, str(file)]
         else:
             # For non-Python code, use standard execution
-            base_cmd = self._CODE_EXECUTE_CMD_MAPPING[code_type].split()[0]  # Get 'python', 'bash', etc.
+            base_cmd = self._CODE_EXECUTE_CMD_MAPPING[code_type].split()[
+                0
+            ]  # Get 'python', 'bash', etc.
             cmd = [base_cmd, str(file)]
 
         proc = subprocess.Popen(
@@ -254,10 +255,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def _create_temp_file(self, code: str, extension: str) -> Path:
         with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            delete=False,
-            suffix=f".{extension}"
+            mode="w", encoding="utf-8", delete=False, suffix=f".{extension}"
         ) as f:
             f.write(code)
             name = f.name
