@@ -352,8 +352,6 @@ class SeedDataset(Dataset):
                 - A PyTorch Dataset (torch.utils.data.Dataset)
                 - A Path object representing the path to a JSON file
                 - A list of dictionaries with DataPoint-compatible fields
-            cache_dir (Optional[str]): Directory to cache dataset files.
-                (default: :obj:`None`)
             seed (Optional[int]): Seed for reproducibility.
                 (default: :obj:`1`)
             min_samples (int): Minimum number of samples required.
@@ -383,20 +381,94 @@ class SeedDataset(Dataset):
         # consistent internal format. Since Seed Dataset should be
         # small, we can load it entirely into memmory
 
+        self.data: List[DataPoint] = self._init_data(data)
+        self._length = len(self.data)
+
+        if self._length < 0 or self._length < min_samples:
+            raise ValueError(f"The dataset does not contain enough samples."
+            "Need {max(0, min_samples)}, got {self._length}")
+
+    def _init_data(self, data:Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]) -> List[DataPoint]:
         if isinstance(data, HFDataset):
-            self._raw_data = self._init_from_hf_dataset(data)
+            raw_data = self._init_from_hf_dataset(data)
         elif isinstance(data, Dataset):
-            self._raw_data = self._init_from_pytorch_dataset(data)
+            raw_data = self._init_from_pytorch_dataset(data)
         elif isinstance(data, Path):
-            self._raw_data = self._init_from_json_path(data)
+            raw_data = self._init_from_json_path(data)
         elif isinstance(data, list):
-            self._raw_data = self._init_from_list(data)
+            raw_data = self._init_from_list(data)
         else:
             raise TypeError("Unsupported data type")
 
-        self.data: List[DataPoint] = []
-        self._setup(min_samples)
-        self._length = len(self.data)
+        def create_datapoint(
+            item: Dict[str, Any], idx: int
+        ) -> Optional[DataPoint]:
+            try:
+                return DataPoint(
+                    question=item['question'],
+                    rationale=item['rationale'],
+                    final_answer=item['final_answer'],
+                    metadata=item.get('metadata'),
+                    difficulty=item.get('difficulty', "-1"),
+                )
+            except ValidationError as e:
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} validation error: {e}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping invalid sample at index {idx} "
+                        f"due to validation error: {e}"
+                    )
+                    return None
+
+        unfiltered_data = [
+            create_datapoint(item, i) for i, item in enumerate(raw_data)
+        ]
+        return [dp for dp in unfiltered_data if dp is not None]
+
+    def __len__(self) -> int:
+        r"""Return the size of the dataset."""
+        return self._length
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        r"""Get an item from the dataset.
+
+        Args:
+            idx (int): Index of the item to get.
+
+        Returns:
+            DataPoint: DataPoint from the dataset with the given index.
+
+        Raises:
+            IndexError: If idx is out of bounds.
+        """
+        if idx < 0 or idx >= self._length:
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of size {self._length}"
+            )
+        return self.data[idx]
+
+    def sample(self) -> DataPoint:
+        r"""Sample a random datapoint from the dataset.
+
+        Returns:
+            DataPoint: A randomly sampled DataPoint.
+
+        Raises:
+            RuntimeError: If the dataset is empty.
+        """
+        if self._length == 0:
+            raise RuntimeError("Dataset is empty, cannot sample.")
+        idx = self._rng.randint(0, self._length - 1)
+        return self[idx]
+
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        r"""Get dataset metadata."""
+        return self._metadata.copy()
+    
 
     def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
         return [dict(item) for item in data]
@@ -408,8 +480,7 @@ class SeedDataset(Dataset):
             raise TypeError(
                 f"{type(data).__name__} does not implement `__len__()`."
             )
-        if not callable(getattr(data, "__getitem__", None)):
-            raise TypeError("Dataset does not support indexing.")
+
         return [dict(data[i]) for i in range(len(data))]
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
@@ -437,8 +508,6 @@ class SeedDataset(Dataset):
     def _init_from_list(
         self, data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        if data is None:
-            return []
         for i, item in enumerate(data):
             if not isinstance(item, dict):
                 raise ValueError(
@@ -447,125 +516,6 @@ class SeedDataset(Dataset):
                 )
         return data
 
-    def __len__(self) -> int:
-        r"""Return the size of the dataset."""
-        return self._length
-
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Get an item from the dataset.
-
-        Args:
-            idx (int): Index of the item to get.
-
-        Returns:
-            DataPoint: DataPoint from the dataset with the given index.
-
-        Raises:
-            IndexError: If idx is out of bounds.
-        """
-        if idx < 0 or idx >= self._length:
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of size {self._length}"
-            )
-        return self.data[idx]
-
-    def _setup(self, min_samples: int) -> None:
-        r"""Set up the dataset by validating and processing raw data.
-
-        This method:
-        1. Checks if the dataset meets the minimum sample requirement.
-        2. Creates the cache directory if specified.
-        3. Processes raw data into DataPoint objects
-           for validation and consistency.
-
-        In non-strict mode, invalid datapoints are filtered out
-        rather than raising an error.
-
-        Args:
-            min_samples (int): Minimum number of samples required.
-
-        Raises:
-            ValueError: If the dataset size is less than min_samples or
-                if sample validation fails (in strict mode),
-                or if the dataset size is smaller than
-                min_samples after filtering invalid datapoints
-                (in non-strict mode).
-            OSError: If cache directory creation fails.
-        """
-        if len(self._raw_data) < min_samples:
-            raise ValueError(
-                f"Dataset must have at least {min_samples} samples, "
-                f"got {len(self._raw_data)}"
-            )
-
-        if self._cache_dir:
-            try:
-                os.makedirs(self._cache_dir, exist_ok=True)
-                logger.debug(f"Created cache directory: {self._cache_dir}")
-            except OSError as e:
-                logger.error(
-                    f"Failed to create cache directory {self._cache_dir}: {e}"
-                )
-                raise
-
-        # Process raw data into DataPoint objects for validation purposes
-        if not self._raw_data:
-            if min_samples > 0:
-                raise ValueError("No data provided, but min_samples > 0")
-            logger.debug("No raw data to process")
-            return
-
-        def create_datapoint(
-            item: Dict[str, Any], idx: int
-        ) -> Optional[DataPoint]:
-            try:
-                return DataPoint(
-                    question=item['question'],
-                    rationale=item['rationale'],
-                    final_answer=item['final_answer'],
-                    metadata=item.get('metadata'),
-                    difficulty=item.get('difficulty', "-1"),
-                )
-
-            except ValidationError as e:
-                if self._strict:
-                    raise ValueError(
-                        f"Sample at index {idx} validation error: {e}"
-                    )
-                else:
-                    logger.warning(
-                        f"Skipping invalid sample at index {idx} "
-                        f"due to validation error: {e}"
-                    )
-                    return None
-
-        raw_data = [
-            create_datapoint(item, i) for i, item in enumerate(self._raw_data)
-        ]
-        self.data = [dp for dp in raw_data if dp is not None]
-        logger.debug(
-            f"Processed {len(raw_data)} data points, of which "
-            f"{len(self.data)} were valid."
-        )
-
-    def sample(self) -> DataPoint:
-        r"""Sample a random datapoint from the dataset.
-
-        Returns:
-            DataPoint: A randomly sampled DataPoint.
-
-        Raises:
-            RuntimeError: If the dataset is empty.
-        """
-        if self._length == 0:
-            raise RuntimeError("Dataset is empty, cannot sample.")
-        idx = self._rng.randint(0, self._length - 1)
-        return self[idx]
-
-    @property
-    def metadata(self) -> Dict[str, Any]:
-        r"""Get dataset metadata."""
-        return self._metadata.copy()
 
 
 class SyntheticDataset(BaseDataset):
