@@ -62,7 +62,42 @@ class FileWriteToolkit(BaseToolkit):
             return f"Content successfully written to file: {filepath}"
         except Exception as e:
             return f"Error occurred while writing to file: {e}"
+    def file_str_replace(
+        self,
+        file: str,
+        old_str: str,
+        new_str: str,
+        sudo: bool = False,
+    ) -> str:
+        r"""Replace specified string in a file. Use for updating specific content in files or fixing errors in code.
 
+        Args:
+            file (str): Absolute path of the file to perform replacement on.
+            old_str (str): Original string to be replaced.
+            new_str (str): New string to replace with.
+            sudo (bool, optional): Whether to use sudo privileges. (Not implemented in this demo)
+
+        Returns:
+            str: A confirmation message indicating the result.
+        """
+        filepath = self._resolve_filepath(file)
+        try:
+            if not os.path.exists(filepath):
+                raise FileNotFoundError(f"File {filepath} not found.")
+
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            new_content = content.replace(old_str, new_str)
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(new_content)
+
+            logger.info(f"Successfully replaced text in {filepath}")
+            return f"Successfully replaced text in file: {filepath}"
+        except Exception as e:
+            logger.error(f"Failed to replace text in file {filepath}: {e}")
+            return f"Failed to replace text in file {filepath}: {e}"
     def get_tools(self) -> List[FunctionTool]:
         r"""Return a list of FunctionTool objects representing the functions in the toolkit.
 
@@ -71,4 +106,5 @@ class FileWriteToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.write_to_file),
+            FunctionTool(self.file_str_replace),
         ]
