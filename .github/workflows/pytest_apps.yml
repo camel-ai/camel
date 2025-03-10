@@ -30,7 +30,7 @@ jobs:
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: |
         source .venv/bin/activate
-        uv pip install -e ".[all, dev]"
+        uv pip install -e ".[all, dev, docs]"
         pytest -v apps/
 
   pytest_examples:

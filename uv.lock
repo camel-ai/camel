@@ -510,7 +510,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.23a0"
+version = "0.2.23"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -558,6 +558,7 @@ all = [
     { name = "google-cloud-storage" },
     { name = "googlemaps" },
     { name = "gradio" },
+    { name = "html2text" },
     { name = "imageio", extra = ["pyav"] },
     { name = "ipykernel" },
     { name = "jupyter-client" },
@@ -573,10 +574,12 @@ all = [
     { name = "notion-client" },
     { name = "openapi-spec-validator" },
     { name = "opencv-python" },
+    { name = "openpyxl" },
     { name = "outlines" },
     { name = "pandas" },
     { name = "pandasai" },
     { name = "pillow" },
+    { name = "playwright" },
     { name = "prance" },
     { name = "praw" },
     { name = "pre-commit" },
@@ -595,6 +598,7 @@ all = [
     { name = "reka-api" },
     { name = "requests-oauthlib" },
     { name = "rouge" },
+    { name = "scenedetect" },
     { name = "scholarly", extra = ["tor"] },
     { name = "sentence-transformers" },
     { name = "sentencepiece" },
@@ -603,6 +607,7 @@ all = [
     { name = "soundfile" },
     { name = "stripe" },
     { name = "sympy" },
+    { name = "tabulate" },
     { name = "tavily-python" },
     { name = "textblob" },
     { name = "torch" },
@@ -618,6 +623,7 @@ all = [
     { name = "unstructured" },
     { name = "wikipedia" },
     { name = "wolframalpha" },
+    { name = "xls2xlsx" },
     { name = "yt-dlp" },
 ]
 communication-tools = [
@@ -639,6 +645,23 @@ data-tools = [
     { name = "stripe" },
     { name = "textblob" },
 ]
+dev = [
+    { name = "gradio" },
+    { name = "mock" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "toml" },
+    { name = "types-colorama" },
+    { name = "types-mock" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+    { name = "types-setuptools" },
+    { name = "types-tqdm" },
+]
 dev-tools = [
     { name = "agentops" },
     { name = "docker" },
@@ -648,14 +671,25 @@ dev-tools = [
     { name = "tree-sitter" },
     { name = "tree-sitter-python" },
 ]
+docs = [
+    { name = "docutils" },
+    { name = "myst-parser" },
+    { name = "nbsphinx" },
+    { name = "sphinx" },
+    { name = "sphinx-book-theme" },
+    { name = "sphinxext-rediraffe" },
+]
 document-tools = [
     { name = "beautifulsoup4" },
     { name = "docx2txt" },
     { name = "openapi-spec-validator" },
+    { name = "openpyxl" },
     { name = "pandasai" },
     { name = "prance" },
     { name = "pymupdf" },
+    { name = "tabulate" },
     { name = "unstructured" },
+    { name = "xls2xlsx" },
 ]
 huggingface = [
     { name = "accelerate" },
@@ -672,6 +706,7 @@ media-tools = [
     { name = "imageio", extra = ["pyav"] },
     { name = "pillow" },
     { name = "pydub" },
+    { name = "scenedetect" },
     { name = "yt-dlp" },
 ]
 model-platforms = [
@@ -720,41 +755,16 @@ web-tools = [
     { name = "fastapi" },
     { name = "firecrawl-py" },
     { name = "googlemaps" },
+    { name = "html2text" },
     { name = "linkup-sdk" },
     { name = "newspaper3k" },
+    { name = "playwright" },
     { name = "pyowm" },
     { name = "requests-oauthlib" },
     { name = "sympy" },
     { name = "tavily-python" },
     { name = "wikipedia" },
     { name = "wolframalpha" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "gradio" },
-    { name = "mock" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "toml" },
-    { name = "types-colorama" },
-    { name = "types-mock" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-    { name = "types-setuptools" },
-    { name = "types-tqdm" },
-]
-docs = [
-    { name = "docutils" },
-    { name = "myst-parser" },
-    { name = "nbsphinx" },
-    { name = "sphinx" },
-    { name = "sphinx-book-theme" },
-    { name = "sphinxext-rediraffe" },
 ]
 
 [package.metadata]
@@ -799,6 +809,7 @@ requires-dist = [
     { name = "docker", marker = "extra == 'all'", specifier = ">=7.1.0,<8" },
     { name = "docker", marker = "extra == 'dev-tools'", specifier = ">=7.1.0,<8" },
     { name = "docstring-parser", specifier = ">=0.15,<0.16" },
+    { name = "docutils", marker = "extra == 'docs'", specifier = "<0.20.0" },
     { name = "docx2txt", marker = "extra == 'all'", specifier = ">=0.8,<0.9" },
     { name = "docx2txt", marker = "extra == 'document-tools'", specifier = ">=0.8,<0.9" },
     { name = "duckduckgo-search", marker = "extra == 'all'", specifier = ">=6.3.5,<7" },
@@ -819,6 +830,9 @@ requires-dist = [
     { name = "googlemaps", marker = "extra == 'all'", specifier = ">=4.10.0,<5" },
     { name = "googlemaps", marker = "extra == 'web-tools'", specifier = ">=4.10.0,<5" },
     { name = "gradio", marker = "extra == 'all'", specifier = ">=3,<4" },
+    { name = "gradio", marker = "extra == 'dev'", specifier = ">=3,<4" },
+    { name = "html2text", marker = "extra == 'all'", specifier = ">=2024.2.26" },
+    { name = "html2text", marker = "extra == 'web-tools'", specifier = ">=2024.2.26" },
     { name = "httpx", specifier = ">=0.28.0,<1.0.0.dev0" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'all'", specifier = ">=2.34.2,<3" },
     { name = "imageio", extras = ["pyav"], marker = "extra == 'media-tools'", specifier = ">=2.34.2,<3" },
@@ -834,8 +848,12 @@ requires-dist = [
     { name = "mistralai", marker = "extra == 'all'", specifier = ">=1.1.0,<2" },
     { name = "mistralai", marker = "extra == 'model-platforms'", specifier = ">=1.1.0,<2" },
     { name = "mock", marker = "extra == 'all'", specifier = ">=5,<6" },
+    { name = "mock", marker = "extra == 'dev'", specifier = ">=5,<6" },
     { name = "mock", marker = "extra == 'test'", specifier = ">=5,<6" },
     { name = "mypy", marker = "extra == 'all'", specifier = ">=1.5.1,<2" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.1,<2" },
+    { name = "myst-parser", marker = "extra == 'docs'" },
+    { name = "nbsphinx", marker = "extra == 'docs'" },
     { name = "nebula3-python", marker = "extra == 'all'", specifier = "==3.8.2" },
     { name = "nebula3-python", marker = "extra == 'rag'", specifier = "==3.8.2" },
     { name = "nebula3-python", marker = "extra == 'storage'", specifier = "==3.8.2" },
@@ -854,6 +872,8 @@ requires-dist = [
     { name = "openapi-spec-validator", marker = "extra == 'document-tools'", specifier = ">=0.7.1,<0.8" },
     { name = "opencv-python", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "opencv-python", marker = "extra == 'huggingface'", specifier = ">=4,<5" },
+    { name = "openpyxl", marker = "extra == 'all'", specifier = ">=3.1.5" },
+    { name = "openpyxl", marker = "extra == 'document-tools'", specifier = ">=3.1.5" },
     { name = "outlines", marker = "extra == 'all'", specifier = ">=0.1.7,<0.2" },
     { name = "pandas", marker = "extra == 'all'", specifier = ">=1.5.3,<2" },
     { name = "pandas", marker = "extra == 'data-tools'", specifier = ">=1.5.3,<2" },
@@ -862,11 +882,14 @@ requires-dist = [
     { name = "pandasai", marker = "extra == 'rag'", specifier = ">=2.3.0,<3" },
     { name = "pillow", marker = "extra == 'all'", specifier = ">=10.1.0,<11.0.0" },
     { name = "pillow", marker = "extra == 'media-tools'", specifier = ">=10.1.0,<11.0.0" },
+    { name = "playwright", marker = "extra == 'all'", specifier = ">=1.50.0" },
+    { name = "playwright", marker = "extra == 'web-tools'", specifier = ">=1.50.0" },
     { name = "prance", marker = "extra == 'all'", specifier = ">=23.6.21.0,<24" },
     { name = "prance", marker = "extra == 'document-tools'", specifier = ">=23.6.21.0,<24" },
     { name = "praw", marker = "extra == 'all'", specifier = ">=7.7.1,<8" },
     { name = "praw", marker = "extra == 'communication-tools'", specifier = ">=7.7.1,<8" },
     { name = "pre-commit", marker = "extra == 'all'", specifier = ">=3,<4" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3,<4" },
     { name = "protobuf", specifier = ">=5,<6" },
     { name = "psutil", specifier = ">=5.9.8,<6" },
     { name = "pydantic", specifier = ">=1.9,<2.10" },
@@ -884,10 +907,13 @@ requires-dist = [
     { name = "pytelegrambotapi", marker = "extra == 'all'", specifier = ">=4.18.0,<5" },
     { name = "pytelegrambotapi", marker = "extra == 'communication-tools'", specifier = ">=4.18.0,<5" },
     { name = "pytest", marker = "extra == 'all'", specifier = ">=7,<8" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7,<8" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7,<8" },
     { name = "pytest-asyncio", marker = "extra == 'all'", specifier = ">=0.23.0,<0.24" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23.0,<0.24" },
     { name = "pytest-cov", marker = "extra == 'all'", specifier = ">=4,<5" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4,<5" },
     { name = "pyyaml", specifier = ">=6.0.2,<7" },
     { name = "qdrant-client", marker = "extra == 'all'", specifier = ">=1.9.0,<2" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.9.0,<2" },
@@ -902,6 +928,9 @@ requires-dist = [
     { name = "requests-oauthlib", marker = "extra == 'web-tools'", specifier = ">=1.3.1,<2" },
     { name = "rouge", marker = "extra == 'all'", specifier = ">=1.0.1,<2" },
     { name = "rouge", marker = "extra == 'data-tools'", specifier = ">=1.0.1,<2" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7,<0.8" },
+    { name = "scenedetect", marker = "extra == 'all'", specifier = ">=0.6.5.2" },
+    { name = "scenedetect", marker = "extra == 'media-tools'", specifier = ">=0.6.5.2" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'all'", specifier = "==1.7.11" },
     { name = "scholarly", extras = ["tor"], marker = "extra == 'research-tools'", specifier = "==1.7.11" },
     { name = "sentence-transformers", marker = "extra == 'all'", specifier = ">=3.0.1,<4" },
@@ -914,15 +943,21 @@ requires-dist = [
     { name = "slack-sdk", marker = "extra == 'communication-tools'", specifier = ">=3.27.2,<4" },
     { name = "soundfile", marker = "extra == 'all'", specifier = ">=0.13,<0.14" },
     { name = "soundfile", marker = "extra == 'huggingface'", specifier = ">=0.13,<0.14" },
+    { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7,<8" },
+    { name = "sphinx-book-theme", marker = "extra == 'docs'" },
+    { name = "sphinxext-rediraffe", marker = "extra == 'docs'", specifier = ">=0.2.7,<0.3" },
     { name = "stripe", marker = "extra == 'all'", specifier = ">=11.3.0,<12" },
     { name = "stripe", marker = "extra == 'data-tools'", specifier = ">=11.3.0,<12" },
     { name = "sympy", marker = "extra == 'all'", specifier = ">=1.13.3,<2" },
     { name = "sympy", marker = "extra == 'web-tools'", specifier = ">=1.13.3,<2" },
+    { name = "tabulate", marker = "extra == 'all'", specifier = ">=0.9.0" },
+    { name = "tabulate", marker = "extra == 'document-tools'", specifier = ">=0.9.0" },
     { name = "tavily-python", marker = "extra == 'all'", specifier = ">=0.5.0,<0.6" },
     { name = "tavily-python", marker = "extra == 'web-tools'", specifier = ">=0.5.0,<0.6" },
     { name = "textblob", marker = "extra == 'all'", specifier = ">=0.17.1,<0.18" },
     { name = "textblob", marker = "extra == 'data-tools'", specifier = ">=0.17.1,<0.18" },
     { name = "tiktoken", specifier = ">=0.7.0,<0.8" },
+    { name = "toml", marker = "extra == 'dev'", specifier = ">=0.10.2" },
     { name = "torch", marker = "extra == 'all'" },
     { name = "torch", marker = "extra == 'huggingface'" },
     { name = "transformers", marker = "extra == 'all'", specifier = ">=4,<5" },
@@ -932,11 +967,17 @@ requires-dist = [
     { name = "tree-sitter-python", marker = "extra == 'all'", specifier = ">=0.23.6,<0.24" },
     { name = "tree-sitter-python", marker = "extra == 'dev-tools'", specifier = ">=0.23.6,<0.24" },
     { name = "types-colorama", marker = "extra == 'all'", specifier = ">=0.4.15,<0.5" },
+    { name = "types-colorama", marker = "extra == 'dev'", specifier = ">=0.4.15,<0.5" },
     { name = "types-mock", marker = "extra == 'all'", specifier = ">=5.1.0,<6" },
+    { name = "types-mock", marker = "extra == 'dev'", specifier = ">=5.1.0,<6" },
     { name = "types-pyyaml", marker = "extra == 'all'", specifier = ">=6.0.12,<7" },
+    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12,<7" },
     { name = "types-requests", marker = "extra == 'all'", specifier = ">=2.31.0,<3" },
+    { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.31.0,<3" },
     { name = "types-setuptools", marker = "extra == 'all'", specifier = ">=69.2.0,<70" },
+    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=69.2.0,<70" },
     { name = "types-tqdm", marker = "extra == 'all'", specifier = ">=4.66.0,<5" },
+    { name = "types-tqdm", marker = "extra == 'dev'", specifier = ">=4.66.0,<5" },
     { name = "unstructured", marker = "extra == 'all'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'document-tools'", specifier = "==0.16.20" },
     { name = "unstructured", marker = "extra == 'rag'", specifier = "==0.16.20" },
@@ -944,37 +985,12 @@ requires-dist = [
     { name = "wikipedia", marker = "extra == 'web-tools'", specifier = ">=1,<2" },
     { name = "wolframalpha", marker = "extra == 'all'", specifier = ">=5.0.0,<6" },
     { name = "wolframalpha", marker = "extra == 'web-tools'", specifier = ">=5.0.0,<6" },
+    { name = "xls2xlsx", marker = "extra == 'all'", specifier = ">=0.2.0" },
+    { name = "xls2xlsx", marker = "extra == 'document-tools'", specifier = ">=0.2.0" },
     { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.11.4,<2025" },
     { name = "yt-dlp", marker = "extra == 'media-tools'", specifier = ">=2024.11.4,<2025" },
 ]
-provides-extras = ["test", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "all"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "gradio", specifier = ">=3,<4" },
-    { name = "mock", specifier = ">=5,<6" },
-    { name = "mypy", specifier = ">=1.5.1,<2" },
-    { name = "pre-commit", specifier = ">=3,<4" },
-    { name = "pytest", specifier = ">=7,<8" },
-    { name = "pytest-asyncio", specifier = ">=0.23.0,<0.24" },
-    { name = "pytest-cov", specifier = ">=4,<5" },
-    { name = "ruff", specifier = ">=0.7,<0.8" },
-    { name = "toml", specifier = ">=0.10.2" },
-    { name = "types-colorama", specifier = ">=0.4.15,<0.5" },
-    { name = "types-mock", specifier = ">=5.1.0,<6" },
-    { name = "types-pyyaml", specifier = ">=6.0.12,<7" },
-    { name = "types-requests", specifier = ">=2.31.0,<3" },
-    { name = "types-setuptools", specifier = ">=69.2.0,<70" },
-    { name = "types-tqdm", specifier = ">=4.66.0,<5" },
-]
-docs = [
-    { name = "docutils", specifier = "<0.20.0" },
-    { name = "myst-parser" },
-    { name = "nbsphinx" },
-    { name = "sphinx", specifier = ">=7,<8" },
-    { name = "sphinx-book-theme" },
-    { name = "sphinxext-rediraffe", specifier = ">=0.2.7,<0.3" },
-]
+provides-extras = ["test", "dev", "docs", "rag", "web-tools", "document-tools", "media-tools", "communication-tools", "data-tools", "research-tools", "dev-tools", "model-platforms", "huggingface", "storage", "all"]
 
 [[package]]
 name = "certifi"
@@ -1303,6 +1319,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cssutils"
+version = "2.11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "more-itertools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/9f/329d26121fe165be44b1dfff21aa0dc348f04633931f1d20ed6cf448a236/cssutils-2.11.1.tar.gz", hash = "sha256:0563a76513b6af6eebbe788c3bf3d01c920e46b3f90c8416738c5cfc773ff8e2", size = 711657 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a7/ec/bb273b7208c606890dc36540fe667d06ce840a6f62f9fae7e658fcdc90fb/cssutils-2.11.1-py3-none-any.whl", hash = "sha256:a67bfdfdff4f3867fab43698ec4897c1a828eca5973f4073321b3bccaf1199b1", size = 385747 },
+]
+
+[[package]]
 name = "curl-cffi"
 version = "0.6.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1318,6 +1346,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/1e/ccbe5cbb14b08e882628e8b50e6640f415256ec7a6e3084c9ce2765588d5/curl_cffi-0.6.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:37e513cc149d024a2d625e202f2cc9d4423d2937343ea2e06f797d99779e62dc", size = 5720483 },
     { url = "https://files.pythonhosted.org/packages/d7/c9/5b2fd0f16e92329b482d737e7b189a79495309c8ec0e3fc480f83abdb919/curl_cffi-0.6.2-cp38-abi3-win32.whl", hash = "sha256:12e829af97cbf7c1d5afef177e786f6f404ddf163b08897a1ed087cadbeb4837", size = 2325216 },
     { url = "https://files.pythonhosted.org/packages/e8/43/9cbd2dde60f7e9ef83748dc0c254d64073c1eafdccd8b1d37d399d457449/curl_cffi-0.6.2-cp38-abi3-win_amd64.whl", hash = "sha256:3791b7a9ae4cb1298165300f2dc2d60a86779f055570ae83163fc2d8a74bf714", size = 2312273 },
+]
+
+[[package]]
+name = "currency-symbols"
+version = "2.0.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/35/09/aaafc15ae4412897085addcd3445411d82a2dc069cc17e3c393295fe9aa2/currency-symbols-2.0.3.tar.gz", hash = "sha256:f6101415319e06674c63d05ed9988b131dd8004cc437e77f7e83e734e5d2eb2f", size = 3547 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/42/70e58c51f5c519fcfe8a633702562a9dda4e54b7d5dcdbee511cd6250d57/currency_symbols-2.0.3-py3-none-any.whl", hash = "sha256:e71c82320f1b410ab15614f5df6ea3645b204752081689bae30b6331006357f0", size = 5030 },
 ]
 
 [[package]]
@@ -1646,6 +1683,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cb/7d/01cddcbb6f5cc0ba72e00ddf9b1fa206c802d557fd0a20b18e130edf1336/emoji-2.14.1.tar.gz", hash = "sha256:f8c50043d79a2c1410ebfae833ae1868d5941a67a6cd4d18377e2eb0bd79346b", size = 597182 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/91/db/a0335710caaa6d0aebdaa65ad4df789c15d89b7babd9a30277838a7d9aac/emoji-2.14.1-py3-none-any.whl", hash = "sha256:35a8a486c1460addb1499e3bf7929d3889b2e2841a57401903699fef595e942b", size = 590617 },
+]
+
+[[package]]
+name = "et-xmlfile"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz", hash = "sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54", size = 17234 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee489817272089c4203e679c63b570a5aaeb18d852ae3cbba6a/et_xmlfile-2.0.0-py3-none-any.whl", hash = "sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa", size = 18059 },
 ]
 
 [[package]]
@@ -2288,6 +2334,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/2c/48/71de9ed269fdae9c8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/c6/80c95b1b2b94682a72cbdbfb85b81ae2daffa4291fbfa1b1464502ede10d/hpack-4.1.0-py3-none-any.whl", hash = "sha256:157ac792668d995c657d93111f46b4535ed114f0c9c8d672271bbec7eae1b496", size = 34357 },
 ]
+
+[[package]]
+name = "html2text"
+version = "2024.2.26"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/43/e1d53588561e533212117750ee79ad0ba02a41f52a08c1df3396bd466c05/html2text-2024.2.26.tar.gz", hash = "sha256:05f8e367d15aaabc96415376776cdd11afd5127a77fce6e36afc60c563ca2c32", size = 56527 }
 
 [[package]]
 name = "html5lib"
@@ -3734,6 +3786,18 @@ wheels = [
 ]
 
 [[package]]
+name = "openpyxl"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "et-xmlfile" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050", size = 186464 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910 },
+]
+
+[[package]]
 name = "opentelemetry-api"
 version = "1.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4125,6 +4189,24 @@ wheels = [
 ]
 
 [[package]]
+name = "playwright"
+version = "1.50.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "greenlet" },
+    { name = "pyee" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/5e/068dea3c96e9c09929b45c92cf7e573403b52a89aa463f89b9da9b87b7a4/playwright-1.50.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:f36d754a6c5bd9bf7f14e8f57a2aea6fd08f39ca4c8476481b9c83e299531148", size = 40277564 },
+    { url = "https://files.pythonhosted.org/packages/78/85/b3deb3d2add00d2a6ee74bf6f57ccefb30efc400fd1b7b330ba9a3626330/playwright-1.50.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:40f274384591dfd27f2b014596250b2250c843ed1f7f4ef5d2960ecb91b4961e", size = 39521844 },
+    { url = "https://files.pythonhosted.org/packages/f3/f6/002b3d98df9c84296fea84f070dc0d87c2270b37f423cf076a913370d162/playwright-1.50.0-py3-none-macosx_11_0_universal2.whl", hash = "sha256:9922ef9bcd316995f01e220acffd2d37a463b4ad10fd73e388add03841dfa230", size = 40277563 },
+    { url = "https://files.pythonhosted.org/packages/b9/63/c9a73736e434df894e484278dddc0bf154312ff8d0f16d516edb790a7d42/playwright-1.50.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:8fc628c492d12b13d1f347137b2ac6c04f98197ff0985ef0403a9a9ee0d39131", size = 45076712 },
+    { url = "https://files.pythonhosted.org/packages/bd/2c/a54b5a64cc7d1a62f2d944c5977fb3c88e74d76f5cdc7966e717426bce66/playwright-1.50.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ffcff35f72db2689a79007aee78f1b0621a22e6e3d6c1f58aaa9ac805bf4497c", size = 44493111 },
+    { url = "https://files.pythonhosted.org/packages/2b/4a/047cbb2ffe1249bd7a56441fc3366fb4a8a1f44bc36a9061d10edfda2c86/playwright-1.50.0-py3-none-win32.whl", hash = "sha256:3b906f4d351260016a8c5cc1e003bb341651ae682f62213b50168ed581c7558a", size = 34784543 },
+    { url = "https://files.pythonhosted.org/packages/bc/2b/e944e10c9b18e77e43d3bb4d6faa323f6cc27597db37b75bc3fd796adfd5/playwright-1.50.0-py3-none-win_amd64.whl", hash = "sha256:1859423da82de631704d5e3d88602d755462b0906824c1debe140979397d2e8d", size = 34784546 },
+]
+
+[[package]]
 name = "pluggy"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4509,6 +4591,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fe/9a/e6bca0eed82db26562c73b5076539a4a08d3cffd19c3cc5913a3e61145fd/pydub-0.25.1.tar.gz", hash = "sha256:980a33ce9949cab2a569606b65674d748ecbca4f0796887fd6f46173a7b0d30f", size = 38326 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl", hash = "sha256:65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6", size = 32327 },
+]
+
+[[package]]
+name = "pyee"
+version = "12.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/37/8fb6e653597b2b67ef552ed49b438d5398ba3b85a9453f8ada0fd77d455c/pyee-12.1.1.tar.gz", hash = "sha256:bbc33c09e2ff827f74191e3e5bbc6be7da02f627b7ec30d86f5ce1a6fb2424a3", size = 30915 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/68/7e150cba9eeffdeb3c5cecdb6896d70c8edd46ce41c0491e12fb2b2256ff/pyee-12.1.1-py3-none-any.whl", hash = "sha256:18a19c650556bb6b32b406d7f017c8f513aceed1ef7ca618fb65de7bd2d347ef", size = 15527 },
 ]
 
 [[package]]
@@ -5324,6 +5418,21 @@ wheels = [
 ]
 
 [[package]]
+name = "scenedetect"
+version = "0.6.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "numpy" },
+    { name = "platformdirs" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ef/4e/2f20c616b3dc8420dcc456fd1a0efee35e34f3e499843e22a2661e11f73d/scenedetect-0.6.5.2.tar.gz", hash = "sha256:cf1af517409ac7b98905d8962de4fbefad01684355d12b5ccb992cbc6c4f8a52", size = 150927 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/b5/2c95bb825cf453e1bdfc9acf0ae3c7f249f47290422cc592a170b6e16530/scenedetect-0.6.5.2-py3-none-any.whl", hash = "sha256:148d312d84b26f6e086e5cca278b68ec61985a0957bf165ca1a5c9c55f6f627e", size = 127315 },
+]
+
+[[package]]
 name = "scholarly"
 version = "1.7.11"
 source = { registry = "https://pypi.org/simple" }
@@ -5871,6 +5980,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/11/8a/5a7fd6284fa8caac23a26c9ddf9c30485a48169344b4bd3b0f02fef1890f/sympy-1.13.3.tar.gz", hash = "sha256:b27fd2c6530e0ab39e275fc9b683895367e51d5da91baa8d3d64db2565fec4d9", size = 7533196 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/ff/c87e0622b1dadea79d2fb0b25ade9ed98954c9033722eb707053d310d4f3/sympy-1.13.3-py3-none-any.whl", hash = "sha256:54612cf55a62755ee71824ce692986f23c88ffa77207b30c1368eda4a7060f73", size = 6189483 },
+]
+
+[[package]]
+name = "tabulate"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797b8f7902564ab6ea0d60ff8ca23952079064155d1ae1/tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c", size = 81090 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f", size = 35252 },
 ]
 
 [[package]]
@@ -6490,6 +6608,15 @@ wheels = [
 ]
 
 [[package]]
+name = "webcolors"
+version = "24.11.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/29/061ec845fb58521848f3739e466efd8250b4b7b98c1b6c5bf4d40b419b7e/webcolors-24.11.1.tar.gz", hash = "sha256:ecb3d768f32202af770477b8b65f318fa4f566c22948673a977b00d589dd80f6", size = 45064 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/e8/c0e05e4684d13459f93d312077a9a2efbe04d59c393bc2b8802248c908d4/webcolors-24.11.1-py3-none-any.whl", hash = "sha256:515291393b4cdf0eb19c155749a096f779f7d909f7cceea072791cb9095b92e9", size = 14934 },
+]
+
+[[package]]
 name = "webencodings"
 version = "0.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -6616,6 +6743,38 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c9/4a/44d3c295350d776427904d73c189e10aeae66d7f555bb2feee16d1e4ba5a/wsproto-1.2.0.tar.gz", hash = "sha256:ad565f26ecb92588a3e43bc3d96164de84cd9902482b130d0ddbaa9664a85065", size = 53425 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/78/58/e860788190eba3bcce367f74d29c4675466ce8dddfba85f7827588416f01/wsproto-1.2.0-py3-none-any.whl", hash = "sha256:b9acddd652b585d75b20477888c56642fdade28bdfd3579aa24a4d2c037dd736", size = 24226 },
+]
+
+[[package]]
+name = "xlrd"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/b3/19a2540d21dea5f908304375bd43f5ed7a4c28a370dc9122c565423e6b44/xlrd-2.0.1.tar.gz", hash = "sha256:f72f148f54442c6b056bf931dbc34f986fd0c3b0b6b5a58d013c9aef274d0c88", size = 100259 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/0c/c2a72d51fe56e08a08acc85d13013558a2d793028ae7385448a6ccdfae64/xlrd-2.0.1-py2.py3-none-any.whl", hash = "sha256:6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd", size = 96531 },
+]
+
+[[package]]
+name = "xls2xlsx"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "chardet" },
+    { name = "cssutils" },
+    { name = "currency-symbols" },
+    { name = "fonttools" },
+    { name = "openpyxl" },
+    { name = "pillow" },
+    { name = "python-dateutil" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "webcolors" },
+    { name = "xlrd" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bb/f1/cd87cb50c5da52a32f3c8eb268f31f2e0594171a89de69b37a66dc5de0b8/xls2xlsx-0.2.0.tar.gz", hash = "sha256:98123cb8f43fdd68f4af8d61d7223100d6003daf9a592fa6c0746acbc7314c35", size = 1330340 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/be/8302d331252974200ff4adb392d1fc67e4ff161c85a3109b915f4cbaa1ca/xls2xlsx-0.2.0-py2.py3-none-any.whl", hash = "sha256:a6b9c6f887d2e366a54d26682d1ec399f5dbf408567d47768ef6178ef587af4e", size = 39191 },
 ]
 
 [[package]]

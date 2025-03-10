@@ -26,6 +26,7 @@ jobs:
 
       - name: Sphinx build
         run: |
+          source .venv/bin/activate
           cd docs
           make html
 
