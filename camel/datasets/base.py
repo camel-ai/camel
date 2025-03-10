@@ -401,9 +401,14 @@ class SeedDataset(Dataset):
             if not data.exists():
                 raise FileNotFoundError(f"JSON file not found: {data}")
             try:
+                logger.debug(f"Loading JSON from {data}")
                 # Explicit encoding to mitigate potential decoding issues
                 with data.open('r', encoding='utf-8') as f:
                     loaded_data = json.load(f)
+                logger.info(
+                    f"Successfully loaded {len(loaded_data)} "
+                    f"items from {data}"
+                )
 
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON in file {data}: {e}")
@@ -421,6 +426,7 @@ class SeedDataset(Dataset):
                     )
 
             self._raw_data = loaded_data
+
         elif isinstance(data, list):
             self._raw_data = data if data is not None else []
         else:
@@ -517,14 +523,11 @@ class SeedDataset(Dataset):
         ) -> Optional[DataPoint]:
             try:
                 return DataPoint(
-                    question=item('question'),
-                    rationale=item('rationale'),
-                    final_answer=item('final_answer'),
-                    metadata=item('metadata', {})
-                    if isinstance(item('metadata'), dict)
-                    else {},
-                    difficulty=item('difficulty'),  # Match BaseDataset
-                    # raw_markdown='' if DataPoint supports it
+                    question=item['question'],
+                    rationale=item['rationale'],
+                    final_answer=item['final_answer'],
+                    metadata=item.get('metadata'),
+                    difficulty=item.get('difficulty', -1),
                 )
 
             except ValidationError as e:
