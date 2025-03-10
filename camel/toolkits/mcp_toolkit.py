@@ -13,20 +13,26 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import inspect
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import Any, Callable, Dict, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Union,
+)
 from urllib.parse import urlparse
 
-from mcp import ListToolsResult, Tool
-from mcp.client.session import ClientSession
-from mcp.client.sse import sse_client
-from mcp.client.stdio import StdioServerParameters, stdio_client
-from mcp.types import CallToolResult
+if TYPE_CHECKING:
+    from mcp import ListToolsResult, Tool
 
 from camel.toolkits import BaseToolkit, FunctionTool
 
 
-class McpToolkit(BaseToolkit):
-    r"""McpToolkit provides an abstraction layer to interact with external
+class MCPToolkit(BaseToolkit):
+    r"""MCPToolkit provides an abstraction layer to interact with external
     tools using the Model Context Protocol (MCP). It supports two modes of
     connection:
 
@@ -38,10 +44,12 @@ class McpToolkit(BaseToolkit):
 
     Attributes:
         command_or_url (str): URL for SSE mode or command executable for stdio
-            mode.
+            mode. (default: :obj:`'None'`)
         args (List[str]): List of command-line arguments if stdio mode is used.
+            (default: :obj:`'None'`)
         env (Dict[str, str]): Environment variables for the stdio mode command.
-        timeout (Optional[float]): Connection timeout.
+            (default: :obj:`'None'`)
+        timeout (Optional[float]): Connection timeout. (default: :obj:`'None'`)
     """
 
     def __init__(
@@ -51,6 +59,9 @@ class McpToolkit(BaseToolkit):
         env: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
     ):
+        from mcp import Tool
+        from mcp.client.session import ClientSession
+
         super().__init__(timeout=timeout)
 
         self.command_or_url = command_or_url
@@ -58,8 +69,9 @@ class McpToolkit(BaseToolkit):
         self.env = env or {}
 
         self._mcp_tools: List[Tool] = []
-        self._session: Optional[ClientSession] = None
+        self._session: Optional['ClientSession'] = None
         self._exit_stack = AsyncExitStack()
+        self._is_connected = False
 
     @asynccontextmanager
     async def connection(self):
@@ -68,9 +80,13 @@ class McpToolkit(BaseToolkit):
         on the provided `command_or_url`.
 
         Yields:
-            McpToolkit: Instance with active connection ready for tool
+            MCPToolkit: Instance with active connection ready for tool
                 interaction.
         """
+        from mcp.client.session import ClientSession
+        from mcp.client.sse import sse_client
+        from mcp.client.stdio import StdioServerParameters, stdio_client
+
         try:
             if urlparse(self.command_or_url).scheme in ("http", "https"):
                 (
@@ -96,34 +112,35 @@ class McpToolkit(BaseToolkit):
             await self._session.initialize()
             list_tools_result = await self.list_mcp_tools()
             self._mcp_tools = list_tools_result.tools
+            self._is_connected = True
             yield self
 
         finally:
+            self._is_connected = False
             await self._exit_stack.aclose()
             self._session = None
 
-    async def list_mcp_tools(self) -> ListToolsResult:
+    async def list_mcp_tools(self) -> Union[str, "ListToolsResult"]:
         r"""Retrieves the list of available tools from the connected MCP
         server.
 
         Returns:
             ListToolsResult: Result containing available MCP tools.
-
-        Raises:
-            RuntimeError: If the client session is not yet established.
         """
         if not self._session:
-            raise RuntimeError(
-                "MCP Client is not connected. Call `connection()` first."
-            )
-        return await self._session.list_tools()
+            return "MCP Client is not connected. Call `connection()` first."
+        try:
+            return await self._session.list_tools()
+        except Exception as e:
+            return f"Failed to list MCP tools: {e!s}"
 
-    def generate_function_from_mcp_tool(self, mcp_tool: Tool) -> Callable:
+    def generate_function_from_mcp_tool(self, mcp_tool: "Tool") -> Callable:
         r"""Dynamically generates a Python callable function corresponding to
         a given MCP tool.
 
         Args:
-            mcp_tool: The MCP tool definition received from the MCP server.
+            mcp_tool (Tool): The MCP tool definition received from the MCP
+                server.
 
         Returns:
             Callable: A dynamically created async Python function that wraps
@@ -165,7 +182,11 @@ class McpToolkit(BaseToolkit):
             Returns:
                 str: The textual result returned by the MCP tool.
             """
-            missing_params = required_params - kwargs.keys()
+            from mcp.types import CallToolResult
+
+            missing_params: Set[str] = set(required_params) - set(
+                kwargs.keys()
+            )
             if missing_params:
                 raise ValueError(
                     f"Missing required parameters: {missing_params}"
@@ -178,12 +199,23 @@ class McpToolkit(BaseToolkit):
             if not result.content:
                 return "No data available for this request."
 
-            if result.content[0].type != "text":
-                # TODO: Handle other content types:
-                #  [ImageContent | EmbeddedResource]
-                return "Unsupported content type."
-
-            return result.content[0].text
+            # Handle different content types
+            content = result.content[0]
+            if content.type == "text":
+                return content.text
+            elif content.type == "image":
+                # Return image URL or data URI if available
+                if hasattr(content, "url") and content.url:
+                    return f"Image available at: {content.url}"
+                return "Image content received (data URI not shown)"
+            elif content.type == "embedded_resource":
+                # Return resource information if available
+                if hasattr(content, "name") and content.name:
+                    return f"Embedded resource: {content.name}"
+                return "Embedded resource received"
+            else:
+                msg = f"Received content of type '{content.type}'"
+                return f"{msg} which is not fully supported yet."
 
         dynamic_function.__name__ = func_name
         dynamic_function.__doc__ = func_desc

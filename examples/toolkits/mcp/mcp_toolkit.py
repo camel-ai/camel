@@ -18,19 +18,19 @@ from pathlib import Path
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import McpToolkit
+from camel.toolkits import MCPToolkit
 from camel.types import ModelPlatformType, ModelType
 
 
 async def main(server_transport: str = "stdio"):
     if server_transport == "stdio":
-        mcp_toolkit = McpToolkit(
+        mcp_toolkit = MCPToolkit(
             command_or_url=sys.executable,
             args=[str(Path(__file__).parent / "mcp_server.py")],
         )
     else:
         # SSE mode, Must run the server first
-        mcp_toolkit = McpToolkit("http://127.0.0.1:8000/sse")
+        mcp_toolkit = MCPToolkit("http://127.0.0.1:8000/sse")
 
     async with mcp_toolkit.connection() as toolkit:
         tools = toolkit.get_tools()
@@ -60,33 +60,35 @@ async def main(server_transport: str = "stdio"):
 
         # Get response information
         response = await camel_agent.astep(usr_msg)
-        print(str(response.info['tool_calls'])[:1000])
+        print(str(response.info['tool_calls']))
         """
-        ==========================================================================
-        [ToolCallingRecord(tool_name='get_forecast', args={'latitude': 
-        41.8781, 'longitude': -87.6298}, result='\nThis Afternoon:\n
-        Temperature: 57°F\nWind: 15 mph WSW\nForecast: Sunny. High near 57, 
-        with temperatures falling to around 55 in the afternoon. West 
-        southwest wind around 15 mph, with gusts as high as 25 mph.\n\n---\n\n
-        Tonight:\nTemperature: 39°F\nWind: 5 to 15 mph WSW\nForecast: Mostly 
-        clear, with a low around 39. West southwest wind 5 to 15 mph, with 
-        gusts as high as 25 mph.\n\n---\n\nMonday:\nTemperature: 64°F\nWind: 5 
-        to 15 mph SW\nForecast: Sunny. High near 64, with temperatures falling 
-        to around 62 in the afternoon. Southwest wind 5 to 15 mph, with gusts 
-        as high as 25 mph.\n\n---\n\nMonday Night:\nTemperature: 43°F\nWind: 
-        15 mph SW\nForecast: Mostly clear, with a low around 43. Southwest 
-        wind around 15 mph, with gusts as high as 25 mph.\n\n---\n\nTuesday:\n
-        Temperature: 44°F\nWind: 15 mph NNW\nForecast: Mostly sunny, with a 
-        high near 44. North northwest wind around 15 mph.\n', t
+        =======================================================================
+        [ToolCallingRecord(tool_name='get_forecast', args={'latitude': 41.
+        8781, 'longitude': -87.6298}, result='\nThis Afternoon:\nTemperature: 
+        65°F\nWind: 15 mph SW\nForecast: Sunny, with a high near 65. Southwest 
+        wind around 15 mph, with gusts as high as 25 mph.
+        \n\n---\n\nTonight:\nTemperature: 45°F\nWind: 10 to 15 mph 
+        SW\nForecast: Mostly clear. Low around 45, with temperatures rising to
+         around 51 overnight. Southwest wind 10 to 15 mph, with gusts as high 
+         as 30 mph.\n\n---\n\nTuesday:\nTemperature: 46°F\nWind: 10 to 20 mph 
+         NW\nForecast: Mostly sunny. High near 46, with temperatures falling 
+         to around 36 in the afternoon. Northwest wind 10 to 20 mph, with 
+         gusts as high as 35 mph.\n\n---\n\nTuesday Night:\nTemperature: 36°
+         F\nWind: 10 to 20 mph ENE\nForecast: Partly cloudy, with a low around 
+         36. East northeast wind 10 to 20 mph.
+         \n\n---\n\nWednesday:\nTemperature: 46°F\nWind: 5 to 15 mph 
+         E\nForecast: Mostly sunny, with a high near 46. East wind 5 to 15 mph.
+         \n', tool_call_id='call_DJjGYAzqlzb5ojirRAuKZmtk')]
+        =======================================================================
         """
 
         usr_msg = "Please get the latest 3 weather alerts for California."
 
         # Get response information
         response = await camel_agent.astep(usr_msg)
-        print(str(response.info['tool_calls'])[:1000])
+        print(str(response.info['tool_calls']))
         """
-        ==========================================================================
+        =======================================================================
         [ToolCallingRecord(tool_name='get_alerts', args={'state': 'CA'}, result
         ='\nEvent: Wind Advisory\nArea: Central Siskiyou County\nSeverity: 
         Moderate\nDescription: * WHAT...South winds 20 to 30 mph with gusts up 
@@ -98,6 +100,7 @@ async def main(server_transport: str = "stdio"):
         this strong can make driving difficult, especially for high\nprofile 
         vehicles. Use extra caution.\n\nSecure outdoor objects.\n', 
         tool_call_id='call_JRDYuTjOjYrymXeFiWxcHZ5d')]
+        =======================================================================
         """
 
 

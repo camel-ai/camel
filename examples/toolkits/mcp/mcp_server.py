@@ -14,7 +14,6 @@
 from typing import Any
 
 import httpx
-import typer
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("weather")
@@ -133,4 +132,5 @@ def main(transport: str = "stdio"):
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    # Hardcoded to use stdio transport mode
+    main("stdio")
