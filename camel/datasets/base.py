@@ -524,7 +524,7 @@ class SeedDataset(Dataset):
                     rationale=item['rationale'],
                     final_answer=item['final_answer'],
                     metadata=item.get('metadata'),
-                    difficulty=item.get('difficulty', -1),
+                    difficulty=item.get('difficulty', "-1"),
                 )
 
             except ValidationError as e:
