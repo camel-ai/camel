@@ -61,8 +61,10 @@ def test_file_find_in_content(terminal_toolkit, test_file):
     assert result == ""
 
     # Test with directory instead of file
-    with pytest.raises(ValueError):
-        terminal_toolkit.file_find_in_content(str(test_file.parent), "pattern")
+    result = terminal_toolkit.file_find_in_content(
+        str(test_file.parent), "pattern"
+    )
+    assert "not a file" in result.lower()
 
 
 def test_file_find_by_name(terminal_toolkit, temp_dir):
@@ -90,8 +92,8 @@ def test_file_find_by_name(terminal_toolkit, temp_dir):
 
     # Test with file instead of directory
     test_file = temp_dir / "test1.txt"
-    with pytest.raises(ValueError):
-        terminal_toolkit.file_find_by_name(str(test_file), "*.txt")
+    result = terminal_toolkit.file_find_by_name(str(test_file), "*.txt")
+    assert "not a directory" in result.lower()
 
 
 def test_shell_exec(terminal_toolkit, temp_dir):
@@ -112,12 +114,12 @@ def test_shell_exec(terminal_toolkit, temp_dir):
     assert "command not found" in result.lower()
 
     # Test with relative path
-    with pytest.raises(ValueError):
-        terminal_toolkit.shell_exec(
-            "test_session",
-            "relative/path",
-            "echo 'test'",
-        )
+    result = terminal_toolkit.shell_exec(
+        "test_session",
+        "relative/path",
+        "echo 'test'",
+    )
+    assert "must be an absolute path" in result.lower()
 
     # Test session persistence
     session_id = "persistent_session"

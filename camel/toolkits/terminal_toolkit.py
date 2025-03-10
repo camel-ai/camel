@@ -117,8 +117,8 @@ class TerminalToolkit(BaseToolkit):
         else:  # Windows
             # For Windows, we use dir command with /s for recursive search
             # and /b for bare format
-            # Convert glob pattern to something Windows can understand
-            pattern = glob.replace("*", "*").replace("?", "?")
+
+            pattern = glob
             command.extend(["dir", "/s", "/b", os.path.join(path, pattern)])
 
         try:
