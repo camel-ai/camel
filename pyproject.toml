@@ -458,5 +458,6 @@ module = [
     "fpdf",
     "mcp",
     "typer",
+    "chunkr_ai.*"
 ]
 ignore_missing_imports = true
