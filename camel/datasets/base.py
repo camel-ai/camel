@@ -385,10 +385,14 @@ class SeedDataset(Dataset):
         self._length = len(self.data)
 
         if self._length < 0 or self._length < min_samples:
-            raise ValueError(f"The dataset does not contain enough samples."
-            "Need {max(0, min_samples)}, got {self._length}")
+            raise ValueError(
+                "The dataset does not contain enough samples."
+                "Need {max(0, min_samples)}, got {self._length}"
+            )
 
-    def _init_data(self, data:Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]) -> List[DataPoint]:
+    def _init_data(
+        self, data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]
+    ) -> List[DataPoint]:
         if isinstance(data, HFDataset):
             raw_data = self._init_from_hf_dataset(data)
         elif isinstance(data, Dataset):
@@ -468,7 +472,6 @@ class SeedDataset(Dataset):
     def metadata(self) -> Dict[str, Any]:
         r"""Get dataset metadata."""
         return self._metadata.copy()
-    
 
     def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
         return [dict(item) for item in data]
@@ -515,7 +518,6 @@ class SeedDataset(Dataset):
                     f"got {type(item).__name__}"
                 )
         return data
-
 
 
 class SyntheticDataset(BaseDataset):
