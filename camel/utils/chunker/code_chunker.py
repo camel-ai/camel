@@ -14,6 +14,8 @@
 import re
 from typing import List, Optional
 
+from unstructured.documents.elements import Element, ElementMetadata
+
 from camel.utils import get_model_encoding
 
 from .base import BaseChunker
@@ -93,16 +95,17 @@ class CodeChunker(BaseChunker):
             chunks.append(self.tokenizer.decode(buffer))
         return chunks
 
-    def chunk(self, content: str) -> List[str]:
+    def chunk(self, content: List[str]) -> List[Element]:
         r"""Splits the content into smaller chunks while preserving
         structure and adhering to token constraints.
 
         Args:
-            content (str): The content to be chunked.
+            content (List[str]): The content to be chunked.
 
         Returns:
             List[str]: A list of chunked text segments.
         """
+        content = "\n".join(map(str, content))
         chunks = []
         current_chunk: list[str] = []
         current_tokens = 0
@@ -171,4 +174,13 @@ class CodeChunker(BaseChunker):
             else:
                 final_chunks.append(chunk)
 
-        return final_chunks
+        #TODO: need to reconsider how to correctly form metadata (maybe need
+        # to decouple the connection with unstructuredIO)
+        chunked_elements = []
+        for chunk in final_chunks:
+            element = Element(
+                metadata=ElementMetadata()
+            )
+            element.text = chunk
+            chunked_elements.append(element)
+        return chunked_elements

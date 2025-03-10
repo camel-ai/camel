@@ -147,7 +147,8 @@ class VectorRetriever(BaseRetriever):
             )
         else:
             # Chunk the content if required
-            chunks = chunker.chunk(text=elements) if should_chunk else elements
+            chunks = chunker.chunk(content=elements) if should_chunk else (
+                elements)
 
             # Process chunks in batches and store embeddings
             for i in range(0, len(chunks), embed_batch):
