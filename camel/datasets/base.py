@@ -384,57 +384,54 @@ class SeedDataset(Dataset):
         # small, we can load it entirely into memmory
 
         if isinstance(data, HFDataset):
-            self._raw_data = [dict(item) for item in data]
+            self._raw_data = self._init_from_hf_dataset(data)
         elif isinstance(data, Dataset):
-            if not isinstance(data, Sized):
-                raise TypeError(
-                    f"{type(data).__name__} does not implement `__len__()`."
-                )
-
-            # Make MyPy happy by ensuring indexability
-            assert callable(
-                getattr(data, "__getitem__", None)
-            ), "Dataset does not support indexing."
-
-            self._raw_data = [dict(data[i]) for i in range(len(data))]
+            self._raw_data = self._init_from_pytorch_dataset(data)
         elif isinstance(data, Path):
-            if not data.exists():
-                raise FileNotFoundError(f"JSON file not found: {data}")
-            try:
-                logger.debug(f"Loading JSON from {data}")
-                # Explicit encoding to mitigate potential decoding issues
-                with data.open('r', encoding='utf-8') as f:
-                    loaded_data = json.load(f)
-                logger.info(
-                    f"Successfully loaded {len(loaded_data)} "
-                    f"items from {data}"
-                )
-
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in file {data}: {e}")
-
-            if not isinstance(loaded_data, list):
-                raise ValueError(
-                    "JSON file must contain a " "list of dictionaries"
-                )
-
-            for i, item in enumerate(loaded_data):
-                if not isinstance(item, dict):
-                    raise ValueError(
-                        f"Expected a dictionary at index {i}, "
-                        f"got {type(item).__name__}"
-                    )
-
-            self._raw_data = loaded_data
-
+            self._raw_data = self._init_from_json_path(data)
         elif isinstance(data, list):
-            self._raw_data = data if data is not None else []
+            self._raw_data = self._init_from_list(data)
         else:
             raise TypeError("Unsupported data type")
 
         self.data: List[DataPoint] = []
         self._setup(min_samples)
         self._length = len(self.data)
+
+    def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
+        return [dict(item) for item in data]
+
+    def _init_from_pytorch_dataset(self, data: Dataset) -> List[Dict[str, Any]]:
+        if not isinstance(data, Sized):
+            raise TypeError(f"{type(data).__name__} does not implement `__len__()`.")
+        if not callable(getattr(data, "__getitem__", None)):
+            raise TypeError("Dataset does not support indexing.")
+        return [dict(data[i]) for i in range(len(data))]
+
+    def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
+        if not data.exists():
+            raise FileNotFoundError(f"JSON file not found: {data}")
+        try:
+            logger.debug(f"Loading JSON from {data}")
+            with data.open('r', encoding='utf-8') as f:
+                loaded_data = json.load(f)
+            logger.info(f"Successfully loaded {len(loaded_data)} items from {data}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in file {data}: {e}")
+        if not isinstance(loaded_data, list):
+            raise ValueError("JSON file must contain a list of dictionaries")
+        for i, item in enumerate(loaded_data):
+            if not isinstance(item, dict):
+                raise ValueError(f"Expected a dictionary at index {i}, got {type(item).__name__}")
+        return loaded_data
+
+    def _init_from_list(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if data is None:
+            return []
+        for i, item in enumerate(data):
+            if not isinstance(item, dict):
+                raise ValueError(f"Expected a dictionary at index {i}, got {type(item).__name__}")
+        return data
 
     def __len__(self) -> int:
         r"""Return the size of the dataset."""
@@ -457,20 +454,6 @@ class SeedDataset(Dataset):
                 f"Index {idx} out of bounds for dataset of size {self._length}"
             )
         return self.data[idx]
-
-    def sample(self) -> DataPoint:
-        r"""Sample a random datapoint from the dataset.
-
-        Returns:
-            DataPoint: A randomly sampled DataPoint.
-
-        Raises:
-            RuntimeError: If the dataset is empty.
-        """
-        if self._length == 0:
-            raise RuntimeError("Dataset is empty, cannot sample.")
-        idx = self._rng.randint(0, self._length - 1)
-        return self[idx]
 
     def _setup(self, min_samples: int) -> None:
         r"""Set up the dataset by validating and processing raw data.
@@ -550,6 +533,20 @@ class SeedDataset(Dataset):
             f"Processed {len(raw_data)} data points, of which "
             f"{len(self.data)} were valid."
         )
+    
+    def sample(self) -> DataPoint:
+        r"""Sample a random datapoint from the dataset.
+
+        Returns:
+            DataPoint: A randomly sampled DataPoint.
+
+        Raises:
+            RuntimeError: If the dataset is empty.
+        """
+        if self._length == 0:
+            raise RuntimeError("Dataset is empty, cannot sample.")
+        idx = self._rng.randint(0, self._length - 1)
+        return self[idx]
 
     @property
     def metadata(self) -> Dict[str, Any]:
