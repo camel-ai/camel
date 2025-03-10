@@ -56,6 +56,7 @@ from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
 from .mcp_toolkit import MCPToolkit
 from .web_toolkit import WebToolkit
+from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 
 
@@ -101,5 +102,6 @@ __all__ = [
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
     'WebToolkit',
+    'FileWriteToolkit',
     'TerminalToolkit',
 ]
