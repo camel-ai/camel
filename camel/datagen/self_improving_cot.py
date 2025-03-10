@@ -161,13 +161,13 @@ class SelfImprovingCoTPipeline:
         # Initialize output file with empty results if path is specified
         if self.output_path:
             with open(self.output_path, 'w') as f:
-                json.dump({'traces': []}, f, indent=2)
+                json.dump({'traces': []}, f, indent=2, ensure_ascii=False)
         self.lock = threading.Lock()
 
     def safe_write_json(self, file_path, data):
         temp_path = file_path + ".tmp"
         with open(temp_path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, ensure_ascii=False)
         os.replace(temp_path, file_path)
 
     def clean_json(self, data):

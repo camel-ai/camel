@@ -14,6 +14,7 @@
 from .aiml_model import AIMLModel
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
+from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
 from .deepseek_model import DeepSeekModel
@@ -74,4 +75,5 @@ __all__ = [
     'InternLMModel',
     'MoonshotModel',
     'AIMLModel',
+    'BaseAudioModel',
 ]
