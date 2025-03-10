@@ -16,7 +16,7 @@ import shutil
 
 import pytest
 
-from camel.loaders import UnstructuredIO
+from camel.loaders import UnstructuredIOLoader
 from camel.retrievers import AutoRetriever
 from camel.storages import QdrantStorage
 from camel.types import StorageType
@@ -64,7 +64,7 @@ def test_run_vector_retriever(auto_retriever):
 
 
 def test_run_vector_retriever_with_element_input(auto_retriever):
-    uio = UnstructuredIO()
+    uio = UnstructuredIOLoader()
     test_element = uio.create_element_from_text(
         text="""Introducing 🦀 CRAB: Cross-environment Agent Benchmark for 
         Multimodal Language Model Agents
