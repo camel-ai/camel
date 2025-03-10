@@ -108,7 +108,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
             import astor
 
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 source = f.read()
 
             # Parse the source code
@@ -158,21 +158,15 @@ class SubprocessInterpreter(BaseInterpreter):
                     modified_source = astor.to_source(tree)
                     # Create a temporary file with the modified source
                     temp_file = self._create_temp_file(modified_source, "py")
-                    cmd = shlex.split(f"python {temp_file!s}")
+                    cmd = ["python", str(temp_file)]
             except SyntaxError:
-                # If parsing fails, run the original file
-                cmd = shlex.split(
-                    self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                        file_name=str(file)
-                    )
-                )
+                # If parsing fails, run the original file using the mapped command
+                base_cmd = self._CODE_EXECUTE_CMD_MAPPING[code_type].split()[0]
+                cmd = [base_cmd, str(file)]
         else:
             # For non-Python code, use standard execution
-            cmd = shlex.split(
-                self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                    file_name=str(file)
-                )
-            )
+            base_cmd = self._CODE_EXECUTE_CMD_MAPPING[code_type].split()[0]  # Get 'python', 'bash', etc.
+            cmd = [base_cmd, str(file)]
 
         proc = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -260,7 +254,10 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def _create_temp_file(self, code: str, extension: str) -> Path:
         with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=f".{extension}"
+            mode="w",
+            encoding="utf-8",
+            delete=False,
+            suffix=f".{extension}"
         ) as f:
             f.write(code)
             name = f.name
