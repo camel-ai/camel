@@ -13,7 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import ast
-import re
 from typing import Optional
 
 from camel.extractors.base import ExtractorStrategy
@@ -34,20 +33,50 @@ class BoxedStrategy(ExtractorStrategy):
         Returns:
             Optional[str]: Content inside \\boxed{} if found, else None.
         """
-        if text is None:
-            logger.debug("Input text is None")
-            return None
-
-        # Look for \boxed{...} pattern
-        boxed_pattern = r'\\boxed\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
-        matches = re.findall(boxed_pattern, text)
-
-        if not matches:
+        # Find the start of the boxed content
+        boxed_pattern = "\\boxed{"
+        if boxed_pattern not in text:
             logger.debug("No \\boxed{} content found in the response")
             return None
 
-        # Return the first match
-        content = matches[0].strip()
+        start_idx = text.find(boxed_pattern) + len(boxed_pattern)
+        if start_idx >= len(text):
+            logger.debug("Malformed \\boxed{} (no content after opening)")
+            return None
+
+        # Use stack-based approach to handle nested braces
+        stack = 1  # Start with one opening brace
+        end_idx = start_idx
+        escape_mode = False
+
+        for i in range(start_idx, len(text)):
+            char = text[i]
+
+            # Handle escape sequences
+            if escape_mode:
+                escape_mode = False
+                continue
+
+            if char == '\\':
+                escape_mode = True
+                continue
+
+            if char == '{':
+                stack += 1
+            elif char == '}':
+                stack -= 1
+
+            if stack == 0:  # Found the matching closing brace
+                end_idx = i
+                break
+
+        # Check if we found a complete boxed expression
+        if stack != 0:
+            logger.debug("Unbalanced braces in \\boxed{} content")
+            return None
+
+        # Extract the content
+        content = text[start_idx:end_idx].strip()
         logger.debug(f"Extracted boxed content: {content}")
         return content
 
@@ -64,9 +93,6 @@ class PythonListStrategy(ExtractorStrategy):
         Returns:
             Optional[str]: Normalized list as a string if found, else None.
         """
-        if text is None:
-            logger.debug("Input text is None")
-            return None
 
         text = text.strip()
         if not (text.startswith('[') and text.endswith(']')):
@@ -101,9 +127,6 @@ class PythonDictStrategy(ExtractorStrategy):
         Returns:
             Optional[str]: Normalized dictionary as a string, else None.
         """
-        if text is None:
-            logger.debug("Input text is None")
-            return None
 
         text = text.strip()
         if not (text.startswith('{') and text.endswith('}')):
@@ -142,9 +165,6 @@ class PythonSetStrategy(ExtractorStrategy):
         Returns:
             Optional[str]: Normalized set as a string if found, else None.
         """
-        if text is None:
-            logger.debug("Input text is None")
-            return None
 
         text = text.strip()
         # Check for set syntax: {1, 2, 3} or set([1, 2, 3])
@@ -183,9 +203,6 @@ class PythonTupleStrategy(ExtractorStrategy):
         Returns:
             Optional[str]: Normalized tuple as a string if found, else None.
         """
-        if text is None:
-            logger.debug("Input text is None")
-            return None
 
         text = text.strip()
         # Check for tuple syntax: (1, 2, 3) or (1,)
