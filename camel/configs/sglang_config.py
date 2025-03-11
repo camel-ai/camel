@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from __future__ import annotations
 
-from typing import Any, Dict, List, Sequence, Union, Optional
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from camel.configs.base_config import BaseConfig
 from camel.types import NOT_GIVEN, NotGiven
@@ -59,7 +59,8 @@ class SGLangConfig(BaseConfig):
         tools (list[Dict[str, Any]], optional): A list of tool definitions
             that the model can dynamically invoke. Each tool should be
             defined as a dictionary following OpenAI's function calling
-            specification format. For more details, refer to the OpenAI documentation.
+            specification format. For more details, refer to the OpenAI
+            documentation.
     """
 
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
