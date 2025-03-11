@@ -115,15 +115,15 @@ class Extractor:
             return
 
         try:
-            if self._metadata["_cache_templates"]:
+            if self._metadata["cache_templates"]:
                 self._template_cache: Dict[str, Any] = {}
 
-            if self._metadata["_batch_size"] > 1:
+            if self._metadata["batch_size"] > 1:
                 self._batch_processor = BatchProcessor(
-                    initial_batch_size=self._metadata["_batch_size"],
-                    monitoring_interval=self._metadata["_monitoring_interval"],
-                    cpu_threshold=self._metadata["_cpu_threshold"],
-                    memory_threshold=self._metadata["_memory_threshold"],
+                    initial_batch_size=self._metadata["batch_size"],
+                    monitoring_interval=self._metadata["monitoring_interval"],
+                    cpu_threshold=self._metadata["cpu_threshold"],
+                    memory_threshold=self._metadata["memory_threshold"],
                 )
 
             self._is_setup = True
