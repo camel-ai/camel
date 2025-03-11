@@ -117,9 +117,9 @@ class TerminalToolkit(BaseToolkit):
         else:  # Windows
             # For Windows, we use dir command with /s for recursive search
             # and /b for bare format
-
             pattern = glob
-            command.extend(["dir", "/s", "/b", os.path.join(path, pattern)])
+            file_path = os.path.join(path, pattern)
+            command.extend(["cmd", "/c", "dir", "/s", "/b", file_path])
 
         try:
             result = subprocess.run(
