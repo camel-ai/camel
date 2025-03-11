@@ -386,8 +386,8 @@ class SeedDataset(Dataset):
 
         if self._length < 0 or self._length < min_samples:
             raise ValueError(
-                "The dataset does not contain enough samples."
-                "Need {max(0, min_samples)}, got {self._length}"
+                "The dataset does not contain enough samples. "
+                f"Need {max(0, min_samples)}, got {self._length}"
             )
 
     def _init_data(
