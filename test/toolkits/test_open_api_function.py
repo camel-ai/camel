@@ -83,7 +83,7 @@ def test_klarna_productsUsingGET(get_function):
                 'url': '''https://www.klarna.com/us/shopping/pl/cl337/
                 3200177969/Shoes/Nike-Dunk-Low-Retro-M-Black-White/?
                 utm_source=openai&ref-site=openai_plugin''',
-                'price': '\$81.00',
+                'price': r'$81.00',
                 'attributes': [
                     'Outsole:Rubber',
                     'Fastening:Laced',
@@ -103,7 +103,7 @@ def test_klarna_productsUsingGET(get_function):
                 'url': '''https://www.klarna.com/us/shopping/pl/cl337/3979297/
                 Shoes/Nike-Air-Force-1-07-M-White/?utm_source=openai&
                 ref-site=openai_plugin''',
-                'price': '\$80.00',
+                'price': r'$80.00',
                 'attributes': [
                     'Outsole:Rubber',
                     'Fastening:Laced',

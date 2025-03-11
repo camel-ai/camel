@@ -19,10 +19,8 @@ from camel.agents import ChatAgent
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-r"""
-Before using sglang to run LLM model offline,
-you need to install flashinfer which cannot 
-be installed by poetry.
+r"""Before using sglang to run LLM model offline,
+you need to install flashinfer.
 Consider your machine's configuration and 
 install flashinfer in a appropriate version.
 For more details, please refer to:
