@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "camel-ai"
-version = "0.2.23"
+version = "0.2.25"
 description = "Communicative Agents for AI Society Study"
 authors = [{ name = "CAMEL-AI.org" }]
 requires-python = ">=3.10,<3.13"
@@ -58,6 +58,7 @@ dev = [
     "types-tqdm>=4.66.0,<5",
     "types-requests>=2.31.0,<3",
     "types-setuptools>=69.2.0,<70",
+    "uv==0.6.5",
 ]
 docs = [
     "sphinx>=7,<8",
@@ -107,6 +108,8 @@ document_tools = [
     "xls2xlsx>=0.2.0",
     "tabulate>=0.9.0",
     "openpyxl>=3.1.5",
+    "docx>=0.2.4",
+    "fpdf>=1.7.2",
 ]
 media_tools = [
     "imageio[pyav]>=2.34.2,<3",
@@ -148,12 +151,14 @@ dev_tools = [
     "e2b-code-interpreter>=1.0.3,<2",
     "tree-sitter-python>=0.23.6,<0.24",
     "tree-sitter>=0.23.2,<0.24",
+    "typer>=0.15.2",
+    "mcp>=1.3.0",
 ]
 model_platforms = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
     "reka-api>=3.0.8,<4",
-    "anthropic>=0.42.0,<0.43",
+    "anthropic>=0.47.0,<0.50.0",
     "cohere>=5.11.0,<6",
     "fish-audio-sdk>=2024.12.5,<2025",
 ]
@@ -247,7 +252,7 @@ all = [
     "litellm>=1.38.1,<2",
     "mistralai>=1.1.0,<2",
     "fish-audio-sdk>=2024.12.5,<2025",
-    "anthropic>=0.42.0,<0.43",
+    "anthropic>=0.47.0,<0.50.0",
     "reka-api>=3.0.8,<4",
     "redis>=5.0.6,<6",
     "azure-storage-blob>=12.21.0,<13",
@@ -273,6 +278,10 @@ all = [
     "scenedetect>=0.6.5.2",
     "playwright>=1.50.0",
     "html2text>=2024.2.26",
+    "docx>=0.2.4",
+    "fpdf>=1.7.2",
+    "mcp>=1.3.0",
+    "typer>=0.15.2",
 ]
 
 [project.urls]
@@ -444,5 +453,9 @@ module = [
     "scenedetect",
     "playwright",
     "html2text",
+    "docx",
+    "fpdf",
+    "mcp",
+    "typer",
 ]
 ignore_missing_imports = true
