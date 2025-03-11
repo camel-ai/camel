@@ -28,8 +28,8 @@ from camel.utils import print_text_animated
 
 
 def main(
-    model_platform=ModelPlatformType.NVIDIA,
-    model_type=ModelType.NVIDIA_LLAMA3_3_70B_INSTRUCT,
+    model_platform=ModelPlatformType.DEFAULT,
+    model_type=ModelType.DEFAULT,
     chat_turn_limit=10,
 ) -> None:
     task_prompt = (

@@ -468,6 +468,42 @@ class RolePlaying:
 
         return init_msg
 
+    async def ainit_chat(
+        self, init_msg_content: Optional[str] = None
+    ) -> BaseMessage:
+        r"""Asynchronously initializes the chat by resetting both of the
+        assistant and user agents. Returns an initial message for the
+        role-playing session.
+
+        Args:
+            init_msg_content (str, optional): A user-specified initial message.
+                Will be sent to the role-playing session as the initial
+                message. (default: :obj:`None`)
+
+        Returns:
+            BaseMessage: A single `BaseMessage` representing the initial
+                message.
+        """
+        # Currently, reset() is synchronous, but if it becomes async in the
+        # future, we can await it here
+        self.assistant_agent.reset()
+        self.user_agent.reset()
+        default_init_msg_content = (
+            "Now start to give me instructions one by one. "
+            "Only reply with Instruction and Input."
+        )
+        if init_msg_content is None:
+            init_msg_content = default_init_msg_content
+
+        # Initialize a message sent by the assistant
+        init_msg = BaseMessage.make_assistant_message(
+            role_name=getattr(self.assistant_sys_msg, 'role_name', None)
+            or "assistant",
+            content=init_msg_content,
+        )
+
+        return init_msg
+
     def step(
         self,
         assistant_msg: BaseMessage,
@@ -515,6 +551,89 @@ class RolePlaying:
             self.user_agent.record_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
+        if assistant_response.terminated or assistant_response.msgs is None:
+            return (
+                ChatAgentResponse(
+                    msgs=[],
+                    terminated=assistant_response.terminated,
+                    info=assistant_response.info,
+                ),
+                ChatAgentResponse(
+                    msgs=[user_msg], terminated=False, info=user_response.info
+                ),
+            )
+        assistant_msg = self._reduce_message_options(assistant_response.msgs)
+
+        # To prevent recording the same memory more than once (once in chat
+        # step and once in role play), and the model generates only one
+        # response when multi-response support is enabled.
+        if (
+            'n' in self.assistant_agent.model_backend.model_config_dict.keys()
+            and self.assistant_agent.model_backend.model_config_dict['n'] > 1
+        ):
+            self.assistant_agent.record_message(assistant_msg)
+
+        return (
+            ChatAgentResponse(
+                msgs=[assistant_msg],
+                terminated=assistant_response.terminated,
+                info=assistant_response.info,
+            ),
+            ChatAgentResponse(
+                msgs=[user_msg],
+                terminated=user_response.terminated,
+                info=user_response.info,
+            ),
+        )
+
+    async def astep(
+        self,
+        assistant_msg: BaseMessage,
+    ) -> Tuple[ChatAgentResponse, ChatAgentResponse]:
+        r"""Asynchronously advances the conversation by taking a message from
+        the assistant, processing it using the user agent, and then processing
+        the resulting message using the assistant agent. Returns a tuple
+        containing the resulting assistant message, whether the assistant
+        agent terminated the conversation, and any additional assistant
+        information, as well as a tuple containing the resulting user message,
+        whether the user agent terminated the conversation, and any additional
+        user information.
+
+        Args:
+            assistant_msg: A `BaseMessage` representing the message from the
+                assistant.
+
+        Returns:
+            Tuple[ChatAgentResponse, ChatAgentResponse]: A tuple containing two
+                ChatAgentResponse: the first struct contains the resulting
+                assistant message, whether the assistant agent terminated the
+                conversation, and any additional assistant information; the
+                second struct contains the resulting user message, whether the
+                user agent terminated the conversation, and any additional user
+                information.
+        """
+        user_response = await self.user_agent.astep(assistant_msg)
+        if user_response.terminated or user_response.msgs is None:
+            return (
+                ChatAgentResponse(msgs=[], terminated=False, info={}),
+                ChatAgentResponse(
+                    msgs=[],
+                    terminated=user_response.terminated,
+                    info=user_response.info,
+                ),
+            )
+        user_msg = self._reduce_message_options(user_response.msgs)
+
+        # To prevent recording the same memory more than once (once in chat
+        # step and once in role play), and the model generates only one
+        # response when multi-response support is enabled.
+        if (
+            'n' in self.user_agent.model_backend.model_config_dict.keys()
+            and self.user_agent.model_backend.model_config_dict['n'] > 1
+        ):
+            self.user_agent.record_message(user_msg)
+
+        assistant_response = await self.assistant_agent.astep(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (
                 ChatAgentResponse(
