@@ -12,9 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import heapq
+import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from camel.logger import get_logger
 from camel.utils import BatchProcessor
@@ -39,16 +39,19 @@ class ExtractorStrategy(ABC):
 
 
 class Extractor:
-    r"""Base class for response extractors with a prioritized strategy system.
+    r"""Base class for response extractors with a fixed strategy pipeline.
 
     This extractor:
-    - Uses a **priority queue** for managing extraction strategies.
-    - Tries **each strategy in order of priority** until one succeeds.
-    - Supports **async execution** and **dynamic strategy management**.
+    - Uses a **fixed multi-stage pipeline** of extraction strategies.
+    - Tries **each strategy in order** within a stage until one succeeds.
+    - Feeds the **output of one stage into the next** for processing.
+    - Supports **async execution** for efficient processing.
+    - Provides **batch processing and resource monitoring** options.
     """
 
     def __init__(
         self,
+        pipeline: List[List[ExtractorStrategy]],
         cache_templates: bool = True,
         max_cache_size: int = 1000,
         extraction_timeout: float = 30.0,
@@ -58,18 +61,36 @@ class Extractor:
         memory_threshold: float = 85.0,
         **kwargs,
     ):
-        r"""Initialize the extractor with resource constraints and strategies.
+        r"""Initialize the extractor with a multi-stage strategy pipeline.
 
         Args:
-            cache_templates (bool): Whether to cache extraction templates.
-            max_cache_size (int): Maximum number of templates to cache.
-            extraction_timeout (float): Timeout for extraction in seconds.
-            batch_size (int): Size of batches for parallel extraction.
-            monitoring_interval (float): Interval for resource checks.
-            cpu_threshold (float): CPU usage threshold for scaling down.
-            memory_threshold (float): Memory usage threshold for scaling down.
-            **kwargs: Additional parameters.
+            pipeline (List[List[ExtractorStrategy]]):
+                A fixed list of lists where each list represents a stage
+                containing extractor strategies executed in order.
+            cache_templates (bool, optional):
+                Whether to enable caching for extraction templates.
+                Defaults to True.
+            max_cache_size (int, optional):
+                Maximum number of cached templates. Defaults to 1000.
+            extraction_timeout (float, optional):
+                Maximum time allowed for an extraction in seconds.
+                Defaults to 30.0.
+            batch_size (int, optional):
+                Number of responses processed in parallel per batch.
+                Defaults to 10.
+            monitoring_interval (float, optional):
+                Interval (in seconds) for checking resource usage.
+                Defaults to 5.0.
+            cpu_threshold (float, optional):
+                CPU usage percentage threshold for scaling down operations.
+                Defaults to 80.0.
+            memory_threshold (float, optional):
+                Memory usage percentage threshold for scaling down operations.
+                Defaults to 85.0.
+            **kwargs:
+                Additional keyword arguments for future extensions.
         """
+
         self._metadata = {
             'cache_templates': cache_templates,
             'max_cache_size': max_cache_size,
@@ -85,29 +106,7 @@ class Extractor:
         self._cache: Dict[str, Any] = {}
         self._batch_processor: Optional[BatchProcessor] = None
 
-        # Strategy management
-        self._strategy_queue: List[Tuple[int, ExtractorStrategy]] = []
-
-    def add_strategy(self, strategy: ExtractorStrategy, priority: int) -> None:
-        r"""Add an extraction strategy with a given priority.
-
-        Args:
-            strategy (ExtractorStrategy): The extraction strategy to add.
-            priority (int): The priority
-                (lower values indicate higher priority).
-        """
-        heapq.heappush(self._strategy_queue, (priority, strategy))
-
-    def remove_strategy(self, strategy: ExtractorStrategy) -> None:
-        r"""Remove an extraction strategy and update priority queue.
-
-        Args:
-            strategy (ExtractorStrategy): The strategy to remove.
-        """
-        self._strategy_queue = [
-            (p, s) for p, s in self._strategy_queue if s != strategy
-        ]
-        heapq.heapify(self._strategy_queue)  # Maintain heap order
+        self._pipeline = pipeline
 
     async def setup(self) -> None:
         r"""Set up the extractor with necessary resources."""
@@ -198,14 +197,14 @@ class Extractor:
         await self.cleanup()
 
     async def extract(self, response: str) -> Optional[str]:
-        r"""Extract a normalized, comparable part of the LLM response
-         using the prioritized fallback strategy.
+        r"""Extracts a normalized, comparable part of the LLM response
+        using the fixed multi-stage strategy pipeline.
 
         Args:
             response (str): The raw response text.
 
         Returns:
-            Optional[Any]: Extracted data if successful, otherwise None.
+            Optional[str]: Extracted data if successful, otherwise None.
         """
         if not self._is_setup:
             raise RuntimeError(
@@ -214,9 +213,40 @@ class Extractor:
         if not response or not response.strip():
             raise ValueError("Empty or whitespace-only response")
 
-        for _, strategy in sorted(self._strategy_queue):
-            result = await strategy.extract(response)
-            if result is not None:
-                return result  # Return the first successful extraction
+        current_input = response  # Initial input
 
-        return None  # No strategy succeeded
+        for stage in self._pipeline:
+            stage_success = (
+                False  # Track if any strategy in the stage succeeds
+            )
+
+            for strategy in stage:
+                try:
+                    # Apply the extraction timeout
+                    result = await asyncio.wait_for(
+                        strategy.extract(current_input),
+                        timeout=self._metadata["extraction_timeout"],
+                    )
+
+                    if result is not None:
+                        current_input = result  # Feed into next stage
+                        stage_success = True
+                        break  # Move to next stage if valid extraction occurs
+
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"Strategy {strategy.__class__.__name__} timed out "
+                        f"after {self._metadata['extraction_timeout']} seconds"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Strategy {strategy.__class__.__name__} failed: {e}"
+                    )
+
+            if not stage_success:
+                logger.debug(
+                    "No strategy in stage succeeded, stopping extraction."
+                )
+                return None  # Stop processing if the stage fails
+
+        return current_input  # Final processed output
