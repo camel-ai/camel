@@ -58,7 +58,6 @@ class AnthropicConfig(BaseConfig):
     stop_sequences: ClassVar[Union[List[str], NotGiven]] = []
     temperature: float = 1
     top_p: Union[float, NotGiven] = 0.7
-    top_k: Union[int, NotGiven] = 5
     stream: bool = False
 
     def as_dict(self) -> dict[str, Any]:

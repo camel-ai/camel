@@ -61,17 +61,22 @@ class AnthropicModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        from anthropic import Anthropic, AsyncAnthropic
+        from openai import AsyncOpenAI, OpenAI
 
         if model_config_dict is None:
             model_config_dict = AnthropicConfig().as_dict()
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        url = (
+            url
+            or os.environ.get("ANTHROPIC_API_BASE_URL")
+            or "https://api.anthropic.com/v1/"
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
-        self.async_client = AsyncAnthropic(
+        self.client = OpenAI(base_url=self._url, api_key=self._api_key)
+
+        self.async_client = AsyncOpenAI(
             api_key=self._api_key, base_url=self._url
         )
 
@@ -122,21 +127,12 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             ChatCompletion: Response in the OpenAI API format.
         """
-        from anthropic import NOT_GIVEN
-
-        if messages[0]["role"] == "system":
-            sys_msg = str(messages.pop(0)["content"])
-        else:
-            sys_msg = NOT_GIVEN  # type: ignore[assignment]
-        response = self.client.messages.create(
+        response = self.client.chat.completions.create(
             model=self.model_type,
-            system=sys_msg,
             messages=messages,  # type: ignore[arg-type]
             **self.model_config_dict,
+            tools=tools,  # type: ignore[arg-type]
         )
-
-        # format response to openai format
-        response = self._convert_response_from_anthropic_to_openai(response)
 
         return response
 
@@ -155,21 +151,14 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             ChatCompletion: Response in the OpenAI API format.
         """
-        from anthropic import NOT_GIVEN
-
-        if messages[0]["role"] == "system":
-            sys_msg = str(messages.pop(0)["content"])
-        else:
-            sys_msg = NOT_GIVEN  # type: ignore[assignment]
-        response = await self.async_client.messages.create(
+        response = await self.async_client.chat.completions.create(
             model=self.model_type,
-            system=sys_msg,
             messages=messages,  # type: ignore[arg-type]
             **self.model_config_dict,
+            tools=tools,  # type: ignore[arg-type]
         )
 
-        # format response to openai format
-        return self._convert_response_from_anthropic_to_openai(response)
+        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for anthropic
