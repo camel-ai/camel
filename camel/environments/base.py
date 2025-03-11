@@ -14,18 +14,18 @@
 
 from abc import ABC, abstractmethod
 
-from .models import Action, StepResult
+from .models import Action, Observation, StepResult
 
 
 class BaseEnvironment(ABC):
     @abstractmethod
-    def reset(self):
+    async def reset(self) -> Observation:
         pass
 
     @abstractmethod
-    def step(self, action: Action) -> StepResult:
+    async def step(self, action: Action) -> StepResult:
         pass
 
     @abstractmethod
-    def close(self) -> None:
+    async def close(self) -> None:
         pass
