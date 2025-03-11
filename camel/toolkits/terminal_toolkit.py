@@ -118,7 +118,7 @@ class TerminalToolkit(BaseToolkit):
             # For Windows, we use dir command with /s for recursive search
             # and /b for bare format
             pattern = glob
-            file_path = os.path.join(path, pattern)
+            file_path = os.path.join(path, pattern).replace('/', '\\')
             command.extend(["cmd", "/c", "dir", "/s", "/b", file_path])
 
         try:
