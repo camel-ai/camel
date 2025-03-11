@@ -451,6 +451,7 @@ module = [
     "tabulate",
     "openpyxl",
     "scenedetect",
+    "scenedetect.detectors",
     "playwright",
     "html2text",
     "docx",
