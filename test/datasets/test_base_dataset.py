@@ -251,7 +251,11 @@ def test_seed_dataset_init_from_hf_dataset():
         {"question": "What is 3 + 3?", "final_answer": "6"}
     ]
     hf_invalid_missing = HFDataset.from_list(invalid_data_missing)
-    with pytest.raises(ValueError, match="Sample at index 0 validation error"):
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
         SeedDataset(data=hf_invalid_missing, min_samples=1, strict=True)
 
     # Sub-test 2b: Missing required field with strict=False
@@ -386,7 +390,11 @@ def test_seed_dataset_init_from_pytorch_dataset():
         }  # Missing rationale
     ]
     pytorch_invalid_missing = MockPyTorchDataset(invalid_data_missing)
-    with pytest.raises(ValueError, match="Sample at index 0 validation error"):
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
         SeedDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
 
     # Sub-test 2b: Missing required field with strict=False
@@ -658,7 +666,11 @@ def test_seed_dataset_init_from_json_file():
         json.dump(invalid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    with pytest.raises(ValueError, match="Sample at index 0 validation error"):
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
         SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # Sub-test 8b: Invalid data with strict=False
@@ -761,7 +773,11 @@ def test_seed_dataset_init_from_list():
             "final_answer": "6",
         }  # Missing rationale
     ]
-    with pytest.raises(ValueError, match="Sample at index 0 validation error"):
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
         SeedDataset(data=invalid_data_missing, min_samples=1, strict=True)
     # Sub-test 4b: Missing required field with strict=False
     dataset_non_strict = SeedDataset(

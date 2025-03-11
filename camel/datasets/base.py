@@ -407,11 +407,52 @@ class SeedDataset(Dataset):
         def create_datapoint(
             item: Dict[str, Any], idx: int
         ) -> Optional[DataPoint]:
+            # Add type checks for required fields to make mypy happy
+            question = item.get('question')
+            if not isinstance(question, str):
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} has invalid 'question': "
+                        f"expected str, got {type(question)}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping sample at index {idx}: invalid 'question'"
+                    )
+                    return None
+
+            rationale = item.get('rationale')
+            if not isinstance(rationale, str):
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} has invalid 'rationale': "
+                        f"expected str, got {type(rationale)}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping sample at index {idx}: invalid 'rationale'"
+                    )
+                    return None
+
+            final_answer = item.get('final_answer')
+            if not isinstance(final_answer, str):
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} has invalid 'final_answer': "
+                        f"expected str, got {type(final_answer)}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping sample at index {idx}: "
+                        "invalid 'final_answer'"
+                    )
+                    return None
+
             try:
                 return DataPoint(
-                    question=item.get('question'),
-                    rationale=item.get('rationale'),
-                    final_answer=item.get('final_answer'),
+                    question=question,
+                    rationale=rationale,
+                    final_answer=final_answer,
                     metadata=item.get('metadata'),
                     difficulty=item.get('difficulty'),
                 )
