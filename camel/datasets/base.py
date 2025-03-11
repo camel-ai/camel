@@ -483,7 +483,16 @@ class SeedDataset(Dataset):
             raise TypeError(
                 f"{type(data).__name__} does not implement `__len__()`."
             )
+        raw_data = []
 
+        for i in range(len(data)):
+            item = data[i]
+            if not isinstance(item, dict):
+                raise TypeError(
+                    f"Item at index {i} is not a dict: "
+                    f"got {type(item).__name__}"
+                )
+            raw_data.append(item)
         return [dict(data[i]) for i in range(len(data))]
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
