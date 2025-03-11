@@ -54,7 +54,10 @@ from .audio_analysis_toolkit import AudioAnalysisToolkit
 from .excel_toolkit import ExcelToolkit
 from .video_analysis_toolkit import VideoAnalysisToolkit
 from .image_analysis_toolkit import ImageAnalysisToolkit
+from .mcp_toolkit import MCPToolkit
 from .web_toolkit import WebToolkit
+from .file_write_toolkit import FileWriteToolkit
+from .terminal_toolkit import TerminalToolkit
 
 
 __all__ = [
@@ -93,9 +96,12 @@ __all__ = [
     'ZapierToolkit',
     'SymPyToolkit',
     'MinerUToolkit',
+    'MCPToolkit',
     'AudioAnalysisToolkit',
     'ExcelToolkit',
     'VideoAnalysisToolkit',
     'ImageAnalysisToolkit',
     'WebToolkit',
+    'FileWriteToolkit',
+    'TerminalToolkit',
 ]
