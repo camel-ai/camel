@@ -1,33 +1,56 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 # memory_toolkit.py
 import json
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
+from camel.memories import (
+    ChatHistoryMemory,
+    MemoryRecord,
+    ScoreBasedContextCreator,
+)
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.function_tool import FunctionTool
-from camel.memories import ChatHistoryMemory, MemoryRecord, ScoreBasedContextCreator
+
+if TYPE_CHECKING:
+    from camel.agents import ChatAgent
+
 
 class MemoryToolkit(BaseToolkit):
     r"""
-    A toolkit that provides methods for saving, loading, and clearing a ChatAgent's memory.
-    These methods are exposed as FunctionTool objects for function calling.
-    Internally, it calls:
+    A toolkit that provides methods for saving, loading, and clearing a
+    ChatAgent's memory.
+    These methods are exposed as FunctionTool objects for
+    function calling. Internally, it calls:
       - agent.save_memory(path)
       - agent.load_memory(new_memory_obj)
       - agent.load_memory_from_path(path)
       - agent.clear_memory()
     """
-    
+
     def __init__(self, agent: 'ChatAgent', timeout: Optional[float] = None):
         super().__init__(timeout=timeout)
         self.agent = agent
 
     def save(self, path: str) -> str:
         r"""
-        Saves the agent's current memory to a JSON file by calling agent.save_memory(path).
-        
+        Saves the agent's current memory to a JSON file by calling
+        agent.save_memory(path).
+
         Args:
             path (str): The file path to save the memory to.
-        
+
         Returns:
             str: Confirmation message.
         """
@@ -41,10 +64,10 @@ class MemoryToolkit(BaseToolkit):
           2) Create a fresh ChatHistoryMemory
           3) Write records into that memory
           4) Call agent.load_memory(...) with that new memory
-        
+
         Args:
             memory_json (str): A JSON string containing memory records.
-        
+
         Returns:
             str: Confirmation or error message.
         """
@@ -71,15 +94,16 @@ class MemoryToolkit(BaseToolkit):
         except json.JSONDecodeError:
             return "[ERROR] Invalid JSON string provided."
         except Exception as e:
-            return f"[ERROR] Failed to load memory: {str(e)}"
+            return f"[ERROR] Failed to load memory: {e!s}"
 
     def load_from_path(self, path: str) -> str:
         r"""
-        Loads the agent's memory from a JSON file by calling agent.load_memory_from_path(path).
-        
+        Loads the agent's memory from a JSON file by calling
+        agent.load_memory_from_path(path).
+
         Args:
             path (str): The file path to load the memory from.
-        
+
         Returns:
             str: Confirmation message.
         """
@@ -89,7 +113,7 @@ class MemoryToolkit(BaseToolkit):
     def clear_memory(self) -> str:
         r"""
         Clears the agent's memory by calling agent.clear_memory().
-        
+
         Returns:
             str: Confirmation message.
         """
@@ -98,8 +122,9 @@ class MemoryToolkit(BaseToolkit):
 
     def get_tools(self) -> list[FunctionTool]:
         r"""
-        Expose the memory management methods as function tools for the ChatAgent.
-        
+        Expose the memory management methods as function tools
+        for the ChatAgent.
+
         Returns:
             list[FunctionTool]: List of FunctionTool objects.
         """
