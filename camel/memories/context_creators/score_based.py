@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -19,6 +19,7 @@ from camel.logger import get_logger
 from camel.memories.base import BaseContextCreator
 from camel.memories.records import ContextRecord
 from camel.messages import OpenAIMessage
+from camel.types.enums import OpenAIBackendRole
 from camel.utils import BaseTokenCounter
 
 logger = get_logger(__name__)
@@ -64,96 +65,220 @@ class ScoreBasedContextCreator(BaseContextCreator):
         self,
         records: List[ContextRecord],
     ) -> Tuple[List[OpenAIMessage], int]:
-        r"""Creates conversational context from chat history while respecting
-        token limits.
+        """Constructs conversation context from chat history while respecting
+            token limits.
 
-        Constructs the context from provided records and ensures that the total
-        token count does not exceed the specified limit by pruning the least
-        score messages if necessary.
+        Key strategies:
+        1. System message is always prioritized and preserved
+        2. Truncation removes low-score messages first
+        3. Final output maintains chronological order and in history memory,
+           the score of each message decreases according to keep_rate. The
+           newer the message, the higher the score.
 
         Args:
-            records (List[ContextRecord]): A list of message records from which
-                to generate the context.
+            records: List of context records with scores and timestamps
 
         Returns:
-            Tuple[List[OpenAIMessage], int]: A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
+            Tuple containing:
+            - Ordered list of OpenAI messages
+            - Total token count of the final context
 
         Raises:
-            RuntimeError: If it's impossible to create a valid context without
-                exceeding the token limit.
+            RuntimeError: If system message alone exceeds token limit
         """
-        # Create unique context units list
-        uuid_set = set()
-        context_units = []
+        # ======================
+        # 1. System Message Handling
+        # ======================
+        system_unit, regular_units = self._extract_system_message(records)
+        system_tokens = system_unit.num_tokens if system_unit else 0
+
+        # ======================
+        # 2. Deduplication & Initial Processing
+        # ======================
+        seen_uuids = set()
+        if system_unit:
+            seen_uuids.add(system_unit.record.memory_record.uuid)
+
+        # Process non-system messages with deduplication
         for idx, record in enumerate(records):
-            if record.memory_record.uuid not in uuid_set:
-                uuid_set.add(record.memory_record.uuid)
-                context_units.append(
-                    _ContextUnit(
-                        idx=idx,
-                        record=record,
-                        num_tokens=self.token_counter.count_tokens_from_messages(
-                            [record.memory_record.to_openai_message()]
-                        ),
-                    )
+            if record.memory_record.uuid in seen_uuids:
+                continue
+            seen_uuids.add(record.memory_record.uuid)
+
+            token_count = self.token_counter.count_tokens_from_messages(
+                [record.memory_record.to_openai_message()]
+            )
+            regular_units.append(
+                _ContextUnit(
+                    idx=idx,
+                    record=record,
+                    num_tokens=token_count,
                 )
+            )
 
-        # TODO: optimize the process, may give information back to memory
+        # ======================
+        # 3. Token Calculation
+        # ======================
+        total_tokens = system_tokens + sum(u.num_tokens for u in regular_units)
 
-        # If not exceed token limit, simply return
-        total_tokens = sum([unit.num_tokens for unit in context_units])
+        # ======================
+        # 4. Early Return if Within Limit
+        # ======================
         if total_tokens <= self.token_limit:
-            context_units = sorted(
-                context_units,
-                key=lambda unit: (unit.record.timestamp, unit.record.score),
+            sorted_units = sorted(
+                regular_units, key=self._conversation_sort_key
             )
-            return self._create_output(context_units)
+            return self._assemble_output(sorted_units, system_unit)
 
-        # Log warning about token limit being exceeded
+        # ======================
+        # 5. Truncation Logic
+        # ======================
         logger.warning(
-            f"Token limit reached ({total_tokens} > {self.token_limit}). "
-            f"Some messages will be pruned from memory to meet the limit."
+            f"Context truncation required ({total_tokens} > \
+            {self.token_limit}), "
+            "pruning low-score messages."
         )
 
-        # Sort by score
-        context_units = sorted(
-            context_units,
-            key=lambda unit: (unit.record.timestamp, unit.record.score),
+        # Sort for truncation: high scores first, older messages first at same
+        # score
+        sorted_for_truncation = sorted(
+            regular_units, key=self._truncation_sort_key
         )
 
-        # Remove the least score messages until total token number is smaller
-        # than token limit
-        truncate_idx = None
-        for i, unit in enumerate(context_units):
-            if i == len(context_units) - 1:
-                # If we reach the end of the list and still exceed the token
-                raise RuntimeError(
-                    "Cannot create context: exceed token limit.", total_tokens
-                )
-            total_tokens -= unit.num_tokens
-            if total_tokens <= self.token_limit:
-                truncate_idx = i
-                break
-        if truncate_idx is None:
+        # Reverse to process from lowest score (end of sorted list)
+        remaining_units = []
+        current_total = system_tokens
+
+        for unit in sorted_for_truncation:
+            potential_total = current_total + unit.num_tokens
+            if potential_total <= self.token_limit:
+                remaining_units.append(unit)
+                current_total = potential_total
+
+        # ======================
+        # 6. Final Validation
+        # ======================
+        # Handle edge case where system message alone exceeds limit
+        if not remaining_units and system_tokens > self.token_limit:
             raise RuntimeError(
-                "Cannot create context: exceed token limit.", total_tokens
+                f"System message exceeds token limit ({system_tokens} > \
+                {self.token_limit})"
             )
-        return self._create_output(context_units[truncate_idx + 1 :])
 
-    def _create_output(
-        self, context_units: List[_ContextUnit]
-    ) -> Tuple[List[OpenAIMessage], int]:
-        r"""Helper method to generate output from context units.
+        # ======================
+        # 7. Output Assembly
+        # ======================
+        # Sort remaining units chronologically
+        final_units = sorted(remaining_units, key=self._conversation_sort_key)
 
-        This method converts the provided context units into a format suitable
-        for output, specifically a list of OpenAIMessages and an integer
-        representing the total token count.
+        # Incase system message is the only message in memory when sorted units
+        # are empty, raise an error
+        if system_unit and len(final_units) == 0 and len(records) > 2:
+            raise RuntimeError(
+                "System message and current message exceeds token limit "
+            )
+
+        return self._assemble_output(final_units, system_unit)
+
+    def _extract_system_message(
+        self, records: List[ContextRecord]
+    ) -> Tuple[Optional[_ContextUnit], List[_ContextUnit]]:
+        """Extracts the system message from records and validates it.
+
+        Args:
+            records: List of context records representing conversation history.
+
+        Returns:
+            Tuple containing:
+            - The system message as a `_ContextUnit`, if valid; otherwise,
+                `None`.
+            - An empty list, serving as the initial container for regular
+                messages.
         """
-        context_units = sorted(
-            context_units, key=lambda unit: unit.record.timestamp
+        if not records:
+            return None, []
+
+        first_record = records[0]
+        if (
+            first_record.memory_record.role_at_backend
+            != OpenAIBackendRole.SYSTEM
+        ):
+            return None, []
+
+        message = first_record.memory_record.to_openai_message()
+        tokens = self.token_counter.count_tokens_from_messages([message])
+        system_message_unit = _ContextUnit(
+            idx=0,
+            record=first_record,
+            num_tokens=tokens,
         )
-        return [
-            unit.record.memory_record.to_openai_message()
-            for unit in context_units
-        ], sum([unit.num_tokens for unit in context_units])
+        return system_message_unit, []
+
+    def _truncation_sort_key(self, unit: _ContextUnit) -> Tuple[float, float]:
+        """Defines the sorting key for the truncation phase.
+
+        Sorting priority:
+        - Primary: Sort by score in descending order (higher scores first).
+        - Secondary: Sort by timestamp in ascending order (older messages
+            first when scores are equal).
+
+        Args:
+            unit: A `_ContextUnit` representing a conversation record.
+
+        Returns:
+            A tuple containing:
+            - Negative score for descending order sorting.
+            - Timestamp for ascending order sorting.
+        """
+        return (-unit.record.score, unit.record.timestamp)
+
+    def _conversation_sort_key(
+        self, unit: _ContextUnit
+    ) -> Tuple[float, float]:
+        """Defines the sorting key for assembling the final output.
+
+        Sorting priority:
+        - Primary: Sort by timestamp in ascending order (chronological order).
+        - Secondary: Sort by score in descending order (higher scores first
+            when timestamps are equal).
+
+        Args:
+            unit: A `_ContextUnit` representing a conversation record.
+
+        Returns:
+            A tuple containing:
+            - Timestamp for chronological sorting.
+            - Negative score for descending order sorting.
+        """
+        return (unit.record.timestamp, -unit.record.score)
+
+    def _assemble_output(
+        self,
+        context_units: List[_ContextUnit],
+        system_unit: Optional[_ContextUnit],
+    ) -> Tuple[List[OpenAIMessage], int]:
+        """Assembles final message list with proper ordering and token count.
+
+        Args:
+            context_units: Sorted list of regular message units
+            system_unit: System message unit (if present)
+
+        Returns:
+            Tuple of (ordered messages, total tokens)
+        """
+        messages = []
+        total_tokens = 0
+
+        # Add system message first if present
+        if system_unit:
+            messages.append(
+                system_unit.record.memory_record.to_openai_message()
+            )
+            total_tokens += system_unit.num_tokens
+
+        # Add sorted regular messages
+        for unit in context_units:
+            messages.append(unit.record.memory_record.to_openai_message())
+            total_tokens += unit.num_tokens
+
+        return messages, total_tokens
