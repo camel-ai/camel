@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
+
 class Action(BaseModel):
     r"""Represents an action taken in an environment.
 
@@ -36,11 +37,7 @@ class Action(BaseModel):
             generated (UTC).
     """
 
-    problem_statement: str = Field(description="Problem statement for the LLM")
     llm_response: str = Field(description="Generated response from the LLM")
-    final_answer: Optional[str] = Field(
-        None, description="Reference solution if available"
-    )
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata about the generation",
