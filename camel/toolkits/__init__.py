@@ -58,6 +58,7 @@ from .mcp_toolkit import MCPToolkit
 from .web_toolkit import WebToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
+from .pubmed_toolkit import PubMedToolkit
 
 
 __all__ = [
@@ -104,4 +105,5 @@ __all__ = [
     'WebToolkit',
     'FileWriteToolkit',
     'TerminalToolkit',
+    'PubMedToolkit',
 ]
