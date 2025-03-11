@@ -13,12 +13,17 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
-from camel.storages import BaseKeyValueStorage, BaseVectorStorage
+from camel.storages import (
+    BaseKeyValueStorage,
+    BaseVectorStorage,
+    BaseMemoryStorage,
+    Mem0Storage,
+)
 from camel.types import OpenAIBackendRole
 
 
@@ -189,3 +194,119 @@ class LongtermAgentMemory(AgentMemory):
         r"""Removes all records from the memory."""
         self.chat_history_block.clear()
         self.vector_db_block.clear()
+
+
+class Mem0Memory(AgentMemory):
+    r"""An agent memory implementation using Mem0's memory capabilities. This memory
+    system provides both semantic search and context-aware memory management.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        storage (Optional[BaseMemoryStorage], optional): A Mem0 storage backend. If
+            `None`, a new :obj:`Mem0Storage` will be created. (default: :obj:`None`)
+        api_key (str, optional): The API key for Mem0. Only used if storage is None.
+        user_id (str, optional): The user ID for memory context.
+        agent_id (str, optional): The agent ID for memory context.
+        run_id (str, optional): The run/session ID for temporary memories.
+        metadata (Dict[str, Any], optional): Additional metadata for memories.
+        retrieve_limit (int, optional): Maximum number of memories to retrieve.
+            (default: :obj:`5`)
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseMemoryStorage] = None,
+        api_key: Optional[str] = None,
+        user_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        run_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        retrieve_limit: int = 5,
+    ) -> None:
+        self._context_creator = context_creator
+        self._storage = storage or Mem0Storage(
+            api_key=api_key,
+            user_id=user_id,
+            agent_id=agent_id,
+            run_id=run_id,
+            metadata=metadata,
+        )
+        if not isinstance(self._storage, Mem0Storage):
+            raise TypeError("Storage must be an instance of Mem0Storage")
+        self._retrieve_limit = retrieve_limit
+        self._current_topic: str = ""
+
+    def retrieve(self) -> List[ContextRecord]:
+        r"""Retrieves relevant memories using semantic search based on the current
+        topic/context.
+
+        Returns:
+            List[ContextRecord]: A list of context records retrieved from memory.
+        """
+        if not self._current_topic:
+            return []
+
+        # Search for relevant memories
+        memories = self._storage.search(
+            query=self._current_topic,
+            limit=self._retrieve_limit,
+        )
+
+        # Convert memories to context records
+        context_records = []
+        for memory in memories:
+            if isinstance(memory.get("text"), dict):
+                text = memory["text"]
+                context_records.append(
+                    ContextRecord(
+                        role_at_backend=text.get("role", OpenAIBackendRole.USER),
+                        content=text.get("content", ""),
+                        metadata=memory.get("metadata", {}),
+                    )
+                )
+            elif isinstance(memory.get("text"), str):
+                context_records.append(
+                    ContextRecord(
+                        role_at_backend=OpenAIBackendRole.USER,
+                        content=memory["text"],
+                        metadata=memory.get("metadata", {}),
+                    )
+                )
+
+        return context_records
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        r"""Writes memory records to storage and updates the current topic.
+
+        Args:
+            records (List[MemoryRecord]): Messages to be added to memory.
+        """
+        # Update current topic from user messages
+        for record in records:
+            if record.role_at_backend == OpenAIBackendRole.USER:
+                self._current_topic = record.message.content
+
+        # Convert records to Mem0 format and add to storage
+        messages = []
+        for record in records:
+            message = {
+                "role": record.role_at_backend,
+                "content": record.message.content,
+            }
+            messages.append(message)
+
+        if messages:
+            self._storage.add(messages)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        r"""Returns the context creator used by the memory.
+
+        Returns:
+            BaseContextCreator: The context creator used by the memory.
+        """
+        return self._context_creator
+
+    def clear(self) -> None:
+        r"""Removes all records from the memory."""
+        self._storage.delete()
