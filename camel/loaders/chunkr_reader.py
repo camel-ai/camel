@@ -41,9 +41,15 @@ class ChunkrReaderConfig:
         ocr_strategy (str, optional): The OCR strategy. Defaults to 'Auto'.
     """
 
-    chunk_processing: int = 512
-    high_resolution: bool = True
-    ocr_strategy: str = "Auto"
+    def __init__(
+        self,
+        chunk_processing: int = 512,
+        high_resolution: bool = True,
+        ocr_strategy: str = "Auto",
+    ):
+        self.chunk_processing = chunk_processing
+        self.high_resolution = high_resolution
+        self.ocr_strategy = ocr_strategy
 
 
 class ChunkrReader:
@@ -87,10 +93,9 @@ class ChunkrReader:
         Returns:
             str: The task ID.
         """
-        if chunkr_config is None:
-            chunkr_config = self._to_chunkr_configuration(ChunkrReaderConfig())
-        else:
-            chunkr_config = self._to_chunkr_configuration(chunkr_config)
+        chunkr_config = self._to_chunkr_configuration(
+            chunkr_config or ChunkrReaderConfig()
+        )
 
         try:
             task = await self._chunkr.create_task(
@@ -112,7 +117,8 @@ class ChunkrReader:
             task_id (str): The task ID to check the status for.
 
         Returns:
-            str: The formatted task result in JSON format.
+            Optional[str]: The formatted task result in JSON format, or `None`
+                if the task fails or is canceld.
         """
         try:
             task = await self._chunkr.get_task(task_id)
