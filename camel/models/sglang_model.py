@@ -355,6 +355,9 @@ def _wait_for_server(base_url: str, timeout: Optional[int] = 30) -> None:
     """
     import requests
 
+    # Set a default value if timeout is None
+    actual_timeout = 30 if timeout is None else timeout
+
     start_time = time.time()
     while True:
         try:
@@ -377,14 +380,15 @@ def _wait_for_server(base_url: str, timeout: Optional[int] = 30) -> None:
                 )
                 break
 
-            if time.time() - start_time > timeout:
+            if time.time() - start_time > actual_timeout:
                 raise TimeoutError(
-                    f"Server did not become ready within {timeout} seconds"
+                    f"Server did not become ready within "
+                    f"{actual_timeout} seconds"
                 )
         except (requests.exceptions.RequestException, TimeoutError) as e:
-            if time.time() - start_time > timeout:
+            if time.time() - start_time > actual_timeout:
                 raise TimeoutError(
-                    f"Server did not become ready within {timeout} seconds: "
-                    f"{e}"
+                    f"Server did not become ready within "
+                    f"{actual_timeout} seconds: {e}"
                 )
             time.sleep(1)
