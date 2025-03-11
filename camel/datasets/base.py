@@ -86,6 +86,7 @@ class DataPoint(BaseModel):
         """
         return cls(**data)
 
+
 class StaticDataset(Dataset):
     r"""A dataset containing validated seed examples for data generation.
     Ensures that all items adhere to the DataPoint schema.
@@ -330,6 +331,7 @@ class StaticDataset(Dataset):
                 )
         return data
 
+
 class GenerativeDataset(Dataset):
     r"""A dataset for generating synthetic datapoints using external agents and
     verifiers.
@@ -343,7 +345,6 @@ class GenerativeDataset(Dataset):
         seed_dataset: StaticDataset,
         verifier: BaseVerifier,
         agent: ChatAgent,
-        cache_dir: Optional[str] = None,
         seed: int = 42,
         **kwargs,
     ):
@@ -358,12 +359,6 @@ class GenerativeDataset(Dataset):
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional dataset parameters.
         """
-        # Initialize with empty data since we'll generate content dynamically
-        super().__init__(
-            data=[],
-            cache_dir=cache_dir,
-            **kwargs,
-        )
 
         self.seed_dataset = seed_dataset
         self.verifier = verifier
@@ -395,7 +390,8 @@ class GenerativeDataset(Dataset):
         return prompt
 
     async def generate_new(self, n: int) -> List[DataPoint]:
-        r"""Generates and validates `n` new datapoints through few-shot prompting.
+        r"""Generates and validates `n` new datapoints through
+        few-shot prompting.
 
         Steps:
             1. Samples examples from the seed dataset.
@@ -419,17 +415,15 @@ class GenerativeDataset(Dataset):
         Notes:
             - Retries on validation failures until `n` valid datapoints exist.
             - Metadata includes a timestamp.
-            - This method can be overridden to use any synthetic data algorithm, 
-            as long as it generates `n` valid datapoints, returns them as a 
-            `List[DataPoint]`, and adds them to `self._data`.
+            - This method can be overridden to use any synthetic data gen
+            algorithm, as long as it generates `n` valid datapoints,
+            returns them as a `List[DataPoint]`, and adds them to `self._data`.
         """
-
 
         valid_data_points: List[DataPoint] = []
 
         while len(valid_data_points) < n:
             try:
-                # Use self.seed_dataset.sample() instead of manual random sampling
                 examples = [self.seed_dataset.sample() for _ in range(3)]
                 prompt = self._construct_prompt(examples)
 
@@ -442,15 +436,23 @@ class GenerativeDataset(Dataset):
 
                 if not isinstance(agent_output, dict):
                     raise TypeError("Agent output must be a dictionary")
-                if 'question' not in agent_output or 'rationale' not in agent_output:
-                    raise KeyError("Agent output missing required keys: 'question' or 'rationale'")
+                if (
+                    'question' not in agent_output
+                    or 'rationale' not in agent_output
+                ):
+                    raise KeyError(
+                        "Agent output missing required keys: "
+                        "'question' or 'rationale'"
+                    )
 
                 rationale = agent_output['rationale']
 
                 # Verify the generated content
                 verifier_response = await self.verifier.verify(rationale)
                 if not hasattr(verifier_response, 'content'):
-                    raise AttributeError("Verifier response missing 'content' attribute")
+                    raise AttributeError(
+                        "Verifier response missing 'content' attribute"
+                    )
 
                 if not verifier_response.result:
                     continue
@@ -462,19 +464,21 @@ class GenerativeDataset(Dataset):
                     'question': agent_output['question'],
                     'rationale': rationale,
                     'final_answer': final_answer,
-                    'metadata': {'created': datetime.now()}
+                    'metadata': {'created': datetime.now()},
                 }
 
                 datapoint = DataPoint(**new_datapoint)
                 valid_data_points.append(datapoint)
 
             except (TypeError, KeyError, AttributeError, ValidationError) as e:
-                logger.warning(f"Error encountered during generation: {e}, retrying...")
+                logger.warning(
+                    f"Error encountered during generation: {e}, retrying..."
+                )
 
         self._data.extend(valid_data_points)
 
         return valid_data_points
-    
+
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the dataset to a JSONL (JSON Lines) file.
 
@@ -496,7 +500,7 @@ class GenerativeDataset(Dataset):
             raise ValueError("Dataset is empty. No data to save.")
 
         file_path = Path(file_path)
-        
+
         try:
             with file_path.open("w", encoding="utf-8") as f:
                 for datapoint in self._data:
@@ -506,4 +510,3 @@ class GenerativeDataset(Dataset):
         except IOError as e:
             logger.error(f"Error writing to file {file_path}: {e}")
             raise
-
