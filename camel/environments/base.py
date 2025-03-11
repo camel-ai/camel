@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.datasets.base import BaseDataset, GenerativeDataset
-from camel.extractors.base import Extractor
+from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
@@ -141,7 +141,7 @@ class BaseEnvironment(ABC):
         self,
         dataset: BaseDataset,
         verifier: BaseVerifier,
-        extractor: Extractor,
+        extractor: BaseExtractor,
         max_steps: Optional[int] = None,
         teacher_agent: Optional[ChatAgent] = None,
         curriculum_config: Optional[Dict[str, Any]] = None,
@@ -151,20 +151,26 @@ class BaseEnvironment(ABC):
         r"""Initialize the environment.
 
         Args:
-            dataset: Dataset to sample questions from.
-            verifier: Verifier to check responses.
-            extractor: Extractor to process LLM responses.
-            max_steps: Maximum steps per episode.
-            teacher_agent: Optional agent for reward shaping and hints
-            curriculum_config: Configuration for curriculum learning including:
+            dataset (BaseDataset): Dataset to sample questions from.
+            verifier (BaseVerifier): Verifier to check responses.
+            extractor (BaseExtractor): Extractor to process LLM responses.
+            max_steps (Optional[int]): Maximum steps per episode. (default:
+            :obj:`None`)
+            teacher_agent (Optional[ChatAgent]): Optional agent for reward
+                shaping and hints. (default: :obj:`None`)
+            curriculum_config (Optional[Dict[str, Any]]): Configuration for
+                curriculum learning including:
                 - difficulty_levels: List of available difficulty levels
                 - promotion_threshold: Score needed to advance
                 - demotion_threshold: Score triggering level decrease
                 - min_questions_per_level: Questions before promotion
-            practice_env_config: Configuration for practice environments:
+                (default: :obj:`None`)
+            practice_env_config (Optional[Dict[str, Any]]): Configuration for
+                practice environments:
                 - max_practice_envs: Maximum concurrent environments
                 - difficulty_range: Allowed difficulty variation
                 - focus_areas: Specific skills to practice
+                (default: :obj:`None`)
             **kwargs: Additional environment parameters.
         """
         self.dataset = dataset

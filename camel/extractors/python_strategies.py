@@ -15,13 +15,13 @@
 import ast
 from typing import Optional
 
-from camel.extractors.base import ExtractorStrategy
+from camel.extractors.base import BaseExtractorStrategy
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class BoxedStrategy(ExtractorStrategy):
+class BoxedStrategy(BaseExtractorStrategy):
     r"""Extracts content from \\boxed{} environments."""
 
     async def extract(self, text: str) -> Optional[str]:
@@ -81,7 +81,7 @@ class BoxedStrategy(ExtractorStrategy):
         return content
 
 
-class PythonListStrategy(ExtractorStrategy):
+class PythonListStrategy(BaseExtractorStrategy):
     r"""Extracts and normalizes Python lists."""
 
     async def extract(self, text: str) -> Optional[str]:
@@ -115,7 +115,7 @@ class PythonListStrategy(ExtractorStrategy):
             return None
 
 
-class PythonDictStrategy(ExtractorStrategy):
+class PythonDictStrategy(BaseExtractorStrategy):
     r"""Extracts and normalizes Python dictionaries."""
 
     async def extract(self, text: str) -> Optional[str]:
@@ -153,7 +153,7 @@ class PythonDictStrategy(ExtractorStrategy):
             return None
 
 
-class PythonSetStrategy(ExtractorStrategy):
+class PythonSetStrategy(BaseExtractorStrategy):
     r"""Extracts and normalizes Python sets."""
 
     async def extract(self, text: str) -> Optional[str]:
@@ -191,7 +191,7 @@ class PythonSetStrategy(ExtractorStrategy):
             return None
 
 
-class PythonTupleStrategy(ExtractorStrategy):
+class PythonTupleStrategy(BaseExtractorStrategy):
     r"""Extracts and normalizes Python tuples."""
 
     async def extract(self, text: str) -> Optional[str]:

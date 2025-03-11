@@ -11,6 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import Extractor, ExtractorStrategy
+from .base import BaseExtractor, BaseExtractorStrategy
 
-__all__ = ["Extractor", "ExtractorStrategy"]
+__all__ = ["BaseExtractor", "BaseExtractorStrategy"]
