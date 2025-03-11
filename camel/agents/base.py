@@ -27,25 +27,3 @@ class BaseAgent(ABC):
     def step(self, *args: Any, **kwargs: Any) -> Any:
         r"""Performs a single step of the agent."""
         pass
-
-    @abstractmethod
-    def save_memory(self, path: str) -> None:
-        r"""Retrieves the current conversation data from memory and writes it
-        into a JSON file."""
-        pass
-
-    @abstractmethod
-    def load_memory(self, memory: Any) -> None:
-        r"""Load the provided memory into the agent."""
-        pass
-
-    @abstractmethod
-    def load_memory_from_path(self, path: str) -> None:
-        r"""Loads memory records from a JSON file filtered by this
-        agent's ID."""
-        pass
-
-    @abstractmethod
-    def clear_memory(self) -> None:
-        r"""Clear the agent's memory and reset to initial state."""
-        pass
