@@ -167,14 +167,15 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # ======================
         # 7. Output Assembly
         # ======================
-        
+
         # Incase system message is the only message in memory when sorted units
         # are empty, raise an error
-        if system_unit and len(final_units) == 0 and len(records) > 2:
+        if system_unit and len(remaining_units) == 0 and len(records) > 2:
             raise RuntimeError(
-                "System message and current message exceeds token limit "
+                "System message and current message exceeds token limit ",
+                total_tokens,
             )
-        
+
         # Sort remaining units chronologically
         final_units = sorted(remaining_units, key=self._conversation_sort_key)
         return self._assemble_output(final_units, system_unit)
