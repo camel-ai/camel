@@ -161,8 +161,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         # Handle edge case where system message alone exceeds limit
         if not remaining_units and system_tokens > self.token_limit:
             raise RuntimeError(
-                f"System message exceeds token limit ({system_tokens} > \
-                {self.token_limit})"
+                "Cannot create context: exceed token limit.", total_tokens
             )
 
         # ======================
