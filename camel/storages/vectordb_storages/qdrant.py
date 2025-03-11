@@ -27,6 +27,7 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 from camel.utils import dependencies_required
+from .utils import collection_exists
 
 _qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
 logger = logging.getLogger(__name__)
@@ -218,11 +219,8 @@ class QdrantStorage(BaseVectorStorage):
         )
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
-        for c in self._client.get_collections().collections:
-            if collection_name == c.name:
-                return True
-        return False
+        """Returns whether the collection exists in the database."""
+        return collection_exists(self._client, collection_name)
 
     def _generate_collection_name(self) -> str:
         r"""Generates a collection name if user doesn't provide"""
