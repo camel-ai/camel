@@ -12,14 +12,17 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 import os
 import random
+from pathlib import Path
 from typing import (
     Any,
     Callable,
     Dict,
     List,
     Optional,
+    Sized,
     TypeVar,
     Union,
 )
@@ -326,42 +329,241 @@ class SeedDataset(BaseDataset):
     r"""A dataset containing validated seed examples for data generation.
     Ensures that all items adhere to the DataPoint schema.
 
-    This class is used to initialize a dataset from a list of dictionary items,
-    validating each against the DataPoint schema.
+    This class can initialize from Hugging Face Datasets,
+    PyTorch Datasets, JSON file paths, or lists of dictionaries,
+    converting them into a consistent internal format.
     """
 
     def __init__(
         self,
-        data: List[Dict[str, str]],
+        data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
         cache_dir: Optional[str] = None,
+        seed: Optional[int] = None,
         min_samples: int = 1,
+        strict: bool = False,
         **kwargs,
     ):
-        r"""Initialize the seed dataset.
+        r"""Initialize the seed dataset and validate integrity.
 
         Args:
-            data (List[Dict[str, str]]): List of dictionary items to create the
-                dataset from.
-            cache_dir (Optional[str]): Directory to cache dataset files.
-                (default: :obj:`None`)
+            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
+            Input data, which can be:
+                - A Hugging Face Dataset (HFDataset)
+                - A PyTorch Dataset (torch.utils.data.Dataset)
+                - A Path object representing the path to a JSON file
+                - A list of dictionaries with DataPoint-compatible fields
+            seed (Optional[int]): Seed for reproducibility.
+                (default: :obj:`1`)
             min_samples (int): Minimum number of samples required.
                 (default: :obj:`1`)
+            strict (bool): Whether to raise an error on invalid datapoints
+                (True) or skip/filter them (False). (default: False)
             **kwargs: Additional dataset parameters.
 
         Raises:
-            ValueError: If dataset size is less than min_samples or if sample
-                validation fails.
+            TypeError: If the data type is not supported.
+            ValueError: If dataset size is less than min_samples or
+            if sample validation fails.
+            FileNotFoundError: If the JSON file path doesn't exist.
+            json.JSONDecodeError: If the JSON file is invalid.
         """
-        if len(data) < min_samples:
+        # Initialize BaseDataset with empty data, we'll populate it ourselves
+        super().__init__(data=[], cache_dir=cache_dir, **kwargs)
+
+        self._rng = random.Random(seed)
+        self._strict = strict
+
+        # Type checking and conversion into list of dicts to have a
+        # consistent internal format. Since Seed Dataset should be
+        # small, we can load it entirely into memory
+
+        self.data: List[DataPoint] = self._init_data(data)
+        self._length = len(self.data)
+
+        if self._length < min_samples:
             raise ValueError(
-                f"Seed dataset must contain at least {min_samples} samples."
+                "The dataset does not contain enough samples. "
+                f"Need {max(0, min_samples)}, got {self._length}"
             )
 
-        super().__init__(
-            data=data,
-            cache_dir=cache_dir,
-            **kwargs,
-        )
+    def _init_data(
+        self, data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]
+    ) -> List[DataPoint]:
+        if isinstance(data, HFDataset):
+            raw_data = self._init_from_hf_dataset(data)
+        elif isinstance(data, Dataset):
+            raw_data = self._init_from_pytorch_dataset(data)
+        elif isinstance(data, Path):
+            raw_data = self._init_from_json_path(data)
+        elif isinstance(data, list):
+            raw_data = self._init_from_list(data)
+        else:
+            raise TypeError("Unsupported data type")
+
+        def create_datapoint(
+            item: Dict[str, Any], idx: int
+        ) -> Optional[DataPoint]:
+            # Add type checks for required fields to make mypy happy
+            question = item.get('question')
+            if not isinstance(question, str):
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} has invalid 'question': "
+                        f"expected str, got {type(question)}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping sample at index {idx}: invalid 'question'"
+                    )
+                    return None
+
+            rationale = item.get('rationale')
+            if not isinstance(rationale, str):
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} has invalid 'rationale': "
+                        f"expected str, got {type(rationale)}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping sample at index {idx}: invalid 'rationale'"
+                    )
+                    return None
+
+            final_answer = item.get('final_answer')
+            if not isinstance(final_answer, str):
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} has invalid 'final_answer': "
+                        f"expected str, got {type(final_answer)}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping sample at index {idx}: "
+                        "invalid 'final_answer'"
+                    )
+                    return None
+
+            try:
+                return DataPoint(
+                    question=question,
+                    rationale=rationale,
+                    final_answer=final_answer,
+                    metadata=item.get('metadata'),
+                    difficulty=item.get('difficulty'),
+                )
+            except ValidationError as e:
+                if self._strict:
+                    raise ValueError(
+                        f"Sample at index {idx} validation error: {e}"
+                    )
+                else:
+                    logger.warning(
+                        f"Skipping invalid sample at index {idx} "
+                        f"due to validation error: {e}"
+                    )
+                    return None
+
+        unfiltered_data = [
+            create_datapoint(item, i) for i, item in enumerate(raw_data)
+        ]
+        return [dp for dp in unfiltered_data if dp is not None]
+
+    def __len__(self) -> int:
+        r"""Return the size of the dataset."""
+        return self._length
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        r"""Get an item from the dataset.
+
+        Args:
+            idx (int): Index of the item to get.
+
+        Returns:
+            DataPoint: DataPoint from the dataset with the given index.
+
+        Raises:
+            IndexError: If idx is out of bounds.
+        """
+        if idx < 0 or idx >= self._length:
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of size {self._length}"
+            )
+        return self.data[idx]
+
+    def sample(self) -> DataPoint:
+        r"""Sample a random datapoint from the dataset.
+
+        Returns:
+            DataPoint: A randomly sampled DataPoint.
+
+        Raises:
+            RuntimeError: If the dataset is empty.
+        """
+        if self._length == 0:
+            raise RuntimeError("Dataset is empty, cannot sample.")
+        idx = self._rng.randint(0, self._length - 1)
+        return self[idx]
+
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        r"""Get dataset metadata."""
+        return self._metadata.copy()
+
+    def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
+        return [dict(item) for item in data]
+
+    def _init_from_pytorch_dataset(
+        self, data: Dataset
+    ) -> List[Dict[str, Any]]:
+        if not isinstance(data, Sized):
+            raise TypeError(
+                f"{type(data).__name__} does not implement `__len__()`."
+            )
+        raw_data = []
+
+        for i in range(len(data)):
+            item = data[i]
+            if not isinstance(item, dict):
+                raise TypeError(
+                    f"Item at index {i} is not a dict: "
+                    f"got {type(item).__name__}"
+                )
+            raw_data.append(dict(item))
+        return raw_data
+
+    def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
+        if not data.exists():
+            raise FileNotFoundError(f"JSON file not found: {data}")
+        try:
+            logger.debug(f"Loading JSON from {data}")
+            with data.open('r', encoding='utf-8') as f:
+                loaded_data = json.load(f)
+            logger.info(
+                f"Successfully loaded {len(loaded_data)} items from {data}"
+            )
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in file {data}: {e}")
+        if not isinstance(loaded_data, list):
+            raise ValueError("JSON file must contain a list of dictionaries")
+        for i, item in enumerate(loaded_data):
+            if not isinstance(item, dict):
+                raise ValueError(
+                    f"Expected a dictionary at index {i}, "
+                    f"got {type(item).__name__}"
+                )
+        return loaded_data
+
+    def _init_from_list(
+        self, data: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        for i, item in enumerate(data):
+            if not isinstance(item, dict):
+                raise ValueError(
+                    f"Expected a dictionary at index {i}, "
+                    f"got {type(item).__name__}"
+                )
+        return data
 
 
 class SyntheticDataset(BaseDataset):
