@@ -14,10 +14,10 @@
 
 from abc import ABC, abstractmethod
 
-from .models import StepResult, Action
+from .models import Action, StepResult
+
 
 class BaseEnvironment(ABC):
-
     @abstractmethod
     def reset(self):
         pass
