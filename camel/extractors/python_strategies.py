@@ -15,7 +15,7 @@
 import ast
 from typing import Optional
 
-from camel.extractors import ExtractorStrategy
+from camel.extractors.base import ExtractorStrategy
 from camel.logger import get_logger
 
 logger = get_logger(__name__)
