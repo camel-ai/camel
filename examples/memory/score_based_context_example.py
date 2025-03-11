@@ -208,7 +208,6 @@ are you?'}]
 """
 
 
-
 # set token limit to 14
 context_creator = ScoreBasedContextCreator(
     OpenAITokenCounter(ModelType.GPT_4), 14
@@ -276,4 +275,3 @@ print(output)
 RuntimeError: System message and current message exceeds token limit 
 ===============================================================================
 """
-
