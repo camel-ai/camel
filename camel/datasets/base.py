@@ -13,12 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import json
-import os
 import random
+from datetime import datetime
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -28,7 +27,7 @@ from typing import (
 
 from datasets import Dataset as HFDataset
 from pydantic import BaseModel, Field, ValidationError
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 from camel.agents import ChatAgent
 from camel.logger import get_logger
@@ -87,7 +86,7 @@ class DataPoint(BaseModel):
         """
         return cls(**data)
 
-class SeedDataset(Dataset):
+class StaticDataset(Dataset):
     r"""A dataset containing validated seed examples for data generation.
     Ensures that all items adhere to the DataPoint schema.
 
@@ -331,8 +330,7 @@ class SeedDataset(Dataset):
                 )
         return data
 
-
-class GenerativeDataset(BaseDataset):
+class GenerativeDataset(Dataset):
     r"""A dataset for generating synthetic datapoints using external agents and
     verifiers.
 
@@ -342,7 +340,7 @@ class GenerativeDataset(BaseDataset):
 
     def __init__(
         self,
-        seed_dataset: SeedDataset,
+        seed_dataset: StaticDataset,
         verifier: BaseVerifier,
         agent: ChatAgent,
         cache_dir: Optional[str] = None,
@@ -374,6 +372,8 @@ class GenerativeDataset(BaseDataset):
         self.seed = seed
         random.seed(self.seed)
 
+        self._data: List[DataPoint] = []
+
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
         r"""Construct a prompt for generating new datapoints.
 
@@ -394,25 +394,43 @@ class GenerativeDataset(BaseDataset):
         prompt += "New datapoint:"
         return prompt
 
-    async def generate_new(self, n: int) -> None:
-        r"""Generate n new datapoints and add them to the dataset.
+    async def generate_new(self, n: int) -> List[DataPoint]:
+        r"""Generates and validates `n` new datapoints through few-shot prompting.
+
+        Steps:
+            1. Samples examples from the seed dataset.
+            2. Constructs a prompt using the selected examples.
+            3. Uses an agent to generate a new datapoint.
+            4. Verifies the datapoint using a verifier.
+            5. Adds valid datapoints to the dataset.
 
         Args:
             n (int): Number of valid datapoints to generate.
 
-        This method generates new datapoints by:
-        1. Sampling examples from the seed dataset
-        2. Constructing a prompt for the agent
-        3. Generating a new datapoint using the agent
-        4. Verifying the generated datapoint with the verifier
-        5. Adding valid datapoints to the dataset
+        Returns:
+            List[DataPoint]: Successfully generated and validated datapoints.
+
+        Raises:
+            TypeError: If the agent's output is not a dictionary.
+            KeyError: If required keys are missing from the agent's response.
+            AttributeError: If the verifier response lacks expected attributes.
+            ValidationError: If a datapoint fails schema validation.
+
+        Notes:
+            - Retries on validation failures until `n` valid datapoints exist.
+            - Metadata includes a timestamp.
+            - This method can be overridden to use any synthetic data algorithm, 
+            as long as it generates `n` valid datapoints, returns them as a 
+            `List[DataPoint]`, and adds them to `self._data`.
         """
+
+
         valid_data_points: List[DataPoint] = []
 
         while len(valid_data_points) < n:
             try:
-                indices = random.sample(range(len(self.seed_dataset)), 3)
-                examples = [self.seed_dataset[i] for i in indices]
+                # Use self.seed_dataset.sample() instead of manual random sampling
+                examples = [self.seed_dataset.sample() for _ in range(3)]
                 prompt = self._construct_prompt(examples)
 
                 # Get agent response
@@ -424,23 +442,15 @@ class GenerativeDataset(BaseDataset):
 
                 if not isinstance(agent_output, dict):
                     raise TypeError("Agent output must be a dictionary")
-                if (
-                    'question' not in agent_output
-                    or 'rationale' not in agent_output
-                ):
-                    raise KeyError(
-                        "Agent output missing required keys: "
-                        "'question' or 'rationale'"
-                    )
+                if 'question' not in agent_output or 'rationale' not in agent_output:
+                    raise KeyError("Agent output missing required keys: 'question' or 'rationale'")
 
                 rationale = agent_output['rationale']
 
                 # Verify the generated content
                 verifier_response = await self.verifier.verify(rationale)
                 if not hasattr(verifier_response, 'content'):
-                    raise AttributeError(
-                        "Verifier response missing 'content' attribute"
-                    )
+                    raise AttributeError("Verifier response missing 'content' attribute")
 
                 if not verifier_response.result:
                     continue
@@ -452,17 +462,16 @@ class GenerativeDataset(BaseDataset):
                     'question': agent_output['question'],
                     'rationale': rationale,
                     'final_answer': final_answer,
+                    'metadata': {'created': datetime.now()}
                 }
 
                 datapoint = DataPoint(**new_datapoint)
                 valid_data_points.append(datapoint)
 
             except (TypeError, KeyError, AttributeError, ValidationError) as e:
-                logger.warning(
-                    f"Error encountered during generation: {e}, retrying..."
-                )
+                logger.warning(f"Error encountered during generation: {e}, retrying...")
 
-        # Add all valid datapoints to the dataset
-        for datapoint in valid_data_points:
-            self.data.append(datapoint)
-            logger.debug("Added new datapoint to dataset")
+        self._data.extend(valid_data_points)
+
+        return valid_data_points
+
