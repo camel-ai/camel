@@ -35,13 +35,13 @@ class AnthropicModel(BaseModelBackend):
         model_type (Union[ModelType, str]): Model for which a backend is
             created, one of CLAUDE_* series.
         model_config_dict (Optional[Dict[str, Any]], optional): A dictionary
-            that will be fed into Anthropic.messages.create().  If
+            that will be fed into `openai.ChatCompletion.create()`.  If
             :obj:`None`, :obj:`AnthropicConfig().as_dict()` will be used.
             (default: :obj:`None`)
         api_key (Optional[str], optional): The API key for authenticating with
             the Anthropic service. (default: :obj:`None`)
         url (Optional[str], optional): The url to the Anthropic service.
-            (default: :obj:`None`)
+            (default: :obj:`https://api.anthropic.com/v1/`)
         token_counter (Optional[BaseTokenCounter], optional): Token counter to
             use for the model. If not provided, :obj:`AnthropicTokenCounter`
             will be used. (default: :obj:`None`)
@@ -61,43 +61,24 @@ class AnthropicModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        from anthropic import Anthropic, AsyncAnthropic
+        from openai import AsyncOpenAI, OpenAI
 
         if model_config_dict is None:
             model_config_dict = AnthropicConfig().as_dict()
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        url = (
+            url
+            or os.environ.get("ANTHROPIC_API_BASE_URL")
+            or "https://api.anthropic.com/v1/"
+        )
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
-        self.async_client = AsyncAnthropic(
+        self.client = OpenAI(base_url=self._url, api_key=self._api_key)
+
+        self.async_client = AsyncOpenAI(
             api_key=self._api_key, base_url=self._url
         )
-
-    def _convert_response_from_anthropic_to_openai(self, response):
-        # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
-        obj = ChatCompletion.construct(
-            id=None,
-            choices=[
-                dict(
-                    index=0,
-                    message={
-                        "role": "assistant",
-                        "content": next(
-                            content.text
-                            for content in response.content
-                            if content.type == "text"
-                        ),
-                    },
-                    finish_reason=response.stop_reason,
-                )
-            ],
-            created=None,
-            model=response.model,
-            object="chat.completion",
-        )
-        return obj
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -126,21 +107,12 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             ChatCompletion: Response in the OpenAI API format.
         """
-        from anthropic import NOT_GIVEN
-
-        if messages[0]["role"] == "system":
-            sys_msg = str(messages.pop(0)["content"])
-        else:
-            sys_msg = NOT_GIVEN  # type: ignore[assignment]
-        response = self.client.messages.create(
+        response = self.client.chat.completions.create(
             model=self.model_type,
-            system=sys_msg,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             **self.model_config_dict,
+            tools=tools,  # type: ignore[arg-type]
         )
-
-        # format response to openai format
-        response = self._convert_response_from_anthropic_to_openai(response)
 
         return response
 
@@ -159,21 +131,14 @@ class AnthropicModel(BaseModelBackend):
         Returns:
             ChatCompletion: Response in the OpenAI API format.
         """
-        from anthropic import NOT_GIVEN
-
-        if messages[0]["role"] == "system":
-            sys_msg = str(messages.pop(0)["content"])
-        else:
-            sys_msg = NOT_GIVEN  # type: ignore[assignment]
-        response = await self.async_client.messages.create(
+        response = await self.async_client.chat.completions.create(
             model=self.model_type,
-            system=sys_msg,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             **self.model_config_dict,
+            tools=tools,  # type: ignore[arg-type]
         )
 
-        # format response to openai format
-        return self._convert_response_from_anthropic_to_openai(response)
+        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for anthropic
@@ -181,8 +146,7 @@ class AnthropicModel(BaseModelBackend):
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API, or it does not contain
-                :obj:`model_path` or :obj:`server_url`.
+                unexpected arguments to Anthropic API.
         """
         for param in self.model_config_dict:
             if param not in ANTHROPIC_API_PARAMS:
