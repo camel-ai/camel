@@ -474,4 +474,36 @@ class GenerativeDataset(Dataset):
         self._data.extend(valid_data_points)
 
         return valid_data_points
+    
+    def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
+        r"""Saves the dataset to a JSONL (JSON Lines) file.
+
+        Each datapoint is stored as a separate JSON object on a new line.
+
+        Args:
+            file_path (Union[str, Path]): Path to save the JSONL file.
+
+        Raises:
+            ValueError: If the dataset is empty.
+            IOError: If there is an issue writing to the file.
+
+        Notes:
+            - Uses `self._data`, which contains the generated datapoints.
+            - Overwrites the file if it already exists.
+            - Ensures compatibility with large datasets by using JSONL format.
+        """
+        if not self._data:
+            raise ValueError("Dataset is empty. No data to save.")
+
+        file_path = Path(file_path)
+        
+        try:
+            with file_path.open("w", encoding="utf-8") as f:
+                for datapoint in self._data:
+                    json.dump(datapoint.to_dict(), f)
+                    f.write("\n")  # Ensure each entry is on a new line
+            logger.info(f"Dataset saved successfully to {file_path}")
+        except IOError as e:
+            logger.error(f"Error writing to file {file_path}: {e}")
+            raise
 
