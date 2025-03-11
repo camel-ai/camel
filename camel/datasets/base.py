@@ -325,7 +325,7 @@ class BaseDataset(Dataset):
         return dataset
 
 
-class SeedDataset(Dataset):
+class SeedDataset(BaseDataset):
     r"""A dataset containing validated seed examples for data generation.
     Ensures that all items adhere to the DataPoint schema.
 
@@ -346,7 +346,7 @@ class SeedDataset(Dataset):
         r"""Initialize the seed dataset and validate integrity.
 
         Args:
-            data (Union[HFDataset, Dataset, str, List[Dict[str, Any]]]):
+            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
             Input data, which can be:
                 - A Hugging Face Dataset (HFDataset)
                 - A PyTorch Dataset (torch.utils.data.Dataset)
@@ -367,24 +367,20 @@ class SeedDataset(Dataset):
             FileNotFoundError: If the JSON file path doesn't exist.
             json.JSONDecodeError: If the JSON file is invalid.
         """
+        # Initialize BaseDataset with empty data, we'll populate it ourselves
+        super().__init__(data=[], cache_dir=cache_dir, **kwargs)
 
-        # Store all parameters in metadata dict for compatibility
-        self._cache_dir = str(cache_dir) if cache_dir is not None else None
-        self._metadata = {
-            'cache_dir': self._cache_dir,
-            **kwargs,
-        }
         self._rng = random.Random(seed)
         self._strict = strict
 
         # Type checking and conversion into list of dicts to have a
         # consistent internal format. Since Seed Dataset should be
-        # small, we can load it entirely into memmory
+        # small, we can load it entirely into memory
 
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
 
-        if self._length < 0 or self._length < min_samples:
+        if self._length < min_samples:
             raise ValueError(
                 "The dataset does not contain enough samples. "
                 f"Need {max(0, min_samples)}, got {self._length}"
@@ -533,8 +529,8 @@ class SeedDataset(Dataset):
                     f"Item at index {i} is not a dict: "
                     f"got {type(item).__name__}"
                 )
-            raw_data.append(item)
-        return [dict(data[i]) for i in range(len(data))]
+            raw_data.append(dict(item))
+        return raw_data
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
         if not data.exists():
