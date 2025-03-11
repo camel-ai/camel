@@ -23,10 +23,11 @@ logger = get_logger(__name__)
 
 
 class PubMedToolkit(BaseToolkit):
-    r"""A toolkit for interacting with PubMed's E-utilities API.
+    r"""A toolkit for interacting with PubMed's E-utilities API to access
+    MEDLINE data.
 
-    This toolkit provides functionality to search and retrieve papers from
-    PubMed, including abstracts, citations, and other metadata.
+    This toolkit provides functionality to search and retrieve papers from the
+    PubMed database, including abstracts, citations, and other metadata.
 
     Args:
         timeout (Optional[float]): The timeout for API requests in seconds.
@@ -45,13 +46,14 @@ class PubMedToolkit(BaseToolkit):
         params: Dict[str, Union[str, int]],
         retries: int = 3,
     ) -> Optional[Dict[str, Any]]:
-        """Makes a request to the PubMed API with error handling and retries.
+        r"""Makes a request to the PubMed/MEDLINE API with error handling and
+        retries.
 
         Args:
             endpoint (str): The API endpoint to call.
             params (Dict[str, Union[str, int]]): Query parameters.
             retries (int, optional): Number of retry attempts.
-            (default: :obj:`3`)
+                (default: :obj:`3`)
 
         Returns:
             Optional[Dict[str, Any]]: JSON response if successful, else None.
@@ -91,7 +93,8 @@ class PubMedToolkit(BaseToolkit):
         date_range: Optional[Dict[str, str]] = None,
         publication_type: Optional[List[str]] = None,
     ) -> List[Dict[str, str]]:
-        r"""Search for papers on PubMed with advanced filtering options.
+        r"""Search for biomedical papers in MEDLINE via PubMed with advanced
+        filtering options.
 
         Args:
             query (str): The search query string.
@@ -155,7 +158,8 @@ class PubMedToolkit(BaseToolkit):
         paper_id: Union[str, int],
         include_references: bool = False,
     ) -> Optional[Dict[str, Any]]:
-        r"""Get detailed information about a specific paper.
+        r"""Get detailed information about a specific biomedical paper from
+        MEDLINE/PubMed.
 
         Args:
             paper_id (Union[str, int]): PubMed ID of the paper.
@@ -232,7 +236,8 @@ class PubMedToolkit(BaseToolkit):
         )
 
     def get_abstract(self, paper_id: Union[str, int]) -> str:
-        r"""Get the abstract of a specific paper.
+        r"""Get the abstract of a specific biomedical paper from MEDLINE/
+        PubMed.
 
         Args:
             paper_id (Union[str, int]): PubMed ID of the paper.
@@ -260,7 +265,8 @@ class PubMedToolkit(BaseToolkit):
             return ""
 
     def get_citation_count(self, paper_id: Union[str, int]) -> int:
-        r"""Get the number of citations for a paper.
+        r"""Get the number of citations for a biomedical paper in MEDLINE/
+        PubMed.
 
         Args:
             paper_id (Union[str, int]): PubMed ID of the paper.
@@ -289,7 +295,8 @@ class PubMedToolkit(BaseToolkit):
         paper_id: Union[str, int],
         max_results: int = 10,
     ) -> List[Dict[str, Any]]:
-        """Get papers related to a specific paper.
+        r"""Get biomedical papers related to a specific paper in MEDLINE/
+        PubMed.
 
         Args:
             paper_id (Union[str, int]): PubMed ID of the paper.

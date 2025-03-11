@@ -58,6 +58,7 @@ response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:2000])
 
 """
+===============================================================================
 ToolCallingRecord(
     tool_name='search_papers',
     args={
@@ -75,7 +76,9 @@ ToolCallingRecord(
             'journal': 'Example Journal',
             'pub_date': '2025 Jan 6',
             'abstract': 'Abstract of the paper',
+===============================================================================
 """
+
 
 # Example 2: Get detailed information about a specific paper
 print("\nExample 2: Get detailed paper information")
@@ -85,11 +88,12 @@ usr_msg = (
     "Get detailed information about PubMed ID 39601789 "
     "(a key paper about mRNA vaccine technology)."
 )
-
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:2000])
 
 """
+===============================================================================
 [ToolCallingRecord(
     tool_name='get_paper_details',
     args={'paper_id': 37840631, 'include_references': True},
@@ -124,6 +128,7 @@ print(str(response.info['tool_calls'])[:2000])
     },
     tool_call_id='call_k8s7oFcRvDBKuEKvk48uoWXZ'
 )]
+===============================================================================
 """
 
 # Example 3: Find related papers and citation metrics
@@ -134,11 +139,12 @@ usr_msg = (
     "Find papers related to PubMed ID 39601789 (limit to 3 papers) and "
     "show its citation count."
 )
-
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:2000])
 
 """
+===============================================================================
 [ToolCallingRecord(
     tool_name='get_related_papers',
     args={'paper_id': 37840631, 'max_results': 5},
@@ -183,6 +189,7 @@ print(str(response.info['tool_calls'])[:2000])
              'improvement on dyslipidemia].Article in Chinese]'
              'Li JH(1), Jiang H, Sun XH, Li CC, Ke YN, Yan SK, Wu YF.'
              'Author information:(1)Department of Cardiology, China-Japan'
+===============================================================================
 """
 
 # Example 4: Advanced search with multiple filters
@@ -194,11 +201,12 @@ usr_msg = (
     "between 2023/01/01 and 2024/03/01, focusing on phase III trials. "
     "Limit to 3 papers."
 )
-
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:2000])
 
 """
+===============================================================================
 [ToolCallingRecord(
     tool_name='search_papers',
     args={
@@ -222,6 +230,7 @@ print(str(response.info['tool_calls'])[:2000])
             'journal': 'Int J Infect Dis',
             'pub_date': '2023 Dec',
             'abstract': Abstract of the paper
+===============================================================================
 """
 
 # Example 5: Get abstract and analyze citations
@@ -232,11 +241,12 @@ usr_msg = (
     "Get the abstract of PubMed ID 39601789 and find out how many times "
     "it has been cited."
 )
-
+camel_agent.reset()
 response = camel_agent.step(usr_msg)
 print(str(response.info['tool_calls'])[:2000])
 
 """
+===============================================================================
 [
     ToolCallingRecord(
         tool_name='get_abstract',
@@ -269,4 +279,5 @@ print(str(response.info['tool_calls'])[:2000])
         tool_call_id='call_ZM3p59gtYmeR9DPdONNHV4Qw'
     )
 ]
+===============================================================================
 """
