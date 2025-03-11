@@ -12,13 +12,16 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import json
 import tempfile
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import torch
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
+from torch.utils.data import Dataset
 
 from camel.datasets.base import (
     BaseDataset,
@@ -191,13 +194,731 @@ def test_base_dataset_metadata():
     assert metadata['custom_param'] == 'value'
 
 
-def test_seed_dataset_init(sample_data):
-    r"""Test SeedDataset initialization."""
-    dataset = SeedDataset(data=sample_data, min_samples=1)
-    assert dataset._raw_data == sample_data
+def test_seed_dataset_init_from_hf_dataset():
+    r"""
+    Test SeedDataset initialization from a
+    Hugging Face Dataset with various scenarios.
+    """
 
-    with pytest.raises(ValueError):
-        SeedDataset(data=sample_data, min_samples=3)
+    # **Test 1: Initialization with proper mock data (only required fields)**
+    valid_data = [
+        {
+            "question": "What is 2 + 2?",
+            "rationale": "Addition of 2 and 2.",
+            "final_answer": "4",
+        },
+        {
+            "question": "Is the sky blue?",
+            "rationale": "Observation of clear weather.",
+            "final_answer": "yes",
+        },
+    ]
+    hf_valid = HFDataset.from_list(valid_data)
+
+    dataset = SeedDataset(data=hf_valid, min_samples=1, strict=True)
+
+    # Verify the dataset initialized correctly
+    assert len(dataset) == 2, "Dataset should contain 2 items."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
+    assert dataset[0].final_answer == "4", "Final answer should match input."
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].difficulty is None
+    ), "Difficulty should be None when not provided."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
+
+    # **Test 2: Initialization with invalid data**
+    # Sub-test 2a: Missing required field with strict=True
+    invalid_data_missing = [
+        {"question": "What is 3 + 3?", "final_answer": "6"}
+    ]
+    hf_invalid_missing = HFDataset.from_list(invalid_data_missing)
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
+        SeedDataset(data=hf_invalid_missing, min_samples=1, strict=True)
+
+    # Sub-test 2b: Missing required field with strict=False
+    dataset_non_strict = SeedDataset(
+        data=hf_invalid_missing, min_samples=0, strict=False
+    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
+
+    # Sub-test 2c: Empty dataset with min_samples=1
+    hf_empty = HFDataset.from_list([])
+    with pytest.raises(
+        ValueError,
+        match="The dataset does not contain enough samples. Need 1, got 0",
+    ):
+        SeedDataset(data=hf_empty, min_samples=1, strict=True)
+
+    # Sub-test 2d: Empty dataset with min_samples=0
+    dataset_empty = SeedDataset(data=hf_empty, min_samples=0, strict=True)
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
+
+    # **Test 3: Initialization with optional fields and additional fields**
+    data_with_optional = [
+        {
+            "question": "What is the capital of France?",
+            "rationale": "France is a country in Europe.",
+            "final_answer": "Paris",
+            "difficulty": "easy",
+            "metadata": {"source": "geography", "id": 123},
+            "extra_field": "this should be ignored",  # Not in DataPoint
+        }
+    ]
+    hf_optional = HFDataset.from_list(data_with_optional)
+    dataset_optional = SeedDataset(
+        data=hf_optional, min_samples=1, strict=True
+    )
+
+    # Verify the dataset initialized correctly
+    assert len(dataset_optional) == 1, "Dataset should contain 1 item."
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
+    assert (
+        dataset_optional[0].difficulty == "easy"
+    ), "Difficulty should be set correctly."
+    assert dataset_optional[0].metadata == {
+        "source": "geography",
+        "id": 123,
+    }, "Metadata should match."
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
+
+
+def test_seed_dataset_init_from_pytorch_dataset():
+    r"""
+    Test SeedDataset initialization from a
+    PyTorch Dataset with various scenarios.
+    """
+
+    class MockPyTorchDataset(Dataset):
+        def __init__(self, data_list):
+            self.data = data_list
+
+        def __len__(self):
+            return len(self.data)
+
+        def __getitem__(self, idx):
+            return self.data[idx]
+
+    # **Test 1: Initialization with proper mock data (only required fields)**
+    valid_data = [
+        {
+            "question": "What is 2 + 2?",
+            "rationale": "Addition of 2 and 2.",
+            "final_answer": "4",
+        },
+        {
+            "question": "Is the sky blue?",
+            "rationale": "Observation of clear weather.",
+            "final_answer": "yes",
+        },
+    ]
+    pytorch_valid = MockPyTorchDataset(valid_data)
+    dataset = SeedDataset(data=pytorch_valid, min_samples=1, strict=True)
+
+    assert len(dataset) == 2, "Dataset should contain 2 items."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
+    assert dataset[0].final_answer == "4", "Final answer should match input."
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].difficulty is None
+    ), "Difficulty should be None when not provided."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
+
+    # **Test 2: Initialization with invalid data**
+    # Sub-test 2a: Missing required field with strict=True
+    invalid_data_missing = [
+        {
+            "question": "What is 3 + 3?",
+            "final_answer": "6",
+        }  # Missing rationale
+    ]
+    pytorch_invalid_missing = MockPyTorchDataset(invalid_data_missing)
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
+        SeedDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
+
+    # Sub-test 2b: Missing required field with strict=False
+    dataset_non_strict = SeedDataset(
+        data=pytorch_invalid_missing, min_samples=0, strict=False
+    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
+
+    # Sub-test 2c: Empty dataset with min_samples=1
+    pytorch_empty = MockPyTorchDataset([])
+    with pytest.raises(
+        ValueError,
+        match="The dataset does not contain enough samples. Need 1, got 0",
+    ):
+        SeedDataset(data=pytorch_empty, min_samples=1, strict=True)
+
+    # Sub-test 2d: Empty dataset with min_samples=0
+    dataset_empty = SeedDataset(data=pytorch_empty, min_samples=0, strict=True)
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
+
+    # **Test 3: Initialization with optional fields and additional fields**
+    data_with_optional = [
+        {
+            "question": "What is the capital of France?",
+            "rationale": "France is a country in Europe.",
+            "final_answer": "Paris",
+            "difficulty": "easy",
+            "metadata": {"source": "geography", "id": 123},
+            "extra_field": "this should be ignored",  # Not in DataPoint
+        }
+    ]
+    pytorch_optional = MockPyTorchDataset(data_with_optional)
+    dataset_optional = SeedDataset(
+        data=pytorch_optional, min_samples=1, strict=True
+    )
+
+    # Verify the dataset initialized correctly
+    assert len(dataset_optional) == 1, "Dataset should contain 1 item."
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
+    assert (
+        dataset_optional[0].difficulty == "easy"
+    ), "Difficulty should be set correctly."
+    assert dataset_optional[0].metadata == {
+        "source": "geography",
+        "id": 123,
+    }, "Metadata should match."
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
+
+    # **Test 4: PyTorch-specific edge cases**
+    # Sub-test 4a: Dataset without __len__
+    class NoLenDataset(Dataset):
+        def __getitem__(self, idx):
+            return {
+                "question": "Test",
+                "rationale": "Test",
+                "final_answer": "Test",
+            }
+
+    with pytest.raises(TypeError) as excinfo:
+        SeedDataset(NoLenDataset(), min_samples=1, strict=True)
+    assert "does not implement `__len__()`." in str(excinfo.value)
+
+    # Sub-test 4b: Dataset with non-dict items
+    class NonDictDataset(Dataset):
+        def __len__(self):
+            return 1
+
+        def __getitem__(self, idx):
+            return "not a dict"
+
+    with pytest.raises(
+        TypeError, match="Item at index 0 is not a dict: got str"
+    ):
+        SeedDataset(data=NonDictDataset(), min_samples=1, strict=True)
+
+
+def test_seed_dataset_init_from_json_file():
+    r"""
+    Test SeedDataset initialization from a JSON file with various scenarios.
+    """
+
+    # **Test 1: Initialization with a valid JSON file (only required fields)**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        valid_data = [
+            {
+                "question": "What is 2 + 2?",
+                "rationale": "Addition of 2 and 2.",
+                "final_answer": "4",
+            },
+            {
+                "question": "Is the sky blue?",
+                "rationale": "Observation of clear weather.",
+                "final_answer": "yes",
+            },
+        ]
+        json.dump(valid_data, tmp_file)
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset = SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+    assert len(dataset) == 2, "Dataset should contain 2 items."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
+    assert dataset[0].final_answer == "4", "Final answer should match input."
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].difficulty is None
+    ), "Difficulty should be None when not provided."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
+
+    # **Test 2: Initialization with invalid JSON file (malformed JSON)**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        tmp_file.write(
+            '[{"question": "Test", "rationale": "Test", "final_answer": "Test"'
+        )  # Missing closing bracket
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(ValueError, match="Invalid JSON in file"):
+        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 3: Initialization with JSON file containing non-list data**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        json.dump(
+            {"question": "Test", "rationale": "Test", "final_answer": "Test"},
+            tmp_file,
+        )
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(
+        ValueError, match="JSON file must contain a list of dictionaries"
+    ):
+        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 4: Initialization with JSON file containing non-dict items**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        invalid_data = [
+            {"question": "Test", "rationale": "Test", "final_answer": "Test"},
+            "not a dict",
+        ]
+        json.dump(invalid_data, tmp_file)
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(
+        ValueError, match="Expected a dictionary at index 1, got str"
+    ):
+        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # **Test 5: Initialization with a missing JSON file**
+    missing_file_path = Path("non_existent_file.json")
+    with pytest.raises(FileNotFoundError, match="JSON file not found:"):
+        SeedDataset(data=missing_file_path, min_samples=1, strict=True)
+
+    # **Test 6: Initialization with an empty JSON file**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        json.dump([], tmp_file)
+        tmp_file_path = Path(tmp_file.name)
+
+    # Sub-test 6a: Empty dataset with min_samples=1
+    with pytest.raises(
+        ValueError,
+        match="The dataset does not contain enough samples. Need 1, got 0",
+    ):
+        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # Sub-test 6b: Empty dataset with min_samples=0
+    dataset_empty = SeedDataset(data=tmp_file_path, min_samples=0, strict=True)
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
+
+    # **Test 7: Initialization with optional fields and additional fields**
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        data_with_optional = [
+            {
+                "question": "What is the capital of France?",
+                "rationale": "France is a country in Europe.",
+                "final_answer": "Paris",
+                "difficulty": "easy",
+                "metadata": {"source": "geography", "id": 123},
+                "extra_field": "this should be ignored",
+            }
+        ]
+        json.dump(data_with_optional, tmp_file)
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset_optional = SeedDataset(
+        data=tmp_file_path, min_samples=1, strict=True
+    )
+    assert len(dataset_optional) == 1, "Dataset should contain 1 item."
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
+    assert (
+        dataset_optional[0].difficulty == "easy"
+    ), "Difficulty should be set correctly."
+    assert dataset_optional[0].metadata == {
+        "source": "geography",
+        "id": 123,
+    }, "Metadata should match."
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
+
+    # **Test 8: JSON-specific edge cases**
+    # Sub-test 8a: Invalid data with strict=True
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        invalid_data = [
+            {
+                "question": "What is 3 + 3?",
+                "final_answer": "6",
+            }  # Missing rationale
+        ]
+        json.dump(invalid_data, tmp_file)
+        tmp_file_path = Path(tmp_file.name)
+
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
+        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+
+    # Sub-test 8b: Invalid data with strict=False
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.json', delete=False
+    ) as tmp_file:
+        invalid_data = [
+            {
+                "question": "What is 3 + 3?",
+                "final_answer": "6",
+            }  # Missing rationale
+        ]
+        json.dump(invalid_data, tmp_file)
+        tmp_file_path = Path(tmp_file.name)
+
+    dataset_non_strict = SeedDataset(
+        data=tmp_file_path, min_samples=0, strict=False
+    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
+
+
+def test_seed_dataset_init_from_list():
+    r"""
+    Test SeedDataset initialization from a list of
+    dictionaries with various scenarios.
+    """
+
+    # **Test 1: Initialization with a valid list (only required fields)**
+    valid_data = [
+        {
+            "question": "What is 2 + 2?",
+            "rationale": "Addition of 2 and 2.",
+            "final_answer": "4",
+        },
+        {
+            "question": "Is the sky blue?",
+            "rationale": "Observation of clear weather.",
+            "final_answer": "yes",
+        },
+    ]
+    dataset = SeedDataset(data=valid_data, min_samples=1, strict=True)
+    assert len(dataset) == 2, "Dataset should contain 2 items."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Items should be DataPoint instances."
+    assert (
+        dataset[0].question == "What is 2 + 2?"
+    ), "Question should match input."
+    assert (
+        dataset[0].rationale == "Addition of 2 and 2."
+    ), "Rationale should match input."
+    assert dataset[0].final_answer == "4", "Final answer should match input."
+    assert (
+        dataset[1].question == "Is the sky blue?"
+    ), "Second question should match input."
+    assert (
+        dataset[1].rationale == "Observation of clear weather."
+    ), "Second rationale should match input."
+    assert (
+        dataset[1].final_answer == "yes"
+    ), "Second final answer should match input."
+    assert (
+        dataset[0].difficulty is None
+    ), "Difficulty should be None when not provided."
+    assert (
+        dataset[0].metadata is None
+    ), "Metadata should be None when not provided."
+
+    # **Test 2: Initialization with a list containing non-dictionary items**
+    invalid_list_data = [
+        {"question": "Test", "rationale": "Test", "final_answer": "Test"},
+        "not a dict",
+    ]
+    with pytest.raises(
+        ValueError, match="Expected a dictionary at index 1, got str"
+    ):
+        SeedDataset(data=invalid_list_data, min_samples=1, strict=True)
+
+    # **Test 3: Initialization with an empty list**
+    empty_data = []
+    # Sub-test 3a: Empty list with min_samples=1
+    with pytest.raises(
+        ValueError,
+        match="The dataset does not contain enough samples. Need 1, got 0",
+    ):
+        SeedDataset(data=empty_data, min_samples=1, strict=True)
+    # Sub-test 3b: Empty list with min_samples=0
+    dataset_empty = SeedDataset(data=empty_data, min_samples=0, strict=True)
+    assert (
+        len(dataset_empty) == 0
+    ), "Empty dataset should have zero length when min_samples=0."
+
+    # **Test 4: Initialization with dictionaries missing required fields**
+    # Sub-test 4a: Missing required field with strict=True
+    invalid_data_missing = [
+        {
+            "question": "What is 3 + 3?",
+            "final_answer": "6",
+        }  # Missing rationale
+    ]
+    with pytest.raises(
+        ValueError,
+        match="Sample at index 0 has invalid 'rationale': "
+        "expected str, got <class 'NoneType'>",
+    ):
+        SeedDataset(data=invalid_data_missing, min_samples=1, strict=True)
+    # Sub-test 4b: Missing required field with strict=False
+    dataset_non_strict = SeedDataset(
+        data=invalid_data_missing, min_samples=0, strict=False
+    )
+    assert (
+        len(dataset_non_strict) == 0
+    ), "Invalid items should be filtered out in non-strict mode."
+
+    # **Test 5: Initialization with optional fields and additional fields**
+    data_with_optional = [
+        {
+            "question": "What is the capital of France?",
+            "rationale": "France is a country in Europe.",
+            "final_answer": "Paris",
+            "difficulty": "easy",
+            "metadata": {"source": "geography", "id": 123},
+            "extra_field": "this should be ignored",
+        }
+    ]
+    dataset_optional = SeedDataset(
+        data=data_with_optional, min_samples=1, strict=True
+    )
+    assert len(dataset_optional) == 1, "Dataset should contain 1 item."
+    assert isinstance(
+        dataset_optional[0], DataPoint
+    ), "Item should be a DataPoint instance."
+    assert (
+        dataset_optional[0].question == "What is the capital of France?"
+    ), "Question should match."
+    assert (
+        dataset_optional[0].rationale == "France is a country in Europe."
+    ), "Rationale should match."
+    assert (
+        dataset_optional[0].final_answer == "Paris"
+    ), "Final answer should match."
+    assert (
+        dataset_optional[0].difficulty == "easy"
+    ), "Difficulty should be set correctly."
+    assert dataset_optional[0].metadata == {
+        "source": "geography",
+        "id": 123,
+    }, "Metadata should match."
+    assert (
+        "extra_field" not in dataset_optional[0].__dict__
+    ), "Extra field should not be present in DataPoint."
+
+    # **Test 6: Mixed valid and invalid items with strict=False**
+    mixed_data = [
+        {
+            "question": "Valid question",
+            "rationale": "Valid rationale",
+            "final_answer": "Valid",
+        },
+        {
+            "question": "Invalid question",
+            "final_answer": "Invalid",
+        },  # Missing rationale
+    ]
+    dataset_mixed = SeedDataset(data=mixed_data, min_samples=1, strict=False)
+    assert (
+        len(dataset_mixed) == 1
+    ), "Only valid items should be included in non-strict mode."
+    assert (
+        dataset_mixed[0].question == "Valid question"
+    ), "Only the valid item should be present."
+
+
+def test_seed_dataset_methods():
+    r"""
+    Test the __len__, __getitem__, and sample methods
+    of SeedDataset with a mock dataset.
+    """
+    mock_data = [
+        {
+            "question": "What is 1+1?",
+            "rationale": "Basic addition.",
+            "final_answer": "2",
+        },
+        {
+            "question": "Is the Earth round?",
+            "rationale": "Scientific consensus.",
+            "final_answer": "yes",
+        },
+        {
+            "question": "What is the capital of Japan?",
+            "rationale": "Geography knowledge.",
+            "final_answer": "Tokyo",
+        },
+        {
+            "question": "How many sides does a triangle have?",
+            "rationale": "Definition of a triangle.",
+            "final_answer": "3",
+        },
+    ]
+    dataset = SeedDataset(data=mock_data, min_samples=1, strict=True)
+
+    assert len(dataset) == 4, "Dataset should have 4 items."
+    assert (
+        dataset[0].question == "What is 1+1?"
+    ), "First item question should match."
+    assert (
+        dataset[0].rationale == "Basic addition."
+    ), "First item rationale should match."
+    assert (
+        dataset[0].final_answer == "2"
+    ), "First item final_answer should match."
+    assert (
+        dataset[3].question == "How many sides does a triangle have?"
+    ), "Last item question should match."
+    assert (
+        dataset[3].rationale == "Definition of a triangle."
+    ), "Last item rationale should match."
+    assert (
+        dataset[3].final_answer == "3"
+    ), "Last item final_answer should match."
+    assert isinstance(
+        dataset[0], DataPoint
+    ), "Item should be a DataPoint instance."
+
+    # Test __getitem__ with out-of-bounds indices
+    with pytest.raises(
+        IndexError, match="Index -1 out of bounds for dataset of size 4"
+    ):
+        dataset[-1]
+    with pytest.raises(
+        IndexError, match="Index 4 out of bounds for dataset of size 4"
+    ):
+        dataset[4]
+
+    # Test sample from non-empty dataset
+    sampled_item = dataset.sample()
+    assert (
+        sampled_item in dataset.data
+    ), "Sampled item should be in the dataset."
+
+    # Test __len__ and sample with empty dataset
+    empty_dataset = SeedDataset(data=[], min_samples=0, strict=True)
+    assert len(empty_dataset) == 0, "Empty dataset should have length 0."
+    with pytest.raises(RuntimeError, match="Dataset is empty, cannot sample."):
+        empty_dataset.sample()
 
 
 def test_synthetic_dataset_init():
