@@ -181,7 +181,7 @@ class Extractor:
         r"""Async context manager entry.
 
         Returns:
-            BaseExtractor: The initialized extractor instance.
+            Extractor: The initialized extractor instance.
         """
         await self.setup()
         return self
