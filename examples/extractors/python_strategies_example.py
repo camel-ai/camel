@@ -14,9 +14,9 @@
 import ast
 import asyncio
 
-from camel.extractors.base import Extractor
-from camel.extractors.python_strategies import (
+from camel.extractors import (
     BoxedStrategy,
+    Extractor,
     PythonDictStrategy,
     PythonListStrategy,
 )
