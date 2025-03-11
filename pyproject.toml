@@ -438,5 +438,6 @@ module = [
     "tabulate",
     "openpyxl",
     "scenedetect",
+    "scenedetect.detectors",
 ]
 ignore_missing_imports = true

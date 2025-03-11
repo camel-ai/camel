@@ -1,0 +1,209 @@
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+
+import ast
+import re
+from typing import Optional
+
+from camel.extractors.base import ExtractorStrategy
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+class BoxedStrategy(ExtractorStrategy):
+    r"""Extracts content from \\boxed{} environments."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        r"""Extract content from \\boxed{} environments.
+
+        Args:
+            text (str): The input text to process.
+
+        Returns:
+            Optional[str]: Content inside \\boxed{} if found, else None.
+        """
+        if text is None:
+            logger.debug("Input text is None")
+            return None
+
+        # Look for \boxed{...} pattern
+        boxed_pattern = r'\\boxed\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
+        matches = re.findall(boxed_pattern, text)
+
+        if not matches:
+            logger.debug("No \\boxed{} content found in the response")
+            return None
+
+        # Return the first match
+        content = matches[0].strip()
+        logger.debug(f"Extracted boxed content: {content}")
+        return content
+
+
+class PythonListStrategy(ExtractorStrategy):
+    r"""Extracts and normalizes Python lists."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        r"""Extract and normalize a Python list.
+
+        Args:
+            text (str): The input text to process.
+
+        Returns:
+            Optional[str]: Normalized list as a string if found, else None.
+        """
+        if text is None:
+            logger.debug("Input text is None")
+            return None
+
+        text = text.strip()
+        if not (text.startswith('[') and text.endswith(']')):
+            logger.debug("Content is not a list format (missing brackets)")
+            return None
+
+        try:
+            # Fix any escaped quotes before parsing
+            fixed_content = text.replace('\\"', '"')
+            parsed = ast.literal_eval(fixed_content)
+            if isinstance(parsed, list):
+                # Sort the list for normalization
+                sorted_list = sorted(parsed, key=lambda x: str(x))
+                return repr(sorted_list)
+            else:
+                logger.debug(f"Content is not a list, got {type(parsed)}")
+                return None
+        except (SyntaxError, ValueError) as e:
+            logger.debug(f"Failed to parse as Python list: {e}")
+            return None
+
+
+class PythonDictStrategy(ExtractorStrategy):
+    r"""Extracts and normalizes Python dictionaries."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        r"""Extract and normalize a Python dictionary.
+
+        Args:
+            text (str): The input text to process.
+
+        Returns:
+            Optional[str]: Normalized dictionary as a string, else None.
+        """
+        if text is None:
+            logger.debug("Input text is None")
+            return None
+
+        text = text.strip()
+        if not (text.startswith('{') and text.endswith('}')):
+            logger.debug("Content is not a dictionary format (missing braces)")
+            return None
+
+        try:
+            # Fix any escaped quotes before parsing
+            fixed_content = text.replace('\\"', '"')
+            parsed = ast.literal_eval(fixed_content)
+            if isinstance(parsed, dict):
+                # Sort the dictionary items for normalization
+                sorted_dict = dict(
+                    sorted(parsed.items(), key=lambda x: str(x[0]))
+                )
+                return repr(sorted_dict)
+            else:
+                logger.debug(
+                    f"Content is not a dictionary, got {type(parsed)}"
+                )
+                return None
+        except (SyntaxError, ValueError) as e:
+            logger.debug(f"Failed to parse as Python dictionary: {e}")
+            return None
+
+
+class PythonSetStrategy(ExtractorStrategy):
+    r"""Extracts and normalizes Python sets."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        r"""Extract and normalize a Python set.
+
+        Args:
+            text (str): The input text to process.
+
+        Returns:
+            Optional[str]: Normalized set as a string if found, else None.
+        """
+        if text is None:
+            logger.debug("Input text is None")
+            return None
+
+        text = text.strip()
+        # Check for set syntax: {1, 2, 3} or set([1, 2, 3])
+        if not (
+            (text.startswith('{') and text.endswith('}'))
+            or (text.startswith('set(') and text.endswith(')'))
+        ):
+            logger.debug("Content is not a set format")
+            return None
+
+        try:
+            # Fix any escaped quotes before parsing
+            fixed_content = text.replace('\\"', '"')
+            parsed = ast.literal_eval(fixed_content)
+            if isinstance(parsed, set):
+                # Sort the set elements for normalization
+                sorted_set = sorted(parsed, key=lambda x: str(x))
+                return repr(set(sorted_set))
+            else:
+                logger.debug(f"Content is not a set, got {type(parsed)}")
+                return None
+        except (SyntaxError, ValueError) as e:
+            logger.debug(f"Failed to parse as Python set: {e}")
+            return None
+
+
+class PythonTupleStrategy(ExtractorStrategy):
+    r"""Extracts and normalizes Python tuples."""
+
+    async def extract(self, text: str) -> Optional[str]:
+        r"""Extract and normalize a Python tuple.
+
+        Args:
+            text (str): The input text to process.
+
+        Returns:
+            Optional[str]: Normalized tuple as a string if found, else None.
+        """
+        if text is None:
+            logger.debug("Input text is None")
+            return None
+
+        text = text.strip()
+        # Check for tuple syntax: (1, 2, 3) or (1,)
+        if not (text.startswith('(') and text.endswith(')')):
+            logger.debug("Content is not a tuple format (missing parentheses)")
+            return None
+
+        try:
+            # Fix any escaped quotes before parsing
+            fixed_content = text.replace('\\"', '"')
+            parsed = ast.literal_eval(fixed_content)
+            if isinstance(parsed, tuple):
+                # Sort the tuple elements for normalization
+                sorted_tuple = tuple(sorted(parsed, key=lambda x: str(x)))
+                return repr(sorted_tuple)
+            else:
+                logger.debug(f"Content is not a tuple, got {type(parsed)}")
+                return None
+        except (SyntaxError, ValueError) as e:
+            logger.debug(f"Failed to parse as Python tuple: {e}")
+            return None
