@@ -366,11 +366,15 @@ class TestMCPToolkitManager:
         manager = MCPToolkitManager([toolkit1, toolkit2])
 
         # Mock the connection context managers of both toolkits
-        async def mock_connection():
-            return AsyncMock()
+        class MockAsyncContextManager:
+            async def __aenter__(self):
+                return AsyncMock()
 
-        toolkit1.connection = MagicMock(return_value=mock_connection())
-        toolkit2.connection = MagicMock(return_value=mock_connection())
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                return None
+
+        toolkit1.connection = MagicMock(return_value=MockAsyncContextManager())
+        toolkit2.connection = MagicMock(return_value=MockAsyncContextManager())
 
         async with manager.connection() as connected_manager:
             assert connected_manager._connected is True
