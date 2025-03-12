@@ -411,17 +411,16 @@ class GenerativeDataset(Dataset):
 
         Raises:
             TypeError: If the agent's output is not a dictionary.
-            KeyError: If required keys are missing from the agent's response.
-            AttributeError: If the verifier response lacks expected attributes.
+            KeyError: If required keys are missing from the response.
+            AttributeError: If the verifier response lacks attributes.
             ValidationError: If a datapoint fails schema validation.
-            RuntimeError: If `max_retries` is reached without generating `n` valid datapoints.
+            RuntimeError: If retries are exhausted before `n` is reached.
 
         Notes:
-            - The function attempts to generate `n` valid datapoints, retrying failed attempts.
-            - If `max_retries` is exhausted before reaching `n`, a `RuntimeError` is raised.
-            - Metadata includes a timestamp to track when each synthetic datapoint was created.
-            - This method can be overridden to implement custom synthetic data generation
-              while ensuring that the return type remains `List[DataPoint]`.
+            - Retries on validation failures until `n` valid datapoints exist.
+            - If retries are exhausted, a `RuntimeError` is raised.
+            - Metadata includes a timestamp for tracking datapoint creation.
+            - This method can be overridden to implement custom generation.
         """
         valid_data_points: List[DataPoint] = []
         retries = 0
@@ -448,7 +447,8 @@ class GenerativeDataset(Dataset):
                         )
                 except (TypeError, KeyError) as e:
                     logger.warning(
-                        f"Agent output issue: {e}, retrying... ({retries + 1}/{max_retries})"
+                        f"Agent output issue: {e}, retrying... "
+                        f"({retries + 1}/{max_retries})"
                     )
                     retries += 1
                     continue
@@ -463,12 +463,13 @@ class GenerativeDataset(Dataset):
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
-                            "Verifier unsuccessful, "
-                            f"response: {verifier_response}"
+                            "Verifier unsuccessful, response: "
+                            f"{verifier_response}"
                         )
                 except (ValueError, AttributeError) as e:
                     logger.warning(
-                        f"Verifier issue: {e}, retrying... ({retries + 1}/{max_retries})"
+                        f"Verifier issue: {e}, "
+                        f"retrying... ({retries + 1}/{max_retries})"
                     )
                     retries += 1
                     continue
@@ -486,7 +487,8 @@ class GenerativeDataset(Dataset):
                     )
                 except ValidationError as e:
                     logger.warning(
-                        f"Datapoint validation failed: {e}, retrying... ({retries + 1}/{max_retries})"
+                        f"Datapoint validation failed: {e}, "
+                        f"retrying... ({retries + 1}/{max_retries})"
                     )
                     retries += 1
                     continue
@@ -495,13 +497,15 @@ class GenerativeDataset(Dataset):
 
             except Exception as e:
                 logger.warning(
-                    f"Unexpected error: {e}, retrying... ({retries + 1}/{max_retries})"
+                    f"Unexpected error: {e}, retrying..."
+                    f" ({retries + 1}/{max_retries})"
                 )
                 retries += 1
 
         if len(valid_data_points) < n:
             raise RuntimeError(
-                f"Failed to generate {n} valid datapoints after {max_retries} retries."
+                f"Failed to generate {n} valid datapoints "
+                f"after {max_retries} retries."
             )
 
         self._data.extend(valid_data_points)
