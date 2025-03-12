@@ -18,7 +18,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import torch
 from datasets import Dataset as HFDataset
 from pydantic import ValidationError
 from torch.utils.data import Dataset
@@ -107,6 +106,7 @@ def sample_data():
             'final_answer': '9',
         },
     ]
+
 
 def test_static_dataset_init_from_hf_dataset():
     r"""
@@ -328,7 +328,9 @@ def test_static_dataset_init_from_pytorch_dataset():
         StaticDataset(data=pytorch_empty, min_samples=1, strict=True)
 
     # Sub-test 2d: Empty dataset with min_samples=0
-    dataset_empty = StaticDataset(data=pytorch_empty, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(
+        data=pytorch_empty, min_samples=0, strict=True
+    )
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -517,7 +519,9 @@ def test_static_dataset_init_from_json_file():
         StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # Sub-test 6b: Empty dataset with min_samples=0
-    dataset_empty = StaticDataset(data=tmp_file_path, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(
+        data=tmp_file_path, min_samples=0, strict=True
+    )
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -835,241 +839,6 @@ def test_static_dataset_methods():
         empty_dataset.sample()
 
 
-def test_synthetic_dataset_init():
-    r"""Test SyntheticDataset initialization."""
-    dataset = SyntheticDataset()
-    assert dataset._raw_data == []
-    assert dataset.data == []
-
-
-def test_synthetic_dataset_add():
-    r"""Test adding items to SyntheticDataset."""
-    dataset = SyntheticDataset()
-    datapoint = DataPoint(
-        question='What is 2+2?',
-        rationale='Addition of two numbers',
-        final_answer='4',
-    )
-
-    dataset.add(datapoint)
-    assert len(dataset.data) == 1
-    assert dataset.data[0] == datapoint
-
-
-def test_synthetic_dataset_add_batch():
-    r"""Test adding batch of items to SyntheticDataset."""
-    dataset = SyntheticDataset()
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-        ),
-    ]
-
-    dataset.add_batch(datapoints)
-    assert len(dataset.data) == 2
-    assert dataset.data == datapoints
-
-
-def test_synthetic_dataset_filter():
-    r"""Test filtering SyntheticDataset."""
-    dataset = SyntheticDataset()
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-            difficulty='easy',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-            difficulty='medium',
-        ),
-    ]
-    dataset.add_batch(datapoints)
-
-    # Filter for easy questions
-    filtered = dataset.filter(lambda dp: dp.difficulty == 'easy')
-    assert len(filtered.data) == 1
-    assert filtered.data[0].question == 'What is 2+2?'
-
-
-def test_pytorch_dataset_init(sample_data):
-    r"""Test PyTorchDataset initialization."""
-    dataset = PyTorchDataset(sample_data)
-    assert len(dataset) == 2
-    assert dataset[0]['question'] == 'What is 2+2?'
-
-
-def test_pytorch_dataset_from_datapoints():
-    r"""Test creating PyTorchDataset from DataPoints."""
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-        ),
-    ]
-
-    dataset = PyTorchDataset.from_datapoints(datapoints)
-    assert len(dataset) == 2
-    assert dataset[0]['question'] == 'What is 2+2?'
-    assert dataset[1]['final_answer'] == '9'
-
-
-def test_pytorch_dataset_transform():
-    r"""Test PyTorchDataset with transform function."""
-    data = [
-        {
-            'question': 'What is 2+2?',
-            'rationale': 'Addition of two numbers',
-            'final_answer': '4',
-        }
-    ]
-
-    def transform(sample):
-        sample['question'] = sample['question'].upper()
-        return sample
-
-    dataset = PyTorchDataset(data, transform=transform)
-    assert dataset[0]['question'] == 'WHAT IS 2+2?'
-
-
-def test_pytorch_dataset_collate_fn():
-    r"""Test PyTorchDataset collate function."""
-    batch = [
-        {
-            'question': 'What is 2+2?',
-            'rationale': 'Addition of two numbers',
-            'final_answer': '4',
-            'numeric_value': 4,
-        },
-        {
-            'question': 'What is 3×3?',
-            'rationale': 'Multiplication of two numbers',
-            'final_answer': '9',
-            'numeric_value': 9,
-        },
-    ]
-
-    result = PyTorchDataset.collate_fn(batch)
-
-    # String fields should be lists
-    assert isinstance(result['question'], list)
-    assert result['question'] == ['What is 2+2?', 'What is 3×3?']
-
-    # Numeric fields should be tensors
-    assert isinstance(result['numeric_value'], torch.Tensor)
-    assert torch.equal(result['numeric_value'], torch.tensor([4, 9]))
-
-
-def test_convert_hf_to_pytorch():
-    r"""Test converting HuggingFace dataset to PyTorchDataset."""
-    hf_data = [
-        {
-            'q': 'What is 2+2?',
-            'r': 'Addition of two numbers',
-            'a': '4',
-        },
-        {
-            'q': 'What is 3×3?',
-            'r': 'Multiplication of two numbers',
-            'a': '9',
-        },
-    ]
-
-    hf_dataset = HFDataset.from_list(hf_data)
-
-    # Test with column mapping
-    column_mapping = {'q': 'question', 'r': 'rationale', 'a': 'final_answer'}
-    pytorch_dataset = convert_hf_to_pytorch(
-        hf_dataset, column_mapping=column_mapping
-    )
-
-    assert len(pytorch_dataset) == 2
-    assert pytorch_dataset[0]['question'] == 'What is 2+2?'
-    assert pytorch_dataset[1]['final_answer'] == '9'
-
-
-def test_convert_synthetic_to_pytorch():
-    r"""Test converting SyntheticDataset to PyTorchDataset."""
-    synthetic_dataset = SyntheticDataset()
-    datapoints = [
-        DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        ),
-        DataPoint(
-            question='What is 3×3?',
-            rationale='Multiplication of two numbers',
-            final_answer='9',
-        ),
-    ]
-    synthetic_dataset.add_batch(datapoints)
-
-    pytorch_dataset = convert_synthetic_to_pytorch(synthetic_dataset)
-
-    assert len(pytorch_dataset) == 2
-    assert pytorch_dataset[0]['question'] == 'What is 2+2?'
-    assert pytorch_dataset[1]['final_answer'] == '9'
-
-
-def test_save_and_load_pytorch_dataset():
-    r"""Test saving and loading PyTorchDataset."""
-    with tempfile.NamedTemporaryFile(suffix='.pt') as temp_file:
-        # Create and save dataset
-        data = [
-            {
-                'question': 'What is 2+2?',
-                'rationale': 'Addition of two numbers',
-                'final_answer': '4',
-            }
-        ]
-        dataset = PyTorchDataset(data)
-        dataset.save_to_disk(temp_file.name)
-
-        # Load dataset
-        loaded_dataset = load_pytorch_dataset(temp_file.name)
-
-        assert len(loaded_dataset) == 1
-        assert loaded_dataset[0]['question'] == 'What is 2+2?'
-
-
-def test_save_synthetic_dataset():
-    r"""Test saving SyntheticDataset."""
-    with tempfile.NamedTemporaryFile(suffix='.pt') as temp_file:
-        # Create and save dataset
-        synthetic_dataset = SyntheticDataset()
-        datapoint = DataPoint(
-            question='What is 2+2?',
-            rationale='Addition of two numbers',
-            final_answer='4',
-        )
-        synthetic_dataset.add(datapoint)
-
-        save_synthetic_dataset(synthetic_dataset, temp_file.name)
-
-        # Load dataset
-        loaded_dataset = load_pytorch_dataset(temp_file.name)
-
-        assert len(loaded_dataset) == 1
-        assert loaded_dataset[0]['question'] == 'What is 2+2?'
-
-
 @pytest.mark.asyncio
 async def test_generative_dataset():
     r"""Test GenerativeDataset with mocked components."""
@@ -1099,7 +868,7 @@ async def test_generative_dataset():
 
     # Create GenerativeDataset with mocks
     dataset = GenerativeDataset(
-        static_dataset=mock_static_dataset,
+        seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
         agent=mock_agent,
     )
@@ -1110,8 +879,8 @@ async def test_generative_dataset():
     # Verify interactions
     assert mock_agent.step.call_count >= 2
     assert mock_verifier.verify.await_count >= 2
-    assert len(dataset.data) == 2
+    assert len(dataset._data) == 2
 
     # Verify generated data
-    assert all(isinstance(dp, DataPoint) for dp in dataset.data)
-    assert all(dp.final_answer == "Verified Answer" for dp in dataset.data)
+    assert all(isinstance(dp, DataPoint) for dp in dataset._data)
+    assert all(dp.final_answer == "Verified Answer" for dp in dataset._data)
