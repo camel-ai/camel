@@ -220,30 +220,48 @@ class _MCPServer(BaseToolkit):
                 )
                 return "Missing required parameters."
 
-            result: CallToolResult = await self._session.call_tool(
-                func_name, kwargs
-            )
+            if not self._session:
+                logger.error(
+                    "MCP Client is not connected. Call `connection()` first."
+                )
+                return (
+                    "MCP Client is not connected. Call `connection()` first."
+                )
 
-            if not result.content:
+            try:
+                result: CallToolResult = await self._session.call_tool(
+                    func_name, kwargs
+                )
+            except Exception as e:
+                logger.error(f"Failed to call MCP tool '{func_name}': {e!s}")
+                return f"Failed to call MCP tool '{func_name}': {e!s}"
+
+            if not result.content or len(result.content) == 0:
                 return "No data available for this request."
 
             # Handle different content types
-            content = result.content[0]
-            if content.type == "text":
-                return content.text
-            elif content.type == "image":
-                # Return image URL or data URI if available
-                if hasattr(content, "url") and content.url:
-                    return f"Image available at: {content.url}"
-                return "Image content received (data URI not shown)"
-            elif content.type == "embedded_resource":
-                # Return resource information if available
-                if hasattr(content, "name") and content.name:
-                    return f"Embedded resource: {content.name}"
-                return "Embedded resource received"
-            else:
-                msg = f"Received content of type '{content.type}'"
-                return f"{msg} which is not fully supported yet."
+            try:
+                content = result.content[0]
+                if content.type == "text":
+                    return content.text
+                elif content.type == "image":
+                    # Return image URL or data URI if available
+                    if hasattr(content, "url") and content.url:
+                        return f"Image available at: {content.url}"
+                    return "Image content received (data URI not shown)"
+                elif content.type == "embedded_resource":
+                    # Return resource information if available
+                    if hasattr(content, "name") and content.name:
+                        return f"Embedded resource: {content.name}"
+                    return "Embedded resource received"
+                else:
+                    msg = f"Received content of type '{content.type}'"
+                    return f"{msg} which is not fully supported yet."
+            except (IndexError, AttributeError) as e:
+                logger.error(
+                    f"Error processing content from MCP tool response: {e!s}"
+                )
+                return "Error processing content from MCP tool response"
 
         dynamic_function.__name__ = func_name
         dynamic_function.__doc__ = func_desc
