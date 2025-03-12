@@ -891,7 +891,6 @@ class BaseBrowser:
 
     def close(self):
         self.browser.close()
-        self.playwright.stop()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
@@ -916,7 +915,7 @@ class BaseBrowser:
         return markdown_content
 
 
-class WebToolkit(BaseToolkit):
+class BrowserToolkit(BaseToolkit):
     r"""A class for browsing the web and interacting with web pages.
 
     This class provides methods for browsing the web and interacting with web
@@ -932,7 +931,7 @@ class WebToolkit(BaseToolkit):
         planning_agent_model: Optional[BaseModelBackend] = None,
         output_language: str = "en",
     ):
-        r"""Initialize the WebToolkit instance.
+        r"""Initialize the BrowserToolkit instance.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
@@ -1290,7 +1289,7 @@ Your output should be in json format, including the following fields:
             return False, replanned_schema
 
     @dependencies_required("playwright")
-    def browser_simulation(
+    def browse_url(
         self, task_prompt: str, start_url: str, round_limit: int = 12
     ) -> str:
         r"""A powerful toolkit which can simulate the browser interaction to solve the task which needs multi-step actions.
@@ -1371,4 +1370,4 @@ Your output should be in json format, including the following fields:
         return simulation_result
 
     def get_tools(self) -> List[FunctionTool]:
-        return [FunctionTool(self.browser_simulation)]
+        return [FunctionTool(self.browse_url)]
