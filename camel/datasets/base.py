@@ -389,40 +389,44 @@ class GenerativeDataset(Dataset):
         prompt += "New datapoint:"
         return prompt
 
-    async def generate_new(self, n: int) -> List[DataPoint]:
+    async def generate_new(
+        self, n: int, max_retries: int = 10
+    ) -> List[DataPoint]:
         r"""Generates and validates `n` new datapoints through
-        few-shot prompting.
+        few-shot prompting, with a retry limit.
 
         Steps:
             1. Samples examples from the seed dataset.
             2. Constructs a prompt using the selected examples.
             3. Uses an agent to generate a new datapoint.
             4. Verifies the datapoint using a verifier.
-            5. Adds valid datapoints to the dataset.
+            5. Stores valid datapoints in memory.
 
         Args:
             n (int): Number of valid datapoints to generate.
+            max_retries (int): Maximum number of retries before stopping.
 
         Returns:
-            List[DataPoint]: Successfully generated and validated datapoints.
+            List[DataPoint]: A list of newly generated valid datapoints.
 
         Raises:
             TypeError: If the agent's output is not a dictionary.
             KeyError: If required keys are missing from the agent's response.
             AttributeError: If the verifier response lacks expected attributes.
             ValidationError: If a datapoint fails schema validation.
+            RuntimeError: If `max_retries` is reached without generating `n` valid datapoints.
 
         Notes:
-            - Retries on validation failures until `n` valid datapoints exist.
-            - Metadata includes a timestamp.
-            - This method can be overridden to use any synthetic data gen
-            algorithm, as long as it generates `n` valid datapoints,
-            returns them as a `List[DataPoint]`, and adds them to `self._data`.
+            - The function attempts to generate `n` valid datapoints, retrying failed attempts.
+            - If `max_retries` is exhausted before reaching `n`, a `RuntimeError` is raised.
+            - Metadata includes a timestamp to track when each synthetic datapoint was created.
+            - This method can be overridden to implement custom synthetic data generation
+              while ensuring that the return type remains `List[DataPoint]`.
         """
-
         valid_data_points: List[DataPoint] = []
+        retries = 0
 
-        while len(valid_data_points) < n:
+        while len(valid_data_points) < n and retries < max_retries:
             try:
                 examples = [self.seed_dataset.sample() for _ in range(3)]
                 prompt = self._construct_prompt(examples)
@@ -443,7 +447,10 @@ class GenerativeDataset(Dataset):
                             "Missing 'question' or 'rationale' in agent output"
                         )
                 except (TypeError, KeyError) as e:
-                    logger.warning(f"Agent output issue: {e}, retrying...")
+                    logger.warning(
+                        f"Agent output issue: {e}, retrying... ({retries + 1}/{max_retries})"
+                    )
+                    retries += 1
                     continue
 
                 rationale = agent_output["rationale"]
@@ -460,7 +467,10 @@ class GenerativeDataset(Dataset):
                             f"response: {verifier_response}"
                         )
                 except (ValueError, AttributeError) as e:
-                    logger.warning(f"Verifier issue: {e}, retrying...")
+                    logger.warning(
+                        f"Verifier issue: {e}, retrying... ({retries + 1}/{max_retries})"
+                    )
+                    retries += 1
                     continue
 
                 try:
@@ -476,14 +486,23 @@ class GenerativeDataset(Dataset):
                     )
                 except ValidationError as e:
                     logger.warning(
-                        f"Datapoint validation failed: {e}, retrying..."
+                        f"Datapoint validation failed: {e}, retrying... ({retries + 1}/{max_retries})"
                     )
+                    retries += 1
                     continue
 
                 valid_data_points.append(new_datapoint)
 
             except Exception as e:
-                logger.warning(f"Unexpected error: {e}, retrying...")
+                logger.warning(
+                    f"Unexpected error: {e}, retrying... ({retries + 1}/{max_retries})"
+                )
+                retries += 1
+
+        if len(valid_data_points) < n:
+            raise RuntimeError(
+                f"Failed to generate {n} valid datapoints after {max_retries} retries."
+            )
 
         self._data.extend(valid_data_points)
         return valid_data_points
