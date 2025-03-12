@@ -32,6 +32,7 @@ from torch.utils.data import Dataset
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
+from camel.verifiers.models import VerifierInput
 
 logger = get_logger(__name__)
 
@@ -426,56 +427,59 @@ class GenerativeDataset(Dataset):
                 examples = [self.seed_dataset.sample() for _ in range(3)]
                 prompt = self._construct_prompt(examples)
 
-                # Get agent response
-                agent_output = (
-                    self.agent.step(prompt, response_format=DataPoint)
-                    .msgs[0]
-                    .parsed
-                )
-
-                if not isinstance(agent_output, dict):
-                    raise TypeError("Agent output must be a dictionary")
-                if (
-                    'question' not in agent_output
-                    or 'rationale' not in agent_output
-                ):
-                    raise KeyError(
-                        "Agent output missing required keys: "
-                        "'question' or 'rationale'"
+                try:
+                    agent_output = (
+                        self.agent.step(prompt, response_format=DataPoint)
+                        .msgs[0]
+                        .parsed
                     )
-
-                rationale = agent_output['rationale']
-
-                # Verify the generated content
-                verifier_response = await self.verifier.verify(rationale)
-                if not hasattr(verifier_response, 'content'):
-                    raise AttributeError(
-                        "Verifier response missing 'content' attribute"
-                    )
-
-                if not verifier_response.result:
+                    if not isinstance(agent_output, dict):
+                        raise TypeError("Agent output must be a dictionary")
+                    if (
+                        "question" not in agent_output
+                        or "rationale" not in agent_output
+                    ):
+                        raise KeyError(
+                            "Missing 'question' or 'rationale' in agent output"
+                        )
+                except (TypeError, KeyError) as e:
+                    logger.warning(f"Agent output issue: {e}, retrying...")
                     continue
 
-                final_answer = verifier_response.result
+                rationale = agent_output["rationale"]
 
-                # Create and validate the new datapoint
-                new_datapoint = {
-                    'question': agent_output['question'],
-                    'rationale': rationale,
-                    'final_answer': final_answer,
-                    'metadata': {'created': datetime.now()},
-                }
+                try:
+                    verifier_response = await self.verifier.verify(
+                        VerifierInput(llm_response=rationale)
+                    )
+                    if not verifier_response or not verifier_response.result:
+                        raise ValueError(
+                            "Verifier unsuccessful, "
+                            f"response: {verifier_response}"
+                        )
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Verifier issue: {e}, retrying...")
+                    continue
 
-                datapoint = DataPoint(**new_datapoint)
-                valid_data_points.append(datapoint)
+                try:
+                    new_datapoint = DataPoint(
+                        question=agent_output["question"],
+                        rationale=rationale,
+                        final_answer=verifier_response.result,
+                        metadata={"created": datetime.now().isoformat()},
+                    )
+                except ValidationError as e:
+                    logger.warning(
+                        f"Datapoint validation failed: {e}, retrying..."
+                    )
+                    continue
 
-            except (TypeError, KeyError, AttributeError, ValidationError) as e:
-                logger.warning(
-                    f"Error encountered during generation: {e}, retrying..."
-                )
+                valid_data_points.append(new_datapoint)
+
+            except Exception as e:
+                logger.warning(f"Unexpected error: {e}, retrying...")
 
         self._data.extend(valid_data_points)
-
         return valid_data_points
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
