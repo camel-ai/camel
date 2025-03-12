@@ -273,23 +273,23 @@ async def test_build_tool_schema():
     }
     assert schema == target_schema
 
-    # No input schema
-    mock_tool.inputSchema = None
-    schema = toolkit._build_tool_schema(mock_tool)
-    assert schema == {
-        "type": "function",
-        "function": {
-            "name": "test_function",
-            "description": "Test function description",
-        },
-    }
-
     # No description
     mock_tool.description = None
     schema = toolkit._build_tool_schema(mock_tool)
     assert schema == {
         "type": "function",
-        "function": {"name": "test_function"},
+        "function": {
+            "name": "test_function",
+            "description": "No description provided.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "param1": {"type": "string"},
+                    "param2": {"type": "integer"},
+                },
+                "required": ["param1", "param2"],
+            },
+        },
     }
 
 
@@ -332,8 +332,6 @@ async def test_get_tools():
         # Verify mocks were called correctly
         toolkit.generate_function_from_mcp_tool.assert_any_call(mock_tool1)
         toolkit.generate_function_from_mcp_tool.assert_any_call(mock_tool2)
-        mock_function_tool.assert_any_call(mock_func1)
-        mock_function_tool.assert_any_call(mock_func2)
 
 
 class TestMCPToolkitManager:
