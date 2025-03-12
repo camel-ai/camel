@@ -92,7 +92,7 @@ ACTION_WITH_FEEDBACK_LIST = [
 ]
 
 
-# codes from magentic-one
+# Code from magentic-one
 class DOMRectangle(TypedDict):
     x: Union[int, float]
     y: Union[int, float]
@@ -127,21 +127,36 @@ class InteractiveRegion(TypedDict):
 
 
 def _get_str(d: Any, k: str) -> str:
+    r"""Safely retrieve a string value from a dictionary."""
+    if k not in d:
+        raise KeyError(f"Missing required key: '{k}'")
     val = d[k]
-    assert isinstance(val, str)
-    return val
+    if isinstance(val, str):
+        return val
+    raise TypeError(
+        f"Expected a string for key '{k}', " f"but got {type(val).__name__}"
+    )
 
 
 def _get_number(d: Any, k: str) -> Union[int, float]:
+    r"""Safely retrieve a number (int or float) from a dictionary"""
     val = d[k]
-    assert isinstance(val, int) or isinstance(val, float)
-    return val
+    if isinstance(val, (int, float)):
+        return val
+    raise TypeError(
+        f"Expected a number (int/float) for key "
+        f"'{k}', but got {type(val).__name__}"
+    )
 
 
 def _get_bool(d: Any, k: str) -> bool:
+    r"""Safely retrieve a boolean value from a dictionary."""
     val = d[k]
-    assert isinstance(val, bool)
-    return val
+    if isinstance(val, bool):
+        return val
+    raise TypeError(
+        f"Expected a boolean for key '{k}', " f"but got {type(val).__name__}"
+    )
 
 
 def _parse_json_output(text: str) -> Dict[str, Any]:
@@ -208,7 +223,8 @@ def _reload_image(image: Image.Image):
     return Image.open(buffer)
 
 
-def domrectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
+def dom_rectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
+    r"""Create a DOMRectangle object from a dictionary."""
     return DOMRectangle(
         x=_get_number(rect, "x"),
         y=_get_number(rect, "y"),
@@ -221,10 +237,11 @@ def domrectangle_from_dict(rect: Dict[str, Any]) -> DOMRectangle:
     )
 
 
-def interactiveregion_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
+def interactive_region_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
+    r"""Create an :class:`InteractiveRegion` object from a dictionary."""
     typed_rects: List[DOMRectangle] = []
     for rect in region["rects"]:
-        typed_rects.append(domrectangle_from_dict(rect))
+        typed_rects.append(dom_rectangle_from_dict(rect))
 
     return InteractiveRegion(
         tag_name=_get_str(region, "tag_name"),
@@ -235,7 +252,8 @@ def interactiveregion_from_dict(region: Dict[str, Any]) -> InteractiveRegion:
     )
 
 
-def visualviewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
+def visual_viewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
+    r"""Create a :class:`VisualViewport` object from a dictionary."""
     return VisualViewport(
         height=_get_number(viewport, "height"),
         width=_get_number(viewport, "width"),
@@ -252,7 +270,7 @@ def visualviewport_from_dict(viewport: Dict[str, Any]) -> VisualViewport:
 
 
 def add_set_of_mark(
-    screenshot: bytes | Image.Image | io.BufferedIOBase,
+    screenshot: Union[bytes, Image.Image, io.BufferedIOBase],
     ROIs: Dict[str, InteractiveRegion],
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
     if isinstance(screenshot, Image.Image):
@@ -272,6 +290,18 @@ def add_set_of_mark(
 def _add_set_of_mark(
     screenshot: Image.Image, ROIs: Dict[str, InteractiveRegion]
 ) -> Tuple[Image.Image, List[str], List[str], List[str]]:
+    r"""Add a set of marks to the screenshot.
+
+    Args:
+        screenshot (Image.Image): The screenshot to add marks to.
+        ROIs (Dict[str, InteractiveRegion]): The regions to add marks to.
+
+    Returns:
+        Tuple[Image.Image, List[str], List[str], List[str]]: A tuple
+        containing the screenshot with marked ROIs, ROIs fully within the
+        images, ROIs located above the visible area, and ROIs located below
+        the visible area.
+    """
     visible_rects: List[str] = list()
     rects_above: List[str] = list()  # Scroll up to see
     rects_below: List[str] = list()  # Scroll down to see
@@ -284,22 +314,22 @@ def _add_set_of_mark(
     for r in ROIs:
         for rect in ROIs[r]["rects"]:
             # Empty rectangles
-            if not rect:
-                continue
-            if rect["width"] * rect["height"] == 0:
+            if not rect or rect["width"] == 0 or rect["height"] == 0:
                 continue
 
-            mid = (
-                (rect["right"] + rect["left"]) / 2.0,
-                (rect["top"] + rect["bottom"]) / 2.0,
-            )
+            # TODO: add scroll left and right?
+            horizontal_center = (rect["right"] + rect["left"]) / 2.0
+            vertical_center = (rect["top"] + rect["bottom"]) / 2.0
+            is_within_horizon = 0 <= horizontal_center < base.size[0]
+            is_above_viewport = vertical_center < 0
+            is_below_viewport = vertical_center >= base.size[1]
 
-            if 0 <= mid[0] and mid[0] < base.size[0]:
-                if mid[1] < 0:
+            if is_within_horizon:
+                if is_above_viewport:
                     rects_above.append(r)
-                elif mid[1] >= base.size[1]:
+                elif is_below_viewport:
                     rects_below.append(r)
-                else:
+                else:  # Fully visible
                     visible_rects.append(r)
                     _draw_roi(draw, int(r), fnt, rect)
 
@@ -314,9 +344,16 @@ def _draw_roi(
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     rect: DOMRectangle,
 ) -> None:
-    color = _color(idx)
-    luminance = color[0] * 0.3 + color[1] * 0.59 + color[2] * 0.11
-    text_color = (0, 0, 0, 255) if luminance > 90 else (255, 255, 255, 255)
+    r"""Draw a ROI on the image.
+
+    Args:
+        draw (ImageDraw.ImageDraw): The draw object.
+        idx (int): The index of the ROI.
+        font (ImageFont.FreeTypeFont | ImageFont.ImageFont): The font.
+        rect (DOMRectangle): The DOM rectangle.
+    """
+    color = _get_random_color(idx)
+    text_color = _get_text_color(color)
 
     roi = ((rect["left"], rect["top"]), (rect["right"], rect["bottom"]))
 
@@ -351,9 +388,36 @@ def _draw_roi(
     )
 
 
-def _color(identifier: int) -> Tuple[int, int, int, int]:
+def _get_text_color(
+    bg_color: Tuple[int, int, int, int],
+) -> Tuple[int, int, int, int]:
+    r"""Determine the ideal text color (black or white) for contrast.
+
+    Args:
+        bg_color: The background color (R, G, B, A).
+
+    Returns:
+        A tuple representing black or white color for text.
+    """
+    luminance = bg_color[0] * 0.3 + bg_color[1] * 0.59 + bg_color[2] * 0.11
+    return (0, 0, 0, 255) if luminance > 120 else (255, 255, 255, 255)
+
+
+def _get_random_color(identifier: int) -> Tuple[int, int, int, int]:
+    r"""Generate a consistent random RGBA color based on the identifier.
+
+    Args:
+        identifier: The ID used as a seed to ensure color consistency.
+
+    Returns:
+        A tuple representing (R, G, B, A) values.
+    """
     rnd = random.Random(int(identifier))
-    color = [rnd.randint(0, 255), rnd.randint(125, 255), rnd.randint(0, 50)]
+    r = rnd.randint(0, 255)
+    g = rnd.randint(125, 255)
+    b = rnd.randint(0, 50)
+    color = [r, g, b]
+    # TODO: check why shuffle is needed?
     rnd.shuffle(color)
     color.append(255)
     return cast(Tuple[int, int, int, int], tuple(color))
@@ -379,13 +443,11 @@ class BaseBrowser:
         self.playwright = sync_playwright().start()
         self.page_history: list = []  # stores the history of visited pages
 
-        # set the cache directory
-        self.cache_dir = "tmp/"
+        # Set the cache directory
+        self.cache_dir = "tmp/" if cache_dir is None else cache_dir
         os.makedirs(self.cache_dir, exist_ok=True)
-        if cache_dir is not None:
-            self.cache_dir = cache_dir
 
-        # load the page script
+        # Load the page script
         abs_dir_path = os.path.dirname(os.path.abspath(__file__))
         page_script_path = os.path.join(abs_dir_path, "page_script.js")
 
@@ -398,34 +460,35 @@ class BaseBrowser:
                 f"Page script file not found at path: {page_script_path}"
             )
 
-    def init(self):
+    def init(self) -> None:
         r"""Initialize the browser."""
-        self.browser = self.playwright.chromium.launch(
-            headless=self.headless
-        )  # Launch the browser, if headless is False, the browser will display
-        self.context = self.browser.new_context(
-            accept_downloads=True
-        )  # create a new context
-        self.page = self.context.new_page()  # create a new page
+        # Launch the browser, if headless is False, the browser will display
+        self.browser = self.playwright.chromium.launch(headless=self.headless)
+        # Create a new context
+        self.context = self.browser.new_context(accept_downloads=True)
+        # Create a new page
+        self.page = self.context.new_page()
 
-    def clean_cache(self):
-        r"""delete the cache directory and its contents."""
+    def clean_cache(self) -> None:
+        r"""Delete the cache directory and its contents."""
         if os.path.exists(self.cache_dir):
             shutil.rmtree(self.cache_dir)
 
-    def _wait_for_load(self, timeout: int = 20):
+    def _wait_for_load(self, timeout: int = 20) -> None:
         r"""Wait for a certain amount of time for the page to load."""
         timeout_ms = timeout * 1000
 
         self.page.wait_for_load_state("load", timeout=timeout_ms)
+
+        # TODO: check if this is needed
         time.sleep(2)
 
-    def click_blank_area(self):
+    def click_blank_area(self) -> None:
         r"""Click a blank area of the page to unfocus the current element."""
         self.page.mouse.click(0, 0)
         self._wait_for_load()
 
-    def visit_page(self, url: str):
+    def visit_page(self, url: str) -> None:
         r"""Visit a page with the given URL."""
 
         self.page.goto(url)
@@ -433,8 +496,8 @@ class BaseBrowser:
         self.page_url = url
 
     def ask_question_about_video(self, question: str) -> str:
-        r"""Ask a question about the video on the current page. It is suitable
-        to process youtube video.
+        r"""Ask a question about the video on the current page,
+        such as YouTube video.
 
         Args:
             question (str): The question to ask.
@@ -459,8 +522,9 @@ class BaseBrowser:
                 directory.
 
         Returns:
-            Tuple[Image.Image, str]: A tuple containing the screenshot image
-                and the path to the image file.
+            Tuple[Image.Image, str]: A tuple containing the screenshot
+            image and the path to the image file if saved, otherwise
+            :obj:`None`.
         """
 
         image_data = self.page.screenshot(timeout=60000)
@@ -468,12 +532,13 @@ class BaseBrowser:
 
         file_path = None
         if save_image:
-            # get url name to form a file name
+            # Get url name to form a file name
+            # TODO: Use a safer way for the url name
             url_name = self.page_url.split("/")[-1]
             for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']:
                 url_name = url_name.replace(char, "_")
 
-            # get formatted time: mmddhhmmss
+            # Get formatted time: mmddhhmmss
             timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
             file_path = os.path.join(
                 self.cache_dir, f"{url_name}_{timestamp}.png"
@@ -492,22 +557,17 @@ class BaseBrowser:
 
         Args:
             scroll_ratio (float): The ratio of viewport height to scroll each
-                step (default: 0.7).
+                step (default: 0.8).
 
         Returns:
             List[str]: A list of paths to the screenshot files.
         """
         screenshots = []
         scroll_height = self.page.evaluate("document.body.scrollHeight")
+        assert self.page.viewport_size is not None
         viewport_height = self.page.viewport_size["height"]
         current_scroll = 0
         screenshot_index = 1
-
-        url_name = self.page.url.split("/")[-1].replace(".", "_")
-        timestamp = datetime.datetime.now().strftime("%m%d%H%M%S")
-        base_file_path = os.path.join(
-            self.cache_dir, f"{url_name}_{timestamp}"
-        )
 
         max_height = scroll_height - viewport_height
         scroll_step = int(viewport_height * scroll_ratio)
@@ -520,14 +580,15 @@ class BaseBrowser:
                 f"{max_height}, step: {scroll_step}"
             )
 
-            file_path = f"{base_file_path}_{screenshot_index}.png"
             _, file_path = self.get_screenshot(save_image=True)
             screenshots.append(file_path)
 
             self.page.evaluate(f"window.scrollBy(0, {scroll_step})")
+            # Allow time for content to load
             time.sleep(0.5)
 
             current_scroll = self.page.evaluate("window.scrollY")
+            # Break if there is no significant scroll
             if abs(current_scroll - last_height) < viewport_height * 0.1:
                 break
 
@@ -547,12 +608,16 @@ class BaseBrowser:
         except Exception as e:
             logger.warning(f"Error evaluating page script: {e}")
 
-        return visualviewport_from_dict(
+        return visual_viewport_from_dict(
             self.page.evaluate("MultimodalWebSurfer.getVisualViewport();")
         )
 
-    def get_interactive_elements(self) -> List[Dict[str, Any]]:
-        # codes from magentic-one
+    def get_interactive_elements(self) -> Dict[str, InteractiveRegion]:
+        r"""Get the interactive elements of the current page.
+
+        Returns:
+            Dict[str, InteractiveRegion]: A dictionary of interactive elements.
+        """
         try:
             self.page.evaluate(self.page_script)
         except Exception as e:
@@ -565,12 +630,13 @@ class BaseBrowser:
 
         typed_results: Dict[str, InteractiveRegion] = {}
         for k in result:
-            typed_results[k] = interactiveregion_from_dict(result[k])
+            typed_results[k] = interactive_region_from_dict(result[k])
 
         return typed_results  # type: ignore[return-value]
 
     def get_som_screenshot(
-        self, save_image: bool = False
+        self,
+        save_image: bool = False,
     ) -> Tuple[Image.Image, Union[str, None]]:
         r"""Get a screenshot of the current viewport with interactive elements
         marked.
@@ -608,15 +674,19 @@ class BaseBrowser:
         return comp, file_path
 
     def scroll_up(self) -> None:
+        r"""Scroll up the page."""
         self.page.keyboard.press("PageUp")
 
     def scroll_down(self) -> None:
+        r"""Scroll down the page."""
         self.page.keyboard.press("PageDown")
 
     def get_url(self) -> str:
+        r"""Get the URL of the current page."""
         return self.page.url
 
-    def click_id(self, identifier: Union[str, int]):
+    def click_id(self, identifier: Union[str, int]) -> None:
+        r"""Click an element with the given identifier."""
         if isinstance(identifier, int):
             identifier = str(identifier)
         target = self.page.locator(f"[__elementId='{identifier}']")
@@ -649,7 +719,7 @@ class BaseBrowser:
 
         self._wait_for_load()
 
-    def extract_url_content(self):
+    def extract_url_content(self) -> str:
         r"""Extract the content of the current page."""
         content = self.page.content()
         return content
@@ -1026,9 +1096,7 @@ out the information you need. Sometimes they are extremely useful.
         """
 
         # get current state
-        som_screenshot, som_screenshot_path = self.browser.get_som_screenshot(
-            save_image=True
-        )
+        som_screenshot, _ = self.browser.get_som_screenshot(save_image=True)
         img = _reload_image(som_screenshot)
         message = BaseMessage.make_user_message(
             role_name='user', content=observe_prompt, image_list=[img]
