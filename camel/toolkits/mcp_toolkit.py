@@ -31,13 +31,16 @@ from urllib.parse import urlparse
 if TYPE_CHECKING:
     from mcp import ListToolsResult, Tool
 
+from camel.logger import get_logger
 from camel.toolkits import BaseToolkit, FunctionTool
 
+logger = get_logger(__name__)
 
-class MCPToolkit(BaseToolkit):
-    r"""MCPToolkit provides an abstraction layer to interact with external
-    tools using the Model Context Protocol (MCP). It supports two modes of
-    connection:
+
+class _MCPServer(BaseToolkit):
+    r"""Internal class that provides an abstraction layer to interact with
+    external tools using the Model Context Protocol (MCP). It supports two
+    modes of connection:
 
     1. stdio mode: Connects via standard input/output streams for local
        command-line interactions.
@@ -76,19 +79,19 @@ class MCPToolkit(BaseToolkit):
         self._exit_stack = AsyncExitStack()
         self._is_connected = False
 
-    @asynccontextmanager
-    async def connection(self):
-        r"""Async context manager for establishing and managing the connection
-        with the MCP server. Automatically selects SSE or stdio mode based
-        on the provided `command_or_url`.
+    async def connect(self):
+        r"""Explicitly connect to the MCP server.
 
-        Yields:
-            MCPToolkit: Instance with active connection ready for tool
-                interaction.
+        Returns:
+            _MCPServer: The connected server instance
         """
         from mcp.client.session import ClientSession
         from mcp.client.sse import sse_client
         from mcp.client.stdio import StdioServerParameters, stdio_client
+
+        if self._is_connected:
+            logger.warning("Server is already connected")
+            return self
 
         try:
             if urlparse(self.command_or_url).scheme in ("http", "https"):
@@ -116,12 +119,33 @@ class MCPToolkit(BaseToolkit):
             list_tools_result = await self.list_mcp_tools()
             self._mcp_tools = list_tools_result.tools
             self._is_connected = True
-            yield self
+            return self
+        except Exception as e:
+            # Ensure resources are cleaned up on connection failure
+            await self.disconnect()
+            logger.error(f"Failed to connect to MCP server: {e}")
 
+    async def disconnect(self):
+        r"""Explicitly disconnect from the MCP server."""
+        self._is_connected = False
+        await self._exit_stack.aclose()
+        self._session = None
+
+    @asynccontextmanager
+    async def connection(self):
+        r"""Async context manager for establishing and managing the connection
+        with the MCP server. Automatically selects SSE or stdio mode based
+        on the provided `command_or_url`.
+
+        Yields:
+            _MCPServer: Instance with active connection ready for tool
+                interaction.
+        """
+        try:
+            await self.connect()
+            yield self
         finally:
-            self._is_connected = False
-            await self._exit_stack.aclose()
-            self._session = None
+            await self.disconnect()
 
     async def list_mcp_tools(self) -> Union[str, "ListToolsResult"]:
         r"""Retrieves the list of available tools from the connected MCP
@@ -191,9 +215,10 @@ class MCPToolkit(BaseToolkit):
                 kwargs.keys()
             )
             if missing_params:
-                raise ValueError(
+                logger.warning(
                     f"Missing required parameters: {missing_params}"
                 )
+                return "Missing required parameters."
 
             result: CallToolResult = await self._session.call_tool(
                 func_name, kwargs
@@ -278,165 +303,189 @@ class MCPToolkit(BaseToolkit):
         ]
 
 
-class MCPToolkitManager:
-    r"""MCPToolkitManager provides a unified interface for managing multiple
-    MCPToolkit instances and their connections.
+class MCPToolkit(BaseToolkit):
+    r"""MCPToolkit provides a unified interface for managing multiple
+    MCP server connections and their tools.
 
-    This class handles the lifecycle of multiple MCP tool connections and
+    This class handles the lifecycle of multiple MCP server connections and
     offers a centralized configuration mechanism for both local and remote
     MCP services.
 
+    Args:
+        servers (Optional[List[_MCPServer]]): List of _MCPServer
+            instances to manage.
+        config_path (Optional[str]): Path to a JSON configuration file
+            defining MCP servers.
+
+    Note:
+        Either `servers` or `config_path` must be provided. If both are
+        provided, servers from both sources will be combined.
+
     Attributes:
-        toolkits (List[MCPToolkit]): List of MCPToolkit instances to manage.
+        servers (List[_MCPServer]): List of _MCPServer instances being managed.
     """
 
-    def __init__(self, toolkits: List[MCPToolkit]):
-        self.toolkits = toolkits
-        self._exit_stack: Optional[AsyncExitStack] = None
+    def __init__(
+        self,
+        servers: Optional[List[_MCPServer]] = None,
+        config_path: Optional[str] = None,
+    ):
+        super().__init__()
+
+        if servers and config_path:
+            logger.warning(
+                "Both servers and config_path are provided. "
+                "Servers from both sources will be combined."
+            )
+
+        self.servers = servers or []
+
+        if config_path:
+            self.servers.extend(self._load_servers_from_config(config_path))
+
+        self._exit_stack = AsyncExitStack()
         self._connected = False
 
-    @staticmethod
-    def from_config(config_path: str) -> "MCPToolkitManager":
-        r"""Creates an MCPToolkitManager from a JSON config file.
-
-        The configuration file should define local MCP servers and/or remote
-        MCP web servers with their respective parameters.
+    def _load_servers_from_config(self, config_path: str) -> List[_MCPServer]:
+        r"""Loads MCP server configurations from a JSON file.
 
         Args:
             config_path (str): Path to the JSON configuration file.
 
         Returns:
-            MCPToolkitManager: An initialized toolkit manager with configured
-                MCPToolkit instances.
-
-        Raises:
-            FileNotFoundError: If the config file doesn't exist.
-            json.JSONDecodeError: If the config file contains invalid JSON.
-            ValueError: If the config is missing required fields or has invalid
-                structure.
-
-        Example:
-            Example JSON configuration format:
-
-            ```json
-            {
-              "mcpServers": {
-                "filesystem": {
-                  "command": "mcp-filesystem-server",
-                  "args": ["/Users/user/Desktop", "/Users/user/Downloads"]
-                },
-              },
-              "mcpWebServers": {
-                "weather": {
-                  "url": "https://example-api.ngrok-free.app/sse"
-                }
-              }
-            }
-            ```
-
-            Each entry under "mcpServers" requires at least a "command" field.
-            Each entry under "mcpWebServers" requires a "url" field.
-            Optional fields include "args", "env", and "timeout".
+            List[_MCPServer]: List of configured _MCPServer instances.
         """
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
                 except json.JSONDecodeError as e:
-                    raise json.JSONDecodeError(
-                        f"Invalid JSON in config file '{config_path}': {e!s}",
-                        e.doc,
-                        e.pos,
-                    ) from e
+                    logger.warning(
+                        f"Invalid JSON in config file '{config_path}': {e!s}"
+                    )
+                    return []
         except FileNotFoundError:
-            raise FileNotFoundError(f"Config file not found: '{config_path}'")
+            logger.warning(f"Config file not found: '{config_path}'")
+            return []
 
-        all_toolkits = []
+        all_servers = []
 
         # Process local MCP servers
         mcp_servers = data.get("mcpServers", {})
         if not isinstance(mcp_servers, dict):
-            raise ValueError("'mcpServers' must be a dictionary")
+            logger.warning("'mcpServers' is not a dictionary, skipping...")
+            mcp_servers = {}
 
         for name, cfg in mcp_servers.items():
             if not isinstance(cfg, dict):
-                raise ValueError(
+                logger.warning(
                     f"Configuration for server '{name}' must be a dictionary"
                 )
+                continue
 
             if "command" not in cfg:
-                raise ValueError(
+                logger.warning(
                     f"Missing required 'command' field for server '{name}'"
                 )
+                continue
 
-            toolkit = MCPToolkit(
+            server = _MCPServer(
                 command_or_url=cfg["command"],
                 args=cfg.get("args", []),
                 env={**os.environ, **cfg.get("env", {})},
                 timeout=cfg.get("timeout", None),
             )
-            all_toolkits.append(toolkit)
+            all_servers.append(server)
 
         # Process remote MCP web servers
         mcp_web_servers = data.get("mcpWebServers", {})
         if not isinstance(mcp_web_servers, dict):
-            raise ValueError("'mcpWebServers' must be a dictionary")
+            logger.warning("'mcpWebServers' is not a dictionary, skipping...")
+            mcp_web_servers = {}
 
         for name, cfg in mcp_web_servers.items():
             if not isinstance(cfg, dict):
-                raise ValueError(
+                logger.warning(
                     f"Configuration for web server '{name}' must"
                     "be a dictionary"
                 )
+                continue
 
             if "url" not in cfg:
-                raise ValueError(
+                logger.warning(
                     f"Missing required 'url' field for web server '{name}'"
                 )
+                continue
 
-            toolkit = MCPToolkit(
+            server = _MCPServer(
                 command_or_url=cfg["url"],
                 timeout=cfg.get("timeout", None),
             )
-            all_toolkits.append(toolkit)
+            all_servers.append(server)
 
-        return MCPToolkitManager(all_toolkits)
+        return all_servers
 
-    @asynccontextmanager
-    async def connection(self) -> AsyncGenerator["MCPToolkitManager", None]:
-        r"""Async context manager that simultaneously establishes connections
-        to all managed MCPToolkit instances.
+    async def connect(self):
+        r"""Explicitly connect to all MCP servers.
 
-        Yields:
-            MCPToolkitManager: Self with all toolkits connected.
+        Returns:
+            MCPToolkit: The connected toolkit instance
         """
+        if self._connected:
+            logger.warning("MCPToolkit is already connected")
+            return self
+
         self._exit_stack = AsyncExitStack()
         try:
-            # Sequentially connect to each toolkit
-            for tk in self.toolkits:
-                await self._exit_stack.enter_async_context(tk.connection())
+            # Sequentially connect to each server
+            for server in self.servers:
+                await server.connect()
             self._connected = True
+            return self
+        except Exception as e:
+            # Ensure resources are cleaned up on connection failure
+            await self.disconnect()
+            logger.error(f"Failed to connect to one or more MCP servers: {e}")
+
+    async def disconnect(self):
+        r"""Explicitly disconnect from all MCP servers."""
+        if not self._connected:
+            return
+
+        for server in self.servers:
+            await server.disconnect()
+        self._connected = False
+        await self._exit_stack.aclose()
+
+    @asynccontextmanager
+    async def connection(self) -> AsyncGenerator["MCPToolkit", None]:
+        r"""Async context manager that simultaneously establishes connections
+        to all managed MCP server instances.
+
+        Yields:
+            MCPToolkit: Self with all servers connected.
+        """
+        try:
+            await self.connect()
             yield self
         finally:
-            self._connected = False
-            await self._exit_stack.aclose()
-            self._exit_stack = None
+            await self.disconnect()
 
     def is_connected(self) -> bool:
-        r"""Checks if all the managed toolkits are connected.
+        r"""Checks if all the managed servers are connected.
 
         Returns:
             bool: True if connected, False otherwise.
         """
         return self._connected
 
-    def get_all_tools(self) -> List[FunctionTool]:
-        r"""Aggregates all tools from the managed MCPToolkit instances.
+    def get_tools(self) -> List[FunctionTool]:
+        r"""Aggregates all tools from the managed MCP server instances.
 
         Returns:
             List[FunctionTool]: Combined list of all available function tools.
         """
         all_tools = []
-        for tk in self.toolkits:
-            all_tools.extend(tk.get_tools())
+        for server in self.servers:
+            all_tools.extend(server.get_tools())
         return all_tools
