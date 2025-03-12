@@ -139,7 +139,7 @@ class BaseEnvironment(ABC):
 
     def __init__(
         self,
-        dataset: StaticDataset | GenerativeDataset,
+        dataset: StaticDataset,
         verifier: BaseVerifier,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
@@ -151,8 +151,7 @@ class BaseEnvironment(ABC):
         r"""Initialize the environment.
 
         Args:
-            dataset (StaticDataset or GenerativeDataset):
-                Dataset to sample questions from.
+            dataset (StaticDataset): Dataset to sample questions from.
             verifier (BaseVerifier): Verifier to check responses.
             extractor (BaseExtractor): Extractor to process LLM responses.
             max_steps (Optional[int]): Maximum steps per episode. (default:
