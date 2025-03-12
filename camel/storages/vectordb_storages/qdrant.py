@@ -467,7 +467,7 @@ class QdrantStorage(BaseVectorStorage):
                 payload=point.payload,
                 vector=point.vector,  # type: ignore[arg-type]
             )
-            for point in search_result
+            for point in search_result.points
         ]
 
         return query_results
