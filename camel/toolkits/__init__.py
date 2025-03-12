@@ -59,6 +59,7 @@ from .web_toolkit import WebToolkit
 from .file_write_toolkit import FileWriteToolkit
 from .terminal_toolkit import TerminalToolkit
 from .pubmed_toolkit import PubMedToolkit
+from .openai_agent_toolkit import OpenAIAgentToolkit
 
 
 __all__ = [
@@ -106,4 +107,5 @@ __all__ = [
     'FileWriteToolkit',
     'TerminalToolkit',
     'PubMedToolkit',
+    'OpenAIAgentToolkit',
 ]
