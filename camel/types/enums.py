@@ -101,6 +101,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
+    CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -248,6 +249,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_siliconflow,
                 self.is_zhipuai,
                 self.is_aiml,
+                self.is_azure_openai,
             ]
         )
 
@@ -315,6 +317,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
         }
 
     @property
@@ -683,6 +686,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
@@ -886,6 +890,7 @@ class ModelPlatformType(Enum):
     MOONSHOT = "moonshot"
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
+    VOLCANO = "volcano"
 
     @property
     def is_openai(self) -> bool:
@@ -1007,6 +1012,11 @@ class ModelPlatformType(Enum):
     def is_aiml(self) -> bool:
         r"""Returns whether this platform is AIML."""
         return self is ModelPlatformType.AIML
+
+    @property
+    def is_volcano(self) -> bool:
+        r"""Returns whether this platform is volcano."""
+        return self is ModelPlatformType.VOLCANO
 
 
 class AudioModelType(Enum):

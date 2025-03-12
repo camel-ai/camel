@@ -12,8 +12,9 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import shlex
+import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List
@@ -43,12 +44,14 @@ class SubprocessInterpreter(BaseInterpreter):
             the executed code. (default: :obj:`False`)
         print_stderr (bool, optional): If True, print the standard error of the
             executed code. (default: :obj:`True`)
+        execution_timeout (int, optional): Maximum time in seconds to wait for
+            code execution to complete. (default: :obj:`60`)
     """
 
-    _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
-        "python": "python {file_name}",
-        "bash": "bash {file_name}",
-        "r": "Rscript {file_name}",
+    _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, Dict[str, str]]] = {
+        "python": {"posix": "python {file_name}", "nt": "python {file_name}"},
+        "bash": {"posix": "bash {file_name}", "nt": "bash {file_name}"},
+        "r": {"posix": "Rscript {file_name}", "nt": "Rscript {file_name}"},
     }
 
     _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
@@ -74,10 +77,12 @@ class SubprocessInterpreter(BaseInterpreter):
         require_confirm: bool = True,
         print_stdout: bool = False,
         print_stderr: bool = True,
+        execution_timeout: int = 60,
     ) -> None:
         self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
+        self.execution_timeout = execution_timeout
 
     def run_file(
         self,
@@ -94,13 +99,9 @@ class SubprocessInterpreter(BaseInterpreter):
         Returns:
             str: A string containing the captured stdout and stderr of the
                 executed code.
-
-        Raises:
-            RuntimeError: If the provided file path does not point to a file.
-            InterpreterError: If the code type provided is not supported.
         """
         if not file.is_file():
-            raise RuntimeError(f"{file} is not a file.")
+            return f"{file} is not a file."
         code_type = self._check_code_type(code_type)
         if self._CODE_TYPE_MAPPING[code_type] == "python":
             # For Python code, use ast to analyze and modify the code
@@ -108,7 +109,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
             import astor
 
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 source = f.read()
 
             # Parse the source code
@@ -158,34 +159,88 @@ class SubprocessInterpreter(BaseInterpreter):
                     modified_source = astor.to_source(tree)
                     # Create a temporary file with the modified source
                     temp_file = self._create_temp_file(modified_source, "py")
-                    cmd = shlex.split(f"python {temp_file!s}")
-            except SyntaxError:
-                # If parsing fails, run the original file
-                cmd = shlex.split(
-                    self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                        file_name=str(file)
+                    cmd = ["python", str(temp_file)]
+            except (SyntaxError, TypeError, ValueError) as e:
+                logger.warning(f"Failed to parse Python code with AST: {e}")
+                platform_type = 'posix' if os.name != 'nt' else 'nt'
+                cmd_template = self._CODE_EXECUTE_CMD_MAPPING[code_type][
+                    platform_type
+                ]
+                base_cmd = cmd_template.split()[0]
+
+                # Check if command is available
+                if not self._is_command_available(base_cmd):
+                    raise InterpreterError(
+                        f"Command '{base_cmd}' not found. Please ensure it "
+                        f"is installed and available in your PATH."
                     )
-                )
+
+                cmd = [base_cmd, str(file)]
         else:
             # For non-Python code, use standard execution
-            cmd = shlex.split(
-                self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                    file_name=str(file)
-                )
-            )
+            platform_type = 'posix' if os.name != 'nt' else 'nt'
+            cmd_template = self._CODE_EXECUTE_CMD_MAPPING[code_type][
+                platform_type
+            ]
+            base_cmd = cmd_template.split()[0]  # Get 'python', 'bash', etc.
 
-        proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        stdout, stderr = proc.communicate()
-        return_code = proc.returncode
+            # Check if command is available
+            if not self._is_command_available(base_cmd):
+                raise InterpreterError(
+                    f"Command '{base_cmd}' not found. Please ensure it "
+                    f"is installed and available in your PATH."
+                )
+
+            cmd = [base_cmd, str(file)]
+
+        # Get current Python executable's environment
+        env = os.environ.copy()
+
+        # On Windows, ensure we use the correct Python executable path
+        if os.name == 'nt':
+            python_path = os.path.dirname(sys.executable)
+            if 'PATH' in env:
+                env['PATH'] = python_path + os.pathsep + env['PATH']
+            else:
+                env['PATH'] = python_path
+
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                shell=False,  # Never use shell=True for security
+            )
+            # Add timeout to prevent hanging processes
+            stdout, stderr = proc.communicate(timeout=self.execution_timeout)
+            return_code = proc.returncode
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+            return_code = proc.returncode
+            timeout_msg = (
+                f"Process timed out after {self.execution_timeout} seconds "
+                f"and was terminated."
+            )
+            stderr = f"{stderr}\n{timeout_msg}"
 
         # Clean up temporary file if it was created
-        if (
-            self._CODE_TYPE_MAPPING[code_type] == "python"
-            and 'temp_file' in locals()
-        ):
-            temp_file.unlink()
+        temp_file_to_clean = locals().get('temp_file')
+        if temp_file_to_clean is not None:
+            try:
+                if temp_file_to_clean.exists():
+                    try:
+                        temp_file_to_clean.unlink()
+                    except PermissionError:
+                        # On Windows, files might be locked
+                        logger.warning(
+                            f"Could not delete temp file "
+                            f"{temp_file_to_clean} (may be locked)"
+                        )
+            except Exception as e:
+                logger.warning(f"Failed to cleanup temporary file: {e}")
 
         if self.print_stdout and stdout:
             print("======stdout======")
@@ -240,7 +295,7 @@ class SubprocessInterpreter(BaseInterpreter):
                 "computer: {code}"
             )
             while True:
-                choice = input("Running code? [Y/n]:").lower()
+                choice = input("Running code? [Y/n]:").lower().strip()
                 if choice in ["y", "yes", "ye", ""]:
                     break
                 elif choice in ["no", "n"]:
@@ -249,22 +304,72 @@ class SubprocessInterpreter(BaseInterpreter):
                         "This choice stops the current operation and any "
                         "further code execution."
                     )
-        temp_file_path = self._create_temp_file(
-            code=code, extension=self._CODE_EXTENSION_MAPPING[code_type]
-        )
+                else:
+                    print("Please enter 'y' or 'n'.")
 
-        result = self.run_file(temp_file_path, code_type)
+        temp_file_path = None
+        temp_dir = None
+        try:
+            temp_file_path = self._create_temp_file(
+                code=code, extension=self._CODE_EXTENSION_MAPPING[code_type]
+            )
+            temp_dir = temp_file_path.parent
+            return self.run_file(temp_file_path, code_type)
+        finally:
+            # Clean up temp file and directory
+            try:
+                if temp_file_path and temp_file_path.exists():
+                    try:
+                        temp_file_path.unlink()
+                    except PermissionError:
+                        # On Windows, files might be locked
+                        logger.warning(
+                            f"Could not delete temp file {temp_file_path}"
+                        )
 
-        temp_file_path.unlink()
-        return result
+                if temp_dir and temp_dir.exists():
+                    try:
+                        import shutil
+
+                        shutil.rmtree(temp_dir, ignore_errors=True)
+                    except Exception as e:
+                        logger.warning(f"Could not delete temp directory: {e}")
+            except Exception as e:
+                logger.warning(f"Error during cleanup: {e}")
 
     def _create_temp_file(self, code: str, extension: str) -> Path:
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=f".{extension}"
-        ) as f:
-            f.write(code)
-            name = f.name
-        return Path(name)
+        r"""Creates a temporary file with the given code and extension.
+
+        Args:
+            code (str): The code to write to the temporary file.
+            extension (str): The file extension to use.
+
+        Returns:
+            Path: The path to the created temporary file.
+        """
+        try:
+            # Create a temporary directory first to ensure we have write
+            # permissions
+            temp_dir = tempfile.mkdtemp()
+            # Create file path with appropriate extension
+            file_path = Path(temp_dir) / f"temp_code.{extension}"
+
+            # Write code to file with appropriate encoding
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(code)
+
+            return file_path
+        except Exception as e:
+            # Clean up temp directory if creation failed
+            if 'temp_dir' in locals():
+                try:
+                    import shutil
+
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                except Exception:
+                    pass
+            logger.error(f"Failed to create temporary file: {e}")
+            raise
 
     def _check_code_type(self, code_type: str) -> str:
         if code_type not in self._CODE_TYPE_MAPPING:
@@ -284,3 +389,39 @@ class SubprocessInterpreter(BaseInterpreter):
         raise RuntimeError(
             "SubprocessInterpreter doesn't support " "`action_space`."
         )
+
+    def _is_command_available(self, command: str) -> bool:
+        r"""Check if a command is available in the system PATH.
+
+        Args:
+            command (str): The command to check.
+
+        Returns:
+            bool: True if the command is available, False otherwise.
+        """
+        if os.name == 'nt':  # Windows
+            # On Windows, use where.exe to find the command
+            try:
+                with open(os.devnull, 'w') as devnull:
+                    subprocess.check_call(
+                        ['where', command],
+                        stdout=devnull,
+                        stderr=devnull,
+                        shell=False,
+                    )
+                return True
+            except subprocess.CalledProcessError:
+                return False
+        else:  # Unix-like systems
+            # On Unix-like systems, use which to find the command
+            try:
+                with open(os.devnull, 'w') as devnull:
+                    subprocess.check_call(
+                        ['which', command],
+                        stdout=devnull,
+                        stderr=devnull,
+                        shell=False,
+                    )
+                return True
+            except subprocess.CalledProcessError:
+                return False

@@ -32,6 +32,7 @@ from torch.utils.data import Dataset
 from camel.agents import ChatAgent
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
+from camel.verifiers.models import VerifierInput
 
 logger = get_logger(__name__)
 
@@ -88,8 +89,11 @@ class DataPoint(BaseModel):
 
 
 class StaticDataset(Dataset):
-    r"""A dataset containing validated seed examples for data generation.
+    r"""A static dataset containing a list of datapoints.
     Ensures that all items adhere to the DataPoint schema.
+    This dataset complies with the PyTorch dataset
+    standard and should be used when its size is fixed at
+    runtime.
 
     This class can initialize from Hugging Face Datasets,
     PyTorch Datasets, JSON file paths, or lists of dictionaries,
@@ -99,23 +103,22 @@ class StaticDataset(Dataset):
     def __init__(
         self,
         data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
-        cache_dir: Optional[str] = None,
-        seed: Optional[int] = None,
+        seed: int = 42,
         min_samples: int = 1,
         strict: bool = False,
         **kwargs,
     ):
-        r"""Initialize the seed dataset and validate integrity.
+        r"""Initialize the static dataset and validate integrity.
 
         Args:
-            data (Union[HFDataset, Dataset, str, List[Dict[str, Any]]]):
+            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
             Input data, which can be:
                 - A Hugging Face Dataset (HFDataset)
                 - A PyTorch Dataset (torch.utils.data.Dataset)
                 - A Path object representing the path to a JSON file
                 - A list of dictionaries with DataPoint-compatible fields
-            seed (Optional[int]): Seed for reproducibility.
-                (default: :obj:`1`)
+            seed (int): Seed for reproducibility.
+                (default: :obj:`42`)
             min_samples (int): Minimum number of samples required.
                 (default: :obj:`1`)
             strict (bool): Whether to raise an error on invalid datapoints
@@ -131,22 +134,20 @@ class StaticDataset(Dataset):
         """
 
         # Store all parameters in metadata dict for compatibility
-        self._cache_dir = str(cache_dir) if cache_dir is not None else None
         self._metadata = {
-            'cache_dir': self._cache_dir,
             **kwargs,
         }
         self._rng = random.Random(seed)
         self._strict = strict
 
-        # Type checking and conversion into list of dicts to have a
-        # consistent internal format. Since Seed Dataset should be
-        # small, we can load it entirely into memmory
+        # Type checking and conversion into list of dicts to prepare validation
+        # and conversion into list of Datapoints. Since Static Dataset should
+        # be small, we can load it entirely into memory
 
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
 
-        if self._length < 0 or self._length < min_samples:
+        if self._length < min_samples:
             raise ValueError(
                 "The dataset does not contain enough samples. "
                 f"Need {max(0, min_samples)}, got {self._length}"
@@ -295,8 +296,8 @@ class StaticDataset(Dataset):
                     f"Item at index {i} is not a dict: "
                     f"got {type(item).__name__}"
                 )
-            raw_data.append(item)
-        return [dict(data[i]) for i in range(len(data))]
+            raw_data.append(dict(item))
+        return raw_data
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
         if not data.exists():
@@ -351,11 +352,10 @@ class GenerativeDataset(Dataset):
         r"""Initialize the generative dataset.
 
         Args:
-            seed_dataset (SeedDataset): Validated dataset to use for examples.
+            seed_dataset (StaticDataset): Validated static dataset to
+            use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
-            cache_dir (Optional[str]): Directory to cache dataset files.
-                (default: :obj:`None`)
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional dataset parameters.
         """
@@ -427,56 +427,59 @@ class GenerativeDataset(Dataset):
                 examples = [self.seed_dataset.sample() for _ in range(3)]
                 prompt = self._construct_prompt(examples)
 
-                # Get agent response
-                agent_output = (
-                    self.agent.step(prompt, response_format=DataPoint)
-                    .msgs[0]
-                    .parsed
-                )
-
-                if not isinstance(agent_output, dict):
-                    raise TypeError("Agent output must be a dictionary")
-                if (
-                    'question' not in agent_output
-                    or 'rationale' not in agent_output
-                ):
-                    raise KeyError(
-                        "Agent output missing required keys: "
-                        "'question' or 'rationale'"
+                try:
+                    agent_output = (
+                        self.agent.step(prompt, response_format=DataPoint)
+                        .msgs[0]
+                        .parsed
                     )
-
-                rationale = agent_output['rationale']
-
-                # Verify the generated content
-                verifier_response = await self.verifier.verify(rationale)
-                if not hasattr(verifier_response, 'content'):
-                    raise AttributeError(
-                        "Verifier response missing 'content' attribute"
-                    )
-
-                if not verifier_response.result:
+                    if not isinstance(agent_output, dict):
+                        raise TypeError("Agent output must be a dictionary")
+                    if (
+                        "question" not in agent_output
+                        or "rationale" not in agent_output
+                    ):
+                        raise KeyError(
+                            "Missing 'question' or 'rationale' in agent output"
+                        )
+                except (TypeError, KeyError) as e:
+                    logger.warning(f"Agent output issue: {e}, retrying...")
                     continue
 
-                final_answer = verifier_response.result
+                rationale = agent_output["rationale"]
 
-                # Create and validate the new datapoint
-                new_datapoint = {
-                    'question': agent_output['question'],
-                    'rationale': rationale,
-                    'final_answer': final_answer,
-                    'metadata': {'created': datetime.now()},
-                }
+                try:
+                    verifier_response = await self.verifier.verify(
+                        VerifierInput(llm_response=rationale)
+                    )
+                    if not verifier_response or not verifier_response.result:
+                        raise ValueError(
+                            "Verifier unsuccessful, "
+                            f"response: {verifier_response}"
+                        )
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Verifier issue: {e}, retrying...")
+                    continue
 
-                datapoint = DataPoint(**new_datapoint)
-                valid_data_points.append(datapoint)
+                try:
+                    new_datapoint = DataPoint(
+                        question=agent_output["question"],
+                        rationale=rationale,
+                        final_answer=verifier_response.result,
+                        metadata={"created": datetime.now().isoformat()},
+                    )
+                except ValidationError as e:
+                    logger.warning(
+                        f"Datapoint validation failed: {e}, retrying..."
+                    )
+                    continue
 
-            except (TypeError, KeyError, AttributeError, ValidationError) as e:
-                logger.warning(
-                    f"Error encountered during generation: {e}, retrying..."
-                )
+                valid_data_points.append(new_datapoint)
+
+            except Exception as e:
+                logger.warning(f"Unexpected error: {e}, retrying...")
 
         self._data.extend(valid_data_points)
-
         return valid_data_points
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:

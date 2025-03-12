@@ -37,9 +37,11 @@ from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
 from .sglang_model import SGLangModel
+from .siliconflow_model import SiliconFlowModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
+from .volcano_model import VolcanoModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -76,4 +78,6 @@ __all__ = [
     'MoonshotModel',
     'AIMLModel',
     'BaseAudioModel',
+    'SiliconFlowModel',
+    'VolcanoModel',
 ]
