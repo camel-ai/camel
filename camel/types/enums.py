@@ -249,6 +249,7 @@ class ModelType(UnifiedModelType, Enum):
                 self.is_siliconflow,
                 self.is_zhipuai,
                 self.is_aiml,
+                self.is_azure_openai,
             ]
         )
 

@@ -731,8 +731,8 @@ class SearchToolkit(BaseToolkit):
 
         Returns:
             Dict[str, Any]: A dictionary containing search results, including
-            web pages, images, and videos if available. The structure follows
-            the Bocha AI search API response format.
+                web pages, images, and videos if available. The structure
+                follows the Bocha AI search API response format.
         """
         import json
 

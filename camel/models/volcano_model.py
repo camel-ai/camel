@@ -13,14 +13,11 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 import os
-from typing import Any, Dict, List, Optional, Type, Union
-
-from pydantic import BaseModel
+from typing import Any, Dict, Optional, Union
 
 from camel.configs import OPENAI_API_PARAMS
-from camel.messages import OpenAIMessage
 from camel.models.openai_compatible_model import OpenAICompatibleModel
-from camel.types import ChatCompletion, ModelType
+from camel.types import ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -61,14 +58,14 @@ class VolcanoModel(OpenAICompatibleModel):
     ) -> None:
         if model_config_dict is None:
             model_config_dict = {}
-        
+
         api_key = api_key or os.environ.get("VOLCANO_API_KEY")
         url = (
             url
             or os.environ.get("VOLCANO_API_BASE_URL")
             or "https://ark.cn-beijing.volces.com/api/v3"
         )
-        
+
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
@@ -100,4 +97,4 @@ class VolcanoModel(OpenAICompatibleModel):
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
                     "input into Volcano model backend."
-                ) 
+                )

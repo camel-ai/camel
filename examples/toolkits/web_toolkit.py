@@ -16,7 +16,7 @@
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.toolkits import WebToolkit
+from camel.toolkits import BrowserToolkit
 from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
@@ -43,7 +43,7 @@ planning_agent_model = ModelFactory.create(
     ).as_dict(),
 )
 
-web_toolkit = WebToolkit(
+web_toolkit = BrowserToolkit(
     headless=False,
     web_agent_model=web_agent_model,
     planning_agent_model=planning_agent_model,
