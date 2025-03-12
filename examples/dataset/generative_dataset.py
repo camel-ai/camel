@@ -15,9 +15,9 @@
 import asyncio
 from pathlib import Path
 
-from camel.verifiers import PythonVerifier
-from camel.datasets import StaticDataset, GenerativeDataset
+from camel.datasets import GenerativeDataset, StaticDataset
 from camel.logger import get_logger
+from camel.verifiers import PythonVerifier
 
 logger = get_logger(__name__)
 
@@ -39,16 +39,21 @@ seed_data = [
 class MockChatAgent:
     def step(self, prompt, response_format):
         """Simulates LLM response with executable Python rationale."""
+
         class MockResponse:
             msgs = [
-                type("MockMessage", (), {
-                    "parsed": {
-                        "question": "What is 3 * 3?",
-                        "rationale": "result = 3 * 3\nprint(result)",
-                    }
-                })
+                type(
+                    "MockMessage",
+                    (),
+                    {
+                        "parsed": {
+                            "question": "What is 3 * 3?",
+                            "rationale": "result = 3 * 3\nprint(result)",
+                        }
+                    },
+                )
             ]
-        
+
         return MockResponse()
 
 
@@ -60,7 +65,9 @@ async def main():
 
     agent = MockChatAgent()
 
-    generative_dataset = GenerativeDataset(seed_dataset=seed_dataset, verifier=verifier, agent=agent)
+    generative_dataset = GenerativeDataset(
+        seed_dataset=seed_dataset, verifier=verifier, agent=agent
+    )
 
     new_data = await generative_dataset.generate_new(n=2)
 
