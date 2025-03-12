@@ -24,7 +24,8 @@ from camel.types import ModelPlatformType, ModelType
 
 
 class OpenAIAgentToolkit(BaseToolkit):
-    r"""A toolkit for OpenAI's agent tools including web search.
+    r"""A toolkit for OpenAI's agent tools including web search and
+        file search.
 
     Args:
         model (Optional[BaseModelBackend], optional): The model to use for
@@ -121,6 +122,40 @@ class OpenAIAgentToolkit(BaseToolkit):
         except Exception as e:
             return f"Web search failed: {e!s}"
 
+    def file_search(
+        self,
+        query: str,
+        vector_store_id: str,
+    ) -> str:
+        r"""Search through files using OpenAI's file search tool.
+
+        Args:
+            query (str): The search query.
+            vector_store_id (str): The vector store ID to search in.
+
+        Returns:
+            str: The search result.
+        """
+        if not vector_store_id:
+            return "No vector store ID provided."
+
+        tool = {
+            "type": "file_search",
+            "vector_store_ids": [vector_store_id],
+        }
+
+        try:
+            response = self._call_responses_api(
+                query=query,
+                tools=[tool],
+                model="gpt-4o-mini",
+            )
+
+            return self._extract_output_text(response)
+
+        except Exception as e:
+            return f"File search failed: {e!s}"
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of available tools.
 
@@ -129,4 +164,5 @@ class OpenAIAgentToolkit(BaseToolkit):
         """
         return [
             FunctionTool(self.web_search),
+            FunctionTool(self.file_search),
         ]
