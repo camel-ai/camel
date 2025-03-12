@@ -102,8 +102,7 @@ class StaticDataset(Dataset):
     def __init__(
         self,
         data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]],
-        cache_dir: Optional[str] = None,
-        seed: Optional[int] = None,
+        seed: int = 42,
         min_samples: int = 1,
         strict: bool = False,
         **kwargs,
@@ -111,14 +110,14 @@ class StaticDataset(Dataset):
         r"""Initialize the static dataset and validate integrity.
 
         Args:
-            data (Union[HFDataset, Dataset, str, List[Dict[str, Any]]]):
+            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
             Input data, which can be:
                 - A Hugging Face Dataset (HFDataset)
                 - A PyTorch Dataset (torch.utils.data.Dataset)
                 - A Path object representing the path to a JSON file
                 - A list of dictionaries with DataPoint-compatible fields
-            seed (Optional[int]): Seed for reproducibility.
-                (default: :obj:`1`)
+            seed (int): Seed for reproducibility.
+                (default: :obj:`42`)
             min_samples (int): Minimum number of samples required.
                 (default: :obj:`1`)
             strict (bool): Whether to raise an error on invalid datapoints
@@ -134,9 +133,7 @@ class StaticDataset(Dataset):
         """
 
         # Store all parameters in metadata dict for compatibility
-        self._cache_dir = str(cache_dir) if cache_dir is not None else None
         self._metadata = {
-            'cache_dir': self._cache_dir,
             **kwargs,
         }
         self._rng = random.Random(seed)
@@ -144,12 +141,12 @@ class StaticDataset(Dataset):
 
         # Type checking and conversion into list of dicts to prepare validation
         # and conversion into list of Datapoints. Since Static Dataset should
-        # be small, we can load it entirely into memmory
+        # be small, we can load it entirely into memory
 
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
 
-        if self._length < 0 or self._length < min_samples:
+        self._length < min_samples:
             raise ValueError(
                 "The dataset does not contain enough samples. "
                 f"Need {max(0, min_samples)}, got {self._length}"
@@ -298,8 +295,8 @@ class StaticDataset(Dataset):
                     f"Item at index {i} is not a dict: "
                     f"got {type(item).__name__}"
                 )
-            raw_data.append(item)
-        return [dict(data[i]) for i in range(len(data))]
+            raw_data.append(dict(item))
+        return raw_data
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
         if not data.exists():
@@ -358,8 +355,6 @@ class GenerativeDataset(Dataset):
             use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
-            cache_dir (Optional[str]): Directory to cache dataset files.
-                (default: :obj:`None`)
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional dataset parameters.
         """
