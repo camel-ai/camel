@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.datasets.base import BaseDataset, GenerativeDataset
+from camel.datasets.base import GenerativeDataset, StaticDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
@@ -139,7 +139,7 @@ class BaseEnvironment(ABC):
 
     def __init__(
         self,
-        dataset: BaseDataset,
+        dataset: StaticDataset | GenerativeDataset,
         verifier: BaseVerifier,
         extractor: BaseExtractor,
         max_steps: Optional[int] = None,
@@ -151,7 +151,8 @@ class BaseEnvironment(ABC):
         r"""Initialize the environment.
 
         Args:
-            dataset (BaseDataset): Dataset to sample questions from.
+            dataset (StaticDataset or GenerativeDataset):
+                Dataset to sample questions from.
             verifier (BaseVerifier): Verifier to check responses.
             extractor (BaseExtractor): Extractor to process LLM responses.
             max_steps (Optional[int]): Maximum steps per episode. (default:
