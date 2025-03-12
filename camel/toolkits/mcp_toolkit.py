@@ -239,6 +239,27 @@ class MCPToolkit(BaseToolkit):
 
         return dynamic_function
 
+    def _build_tool_schema(self, mcp_tool: "Tool") -> Dict[str, Any]:
+        input_schema = mcp_tool.inputSchema
+        properties = input_schema.get("properties", {})
+        required = input_schema.get("required", [])
+
+        parameters = {
+            "type": "object",
+            "properties": properties,
+            "required": required,
+        }
+
+        return {
+            "type": "function",
+            "function": {
+                "name": mcp_tool.name,
+                "description": mcp_tool.description
+                or "No description provided.",
+                "parameters": parameters,
+            },
+        }
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit. Each function is dynamically generated
@@ -249,7 +270,10 @@ class MCPToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            FunctionTool(self.generate_function_from_mcp_tool(mcp_tool))
+            FunctionTool(
+                self.generate_function_from_mcp_tool(mcp_tool),
+                openai_tool_schema=self._build_tool_schema(mcp_tool),
+            )
             for mcp_tool in self._mcp_tools
         ]
 
