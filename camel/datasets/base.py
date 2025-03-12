@@ -354,7 +354,8 @@ class GenerativeDataset(Dataset):
         r"""Initialize the generative dataset.
 
         Args:
-            seed_dataset (SeedDataset): Validated dataset to use for examples.
+            seed_dataset (StaticDataset): Validated static dataset to
+            use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
             cache_dir (Optional[str]): Directory to cache dataset files.
