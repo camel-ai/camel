@@ -57,6 +57,7 @@ class MCPToolkit(BaseToolkit):
 
     def __init__(
         self,
+        name: str,
         command_or_url: str,
         args: Optional[List[str]] = None,
         env: Optional[Dict[str, str]] = None,
@@ -67,6 +68,7 @@ class MCPToolkit(BaseToolkit):
 
         super().__init__(timeout=timeout)
 
+        self.name = name
         self.command_or_url = command_or_url
         self.args = args or []
         self.env = env or {}
@@ -416,3 +418,34 @@ class MCPToolkitManager:
         for tk in self.toolkits:
             all_tools.extend(tk.get_tools())
         return all_tools
+
+    def add_toolkit(self, toolkit: MCPToolkit) -> None:
+        r"""Dynamically adds an MCPToolkit instance to the manager.
+
+        Args:
+            toolkit (MCPToolkit): The toolkit instance to be added.
+        """
+        self.toolkits.append(toolkit)
+
+    def remove_toolkit(self, name: str) -> None:
+        r"""Removes an MCPToolkit instance by its name.
+
+        Args:
+            name (str): The name of the toolkit to remove.
+
+        Raises:
+            ValueError: If the toolkit with the given name is not found.
+        """
+        for tk in self.toolkits:
+            if tk.name == name:
+                self.toolkits.remove(tk)
+                return
+        raise ValueError(f"No toolkit found with name '{name}'")
+
+    def __repr__(self) -> str:
+        r"""Returns a string representation of the MCPToolkitManager.
+
+        Returns:
+            str: A string representation of the MCPToolkitManager.
+        """
+        return f"MCPToolkitManager({[tk.name for tk in self.toolkits]})"
