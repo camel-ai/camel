@@ -108,9 +108,9 @@ def sample_data():
         },
     ]
 
-def test_seed_dataset_init_from_hf_dataset():
+def test_static_dataset_init_from_hf_dataset():
     r"""
-    Test SeedDataset initialization from a
+    Test StaticDataset initialization from a
     Hugging Face Dataset with various scenarios.
     """
 
@@ -129,7 +129,7 @@ def test_seed_dataset_init_from_hf_dataset():
     ]
     hf_valid = HFDataset.from_list(valid_data)
 
-    dataset = SeedDataset(data=hf_valid, min_samples=1, strict=True)
+    dataset = StaticDataset(data=hf_valid, min_samples=1, strict=True)
 
     # Verify the dataset initialized correctly
     assert len(dataset) == 2, "Dataset should contain 2 items."
@@ -170,10 +170,10 @@ def test_seed_dataset_init_from_hf_dataset():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=hf_invalid_missing, min_samples=1, strict=True)
+        StaticDataset(data=hf_invalid_missing, min_samples=1, strict=True)
 
     # Sub-test 2b: Missing required field with strict=False
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=hf_invalid_missing, min_samples=0, strict=False
     )
     assert (
@@ -186,10 +186,10 @@ def test_seed_dataset_init_from_hf_dataset():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=hf_empty, min_samples=1, strict=True)
+        StaticDataset(data=hf_empty, min_samples=1, strict=True)
 
     # Sub-test 2d: Empty dataset with min_samples=0
-    dataset_empty = SeedDataset(data=hf_empty, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(data=hf_empty, min_samples=0, strict=True)
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -206,7 +206,7 @@ def test_seed_dataset_init_from_hf_dataset():
         }
     ]
     hf_optional = HFDataset.from_list(data_with_optional)
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=hf_optional, min_samples=1, strict=True
     )
 
@@ -236,9 +236,9 @@ def test_seed_dataset_init_from_hf_dataset():
     ), "Extra field should not be present in DataPoint."
 
 
-def test_seed_dataset_init_from_pytorch_dataset():
+def test_static_dataset_init_from_pytorch_dataset():
     r"""
-    Test SeedDataset initialization from a
+    Test StaticDataset initialization from a
     PyTorch Dataset with various scenarios.
     """
 
@@ -266,7 +266,7 @@ def test_seed_dataset_init_from_pytorch_dataset():
         },
     ]
     pytorch_valid = MockPyTorchDataset(valid_data)
-    dataset = SeedDataset(data=pytorch_valid, min_samples=1, strict=True)
+    dataset = StaticDataset(data=pytorch_valid, min_samples=1, strict=True)
 
     assert len(dataset) == 2, "Dataset should contain 2 items."
     assert isinstance(
@@ -309,10 +309,10 @@ def test_seed_dataset_init_from_pytorch_dataset():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
+        StaticDataset(data=pytorch_invalid_missing, min_samples=1, strict=True)
 
     # Sub-test 2b: Missing required field with strict=False
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=pytorch_invalid_missing, min_samples=0, strict=False
     )
     assert (
@@ -325,10 +325,10 @@ def test_seed_dataset_init_from_pytorch_dataset():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=pytorch_empty, min_samples=1, strict=True)
+        StaticDataset(data=pytorch_empty, min_samples=1, strict=True)
 
     # Sub-test 2d: Empty dataset with min_samples=0
-    dataset_empty = SeedDataset(data=pytorch_empty, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(data=pytorch_empty, min_samples=0, strict=True)
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -345,7 +345,7 @@ def test_seed_dataset_init_from_pytorch_dataset():
         }
     ]
     pytorch_optional = MockPyTorchDataset(data_with_optional)
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=pytorch_optional, min_samples=1, strict=True
     )
 
@@ -385,7 +385,7 @@ def test_seed_dataset_init_from_pytorch_dataset():
             }
 
     with pytest.raises(TypeError) as excinfo:
-        SeedDataset(NoLenDataset(), min_samples=1, strict=True)
+        StaticDataset(NoLenDataset(), min_samples=1, strict=True)
     assert "does not implement `__len__()`." in str(excinfo.value)
 
     # Sub-test 4b: Dataset with non-dict items
@@ -399,12 +399,12 @@ def test_seed_dataset_init_from_pytorch_dataset():
     with pytest.raises(
         TypeError, match="Item at index 0 is not a dict: got str"
     ):
-        SeedDataset(data=NonDictDataset(), min_samples=1, strict=True)
+        StaticDataset(data=NonDictDataset(), min_samples=1, strict=True)
 
 
-def test_seed_dataset_init_from_json_file():
+def test_static_dataset_init_from_json_file():
     r"""
-    Test SeedDataset initialization from a JSON file with various scenarios.
+    Test StaticDataset initialization from a JSON file with various scenarios.
     """
 
     # **Test 1: Initialization with a valid JSON file (only required fields)**
@@ -426,7 +426,7 @@ def test_seed_dataset_init_from_json_file():
         json.dump(valid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    dataset = SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+    dataset = StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
     assert isinstance(
         dataset[0], DataPoint
@@ -464,7 +464,7 @@ def test_seed_dataset_init_from_json_file():
         tmp_file_path = Path(tmp_file.name)
 
     with pytest.raises(ValueError, match="Invalid JSON in file"):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # **Test 3: Initialization with JSON file containing non-list data**
     with tempfile.NamedTemporaryFile(
@@ -479,7 +479,7 @@ def test_seed_dataset_init_from_json_file():
     with pytest.raises(
         ValueError, match="JSON file must contain a list of dictionaries"
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # **Test 4: Initialization with JSON file containing non-dict items**
     with tempfile.NamedTemporaryFile(
@@ -495,12 +495,12 @@ def test_seed_dataset_init_from_json_file():
     with pytest.raises(
         ValueError, match="Expected a dictionary at index 1, got str"
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # **Test 5: Initialization with a missing JSON file**
     missing_file_path = Path("non_existent_file.json")
     with pytest.raises(FileNotFoundError, match="JSON file not found:"):
-        SeedDataset(data=missing_file_path, min_samples=1, strict=True)
+        StaticDataset(data=missing_file_path, min_samples=1, strict=True)
 
     # **Test 6: Initialization with an empty JSON file**
     with tempfile.NamedTemporaryFile(
@@ -514,10 +514,10 @@ def test_seed_dataset_init_from_json_file():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # Sub-test 6b: Empty dataset with min_samples=0
-    dataset_empty = SeedDataset(data=tmp_file_path, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(data=tmp_file_path, min_samples=0, strict=True)
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -539,7 +539,7 @@ def test_seed_dataset_init_from_json_file():
         json.dump(data_with_optional, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=tmp_file_path, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
@@ -585,7 +585,7 @@ def test_seed_dataset_init_from_json_file():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=tmp_file_path, min_samples=1, strict=True)
+        StaticDataset(data=tmp_file_path, min_samples=1, strict=True)
 
     # Sub-test 8b: Invalid data with strict=False
     with tempfile.NamedTemporaryFile(
@@ -600,7 +600,7 @@ def test_seed_dataset_init_from_json_file():
         json.dump(invalid_data, tmp_file)
         tmp_file_path = Path(tmp_file.name)
 
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=tmp_file_path, min_samples=0, strict=False
     )
     assert (
@@ -608,9 +608,9 @@ def test_seed_dataset_init_from_json_file():
     ), "Invalid items should be filtered out in non-strict mode."
 
 
-def test_seed_dataset_init_from_list():
+def test_static_dataset_init_from_list():
     r"""
-    Test SeedDataset initialization from a list of
+    Test StaticDataset initialization from a list of
     dictionaries with various scenarios.
     """
 
@@ -627,7 +627,7 @@ def test_seed_dataset_init_from_list():
             "final_answer": "yes",
         },
     ]
-    dataset = SeedDataset(data=valid_data, min_samples=1, strict=True)
+    dataset = StaticDataset(data=valid_data, min_samples=1, strict=True)
     assert len(dataset) == 2, "Dataset should contain 2 items."
     assert isinstance(
         dataset[0], DataPoint
@@ -663,7 +663,7 @@ def test_seed_dataset_init_from_list():
     with pytest.raises(
         ValueError, match="Expected a dictionary at index 1, got str"
     ):
-        SeedDataset(data=invalid_list_data, min_samples=1, strict=True)
+        StaticDataset(data=invalid_list_data, min_samples=1, strict=True)
 
     # **Test 3: Initialization with an empty list**
     empty_data = []
@@ -672,9 +672,9 @@ def test_seed_dataset_init_from_list():
         ValueError,
         match="The dataset does not contain enough samples. Need 1, got 0",
     ):
-        SeedDataset(data=empty_data, min_samples=1, strict=True)
+        StaticDataset(data=empty_data, min_samples=1, strict=True)
     # Sub-test 3b: Empty list with min_samples=0
-    dataset_empty = SeedDataset(data=empty_data, min_samples=0, strict=True)
+    dataset_empty = StaticDataset(data=empty_data, min_samples=0, strict=True)
     assert (
         len(dataset_empty) == 0
     ), "Empty dataset should have zero length when min_samples=0."
@@ -692,9 +692,9 @@ def test_seed_dataset_init_from_list():
         match="Sample at index 0 has invalid 'rationale': "
         "expected str, got <class 'NoneType'>",
     ):
-        SeedDataset(data=invalid_data_missing, min_samples=1, strict=True)
+        StaticDataset(data=invalid_data_missing, min_samples=1, strict=True)
     # Sub-test 4b: Missing required field with strict=False
-    dataset_non_strict = SeedDataset(
+    dataset_non_strict = StaticDataset(
         data=invalid_data_missing, min_samples=0, strict=False
     )
     assert (
@@ -712,7 +712,7 @@ def test_seed_dataset_init_from_list():
             "extra_field": "this should be ignored",
         }
     ]
-    dataset_optional = SeedDataset(
+    dataset_optional = StaticDataset(
         data=data_with_optional, min_samples=1, strict=True
     )
     assert len(dataset_optional) == 1, "Dataset should contain 1 item."
@@ -751,7 +751,7 @@ def test_seed_dataset_init_from_list():
             "final_answer": "Invalid",
         },  # Missing rationale
     ]
-    dataset_mixed = SeedDataset(data=mixed_data, min_samples=1, strict=False)
+    dataset_mixed = StaticDataset(data=mixed_data, min_samples=1, strict=False)
     assert (
         len(dataset_mixed) == 1
     ), "Only valid items should be included in non-strict mode."
@@ -760,10 +760,10 @@ def test_seed_dataset_init_from_list():
     ), "Only the valid item should be present."
 
 
-def test_seed_dataset_methods():
+def test_static_dataset_methods():
     r"""
     Test the __len__, __getitem__, and sample methods
-    of SeedDataset with a mock dataset.
+    of StaticDataset with a mock dataset.
     """
     mock_data = [
         {
@@ -787,7 +787,7 @@ def test_seed_dataset_methods():
             "final_answer": "3",
         },
     ]
-    dataset = SeedDataset(data=mock_data, min_samples=1, strict=True)
+    dataset = StaticDataset(data=mock_data, min_samples=1, strict=True)
 
     assert len(dataset) == 4, "Dataset should have 4 items."
     assert (
@@ -829,7 +829,7 @@ def test_seed_dataset_methods():
     ), "Sampled item should be in the dataset."
 
     # Test __len__ and sample with empty dataset
-    empty_dataset = SeedDataset(data=[], min_samples=0, strict=True)
+    empty_dataset = StaticDataset(data=[], min_samples=0, strict=True)
     assert len(empty_dataset) == 0, "Empty dataset should have length 0."
     with pytest.raises(RuntimeError, match="Dataset is empty, cannot sample."):
         empty_dataset.sample()
@@ -1073,9 +1073,9 @@ def test_save_synthetic_dataset():
 @pytest.mark.asyncio
 async def test_generative_dataset():
     r"""Test GenerativeDataset with mocked components."""
-    mock_seed_dataset = MagicMock(spec=SeedDataset)
-    mock_seed_dataset.__len__.return_value = 5
-    mock_seed_dataset.__getitem__.side_effect = lambda i: DataPoint(
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
         question=f"Question {i}",
         rationale=f"Rationale {i}",
         final_answer=f"Answer {i}",
@@ -1099,7 +1099,7 @@ async def test_generative_dataset():
 
     # Create GenerativeDataset with mocks
     dataset = GenerativeDataset(
-        seed_dataset=mock_seed_dataset,
+        static_dataset=mock_static_dataset,
         verifier=mock_verifier,
         agent=mock_agent,
     )
