@@ -889,6 +889,7 @@ class ModelPlatformType(Enum):
     MOONSHOT = "moonshot"
     SILICONFLOW = "siliconflow"
     AIML = "aiml"
+    VOLCANO = "volcano"
 
     @property
     def is_openai(self) -> bool:
@@ -1010,6 +1011,11 @@ class ModelPlatformType(Enum):
     def is_aiml(self) -> bool:
         r"""Returns whether this platform is AIML."""
         return self is ModelPlatformType.AIML
+
+    @property
+    def is_volcano(self) -> bool:
+        r"""Returns whether this platform is volcano."""
+        return self is ModelPlatformType.VOLCANO
 
 
 class AudioModelType(Enum):
