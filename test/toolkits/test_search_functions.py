@@ -402,3 +402,65 @@ def test_search_linkup_error(search_toolkit):
             result = search_toolkit.search_linkup(query="test query")
 
         assert result == {"error": "An unexpected error occurred: Test error"}
+
+
+def test_search_bocha_success(search_toolkit):
+    """Test successful Bocha AI search with basic parameters."""
+    import json
+
+    mock_response = {
+        "code": 200,
+        "data": {
+            "_type": "SearchResponse",
+            "queryContext": {"originalQuery": "test_query"},
+            "webPages": {
+                "webSearchUrl": "",
+                "value": [],
+            },
+            "images": {},
+            "videos": {},
+        },
+    }
+    with patch('requests.post') as mock_post:
+        mock_post.return_value.json.return_value = mock_response
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.text = "OK"
+        mock_post.return_value.raise_for_status = lambda: None
+
+        with patch.dict(os.environ, {'BOCHA_API_KEY': 'test_key'}):
+            result = search_toolkit.search_bocha(
+                query="test query",
+            )
+
+    assert result == mock_response["data"]
+
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert kwargs['headers'] == {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer test_key",
+    }
+
+    assert kwargs['data'] == json.dumps(
+        {
+            "query": "test query",
+            "freshness": "noLimit",
+            "summary": False,
+            "count": 10,
+            "page": 1,
+        }
+    )
+
+
+def test_search_bocha_error(search_toolkit):
+    """Test error handling in Bocha AI search."""
+    with patch('requests.post') as mock_post:
+        mock_post.side_effect = requests.exceptions.RequestException(
+            "Connection error"
+        )
+
+        with patch.dict(os.environ, {'BOCHA_API_KEY': 'test_key'}):
+            result = search_toolkit.search_bocha(query="test query")
+
+    assert "error" in result
+    assert "Connection error" in result["error"]
