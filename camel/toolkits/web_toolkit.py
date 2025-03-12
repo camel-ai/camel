@@ -891,7 +891,6 @@ class BaseBrowser:
 
     def close(self):
         self.browser.close()
-        self.playwright.stop()
 
     # ruff: noqa: E501
     def show_interactive_elements(self):
