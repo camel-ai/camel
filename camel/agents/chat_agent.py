@@ -781,7 +781,13 @@ class ChatAgent(BaseAgent):
         if not response:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
-                "run succesfully."
+                "run successfully."
+            )
+
+        elif not response:
+            raise ModelProcessingError(
+                f"Unable to process messages: the only provided model "
+                f"did not run successfully. Error: {error_info}"
             )
 
         logger.info(
@@ -819,7 +825,13 @@ class ChatAgent(BaseAgent):
         if not response:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
-                "run succesfully."
+                "run successfully."
+            )
+            
+        elif not response:
+            raise ModelProcessingError(
+                f"Unable to process messages: the only provided model "
+                f"did not run successfully. Error: {error_info}"
             )
 
         logger.info(
