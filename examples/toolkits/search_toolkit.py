@@ -213,3 +213,33 @@ Goeppert-Mayer (1963) 3. Donna Strickland (2018) 4. (4th winner not mentioned
 in the provided data) 5. (5th winner not mentioned in the provided data). Less 
 than 5 women have won the Nobel Prize in Physics out of 225 total laureates.'}
 """
+
+search_bocha_response = SearchToolkit().search_bocha(
+    query="阿里巴巴2024年的esg报告",
+    freshness="noLimit",
+    summary=False,
+    count=10,
+)
+print(search_bocha_response)
+
+"""
+{"_type":"SearchResponse","queryContext":{"originalQuery":"阿里巴巴2024年的esg报
+告"},"webPages":{"webSearchUrl":"","totalEstimatedMatches":8912791,"value":[
+{"id":None,"name":"阿里巴巴发布2024年ESG报告持续推进减碳与数字化普惠","url":"ht
+tps://www.alibabagroup.com/document-1752073403914780672","displayUrl":"htt
+ps://www.alibabagroup.com/document-1752073403914780672","snippet":"阿里巴巴
+集团发布《2024财年环境、社会和治理(ESG)报告》(下称"报告"),详细分享过去一年在ESG各方面取
+得的进展。报告显示,阿里巴巴扎实推进减碳举措,全集团自身运营净碳排放和价值链碳...","siteName"
+:"www.alibabagroup.com","siteIcon":"https://th.bochaai.com/favicon?domain_url=
+https://www.alibabagroup.com/document-1752073403914780672","dateLastCrawled":
+"2024-07-22T00:00:00Z","cachedPageUrl":None,"language":None,"isFamilyFriendly"
+:None,"isNavigational":None},],"someResultsRemoved":true},"images":{"id":None,
+"readLink":None,"webSearchUrl":None,"value":[{"webSearchUrl":None,"name":None,
+"thumbnailUrl":"http://q7.itc.cn/q_70/images01/20240726/ee26d6fa8658472d8b4c5
+e7236b1640a.png","datePublished":None,"contentUrl":"http://q7.itc.cn/q_70/im
+ages01/20240726/ee26d6fa8658472d8b4c5e7236b1640a.png","hostPageUrl":"https://
+m.sohu.com/a/796245119_121713887/?pvid=000115_3w_a","contentSize":None,"enco
+dingFormat":None,"hostPageDisplayUrl":"https://m.sohu.com/a/796245119_121713887
+/?pvid=000115_3w_a","width":1285,"height":722,"thumbnail":None}],"isFamilyFrien
+dly":None},"videos":None}
+"""
