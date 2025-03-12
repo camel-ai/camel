@@ -78,7 +78,8 @@ usr_msg = "What is the temperature in Tokyo?"
 response = agent.step(input_message=usr_msg, response_format=None)
 
 print(response.msgs[0].content)
-'''
+"""
+===============================================================================
 The current temperature in Tokyo can be found on various weather websites. 
 Here are a couple of reliable sources where you can check the latest weather 
 conditions:
@@ -88,8 +89,8 @@ conditions:
 
 You can visit these links to get the most up-to-date temperature and weather 
 conditions in Tokyo.
-'''
-
+===============================================================================
+"""
 search_linkup_response = SearchToolkit().search_linkup(
     query="Can you tell me which women were awared the Physics Nobel Prize",
     depth="standard",
@@ -98,6 +99,7 @@ search_linkup_response = SearchToolkit().search_linkup(
 
 print(search_linkup_response)
 """
+===============================================================================
 {'results': [{'type': 'text', 'name': 'Physics Nobel Prizes awarded to women | 
 Scientia News', 'url': 'https://www.scientianews.org/
 physics-nobel-prize-winners', 'content': 'The next female Nobel Prize in 
@@ -163,6 +165,7 @@ the only person who has received the Nobel Prize in Physics twice, year 1956
 and 1972 . Marie Curie was awarded the Nobel Prize twice, once in physics 1903 
 and once in chemistry 1911.. See the list of multiple Nobel Prize laureates 
 within other Nobel Prize categories here'}]}
+===============================================================================
 """
 
 search_linkup_response = SearchToolkit().search_linkup(
@@ -173,6 +176,7 @@ search_linkup_response = SearchToolkit().search_linkup(
 
 print(search_linkup_response)
 """
+===============================================================================
 {'answer': "The women who have been awarded the Nobel Prize in Physics are: 1. 
 Marie Curie - 1903 2. Maria Goeppert Mayer - 1963 3. Donna Strickland - 2018 
 4. Anne L'Huillier - 2023", 'sources': [{'name': 'Nobel Prize awarded women - 
@@ -188,7 +192,7 @@ Strickland.'}, {'name': 'List of female Nobel laureates - Wikipedia', 'url':
 "The most recent women to be awarded a Nobel Prize were Han Kang in Literature 
 (2024), Claudia Goldin in Economics, Narges Mohammadi for Peace, Anne 
 L'Huillier in Physics and Katalin Karikó in Physiology or Medicine (2023)."}]}
-(camel-ai-py3.10) ruihan@RuideMac-mini camel % 
+===============================================================================
 """
 
 
@@ -207,9 +211,43 @@ search_linkup_response = SearchToolkit().search_linkup(
 print(search_linkup_response)
 
 """
+===============================================================================
 {'name': 'Female Nobel Prize Winners in Physics', 'description': 'The women 
 awarded the Nobel Prize in Physics include: 1. Marie Curie (1903) 2. Maria 
 Goeppert-Mayer (1963) 3. Donna Strickland (2018) 4. (4th winner not mentioned 
 in the provided data) 5. (5th winner not mentioned in the provided data). Less 
 than 5 women have won the Nobel Prize in Physics out of 225 total laureates.'}
+===============================================================================
+"""
+
+search_bocha_response = SearchToolkit().search_bocha(
+    query="阿里巴巴2024年的esg报告",
+    freshness="noLimit",
+    summary=False,
+    count=10,
+)
+print(search_bocha_response)
+
+"""
+===============================================================================
+{"_type":"SearchResponse","queryContext":{"originalQuery":"阿里巴巴2024年的esg报
+告"},"webPages":{"webSearchUrl":"","totalEstimatedMatches":8912791,"value":[
+{"id":None,"name":"阿里巴巴发布2024年ESG报告持续推进减碳与数字化普惠","url":"ht
+tps://www.alibabagroup.com/document-1752073403914780672","displayUrl":"htt
+ps://www.alibabagroup.com/document-1752073403914780672","snippet":"阿里巴巴
+集团发布《2024财年环境、社会和治理(ESG)报告》(下称"报告"),详细分享过去一年在ESG各方面取
+得的进展。报告显示,阿里巴巴扎实推进减碳举措,全集团自身运营净碳排放和价值链碳...","siteName"
+:"www.alibabagroup.com","siteIcon":"https://th.bochaai.com/favicon?domain_url=
+https://www.alibabagroup.com/document-1752073403914780672","dateLastCrawled":
+"2024-07-22T00:00:00Z","cachedPageUrl":None,"language":None,"isFamilyFriendly"
+:None,"isNavigational":None},],"someResultsRemoved":true},"images":{"id":None,
+"readLink":None,"webSearchUrl":None,"value":[{"webSearchUrl":None,"name":None,
+"thumbnailUrl":"http://q7.itc.cn/q_70/images01/20240726/ee26d6fa8658472d8b4c5
+e7236b1640a.png","datePublished":None,"contentUrl":"http://q7.itc.cn/q_70/im
+ages01/20240726/ee26d6fa8658472d8b4c5e7236b1640a.png","hostPageUrl":"https://
+m.sohu.com/a/796245119_121713887/?pvid=000115_3w_a","contentSize":None,"enco
+dingFormat":None,"hostPageDisplayUrl":"https://m.sohu.com/a/796245119_121713887
+/?pvid=000115_3w_a","width":1285,"height":722,"thumbnail":None}],"isFamilyFrien
+dly":None},"videos":None}
+===============================================================================
 """
