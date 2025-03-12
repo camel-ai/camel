@@ -98,6 +98,7 @@ __all__ = [
     'SymPyToolkit',
     'MinerUToolkit',
     'MCPToolkit',
+    'MCPToolkitManager',
     'AudioAnalysisToolkit',
     'ExcelToolkit',
     'VideoAnalysisToolkit',
