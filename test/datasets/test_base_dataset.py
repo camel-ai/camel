@@ -24,16 +24,9 @@ from pydantic import ValidationError
 from torch.utils.data import Dataset
 
 from camel.datasets.base import (
-    BaseDataset,
     DataPoint,
     GenerativeDataset,
-    PyTorchDataset,
-    SeedDataset,
-    SyntheticDataset,
-    convert_hf_to_pytorch,
-    convert_synthetic_to_pytorch,
-    load_pytorch_dataset,
-    save_synthetic_dataset,
+    StaticDataset,
 )
 
 
@@ -114,85 +107,6 @@ def sample_data():
             'final_answer': '9',
         },
     ]
-
-
-@pytest.mark.asyncio
-async def test_base_dataset_setup(sample_data):
-    r"""Test BaseDataset setup process."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        dataset = BaseDataset(data=sample_data, cache_dir=temp_dir)
-        await dataset.setup()
-
-        assert dataset._is_setup
-        assert len(dataset.data) == 2
-        assert isinstance(dataset.data[0], DataPoint)
-        assert dataset.data[0].question == 'What is 2+2?'
-        assert dataset.data[1].final_answer == '9'
-
-
-@pytest.mark.asyncio
-async def test_base_dataset_empty_setup():
-    r"""Test BaseDataset setup with empty data."""
-    dataset = BaseDataset(data=None)
-    await dataset.setup()
-
-    assert dataset._is_setup
-    assert len(dataset.data) == 0
-
-
-@pytest.mark.asyncio
-async def test_base_dataset_cleanup():
-    r"""Test BaseDataset cleanup process."""
-    dataset = BaseDataset(data=[])
-    await dataset.setup()
-    assert dataset._is_setup
-
-    await dataset.cleanup()
-    assert not dataset._is_setup
-
-
-def test_base_dataset_sample(sample_data):
-    r"""Test sampling from BaseDataset."""
-    dataset = BaseDataset(data=sample_data)
-    dataset._is_setup = True
-    dataset.data = [DataPoint(**item) for item in sample_data]
-
-    sample = dataset.sample()
-    assert isinstance(sample, DataPoint)
-    assert sample in dataset.data
-
-
-def test_base_dataset_len(sample_data):
-    r"""Test BaseDataset length."""
-    dataset = BaseDataset(data=sample_data)
-    dataset._is_setup = True
-    dataset.data = [DataPoint(**item) for item in sample_data]
-
-    assert len(dataset) == 2
-
-
-def test_base_dataset_getitem(sample_data):
-    r"""Test BaseDataset item access."""
-    dataset = BaseDataset(data=sample_data)
-    dataset._is_setup = True
-    dataset.data = [DataPoint(**item) for item in sample_data]
-
-    item = dataset[0]
-    assert isinstance(item, DataPoint)
-    assert item.question == 'What is 2+2?'
-
-    with pytest.raises(IndexError):
-        _ = dataset[100]  # Out of bounds
-
-
-def test_base_dataset_metadata():
-    r"""Test BaseDataset metadata."""
-    dataset = BaseDataset(data=[], cache_dir='/tmp', custom_param='value')
-
-    metadata = dataset.metadata
-    assert metadata['cache_dir'] == '/tmp'
-    assert metadata['custom_param'] == 'value'
-
 
 def test_seed_dataset_init_from_hf_dataset():
     r"""
