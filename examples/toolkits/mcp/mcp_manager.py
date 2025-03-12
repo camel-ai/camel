@@ -31,11 +31,12 @@ Usage:
 """
 
 import asyncio
-from camel.toolkits import MCPToolkitManager
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-from camel.agents import ChatAgent
 from pathlib import Path
+
+from camel.agents import ChatAgent
+from camel.models import ModelFactory
+from camel.toolkits import MCPToolkitManager
+from camel.types import ModelPlatformType, ModelType
 
 
 async def main():
@@ -43,7 +44,6 @@ async def main():
     manager = MCPToolkitManager.from_config(str(config_path))
 
     async with manager.connection():
-        
         tools = manager.get_all_tools()
         sys_msg = "You are a helpful assistant"
 
@@ -59,8 +59,9 @@ async def main():
         user_msg = "List all README files in the project, using relative paths"
         response = await camel_agent.astep(user_msg)
         print(response.msgs[0].content)
-        print(response.info['tool_calls'])     
-        
+        print(response.info['tool_calls'])
+
+
 if __name__ == "__main__":
     asyncio.run(main())
 '''

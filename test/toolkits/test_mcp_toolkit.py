@@ -241,6 +241,59 @@ async def test_generate_function_from_mcp_tool():
 
 
 @pytest.mark.asyncio
+async def test_build_tool_schema():
+    r"""Test build_tool_schema method."""
+    toolkit = MCPToolkit("test_command")
+    mock_tool = MagicMock()
+    mock_tool.name = "test_function"
+    mock_tool.description = "Test function description"
+    mock_tool.inputSchema = {
+        "properties": {
+            "param1": {"type": "string"},
+            "param2": {"type": "integer"},
+        },
+        "required": ["param1", "param2"],
+    }
+    schema = toolkit._build_tool_schema(mock_tool)
+
+    target_schema = {
+        "type": "function",
+        "function": {
+            "name": "test_function",
+            "description": "Test function description",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "param1": {"type": "string"},
+                    "param2": {"type": "integer"},
+                },
+                "required": ["param1", "param2"],
+            },
+        },
+    }
+    assert schema == target_schema
+
+    # No input schema
+    mock_tool.inputSchema = None
+    schema = toolkit._build_tool_schema(mock_tool)
+    assert schema == {
+        "type": "function",
+        "function": {
+            "name": "test_function",
+            "description": "Test function description",
+        },
+    }
+
+    # No description
+    mock_tool.description = None
+    schema = toolkit._build_tool_schema(mock_tool)
+    assert schema == {
+        "type": "function",
+        "function": {"name": "test_function"},
+    }
+
+
+@pytest.mark.asyncio
 async def test_get_tools():
     r"""Test get_tools method."""
     with patch(
