@@ -450,7 +450,9 @@ class GenerativeDataset(Dataset):
 
                 try:
                     verifier_response = await self.verifier.verify(
-                        VerifierInput(llm_response=rationale)
+                        VerifierInput(
+                            llm_response=rationale, ground_truth=None
+                        )
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
@@ -466,7 +468,11 @@ class GenerativeDataset(Dataset):
                         question=agent_output["question"],
                         rationale=rationale,
                         final_answer=verifier_response.result,
-                        metadata={"created": datetime.now().isoformat()},
+                        difficulty=None,
+                        metadata={
+                            "synthetic": str(True),
+                            "created": datetime.now().isoformat(),
+                        },
                     )
                 except ValidationError as e:
                     logger.warning(
