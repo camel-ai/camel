@@ -88,8 +88,11 @@ class DataPoint(BaseModel):
 
 
 class StaticDataset(Dataset):
-    r"""A dataset containing validated seed examples for data generation.
+    r"""A static dataset containing a list of datapoints.
     Ensures that all items adhere to the DataPoint schema.
+    This dataset complies with the PyTorch dataset
+    standard and should be used when its size is fixed at
+    runtime.
 
     This class can initialize from Hugging Face Datasets,
     PyTorch Datasets, JSON file paths, or lists of dictionaries,
@@ -105,7 +108,7 @@ class StaticDataset(Dataset):
         strict: bool = False,
         **kwargs,
     ):
-        r"""Initialize the seed dataset and validate integrity.
+        r"""Initialize the static dataset and validate integrity.
 
         Args:
             data (Union[HFDataset, Dataset, str, List[Dict[str, Any]]]):
@@ -139,9 +142,9 @@ class StaticDataset(Dataset):
         self._rng = random.Random(seed)
         self._strict = strict
 
-        # Type checking and conversion into list of dicts to have a
-        # consistent internal format. Since Seed Dataset should be
-        # small, we can load it entirely into memmory
+        # Type checking and conversion into list of dicts to prepare validation
+        # and conversion into list of Datapoints. Since Static Dataset should
+        # be small, we can load it entirely into memmory
 
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
