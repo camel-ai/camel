@@ -12,12 +12,10 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-import os
 from typing import Dict, List, Optional, Tuple
 
-from camel.societies import RolePlaying
-from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
+from camel.societies import RolePlaying
 from camel.types import ModelPlatformType
 from camel.utils import print_text_animated
 
@@ -41,7 +39,7 @@ def main(
     with_task_specify: bool = True,
     model_config_dict: Optional[Dict] = None,
 ) -> Tuple[List[Dict], List[Dict]]:
-    """Run a role-playing session with Volcano Engine API.
+    r"""Run a role-playing session with Volcano Engine API.
 
     Args:
         assistant_role_name: The role name of the assistant.
@@ -54,18 +52,10 @@ def main(
         A tuple of assistant and user message lists.
     """
     if model_config_dict is None:
-        model_config_dict = ChatGPTConfig(
-            temperature=0.2,
-            max_tokens=1024,
-        ).as_dict()
-
-    # Check if VOLCANO_API_KEY is set
-    api_key = os.environ.get("VOLCANO_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "VOLCANO_API_KEY environment variable is not set. "
-            "Please set it before running this example."
-        )
+        model_config_dict = {
+            "temperature": 0.2,
+            "max_tokens": 1024,
+        }
 
     # Create models for assistant and user
     assistant_model = ModelFactory.create(
@@ -104,7 +94,9 @@ def main(
     input_msg = role_playing.init_chat()  # Initialize the chat
     while n < 10:
         n += 1
-        assistant_response, user_response = role_playing.step(input_msg)  # Provide input_msg
+        assistant_response, user_response = role_playing.step(
+            input_msg
+        )  # Provide input_msg
         if assistant_response is None or user_response is None:
             break
 
@@ -126,10 +118,13 @@ def main(
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
             break
 
-        input_msg = assistant_response.msg  # Update input_msg for the next step
+        input_msg = (
+            assistant_response.msg
+        )  # Update input_msg for the next step
 
-    # return role_playing.assistant_agent.chat_history, role_playing.user_agent.chat_history
+    # return role_playing.assistant_agent.chat_history, role_playing.
+    # user_agent.chat_history
 
 
 if __name__ == "__main__":
-    main() 
+    main()

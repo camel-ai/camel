@@ -16,7 +16,6 @@ import re
 import pytest
 
 from camel.models import VolcanoModel
-from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -44,4 +43,4 @@ def test_volcano_model_unexpected_argument():
             )
         ),
     ):
-        _ = VolcanoModel(model_type, model_config_dict) 
+        _ = VolcanoModel(model_type, model_config_dict)
