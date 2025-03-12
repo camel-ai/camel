@@ -11,11 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import json
+import tempfile
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from camel.toolkits.mcp_toolkit import MCPToolkit
+from camel.toolkits.mcp_toolkit import MCPToolkit, MCPToolkitManager
 
 
 @pytest.mark.asyncio
@@ -278,3 +281,129 @@ async def test_get_tools():
         toolkit.generate_function_from_mcp_tool.assert_any_call(mock_tool2)
         mock_function_tool.assert_any_call(mock_func1)
         mock_function_tool.assert_any_call(mock_func2)
+
+
+class TestMCPToolkitManager:
+    r"""Test MCPToolkitManager class."""
+
+    def test_init(self):
+        r"""Test initialization of MCPToolkitManager."""
+        toolkit1 = MCPToolkit("test_command1")
+        toolkit2 = MCPToolkit("test_command2")
+        manager = MCPToolkitManager([toolkit1, toolkit2])
+
+        assert manager.toolkits == [toolkit1, toolkit2]
+        assert manager._exit_stack is None
+        assert manager._connected is False
+
+    def test_from_config_file_not_found(self):
+        r"""Test from_config with non-existent file."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            non_existent_path = Path(temp_dir) / "non_existent.json"
+            with pytest.raises(FileNotFoundError) as excinfo:
+                MCPToolkitManager.from_config(str(non_existent_path))
+            assert "Config file not found" in str(excinfo.value)
+
+    def test_from_config_invalid_json(self):
+        r"""Test from_config with invalid JSON."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "invalid.json"
+            config_path.write_text("{invalid json")
+            with pytest.raises(json.JSONDecodeError):
+                MCPToolkitManager.from_config(str(config_path))
+
+    def test_from_config_valid(self):
+        r"""Test from_config with valid configuration."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "valid.json"
+            config_data = {
+                "mcpServers": {
+                    "server1": {
+                        "command": "test-command",
+                        "args": ["--arg1"],
+                        "env": {"TEST_ENV": "value"},
+                    }
+                },
+                "mcpWebServers": {"server2": {"url": "https://test.com/sse"}},
+            }
+            config_path.write_text(json.dumps(config_data))
+
+            manager = MCPToolkitManager.from_config(str(config_path))
+            assert len(manager.toolkits) == 2
+
+            # Check local server toolkit
+            assert manager.toolkits[0].command_or_url == "test-command"
+            assert manager.toolkits[0].args == ["--arg1"]
+            assert "TEST_ENV" in manager.toolkits[0].env
+
+            # Check web server toolkit
+            assert manager.toolkits[1].command_or_url == "https://test.com/sse"
+
+    def test_from_config_missing_required_fields(self):
+        r"""Test from_config with missing required fields."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "invalid_fields.json"
+
+            # Missing command field
+            config_data = {"mcpServers": {"server1": {"args": ["--arg1"]}}}
+            config_path.write_text(json.dumps(config_data))
+            with pytest.raises(ValueError) as excinfo:
+                MCPToolkitManager.from_config(str(config_path))
+            assert "Missing required 'command' field" in str(excinfo.value)
+
+            # Missing url field
+            config_data = {"mcpWebServers": {"server1": {"timeout": 30}}}
+            config_path.write_text(json.dumps(config_data))
+            with pytest.raises(ValueError) as excinfo:
+                MCPToolkitManager.from_config(str(config_path))
+            assert "Missing required 'url' field" in str(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_connection(self):
+        r"""Test connection context manager."""
+        toolkit1 = MCPToolkit("test_command1")
+        toolkit2 = MCPToolkit("test_command2")
+        manager = MCPToolkitManager([toolkit1, toolkit2])
+
+        # Mock the connection context managers of both toolkits
+        async def mock_connection():
+            return AsyncMock()
+
+        toolkit1.connection = MagicMock(return_value=mock_connection())
+        toolkit2.connection = MagicMock(return_value=mock_connection())
+
+        async with manager.connection() as connected_manager:
+            assert connected_manager._connected is True
+            assert connected_manager._exit_stack is not None
+
+        assert manager._connected is False
+        assert manager._exit_stack is None
+
+    def test_is_connected(self):
+        r"""Test is_connected method."""
+        manager = MCPToolkitManager([MCPToolkit("test_command")])
+        assert manager.is_connected() is False
+        manager._connected = True
+        assert manager.is_connected() is True
+
+    @pytest.mark.asyncio
+    async def test_get_all_tools(self):
+        r"""Test get_all_tools method."""
+        toolkit1 = MCPToolkit("test_command1")
+        toolkit2 = MCPToolkit("test_command2")
+        manager = MCPToolkitManager([toolkit1, toolkit2])
+
+        # Mock get_tools for both toolkits
+        mock_tool1 = MagicMock()
+        mock_tool2 = MagicMock()
+        mock_tool3 = MagicMock()
+
+        toolkit1.get_tools = MagicMock(return_value=[mock_tool1, mock_tool2])
+        toolkit2.get_tools = MagicMock(return_value=[mock_tool3])
+
+        tools = manager.get_all_tools()
+
+        assert len(tools) == 3
+        assert tools == [mock_tool1, mock_tool2, mock_tool3]
+        toolkit1.get_tools.assert_called_once()
+        toolkit2.get_tools.assert_called_once()
