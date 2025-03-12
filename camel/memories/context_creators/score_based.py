@@ -44,13 +44,20 @@ class ScoreBasedContextCreator(BaseContextCreator):
             tokens in a message.
         token_limit (int): The maximum number of tokens allowed in the
             generated context.
+        skip_token_counting (bool, optional): If True, token counting will be
+            skipped and all messages will be included in the context. Defaults
+            to True.
     """
 
     def __init__(
-        self, token_counter: BaseTokenCounter, token_limit: int
+        self,
+        token_counter: BaseTokenCounter,
+        token_limit: int,
+        skip_token_counting: bool = True,
     ) -> None:
         self._token_counter = token_counter
         self._token_limit = token_limit
+        self._skip_token_counting = skip_token_counting
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -59,6 +66,10 @@ class ScoreBasedContextCreator(BaseContextCreator):
     @property
     def token_limit(self) -> int:
         return self._token_limit
+
+    @property
+    def skip_token_counting(self) -> bool:
+        return self._skip_token_counting
 
     def create_context(
         self,
@@ -69,7 +80,8 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         Constructs the context from provided records and ensures that the total
         token count does not exceed the specified limit by pruning the least
-        score messages if necessary.
+        score messages if necessary. If skip_token_counting is True, all
+        messages will be included without token counting.
 
         Args:
             records (List[ContextRecord]): A list of message records from which
@@ -77,7 +89,8 @@ class ScoreBasedContextCreator(BaseContextCreator):
 
         Returns:
             Tuple[List[OpenAIMessage], int]: A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
+                context in OpenAIMessage format and the total token count (or
+                -1 if token counting is skipped).
 
         Raises:
             RuntimeError: If it's impossible to create a valid context without
@@ -89,15 +102,25 @@ class ScoreBasedContextCreator(BaseContextCreator):
         for idx, record in enumerate(records):
             if record.memory_record.uuid not in uuid_set:
                 uuid_set.add(record.memory_record.uuid)
+
+                # Skip token counting if specified
+                num_tokens = -1
+                if not self.skip_token_counting:
+                    num_tokens = self.token_counter.count_tokens_from_messages(
+                        [record.memory_record.to_openai_message()]
+                    )
+
                 context_units.append(
                     _ContextUnit(
                         idx=idx,
                         record=record,
-                        num_tokens=self.token_counter.count_tokens_from_messages(
-                            [record.memory_record.to_openai_message()]
-                        ),
+                        num_tokens=num_tokens,
                     )
                 )
+
+        # If token counting is skipped, return all messages
+        if self.skip_token_counting:
+            return self._create_output(context_units, skip_counting=True)
 
         # TODO: optimize the process, may give information back to memory
 
@@ -136,16 +159,25 @@ class ScoreBasedContextCreator(BaseContextCreator):
         return self._create_output(context_units[truncate_idx + 1 :])
 
     def _create_output(
-        self, context_units: List[_ContextUnit]
+        self, context_units: List[_ContextUnit], skip_counting: bool = False
     ) -> Tuple[List[OpenAIMessage], int]:
         r"""Helper method to generate output from context units.
 
         This method converts the provided context units into a format suitable
         for output, specifically a list of OpenAIMessages and an integer
         representing the total token count.
+
+        Args:
+            context_units: List of context units to convert to output format.
+            skip_counting: If True, returns -1 as token count.
         """
         context_units = sorted(context_units, key=lambda unit: unit.idx)
-        return [
+        messages = [
             unit.record.memory_record.to_openai_message()
             for unit in context_units
-        ], sum([unit.num_tokens for unit in context_units])
+        ]
+
+        if skip_counting:
+            return messages, -1
+
+        return messages, sum([unit.num_tokens for unit in context_units])
