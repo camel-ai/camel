@@ -452,7 +452,7 @@ class QdrantStorage(BaseVectorStorage):
         # Execute the search with optional filter
         search_result = self._client.query_points(
             collection_name=self.collection_name,
-            query_vector=query.query_vector,
+            query=query.query_vector,
             with_payload=True,
             with_vectors=True,
             limit=query.top_k,
