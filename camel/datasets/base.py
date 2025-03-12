@@ -146,7 +146,7 @@ class StaticDataset(Dataset):
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
 
-        self._length < min_samples:
+        if self._length < min_samples:
             raise ValueError(
                 "The dataset does not contain enough samples. "
                 f"Need {max(0, min_samples)}, got {self._length}"
