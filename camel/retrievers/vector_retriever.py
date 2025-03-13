@@ -114,9 +114,11 @@ class VectorRetriever(BaseRetriever):
 
             self.storage.add(records=records)
 
-    def _get_content_path_info(
-        self, content: Union[str, Element, IO[bytes]]
+    def _get_content_path_info_uio(
+        self, content: Union[str, "Element", IO[bytes]]
     ) -> str:
+        from unstructured.documents.elements import Element
+
         if isinstance(content, Element):
             return (
                 content.metadata.file_directory[:100]
@@ -129,12 +131,14 @@ class VectorRetriever(BaseRetriever):
             return content[:100]
         return ""
 
-    def _parse_content(
+    def _parse_content_uio(
         self,
-        content: Union[str, Element, IO[bytes]],
+        content: Union[str, "Element", IO[bytes]],
         metadata_filename: Optional[str],
         **kwargs,
-    ) -> list[Element]:
+    ) -> list["Element"]:
+        from unstructured.documents.elements import Element
+
         if isinstance(content, Element):
             return [content]
         elif isinstance(content, IOBase):
@@ -206,8 +210,8 @@ class VectorRetriever(BaseRetriever):
             from camel.loaders import UnstructuredIO
 
             self.uio: UnstructuredIO = UnstructuredIO()
-            content_path_info = self._get_content_path_info(content)
-            elements = self._parse_content(
+            content_path_info = self._get_content_path_info_uio(content)
+            elements = self._parse_content_uio(
                 content, metadata_filename, **kwargs
             )
             if not elements:

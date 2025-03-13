@@ -35,8 +35,8 @@ def main():
 
     # Set up web searching agent
     search_agent_model = ModelFactory.create(
-        model_platform=ModelPlatformType.ANTHROPIC,
-        model_type=ModelType.CLAUDE_3_5_SONNET,
+        model_platform=ModelPlatformType.DEFAULT,
+        model_type=ModelType.DEFAULT,
     )
     search_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
