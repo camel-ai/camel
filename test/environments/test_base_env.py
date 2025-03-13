@@ -31,15 +31,11 @@ def test_action_model():
     r"""Test the Action model initialization and properties."""
     custom_time = datetime(2023, 1, 1, tzinfo=timezone.utc)
     action_full = Action(
-        problem_statement="Full problem",
         llm_response="Full response",
-        final_answer="Reference solution",
         metadata={"model": "test-model", "temperature": 0.7},
         timestamp=custom_time,
     )
-    assert action_full.problem_statement == "Full problem"
     assert action_full.llm_response == "Full response"
-    assert action_full.final_answer == "Reference solution"
     assert action_full.metadata == {"model": "test-model", "temperature": 0.7}
     assert action_full.timestamp == custom_time
 
