@@ -68,6 +68,16 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
+
+from camel.utils import (
+    func_string_to_callable,
+    generate_prompt_for_structured_output,
+    get_model_encoding,
+    get_pydantic_object_schema,
+    json_to_function_code,
+    track_agent,
+)
+
 from camel.types.agents import ToolCallingRecord
 from camel.utils import get_model_encoding
 
@@ -76,17 +86,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-# AgentOps decorator setting
-try:
-    import os
-
-    if os.getenv("AGENTOPS_API_KEY") is not None:
-        from agentops import track_agent
-    else:
-        raise ImportError
-except (ImportError, AttributeError):
-    from camel.utils import track_agent
 
 
 SIMPLE_FORMAT_PROMPT = TextPrompt(
