@@ -91,9 +91,8 @@ class DataPoint(BaseModel):
 class StaticDataset(Dataset):
     r"""A static dataset containing a list of datapoints.
     Ensures that all items adhere to the DataPoint schema.
-    This dataset complies with the PyTorch dataset
-    standard and should be used when its size is fixed at
-    runtime.
+    This dataset extends :obj:`Dataset` from PyTorch and should
+    be used when its size is fixed at runtime.
 
     This class can initialize from Hugging Face Datasets,
     PyTorch Datasets, JSON file paths, or lists of dictionaries,
@@ -111,26 +110,29 @@ class StaticDataset(Dataset):
         r"""Initialize the static dataset and validate integrity.
 
         Args:
-            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
-            Input data, which can be:
-                - A Hugging Face Dataset (HFDataset)
-                - A PyTorch Dataset (torch.utils.data.Dataset)
-                - A Path object representing the path to a JSON file
-                - A list of dictionaries with DataPoint-compatible fields
-            seed (int): Seed for reproducibility.
-                (default: :obj:`42`)
-            min_samples (int): Minimum number of samples required.
-                (default: :obj:`1`)
-            strict (bool): Whether to raise an error on invalid datapoints
-                (True) or skip/filter them (False). (default: False)
+            data (:obj:`Union[HFDataset, Dataset,
+            Path, List[Dict[str, Any]]]`):
+                Input data, which can be one of the following:
+                - A Hugging Face Dataset (:obj:`HFDataset`).
+                - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`).
+                - A :obj:`Path` object representing a JSON file.
+                - A list of dictionaries with :obj:`DataPoint`-compatible
+                  fields.
+            seed (:obj:`int`): Random seed for reproducibility.
+                Default is :obj:`42`.
+            min_samples (:obj:`int`): Minimum required number of samples.
+                Default is :obj:`1`.
+            strict (:obj:`bool`): Whether to raise an error on invalid
+                datapoints (:obj:`True`) or skip/filter them (:obj:`False`).
+                Default is :obj:`False`.
             **kwargs: Additional dataset parameters.
 
         Raises:
-            TypeError: If the data type is not supported.
-            ValueError: If dataset size is less than min_samples or
-            if sample validation fails.
-            FileNotFoundError: If the JSON file path doesn't exist.
-            json.JSONDecodeError: If the JSON file is invalid.
+            TypeError: If the input data type is unsupported.
+            ValueError: If the dataset contains fewer than :obj:`min_samples`
+                datapoints or if validation fails.
+            FileNotFoundError: If the specified JSON file path does not exist.
+            json.JSONDecodeError: If the JSON file contains invalid formatting.
         """
 
         # Store all parameters in metadata dict for compatibility
@@ -139,10 +141,6 @@ class StaticDataset(Dataset):
         }
         self._rng = random.Random(seed)
         self._strict = strict
-
-        # Type checking and conversion into list of dicts to prepare validation
-        # and conversion into list of Datapoints. Since Static Dataset should
-        # be small, we can load it entirely into memory
 
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
@@ -156,6 +154,26 @@ class StaticDataset(Dataset):
     def _init_data(
         self, data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]
     ) -> List[DataPoint]:
+        r"""Convert input data from various formats into a list of
+        :obj:`DataPoint` instances.
+
+        Args:
+            data (:obj:`Union[
+                HFDataset,
+                Dataset,
+                Path,
+                List[Dict[str, Any]]
+            ]`):
+                Input dataset in one of the supported formats.
+
+        Returns:
+            :obj:`List[DataPoint]`: A list of validated :obj:`DataPoint`
+                instances.
+
+        Raises:
+            TypeError: If the input data type is unsupported.
+        """
+
         if isinstance(data, HFDataset):
             raw_data = self._init_from_hf_dataset(data)
         elif isinstance(data, Dataset):
@@ -241,17 +259,19 @@ class StaticDataset(Dataset):
         return self._length
 
     def __getitem__(self, idx: int) -> DataPoint:
-        r"""Get an item from the dataset.
+        r"""Retrieve a datapoint by index.
 
         Args:
-            idx (int): Index of the item to get.
+            idx (:obj:`int`): Index of the datapoint.
 
         Returns:
-            DataPoint: DataPoint from the dataset with the given index.
+            :obj:`DataPoint`: The datapoint corresponding to the given index.
 
         Raises:
-            IndexError: If idx is out of bounds.
+            IndexError: If :obj:`idx` is out of bounds (negative or greater
+                than dataset length - 1).
         """
+
         if idx < 0 or idx >= self._length:
             raise IndexError(
                 f"Index {idx} out of bounds for dataset of size {self._length}"
@@ -262,11 +282,12 @@ class StaticDataset(Dataset):
         r"""Sample a random datapoint from the dataset.
 
         Returns:
-            DataPoint: A randomly sampled DataPoint.
+            :obj:`DataPoint`: A randomly sampled :obj:`DataPoint`.
 
         Raises:
-            RuntimeError: If the dataset is empty.
+            RuntimeError: If the dataset is empty and no samples can be drawn.
         """
+
         if self._length == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
         idx = self._rng.randint(0, self._length - 1)
@@ -274,15 +295,42 @@ class StaticDataset(Dataset):
 
     @property
     def metadata(self) -> Dict[str, Any]:
-        r"""Get dataset metadata."""
+        r"""Retrieve dataset metadata.
+
+        Returns:
+            :obj:`Dict[str, Any]`: A copy of the dataset metadata dictionary.
+        """
+
         return self._metadata.copy()
 
     def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
+        r"""Convert a Hugging Face dataset into a list of dictionaries.
+
+        Args:
+            data (:obj:`HFDataset`): A Hugging Face dataset.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of dictionaries representing
+            the dataset, where each dictionary corresponds to a datapoint.
+        """
         return [dict(item) for item in data]
 
     def _init_from_pytorch_dataset(
         self, data: Dataset
     ) -> List[Dict[str, Any]]:
+        r"""Convert a PyTorch dataset into a list of dictionaries.
+
+        Args:
+            data (:obj:`Dataset`): A PyTorch dataset.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of dictionaries representing
+            the dataset.
+
+        Raises:
+            TypeError: If the dataset does not implement :obj:`__len__()`
+                or contains non-dictionary elements.
+        """
         if not isinstance(data, Sized):
             raise TypeError(
                 f"{type(data).__name__} does not implement `__len__()`."
@@ -300,6 +348,20 @@ class StaticDataset(Dataset):
         return raw_data
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
+        r"""Load and parse a dataset from a JSON file.
+
+        Args:
+            data (:obj:`Path`): Path to the JSON file.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of datapoint dictionaries.
+
+        Raises:
+            FileNotFoundError: If the specified JSON file does not exist.
+            ValueError: If the JSON content is not a list of dictionaries.
+            json.JSONDecodeError: If the JSON file has invalid formatting.
+        """
+
         if not data.exists():
             raise FileNotFoundError(f"JSON file not found: {data}")
         try:
@@ -324,6 +386,18 @@ class StaticDataset(Dataset):
     def _init_from_list(
         self, data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
+        r"""Validate and convert a list of dictionaries into a dataset.
+
+        Args:
+            data (:obj:`List[Dict[str, Any]]`): A list of dictionaries where
+                each dictionary must be a valid :obj:`DataPoint`.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: The validated list of dictionaries.
+
+        Raises:
+            ValueError: If any item in the list is not a dictionary.
+        """
         for i, item in enumerate(data):
             if not isinstance(item, dict):
                 raise ValueError(
