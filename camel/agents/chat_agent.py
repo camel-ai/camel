@@ -771,7 +771,7 @@ class ChatAgent(BaseAgent):
 
     def _sanitize_messages_for_logging(self, messages):
         r"""Sanitize OpenAI messages for logging by replacing base64 image
-        data with a simple message.
+        data with a simple message and a link to view the image.
 
         Args:
             messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
@@ -779,6 +779,11 @@ class ChatAgent(BaseAgent):
         Returns:
             List[OpenAIMessage]: The sanitized OpenAI messages.
         """
+        import hashlib
+        import os
+        import re
+        import tempfile
+
         # Create a copy of messages for logging to avoid modifying the
         # original messages
         sanitized_messages = []
@@ -793,19 +798,95 @@ class ChatAgent(BaseAgent):
                             isinstance(item, dict)
                             and item.get('type') == 'image_url'
                         ):
-                            # Replace base64 image data with a simple message
+                            # Handle image URL
                             image_url = item.get('image_url', {}).get(
                                 'url', ''
                             )
                             if image_url and image_url.startswith(
                                 'data:image'
                             ):
-                                content_list.append(
-                                    {
-                                        'type': 'image',
-                                        'image_info': {'type': 'base64 image'},
-                                    }
+                                # Extract image data and format
+                                match = re.match(
+                                    r'data:image/([^;]+);base64,(.+)',
+                                    image_url,
                                 )
+                                if match:
+                                    img_format, base64_data = match.groups()
+
+                                    # Create a hash of the image data to use
+                                    # as filename
+                                    img_hash = hashlib.md5(
+                                        base64_data[:100].encode()
+                                    ).hexdigest()[:10]
+                                    img_filename = (
+                                        f"image_{img_hash}.{img_format}"
+                                    )
+
+                                    # Save image to temp directory for viewing
+                                    try:
+                                        import base64
+
+                                        temp_dir = tempfile.gettempdir()
+                                        img_path = os.path.join(
+                                            temp_dir, img_filename
+                                        )
+
+                                        # Only save if file doesn't exist
+                                        if not os.path.exists(img_path):
+                                            with open(img_path, 'wb') as f:
+                                                f.write(
+                                                    base64.b64decode(
+                                                        base64_data
+                                                    )
+                                                )
+
+                                        # Create a file:// URL that can be
+                                        # opened
+                                        file_url = f"file://{img_path}"
+
+                                        content_list.append(
+                                            {
+                                                'type': 'image_url',
+                                                'image_url': {
+                                                    'url': f'{file_url}',
+                                                    'detail': item.get(
+                                                        'image_url', {}
+                                                    ).get('detail', 'auto'),
+                                                },
+                                            }
+                                        )
+                                    except Exception as e:
+                                        # If saving fails, fall back to simple
+                                        # message
+                                        content_list.append(
+                                            {
+                                                'type': 'image_url',
+                                                'image_url': {
+                                                    'url': '[base64 '
+                                                    + 'image - error saving: '
+                                                    + str(e)
+                                                    + ']',
+                                                    'detail': item.get(
+                                                        'image_url', {}
+                                                    ).get('detail', 'auto'),
+                                                },
+                                            }
+                                        )
+                                else:
+                                    # If regex fails, fall back to simple
+                                    # message
+                                    content_list.append(
+                                        {
+                                            'type': 'image_url',
+                                            'image_url': {
+                                                'url': '[base64 '
+                                                + 'image - invalid format]',
+                                                'detail': item.get(
+                                                    'image_url', {}
+                                                ).get('detail', 'auto'),
+                                            },
+                                        }
+                                    )
                             else:
                                 content_list.append(item)
                         else:
