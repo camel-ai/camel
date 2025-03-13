@@ -393,7 +393,6 @@ class BaseEnvironment(ABC):
             question = getattr(datapoint, "question", None)
             final_answer = getattr(datapoint, "final_answer", None)
             rationale = getattr(datapoint, "rationale", None)
-            difficulty = getattr(datapoint, "difficulty", None)
             metadata = getattr(datapoint, "metadata", {})
 
             if not question or not final_answer:
@@ -407,7 +406,6 @@ class BaseEnvironment(ABC):
                 question=question,
                 context={
                     "final_answer": final_answer,
-                    "difficulty": difficulty,
                     "rationale": rationale,
                 },
                 metadata={

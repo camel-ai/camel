@@ -42,13 +42,9 @@ class DataPoint(BaseModel):
 
     Attributes:
         question (str): The primary question or issue to be addressed.
-        rationale (str): Logical reasoning or explanation behind the
-            answer.
+        rationale (Optional[str]): Logical reasoning or explanation behind the
+            answer. (default: :obj:`None`)
         final_answer (str): The final answer.
-        raw_markdown (Optional[str]): Raw markdown content for generating
-            rewards/hints. (default: :obj:`None`)
-        difficulty (Optional[str]): Difficulty level of the question.
-            (default: :obj:`None`)
         metadata Optional[Dict[str, Any]]: Additional metadata about the data
             point. (default: :obj:`None`)
     """
@@ -56,13 +52,12 @@ class DataPoint(BaseModel):
     question: str = Field(
         ..., description="The primary question or issue to be addressed."
     )
-    rationale: str = Field(
-        ..., description="Logical reasoning or explanation behind the answer."
+    rationale: Optional[str] = Field(
+        default=None,
+        description="Logical reasoning or explanation behind the answer.",
     )
     final_answer: str = Field(..., description="The final answer.")
-    difficulty: Optional[str] = Field(
-        None, description="Difficulty level of the question."
-    )
+
     metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Additional metadata about the data point."
     )
@@ -235,7 +230,6 @@ class StaticDataset(Dataset):
                     rationale=rationale,
                     final_answer=final_answer,
                     metadata=item.get('metadata'),
-                    difficulty=item.get('difficulty'),
                 )
             except ValidationError as e:
                 if self._strict:
@@ -558,7 +552,6 @@ class GenerativeDataset(Dataset):
                         question=agent_output["question"],
                         rationale=rationale,
                         final_answer=verifier_response.result,
-                        difficulty=None,
                         metadata={
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
@@ -589,6 +582,29 @@ class GenerativeDataset(Dataset):
 
         self._data.extend(valid_data_points)
         return valid_data_points
+
+    def __len__(self) -> int:
+        r"""Return the size of the dataset."""
+        return len(self._data)
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        r"""Retrieve a datapoint by index.
+
+        Args:
+            idx (int): Index of the datapoint.
+
+        Returns:
+            DataPoint: The datapoint corresponding to the given index.
+
+        Raises:
+            IndexError: If idx is out of bounds.
+        """
+        if idx < 0 or idx >= len(self._data):
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of "
+                f"size {len(self._data)}"
+            )
+        return self._data[idx]
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the dataset to a JSONL (JSON Lines) file.
