@@ -18,6 +18,49 @@ The `ChatAgent` is the primary implementation that handles conversations with la
 - Multiple model backend support with scheduling strategies
 - Async operation support
 
+## 1.3. Usage
+
+### Basic Chat Agent Usage
+```python
+from camel.agents import ChatAgent
+
+# Create a chat agent with a system message
+agent = ChatAgent(system_message="You are a helpful assistant.")
+
+# Step through a conversation
+response = agent.step("Hello, can you help me?")
+```
+
+### Using Tools with Chat Agent
+```python
+from camel.agents import ChatAgent
+from camel.functions import FunctionTool
+
+# Define a tool
+def calculator(a: int, b: int) -> int:
+    return a + b
+
+# Create agent with tool
+agent = ChatAgent(tools=[calculator])
+
+# The agent can now use the calculator tool in conversations
+response = agent.step("What is 5 + 3?")
+```
+
+### Structured Output
+```python
+from pydantic import BaseModel
+from typing import List
+
+class ResponseFormat(BaseModel):
+    points: List[str]
+    summary: str
+
+# Create agent with structured output
+agent = ChatAgent()
+response = agent.step("List benefits of exercise", response_format=ResponseFormat)
+```
+
 ## 2. Types
 
 ### 2.1. `ChatAgent`
@@ -49,69 +92,26 @@ Focused on information retrieval and search tasks across various data sources.
 ### 2.8. `TaskAgent`
 Handles task decomposition and management, breaking down complex tasks into manageable subtasks.
 
-## 3. Usage
+## 3. Best Practices
 
-### 3.1. Basic Chat Agent Usage
-```python
-from camel.agents import ChatAgent
-
-# Create a chat agent with a system message
-agent = ChatAgent(system_message="You are a helpful assistant.")
-
-# Step through a conversation
-response = agent.step("Hello, can you help me?")
-```
-
-### 3.2. Using Tools with Chat Agent
-```python
-from camel.agents import ChatAgent
-from camel.functions import FunctionTool
-
-# Define a tool
-def calculator(a: int, b: int) -> int:
-    return a + b
-
-# Create agent with tool
-agent = ChatAgent(tools=[calculator])
-
-# The agent can now use the calculator tool in conversations
-response = agent.step("What is 5 + 3?")
-```
-
-### 3.3. Structured Output
-```python
-from pydantic import BaseModel
-from typing import List
-
-class ResponseFormat(BaseModel):
-    points: List[str]
-    summary: str
-
-# Create agent with structured output
-agent = ChatAgent()
-response = agent.step("List benefits of exercise", response_format=ResponseFormat)
-```
-
-## 4. Best Practices
-
-### 4.1. Memory Management
+### 3.1. Memory Management
 - Use appropriate window sizes to manage conversation history
 - Consider token limits when dealing with long conversations
 - Utilize the memory system for maintaining context
 
-### 4.2. Tool Integration
+### 3.2. Tool Integration
 - Keep tool functions focused and well-documented
 - Handle tool errors gracefully
 - Use external tools for operations that should be handled by the user
 
-### 4.3. Response Handling
+### 3.3. Response Handling
 - Implement appropriate response terminators for conversation control
 - Use structured outputs when specific response formats are needed
 - Handle async operations properly when dealing with long-running tasks
 
-## 5. Advanced Features
+## 4. Advanced Features
 
-### 5.1. Model Scheduling
+### 4.1. Model Scheduling
 The agent supports multiple model backends with customizable scheduling strategies:
 ```python
 def custom_strategy(models):
@@ -121,7 +121,7 @@ def custom_strategy(models):
 agent.add_model_scheduling_strategy("custom", custom_strategy)
 ```
 
-### 5.2. Output Language Control
+### 4.2. Output Language Control
 Control the language of agent responses:
 ```python
 agent.set_output_language("Spanish")
