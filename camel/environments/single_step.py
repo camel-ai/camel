@@ -17,7 +17,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
 from camel.agents import ChatAgent
-from camel.datasets.base import DataPoint, StaticDataset, GenerativeDataset
+from camel.datasets.base import DataPoint, GenerativeDataset, StaticDataset
 from camel.environments.base import BaseEnvironment
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -29,7 +29,8 @@ from camel.verifiers.models import (
     VerificationOutcome,
     VerifierInput,
 )
-from .models import Observation, Action, StepResult
+
+from .models import Action, Observation, StepResult
 
 logger = get_logger(__name__)
 
@@ -38,7 +39,6 @@ logger = get_logger(__name__)
 # Note: TeacherAgent should be renamed into neural_reward_model.
 #       This is where PRMs or such could be useful.
 #       Should probably be its own class and not just raw ChatAgent
-
 
 
 class SingleStepEnv(BaseEnvironment):
@@ -150,7 +150,9 @@ class SingleStepEnv(BaseEnvironment):
 
         self._state = self.dataset.sample()
 
-        observation = Observation(question=self._state.question, context = {}, metadata = {})
+        observation = Observation(
+            question=self._state.question, context={}, metadata={}
+        )
 
         return observation
 
@@ -225,7 +227,7 @@ class SingleStepEnv(BaseEnvironment):
         verification_success = float(
             verification_result.status == VerificationOutcome.SUCCESS
         )
-        #FIXME: Magic numbers
+        # FIXME: Magic numbers
         rewards["correctness"] = 1.0 if verification_success > 0.5 else 0.0
 
         further_rewards = await self._compute_custom_reward(
@@ -249,4 +251,3 @@ class SingleStepEnv(BaseEnvironment):
     def metadata(self) -> Dict[str, Any]:
         r"""Get environment metadata."""
         return self._metadata.copy()
-
