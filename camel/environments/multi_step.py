@@ -35,20 +35,8 @@ class MultiStepEnv(BaseEnvironment):
         r"""Initialize the environment.
 
         Args:
-            dataset: Dataset to sample questions from.
-            verifier: Verifier to check responses.
             extractor: Extractor to process LLM responses.
             max_steps: Maximum steps per episode.
-            teacher_agent: Optional agent for reward shaping and hints
-            curriculum_config: Configuration for curriculum learning including:
-                - difficulty_levels: List of available difficulty levels
-                - promotion_threshold: Score needed to advance
-                - demotion_threshold: Score triggering level decrease
-                - min_questions_per_level: Questions before promotion
-            practice_env_config: Configuration for practice environments:
-                - max_practice_envs: Maximum concurrent environments
-                - difficulty_range: Allowed difficulty variation
-                - focus_areas: Specific skills to practice
             **kwargs: Additional environment parameters.
         """
         self.extractor = extractor
@@ -82,7 +70,7 @@ class MultiStepEnv(BaseEnvironment):
         pass
 
     async def close(self) -> None:
-        r"""Clean up resources, including verifier teardown."""
+        r"""Clean up resources."""
         if not self._is_setup:
             return
 
