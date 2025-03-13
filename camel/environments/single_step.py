@@ -142,8 +142,8 @@ class SingleStepEnv(BaseEnvironment):
 
         try:
             await self.teardown()
-            
-            #TODO: Once teacher and dataset have clean up 
+
+            # TODO: Once teacher and dataset have clean up
             # methods, call them here
             self._state = None
             self._episode_ended = False

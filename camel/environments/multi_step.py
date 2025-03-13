@@ -119,7 +119,7 @@ class MultiStepEnv(BaseEnvironment):
         r"""Take a step in the environment.
 
         Args:
-            action: Action containing everything that is needed
+            action: Action containing everything needed
             to progress in the environment
 
         Returns:
@@ -146,23 +146,25 @@ class MultiStepEnv(BaseEnvironment):
         current_obs: Observation = self._last_observation
         self._episode_history.append((current_obs, action))
 
-        # extract relevant part from llm response
+        # Extract relevant part from LLM response
         extraction_result = await self.extractor.extract(action.llm_response)
 
         if not extraction_result:
-            logger.warning(
-                "Extractor failed parsing LLM response."
-            )
+            logger.warning("Extractor failed parsing LLM response.")
             extraction_result = ""
 
-        # compute rewards
+        # Update the environment state based on the action
+        self._update_state(action, extraction_result)
+
+        # Compute rewards
         total_reward, rewards_dict = await self.compute_reward(
             action, extraction_result
         )
 
-        # check termination
+        # Check termination
         done = self.is_done()
 
+        # Get next observation based on the updated state
         next_obs = (
             self._get_terminal_observation()
             if done
@@ -180,12 +182,16 @@ class MultiStepEnv(BaseEnvironment):
             info={
                 "extraction_result": extraction_result,
                 "step": self._current_step,
-                "state": self._state,
+                "state": self._state,  # Updated state
             },
         )
 
     @abstractmethod
     def _get_initial_state(self) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    def _update_state(self, action: Action, extraction_result: str) -> None:
         pass
 
     @abstractmethod
