@@ -710,7 +710,8 @@ class ChatAgent(BaseAgent):
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: {openai_messages}"
+            f"processed these messages: "
+            f"{self._format_messages_for_logging(openai_messages)}"
         )
 
         if isinstance(response, ChatCompletion):
@@ -755,7 +756,8 @@ class ChatAgent(BaseAgent):
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: {openai_messages}"
+            f"processed these messages: "
+            f"{self._format_messages_for_logging(openai_messages)}"
         )
 
         if isinstance(response, ChatCompletion):
@@ -991,6 +993,41 @@ class ChatAgent(BaseAgent):
             )
             output_messages.append(chat_message)
 
+    def _format_messages_for_logging(self, messages):
+        r"""Format OpenAI messages for logging by replacing base64 image data
+        with a placeholder.
+
+        Args:
+            messages: List of OpenAI messages that may contain base64 image
+                data
+
+        Returns:
+            List of messages with base64 image data replaced by a placeholder
+        """
+        log_messages = []
+        for msg in messages:
+            # Create a copy of the message to avoid modifying the original
+            log_msg = dict(msg)
+
+            # Check if the message has content with base64 image data
+            if 'content' in log_msg and isinstance(log_msg['content'], list):
+                content_list = []
+                for item in log_msg['content']:
+                    if isinstance(item, dict) and item.get('type') == 'image':
+                        # Replace image data with placeholder
+                        content_list.append(
+                            {
+                                'type': 'image',
+                                'image_url': {'url': 'processing image'},
+                            }
+                        )
+                    else:
+                        content_list.append(item)
+                log_msg['content'] = content_list
+
+            log_messages.append(log_msg)
+        return log_messages
+
     def _step_token_exceed(
         self,
         num_tokens: int,
@@ -1047,7 +1084,7 @@ class ChatAgent(BaseAgent):
             result = tool(**args)
         except Exception as e:
             # Capture the error message to prevent framework crash
-            error_msg = f"Error executing tool '{func_name}': {str(e)}"
+            error_msg = f"Error executing tool '{func_name}': {e!s}"
             result = {"error": error_msg}
             logging.warning(error_msg)
 
@@ -1065,7 +1102,7 @@ class ChatAgent(BaseAgent):
             result = await tool.async_call(**args)
         except Exception as e:
             # Capture the error message to prevent framework crash
-            error_msg = f"Error executing async tool '{func_name}': {str(e)}"
+            error_msg = f"Error executing async tool '{func_name}': {e!s}"
             result = {"error": error_msg}
             logging.warning(error_msg)
 
