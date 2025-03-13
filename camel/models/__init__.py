@@ -14,6 +14,7 @@
 from .aiml_model import AIMLModel
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
+from .base_audio_model import BaseAudioModel
 from .base_model import BaseModelBackend
 from .cohere_model import CohereModel
 from .deepseek_model import DeepSeekModel
@@ -36,9 +37,11 @@ from .qwen_model import QwenModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
 from .sglang_model import SGLangModel
+from .siliconflow_model import SiliconFlowModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
+from .volcano_model import VolcanoModel
 from .yi_model import YiModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -74,4 +77,7 @@ __all__ = [
     'InternLMModel',
     'MoonshotModel',
     'AIMLModel',
+    'BaseAudioModel',
+    'SiliconFlowModel',
+    'VolcanoModel',
 ]

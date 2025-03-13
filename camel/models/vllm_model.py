@@ -139,6 +139,10 @@ class VLLMModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]], optional): The format
+                to return the response in.
+            tools (Optional[List[Dict[str, Any]]], optional): List of tools
+                the model may call.
 
         Returns:
             Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]:
@@ -146,10 +150,16 @@ class VLLMModel(BaseModelBackend):
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
 
+        kwargs = self.model_config_dict.copy()
+        if tools:
+            kwargs["tools"] = tools
+        if response_format:
+            kwargs["response_format"] = {"type": "json_object"}
+
         response = await self._async_client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **kwargs,
         )
         return response
 
@@ -164,6 +174,10 @@ class VLLMModel(BaseModelBackend):
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
+            response_format (Optional[Type[BaseModel]], optional): The format
+                to return the response in.
+            tools (Optional[List[Dict[str, Any]]], optional): List of tools
+                the model may call.
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
@@ -171,10 +185,16 @@ class VLLMModel(BaseModelBackend):
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
 
+        kwargs = self.model_config_dict.copy()
+        if tools:
+            kwargs["tools"] = tools
+        if response_format:
+            kwargs["response_format"] = {"type": "json_object"}
+
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,
-            **self.model_config_dict,
+            **kwargs,
         )
         return response
 

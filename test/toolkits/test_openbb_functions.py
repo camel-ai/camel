@@ -18,7 +18,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.toolkits import OpenBBToolkit
+# Create a mock for the openbb module
+mock_openbb_module = MagicMock()
+mock_openbb_module.obb = MagicMock()
+
+# Apply the mock to sys.modules
+with patch.dict('sys.modules', {'openbb': mock_openbb_module}):
+    from camel.toolkits import OpenBBToolkit
 
 
 @pytest.fixture

@@ -37,6 +37,7 @@ from camel.models.siliconflow_model import SiliconFlowModel
 from camel.models.stub_model import StubModel
 from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
+from camel.models.volcano_model import VolcanoModel
 from camel.models.yi_model import YiModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType, UnifiedModelType
@@ -107,6 +108,8 @@ class ModelFactory:
             model_class = SiliconFlowModel
         elif model_platform.is_aiml:
             model_class = AIMLModel
+        elif model_platform.is_volcano:
+            model_class = VolcanoModel
 
         elif model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel

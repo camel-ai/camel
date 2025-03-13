@@ -12,7 +12,7 @@ CAMEL supports a wide range of models, including [OpenAI’s GPT series](https:/
 
 | Model Platform | Model Type(s) |
 |---------------|--------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
+| **OpenAI** | gpt-4.5-preview, gpt-4o, gpt-4o-mini, o1, o1-preview, o1-mini, o3-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Azure OpenAI** | gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo |
 | **Mistral AI** | mistral-large-latest, pixtral-12b-2409, ministral-8b-latest, ministral-3b-latest, open-mistral-nemo, codestral-latest, open-mistral-7b, open-mixtral-8x7b, open-mixtral-8x22b, open-codestral-mamba |
 | **Moonshot** | moonshot-v1-8k, moonshot-v1-32k, moonshot-v1-128k |
