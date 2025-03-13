@@ -141,7 +141,7 @@ class BaseEnvironment(ABC):
         self,
         dataset: StaticDataset,
         verifier: BaseVerifier,
-        extractor: BaseExtractor,
+        extractor: Extractor,
         max_steps: Optional[int] = None,
         teacher_agent: Optional[ChatAgent] = None,
         curriculum_config: Optional[Dict[str, Any]] = None,
