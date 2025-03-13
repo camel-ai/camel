@@ -20,6 +20,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Sized,
     Union,
@@ -42,9 +43,9 @@ class DataPoint(BaseModel):
 
     Attributes:
         question (str): The primary question or issue to be addressed.
+        final_answer (str): The final answer.
         rationale (Optional[str]): Logical reasoning or explanation behind the
             answer. (default: :obj:`None`)
-        final_answer (str): The final answer.
         metadata Optional[Dict[str, Any]]: Additional metadata about the data
             point. (default: :obj:`None`)
     """
@@ -52,12 +53,11 @@ class DataPoint(BaseModel):
     question: str = Field(
         ..., description="The primary question or issue to be addressed."
     )
+    final_answer: str = Field(..., description="The final answer.")
     rationale: Optional[str] = Field(
         default=None,
         description="Logical reasoning or explanation behind the answer.",
     )
-    final_answer: str = Field(..., description="The final answer.")
-
     metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Additional metadata about the data point."
     )
@@ -153,16 +153,11 @@ class StaticDataset(Dataset):
         :obj:`DataPoint` instances.
 
         Args:
-            data (:obj:`Union[
-                HFDataset,
-                Dataset,
-                Path,
-                List[Dict[str, Any]]
-            ]`):
-                Input dataset in one of the supported formats.
+            data:Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]: Input
+                dataset in one of the supported formats.
 
         Returns:
-            :obj:`List[DataPoint]`: A list of validated :obj:`DataPoint`
+            List (DataPoint): A list of validated :obj:`DataPoint`
                 instances.
 
         Raises:
@@ -198,11 +193,11 @@ class StaticDataset(Dataset):
                     return None
 
             rationale = item.get('rationale')
-            if not isinstance(rationale, str):
+            if rationale is not None and not isinstance(rationale, str):
                 if self._strict:
                     raise ValueError(
                         f"Sample at index {idx} has invalid 'rationale': "
-                        f"expected str, got {type(rationale)}"
+                        f"expected str or None, got {type(rationale)}"
                     )
                 else:
                     logger.warning(
@@ -256,10 +251,10 @@ class StaticDataset(Dataset):
         r"""Retrieve a datapoint by index.
 
         Args:
-            idx (:obj:`int`): Index of the datapoint.
+            idx (int): Index of the datapoint.
 
         Returns:
-            :obj:`DataPoint`: The datapoint corresponding to the given index.
+            DataPoint: The datapoint corresponding to the given index.
 
         Raises:
             IndexError: If :obj:`idx` is out of bounds (negative or greater
@@ -276,7 +271,7 @@ class StaticDataset(Dataset):
         r"""Sample a random datapoint from the dataset.
 
         Returns:
-            :obj:`DataPoint`: A randomly sampled :obj:`DataPoint`.
+            DataPoint: A randomly sampled :obj:`DataPoint`.
 
         Raises:
             RuntimeError: If the dataset is empty and no samples can be drawn.
@@ -292,7 +287,7 @@ class StaticDataset(Dataset):
         r"""Retrieve dataset metadata.
 
         Returns:
-            :obj:`Dict[str, Any]`: A copy of the dataset metadata dictionary.
+            Dict[str, Any]: A copy of the dataset metadata dictionary.
         """
 
         return self._metadata.copy()
@@ -301,11 +296,11 @@ class StaticDataset(Dataset):
         r"""Convert a Hugging Face dataset into a list of dictionaries.
 
         Args:
-            data (:obj:`HFDataset`): A Hugging Face dataset.
+            data (HFDataset): A Hugging Face dataset.
 
         Returns:
-            :obj:`List[Dict[str, Any]]`: A list of dictionaries representing
-            the dataset, where each dictionary corresponds to a datapoint.
+            List[Dict[str, Any]]: A list of dictionaries representing
+                the dataset, where each dictionary corresponds to a datapoint.
         """
         return [dict(item) for item in data]
 
@@ -315,11 +310,11 @@ class StaticDataset(Dataset):
         r"""Convert a PyTorch dataset into a list of dictionaries.
 
         Args:
-            data (:obj:`Dataset`): A PyTorch dataset.
+            data (Dataset): A PyTorch dataset.
 
         Returns:
-            :obj:`List[Dict[str, Any]]`: A list of dictionaries representing
-            the dataset.
+            List[Dict[str, Any]]: A list of dictionaries representing
+                the dataset.
 
         Raises:
             TypeError: If the dataset does not implement :obj:`__len__()`
@@ -345,10 +340,10 @@ class StaticDataset(Dataset):
         r"""Load and parse a dataset from a JSON file.
 
         Args:
-            data (:obj:`Path`): Path to the JSON file.
+            data (Path): Path to the JSON file.
 
         Returns:
-            :obj:`List[Dict[str, Any]]`: A list of datapoint dictionaries.
+            List[Dict[str, Any]]: A list of datapoint dictionaries.
 
         Raises:
             FileNotFoundError: If the specified JSON file does not exist.
@@ -383,11 +378,11 @@ class StaticDataset(Dataset):
         r"""Validate and convert a list of dictionaries into a dataset.
 
         Args:
-            data (:obj:`List[Dict[str, Any]]`): A list of dictionaries where
+            data (List[Dict[str, Any]]): A list of dictionaries where
                 each dictionary must be a valid :obj:`DataPoint`.
 
         Returns:
-            :obj:`List[Dict[str, Any]]`: The validated list of dictionaries.
+            List[Dict[str, Any]]: The validated list of dictionaries.
 
         Raises:
             ValueError: If any item in the list is not a dictionary.
@@ -421,7 +416,7 @@ class GenerativeDataset(Dataset):
 
         Args:
             seed_dataset (StaticDataset): Validated static dataset to
-            use for examples.
+                use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
@@ -453,13 +448,19 @@ class GenerativeDataset(Dataset):
         for i, example in enumerate(examples, 1):
             prompt += f"Example {i}:\n"
             prompt += f"Question: {example.question}\n"
-            prompt += f"Rationale: {example.rationale}\n"
+            if example.rationale is not None:
+                prompt += f"Rationale: {example.rationale}\n"
+            else:
+                prompt += "Rationale: None\n"
             prompt += f"Final Answer: {example.final_answer}\n\n"
         prompt += "New datapoint:"
         return prompt
 
     async def generate_new(
-        self, n: int, max_retries: int = 10
+        self,
+        n: int,
+        max_retries: int = 10,
+        verify_mode: Literal["rationale", "final_answer"] = "rationale",
     ) -> List[DataPoint]:
         r"""Generates and validates `n` new datapoints through
         few-shot prompting, with a retry limit.
@@ -474,24 +475,28 @@ class GenerativeDataset(Dataset):
         Args:
             n (int): Number of valid datapoints to generate.
             max_retries (int): Maximum number of retries before stopping.
+            verify_mode (Literal["rationale", "final_answer"]): Determines
+                which field to verify. If "rationale", verifies the reasoning.
+                If "final_answer", verifies the final answer. (default:
+                :obj:`rationale`)
 
         Returns:
             List[DataPoint]: A list of newly generated valid datapoints.
 
         Raises:
             TypeError: If the agent's output is not a dictionary (or does not
-            match the expected format).
+                match the expected format).
             KeyError: If required keys are missing from the response.
             AttributeError: If the verifier response lacks attributes.
             ValidationError: If a datapoint fails schema validation.
             RuntimeError: If retries are exhausted before `n` valid datapoints
-            are generated.
+                are generated.
 
         Notes:
             - Retries on validation failures until `n` valid datapoints exist
-            or `max_retries` is reached, whichever comes first.
+                or `max_retries` is reached, whichever comes first.
             - If retries are exhausted before reaching `n`, a `RuntimeError`
-            is raised.
+                is raised.
             - Metadata includes a timestamp for tracking datapoint creation.
             - This method can be overridden to implement custom generation.
         """
@@ -513,10 +518,11 @@ class GenerativeDataset(Dataset):
                         raise TypeError("Agent output must be a dictionary")
                     if (
                         "question" not in agent_output
-                        or "rationale" not in agent_output
+                        or "final_answer" not in agent_output
                     ):
                         raise KeyError(
-                            "Missing 'question' or 'rationale' in agent output"
+                            "Missing 'question' or 'final_answer' in "
+                            "agent output"
                         )
                 except (TypeError, KeyError) as e:
                     logger.warning(
@@ -526,12 +532,23 @@ class GenerativeDataset(Dataset):
                     retries += 1
                     continue
 
-                rationale = agent_output["rationale"]
+                rationale = agent_output.get("rationale")
+                final_answer = agent_output.get("final_answer")
 
                 try:
+                    # Determine which field to verify based on verify_mode
+                    content_to_verify = ""
+                    if verify_mode == "rationale":
+                        content_to_verify = (
+                            rationale if rationale is not None else ""
+                        )
+                    else:  # verify_mode == "final_answer"
+                        content_to_verify = final_answer  # type:ignore[assignment]
+
                     verifier_response = await self.verifier.verify(
                         VerifierInput(
-                            llm_response=rationale, ground_truth=None
+                            llm_response=content_to_verify,
+                            ground_truth=None,
                         )
                     )
                     if not verifier_response or not verifier_response.result:
@@ -555,6 +572,7 @@ class GenerativeDataset(Dataset):
                         metadata={
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
+                            "verify_mode": verify_mode,
                         },
                     )
                 except ValidationError as e:
