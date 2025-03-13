@@ -20,8 +20,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.datasets.base import BaseDataset, GenerativeDataset
-from camel.extractors.base import Extractor
+from camel.datasets.base import GenerativeDataset, StaticDataset
+from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
     BaseVerifier,
@@ -139,7 +139,7 @@ class BaseEnvironment(ABC):
 
     def __init__(
         self,
-        dataset: BaseDataset,
+        dataset: StaticDataset,
         verifier: BaseVerifier,
         extractor: Extractor,
         max_steps: Optional[int] = None,
@@ -151,7 +151,7 @@ class BaseEnvironment(ABC):
         r"""Initialize the environment.
 
         Args:
-            dataset (BaseDataset): Dataset to sample questions from.
+            dataset (StaticDataset): Dataset to sample questions from.
             verifier (BaseVerifier): Verifier to check responses.
             extractor (BaseExtractor): Extractor to process LLM responses.
             max_steps (Optional[int]): Maximum steps per episode. (default:
@@ -393,7 +393,6 @@ class BaseEnvironment(ABC):
             question = getattr(datapoint, "question", None)
             final_answer = getattr(datapoint, "final_answer", None)
             rationale = getattr(datapoint, "rationale", None)
-            difficulty = getattr(datapoint, "difficulty", None)
             metadata = getattr(datapoint, "metadata", {})
 
             if not question or not final_answer:
@@ -407,7 +406,6 @@ class BaseEnvironment(ABC):
                 question=question,
                 context={
                     "final_answer": final_answer,
-                    "difficulty": difficulty,
                     "rationale": rationale,
                 },
                 metadata={
