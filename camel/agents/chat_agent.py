@@ -707,11 +707,13 @@ class ChatAgent(BaseAgent):
                 f"did not run successfully. Error: {error_info}"
             )
 
+        sanitized_messages = self._sanitize_messages_for_logging(
+            openai_messages
+        )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: "
-            f"{self._format_messages_for_logging(openai_messages)}"
+            f"processed these messages: {sanitized_messages}"
         )
 
         if isinstance(response, ChatCompletion):
@@ -753,17 +755,66 @@ class ChatAgent(BaseAgent):
                 f"did not run successfully. Error: {error_info}"
             )
 
+        sanitized_messages = self._sanitize_messages_for_logging(
+            openai_messages
+        )
         logger.info(
             f"Model {self.model_backend.model_type}, "
             f"index {self.model_backend.current_model_index}, "
-            f"processed these messages: "
-            f"{self._format_messages_for_logging(openai_messages)}"
+            f"processed these messages: {sanitized_messages}"
         )
 
         if isinstance(response, ChatCompletion):
             return self._handle_batch_response(response)
         else:
             return await self._ahandle_stream_response(response, num_tokens)
+
+    def _sanitize_messages_for_logging(self, messages):
+        r"""Sanitize OpenAI messages for logging by replacing base64 image
+        data with a simple message.
+
+        Args:
+            messages (List[OpenAIMessage]): The OpenAI messages to sanitize.
+
+        Returns:
+            List[OpenAIMessage]: The sanitized OpenAI messages.
+        """
+        # Create a copy of messages for logging to avoid modifying the
+        # original messages
+        sanitized_messages = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                sanitized_msg = msg.copy()
+                # Check if content is a list (multimodal content with images)
+                if isinstance(sanitized_msg.get('content'), list):
+                    content_list = []
+                    for item in sanitized_msg['content']:
+                        if (
+                            isinstance(item, dict)
+                            and item.get('type') == 'image_url'
+                        ):
+                            # Replace base64 image data with a simple message
+                            image_url = item.get('image_url', {}).get(
+                                'url', ''
+                            )
+                            if image_url and image_url.startswith(
+                                'data:image'
+                            ):
+                                content_list.append(
+                                    {
+                                        'type': 'image',
+                                        'image_info': {'type': 'base64 image'},
+                                    }
+                                )
+                            else:
+                                content_list.append(item)
+                        else:
+                            content_list.append(item)
+                    sanitized_msg['content'] = content_list
+                sanitized_messages.append(sanitized_msg)
+            else:
+                sanitized_messages.append(msg)
+        return sanitized_messages
 
     def _step_get_info(
         self,
@@ -992,41 +1043,6 @@ class ChatAgent(BaseAgent):
                 content=content_dict[index],
             )
             output_messages.append(chat_message)
-
-    def _format_messages_for_logging(self, messages):
-        r"""Format OpenAI messages for logging by replacing base64 image data
-        with a placeholder.
-
-        Args:
-            messages: List of OpenAI messages that may contain base64 image
-                data
-
-        Returns:
-            List of messages with base64 image data replaced by a placeholder
-        """
-        log_messages = []
-        for msg in messages:
-            # Create a copy of the message to avoid modifying the original
-            log_msg = dict(msg)
-
-            # Check if the message has content with base64 image data
-            if 'content' in log_msg and isinstance(log_msg['content'], list):
-                content_list = []
-                for item in log_msg['content']:
-                    if isinstance(item, dict) and item.get('type') == 'image':
-                        # Replace image data with placeholder
-                        content_list.append(
-                            {
-                                'type': 'image',
-                                'image_url': {'url': 'processing image'},
-                            }
-                        )
-                    else:
-                        content_list.append(item)
-                log_msg['content'] = content_list
-
-            log_messages.append(log_msg)
-        return log_messages
 
     def _step_token_exceed(
         self,
