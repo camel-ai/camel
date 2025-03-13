@@ -18,14 +18,15 @@ from typing import Any, Dict, List, Optional, Tuple
 from camel.environments.base import BaseEnvironment
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
+
 from .models import Action, Observation, StepResult
 
 logger = get_logger(__name__)
 
+
 class MultiStepEnv(BaseEnvironment):
-    r"""Base class for developing Multi-Step environments for RL with LLMs.
-    """
-    
+    r"""Base class for developing Multi-Step environments for RL with LLMs."""
+
     def __init__(
         self,
         extractor: BaseExtractor,
@@ -64,7 +65,7 @@ class MultiStepEnv(BaseEnvironment):
         except Exception as e:
             logger.error(f'Failed to setup environment: {e}')
             raise
-    
+
     @abstractmethod
     async def _setup(self) -> None:
         pass
@@ -84,7 +85,7 @@ class MultiStepEnv(BaseEnvironment):
         except Exception as e:
             logger.error(f'Failed to teardown environment: {e}')
             raise
-    
+
     @abstractmethod
     async def _close(self) -> None:
         pass
@@ -149,6 +150,9 @@ class MultiStepEnv(BaseEnvironment):
         extraction_result = await self.extractor.extract(action.llm_response)
 
         if not extraction_result:
+            logger.warning(
+                "Extractor failed parsing LLM response."
+            )
             extraction_result = ""
 
         # compute rewards
@@ -157,7 +161,7 @@ class MultiStepEnv(BaseEnvironment):
         )
 
         # check termination
-        done = self._is_done()
+        done = self.is_done()
 
         next_obs = (
             self._get_terminal_observation()
@@ -200,11 +204,22 @@ class MultiStepEnv(BaseEnvironment):
     ) -> Tuple[float, Dict[str, float]]:
         pass
 
-    def _is_done(self) -> bool:
+    def is_done(self) -> bool:
         r"""Check if episode should terminate."""
+
+        # After too many steps
         if self.max_steps and self._current_step >= self.max_steps:
             return True
+
+        # Further termination logic can be implemented in subclass
+        if self._is_done():
+            return True
+
         return False
+
+    @abstractmethod
+    def _is_done(self) -> bool:
+        pass
 
     @property
     def metadata(self) -> Dict[str, Any]:
