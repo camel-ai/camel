@@ -699,12 +699,12 @@ class ChatAgent(BaseAgent):
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
-                "run succesfully."
+                "run successfully."
             )
         elif not response:
             raise ModelProcessingError(
                 f"Unable to process messages: the only provided model "
-                f"did not run succesfully. Error: {error_info}"
+                f"did not run successfully. Error: {error_info}"
             )
 
         logger.info(
@@ -744,12 +744,12 @@ class ChatAgent(BaseAgent):
         if not response and self.model_backend.num_models > 1:
             raise ModelProcessingError(
                 "Unable to process messages: none of the provided models "
-                "run succesfully."
+                "run successfully."
             )
         elif not response:
             raise ModelProcessingError(
                 f"Unable to process messages: the only provided model "
-                f"did not run succesfully. Error: {error_info}"
+                f"did not run successfully. Error: {error_info}"
             )
 
         logger.info(
