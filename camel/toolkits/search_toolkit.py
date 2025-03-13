@@ -488,6 +488,86 @@ class SearchToolkit(BaseToolkit):
         # If no answer found, return an empty list
         return responses
 
+    @dependencies_required("requests")
+    @api_keys_required(
+        [
+            (None, 'BAIDU_API_KEY'),
+            (None, 'BAIDU_SECRET_KEY'),
+        ]
+    )
+    def search_baidu(
+            self,
+            query: str,
+            num_result_pages: int = 5,
+            lang: str = 'zh'
+    ) -> List[Dict[str, Any]]:
+        r"""Use Baidu search engine to search information for the given query.
+
+        Args:
+            query (str): The query to be searched.
+            num_result_pages (int): The number of result pages to retrieve.
+            lang (str): The language of the search results. Default is 'zh' for Chinese.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries where each dictionary
+            represents a website.
+                Each dictionary contains the following keys:
+                - 'result_id': A number in order.
+                - 'title': The title of the website.
+                - 'description': A brief description of the website.
+                - 'url': The URL of the website.
+        """
+        import requests
+
+        BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
+        BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY")
+
+        # Get access token
+        token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={BAIDU_API_KEY}&client_secret={BAIDU_SECRET_KEY}"
+        response = requests.get(token_url)
+        access_token = response.json().get("access_token")
+
+        if not access_token:
+            return [{"error": "Failed to get access token from Baidu."}]
+
+        # Search URL
+        search_url = "https://aip.baidubce.com/rest/2.0/sug"
+        params = {
+            "wd": query,
+            "pn": 0,  # Page number, starting from 0
+            "rn": num_result_pages,  # Number of results per page
+            "ie": lang,
+            "access_token": access_token
+        }
+
+        responses = []
+        try:
+            result = requests.get(search_url, params=params)
+            data = result.json()
+
+            if "g" in data:
+                search_items = data["g"]
+
+                for i, search_item in enumerate(search_items, start=1):
+                    title = search_item.get("q")
+                    description = search_item.get("s")
+                    link = search_item.get("p")
+
+                    response = {
+                        "result_id": i,
+                        "title": title,
+                        "description": description,
+                        "url": link,
+                    }
+                    responses.append(response)
+            else:
+                responses.append({"error": "Baidu search failed."})
+
+        except requests.RequestException as e:
+            responses.append({"error": f"Baidu search failed. Error: {e}"})
+
+        return responses
+
     @dependencies_required("wolframalpha")
     def query_wolfram_alpha(
         self, query: str, is_detailed: bool = False
@@ -720,4 +800,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
+            FunctionTool(self.search_baidu),
         ]
