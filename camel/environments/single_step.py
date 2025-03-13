@@ -42,7 +42,8 @@ logger = get_logger(__name__)
 
 
 class SingleStepEnv(BaseEnvironment):
-    r"""Base class for all RLVR training environments.
+    r"""Base class for all single step
+    RL training environments.
 
     An environment ties everything together. It:
     1. Holds state and manages curriculum progression
@@ -132,6 +133,23 @@ class SingleStepEnv(BaseEnvironment):
             logger.info('Environment teardown completed successfully')
         except Exception as e:
             logger.error(f'Failed to teardown environment: {e}')
+            raise
+
+    async def close(self) -> None:
+        r"""Perform a full cleanup of all environment resources."""
+        if not self._is_setup:
+            return
+
+        try:
+            await self.teardown()
+            
+            #TODO: Once teacher and dataset have clean up 
+            # methods, call them here
+            self._state = None
+            self._episode_ended = False
+            logger.info('Environment closed successfully')
+        except Exception as e:
+            logger.error(f'Failed to close environment: {e}')
             raise
 
     async def reset(self) -> Observation:
