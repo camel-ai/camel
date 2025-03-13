@@ -146,20 +146,11 @@ class MultiStepEnv(BaseEnvironment):
         current_obs: Observation = self._last_observation
         self._episode_history.append((current_obs, action))
 
-        # Extract relevant part from LLM response
-        extraction_result = await self.extractor.extract(action.llm_response)
-
-        if not extraction_result:
-            logger.warning("Extractor failed parsing LLM response.")
-            extraction_result = ""
-
         # Update the environment state based on the action
-        self._update_state(action, extraction_result)
+        await self._update_state(action)
 
         # Compute rewards
-        total_reward, rewards_dict = await self.compute_reward(
-            action, extraction_result
-        )
+        total_reward, rewards_dict = await self.compute_reward()
 
         # Check termination
         done = self.is_done()
@@ -180,7 +171,7 @@ class MultiStepEnv(BaseEnvironment):
             rewards_dict=rewards_dict,
             done=done,
             info={
-                "extraction_result": extraction_result,
+                "extraction_result": self.extractor.extract(action),
                 "step": self._current_step,
                 "state": self._state,  # Updated state
             },
@@ -191,7 +182,7 @@ class MultiStepEnv(BaseEnvironment):
         pass
 
     @abstractmethod
-    def _update_state(self, action: Action, extraction_result: str) -> None:
+    async def _update_state(self, action: Action) -> None:
         pass
 
     @abstractmethod
@@ -205,8 +196,6 @@ class MultiStepEnv(BaseEnvironment):
     @abstractmethod
     async def compute_reward(
         self,
-        action: Action,
-        extraction_result: str,
     ) -> Tuple[float, Dict[str, float]]:
         pass
 
