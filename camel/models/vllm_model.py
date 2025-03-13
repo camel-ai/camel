@@ -145,12 +145,15 @@ class VLLMModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `AsyncStream[ChatCompletionChunk]` in the stream mode.
         """
-
-        response = await self._async_client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
+        params = {
+            "messages": messages,
+            "model": self.model_type,
             **self.model_config_dict,
-        )
+        }
+        if tools is not None:
+            params["tools"] = tools
+
+        response = await self._async_client.chat.completions.create(**params)
         return response
 
     def _run(
@@ -170,12 +173,14 @@ class VLLMModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-
-        response = self._client.chat.completions.create(
-            messages=messages,
-            model=self.model_type,
+        params = {
+            "messages": messages,
+            "model": self.model_type,
             **self.model_config_dict,
-        )
+        }
+        if tools is not None:
+            params["tools"] = tools
+        response = self._client.chat.completions.create(**params)
         return response
 
     @property
