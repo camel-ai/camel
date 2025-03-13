@@ -370,7 +370,8 @@ class GenerativeDataset(Dataset):
         self._data: List[DataPoint] = []
 
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
-        r"""Construct a prompt for generating new datapoints.
+        r"""Construct a prompt for generating new datapoints
+        using a fixed sample of 3 examples from the seed dataset.
 
         Args:
             examples (List[DataPoint]): Examples to include in the prompt.
@@ -396,7 +397,7 @@ class GenerativeDataset(Dataset):
         few-shot prompting, with a retry limit.
 
         Steps:
-            1. Samples examples from the seed dataset.
+            1. Samples 3 examples from the seed dataset.
             2. Constructs a prompt using the selected examples.
             3. Uses an agent to generate a new datapoint.
             4. Verifies the datapoint using a verifier.
@@ -410,15 +411,19 @@ class GenerativeDataset(Dataset):
             List[DataPoint]: A list of newly generated valid datapoints.
 
         Raises:
-            TypeError: If the agent's output is not a dictionary.
+            TypeError: If the agent's output is not a dictionary (or does not
+            match the expected format).
             KeyError: If required keys are missing from the response.
             AttributeError: If the verifier response lacks attributes.
             ValidationError: If a datapoint fails schema validation.
-            RuntimeError: If retries are exhausted before `n` is reached.
+            RuntimeError: If retries are exhausted before `n` valid datapoints
+            are generated.
 
         Notes:
-            - Retries on validation failures until `n` valid datapoints exist.
-            - If retries are exhausted, a `RuntimeError` is raised.
+            - Retries on validation failures until `n` valid datapoints exist
+            or `max_retries` is reached, whichever comes first.
+            - If retries are exhausted before reaching `n`, a `RuntimeError`
+            is raised.
             - Metadata includes a timestamp for tracking datapoint creation.
             - This method can be overridden to implement custom generation.
         """
