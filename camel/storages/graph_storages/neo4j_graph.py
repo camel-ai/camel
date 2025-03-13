@@ -343,14 +343,14 @@ class Neo4jGraph(BaseGraphStorage):
         self, subj: str, obj: str, rel: str, timestamp: Optional[str] = None
     ) -> None:
         r"""Adds a relationship (triplet) between two entities
-            in the database with a timestamp.
+        in the database with a timestamp.
 
         Args:
             subj (str): The identifier for the subject entity.
             obj (str): The identifier for the object entity.
             rel (str): The relationship between the subject and object.
             timestamp (Optional[str]): The timestamp of the relationship.
-                                Defaults to None.
+                Defaults to None.
         """
         query = """
             MERGE (n1:`%s` {id:$subj})
@@ -737,21 +737,23 @@ class Neo4jGraph(BaseGraphStorage):
         obj: Optional[str] = None,
         rel: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        r"""
-        Query triplet information. If subj, obj, or rel is
+        r"""Query triplet information. If subj, obj, or rel is
         not specified, returns all matching triplets.
 
         Args:
             subj (Optional[str]): The ID of the subject node.
-                        If None, matches any subject node.
+                If None, matches any subject node.
+                (default: :obj:`None`)
             obj (Optional[str]): The ID of the object node.
-                        If None, matches any object node.
+                If None, matches any object node.
+                (default: :obj:`None`)
             rel (Optional[str]): The type of relationship.
-                        If None, matches any relationship type.
+                If None, matches any relationship type.
+                (default: :obj:`None`)
 
         Returns:
             List[Dict[str, Any]]: A list of matching triplets,
-                    each containing subj, obj, rel, and timestamp.
+                each containing subj, obj, rel, and timestamp.
         """
         import logging
 
