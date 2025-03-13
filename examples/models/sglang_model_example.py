@@ -87,8 +87,7 @@ weather_tool = [
 ]
 
 
-r"""
-Note that api_key defines the parser used to interpret responses.
+r"""Note that api_key defines the parser used to interpret responses.
 Currently supported parsers include:
 llama3: Llama 3.1 / 3.2 (e.g. meta-llama/Llama-3.1-8B-Instruct,
         meta-llama/Llama-3.2-1B-Instruct).

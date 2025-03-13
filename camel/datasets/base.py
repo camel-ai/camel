@@ -42,13 +42,9 @@ class DataPoint(BaseModel):
 
     Attributes:
         question (str): The primary question or issue to be addressed.
-        rationale (str): Logical reasoning or explanation behind the
-            answer.
+        rationale (Optional[str]): Logical reasoning or explanation behind the
+            answer. (default: :obj:`None`)
         final_answer (str): The final answer.
-        raw_markdown (Optional[str]): Raw markdown content for generating
-            rewards/hints. (default: :obj:`None`)
-        difficulty (Optional[str]): Difficulty level of the question.
-            (default: :obj:`None`)
         metadata Optional[Dict[str, Any]]: Additional metadata about the data
             point. (default: :obj:`None`)
     """
@@ -56,13 +52,12 @@ class DataPoint(BaseModel):
     question: str = Field(
         ..., description="The primary question or issue to be addressed."
     )
-    rationale: str = Field(
-        ..., description="Logical reasoning or explanation behind the answer."
+    rationale: Optional[str] = Field(
+        default=None,
+        description="Logical reasoning or explanation behind the answer.",
     )
     final_answer: str = Field(..., description="The final answer.")
-    difficulty: Optional[str] = Field(
-        None, description="Difficulty level of the question."
-    )
+
     metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Additional metadata about the data point."
     )
@@ -91,9 +86,8 @@ class DataPoint(BaseModel):
 class StaticDataset(Dataset):
     r"""A static dataset containing a list of datapoints.
     Ensures that all items adhere to the DataPoint schema.
-    This dataset complies with the PyTorch dataset
-    standard and should be used when its size is fixed at
-    runtime.
+    This dataset extends :obj:`Dataset` from PyTorch and should
+    be used when its size is fixed at runtime.
 
     This class can initialize from Hugging Face Datasets,
     PyTorch Datasets, JSON file paths, or lists of dictionaries,
@@ -111,26 +105,29 @@ class StaticDataset(Dataset):
         r"""Initialize the static dataset and validate integrity.
 
         Args:
-            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
-            Input data, which can be:
-                - A Hugging Face Dataset (HFDataset)
-                - A PyTorch Dataset (torch.utils.data.Dataset)
-                - A Path object representing the path to a JSON file
-                - A list of dictionaries with DataPoint-compatible fields
-            seed (int): Seed for reproducibility.
-                (default: :obj:`42`)
-            min_samples (int): Minimum number of samples required.
-                (default: :obj:`1`)
-            strict (bool): Whether to raise an error on invalid datapoints
-                (True) or skip/filter them (False). (default: False)
+            data (:obj:`Union[HFDataset, Dataset,
+            Path, List[Dict[str, Any]]]`):
+                Input data, which can be one of the following:
+                - A Hugging Face Dataset (:obj:`HFDataset`).
+                - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`).
+                - A :obj:`Path` object representing a JSON file.
+                - A list of dictionaries with :obj:`DataPoint`-compatible
+                  fields.
+            seed (:obj:`int`): Random seed for reproducibility.
+                Default is :obj:`42`.
+            min_samples (:obj:`int`): Minimum required number of samples.
+                Default is :obj:`1`.
+            strict (:obj:`bool`): Whether to raise an error on invalid
+                datapoints (:obj:`True`) or skip/filter them (:obj:`False`).
+                Default is :obj:`False`.
             **kwargs: Additional dataset parameters.
 
         Raises:
-            TypeError: If the data type is not supported.
-            ValueError: If dataset size is less than min_samples or
-            if sample validation fails.
-            FileNotFoundError: If the JSON file path doesn't exist.
-            json.JSONDecodeError: If the JSON file is invalid.
+            TypeError: If the input data type is unsupported.
+            ValueError: If the dataset contains fewer than :obj:`min_samples`
+                datapoints or if validation fails.
+            FileNotFoundError: If the specified JSON file path does not exist.
+            json.JSONDecodeError: If the JSON file contains invalid formatting.
         """
 
         # Store all parameters in metadata dict for compatibility
@@ -139,10 +136,6 @@ class StaticDataset(Dataset):
         }
         self._rng = random.Random(seed)
         self._strict = strict
-
-        # Type checking and conversion into list of dicts to prepare validation
-        # and conversion into list of Datapoints. Since Static Dataset should
-        # be small, we can load it entirely into memory
 
         self.data: List[DataPoint] = self._init_data(data)
         self._length = len(self.data)
@@ -156,6 +149,26 @@ class StaticDataset(Dataset):
     def _init_data(
         self, data: Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]
     ) -> List[DataPoint]:
+        r"""Convert input data from various formats into a list of
+        :obj:`DataPoint` instances.
+
+        Args:
+            data (:obj:`Union[
+                HFDataset,
+                Dataset,
+                Path,
+                List[Dict[str, Any]]
+            ]`):
+                Input dataset in one of the supported formats.
+
+        Returns:
+            :obj:`List[DataPoint]`: A list of validated :obj:`DataPoint`
+                instances.
+
+        Raises:
+            TypeError: If the input data type is unsupported.
+        """
+
         if isinstance(data, HFDataset):
             raw_data = self._init_from_hf_dataset(data)
         elif isinstance(data, Dataset):
@@ -217,7 +230,6 @@ class StaticDataset(Dataset):
                     rationale=rationale,
                     final_answer=final_answer,
                     metadata=item.get('metadata'),
-                    difficulty=item.get('difficulty'),
                 )
             except ValidationError as e:
                 if self._strict:
@@ -241,17 +253,19 @@ class StaticDataset(Dataset):
         return self._length
 
     def __getitem__(self, idx: int) -> DataPoint:
-        r"""Get an item from the dataset.
+        r"""Retrieve a datapoint by index.
 
         Args:
-            idx (int): Index of the item to get.
+            idx (:obj:`int`): Index of the datapoint.
 
         Returns:
-            DataPoint: DataPoint from the dataset with the given index.
+            :obj:`DataPoint`: The datapoint corresponding to the given index.
 
         Raises:
-            IndexError: If idx is out of bounds.
+            IndexError: If :obj:`idx` is out of bounds (negative or greater
+                than dataset length - 1).
         """
+
         if idx < 0 or idx >= self._length:
             raise IndexError(
                 f"Index {idx} out of bounds for dataset of size {self._length}"
@@ -262,11 +276,12 @@ class StaticDataset(Dataset):
         r"""Sample a random datapoint from the dataset.
 
         Returns:
-            DataPoint: A randomly sampled DataPoint.
+            :obj:`DataPoint`: A randomly sampled :obj:`DataPoint`.
 
         Raises:
-            RuntimeError: If the dataset is empty.
+            RuntimeError: If the dataset is empty and no samples can be drawn.
         """
+
         if self._length == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
         idx = self._rng.randint(0, self._length - 1)
@@ -274,15 +289,42 @@ class StaticDataset(Dataset):
 
     @property
     def metadata(self) -> Dict[str, Any]:
-        r"""Get dataset metadata."""
+        r"""Retrieve dataset metadata.
+
+        Returns:
+            :obj:`Dict[str, Any]`: A copy of the dataset metadata dictionary.
+        """
+
         return self._metadata.copy()
 
     def _init_from_hf_dataset(self, data: HFDataset) -> List[Dict[str, Any]]:
+        r"""Convert a Hugging Face dataset into a list of dictionaries.
+
+        Args:
+            data (:obj:`HFDataset`): A Hugging Face dataset.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of dictionaries representing
+            the dataset, where each dictionary corresponds to a datapoint.
+        """
         return [dict(item) for item in data]
 
     def _init_from_pytorch_dataset(
         self, data: Dataset
     ) -> List[Dict[str, Any]]:
+        r"""Convert a PyTorch dataset into a list of dictionaries.
+
+        Args:
+            data (:obj:`Dataset`): A PyTorch dataset.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of dictionaries representing
+            the dataset.
+
+        Raises:
+            TypeError: If the dataset does not implement :obj:`__len__()`
+                or contains non-dictionary elements.
+        """
         if not isinstance(data, Sized):
             raise TypeError(
                 f"{type(data).__name__} does not implement `__len__()`."
@@ -300,6 +342,20 @@ class StaticDataset(Dataset):
         return raw_data
 
     def _init_from_json_path(self, data: Path) -> List[Dict[str, Any]]:
+        r"""Load and parse a dataset from a JSON file.
+
+        Args:
+            data (:obj:`Path`): Path to the JSON file.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of datapoint dictionaries.
+
+        Raises:
+            FileNotFoundError: If the specified JSON file does not exist.
+            ValueError: If the JSON content is not a list of dictionaries.
+            json.JSONDecodeError: If the JSON file has invalid formatting.
+        """
+
         if not data.exists():
             raise FileNotFoundError(f"JSON file not found: {data}")
         try:
@@ -324,6 +380,18 @@ class StaticDataset(Dataset):
     def _init_from_list(
         self, data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
+        r"""Validate and convert a list of dictionaries into a dataset.
+
+        Args:
+            data (:obj:`List[Dict[str, Any]]`): A list of dictionaries where
+                each dictionary must be a valid :obj:`DataPoint`.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: The validated list of dictionaries.
+
+        Raises:
+            ValueError: If any item in the list is not a dictionary.
+        """
         for i, item in enumerate(data):
             if not isinstance(item, dict):
                 raise ValueError(
@@ -370,7 +438,8 @@ class GenerativeDataset(Dataset):
         self._data: List[DataPoint] = []
 
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
-        r"""Construct a prompt for generating new datapoints.
+        r"""Construct a prompt for generating new datapoints
+        using a fixed sample of 3 examples from the seed dataset.
 
         Args:
             examples (List[DataPoint]): Examples to include in the prompt.
@@ -389,40 +458,47 @@ class GenerativeDataset(Dataset):
         prompt += "New datapoint:"
         return prompt
 
-    async def generate_new(self, n: int) -> List[DataPoint]:
+    async def generate_new(
+        self, n: int, max_retries: int = 10
+    ) -> List[DataPoint]:
         r"""Generates and validates `n` new datapoints through
-        few-shot prompting.
+        few-shot prompting, with a retry limit.
 
         Steps:
-            1. Samples examples from the seed dataset.
+            1. Samples 3 examples from the seed dataset.
             2. Constructs a prompt using the selected examples.
             3. Uses an agent to generate a new datapoint.
             4. Verifies the datapoint using a verifier.
-            5. Adds valid datapoints to the dataset.
+            5. Stores valid datapoints in memory.
 
         Args:
             n (int): Number of valid datapoints to generate.
+            max_retries (int): Maximum number of retries before stopping.
 
         Returns:
-            List[DataPoint]: Successfully generated and validated datapoints.
+            List[DataPoint]: A list of newly generated valid datapoints.
 
         Raises:
-            TypeError: If the agent's output is not a dictionary.
-            KeyError: If required keys are missing from the agent's response.
-            AttributeError: If the verifier response lacks expected attributes.
+            TypeError: If the agent's output is not a dictionary (or does not
+            match the expected format).
+            KeyError: If required keys are missing from the response.
+            AttributeError: If the verifier response lacks attributes.
             ValidationError: If a datapoint fails schema validation.
+            RuntimeError: If retries are exhausted before `n` valid datapoints
+            are generated.
 
         Notes:
-            - Retries on validation failures until `n` valid datapoints exist.
-            - Metadata includes a timestamp.
-            - This method can be overridden to use any synthetic data gen
-            algorithm, as long as it generates `n` valid datapoints,
-            returns them as a `List[DataPoint]`, and adds them to `self._data`.
+            - Retries on validation failures until `n` valid datapoints exist
+            or `max_retries` is reached, whichever comes first.
+            - If retries are exhausted before reaching `n`, a `RuntimeError`
+            is raised.
+            - Metadata includes a timestamp for tracking datapoint creation.
+            - This method can be overridden to implement custom generation.
         """
-
         valid_data_points: List[DataPoint] = []
+        retries = 0
 
-        while len(valid_data_points) < n:
+        while len(valid_data_points) < n and retries < max_retries:
             try:
                 examples = [self.seed_dataset.sample() for _ in range(3)]
                 prompt = self._construct_prompt(examples)
@@ -443,22 +519,32 @@ class GenerativeDataset(Dataset):
                             "Missing 'question' or 'rationale' in agent output"
                         )
                 except (TypeError, KeyError) as e:
-                    logger.warning(f"Agent output issue: {e}, retrying...")
+                    logger.warning(
+                        f"Agent output issue: {e}, retrying... "
+                        f"({retries + 1}/{max_retries})"
+                    )
+                    retries += 1
                     continue
 
                 rationale = agent_output["rationale"]
 
                 try:
                     verifier_response = await self.verifier.verify(
-                        VerifierInput(llm_response=rationale)
+                        VerifierInput(
+                            llm_response=rationale, ground_truth=None
+                        )
                     )
                     if not verifier_response or not verifier_response.result:
                         raise ValueError(
-                            "Verifier unsuccessful, "
-                            f"response: {verifier_response}"
+                            "Verifier unsuccessful, response: "
+                            f"{verifier_response}"
                         )
                 except (ValueError, AttributeError) as e:
-                    logger.warning(f"Verifier issue: {e}, retrying...")
+                    logger.warning(
+                        f"Verifier issue: {e}, "
+                        f"retrying... ({retries + 1}/{max_retries})"
+                    )
+                    retries += 1
                     continue
 
                 try:
@@ -466,21 +552,59 @@ class GenerativeDataset(Dataset):
                         question=agent_output["question"],
                         rationale=rationale,
                         final_answer=verifier_response.result,
-                        metadata={"created": datetime.now().isoformat()},
+                        metadata={
+                            "synthetic": str(True),
+                            "created": datetime.now().isoformat(),
+                        },
                     )
                 except ValidationError as e:
                     logger.warning(
-                        f"Datapoint validation failed: {e}, retrying..."
+                        f"Datapoint validation failed: {e}, "
+                        f"retrying... ({retries + 1}/{max_retries})"
                     )
+                    retries += 1
                     continue
 
                 valid_data_points.append(new_datapoint)
 
             except Exception as e:
-                logger.warning(f"Unexpected error: {e}, retrying...")
+                logger.warning(
+                    f"Unexpected error: {e}, retrying..."
+                    f" ({retries + 1}/{max_retries})"
+                )
+                retries += 1
+
+        if len(valid_data_points) < n:
+            raise RuntimeError(
+                f"Failed to generate {n} valid datapoints "
+                f"after {max_retries} retries."
+            )
 
         self._data.extend(valid_data_points)
         return valid_data_points
+
+    def __len__(self) -> int:
+        r"""Return the size of the dataset."""
+        return len(self._data)
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        r"""Retrieve a datapoint by index.
+
+        Args:
+            idx (int): Index of the datapoint.
+
+        Returns:
+            DataPoint: The datapoint corresponding to the given index.
+
+        Raises:
+            IndexError: If idx is out of bounds.
+        """
+        if idx < 0 or idx >= len(self._data):
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of "
+                f"size {len(self._data)}"
+            )
+        return self._data[idx]
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the dataset to a JSONL (JSON Lines) file.

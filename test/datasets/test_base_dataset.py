@@ -43,7 +43,6 @@ def test_datapoint_creation():
     assert datapoint.question == 'What is 2+2?'
     assert datapoint.rationale == 'Addition of two numbers'
     assert datapoint.final_answer == '4'
-    assert datapoint.difficulty is None
     assert datapoint.metadata is None
 
 
@@ -52,8 +51,11 @@ def test_datapoint_validation():
     with pytest.raises(ValidationError):
         DataPoint(question='What is 2+2?')
 
-    with pytest.raises(ValidationError):
-        DataPoint(question='What is 2+2?', rationale='Addition')
+    # This should now work since rationale is optional
+    datapoint = DataPoint(question='What is 2+2?', final_answer='4')
+    assert datapoint.question == 'What is 2+2?'
+    assert datapoint.rationale is None
+    assert datapoint.final_answer == '4'
 
 
 def test_datapoint_to_dict():
@@ -62,7 +64,6 @@ def test_datapoint_to_dict():
         'question': 'What is 2+2?',
         'rationale': 'Addition of two numbers',
         'final_answer': '4',
-        'difficulty': 'easy',
         'metadata': {'topic': 'math'},
     }
 
@@ -72,12 +73,12 @@ def test_datapoint_to_dict():
     assert data_dict['question'] == 'What is 2+2?'
     assert data_dict['rationale'] == 'Addition of two numbers'
     assert data_dict['final_answer'] == '4'
-    assert data_dict['difficulty'] == 'easy'
     assert data_dict['metadata'] == {'topic': 'math'}
 
 
 def test_datapoint_from_dict():
     r"""Test creating DataPoint from dictionary."""
+    # Test with rationale
     data = {
         'question': 'What is 2+2?',
         'rationale': 'Addition of two numbers',
@@ -153,9 +154,6 @@ def test_static_dataset_init_from_hf_dataset():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
-    assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
 
@@ -200,7 +198,6 @@ def test_static_dataset_init_from_hf_dataset():
             "question": "What is the capital of France?",
             "rationale": "France is a country in Europe.",
             "final_answer": "Paris",
-            "difficulty": "easy",
             "metadata": {"source": "geography", "id": 123},
             "extra_field": "this should be ignored",  # Not in DataPoint
         }
@@ -224,9 +221,6 @@ def test_static_dataset_init_from_hf_dataset():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -289,9 +283,6 @@ def test_static_dataset_init_from_pytorch_dataset():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
-    assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
 
@@ -341,7 +332,6 @@ def test_static_dataset_init_from_pytorch_dataset():
             "question": "What is the capital of France?",
             "rationale": "France is a country in Europe.",
             "final_answer": "Paris",
-            "difficulty": "easy",
             "metadata": {"source": "geography", "id": 123},
             "extra_field": "this should be ignored",  # Not in DataPoint
         }
@@ -365,9 +355,6 @@ def test_static_dataset_init_from_pytorch_dataset():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -449,9 +436,6 @@ def test_static_dataset_init_from_json_file():
     assert (
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
-    assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
     assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
@@ -535,7 +519,6 @@ def test_static_dataset_init_from_json_file():
                 "question": "What is the capital of France?",
                 "rationale": "France is a country in Europe.",
                 "final_answer": "Paris",
-                "difficulty": "easy",
                 "metadata": {"source": "geography", "id": 123},
                 "extra_field": "this should be ignored",
             }
@@ -559,9 +542,6 @@ def test_static_dataset_init_from_json_file():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -653,9 +633,6 @@ def test_static_dataset_init_from_list():
         dataset[1].final_answer == "yes"
     ), "Second final answer should match input."
     assert (
-        dataset[0].difficulty is None
-    ), "Difficulty should be None when not provided."
-    assert (
         dataset[0].metadata is None
     ), "Metadata should be None when not provided."
 
@@ -711,7 +688,6 @@ def test_static_dataset_init_from_list():
             "question": "What is the capital of France?",
             "rationale": "France is a country in Europe.",
             "final_answer": "Paris",
-            "difficulty": "easy",
             "metadata": {"source": "geography", "id": 123},
             "extra_field": "this should be ignored",
         }
@@ -732,9 +708,6 @@ def test_static_dataset_init_from_list():
     assert (
         dataset_optional[0].final_answer == "Paris"
     ), "Final answer should match."
-    assert (
-        dataset_optional[0].difficulty == "easy"
-    ), "Difficulty should be set correctly."
     assert dataset_optional[0].metadata == {
         "source": "geography",
         "id": 123,
@@ -884,6 +857,221 @@ async def test_generative_dataset():
     # Verify generated data
     assert all(isinstance(dp, DataPoint) for dp in dataset._data)
     assert all(dp.final_answer == "Verified Answer" for dp in dataset._data)
+
+
+@pytest.mark.asyncio
+async def test_generate_new():
+    r"""Test GenerativeDataset with mocked components."""
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Create a mock verifier instead of using a real PythonVerifier
+    mock_verifier = MagicMock()
+
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.side_effect = [
+        MagicMock(result="11"),
+        MagicMock(result=None),
+        MagicMock(result="15"),
+    ]
+
+    mock_agent = MagicMock()
+    mock_agent.step.return_value = MagicMock(
+        msgs=[
+            MagicMock(
+                parsed={
+                    'question': 'Generated Question',
+                    'rationale': 'Generated Rationale',
+                }
+            )
+        ]
+    )
+    mock_agent.step.side_effect = [
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 5 + 6?",
+                        "rationale": "print(5 + 6)",
+                    }
+                )
+            ]
+        ),
+        # syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 3 + 5?",
+                        "rationale": "print(2 + )",
+                    }
+                )
+            ]
+        ),
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 7 + 8?",
+                        "rationale": "print(7 + 8)",
+                    }
+                )
+            ]
+        ),
+    ]
+
+    # Create GenerativeDataset with mocks
+    dataset = GenerativeDataset(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        agent=mock_agent,
+    )
+
+    new_datapoints = await dataset.generate_new(2)
+
+    assert (
+        len(new_datapoints) == 2
+    ), "Should generate exactly 2 valid datapoints"
+    assert mock_agent.step.call_count == 3, "Should retry past invalid output"
+
+    # Check first correct datapoint (5 + 6 = 11)
+    dp1 = new_datapoints[0]
+    assert dp1.question == "What is 5 + 6?"
+    assert dp1.rationale == "print(5 + 6)"
+    assert (
+        dp1.final_answer == "11"
+    ), "Verifier should output '11' from print(5 + 6)"
+    assert dp1.metadata["synthetic"] == "True"
+
+    # Check second correct datapoint (7 + 8 = 15)
+    dp2 = new_datapoints[1]
+    assert dp2.question == "What is 7 + 8?"
+    assert dp2.rationale == "print(7 + 8)"
+    assert (
+        dp2.final_answer == "15"
+    ), "Verifier should output '15' from print(7 + 8)"
+    assert dp2.metadata["synthetic"] == "True"
+
+    # Verify that the mock verifier was called the expected number of times
+    assert (
+        mock_verifier.verify.call_count == 3
+    ), "Verifier should be called 3 times"
+
+
+@pytest.mark.asyncio
+async def test_generate_new_with_max_retries():
+    r"""Test GenerativeDataset retry mechanism with
+    max_retries=2 and a sequence of one correct, three wrong,
+    and one correct output, expecting failure."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    # Create a mock verifier instead of using a real PythonVerifier
+    mock_verifier = MagicMock()
+
+    mock_verifier.verify = AsyncMock()
+    mock_verifier.verify.side_effect = [
+        MagicMock(result="7"),
+        MagicMock(result=None),
+        MagicMock(result=None),
+        MagicMock(result=None),
+        MagicMock(result="23"),
+    ]
+
+    # Set up mock agent with specific output sequence
+    mock_agent = MagicMock()
+    mock_agent.step.side_effect = [
+        # Correct
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 3 + 4?",
+                        "rationale": "print(3 + 4)",
+                    }
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 5 + 6?",
+                        "rationale": "print(5 + )",
+                    }
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 7 + 8?",
+                        "rationale": "print(7 + )",
+                    }
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 9 + 10?",
+                        "rationale": "print(9 + )",
+                    }
+                )
+            ]
+        ),
+        # Correct
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 11 + 12?",
+                        "rationale": "print(11 + 12)",
+                    }
+                )
+            ]
+        ),
+    ]
+
+    dataset = GenerativeDataset(
+        seed_dataset=mock_static_dataset,
+        verifier=mock_verifier,
+        agent=mock_agent,
+    )
+
+    # Expect RuntimeError due to insufficient valid
+    # datapoints within retry limit
+    with pytest.raises(
+        RuntimeError,
+        match="Failed to generate 2 valid datapoints after 2 retries.",
+    ):
+        await dataset.generate_new(2, max_retries=2)
+
+    # Verify that the agent was called 3 times before failing
+    assert (
+        mock_agent.step.call_count == 3
+    ), "Should attempt 3 times: correct, wrong, wrong"
+
+    # Verify that the mock verifier was called the expected number of times
+    assert (
+        mock_verifier.verify.call_count == 3
+    ), "Verifier should be called 3 times"
 
 
 @pytest.mark.asyncio

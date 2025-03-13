@@ -14,6 +14,7 @@
 
 import asyncio
 from pathlib import Path
+from typing import ClassVar
 
 from camel.datasets import GenerativeDataset, StaticDataset
 from camel.logger import get_logger
@@ -41,7 +42,7 @@ class MockChatAgent:
         """Simulates LLM response with executable Python rationale."""
 
         class MockResponse:
-            msgs = [
+            msgs: ClassVar = [
                 type(
                     "MockMessage",
                     (),
