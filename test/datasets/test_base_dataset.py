@@ -27,6 +27,7 @@ from camel.datasets.base import (
     GenerativeDataset,
     StaticDataset,
 )
+from camel.verifiers.python_verifier import PythonVerifier
 
 
 # ruff: noqa: RUF001
@@ -884,6 +885,199 @@ async def test_generative_dataset():
     # Verify generated data
     assert all(isinstance(dp, DataPoint) for dp in dataset._data)
     assert all(dp.final_answer == "Verified Answer" for dp in dataset._data)
+
+
+@pytest.mark.asyncio
+async def test_generate_new():
+    r"""Test GenerativeDataset with mocked components."""
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    verifier = PythonVerifier()
+    await verifier.setup()
+
+    mock_agent = MagicMock()
+    mock_agent.step.return_value = MagicMock(
+        msgs=[
+            MagicMock(
+                parsed={
+                    'question': 'Generated Question',
+                    'rationale': 'Generated Rationale',
+                }
+            )
+        ]
+    )
+    mock_agent.step.side_effect = [
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 5 + 6?",
+                        "rationale": "print(5 + 6)",
+                    }
+                )
+            ]
+        ),
+        # syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 3 + 5?",
+                        "rationale": "print(2 + )",
+                    }
+                )
+            ]
+        ),
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 7 + 8?",
+                        "rationale": "print(7 + 8)",
+                    }
+                )
+            ]
+        ),
+    ]
+
+    # Create GenerativeDataset with mocks
+    dataset = GenerativeDataset(
+        seed_dataset=mock_static_dataset,
+        verifier=verifier,
+        agent=mock_agent,
+    )
+
+    new_datapoints = await dataset.generate_new(2)
+
+    assert (
+        len(new_datapoints) == 2
+    ), "Should generate exactly 2 valid datapoints"
+    assert mock_agent.step.call_count == 3, "Should retry past invalid output"
+
+    # Check first correct datapoint (5 + 6 = 11)
+    dp1 = new_datapoints[0]
+    assert dp1.question == "What is 5 + 6?"
+    assert dp1.rationale == "print(5 + 6)"
+    assert (
+        dp1.final_answer == "11"
+    ), "Verifier should output '11' from print(5 + 6)"
+    assert dp1.metadata["synthetic"] == "True"
+
+    # Check second correct datapoint (7 + 8 = 15)
+    dp2 = new_datapoints[1]
+    assert dp2.question == "What is 7 + 8?"
+    assert dp2.rationale == "print(7 + 8)"
+    assert (
+        dp2.final_answer == "15"
+    ), "Verifier should output '15' from print(7 + 8)"
+    assert dp2.metadata["synthetic"] == "True"
+
+    await verifier.cleanup()
+
+
+@pytest.mark.asyncio
+async def test_generate_new_with_max_retries():
+    r"""Test GenerativeDataset retry mechanism with
+    max_retries=2 and a sequence of one correct, three wrong,
+    and one correct output, expecting failure."""
+
+    mock_static_dataset = MagicMock(spec=StaticDataset)
+    mock_static_dataset.__len__.return_value = 5
+    mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
+        question=f"Question {i}",
+        rationale=f"Rationale {i}",
+        final_answer=f"Answer {i}",
+    )
+
+    verifier = PythonVerifier()
+    await verifier.setup()
+
+    # Set up mock agent with specific output sequence
+    mock_agent = MagicMock()
+    mock_agent.step.side_effect = [
+        # Correct
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 3 + 4?",
+                        "rationale": "print(3 + 4)",
+                    }
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 5 + 6?",
+                        "rationale": "print(5 + )",
+                    }
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 7 + 8?",
+                        "rationale": "print(7 + )",
+                    }
+                )
+            ]
+        ),
+        # Wrong: Syntactically incorrect
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 9 + 10?",
+                        "rationale": "print(9 + )",
+                    }
+                )
+            ]
+        ),
+        # Correct
+        MagicMock(
+            msgs=[
+                MagicMock(
+                    parsed={
+                        "question": "What is 11 + 12?",
+                        "rationale": "print(11 + 12)",
+                    }
+                )
+            ]
+        ),
+    ]
+
+    dataset = GenerativeDataset(
+        seed_dataset=mock_static_dataset,
+        verifier=verifier,
+        agent=mock_agent,
+    )
+
+    # Expect RuntimeError due to insufficient valid
+    # datapoints within retry limit
+    with pytest.raises(
+        RuntimeError,
+        match="Failed to generate 2 valid datapoints after 2 retries.",
+    ):
+        await dataset.generate_new(2, max_retries=2)
+
+    # Verify that the agent was called 3 times before failing
+    assert (
+        mock_agent.step.call_count == 3
+    ), "Should attempt 3 times: correct, wrong, wrong"
+
+    await verifier.cleanup()
 
 
 @pytest.mark.asyncio
