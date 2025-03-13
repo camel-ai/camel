@@ -189,7 +189,7 @@ pip install camel-ai
 
 For more detailed instructions and additional configuration options, check out the [installation section](https://github.com/camel-ai/camel/blob/master/docs/get_started/installation.md).
 
-After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://www.docs.camel-ai.org) to build powerful multi-agent systems.
+After running, you can explore our CAMEL Tech Stack and Cookbooks at [www.docs.camel-ai.org](https://docs.camel-ai.org) to build powerful multi-agent systems.
 
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
