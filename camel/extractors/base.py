@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -204,6 +205,10 @@ class Extractor:
 
         Returns:
             Optional[str]: Extracted data if successful, otherwise None.
+
+        Raises:
+            ValueError: If response is empty or invalid.
+            RuntimeError: If extractor is not initialized.
         """
         if not self._is_setup:
             raise RuntimeError(
@@ -211,4 +216,41 @@ class Extractor:
             )
         if not response or not response.strip():
             raise ValueError("Empty or whitespace-only response")
-        raise NotImplementedError("Subclasses must implement extract()")
+
+        current_input = response  # Initial input
+
+        for stage in self._pipeline:
+            stage_success = (
+                False  # Track if any strategy in the stage succeeds
+            )
+
+            for strategy in stage:
+                try:
+                    # Apply the extraction timeout
+                    result = await asyncio.wait_for(
+                        strategy.extract(current_input),
+                        timeout=self._metadata["extraction_timeout"],
+                    )
+
+                    if result is not None:
+                        current_input = result  # Feed into next stage
+                        stage_success = True
+                        break  # Move to next stage if valid extraction occurs
+
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"Strategy {strategy.__class__.__name__} timed out "
+                        f"after {self._metadata['extraction_timeout']} seconds"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Strategy {strategy.__class__.__name__} failed: {e}"
+                    )
+
+            if not stage_success:
+                logger.debug(
+                    "No strategy in stage succeeded, stopping extraction."
+                )
+                return None  # Stop processing if the stage fails
+
+        return current_input  # Final processed output
