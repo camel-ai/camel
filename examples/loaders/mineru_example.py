@@ -31,7 +31,7 @@ def main():
         # Wait for completion
         result = mineru.wait_for_completion(task_id)
         print("\nTask completed successfully:")
-        print(f"Download URL: {result['full_zip_url']}")
+        print(f"Download URL: {result}")
 
     except Exception as e:
         print(f"Single URL extraction failed: {e}")

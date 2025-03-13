@@ -41,8 +41,8 @@ def main():
         *GoogleMapsToolkit().get_tools(),
     ]
 
-    model_platform = ModelPlatformType.DEFAULT
-    model_type = ModelType.DEFAULT
+    model_platform = ModelPlatformType.ANTHROPIC
+    model_type = ModelType.CLAUDE_3_5_SONNET
     assistant_role_name = "Searcher"
     user_role_name = "Professor"
     assistant_agent_kwargs = dict(

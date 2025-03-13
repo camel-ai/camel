@@ -65,8 +65,7 @@ class BM25Retriever(BaseRetriever):
         Raises:
             ValueError: If neither `chunks` nor `self.chunks` is available.
         """
-        if chunks is None:
-            chunks = self.chunks
+        chunks = chunks or self.chunks
 
         if not chunks:
             raise ValueError("No chunks provided.")
@@ -75,7 +74,9 @@ class BM25Retriever(BaseRetriever):
 
         tokenized_corpus = []
         for chunk in chunks:
-            tokenized_corpus.append(chunk.text.split(" "))
+            tokenized_corpus.append(
+                ''.join(c if c.isalnum() else ' ' for c in chunk.text).split()
+            )
 
         self.bm25 = BM25Okapi(tokenized_corpus)
 

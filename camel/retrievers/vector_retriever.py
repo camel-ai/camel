@@ -114,6 +114,61 @@ class VectorRetriever(BaseRetriever):
 
             self.storage.add(records=records)
 
+    def _get_content_path_info(
+        self, content: Union[str, Element, IO[bytes]]
+    ) -> str:
+        if isinstance(content, Element):
+            return (
+                content.metadata.file_directory[:100]
+                if content.metadata.file_directory
+                else ""
+            )
+        elif isinstance(content, IOBase):
+            return "From file bytes"
+        elif isinstance(content, str):
+            return content[:100]
+        return ""
+
+    def _parse_content(
+        self,
+        content: Union[str, Element, IO[bytes]],
+        metadata_filename: Optional[str],
+        **kwargs,
+    ) -> list[Element]:
+        if isinstance(content, Element):
+            return [content]
+        elif isinstance(content, IOBase):
+            try:
+                return (
+                    self.uio.parse_bytes(
+                        file=content,
+                        metadata_filename=metadata_filename,
+                        **kwargs,
+                    )
+                    or []
+                )
+            finally:
+                content.close()
+        elif isinstance(content, str):
+            parsed_url = urlparse(content)
+            is_url = all([parsed_url.scheme, parsed_url.netloc])
+
+            if is_url or os.path.exists(content):
+                return (
+                    self.uio.parse_file_or_url(
+                        input_path=content,
+                        metadata_filename=metadata_filename,
+                        **kwargs,
+                    )
+                    or []
+                )
+            return [
+                self.uio.create_element_from_text(
+                    text=content, filename=metadata_filename
+                )
+            ]
+        raise ValueError(f"Unsupported content type: {type(content)}")
+
     def process(
         self,
         content: Union[str, "Element", IO[bytes]],
@@ -148,51 +203,13 @@ class VectorRetriever(BaseRetriever):
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         if chunk_tool_type == ChunkToolType.UNSTRUCTURED_IO:
-            from unstructured.documents.elements import Element
-
             from camel.loaders import UnstructuredIO
 
             self.uio: UnstructuredIO = UnstructuredIO()
-
-            if isinstance(content, Element):
-                content_path_info = (
-                    content.metadata.file_directory[:100]
-                    if content.metadata.file_directory
-                    else ""
-                )
-                elements = [content]
-            elif isinstance(content, IOBase):
-                content_path_info = "From file bytes"
-                elements = (
-                    self.uio.parse_bytes(
-                        file=content,
-                        metadata_filename=metadata_filename,
-                        **kwargs,
-                    )
-                    or []
-                )
-            elif isinstance(content, str):
-                content_path_info = content[:100]
-                # Check if the content is URL
-                parsed_url = urlparse(content)
-                is_url = all([parsed_url.scheme, parsed_url.netloc])
-                if is_url or os.path.exists(content):
-                    elements = (
-                        self.uio.parse_file_or_url(
-                            input_path=content,
-                            metadata_filename=metadata_filename,
-                            **kwargs,
-                        )
-                        or []
-                    )
-                else:
-                    elements = [
-                        self.uio.create_element_from_text(
-                            text=content,
-                            filename=metadata_filename,
-                        )
-                    ]
-
+            content_path_info = self._get_content_path_info(content)
+            elements = self._parse_content(
+                content, metadata_filename, **kwargs
+            )
             if not elements:
                 warnings.warn(
                     f"No elements were extracted from the content: {content}"

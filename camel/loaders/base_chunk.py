@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import logging
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class Chunk(BaseModel):
@@ -31,19 +34,21 @@ class Chunk(BaseModel):
 
     @classmethod
     def from_uio_chunks(cls, uio_chunks, extra_info=None):
-        return [
-            cls(
-                text=str(uio_chunk),
-                metadata={
-                    **{
+        chunks = []
+        for uio_chunk in uio_chunks:
+            try:
+                metadata_dict = uio_chunk.metadata.to_dict()
+                chunk = cls(
+                    text=str(uio_chunk),
+                    metadata={
                         key: value
-                        for key, value in (
-                            uio_chunk.metadata.to_dict().items()
-                        )
+                        for key, value in metadata_dict.items()
                         if key != "orig_elements"
                     },
-                    "extra_info": extra_info or {},
-                },
-            )
-            for uio_chunk in uio_chunks
-        ]
+                    extra_info=extra_info or {},
+                )
+                chunks.append(chunk)
+            except AttributeError as e:
+                # Log or handle the exception as needed
+                logger.error(f"Skipping chunk due to attribute error: {e}")
+        return chunks
