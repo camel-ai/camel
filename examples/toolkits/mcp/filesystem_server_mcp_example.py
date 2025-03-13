@@ -1,5 +1,5 @@
 import asyncio
-import os
+import os  # noqa: F401
 import sys
 from pathlib import Path
 
@@ -18,7 +18,8 @@ load_dotenv()
 # os.environ["ANTHROPIC_API_KEY"] = anthropic_api_key
 
 # Import _MCPServer from the correct location.
-from camel.toolkits.mcp_toolkit import _MCPServer
+from camel.toolkits.mcp_toolkit import _MCPServer  # noqa: E402
+
 
 async def interactive_input_loop(agent: ChatAgent):
     loop = asyncio.get_event_loop()

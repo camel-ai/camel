@@ -15,29 +15,28 @@
 
 #filesystem_mcp_server.py
 
-import asyncio
-import logging
+import asyncio  # noqa: F401
 import os
 
 from mcp.server.fastmcp import FastMCP
 
-# Configure logging to output to stdout.
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from camel.logger import get_logger
 
+# Configure logging to output to stdout.
+logger = get_logger(__name__)
 # Create an MCP server instance under the "filesystem" namespace.
 mcp = FastMCP("filesystem")
 
 # Define the read_file tool.
 @mcp.tool()
 async def read_file(file_path: str) -> str:
-    """
-    Reads the content of the file at the given file path.
-    
-    Metadata:
-        Version: 1.0
-        Dependencies: os, pathlib
-        Description: Returns the content of the specified file or an error message.
+    r"""Reads the content of the file at the given file path.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        str: The content of the file with trailing whitespace removed, or an error message if reading fails.
     """
     logger.info(f"read_file triggered with file_path: {file_path}")
     try:
@@ -64,13 +63,13 @@ read_file.inputSchema = {
 # Define the list_directory tool.
 @mcp.tool()
 async def list_directory(directory_path: str) -> str:
-    """
-    Lists the contents of the specified directory.
-    
-    Metadata:
-        Version: 1.0
-        Dependencies: os
-        Description: Returns a newline-separated list of files and directories.
+    r"""Lists the contents of the specified directory.
+
+    Args:
+        directory_path (str): The path of the directory to list.
+
+    Returns:
+        str: A newline-separated string of the directory entries, or an error message if listing fails.
     """
     logger.info(f"list_directory triggered with directory_path: {directory_path}")
     try:
@@ -93,13 +92,15 @@ list_directory.inputSchema = {
 }
 
 def main(transport: str = "stdio"):
-    """
-    Filesystem MCP Server
+    r"""Runs the Filesystem MCP Server.
 
-    This server provides filesystem-related functionalities via the Model Context Protocol (MCP).
-    It supports two modes:
-      - stdio mode (default): via standard input/output streams.
-      - SSE mode: via HTTP Server-Sent Events.
+    This server provides filesystem-related functionalities via the Model Context Protocol (MCP)
+    and supports two modes of operation:
+        - 'stdio': Uses standard input/output streams (default).
+        - 'sse': Uses HTTP Server-Sent Events.
+
+    Args:
+        transport (str): The transport mode for the server ('stdio' or 'sse').
     """
     if transport == 'stdio':
         mcp.run(transport='stdio')
