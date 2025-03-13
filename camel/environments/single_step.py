@@ -64,7 +64,9 @@ class SingleStepEnv(BaseEnvironment):
     - Chain-of-thought validation
     """
 
-    PLACEHOLDER_OBS = "Episode ended. This is just a placeholder."
+    PLACEHOLDER_OBS = Observation(
+        question="Episode ended. This is just a placeholder."
+    )
 
     def __init__(
         self,
@@ -194,6 +196,9 @@ class SingleStepEnv(BaseEnvironment):
 
         # extract verifiable part from llm response
         extraction_result = await self.extractor.extract(action.llm_response)
+
+        if not extraction_result:
+            raise RuntimeError(f"Couldn't extract from {action.llm_response}")
 
         # verify the extracted
         verification_result = await self.verifier.verify(
