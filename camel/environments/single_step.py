@@ -236,7 +236,7 @@ class SingleStepEnv(BaseEnvironment):
         r"""Compute reward scores for different aspects of the response.
 
         Args:
-            response: The response.
+            action: The action.
             extraction_result: Extracted information from response
             verification_result: Result from the verifier.
 
