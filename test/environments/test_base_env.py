@@ -13,8 +13,6 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from datetime import datetime, timezone
-from typing import Dict, Tuple
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -24,7 +22,6 @@ from camel.environments.base import (
     Observation,
     StepResult,
 )
-from camel.verifiers.models import VerificationOutcome, VerificationResult
 
 
 def test_action_model():
@@ -80,7 +77,7 @@ class MockBaseEnvironment(BaseEnvironment):
             observation=Observation(question="Next question"),
             reward=1.0,
             done=False,
-            info={}
+            info={},
         )
 
     async def close(self):
@@ -97,7 +94,9 @@ async def test_base_environment_lifecycle():
     assert observation.question == "Initial question"
 
     # Test step
-    action = Action(problem_statement="Test problem", llm_response="Test response")
+    action = Action(
+        llm_response="Test response",
+    )
     result = await env.step(action)
     assert isinstance(result, StepResult)
     assert result.reward == 1.0
