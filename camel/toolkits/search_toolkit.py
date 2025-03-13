@@ -704,6 +704,68 @@ class SearchToolkit(BaseToolkit):
         except Exception as e:
             return [{"error": f"An unexpected error occurred: {e!s}"}]
 
+    @api_keys_required([(None, 'BOCHA_API_KEY')])
+    def search_bocha(
+        self,
+        query: str,
+        freshness: str = "noLimit",
+        summary: bool = False,
+        count: int = 10,
+        page: int = 1,
+    ) -> Dict[str, Any]:
+        r"""Query the Bocha AI search API and return search results.
+
+        Args:
+            query (str): The search query.
+            freshness (str): Time frame filter for search results. Default
+                is "noLimit". Options include:
+                - 'noLimit': no limit (default).
+                - 'oneDay': past day.
+                - 'oneWeek': past week.
+                - 'oneMonth': past month.
+                - 'oneYear': past year.
+            summary (bool): Whether to include text summaries in results.
+                Default is False.
+            count (int): Number of results to return (1-50). Default is 10.
+            page (int): Page number of results. Default is 1.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing search results, including
+                web pages, images, and videos if available. The structure
+                follows the Bocha AI search API response format.
+        """
+        import json
+
+        BOCHA_API_KEY = os.getenv("BOCHA_API_KEY")
+
+        url = "https://api.bochaai.com/v1/web-search"
+        headers = {
+            "Authorization": f"Bearer {BOCHA_API_KEY}",
+            "Content-Type": "application/json",
+        }
+
+        payload = json.dumps(
+            {
+                "query": query,
+                "freshness": freshness,
+                "summary": summary,
+                "count": count,
+                "page": page,
+            }
+        )
+        try:
+            response = requests.post(url, headers=headers, data=payload)
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Bocha API failed with {response.status_code}: "
+                        f"{response.text}"
+                    )
+                }
+            return response.json()["data"]
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Bocha AI search failed: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -720,4 +782,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.query_wolfram_alpha),
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
+            FunctionTool(self.search_bocha),
         ]
