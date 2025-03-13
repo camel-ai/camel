@@ -171,7 +171,9 @@ class MultiStepEnv(BaseEnvironment):
             rewards_dict=rewards_dict,
             done=done,
             info={
-                "extraction_result": self.extractor.extract(action),
+                "extraction_result": self.extractor.extract(
+                    action.llm_response
+                ),
                 "step": self._current_step,
                 "state": self._state,  # Updated state
             },
