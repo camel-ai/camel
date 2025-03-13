@@ -1043,7 +1043,13 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        result = tool(**args)
+        try:
+            result = tool(**args)
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing tool '{func_name}': {str(e)}"
+            result = {"error": error_msg}
+            logging.warning(error_msg)
 
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
@@ -1055,7 +1061,14 @@ class ChatAgent(BaseAgent):
         args = tool_call_request.args
         tool_call_id = tool_call_request.tool_call_id
         tool = self._internal_tools[func_name]
-        result = await tool.async_call(**args)
+        try:
+            result = await tool.async_call(**args)
+        except Exception as e:
+            # Capture the error message to prevent framework crash
+            error_msg = f"Error executing async tool '{func_name}': {str(e)}"
+            result = {"error": error_msg}
+            logging.warning(error_msg)
+
         return self._record_tool_calling(func_name, args, result, tool_call_id)
 
     def _record_tool_calling(
