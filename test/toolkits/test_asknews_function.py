@@ -12,10 +12,23 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 import os
+import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-from camel.toolkits.ask_news_toolkit import AskNewsToolkit, _process_response
+# Create mock for the asknews_sdk module
+mock_asknews_sdk = MagicMock()
+mock_asknews_sdk.AskNewsSDK = MagicMock()
+mock_asknews_sdk.AsyncAskNewsSDK = MagicMock()
+
+sys.modules['asknews_sdk'] = mock_asknews_sdk
+
+# Import the modules that depend on asknews_sdk
+# ruff: noqa: E402
+from camel.toolkits.ask_news_toolkit import (
+    AskNewsToolkit,
+    _process_response,
+)
 
 
 class TestAskNewsToolkit(unittest.TestCase):
@@ -26,11 +39,11 @@ class TestAskNewsToolkit(unittest.TestCase):
             "ASKNEWS_CLIENT_SECRET": "fake_client_secret",
         },
     )
-    @patch("asknews_sdk.AskNewsSDK")
-    def setUp(self, MockAskNewsSDK):
+    def setUp(self):
         # Setup for tests
-        self.mock_sdk = MockAskNewsSDK.return_value
+        self.mock_sdk = MagicMock()
         self.toolkit = AskNewsToolkit()
+        self.toolkit.asknews_client = self.mock_sdk
 
     def test_get_news_success(self):
         # Mock the API response for a successful get_news call

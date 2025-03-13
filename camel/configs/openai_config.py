@@ -94,6 +94,13 @@ class ChatGPTConfig(BaseConfig):
             forces the model to call that tool. :obj:`"none"` is the default
             when no tools are present. :obj:`"auto"` is the default if tools
             are present.
+        reasoning_effort(str, optional): A parameter specifying the level of
+            reasoning used by certain model types. Valid values are :obj:
+            `"low"`, :obj:`"medium"`, or :obj:`"high"`. If set, it is only
+            applied to the model types that support it (e.g., :obj:`o1`,
+            :obj:`o1mini`, :obj:`o1preview`, :obj:`o3mini`). If not provided
+            or if the model type does not support it, this parameter is
+            ignored. (default: :obj:`None`)
     """
 
     temperature: float = 0.2  # openai default: 1.0
@@ -108,6 +115,7 @@ class ChatGPTConfig(BaseConfig):
     logit_bias: Dict = Field(default_factory=dict)
     user: str = ""
     tool_choice: Optional[Union[Dict[str, str], str]] = None
+    reasoning_effort: Optional[str] = None
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

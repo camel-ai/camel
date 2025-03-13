@@ -34,6 +34,7 @@ class ModelType(UnifiedModelType, Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    GPT_4_5_PREVIEW = "gpt-4.5-preview"
     O1 = "o1"
     O1_PREVIEW = "o1-preview"
     O1_MINI = "o1-mini"
@@ -100,6 +101,7 @@ class ModelType(UnifiedModelType, Enum):
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_3_5_SONNET = "claude-3-5-sonnet-latest"
     CLAUDE_3_5_HAIKU = "claude-3-5-haiku-latest"
+    CLAUDE_3_7_SONNET = "claude-3-7-sonnet-latest"
 
     # Nvidia models
     NVIDIA_NEMOTRON_340B_INSTRUCT = "nvidia/nemotron-4-340b-instruct"
@@ -263,6 +265,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
             ModelType.O3_MINI,
+            ModelType.GPT_4_5_PREVIEW,
         }
 
     @property
@@ -313,6 +316,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
         }
 
     @property
@@ -623,6 +627,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.GPT_4_TURBO,
             ModelType.O1_PREVIEW,
             ModelType.O1_MINI,
+            ModelType.GPT_4_5_PREVIEW,
             ModelType.MISTRAL_LARGE,
             ModelType.MISTRAL_NEMO,
             ModelType.MISTRAL_PIXTRAL_12B,
@@ -680,6 +685,7 @@ class ModelType(UnifiedModelType, Enum):
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
             ModelType.CLAUDE_3_5_HAIKU,
+            ModelType.CLAUDE_3_7_SONNET,
             ModelType.YI_MEDIUM_200K,
         }:
             return 200_000
