@@ -18,6 +18,7 @@ from .single_step import SingleStepEnv
 __all__ = [
     "BaseEnvironment",
     "SingleStepEnv",
+    "MultiStepEnv",
     "Action",
     "Observation",
     "StepResult",
