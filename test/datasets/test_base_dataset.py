@@ -58,7 +58,7 @@ def test_datapoint_validation():
         question='What is 2+2?', rationale='Addition', final_answer='4'
     )
     assert datapoint.question == 'What is 2+2?'
-    assert datapoint.rationale is 'Addition'
+    assert datapoint.rationale == 'Addition'
     assert datapoint.final_answer == '4'
 
 
