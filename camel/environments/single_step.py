@@ -14,9 +14,9 @@
 
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
-from camel.datasets.base import DataPoint, GenerativeDataset, StaticDataset
+from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
@@ -55,7 +55,7 @@ class SingleStepEnv:
 
     def __init__(
         self,
-        dataset: StaticDataset | GenerativeDataset,
+        dataset: Union[StaticDataset, BaseGenerator],
         verifier: BaseVerifier,
         extractor: BaseExtractor,
         **kwargs,
