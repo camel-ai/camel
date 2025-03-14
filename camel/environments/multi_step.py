@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 
 class MultiStepEnv(ABC):
-    r"""Base class for developing Multi-Step environments for RL with LLMs."""
+    r"""A multi-step environment for reinforcement learning with LLMs."""
 
     def __init__(
         self,
@@ -52,7 +52,15 @@ class MultiStepEnv(ABC):
         self._episode_history: List[Tuple[Observation, Action]] = []
 
     async def setup(self) -> None:
-        r"""Set up the environment"""
+        r"""Set up the environment by initializing the verifier and extractor.
+
+        This method ensures that the environment is ready for interaction.
+        It sets up necessary components, including the verifier and extractor.
+
+        Raises:
+            Exception: If setup fails due to an internal error.
+        """
+
         if self._is_setup:
             return
 
@@ -70,7 +78,14 @@ class MultiStepEnv(ABC):
         pass
 
     async def close(self) -> None:
-        r"""Clean up resources."""
+        r"""Clean up and close all resources used by the environment.
+        This method shuts down the verifier, calls the internal
+        close function that is implemented in any MultiStepEnv,
+        and ensures that the environment is properly closed.
+
+        Raises:
+            Exception: If an error occurs while closing the environment.
+        """
         if not self._is_setup:
             return
 
@@ -93,7 +108,12 @@ class MultiStepEnv(ABC):
         r"""Reset the environment to an initial state.
 
         Returns:
-            Initial observation for the episode
+            Observation: The initial observation
+            for the episode.
+
+        Raises:
+            RuntimeError: If we fail to get the initial
+            observation.
         """
 
         if not self._is_setup:
@@ -115,14 +135,24 @@ class MultiStepEnv(ABC):
         return observation
 
     async def step(self, action: Action) -> StepResult:
-        r"""Take a step in the environment.
+        r"""Take a step in the environment using the given action.
+
+        This method updates the environment state based on the LLM's response,
+        computes rewards, checks if the episode is done, and based on that
+        gets the next or final observation.
 
         Args:
-            action: Action containing everything needed
-            to progress in the environment
+            action (Action): The action containing the LLM
+            response.
 
         Returns:
-            StepResult containing next observation, reward, done flag, and info
+            StepResult containing next observation, total reward,
+            a dictionary of rewards, done flag, and info
+
+        Raises:
+            RuntimeError: If the environment is not set up,
+            the episode has ended, or there is no valid
+            current observation.
         """
         if self.max_steps and self._current_step >= self.max_steps:
             return StepResult(
@@ -201,7 +231,14 @@ class MultiStepEnv(ABC):
         pass
 
     def is_done(self) -> bool:
-        r"""Check if episode should terminate."""
+        r"""Check if the episode should terminate.
+
+        This function terminates the episode if the maximum number of
+        steps is reached or if any other terminating criterion is met.
+
+        Returns:
+            bool: A boolean flag.
+        """
 
         # After too many steps
         if self.max_steps and self._current_step >= self.max_steps:
@@ -219,10 +256,21 @@ class MultiStepEnv(ABC):
 
     @property
     def metadata(self) -> Dict[str, Any]:
-        r"""Get environment metadata."""
+        r"""Retrieve the metadata of the environment.
+
+        This provides additional parameters and configuration details.
+
+        Returns:
+            Dict[str, Any]: A copy of the environment's metadata.
+        """
         return self._metadata.copy()
 
     @property
     def current_step(self) -> int:
-        r"""Get current step number."""
+        r"""Get the current step number.
+
+        Returns:
+            int: The number of the step we are
+            currently in.
+        """
         return self._current_step
