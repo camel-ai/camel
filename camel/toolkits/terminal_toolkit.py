@@ -582,69 +582,118 @@ class TerminalToolkit(BaseToolkit):
                 # Unix system implementation
                 import pty
                 import fcntl
+                import termios
+                import struct
                 
-                # Create pseudo terminal
-                master_fd, slave_fd = pty.openpty()
-                # Set to non-blocking mode
-                flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
-                fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-                
-                # Determine the shell command to execute
-                if self.use_shell_mode:
-                    # In shell mode, execute command directly
-                    shell_cmd = command
-                else:
-                    # In Python mode, check if Python interpreter needs to be replaced
-                    if command.startswith('python '):
-                        shell_cmd = command.replace('python ', f'"{python_exe}" ')
-                    else:
-                        shell_cmd = command
-                
-                process = subprocess.Popen(
-                    shell_cmd,
-                    shell=True,
-                    cwd=exec_dir,
-                    stdin=slave_fd,
-                    stdout=slave_fd,
-                    stderr=slave_fd,
-                    env=env,
-                    preexec_fn=os.setsid
-                )
-                
-                os.close(slave_fd)  # Close child process end
-                
-                # Create read output thread
-                def _read_output():
-                    """Read output from master_fd"""
-                    try:
-                        while True:
+                try:
+                    # Create pseudo terminal with proper permissions
+                    master_fd, slave_fd = pty.openpty()
+                    
+                    # Set terminal attributes
+                    term_settings = termios.tcgetattr(slave_fd)
+                    term_settings[3] = term_settings[3] & ~termios.ECHO  # Disable echo
+                    termios.tcsetattr(slave_fd, termios.TCSANOW, term_settings)
+                    
+                    # Set window size
+                    term_size = struct.pack('HHHH', 24, 80, 0, 0)
+                    fcntl.ioctl(slave_fd, termios.TIOCSWINSZ, term_size)
+                    
+                    # Set to non-blocking mode
+                    flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+                    fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+                    
+                    # Set proper permissions for the PTY
+                    os.fchmod(master_fd, 0o622)
+                    os.fchmod(slave_fd, 0o622)
+                    
+                    process = subprocess.Popen(
+                        command,
+                        shell=True,
+                        cwd=exec_dir,
+                        stdin=slave_fd,
+                        stdout=slave_fd,
+                        stderr=slave_fd,
+                        env=env,
+                        start_new_session=True  # 只使用start_new_session，移除preexec_fn
+                    )
+                    
+                    os.close(slave_fd)  # Close child process end
+                    
+                    # Create read output thread with proper error handling
+                    def _read_output():
+                        """Read output from master_fd with improved error handling"""
+                        buffer = ""
+                        try:
+                            while True:
+                                try:
+                                    data = os.read(master_fd, 1024)
+                                    if data:
+                                        output = data.decode('utf-8', errors='replace')
+                                        buffer += output
+                                        self._update_terminal_output(output)
+                                except OSError as e:
+                                    if e.errno != errno.EAGAIN:  # Ignore expected non-blocking read errors
+                                        logger.error(f"Terminal read error: {e}")
+                                        break
+                                    time.sleep(0.1)
+                                except Exception as e:
+                                    logger.error(f"Unexpected terminal error: {e}")
+                                    break
+                                    
+                                # Check process status
+                                if process.poll() is not None:
+                                    # Process ended, flush remaining output
+                                    try:
+                                        remaining = os.read(master_fd, 4096)
+                                        if remaining:
+                                            output = remaining.decode('utf-8', errors='replace')
+                                            buffer += output
+                                            self._update_terminal_output(output)
+                                    except:
+                                        pass
+                                    break
+                                    
+                        except Exception as e:
+                            logger.error(f"Terminal thread error: {e}")
+                        finally:
                             try:
-                                data = os.read(master_fd, 1024)
-                                if data:
-                                    output = data.decode('utf-8', errors='replace')
-                                    self._update_terminal_output(output)
-                            except OSError as e:
-                                if e.errno != errno.EAGAIN:  # Ignore errors during non-blocking read
-                                    raise
-                                time.sleep(0.1)
-                            if process.poll() is not None:  # Process ended
-                                break
-                    except Exception as e:
-                        logger.error(f"Error reading output: {e}")
-                    finally:
-                        os.close(master_fd)
-                
-                # Start read output thread
-                threading.Thread(target=_read_output, daemon=True).start()
-                
-                self.shell_sessions[id] = {
-                    "process": process,
-                    "master_fd": master_fd,
-                    "output": "",
-                    "running": True,
-                    "command": command
-                }
-                
+                                os.close(master_fd)
+                            except:
+                                pass
+                            
+                            # Store final output
+                            session = self.shell_sessions.get(id)
+                            if session:
+                                session["output"] = buffer
+                    
+                    # Start read output thread
+                    output_thread = threading.Thread(target=_read_output, daemon=True)
+                    output_thread.start()
+                    
+                    self.shell_sessions[id] = {
+                        "process": process,
+                        "master_fd": master_fd,
+                        "output": "",
+                        "running": True,
+                        "command": command,
+                        "output_thread": output_thread
+                    }
+                    
+                except Exception as e:
+                    error_msg = f"Error creating Linux terminal: {e}"
+                    logger.error(error_msg)
+                    self._update_terminal_output(f"\nError: {error_msg}\n")
+                    
+                    # Clean up resources on error
+                    try:
+                        if 'master_fd' in locals():
+                            os.close(master_fd)
+                        if 'slave_fd' in locals():
+                            os.close(slave_fd)
+                    except:
+                        pass
+                    
+                    return f"Error: {error_msg}"
             else:  # Windows
                 # Determine the shell command to execute
                 if self.use_shell_mode:
