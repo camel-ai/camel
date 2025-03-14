@@ -17,6 +17,26 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool, SearchToolkit
 
+res_baidu_free = SearchToolkit().search_baidu_free(
+    query="Python 教程", max_results=3
+)
+print(res_baidu_free)
+
+"""
+===============================================================================
+{'results': [{'result_id': 1, 'title': 'Python3教程| 菜鸟教程', 'description':
+ '本教程主要针对Python3.x 版本的学习,如果你使用的是 Python 2.x 
+   请移步至Python 2.X版本的教程。
+   官方宣布,2020 年 1 月 1 日, 停止 Python 2 的更新。 查看Python 版本 
+   我们可以在...个人图书馆\ue62b\ue680播报\ue67d暂停', 
+   'url': 'http://www.baidu.com/link?url=2qx1-R1woSbIoqTPqvrIdxyDkT2GMP93Ewq
+   I5w5YxA07iL1BW2NmXB2FNBkN0ylMYuycWcJFp5FEITkUoXWQBr0HNUBHSPm9WO7kemz59F3'}
+   , {'result_id': 2, 'title': 'Python3教程| 菜鸟教程', 'description': '', 
+   'url': 'http://www.baidu.com/link?url=2qx1-R1woSbIoqTPqvrIdxyDkT2GMP93Ew
+   qI5w5YxA07iL1BW2NmXB2FNBkN0ylMwMsDUjKeC39YZ9SdzVhQlNpnqA6bICoPSuS2ccfs1gC'}]}
+===============================================================================
+"""
+
 res_simple = SearchToolkit().query_wolfram_alpha(
     query="solve 3x-7=11", is_detailed=False
 )

@@ -766,213 +766,6 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
-    @api_keys_required(
-        [
-            (None, 'BING_API_KEY'),
-        ]
-    )
-    def search_bing(
-        self,
-        query: str,
-        count: int = 10,
-        offset: int = 0,
-        market: str = "en-US",
-        safesearch: str = "Moderate",
-        freshness: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        r"""Use Bing search engine to search information for the given query.
-
-        Args:
-            query (str): The query to be searched.
-            count (int): The number of search results to return.
-                Max value is 50. Default is 10.
-            offset (int): The zero-based offset that indicates the number of
-                search results to skip before returning results. Default is 0.
-            market (str): The market where the results come from. Format
-                is <language code>-<country code>. Default is "en-US".
-            safesearch (str): Filter adult content. Values can be: "Off",
-                "Moderate", or "Strict". Default is "Moderate".
-            freshness (Optional[str]): Filter by when Bing discovered the page.
-                Values can be:
-                "Day" for content discovered in the past 24 hours,
-                "Week" for content discovered in the past week,
-                "Month" for content discovered in the past month.
-
-        Returns:
-            List[Dict[str, Any]]: A list of dictionaries where each dictionary
-            represents a search result.
-                Each dictionary contains the following keys:
-                - 'result_id': A number in order.
-                - 'title': The title of the website.
-                - 'description': A brief description of the website.
-                - 'url': The URL of the website.
-        """
-        from typing import Dict, Union
-
-        import requests
-
-        BING_API_KEY = os.getenv("BING_API_KEY")
-        if not BING_API_KEY:
-            return [{"error": "BING_API_KEY environment variable not set"}]
-
-        # Bing Web Search API endpoint
-        url = "https://api.bing.microsoft.com/v7.0/search"
-
-        # Set up the headers with the subscription key
-        headers = {"Ocp-Apim-Subscription-Key": BING_API_KEY}
-
-        # Set up requests library expectations
-        params: Dict[str, Union[str, int]] = {
-            "q": query,
-            "count": count,
-            "offset": offset,
-            "mkt": market,
-            "safeSearch": safesearch,
-        }
-
-        # Add freshness parameter if specified
-        if freshness:
-            params["freshness"] = freshness
-
-        responses = []
-        try:
-            # Make the request with properly typed parameters
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()  # Raise an exception for HTTP errors
-
-            # Parse the JSON response
-            data = response.json()
-
-            # Process the search results
-            if "webPages" in data and "value" in data["webPages"]:
-                results = data["webPages"]["value"]
-
-                # Iterate over the results
-                for i, result in enumerate(results, start=1):
-                    response_item = {
-                        "result_id": i,
-                        "title": result.get("name", ""),
-                        "description": result.get("snippet", ""),
-                        "url": result.get("url", ""),
-                    }
-                    responses.append(response_item)
-            else:
-                responses.append(
-                    {"error": "No results found or invalid response format"}
-                )
-
-        except requests.exceptions.RequestException as e:
-            responses.append({"error": f"Bing search failed: {e!s}"})
-        except Exception as e:
-            responses.append({"error": f"An unexpected error occurred: {e!s}"})
-
-        return responses
-
-    @api_keys_required(
-        [
-            (None, 'BAIDU_API_KEY'),
-            (None, 'BAIDU_SECRET_KEY'),
-        ]
-    )
-    def search_baidu(
-        self,
-        query: str,
-        page_num: int = 1,
-        rn: int = 10,
-        site: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        r"""Use Baidu search engine to search information for the given query.
-
-        Args:
-            query (str): The query to be searched.
-            page_num (int): The page number to return. Default is 1.
-                rn (int): The number of results per page (1-50).
-                    Default is 10.
-            site (Optional[str]): Limit search to a specific site,
-                    e.g., "example.com".
-
-        Returns:
-            List[Dict[str, Any]]: A list of dictionaries where each dictionary
-            represents a search result.
-                Each dictionary contains the following keys:
-                - 'result_id': A number in order.
-                - 'title': The title of the website.
-                - 'description': A brief description of the website.
-                - 'url': The URL of the website.
-        """
-
-        import requests
-
-        BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
-        BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY")
-
-        if not BAIDU_API_KEY or not BAIDU_SECRET_KEY:
-            return [
-                {
-                    "error": (
-                        "BAIDU_API_KEY or BAIDU_SECRET_KEY environment"
-                        "variable not set"
-                    )
-                }
-            ]
-
-        # First, get the access token
-        token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={BAIDU_API_KEY}&client_secret={BAIDU_SECRET_KEY}"
-
-        responses = []
-        try:
-            token_response = requests.get(token_url)
-            token_response.raise_for_status()
-            access_token = token_response.json().get("access_token")
-
-            if not access_token:
-                return [{"error": "Failed to obtain Baidu access token"}]
-
-            # Baidu Web Search API endpoint
-            search_url = f"https://aip.baidubce.com/rest/2.0/web/search?access_token={access_token}"
-
-            # Set up the parameters
-            params = {
-                "query": query,
-                "page_num": page_num,
-                "rn": rn,  # Number of results per page
-            }
-
-            # Add site parameter if specified
-            if site:
-                params["site"] = site
-
-            # Make the search request
-            search_response = requests.post(search_url, data=params)
-            search_response.raise_for_status()
-            search_data = search_response.json()
-
-            # Process the search results
-            if "results" in search_data:
-                results = search_data["results"]
-
-                # Iterate over the results
-                for i, result in enumerate(results, start=1):
-                    response_item = {
-                        "result_id": i,
-                        "title": result.get("title", ""),
-                        "description": result.get("abstract", ""),
-                        "url": result.get("url", ""),
-                    }
-                    responses.append(response_item)
-            else:
-                error_msg = search_data.get(
-                    "error_msg", "No results found or invalid response format"
-                )
-                responses.append({"error": error_msg})
-
-        except requests.exceptions.RequestException as e:
-            responses.append({"error": f"Baidu search failed: {e!s}"})
-        except Exception as e:
-            responses.append({"error": f"An unexpected error occurred: {e!s}"})
-
-        return responses
-
     def search_baidu_free(self, query: str, max_results: int = 5) -> dict:
         r"""Search Baidu using web scraping (free version).
 
@@ -989,8 +782,9 @@ class SearchToolkit(BaseToolkit):
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/91.0.4472.124 Safari/537.36"
-                )
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Referer": "https://www.baidu.com",
             }
             params = {"wd": query, "rn": str(max_results)}
 
@@ -1002,16 +796,15 @@ class SearchToolkit(BaseToolkit):
             soup = BeautifulSoup(response.text, "html.parser")
 
             results = []
-            for idx, item in enumerate(soup.select(".result.c-container"), 1):
-                title_element = item.select_one("h3.t")
+            for idx, item in enumerate(soup.select(".result"), 1):
+                title_element = item.select_one("h3 > a")
                 title = (
                     title_element.get_text(strip=True) if title_element else ""
                 )
 
-                link_element = item.select_one("a")
-                link = link_element["href"] if link_element else ""
+                link = title_element["href"] if title_element else ""
 
-                desc_element = item.select_one(".c-abstract")
+                desc_element = item.select_one(".c-abstract, .c-span-last")
                 desc = (
                     desc_element.get_text(strip=True) if desc_element else ""
                 )
@@ -1026,6 +819,12 @@ class SearchToolkit(BaseToolkit):
                 )
                 if len(results) >= max_results:
                     break
+
+            if not results:
+                print(
+                    "Warning: No results found. Check"
+                    "if Baidu HTML structure has changed."
+                )
 
             return {"results": results}
 
@@ -1049,7 +848,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
-            FunctionTool(self.search_bing),
-            FunctionTool(self.search_baidu),
             FunctionTool(self.search_baidu_free),
         ]
