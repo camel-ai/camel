@@ -50,12 +50,8 @@ class SingleStepEnv:
     3. Manages dataset and task selection
     4. Provides reset and step functions
     5. Handles verifier setup and teardown
-    6. Enables proactive agent behavior
-    7. Supports practice environment creation
-    8. Facilitates chain-of-thought verification
 
     Key Features:
-    - Curriculum learning with adaptive difficulty
     - Reward shaping based on solution quality
     - Hint generation from verified solutions
     - Task selection based on agent progress
@@ -72,9 +68,6 @@ class SingleStepEnv:
         dataset: StaticDataset | GenerativeDataset,
         verifier: BaseVerifier,
         extractor: BaseExtractor,
-        teacher_agent: Optional[ChatAgent] = None,
-        curriculum_config: Optional[Dict[str, Any]] = None,
-        practice_env_config: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         r"""Initialize the environment.
@@ -83,16 +76,6 @@ class SingleStepEnv:
             dataset: Dataset to sample questions from.
             verifier: Verifier to check responses.
             extractor: Extractor to process LLM responses.
-            teacher_agent: Optional agent for reward shaping and hints
-            curriculum_config: Configuration for curriculum learning including:
-                - difficulty_levels: List of available difficulty levels
-                - promotion_threshold: Score needed to advance
-                - demotion_threshold: Score triggering level decrease
-                - min_questions_per_level: Questions before promotion
-            practice_env_config: Configuration for practice environments:
-                - max_practice_envs: Maximum concurrent environments
-                - difficulty_range: Allowed difficulty variation
-                - focus_areas: Specific skills to practice
             **kwargs: Additional environment parameters.
         """
         self.dataset = dataset
