@@ -614,7 +614,7 @@ class TerminalToolkit(BaseToolkit):
                         stdout=slave_fd,
                         stderr=slave_fd,
                         env=env,
-                        start_new_session=True  # 只使用start_new_session，移除preexec_fn
+                        start_new_session=True
                     )
                     
                     os.close(slave_fd)  # Close child process end
