@@ -12,6 +12,8 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from typing import Dict, Optional, Type, Union
+import yaml
+import json
 
 from camel.models.aiml_model import AIMLModel
 from camel.models.anthropic_model import AnthropicModel
@@ -155,3 +157,60 @@ class ModelFactory:
             url=url,
             token_counter=token_counter,
         )
+    
+    @classmethod
+    def __parse_model_platform(cls, model_platform_str: str) -> ModelPlatformType:
+        try:
+            if model_platform_str.startswith("ModelPlatformType."):
+                platform_name = model_platform_str.split('.')[-1]  
+            else:
+                platform_name = model_platform_str.upper()  
+
+            print(f"Converted platform name: {platform_name}")  # Debugging line
+
+            if platform_name not in ModelPlatformType.__members__:
+                raise ValueError(
+                    f"Invalid model platform: {platform_name}. "
+                    f"Valid options: {', '.join(ModelPlatformType.__members__.keys())}"
+                )
+
+            return ModelPlatformType[platform_name]
+
+        except KeyError:
+            raise ValueError(f"Invalid model platform: {model_platform_str}")
+
+
+    @classmethod
+    def __load_yaml(cls, filepath:str) -> Dict:
+        # Loading the yaml file.
+        with open(filepath, 'r') as file:
+            config = yaml.safe_load(file)
+
+        return config
+    
+    @classmethod
+    def __load_json(cls, filepath:str) -> Dict:
+        # Loading the json file.
+        with open(filepath, 'r') as file:
+            config = json.load(file)
+        
+        return config
+
+
+    @classmethod
+    def create_from_yaml(cls, filepath:str) -> BaseModelBackend:
+        config = cls.__load_yaml(filepath)
+        config["model_platform"] = cls.__parse_model_platform(config["model_platform"])
+
+        model = ModelFactory.create(**config)
+
+        return model
+
+    @classmethod
+    def create_from_json(cls, filepath:str) -> BaseModelBackend:
+        config = cls.__load_json(filepath)
+        config["model_platform"] = cls.__parse_model_platform(config["model_platform"])
+
+        model = ModelFactory.create(**config)
+
+        return model
