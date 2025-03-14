@@ -19,7 +19,7 @@ class BaseInterpreter(ABC):
     r"""An abstract base class for code interpreters."""
 
     @abstractmethod
-    def run(self, code: str, code_type: str) -> str:
+    def run(self, code: str, code_type: str, timeout: int = None) -> str:
         r"""Executes the given code based on its type.
 
         Args:
