@@ -16,7 +16,6 @@
 from abc import abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
-from camel.agents import ChatAgent
 from camel.datasets.base import DataPoint, GenerativeDataset, StaticDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
@@ -25,7 +24,6 @@ from camel.verifiers.base import (
     VerificationResult,
 )
 from camel.verifiers.models import (
-    VerificationOutcome,
     VerifierInput,
 )
 
@@ -62,6 +60,8 @@ class SingleStepEnv:
     PLACEHOLDER_OBS = Observation(
         question="Episode ended. This is just a placeholder."
     )
+
+    ACCURACY_REWARD = 10
 
     def __init__(
         self,
@@ -228,12 +228,9 @@ class SingleStepEnv:
         """
         rewards: Dict[str, float] = {}
 
-        # Get success from verification result status
-        verification_success = float(
-            verification_result.status == VerificationOutcome.SUCCESS
+        rewards["correctness"] = (
+            self.ACCURACY_REWARD if verification_result.status else 0.0
         )
-        # FIXME: Magic numbers
-        rewards["correctness"] = 1.0 if verification_success > 0.5 else 0.0
 
         further_rewards = await self._compute_custom_reward(
             action, extraction_result, verification_result
