@@ -1049,12 +1049,18 @@ check the history actions to avoid the same mistakes.
 - `action_code`: The action code you want to take. It is only one step action 
 code, without any other texts (such as annotation)
 
-Here are an example of the output:
+Here is two example of the output:
 ```json
 {{
     "observation": [IMAGE_DESCRIPTION],
     "reasoning": [YOUR_REASONING],
     "action_code": "fill_input_id([ID], [TEXT])"
+}}
+
+{{
+    "observation":  "The current page is a CAPTCHA verification page on Amazon. It asks the user to ..",
+    "reasoning": "To proceed with the task of searching for products, I need to complete..",
+    "action_code": "fill_input_id(3, 'AUXPMR')"
 }}
 
 Here are some tips for you:
@@ -1152,18 +1158,18 @@ out the information you need. Sometimes they are extremely useful.
 
         def _fix_action_code(action_code: str) -> str:
             r"""Fix potential missing quotes in action code"""
-    
+
             match = re.match(r'(\w+)\((.*)\)', action_code)
             if not match:
                 return action_code
-                
+
             func_name, args_str = match.groups()
-    
+
             args = []
             current_arg = ""
             in_quotes = False
             quote_char = None
-            
+
             for char in args_str:
                 if char in ['"', "'"]:
                     if not in_quotes:
@@ -1181,20 +1187,24 @@ out the information you need. Sometimes they are extremely useful.
                     current_arg = ""
                 else:
                     current_arg += char
-                    
+
             if current_arg:
                 args.append(current_arg.strip())
-                
+
             fixed_args = []
             for arg in args:
-                if (arg.startswith('"') and arg.endswith('"')) or \
-                   (arg.startswith("'") and arg.endswith("'")) or \
-                   re.match(r'^-?\d+(\.\d+)?$', arg):
+                if (
+                    (arg.startswith('"') and arg.endswith('"'))
+                    or (arg.startswith("'") and arg.endswith("'"))
+                    or re.match(r'^-?\d+(\.\d+)?$', arg)
+                    or re.match(r'^-?\d+\.?\d*[eE][-+]?\d+$', arg)
+                    or re.match(r'^0[xX][0-9a-fA-F]+$', arg)
+                ):
                     fixed_args.append(arg)
-    
+
                 else:
                     fixed_args.append(f"'{arg}'")
-                    
+
             return f"{func_name}({', '.join(fixed_args)})"
 
         action_code = _fix_action_code(action_code)
