@@ -336,7 +336,7 @@ def api_keys_required(
                 key_way = "https://api.moonshot.cn/v1"
             elif env_var_name == 'NVIDIA_API_KEY':
                 key_way = "https://integrate.api.nvidia.com/"
-            elif env_var_name == 'OPENAI_COMPATIBILIY_API_KEY':
+            elif env_var_name == 'OPENAI_COMPATIBILITY_API_KEY':
                 key_way = "https://platform.openai.com/docs/overview"
             elif env_var_name == 'QWEN_API_KEY':
                 key_way = "https://tongyi.aliyun.com/"

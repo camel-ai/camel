@@ -183,7 +183,7 @@ CAMEL provides a variety of built-in toolkits that you can use right away. Here'
 | VideoAnalysisToolkit | A toolkit for analyzing video content with vision-language models, including frame extraction and question answering about video content. |
 | VideoDownloaderToolkit | A toolkit for downloading videos and optionally splitting them into chunks, with support for various video services. |
 | WeatherToolkit | A toolkit for fetching weather data for cities using the OpenWeatherMap API. |
-| WebToolkit | A toolkit for browsing the web and interacting with web pages, including browser simulation and content extraction. |
+| BrowserToolkit | A toolkit for browsing the web and interacting with web pages, including browser simulation and content extraction. |
 | WhatsAppToolkit | A toolkit for interacting with the WhatsApp Business API, including sending messages, managing message templates, and accessing business profile information. |
 | ZapierToolkit | A toolkit for interacting with Zapier's NLA API to execute actions through natural language commands and automate workflows. |
 
