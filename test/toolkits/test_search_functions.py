@@ -356,9 +356,9 @@ def test_parse_wolfram_result():
 
     result = SearchToolkit()._parse_wolfram_result(sample_wolfram_result)
 
-    assert result == expected_output, (
-        f"Expected {expected_output}, but got {result}"
-    )
+    assert (
+        result == expected_output
+    ), f"Expected {expected_output}, but got {result}"
 
 
 @patch('requests.get')
@@ -386,9 +386,9 @@ def test_get_wolframalpha_step_by_step_solution(mock_get):
         "dummy_app_id", "dummy_query"
     )
 
-    assert result == expected_steps, (
-        f"Expected {expected_steps}, but got {result}"
-    )
+    assert (
+        result == expected_steps
+    ), f"Expected {expected_steps}, but got {result}"
 
 
 class MockSearchResult:
