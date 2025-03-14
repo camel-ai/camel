@@ -785,16 +785,13 @@ class SearchToolkit(BaseToolkit):
         Args:
             query (str): The query to be searched.
             count (int): The number of search results to return.
-                    Max value is 50. Default is 10.
+                Max value is 50. Default is 10.
             offset (int): The zero-based offset that indicates the number of
-                    search results to skip before returning results.
-                    Default is 0.
-            market (str): The market where the results come from.
-                    Format is <language code>-<country code>.
-                    Default is "en-US".
-            safesearch (str): Filter adult content.
-                Values can be: "Off", "Moderate", or "Strict".
-                Default is "Moderate".
+                search results to skip before returning results. Default is 0.
+            market (str): The market where the results come from. Format
+                is <language code>-<country code>. Default is "en-US".
+            safesearch (str): Filter adult content. Values can be: "Off",
+                "Moderate", or "Strict". Default is "Moderate".
             freshness (Optional[str]): Filter by when Bing discovered the page.
                 Values can be:
                 "Day" for content discovered in the past 24 hours,
@@ -810,6 +807,8 @@ class SearchToolkit(BaseToolkit):
                 - 'description': A brief description of the website.
                 - 'url': The URL of the website.
         """
+        from typing import Dict, Union
+
         import requests
 
         BING_API_KEY = os.getenv("BING_API_KEY")
@@ -822,8 +821,8 @@ class SearchToolkit(BaseToolkit):
         # Set up the headers with the subscription key
         headers = {"Ocp-Apim-Subscription-Key": BING_API_KEY}
 
-        # Set up the parameters
-        params = {
+        # Set up requests library expectations
+        params: Dict[str, Union[str, int]] = {
             "q": query,
             "count": count,
             "offset": offset,
@@ -837,7 +836,7 @@ class SearchToolkit(BaseToolkit):
 
         responses = []
         try:
-            # Make the request
+            # Make the request with properly typed parameters
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raise an exception for HTTP errors
 
@@ -974,6 +973,65 @@ class SearchToolkit(BaseToolkit):
 
         return responses
 
+    def search_baidu_free(self, query: str, max_results: int = 5) -> dict:
+        r"""Search Baidu using web scraping (free version).
+
+        Args:
+            query: Search query string.
+            max_results: Maximum number of results to return.
+
+        Returns:
+            Dict containing search results or error message.
+        """
+        try:
+            url = "https://www.baidu.com/s"
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/91.0.4472.124 Safari/537.36"
+                )
+            }
+            params = {"wd": query, "rn": str(max_results)}
+
+            response = requests.get(url, headers=headers, params=params)
+            response.encoding = "utf-8"
+
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            results = []
+            for idx, item in enumerate(soup.select(".result.c-container"), 1):
+                title_element = item.select_one("h3.t")
+                title = (
+                    title_element.get_text(strip=True) if title_element else ""
+                )
+
+                link_element = item.select_one("a")
+                link = link_element["href"] if link_element else ""
+
+                desc_element = item.select_one(".c-abstract")
+                desc = (
+                    desc_element.get_text(strip=True) if desc_element else ""
+                )
+
+                results.append(
+                    {
+                        "result_id": idx,
+                        "title": title,
+                        "description": desc,
+                        "url": link,
+                    }
+                )
+                if len(results) >= max_results:
+                    break
+
+            return {"results": results}
+
+        except Exception as e:
+            return {"error": f"Baidu scraping error: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -993,4 +1051,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.search_bocha),
             FunctionTool(self.search_bing),
             FunctionTool(self.search_baidu),
+            FunctionTool(self.search_baidu_free),
         ]
