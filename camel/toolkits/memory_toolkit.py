@@ -28,8 +28,7 @@ if TYPE_CHECKING:
 
 
 class MemoryToolkit(BaseToolkit):
-    r"""
-    A toolkit that provides methods for saving, loading, and clearing a
+    r"""A toolkit that provides methods for saving, loading, and clearing a
     ChatAgent's memory.
     These methods are exposed as FunctionTool objects for
     function calling. Internally, it calls:
@@ -44,8 +43,7 @@ class MemoryToolkit(BaseToolkit):
         self.agent = agent
 
     def save(self, path: str) -> str:
-        r"""
-        Saves the agent's current memory to a JSON file by calling
+        r"""Saves the agent's current memory to a JSON file by calling
         agent.save_memory(path).
 
         Args:
@@ -58,12 +56,7 @@ class MemoryToolkit(BaseToolkit):
         return f"Memory saved to {path}"
 
     def load(self, memory_json: str) -> str:
-        r"""
-        Loads memory into the agent from a JSON string:
-          1) Parse `memory_json` as a list of memory records
-          2) Create a fresh ChatHistoryMemory
-          3) Write records into that memory
-          4) Call agent.load_memory(...) with that new memory
+        r"""Loads memory into the agent from a JSON string.
 
         Args:
             memory_json (str): A JSON string containing memory records.
@@ -97,9 +90,7 @@ class MemoryToolkit(BaseToolkit):
             return f"[ERROR] Failed to load memory: {e!s}"
 
     def load_from_path(self, path: str) -> str:
-        r"""
-        Loads the agent's memory from a JSON file by calling
-        agent.load_memory_from_path(path).
+        r"""Loads the agent's memory from a JSON file.
 
         Args:
             path (str): The file path to load the memory from.
@@ -111,8 +102,7 @@ class MemoryToolkit(BaseToolkit):
         return f"Memory loaded from {path}"
 
     def clear_memory(self) -> str:
-        r"""
-        Clears the agent's memory by calling agent.clear_memory().
+        r"""Clears the agent's memory.
 
         Returns:
             str: Confirmation message.
@@ -121,8 +111,7 @@ class MemoryToolkit(BaseToolkit):
         return "Memory has been cleared."
 
     def get_tools(self) -> list[FunctionTool]:
-        r"""
-        Expose the memory management methods as function tools
+        r"""Expose the memory management methods as function tools
         for the ChatAgent.
 
         Returns:

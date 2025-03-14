@@ -360,8 +360,7 @@ class ChatAgent(BaseAgent):
         logger.info(f"Memory loaded from {memory}")
 
     def load_memory_from_path(self, path: str) -> None:
-        r"""
-        Loads memory records from a JSON file filtered by this agent's ID.
+        r"""Loads memory records from a JSON file filtered by this agent's ID.
 
         Args:
             path (str): The file path to a JSON memory file that uses
@@ -385,8 +384,7 @@ class ChatAgent(BaseAgent):
         logger.info(f"Memory loaded from {path}")
 
     def save_memory(self, path: str) -> None:
-        r"""
-        Retrieves the current conversation data from memory and writes it
+        r"""Retrieves the current conversation data from memory and writes it
         into a JSON file using JsonStorage.
 
         Args:

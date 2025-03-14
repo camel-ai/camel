@@ -77,10 +77,8 @@ class ChatHistoryMemory(AgentMemory):
     def write_records(self, records: List[MemoryRecord]) -> None:
         for record in records:
             # assign the agent_id to the record
-            if record.agent_id == "":
-                # if the agent memory has an agent_id, use it
-                if self.agent_id is not None:
-                    record.agent_id = self.agent_id
+            if record.agent_id == "" and self.agent_id is not None:
+                record.agent_id = self.agent_id
         self._chat_history_block.write_records(records)
 
     def get_context_creator(self) -> BaseContextCreator:
@@ -141,10 +139,8 @@ class VectorDBMemory(AgentMemory):
                 self._current_topic = record.message.content
 
             # assign the agent_id to the record
-            if record.agent_id == "":
-                # if the agent memory has an agent_id, use it
-                if self.agent_id is not None:
-                    record.agent_id = self.agent_id
+            if record.agent_id == "" and self.agent_id is not None:
+                record.agent_id = self.agent_id
 
         self._vectordb_block.write_records(records)
 
