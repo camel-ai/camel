@@ -17,23 +17,36 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool, SearchToolkit
 
-res_baidu_free = SearchToolkit().search_baidu_free(
-    query="Python 教程", max_results=3
+agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_baidu)],
 )
-print(res_baidu_free)
+
+usr_msg = "今天北京的天气如何"
+
+response = agent.step(input_message=usr_msg, response_format=None)
+
+print(response.msgs[0].content)
 
 """
 ===============================================================================
-{'results': [{'result_id': 1, 'title': 'Python3教程| 菜鸟教程', 'description':
- '本教程主要针对Python3.x 版本的学习,如果你使用的是 Python 2.x 
-   请移步至Python 2.X版本的教程。
-   官方宣布,2020 年 1 月 1 日, 停止 Python 2 的更新。 查看Python 版本 
-   我们可以在...个人图书馆\ue62b\ue680播报\ue67d暂停', 
-   'url': 'http://www.baidu.com/link?url=2qx1-R1woSbIoqTPqvrIdxyDkT2GMP93Ewq
-   I5w5YxA07iL1BW2NmXB2FNBkN0ylMYuycWcJFp5FEITkUoXWQBr0HNUBHSPm9WO7kemz59F3'}
-   , {'result_id': 2, 'title': 'Python3教程| 菜鸟教程', 'description': '', 
-   'url': 'http://www.baidu.com/link?url=2qx1-R1woSbIoqTPqvrIdxyDkT2GMP93Ew
-   qI5w5YxA07iL1BW2NmXB2FNBkN0ylMwMsDUjKeC39YZ9SdzVhQlNpnqA6bICoPSuS2ccfs1gC'}]}
+今天北京的天气信息可以通过以下链接查看:
+
+1. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=AJhE9PhEO3TmkJ70CUcRsR3NVB3m6wxN5Imdp0ZVsEBK1t8YhtM6YMxrQy3_vRN6dJv4FLHkBCe
+fZURnzHTm9gio-dS4-4MwGVgJe40m7prOoggce2eB0h-3DsllbKMm)
+2. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=1vhNOfl9tV65_104GMQbDnU_fdCZPXDV2BtTJelxdd6isdSZjAHvtoXqOWG3n7D1N-m9zAmOhQG
+c-jEGqiXe9K)
+3. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=Q0URfpodXDpUe1TKBPpToKIyIuCcjSGUR5jorx81g8Pni5XH-Tbc6AXMa7EwCWjBG3jysTZb43S
+6ZCsJOKvPw2EbIlQ_bMu42-5sCraqXlS)
+4. [中国天气网 - 北京天气预报一周](http://www.baidu.com/link?
+url=TtFe8QryJFuwX1kx50YF5WijRcd2TMJRhPudDQvqW7TG4siah68gUZd_frsVWPi1xkYvrxoYL87
+QMH0wSjDYOq)
+
+请点击链接查看详细的天气预报信息。
 ===============================================================================
 """
 

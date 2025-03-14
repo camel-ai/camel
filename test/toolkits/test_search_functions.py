@@ -185,7 +185,7 @@ def test_search_duckduckgo_images():
 
 
 @patch('requests.get')
-def test_search_baidu_free(mock_get, search_toolkit):
+def test_search_baidu(mock_get, search_toolkit):
     # Mock the response from Baidu search
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -212,9 +212,7 @@ def test_search_baidu_free(mock_get, search_toolkit):
     mock_get.return_value = mock_response
 
     # Call the function under test
-    result = search_toolkit.search_baidu_free(
-        query="test query", max_results=5
-    )
+    result = search_toolkit.search_baidu(query="test query", max_results=5)
 
     # Expected output
     expected_output = {

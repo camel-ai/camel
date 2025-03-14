@@ -766,16 +766,22 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
-    def search_baidu_free(self, query: str, max_results: int = 5) -> dict:
-        r"""Search Baidu using web scraping (free version).
+    def search_baidu(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+        r"""Search Baidu using web scraping to retrieve relevant search
+        results. This method queries Baidu's search engine and extracts search
+        results including titles, descriptions, and URLs.
 
         Args:
-            query: Search query string.
-            max_results: Maximum number of results to return.
+            query (str): Search query string to submit to Baidu.
+            max_results (int): Maximum number of results to return.
+                (default: :obj:`5`)
 
         Returns:
-            Dict containing search results or error message.
+            Dict[str, Any]: A dictionary containing search results or error
+                message.
         """
+        from bs4 import BeautifulSoup
+
         try:
             url = "https://www.baidu.com/s"
             headers = {
@@ -790,8 +796,6 @@ class SearchToolkit(BaseToolkit):
 
             response = requests.get(url, headers=headers, params=params)
             response.encoding = "utf-8"
-
-            from bs4 import BeautifulSoup
 
             soup = BeautifulSoup(response.text, "html.parser")
 
@@ -822,7 +826,7 @@ class SearchToolkit(BaseToolkit):
 
             if not results:
                 print(
-                    "Warning: No results found. Check"
+                    "Warning: No results found. Check "
                     "if Baidu HTML structure has changed."
                 )
 
@@ -848,5 +852,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
-            FunctionTool(self.search_baidu_free),
+            FunctionTool(self.search_baidu),
         ]
