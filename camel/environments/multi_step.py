@@ -15,7 +15,6 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from camel.environments.base import BaseEnvironment
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 
@@ -24,7 +23,7 @@ from .models import Action, Observation, StepResult
 logger = get_logger(__name__)
 
 
-class MultiStepEnv(BaseEnvironment):
+class MultiStepEnv:
     r"""Base class for developing Multi-Step environments for RL with LLMs."""
 
     def __init__(

@@ -13,7 +13,7 @@
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Protocol
 
 from pydantic import BaseModel, Field
 
@@ -83,3 +83,29 @@ class StepResult(BaseModel):
         default_factory=dict,
         description="Additional information about the step",
     )
+
+
+class Environment(Protocol):
+    async def reset(self) -> Observation:
+        r"""Reset the environment to an initial state.
+
+        Returns:
+            Initial observation for the episode
+        """
+        ...
+
+    async def step(self, action: Action) -> StepResult:
+        r"""Take a step in the environment.
+
+        Args:
+            action: Action containing everything that is needed
+            to progress in the environment
+
+        Returns:
+            StepResult containing next observation, reward, done flag, and info
+        """
+        ...
+
+    async def close(self) -> None:
+        r"""Perform a full cleanup of all environment resources."""
+        ...

@@ -18,7 +18,6 @@ from typing import Any, Dict, Optional, Tuple
 
 from camel.agents import ChatAgent
 from camel.datasets.base import DataPoint, GenerativeDataset, StaticDataset
-from camel.environments.base import BaseEnvironment
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
@@ -41,7 +40,7 @@ logger = get_logger(__name__)
 #       Should probably be its own class and not just raw ChatAgent
 
 
-class SingleStepEnv(BaseEnvironment):
+class SingleStepEnv:
     r"""Base class for all single step
     RL training environments.
 
