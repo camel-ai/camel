@@ -280,12 +280,17 @@ class Workforce(BaseNode):
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
             additional_info=task.additional_info,
+            output_format_spec='''
+            {
+                "assignee_id": "the ID of the worker node"
+            }
+            '''
         )
 
         response = self.coordinator_agent.step(
             prompt, response_format=TaskAssignResult
         )
-        result_dict = json.loads(response.msg.content)
+        result_dict = ASSIGN_TASK_PROMPT.handle_output_format(response.msg.content, required_keys={"assignee_id"})
         task_assign_result = TaskAssignResult(**result_dict)
         return task_assign_result.assignee_id
 

@@ -1065,3 +1065,58 @@ class HuggingFaceRepoType(str, Enum):
     DATASET = "dataset"
     MODEL = "model"
     SPACE = "space"
+
+class OutputFormatType(Enum):
+    """Output format type enumeration.
+
+    Defines various available output format types.
+    The format type strings are case-insensitive and will be converted to uppercase.
+    The default output format type is TEXT.
+
+    How to customize output formats:
+    
+    1. Define custom output format prompts directly or inherit from OutputFormatPrompt:
+    # Create a custom output format with specific type
+    output_format = OutputFormat(output_format_type=OutputFormatType.CUSTOM_FORMAT)
+    
+    # Define a prompt with format requirements
+    # You can specify the output format requirements in the prompt text
+    # and pass the output_format object to control LLM output format 
+    prompt = OutputFormatPrompt(
+        "Your prompt text only, no output format requirements, the output format will be enforced by OutputFormatPrompt",
+        output_format=output_format
+    )
+    
+    2. Register custom output format handlers:
+    # Create a custom format handler
+    class CustomOutputFormatHandler(OutputFormatHandler):
+        def _setup_extractors(self):
+            # Add data extraction logic
+            pass
+        def _setup_validators(self):
+            # Add data validation logic for the extracted data (optional)
+            pass
+    
+    # Register to factory
+    OutputFormatHandlerFactory.register_handler(
+        "CUSTOM_FORMAT", # the type name of the custom output format
+        CustomOutputFormatHandler
+    )
+    """
+    
+    JSON = "JSON"
+    JSONL = "JSONL"
+    XML = "XML"
+    YAML = "YAML"
+    CSV = "CSV"
+    HTML = "HTML"
+    TEXT = "TEXT"
+    MARKDOWN = "MARKDOWN"
+
+    def __str__(self) -> str:
+        """Returns string representation of the enum value.
+
+        Returns:
+            str: String representation of the enum value.
+        """
+        return self.value
