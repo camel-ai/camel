@@ -56,21 +56,20 @@ class StaticDataset(Dataset):
         r"""Initialize the static dataset and validate integrity.
 
         Args:
-            data (:obj:`Union[HFDataset, Dataset,
-            Path, List[Dict[str, Any]]]`):
+            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]):
                 Input data, which can be one of the following:
                 - A Hugging Face Dataset (:obj:`HFDataset`).
                 - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`).
                 - A :obj:`Path` object representing a JSON file.
                 - A list of dictionaries with :obj:`DataPoint`-compatible
                   fields.
-            seed (:obj:`int`): Random seed for reproducibility.
-                Default is :obj:`42`.
-            min_samples (:obj:`int`): Minimum required number of samples.
-                Default is :obj:`1`.
-            strict (:obj:`bool`): Whether to raise an error on invalid
+            seed (int): Random seed for reproducibility.
+                (default: :obj:`42`)
+            min_samples (int): Minimum required number of samples.
+                (default: :obj:`1`)
+            strict (bool): Whether to raise an error on invalid
                 datapoints (:obj:`True`) or skip/filter them (:obj:`False`).
-                Default is :obj:`False`.
+                (default: :obj:`False`)
             **kwargs: Additional dataset parameters.
 
         Raises:
@@ -104,11 +103,11 @@ class StaticDataset(Dataset):
         :obj:`DataPoint` instances.
 
         Args:
-            data:Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]: Input
+            data (Union[HFDataset, Dataset, Path, List[Dict[str, Any]]]): Input
                 dataset in one of the supported formats.
 
         Returns:
-            List (DataPoint): A list of validated :obj:`DataPoint`
+            List[DataPoint]: A list of validated :obj:`DataPoint`
                 instances.
 
         Raises:

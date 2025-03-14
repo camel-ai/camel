@@ -51,8 +51,10 @@ def test_datapoint_validation():
     with pytest.raises(ValidationError):
         DataPoint(question='What is 2+2?')
 
-    with pytest.raises(ValidationError):
-        DataPoint(question='What is 2+2?', final_answer='4')
+    datapoint = DataPoint(question='What is 2+2?', final_answer='4')
+    assert datapoint.question == 'What is 2+2?'
+    assert datapoint.rationale is None
+    assert datapoint.final_answer == '4'
 
     datapoint = DataPoint(
         question='What is 2+2?', rationale='Addition', final_answer='4'
