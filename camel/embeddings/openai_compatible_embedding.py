@@ -34,8 +34,8 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
 
     @api_keys_required(
         [
-            ("api_key", 'OPENAI_COMPATIBILIY_API_KEY'),
-            ("url", 'OPENAI_COMPATIBILIY_API_BASE_URL'),
+            ("api_key", 'OPENAI_COMPATIBILITY_API_KEY'),
+            ("url", 'OPENAI_COMPATIBILITY_API_BASE_URL'),
         ]
     )
     def __init__(
@@ -48,9 +48,9 @@ class OpenAICompatibleEmbedding(BaseEmbedding[str]):
         self.output_dim: Optional[int] = None
 
         self._api_key = api_key or os.environ.get(
-            "OPENAI_COMPATIBILIY_API_KEY"
+            "OPENAI_COMPATIBILITY_API_KEY"
         )
-        self._url = url or os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL")
+        self._url = url or os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL")
         self._client = OpenAI(
             timeout=180,
             max_retries=3,
