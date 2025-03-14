@@ -245,7 +245,7 @@ def test_search_baidu_free(mock_get, search_toolkit):
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/120.0.0.0 Safari/537.36"
             ),
-            "Referer": "https://www.baidu.com"  # Include Referer header
+            "Referer": "https://www.baidu.com"
         },
         params={"wd": "test query", "rn": "5"}
     )
