@@ -22,7 +22,7 @@ from datasets import Dataset as HFDataset
 from pydantic import ValidationError
 from torch.utils.data import Dataset
 
-from camel.datasets.base import (
+from camel.datasets import (
     DataPoint,
     FewShotGenerator,
     StaticDataset,
