@@ -51,10 +51,14 @@ def test_datapoint_validation():
     with pytest.raises(ValidationError):
         DataPoint(question='What is 2+2?')
 
-    # This should now work since rationale is optional
-    datapoint = DataPoint(question='What is 2+2?', final_answer='4')
+    with pytest.raises(ValidationError):
+        DataPoint(question='What is 2+2?', final_answer='4')
+
+    datapoint = DataPoint(
+        question='What is 2+2?', rationale='Addition', final_answer='4'
+    )
     assert datapoint.question == 'What is 2+2?'
-    assert datapoint.rationale is None
+    assert datapoint.rationale is 'Addition'
     assert datapoint.final_answer == '4'
 
 

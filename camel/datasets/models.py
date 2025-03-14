@@ -32,8 +32,8 @@ class DataPoint(BaseModel):
         ..., description="The primary question or issue to be addressed."
     )
     final_answer: str = Field(..., description="The final answer.")
-    rationale: Optional[str] = Field(
-        default=None,
+    rationale: str = Field(
+        ...,
         description="Logical reasoning or explanation behind the answer.",
     )
     metadata: Optional[Dict[str, Any]] = Field(
