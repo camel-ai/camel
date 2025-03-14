@@ -12,7 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
 from camel.extractors.base import BaseExtractor
@@ -23,7 +23,7 @@ from .models import Action, Observation, StepResult
 logger = get_logger(__name__)
 
 
-class MultiStepEnv:
+class MultiStepEnv(ABC):
     r"""Base class for developing Multi-Step environments for RL with LLMs."""
 
     def __init__(
