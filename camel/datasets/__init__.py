@@ -12,13 +12,15 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 from .base import (
+    BaseGenerator,
     DataPoint,
-    GenerativeDataset,
+    FewShotGenerator,
     StaticDataset,
 )
 
 __all__ = [
+    "BaseGenerator",
     "DataPoint",
+    "FewShotGenerator",
     "StaticDataset",
-    "GenerativeDataset",
 ]

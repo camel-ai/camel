@@ -12,6 +12,7 @@
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
 
+import abc
 import json
 import random
 from datetime import datetime
@@ -193,6 +194,11 @@ class StaticDataset(Dataset):
                     return None
 
             rationale = item.get('rationale')
+            if self._strict and rationale is None:
+                raise ValueError(
+                    f"Sample at index {idx} has invalid 'rationale': "
+                    f"expected str, got {type(rationale)}"
+                )
             if rationale is not None and not isinstance(rationale, str):
                 if self._strict:
                     raise ValueError(
@@ -396,12 +402,99 @@ class StaticDataset(Dataset):
         return data
 
 
-class GenerativeDataset(Dataset):
-    r"""A dataset for generating synthetic datapoints using external agents and
-    verifiers.
+class BaseGenerator(abc.ABC):
+    r"""Abstract base class for data generators.
 
-    This class leverages a seed dataset and external components to generate
-    new synthetic datapoints on demand.
+    This class defines the interface for generating synthetic datapoints.
+    Concrete implementations should provide specific generation strategies.
+    """
+
+    def __init__(self, seed: int = 42, **kwargs):
+        r"""Initialize the base generator.
+
+        Args:
+            seed (int): Random seed for reproducibility. (default: :obj:`42`)
+            **kwargs: Additional generator parameters.
+        """
+        self.seed = seed
+        random.seed(self.seed)
+
+        self._data: List[DataPoint] = []
+
+    @abc.abstractmethod
+    async def generate_new(self, n: int, **kwargs) -> List[DataPoint]:
+        r"""Generate n new datapoints.
+
+        Args:
+            n (int): Number of datapoints to generate.
+            **kwargs: Additional generation parameters.
+
+        Returns:
+            List[DataPoint]: A list of newly generated datapoints.
+        """
+        pass
+
+    def __len__(self) -> int:
+        r"""Return the size of the generated dataset."""
+        return len(self._data)
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        r"""Retrieve a datapoint by index.
+
+        Args:
+            idx (int): Index of the datapoint.
+
+        Returns:
+            DataPoint: The datapoint corresponding to the given index.
+
+        Raises:
+            IndexError: If idx is out of bounds.
+        """
+        if idx < 0 or idx >= len(self._data):
+            raise IndexError(
+                f"Index {idx} out of bounds for dataset of "
+                f"size {len(self._data)}"
+            )
+        return self._data[idx]
+
+    def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
+        r"""Saves the generated datapoints to a JSONL (JSON Lines) file.
+
+        Each datapoint is stored as a separate JSON object on a new line.
+
+        Args:
+            file_path (Union[str, Path]): Path to save the JSONL file.
+
+        Raises:
+            ValueError: If no datapoints have been generated.
+            IOError: If there is an issue writing to the file.
+
+        Notes:
+            - Uses `self._data`, which contains the generated datapoints.
+            - Overwrites the file if it already exists.
+            - Ensures compatibility with large datasets by using JSONL format.
+        """
+        if not self._data:
+            raise ValueError("Dataset is empty. No data to save.")
+
+        file_path = Path(file_path)
+
+        try:
+            with file_path.open("w", encoding="utf-8") as f:
+                for datapoint in self._data:
+                    json.dump(datapoint.to_dict(), f)
+                    f.write("\n")  # Ensure each entry is on a new line
+            logger.info(f"Dataset saved successfully to {file_path}")
+        except IOError as e:
+            logger.error(f"Error writing to file {file_path}: {e}")
+            raise
+
+
+class FewShotGenerator(BaseGenerator):
+    r"""A generator for creating synthetic datapoints using few-shot learning.
+
+    This class leverages a seed dataset, an agent, and a verifier to generate
+    new synthetic datapoints on demand through few-shot prompting.
     """
 
     def __init__(
@@ -412,7 +505,7 @@ class GenerativeDataset(Dataset):
         seed: int = 42,
         **kwargs,
     ):
-        r"""Initialize the generative dataset.
+        r"""Initialize the few-shot generator.
 
         Args:
             seed_dataset (StaticDataset): Validated static dataset to
@@ -420,21 +513,16 @@ class GenerativeDataset(Dataset):
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
-            **kwargs: Additional dataset parameters.
+            **kwargs: Additional generator parameters.
         """
-
+        super().__init__(seed=seed, **kwargs)
         self.seed_dataset = seed_dataset
         self.verifier = verifier
         self.agent = agent
 
-        self.seed = seed
-        random.seed(self.seed)
-
-        self._data: List[DataPoint] = []
-
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
         r"""Construct a prompt for generating new datapoints
-        using a fixed sample of 3 examples from the seed dataset.
+        using a fixed sample of examples from the seed dataset.
 
         Args:
             examples (List[DataPoint]): Examples to include in the prompt.
@@ -461,12 +549,14 @@ class GenerativeDataset(Dataset):
         n: int,
         max_retries: int = 10,
         verify_mode: Literal["rationale", "final_answer"] = "rationale",
+        num_examples: int = 3,
+        **kwargs,
     ) -> List[DataPoint]:
         r"""Generates and validates `n` new datapoints through
         few-shot prompting, with a retry limit.
 
         Steps:
-            1. Samples 3 examples from the seed dataset.
+            1. Samples examples from the seed dataset.
             2. Constructs a prompt using the selected examples.
             3. Uses an agent to generate a new datapoint.
             4. Verifies the datapoint using a verifier.
@@ -475,10 +565,14 @@ class GenerativeDataset(Dataset):
         Args:
             n (int): Number of valid datapoints to generate.
             max_retries (int): Maximum number of retries before stopping.
+                (default: :obj:`10`)
             verify_mode (Literal["rationale", "final_answer"]): Determines
                 which field to verify. If "rationale", verifies the reasoning.
-                If "final_answer", verifies the final answer. (default:
-                :obj:`rationale`)
+                If "final_answer", verifies the final answer.
+                (default: :obj:`rationale`)
+            num_examples (int): Number of examples to sample from the seed dataset.
+                (default: :obj:`3`)
+            **kwargs: Additional generation parameters.
 
         Returns:
             List[DataPoint]: A list of newly generated valid datapoints.
@@ -498,14 +592,15 @@ class GenerativeDataset(Dataset):
             - If retries are exhausted before reaching `n`, a `RuntimeError`
                 is raised.
             - Metadata includes a timestamp for tracking datapoint creation.
-            - This method can be overridden to implement custom generation.
         """
         valid_data_points: List[DataPoint] = []
         retries = 0
 
         while len(valid_data_points) < n and retries < max_retries:
             try:
-                examples = [self.seed_dataset.sample() for _ in range(3)]
+                examples = [
+                    self.seed_dataset.sample() for _ in range(num_examples)
+                ]
                 prompt = self._construct_prompt(examples)
 
                 try:
@@ -516,14 +611,8 @@ class GenerativeDataset(Dataset):
                     )
                     if not isinstance(agent_output, dict):
                         raise TypeError("Agent output must be a dictionary")
-                    if (
-                        "question" not in agent_output
-                        or "final_answer" not in agent_output
-                    ):
-                        raise KeyError(
-                            "Missing 'question' or 'final_answer' in "
-                            "agent output"
-                        )
+                    if "question" not in agent_output:
+                        raise KeyError("Missing 'question' in agent output")
                 except (TypeError, KeyError) as e:
                     logger.warning(
                         f"Agent output issue: {e}, retrying... "
@@ -573,6 +662,7 @@ class GenerativeDataset(Dataset):
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
                             "verify_mode": verify_mode,
+                            "generator": "few_shot",
                         },
                     )
                 except ValidationError as e:
@@ -600,58 +690,3 @@ class GenerativeDataset(Dataset):
 
         self._data.extend(valid_data_points)
         return valid_data_points
-
-    def __len__(self) -> int:
-        r"""Return the size of the dataset."""
-        return len(self._data)
-
-    def __getitem__(self, idx: int) -> DataPoint:
-        r"""Retrieve a datapoint by index.
-
-        Args:
-            idx (int): Index of the datapoint.
-
-        Returns:
-            DataPoint: The datapoint corresponding to the given index.
-
-        Raises:
-            IndexError: If idx is out of bounds.
-        """
-        if idx < 0 or idx >= len(self._data):
-            raise IndexError(
-                f"Index {idx} out of bounds for dataset of "
-                f"size {len(self._data)}"
-            )
-        return self._data[idx]
-
-    def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
-        r"""Saves the dataset to a JSONL (JSON Lines) file.
-
-        Each datapoint is stored as a separate JSON object on a new line.
-
-        Args:
-            file_path (Union[str, Path]): Path to save the JSONL file.
-
-        Raises:
-            ValueError: If the dataset is empty.
-            IOError: If there is an issue writing to the file.
-
-        Notes:
-            - Uses `self._data`, which contains the generated datapoints.
-            - Overwrites the file if it already exists.
-            - Ensures compatibility with large datasets by using JSONL format.
-        """
-        if not self._data:
-            raise ValueError("Dataset is empty. No data to save.")
-
-        file_path = Path(file_path)
-
-        try:
-            with file_path.open("w", encoding="utf-8") as f:
-                for datapoint in self._data:
-                    json.dump(datapoint.to_dict(), f)
-                    f.write("\n")  # Ensure each entry is on a new line
-            logger.info(f"Dataset saved successfully to {file_path}")
-        except IOError as e:
-            logger.error(f"Error writing to file {file_path}: {e}")
-            raise

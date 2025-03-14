@@ -24,7 +24,7 @@ from torch.utils.data import Dataset
 
 from camel.datasets.base import (
     DataPoint,
-    GenerativeDataset,
+    FewShotGenerator,
     StaticDataset,
 )
 
@@ -813,8 +813,8 @@ def test_static_dataset_methods():
 
 
 @pytest.mark.asyncio
-async def test_generative_dataset():
-    r"""Test GenerativeDataset with mocked components."""
+async def test_few_shot_generator():
+    r"""Test FewShotGenerator with mocked components."""
     mock_static_dataset = MagicMock(spec=StaticDataset)
     mock_static_dataset.__len__.return_value = 5
     mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
@@ -839,8 +839,8 @@ async def test_generative_dataset():
         ]
     )
 
-    # Create GenerativeDataset with mocks
-    dataset = GenerativeDataset(
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
         agent=mock_agent,
@@ -861,7 +861,7 @@ async def test_generative_dataset():
 
 @pytest.mark.asyncio
 async def test_generate_new():
-    r"""Test GenerativeDataset with mocked components."""
+    r"""Test FewShotGenerator with mocked components."""
     mock_static_dataset = MagicMock(spec=StaticDataset)
     mock_static_dataset.__len__.return_value = 5
     mock_static_dataset.__getitem__.side_effect = lambda i: DataPoint(
@@ -925,8 +925,8 @@ async def test_generate_new():
         ),
     ]
 
-    # Create GenerativeDataset with mocks
-    dataset = GenerativeDataset(
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
         agent=mock_agent,
@@ -965,7 +965,7 @@ async def test_generate_new():
 
 @pytest.mark.asyncio
 async def test_generate_new_with_max_retries():
-    r"""Test GenerativeDataset retry mechanism with
+    r"""Test FewShotGenerator retry mechanism with
     max_retries=2 and a sequence of one correct, three wrong,
     and one correct output, expecting failure."""
 
@@ -1049,7 +1049,7 @@ async def test_generate_new_with_max_retries():
         ),
     ]
 
-    dataset = GenerativeDataset(
+    dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
         agent=mock_agent,
@@ -1075,8 +1075,8 @@ async def test_generate_new_with_max_retries():
 
 
 @pytest.mark.asyncio
-async def test_generative_dataset_save_to_jsonl(tmp_path):
-    r"""Test GenerativeDataset's save_to_jsonl method with mocked data.
+async def test_few_shot_generator_save_to_jsonl(tmp_path):
+    r"""Test FewShotGenerator's save_to_jsonl method with mocked data.
 
     This test verifies that:
     1. Data can be successfully saved to a JSONL file.
@@ -1113,8 +1113,8 @@ async def test_generative_dataset_save_to_jsonl(tmp_path):
         ]
     )
 
-    # Create GenerativeDataset with mocks
-    dataset = GenerativeDataset(
+    # Create FewShotGenerator with mocks
+    dataset = FewShotGenerator(
         seed_dataset=mock_static_dataset,
         verifier=mock_verifier,
         agent=mock_agent,

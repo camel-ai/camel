@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.datasets.base import GenerativeDataset, StaticDataset
+from camel.datasets.base import BaseGenerator, StaticDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
@@ -360,7 +360,7 @@ class BaseEnvironment(ABC):
             logger.warning(
                 "Dataset is empty. Attempting to generate new data..."
             )
-            if isinstance(self.dataset, GenerativeDataset):
+            if isinstance(self.dataset, BaseGenerator):
                 try:
                     asyncio.run(
                         self.dataset.generate_new(1)
@@ -370,7 +370,9 @@ class BaseEnvironment(ABC):
                     logger.error(f"Failed to generate new data: {e}")
                     return self._get_terminal_observation()
             else:
-                logger.error("Dataset is empty and not a GenerativeDataset.")
+                logger.error(
+                    "Dataset is empty and not a BaseGenerator implementation."
+                )
                 return self._get_terminal_observation()
 
         try:
