@@ -144,16 +144,11 @@ class StaticDataset(Dataset):
                     return None
 
             rationale = item.get('rationale')
-            if self._strict and rationale is None:
-                raise ValueError(
-                    f"Sample at index {idx} has invalid 'rationale': "
-                    f"expected str, got {type(rationale)}"
-                )
-            if rationale is not None and not isinstance(rationale, str):
+            if not isinstance(rationale, str):
                 if self._strict:
                     raise ValueError(
                         f"Sample at index {idx} has invalid 'rationale': "
-                        f"expected str or None, got {type(rationale)}"
+                        f"expected str, got {type(rationale)}"
                     )
                 else:
                     logger.warning(
