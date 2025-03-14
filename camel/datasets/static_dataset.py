@@ -60,7 +60,7 @@ class StaticDataset(Dataset):
                 Input data, which can be one of the following:
                 - A Hugging Face Dataset (:obj:`HFDataset`).
                 - A PyTorch Dataset (:obj:`torch.utils.data.Dataset`).
-                - A :obj:`Path` object representing a JSON file.
+                - A :obj:`Path` object representing a JSON or JSONL file.
                 - A list of dictionaries with :obj:`DataPoint`-compatible
                   fields.
             seed (int): Random seed for reproducibility.
@@ -112,6 +112,7 @@ class StaticDataset(Dataset):
 
         Raises:
             TypeError: If the input data type is unsupported.
+            ValueError: If the Path has an unsupported file extension.
         """
 
         if isinstance(data, HFDataset):
@@ -119,7 +120,13 @@ class StaticDataset(Dataset):
         elif isinstance(data, Dataset):
             raw_data = self._init_from_pytorch_dataset(data)
         elif isinstance(data, Path):
-            raw_data = self._init_from_json_path(data)
+            if data.suffix == ".jsonl":
+                raw_data = self._init_from_jsonl_path(data)
+            elif data.suffix == ".json":
+                raw_data = self._init_from_json_path(data)
+            else:
+                raise ValueError(f"Unsupported file extension: {data.suffix}")
+
         elif isinstance(data, list):
             raw_data = self._init_from_list(data)
         else:
@@ -321,6 +328,48 @@ class StaticDataset(Dataset):
                     f"got {type(item).__name__}"
                 )
         return loaded_data
+
+    def _init_from_jsonl_path(self, data: Path) -> List[Dict[str, Any]]:
+        r"""Load and parse a dataset from a JSONL file.
+
+        Args:
+            data (:obj:`Path`): Path to the JSONL file.
+
+        Returns:
+            :obj:`List[Dict[str, Any]]`: A list of datapoint dictionaries.
+
+        Raises:
+            FileNotFoundError: If the specified JSONL file does not exist.
+            ValueError: If a line in the file contains invalid JSON or
+            is not a dictionary.
+        """
+        if not data.exists():
+            raise FileNotFoundError(f"JSONL file not found: {data}")
+
+        raw_data = []
+        logger.debug(f"Loading JSONL from {data}")
+        with data.open('r', encoding='utf-8') as f:
+            for line_number, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue  # Skip blank lines if any exist.
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError as e:
+                    raise ValueError(
+                        f"Invalid JSON on line {line_number} in file "
+                        f"{data}: {e}"
+                    )
+                raw_data.append(record)
+        logger.info(f"Successfully loaded {len(raw_data)} items from {data}")
+
+        for i, item in enumerate(raw_data):
+            if not isinstance(item, dict):
+                raise ValueError(
+                    f"Expected a dictionary at record {i+1} (line {i+1}), "
+                    f"got {type(item).__name__}"
+                )
+        return raw_data
 
     def _init_from_list(
         self, data: List[Dict[str, Any]]
