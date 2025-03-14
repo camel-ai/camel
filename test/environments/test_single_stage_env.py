@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from camel.datasets import StaticDataset
-from camel.environments.base import (
+from camel.environments import (
     Action,
     Observation,
     StepResult,
@@ -100,7 +100,7 @@ async def test_single_step_env_lifecycle():
     action = Action(llm_response="Test response")
     result = await env.step(action)
     assert isinstance(result, StepResult)
-    assert result.reward == 1.5  # correctness: 1.0 + custom_reward: 0.5
+    assert result.reward == 10.5  # correctness: 10.0 + custom_reward: 0.5
     assert result.done is True
     assert result.observation == SingleStepEnv.PLACEHOLDER_OBS
     mock_extractor.extract.assert_awaited_once_with("Test response")

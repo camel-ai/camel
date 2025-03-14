@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from camel.environments.base import (
+from camel.environments import (
     Action,
     Observation,
     StepResult,
