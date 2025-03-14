@@ -274,6 +274,10 @@ class FewShotGenerator(BaseGenerator):
 
                 rationale = agent_output.get("rationale")
 
+                if not isinstance(rationale, str):
+                    raise TypeError(f"Rationale {rationale} is not a string.")
+
+
                 try:
                     verifier_response = await self.verifier.verify(
                         VerifierInput(
