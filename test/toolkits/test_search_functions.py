@@ -191,29 +191,26 @@ def test_search_baidu_free(mock_get, search_toolkit):
     mock_response.status_code = 200
     mock_response.encoding = "utf-8"
     mock_response.text = """
-        <html>
-            <head><title>Baidu Search</title></head>
-            <body>
-                <div class="result c-container">
-                    <h3 class="t">
-                        <a href="https://example1.com">Test Title 1</a>
-                    </h3>
-                    <div class="c-abstract">Test Abstract 1</div>
-                </div>
-                <div class="result c-container">
-                    <h3 class="t">
-                        <a href="https://example2.com">Test Title 2</a>
-                    </h3>
-                    <div class="c-abstract">Test Abstract 2</div>
-                </div>
-            </body>
-        </html>
-        """
+    <html>
+        <head><title>Baidu Search</title></head>
+        <body>
+            <div class="result c-container">
+                <h3 class="t"><a href="https://example1.com">Test Title 1</a></h3>
+                <div class="c-abstract">Test Abstract 1</div>
+            </div>
+            <div class="result c-container">
+                <h3 class="t"><a href="https://example2.com">Test Title 2</a></h3>
+                <div class="c-abstract">Test Abstract 2</div>
+            </div>
+        </body>
+    </html>
+    """
     mock_get.return_value = mock_response
 
     # Call the function under test
     result = search_toolkit.search_baidu_free(
-        query="test query", max_results=5
+        query="test query",
+        max_results=5
     )
 
     # Expected output
@@ -223,14 +220,14 @@ def test_search_baidu_free(mock_get, search_toolkit):
                 "result_id": 1,
                 "title": "Test Title 1",
                 "description": "Test Abstract 1",
-                "url": "https://example1.com",
+                "url": "https://example1.com"
             },
             {
                 "result_id": 2,
                 "title": "Test Title 2",
                 "description": "Test Abstract 2",
-                "url": "https://example2.com",
-            },
+                "url": "https://example2.com"
+            }
         ]
     }
 
@@ -242,10 +239,11 @@ def test_search_baidu_free(mock_get, search_toolkit):
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/91.0.4472.124 Safari/537.36"
-            )
+                "Chrome/120.0.0.0 Safari/537.36"  # Updated User-Agent to match the actual one
+            ),
+            "Referer": "https://www.baidu.com"  # Include Referer header
         },
-        params={"wd": "test query", "rn": "5"},
+        params={"wd": "test query", "rn": "5"}
     )
 
 
