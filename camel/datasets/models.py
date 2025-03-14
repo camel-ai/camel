@@ -1,5 +1,7 @@
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, Field
+
 
 class DataPoint(BaseModel):
     r"""A single data point in the dataset.

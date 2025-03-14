@@ -14,11 +14,12 @@ from datasets import Dataset as HFDataset
 from pydantic import ValidationError
 from torch.utils.data import Dataset
 
-from .models import DataPoint
 from camel.logger import get_logger
 
+from .models import DataPoint
 
 logger = get_logger(__name__)
+
 
 class StaticDataset(Dataset):
     r"""A static dataset containing a list of datapoints.

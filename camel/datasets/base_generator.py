@@ -122,6 +122,7 @@ class BaseGenerator(abc.ABC):
             logger.error(f"Error writing to file {file_path}: {e}")
             raise
 
+
 class FewShotGenerator(BaseGenerator):
     r"""A generator for creating synthetic datapoints using few-shot learning.
 
@@ -151,7 +152,7 @@ class FewShotGenerator(BaseGenerator):
         self.seed_dataset = seed_dataset
         try:
             self._validate_seed_dataset()
-        except:
+        except Exception:
             raise RuntimeError("Seed Data does not follow Datapoint format")
         self.verifier = verifier
         self.agent = agent
@@ -159,7 +160,6 @@ class FewShotGenerator(BaseGenerator):
     # TODO: Validate that seed dataset contains rationale
     def _validate_seed_dataset(self) -> None:
         pass
-            
 
     def _construct_prompt(self, examples: List[DataPoint]) -> str:
         r"""Construct a prompt for generating new datapoints
@@ -198,8 +198,9 @@ class FewShotGenerator(BaseGenerator):
         Steps:
             1. Samples examples from the seed dataset.
             2. Constructs a prompt using the selected examples.
-            3. Uses an agent to generate a new datapoint.
-            4. Verifies the datapoint using a verifier.
+            3. Uses an agent to generate a new datapoint,
+            consisting of a question and code to solve the question.
+            4. Executes code using a verifier to get pseudo ground truth.
             5. Stores valid datapoints in memory.
 
         Args:
@@ -249,9 +250,15 @@ class FewShotGenerator(BaseGenerator):
                     if not isinstance(agent_output, dict):
                         raise TypeError("Agent output must be a dictionary")
                     if "question" not in agent_output:
-                        raise KeyError(f"Missing 'question' in agent output {agent_output}")
+                        raise KeyError(
+                            "Missing 'question' in agent"
+                            f"output {agent_output}"
+                        )
                     if "rationale" not in agent_output:
-                        raise KeyError(f"Missing 'rationale' in agent output {agent_output}")
+                        raise KeyError(
+                            "Missing 'rationale' in agent"
+                            f"output {agent_output}"
+                        )
                 except (TypeError, KeyError) as e:
                     logger.warning(
                         f"Agent output issue: {e}, retrying... "
@@ -290,7 +297,6 @@ class FewShotGenerator(BaseGenerator):
                         metadata={
                             "synthetic": str(True),
                             "created": datetime.now().isoformat(),
-                            "verify_mode": verify_mode,
                             "generator": "few_shot",
                         },
                     )
