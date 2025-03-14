@@ -772,21 +772,31 @@ class SearchToolkit(BaseToolkit):
         ]
     )
     def search_bing(
-        self, query: str, count: int = 10, offset: int = 0, market: str = "en-US", 
-        safesearch: str = "Moderate", freshness: Optional[str] = None
+        self,
+        query: str,
+        count: int = 10,
+        offset: int = 0,
+        market: str = "en-US",
+        safesearch: str = "Moderate",
+        freshness: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         r"""Use Bing search engine to search information for the given query.
 
         Args:
             query (str): The query to be searched.
-            count (int): The number of search results to return. Max value is 50. Default is 10.
-            offset (int): The zero-based offset that indicates the number of search results to skip
-                before returning results. Default is 0.
-            market (str): The market where the results come from. Format is <language code>-<country code>.
-                Default is "en-US".
-            safesearch (str): Filter adult content. Values can be: "Off", "Moderate", or "Strict".
+            count (int): The number of search results to return.
+                    Max value is 50. Default is 10.
+            offset (int): The zero-based offset that indicates the number of
+                    search results to skip before returning results.
+                    Default is 0.
+            market (str): The market where the results come from.
+                    Format is <language code>-<country code>.
+                    Default is "en-US".
+            safesearch (str): Filter adult content.
+                Values can be: "Off", "Moderate", or "Strict".
                 Default is "Moderate".
-            freshness (Optional[str]): Filter by when Bing discovered the page. Values can be:
+            freshness (Optional[str]): Filter by when Bing discovered the page.
+                Values can be:
                 "Day" for content discovered in the past 24 hours,
                 "Week" for content discovered in the past week,
                 "Month" for content discovered in the past month.
@@ -818,7 +828,7 @@ class SearchToolkit(BaseToolkit):
             "count": count,
             "offset": offset,
             "mkt": market,
-            "safeSearch": safesearch
+            "safeSearch": safesearch,
         }
 
         # Add freshness parameter if specified
@@ -830,31 +840,33 @@ class SearchToolkit(BaseToolkit):
             # Make the request
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raise an exception for HTTP errors
-            
+
             # Parse the JSON response
             data = response.json()
-            
+
             # Process the search results
             if "webPages" in data and "value" in data["webPages"]:
                 results = data["webPages"]["value"]
-                
+
                 # Iterate over the results
                 for i, result in enumerate(results, start=1):
                     response_item = {
                         "result_id": i,
                         "title": result.get("name", ""),
                         "description": result.get("snippet", ""),
-                        "url": result.get("url", "")
+                        "url": result.get("url", ""),
                     }
                     responses.append(response_item)
             else:
-                responses.append({"error": "No results found or invalid response format"})
-        
+                responses.append(
+                    {"error": "No results found or invalid response format"}
+                )
+
         except requests.exceptions.RequestException as e:
-            responses.append({"error": f"Bing search failed: {str(e)}"})
+            responses.append({"error": f"Bing search failed: {e!s}"})
         except Exception as e:
-            responses.append({"error": f"An unexpected error occurred: {str(e)}"})
-        
+            responses.append({"error": f"An unexpected error occurred: {e!s}"})
+
         return responses
 
     @api_keys_required(
@@ -864,15 +876,21 @@ class SearchToolkit(BaseToolkit):
         ]
     )
     def search_baidu(
-        self, query: str, page_num: int = 1, rn: int = 10, site: Optional[str] = None
+        self,
+        query: str,
+        page_num: int = 1,
+        rn: int = 10,
+        site: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         r"""Use Baidu search engine to search information for the given query.
 
         Args:
             query (str): The query to be searched.
             page_num (int): The page number to return. Default is 1.
-            rn (int): The number of results per page (1-50). Default is 10.
-            site (Optional[str]): Limit search to a specific site, e.g., "example.com".
+                rn (int): The number of results per page (1-50).
+                    Default is 10.
+            site (Optional[str]): Limit search to a specific site,
+                    e.g., "example.com".
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -883,69 +901,77 @@ class SearchToolkit(BaseToolkit):
                 - 'description': A brief description of the website.
                 - 'url': The URL of the website.
         """
+
         import requests
-        import time
-        import json
 
         BAIDU_API_KEY = os.getenv("BAIDU_API_KEY")
         BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY")
-        
+
         if not BAIDU_API_KEY or not BAIDU_SECRET_KEY:
-            return [{"error": "BAIDU_API_KEY or BAIDU_SECRET_KEY environment variable not set"}]
+            return [
+                {
+                    "error": (
+                        "BAIDU_API_KEY or BAIDU_SECRET_KEY environment"
+                        "variable not set"
+                    )
+                }
+            ]
 
         # First, get the access token
         token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={BAIDU_API_KEY}&client_secret={BAIDU_SECRET_KEY}"
-        
+
         responses = []
         try:
             token_response = requests.get(token_url)
             token_response.raise_for_status()
             access_token = token_response.json().get("access_token")
-            
+
             if not access_token:
                 return [{"error": "Failed to obtain Baidu access token"}]
-            
+
             # Baidu Web Search API endpoint
             search_url = f"https://aip.baidubce.com/rest/2.0/web/search?access_token={access_token}"
-            
+
             # Set up the parameters
             params = {
                 "query": query,
                 "page_num": page_num,
-                "rn": rn  # Number of results per page
+                "rn": rn,  # Number of results per page
             }
-            
+
             # Add site parameter if specified
             if site:
                 params["site"] = site
-            
+
             # Make the search request
             search_response = requests.post(search_url, data=params)
             search_response.raise_for_status()
             search_data = search_response.json()
-            
+
             # Process the search results
             if "results" in search_data:
                 results = search_data["results"]
-                
+
                 # Iterate over the results
                 for i, result in enumerate(results, start=1):
                     response_item = {
                         "result_id": i,
                         "title": result.get("title", ""),
                         "description": result.get("abstract", ""),
-                        "url": result.get("url", "")
+                        "url": result.get("url", ""),
                     }
                     responses.append(response_item)
             else:
-                error_msg = search_data.get("error_msg", "No results found or invalid response format")
+                error_msg = search_data.get(
+                    "error_msg", "No results found or invalid response format"
+                )
                 responses.append({"error": error_msg})
-        
+
         except requests.exceptions.RequestException as e:
-            responses.append({"error": f"Baidu search failed: {str(e)}"})
+            responses.append({"error": f"Baidu search failed: {e!s}"})
         except Exception as e:
-            responses.append({"error": f"An unexpected error occurred: {str(e)}"})
-        
+            responses.append({"error": f"An unexpected error occurred: {e!s}"})
+
         return responses
 
     def get_tools(self) -> List[FunctionTool]:
