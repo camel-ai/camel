@@ -108,12 +108,10 @@ class MultiStepEnv(ABC):
         r"""Reset the environment to an initial state.
 
         Returns:
-            Observation: The initial observation
-            for the episode.
+            Observation: The initial observation for the episode.
 
         Raises:
-            RuntimeError: If we fail to get the initial
-            observation.
+            RuntimeError: If we fail to get the initial observation.
         """
 
         if not self._is_setup:
@@ -142,17 +140,15 @@ class MultiStepEnv(ABC):
         gets the next or final observation.
 
         Args:
-            action (Action): The action containing the LLM
-            response.
+            action (Action): The action containing the LLM response.
 
         Returns:
-            StepResult containing next observation, total reward,
-            a dictionary of rewards, done flag, and info
+            StepResult containing next observation, total reward, a dictionary
+                of rewards, done flag, and info.
 
         Raises:
-            RuntimeError: If the environment is not set up,
-            the episode has ended, or there is no valid
-            current observation.
+            RuntimeError: If the environment is not set up, the episode has
+                ended, or there is no valid current observation.
         """
         if self.max_steps and self._current_step >= self.max_steps:
             return StepResult(
@@ -270,7 +266,6 @@ class MultiStepEnv(ABC):
         r"""Get the current step number.
 
         Returns:
-            int: The number of the step we are
-            currently in.
+            int: The number of the step we are currently in.
         """
         return self._current_step

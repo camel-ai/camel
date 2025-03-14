@@ -128,12 +128,12 @@ class SingleStepEnv:
     async def reset(self) -> Observation:
         r"""Reset the environment and start a new episode.
 
-        This method samples a new data point from the dataset
-        and returns the initial observation.
+        This method samples a new data point from the dataset and returns the
+        initial observation.
 
         Returns:
-            Observation: The first observation of the new episode,
-            including the question.
+            Observation: The first observation of the new episode, including
+                the question.
 
         Raises:
             Exception: If the environment is not set up properly.
@@ -161,18 +161,17 @@ class SingleStepEnv:
         verifies correctness, computes rewards, and ends the episode.
 
         Args:
-            action (Action): The action containing the LLM
-            response to evaluate.
+            action (Action): The action containing the LLM response to
+                evaluate.
 
         Returns:
-            StepResult: Contains the next observation (placeholder),
-            total reward, reward breakdown, completion flag,
-            and additional information.
+            StepResult: Contains the next observation (placeholder), total
+                reward, reward breakdown, completion flag, and additional
+                information.
 
         Raises:
-            RuntimeError: If the environment is not set up,
-            the episode has ended, or there is no valid
-            current observation.
+            RuntimeError: If the environment is not set up, the episode has
+                ended, or there is no valid current observation.
         """
 
         if not self._is_setup:
@@ -228,10 +227,10 @@ class SingleStepEnv:
 
         Args:
             action (Action): The action taken in the environment.
-            extraction_result (str):
-                The extracted verifiable content from the LLM response.
-            verification_result (VerificationResult):
-                The result of verifying the extracted response.
+            extraction_result (str): The extracted verifiable content from the
+                LLM response.
+            verification_result (VerificationResult): The result of verifying
+                the extracted response.
 
         Returns:
             Tuple[float, Dict[str, float]]: A tuple containing:
@@ -270,14 +269,14 @@ class SingleStepEnv:
 
         Args:
             action (Action): The action taken in the environment.
-            extraction_result (str):
-                The extracted verifiable content from the LLM response.
-            verification_result (VerificationResult):
-                The result of verifying the extracted response.
+            extraction_result (str): The extracted verifiable content from the
+                LLM response.
+            verification_result (VerificationResult): The result of verifying
+                the extracted response.
 
         Returns:
             Dict[str, float]: A dictionary mapping custom reward categories
-            to their values.
+                to their values.
         """
         pass
 
