@@ -766,6 +766,75 @@ class SearchToolkit(BaseToolkit):
         except requests.exceptions.RequestException as e:
             return {"error": f"Bocha AI search failed: {e!s}"}
 
+    def search_baidu(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+        r"""Search Baidu using web scraping to retrieve relevant search
+        results. This method queries Baidu's search engine and extracts search
+        results including titles, descriptions, and URLs.
+
+        Args:
+            query (str): Search query string to submit to Baidu.
+            max_results (int): Maximum number of results to return.
+                (default: :obj:`5`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing search results or error
+                message.
+        """
+        from bs4 import BeautifulSoup
+
+        try:
+            url = "https://www.baidu.com/s"
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Referer": "https://www.baidu.com",
+            }
+            params = {"wd": query, "rn": str(max_results)}
+
+            response = requests.get(url, headers=headers, params=params)
+            response.encoding = "utf-8"
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            results = []
+            for idx, item in enumerate(soup.select(".result"), 1):
+                title_element = item.select_one("h3 > a")
+                title = (
+                    title_element.get_text(strip=True) if title_element else ""
+                )
+
+                link = title_element["href"] if title_element else ""
+
+                desc_element = item.select_one(".c-abstract, .c-span-last")
+                desc = (
+                    desc_element.get_text(strip=True) if desc_element else ""
+                )
+
+                results.append(
+                    {
+                        "result_id": idx,
+                        "title": title,
+                        "description": desc,
+                        "url": link,
+                    }
+                )
+                if len(results) >= max_results:
+                    break
+
+            if not results:
+                print(
+                    "Warning: No results found. Check "
+                    "if Baidu HTML structure has changed."
+                )
+
+            return {"results": results}
+
+        except Exception as e:
+            return {"error": f"Baidu scraping error: {e!s}"}
+
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
         functions in the toolkit.
@@ -783,4 +852,5 @@ class SearchToolkit(BaseToolkit):
             FunctionTool(self.tavily_search),
             FunctionTool(self.search_brave),
             FunctionTool(self.search_bocha),
+            FunctionTool(self.search_baidu),
         ]
