@@ -125,7 +125,10 @@ class StaticDataset(Dataset):
             elif data.suffix == ".json":
                 raw_data = self._init_from_json_path(data)
             else:
-                raise ValueError(f"Unsupported file extension: {data.suffix}")
+                raise ValueError(
+                    f"Unsupported file extension: {data.suffix}."
+                    " Please enter a .json or .jsonl object."
+                )
 
         elif isinstance(data, list):
             raw_data = self._init_from_list(data)
