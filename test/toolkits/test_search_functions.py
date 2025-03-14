@@ -213,8 +213,7 @@ def test_search_baidu_free(mock_get, search_toolkit):
 
     # Call the function under test
     result = search_toolkit.search_baidu_free(
-        query="test query",
-        max_results=5
+        query="test query", max_results=5
     )
 
     # Expected output
@@ -224,14 +223,14 @@ def test_search_baidu_free(mock_get, search_toolkit):
                 "result_id": 1,
                 "title": "Test Title 1",
                 "description": "Test Abstract 1",
-                "url": "https://example1.com"
+                "url": "https://example1.com",
             },
             {
                 "result_id": 2,
                 "title": "Test Title 2",
                 "description": "Test Abstract 2",
-                "url": "https://example2.com"
-            }
+                "url": "https://example2.com",
+            },
         ]
     }
 
@@ -245,9 +244,9 @@ def test_search_baidu_free(mock_get, search_toolkit):
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/120.0.0.0 Safari/537.36"
             ),
-            "Referer": "https://www.baidu.com"
+            "Referer": "https://www.baidu.com",
         },
-        params={"wd": "test query", "rn": "5"}
+        params={"wd": "test query", "rn": "5"},
     )
 
 
@@ -357,9 +356,9 @@ def test_parse_wolfram_result():
 
     result = SearchToolkit()._parse_wolfram_result(sample_wolfram_result)
 
-    assert (
-        result == expected_output
-    ), f"Expected {expected_output}, but got {result}"
+    assert result == expected_output, (
+        f"Expected {expected_output}, but got {result}"
+    )
 
 
 @patch('requests.get')
@@ -387,9 +386,9 @@ def test_get_wolframalpha_step_by_step_solution(mock_get):
         "dummy_app_id", "dummy_query"
     )
 
-    assert (
-        result == expected_steps
-    ), f"Expected {expected_steps}, but got {result}"
+    assert result == expected_steps, (
+        f"Expected {expected_steps}, but got {result}"
+    )
 
 
 class MockSearchResult:
