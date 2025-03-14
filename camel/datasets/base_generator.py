@@ -122,8 +122,6 @@ class BaseGenerator(abc.ABC):
             logger.error(f"Error writing to file {file_path}: {e}")
             raise
 
-
-
 class FewShotGenerator(BaseGenerator):
     r"""A generator for creating synthetic datapoints using few-shot learning.
 
@@ -152,12 +150,13 @@ class FewShotGenerator(BaseGenerator):
         super().__init__(seed=seed, **kwargs)
         self.seed_dataset = seed_dataset
         try:
-            self._validate_seed_dataset() # TODO
+            self._validate_seed_dataset()
         except:
             raise RuntimeError("Seed Data does not follow Datapoint format")
         self.verifier = verifier
         self.agent = agent
 
+    # TODO: Validate that seed dataset contains rationale
     def _validate_seed_dataset(self) -> None:
         pass
             
