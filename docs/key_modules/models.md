@@ -68,8 +68,8 @@ ChatAgent(system_msg, model=model)
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
     model_type="a-string-representing-the-model-type",
-    api_key=os.environ.get("OPENAI_COMPATIBILIY_API_KEY"),
-    url=os.environ.get("OPENAI_COMPATIBILIY_API_BASE_URL"),
+    api_key=os.environ.get("OPENAI_COMPATIBILITY_API_KEY"),
+    url=os.environ.get("OPENAI_COMPATIBILITY_API_BASE_URL"),
     model_config_dict={"temperature": 0.4, "max_tokens": 4096},
 )
 ```
