@@ -183,6 +183,214 @@ def test_search_duckduckgo_images():
             keywords="test query", max_results=2
         )
 
+@patch('requests.get')
+def test_search_bing(mock_get, search_toolkit):
+    # Mock the response from Bing search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "webPages": {
+            "webSearchUrl": "https://www.bing.com/search?q=test+query",
+            "value": [
+                {
+                    "name": "Test Title 1",
+                    "snippet": "Test Snippet 1",
+                    "url": "https://example1.com"
+                },
+                {
+                    "name": "Test Title 2",
+                    "snippet": "Test Snippet 2",
+                    "url": "https://example2.com"
+                }
+            ]
+        }
+    }
+    mock_get.return_value = mock_response
+
+    # Set environment variables
+    with patch.dict(
+        os.environ,
+        {
+            'BING_API_KEY': 'fake_api_key',
+        },
+    ):
+        # Call the function under test
+        result = search_toolkit.search_bing(
+            query="test query",
+            count=10,
+            offset=0,
+            market="en-US",
+            safesearch="Moderate",
+            freshness=None
+        )
+
+    # Expected output
+    expected_output = [
+        {
+            "result_id": 1,
+            "title": "Test Title 1",
+            "description": "Test Snippet 1",
+            "url": "https://example1.com"
+        },
+        {
+            "result_id": 2,
+            "title": "Test Title 2",
+            "description": "Test Snippet 2",
+            "url": "https://example2.com"
+        }
+    ]
+
+    # Assertions
+    assert result == expected_output
+    mock_get.assert_called_once_with(
+        "https://api.bing.microsoft.com/v7.0/search",
+        headers={"Ocp-Apim-Subscription-Key": "fake_api_key"},
+        params={
+            "q": "test query",
+            "count": 10,
+            "offset": 0,
+            "mkt": "en-US",
+            "safeSearch": "Moderate"
+        }
+    )
+
+@patch('requests.get')
+@patch('requests.post')
+def test_search_baidu(mock_post, mock_get, search_toolkit):
+    # Mock the access token response
+    mock_token_response = MagicMock()
+    mock_token_response.status_code = 200
+    mock_token_response.json.return_value = {
+        "access_token": "fake_access_token"
+    }
+    mock_get.return_value = mock_token_response
+
+    # Mock the search response
+    mock_search_response = MagicMock()
+    mock_search_response.status_code = 200
+    mock_search_response.json.return_value = {
+        "results": [
+            {
+                "title": "Test Title 1",
+                "abstract": "Test Abstract 1",
+                "url": "https://example1.com"
+            },
+            {
+                "title": "Test Title 2",
+                "abstract": "Test Abstract 2",
+                "url": "https://example2.com"
+            }
+        ]
+    }
+    mock_post.return_value = mock_search_response
+
+    # Set environment variables
+    with patch.dict(
+        os.environ,
+        {
+            'BAIDU_API_KEY': 'fake_api_key',
+            'BAIDU_SECRET_KEY': 'fake_secret_key',
+        },
+    ):
+        # Call the function under test
+        result = search_toolkit.search_baidu(
+            query="test query",
+            page_num=1,
+            rn=10,
+            site=None
+        )
+
+    # Expected output
+    expected_output = [
+        {
+            "result_id": 1,
+            "title": "Test Title 1",
+            "description": "Test Abstract 1",
+            "url": "https://example1.com"
+        },
+        {
+            "result_id": 2,
+            "title": "Test Title 2",
+            "description": "Test Abstract 2",
+            "url": "https://example2.com"
+        }
+    ]
+
+    # Assertions
+    assert result == expected_output
+    mock_get.assert_called_once_with(
+        "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=fake_api_key&client_secret=fake_secret_key"
+    )
+    mock_post.assert_called_once_with(
+        "https://aip.baidubce.com/rest/2.0/web/search?access_token=fake_access_token",
+        data={
+            "query": "test query",
+            "page_num": 1,
+            "rn": 10
+        }
+    )
+
+@patch('requests.get')
+def test_search_baidu_free(mock_get, search_toolkit):
+    # Mock the response from Baidu search
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.encoding = "utf-8"
+    mock_response.text = """
+    <html>
+        <head><title>Baidu Search</title></head>
+        <body>
+            <div class="result c-container">
+                <h3 class="t"><a href="https://example1.com">Test Title 1</a></h3>
+                <div class="c-abstract">Test Abstract 1</div>
+            </div>
+            <div class="result c-container">
+                <h3 class="t"><a href="https://example2.com">Test Title 2</a></h3>
+                <div class="c-abstract">Test Abstract 2</div>
+            </div>
+        </body>
+    </html>
+    """
+    mock_get.return_value = mock_response
+
+    # Call the function under test
+    result = search_toolkit.search_baidu_free(
+        query="test query",
+        max_results=5
+    )
+
+    # Expected output
+    expected_output = {
+        "results": [
+            {
+                "result_id": 1,
+                "title": "Test Title 1",
+                "description": "Test Abstract 1",
+                "url": "https://example1.com"
+            },
+            {
+                "result_id": 2,
+                "title": "Test Title 2",
+                "description": "Test Abstract 2",
+                "url": "https://example2.com"
+            }
+        ]
+    }
+
+    # Assertions
+    assert result == expected_output
+    mock_get.assert_called_once_with(
+        "https://www.baidu.com/s",
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/91.0.4472.124 Safari/537.36"
+            )
+        },
+        params={"wd": "test query", "rn": "5"}
+    )
+
 
 @patch('requests.get')
 @patch('wolframalpha.Client')
