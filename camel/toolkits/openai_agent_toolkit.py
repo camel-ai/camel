@@ -30,6 +30,7 @@ class OpenAIAgentToolkit(BaseToolkit):
     Args:
         model (Optional[BaseModelBackend], optional): The model to use for
             responses. If None, defaults to gpt-4o-mini.
+            (default: :obj:`OpenAIModel` with `GPT_4O_MINI`)
         api_key (Optional[str], optional): OpenAI API key. If not provided,
             will attempt to use OPENAI_API_KEY environment variable.
     """
@@ -55,13 +56,12 @@ class OpenAIAgentToolkit(BaseToolkit):
         tools: List[Dict[str, Any]],
         model: str = "gpt-4o-mini",
     ) -> Dict[str, Any]:
-        """Call the OpenAI Responses API with the given query and tools.
+        r"""Call the OpenAI Responses API with the given query and tools.
 
         Args:
             query (str): The query to send.
             tools (List[Dict[str, Any]]): The tools to use.
             model (str, optional): The model to use. Defaults to "gpt-4o-mini".
-
         Returns:
             Dict[str, Any]: The API response.
         """
@@ -87,7 +87,7 @@ class OpenAIAgentToolkit(BaseToolkit):
             raise ValueError(f"API call failed: {e!s}")
 
     def _extract_output_text(self, response: Dict[str, Any]) -> str:
-        """Extract text output from the response.
+        r"""Extract text output from the response.
 
         Args:
             response (Dict[str, Any]): The API response.
