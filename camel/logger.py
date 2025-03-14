@@ -53,6 +53,14 @@ def set_log_file(file_path):
     Returns:
         logging.FileHandler: The file handler that was added to the logger.
     """
+    # Check for existing handlers to the same file
+    for handler in _logger.handlers:
+        if isinstance(handler, logging.FileHandler) and os.path.abspath(
+            handler.baseFilename
+        ) == os.path.abspath(file_path):
+            _logger.info(f"File handler already exists for: {file_path}")
+            return handler
+
     # Create directory if it doesn't exist
     log_dir = os.path.dirname(file_path)
     if log_dir and not os.path.exists(log_dir):
@@ -139,7 +147,10 @@ def set_log_level(level):
 
     # Update level for all handlers
     for handler in _logger.handlers:
-        handler.setLevel(level)
+        try:
+            handler.setLevel(level)
+        except Exception as e:
+            _logger.warning(f"Failed to set level on handler {handler}: {e}")
 
     _logger.debug(f"Logging level set to: {logging.getLevelName(level)}")
 
