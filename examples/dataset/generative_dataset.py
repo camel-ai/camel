@@ -16,7 +16,7 @@ import asyncio
 from pathlib import Path
 from typing import ClassVar
 
-from camel.datasets import GenerativeDataset, StaticDataset
+from camel.datasets import FewShotGenerator, StaticDataset
 from camel.logger import get_logger
 from camel.verifiers import PythonVerifier
 
@@ -66,16 +66,16 @@ async def main():
 
     agent = MockChatAgent()
 
-    generative_dataset = GenerativeDataset(
+    generator = FewShotGenerator(
         seed_dataset=seed_dataset, verifier=verifier, agent=agent
     )
 
-    new_data = await generative_dataset.generate_new(n=2)
+    new_data = await generator.generate_new(n=2)
 
     for dp in new_data:
         print(dp)
 
-    generative_dataset.save_to_jsonl(Path("generated_data.jsonl"))
+    generator.save_to_jsonl(Path("generated_data.jsonl"))
 
     await verifier.cleanup()
 
