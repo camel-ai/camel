@@ -25,7 +25,7 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
-def test_chat_agent_vectordb_memory_save_and_load():
+def chat_agent_vectordb_memory_save_and_load():
     # 1) Create a QdrantStorage in-memory instance
     #    (in production, set path to a real directory or remote)
     vector_storage = QdrantStorage(
@@ -116,4 +116,4 @@ def test_chat_agent_vectordb_memory_save_and_load():
 
 
 if __name__ == "__main__":
-    test_chat_agent_vectordb_memory_save_and_load()
+    chat_agent_vectordb_memory_save_and_load()

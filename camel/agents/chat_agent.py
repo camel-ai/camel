@@ -357,7 +357,7 @@ class ChatAgent(BaseAgent):
 
         for context_record in memory.retrieve():
             self.memory.write_record(context_record.memory_record)
-        print(f"Memory loaded from {memory}")
+        logger.info(f"Memory loaded from {memory}")
 
     def load_memory_from_path(self, path: str) -> None:
         r"""
@@ -382,7 +382,7 @@ class ChatAgent(BaseAgent):
         for record_dict in all_records:
             record = MemoryRecord.from_dict(record_dict)
             self.memory.write_records([record])
-        print(f"Memory loaded from {path}")
+        logger.info(f"Memory loaded from {path}")
 
     def save_memory(self, path: str) -> None:
         r"""
@@ -396,7 +396,7 @@ class ChatAgent(BaseAgent):
         context_records = self.memory.retrieve()
         to_save = [cr.memory_record.to_dict() for cr in context_records]
         json_store.save(to_save)
-        print(f"Memory saved to {path}")
+        logger.info(f"Memory saved to {path}")
 
     def clear_memory(self) -> None:
         r"""Clear the agent's memory and reset to initial state.

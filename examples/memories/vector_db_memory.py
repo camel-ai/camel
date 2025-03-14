@@ -22,7 +22,7 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
-def test_chat_agent_vectordb_memory():
+def chat_agent_vectordb_memory():
     # Shared vector storage
     vector_storage = QdrantStorage(
         vector_dim=1536,
@@ -110,4 +110,4 @@ def test_chat_agent_vectordb_memory():
 
 
 if __name__ == "__main__":
-    test_chat_agent_vectordb_memory()
+    chat_agent_vectordb_memory()

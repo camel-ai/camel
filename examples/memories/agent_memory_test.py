@@ -26,7 +26,7 @@ from camel.types.enums import OpenAIBackendRole
 from camel.utils import OpenAITokenCounter
 
 
-def test_chat_agent_memory():
+def chat_agent_memory():
     context_creator = ScoreBasedContextCreator(
         token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
         token_limit=1024,
@@ -124,4 +124,4 @@ def test_chat_agent_memory():
 
 
 if __name__ == "__main__":
-    test_chat_agent_memory()
+    chat_agent_memory()
