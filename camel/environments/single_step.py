@@ -16,7 +16,7 @@
 from abc import abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
-from camel.datasets import DataPoint, BaseGenerator, StaticDataset
+from camel.datasets import BaseGenerator, DataPoint, StaticDataset
 from camel.extractors.base import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers.base import (
