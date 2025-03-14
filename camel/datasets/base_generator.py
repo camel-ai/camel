@@ -49,8 +49,7 @@ class BaseGenerator(abc.ABC):
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional generator parameters.
         """
-        self.seed = seed
-        random.seed(self.seed)
+        self._rng = random.Random(seed)
 
         self._data: List[DataPoint] = []
 
@@ -89,6 +88,12 @@ class BaseGenerator(abc.ABC):
                 f"size {len(self._data)}"
             )
         return self._data[idx]
+
+    def sample(self) -> DataPoint:
+        if len(self._data) == 0:
+            raise RuntimeError("Dataset is empty, cannot sample.")
+        idx = self._rng.randint(0, len(self._data) - 1)
+        return self[idx]
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the generated datapoints to a JSONL (JSON Lines) file.
