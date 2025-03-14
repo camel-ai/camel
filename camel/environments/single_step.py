@@ -31,30 +31,20 @@ from .models import Action, Observation, StepResult
 
 logger = get_logger(__name__)
 
-# TODO: Add MachineInfo into this file
-# TODO: Implement Curriculum Learning
-# Note: TeacherAgent should be renamed into neural_reward_model.
-#       This is where PRMs or such could be useful.
-#       Should probably be its own class and not just raw ChatAgent
-
 
 class SingleStepEnv:
-    r"""Base class for all single step
-    RL training environments.
-
-    An environment ties everything together. It:
-    1. Holds state and manages curriculum progression
-    2. Defines reward functions and hint generation
-    3. Manages dataset and task selection
-    4. Provides reset and step functions
-    5. Handles verifier setup and teardown
+    r"""A single-step environment for reinforcement learning with LLMs.
 
     Key Features:
-    - Reward shaping based on solution quality
-    - Hint generation from verified solutions
-    - Task selection based on agent progress
-    - Practice environment generation
-    - Chain-of-thought validation
+    - Samples questions from a dataset and asks the LLM
+    - Extracts verifiable information from model responses.
+    - Verifies extracted responses against ground truth.
+    - Computes and assigns rewards based on correctness.
+    - Supports async setup, teardown, and cleanup of resources.
+
+    This class is intended as a foundation for RL experiments involving
+    LLM-based policies, ensuring structured interactions between model
+    actions and verification mechanisms.
     """
 
     PLACEHOLDER_OBS = Observation(
@@ -89,7 +79,15 @@ class SingleStepEnv:
         self._episode_ended: bool = False
 
     async def setup(self) -> None:
-        r"""Set up the environment, including verifier initialization."""
+        r"""Set up the environment by initializing the verifier and extractor.
+
+        This method ensures that the environment is ready for interaction.
+        It sets up necessary components, including the verifier and extractor.
+
+        Raises:
+            Exception: If setup fails due to an internal error.
+        """
+
         if self._is_setup:
             return
 
@@ -103,32 +101,23 @@ class SingleStepEnv:
             logger.error(f'Failed to setup environment: {e}')
             raise
 
-    async def teardown(self) -> None:
-        r"""Clean up resources, including verifier teardown."""
+    async def close(self) -> None:
+        r"""Clean up and close all resources used by the environment.
+
+        This method shuts down the verifier and extractor, resets the internal
+        state, and ensures that the environment is properly closed.
+
+        Raises:
+            Exception: If an error occurs while closing the environment.
+        """
+
         if not self._is_setup:
             return
 
         try:
-            # Cleanup components
+            self._is_setup = False
             await self.verifier.cleanup()
             await self.extractor.cleanup()
-
-            self._is_setup = False
-            logger.info('Environment teardown completed successfully')
-        except Exception as e:
-            logger.error(f'Failed to teardown environment: {e}')
-            raise
-
-    async def close(self) -> None:
-        r"""Perform a full cleanup of all environment resources."""
-        if not self._is_setup:
-            return
-
-        try:
-            await self.teardown()
-
-            # TODO: Once teacher and dataset have clean up
-            # methods, call them here
             self._state = None
             self._episode_ended = False
             logger.info('Environment closed successfully')
@@ -137,10 +126,17 @@ class SingleStepEnv:
             raise
 
     async def reset(self) -> Observation:
-        r"""Reset the environment to initial state.
+        r"""Reset the environment and start a new episode.
+
+        This method samples a new data point from the dataset
+        and returns the initial observation.
 
         Returns:
-            Initial observation for the episode
+            Observation: The first observation of the new episode,
+            including the question.
+
+        Raises:
+            Exception: If the environment is not set up properly.
         """
 
         if not self._is_setup:
@@ -159,14 +155,24 @@ class SingleStepEnv:
         return observation
 
     async def step(self, action: Action) -> StepResult:
-        r"""Take a step in the environment.
+        r"""Take a step in the environment using the given action.
+
+        This method processes the LLM response, extracts verifiable content,
+        verifies correctness, computes rewards, and ends the episode.
 
         Args:
-            action: Action containing everything that is needed
-            to progress in the environment
+            action (Action): The action containing the LLM
+            response to evaluate.
 
         Returns:
-            StepResult containing next observation, reward, done flag, and info
+            StepResult: Contains the next observation (placeholder),
+            total reward, reward breakdown, completion flag,
+            and additional information.
+
+        Raises:
+            RuntimeError: If the environment is not set up,
+            the episode has ended, or there is no valid
+            current observation.
         """
 
         if not self._is_setup:
@@ -215,17 +221,27 @@ class SingleStepEnv:
         extraction_result: str,
         verification_result: VerificationResult,
     ) -> Tuple[float, Dict[str, float]]:
-        r"""Compute reward scores for different aspects of the response.
+        r"""Compute reward scores based on verification results.
+
+        This method calculates the reward based on correctness and any
+        additional custom reward components.
 
         Args:
-            action: The action.
-            extraction_result: Extracted information from response
-            verification_result: Result from the verifier.
+            action (Action): The action taken in the environment.
+            extraction_result (str):
+                The extracted verifiable content from the LLM response.
+            verification_result (VerificationResult):
+                The result of verifying the extracted response.
 
         Returns:
-            - Total reward
-            - Dictionary of reward scores for different aspects.
+            Tuple[float, Dict[str, float]]: A tuple containing:
+                - Total reward (float)
+                - Dictionary of individual reward components.
+
+        Raises:
+            Exception: If an error occurs while computing rewards.
         """
+
         rewards: Dict[str, float] = {}
 
         rewards["correctness"] = (
@@ -247,9 +263,32 @@ class SingleStepEnv:
         extraction_result: str,
         verification_result: VerificationResult,
     ) -> Dict[str, float]:
+        r"""Compute additional custom reward components.
+
+        This method should be implemented by subclasses to define
+        domain-specific reward calculations.
+
+        Args:
+            action (Action): The action taken in the environment.
+            extraction_result (str):
+                The extracted verifiable content from the LLM response.
+            verification_result (VerificationResult):
+                The result of verifying the extracted response.
+
+        Returns:
+            Dict[str, float]: A dictionary mapping custom reward categories
+            to their values.
+        """
         pass
 
     @property
     def metadata(self) -> Dict[str, Any]:
-        r"""Get environment metadata."""
+        r"""Retrieve the metadata of the environment.
+
+        This provides additional parameters and configuration details.
+
+        Returns:
+            Dict[str, Any]: A copy of the environment's metadata.
+        """
+
         return self._metadata.copy()
