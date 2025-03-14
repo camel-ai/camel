@@ -54,6 +54,24 @@ class BaseGenerator(abc.ABC):
         self._data: List[DataPoint] = []
 
     @abc.abstractmethod
+    async def setup(self) -> None:
+        r"""Set up resources needed for generation.
+
+        This method should be called before generation starts.
+        Override this method to initialize any resources needed for generation.
+        """
+        pass
+
+    @abc.abstractmethod
+    async def teardown(self) -> None:
+        r"""Clean up resources after generation.
+
+        This method should be called after generation is complete.
+        Override this method to clean up any resources used during generation.
+        """
+        pass
+
+    @abc.abstractmethod
     async def generate_new(self, n: int, **kwargs) -> List[DataPoint]:
         r"""Generate n new datapoints.
 
@@ -190,6 +208,34 @@ class FewShotGenerator(BaseGenerator):
         prompt += "New datapoint:"
         return prompt
 
+    async def setup(self) -> None:
+        r"""Set up resources needed for generation.
+
+        Initializes the agent and verifier if needed.
+        """
+        # Initialize agent if it has a setup method
+        if hasattr(self.agent, "setup") and callable(self.agent.setup):
+            await self.agent.setup()
+
+        # Initialize verifier if it has a setup method
+        if hasattr(self.verifier, "setup") and callable(self.verifier.setup):
+            await self.verifier.setup()
+
+    async def teardown(self) -> None:
+        r"""Clean up resources after generation.
+
+        Cleans up the agent and verifier if needed.
+        """
+        # Clean up agent if it has a teardown method
+        if hasattr(self.agent, "teardown") and callable(self.agent.teardown):
+            await self.agent.teardown()
+
+        # Clean up verifier if it has a teardown method
+        if hasattr(self.verifier, "teardown") and callable(
+            self.verifier.teardown
+        ):
+            await self.verifier.teardown()
+
     async def generate_new(
         self,
         n: int,
@@ -236,100 +282,114 @@ class FewShotGenerator(BaseGenerator):
                 is raised.
             - Metadata includes a timestamp for tracking datapoint creation.
         """
-        valid_data_points: List[DataPoint] = []
-        retries = 0
+        # Setup resources before generation
+        await self.setup()
 
-        while len(valid_data_points) < n and retries < max_retries:
-            try:
-                examples = [
-                    self.seed_dataset.sample() for _ in range(num_examples)
-                ]
-                prompt = self._construct_prompt(examples)
+        try:
+            valid_data_points: List[DataPoint] = []
+            retries = 0
 
+            while len(valid_data_points) < n and retries < max_retries:
                 try:
-                    agent_output = (
-                        self.agent.step(prompt, response_format=DataPoint)
-                        .msgs[0]
-                        .parsed
-                    )
-                    if not isinstance(agent_output, dict):
-                        raise TypeError("Agent output must be a dictionary")
-                    if "question" not in agent_output:
-                        raise KeyError(
-                            "Missing 'question' in agent"
-                            f"output {agent_output}"
+                    examples = [
+                        self.seed_dataset.sample() for _ in range(num_examples)
+                    ]
+                    prompt = self._construct_prompt(examples)
+
+                    try:
+                        agent_output = (
+                            self.agent.step(prompt, response_format=DataPoint)
+                            .msgs[0]
+                            .parsed
                         )
-                    if "rationale" not in agent_output:
-                        raise KeyError(
-                            "Missing 'rationale' in agent"
-                            f"output {agent_output}"
+                        if not isinstance(agent_output, dict):
+                            raise TypeError(
+                                "Agent output must be a dictionary"
+                            )
+                        if "question" not in agent_output:
+                            raise KeyError(
+                                "Missing 'question' in agent"
+                                f"output {agent_output}"
+                            )
+                        if "rationale" not in agent_output:
+                            raise KeyError(
+                                "Missing 'rationale' in agent"
+                                f"output {agent_output}"
+                            )
+                    except (TypeError, KeyError) as e:
+                        logger.warning(
+                            f"Agent output issue: {e}, retrying... "
+                            f"({retries + 1}/{max_retries})"
                         )
-                except (TypeError, KeyError) as e:
+                        retries += 1
+                        continue
+
+                    rationale = agent_output.get("rationale")
+
+                    if not isinstance(rationale, str):
+                        raise TypeError(
+                            f"Rationale {rationale} is not a string."
+                        )
+
+                    try:
+                        verifier_response = await self.verifier.verify(
+                            VerifierInput(
+                                llm_response=rationale,
+                                ground_truth=None,
+                            )
+                        )
+                        if (
+                            not verifier_response
+                            or not verifier_response.result
+                        ):
+                            raise ValueError(
+                                "Verifier unsuccessful, response: "
+                                f"{verifier_response}"
+                            )
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(
+                            f"Verifier issue: {e}, "
+                            f"retrying... ({retries + 1}/{max_retries})"
+                        )
+                        retries += 1
+                        continue
+
+                    try:
+                        new_datapoint = DataPoint(
+                            question=agent_output["question"],
+                            rationale=rationale,
+                            final_answer=verifier_response.result,
+                            metadata={
+                                "synthetic": str(True),
+                                "created": datetime.now().isoformat(),
+                                "generator": "few_shot",
+                            },
+                        )
+                    except ValidationError as e:
+                        logger.warning(
+                            f"Datapoint validation failed: {e}, "
+                            f"retrying... ({retries + 1}/{max_retries})"
+                        )
+                        retries += 1
+                        continue
+
+                    valid_data_points.append(new_datapoint)
+
+                except Exception as e:
                     logger.warning(
-                        f"Agent output issue: {e}, retrying... "
-                        f"({retries + 1}/{max_retries})"
+                        f"Unexpected error: {e}, retrying..."
+                        f" ({retries + 1}/{max_retries})"
                     )
                     retries += 1
-                    continue
 
-                rationale = agent_output.get("rationale")
-
-                if not isinstance(rationale, str):
-                    raise TypeError(f"Rationale {rationale} is not a string.")
-
-                try:
-                    verifier_response = await self.verifier.verify(
-                        VerifierInput(
-                            llm_response=rationale,
-                            ground_truth=None,
-                        )
-                    )
-                    if not verifier_response or not verifier_response.result:
-                        raise ValueError(
-                            "Verifier unsuccessful, response: "
-                            f"{verifier_response}"
-                        )
-                except (ValueError, AttributeError) as e:
-                    logger.warning(
-                        f"Verifier issue: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
-                    )
-                    retries += 1
-                    continue
-
-                try:
-                    new_datapoint = DataPoint(
-                        question=agent_output["question"],
-                        rationale=rationale,
-                        final_answer=verifier_response.result,
-                        metadata={
-                            "synthetic": str(True),
-                            "created": datetime.now().isoformat(),
-                            "generator": "few_shot",
-                        },
-                    )
-                except ValidationError as e:
-                    logger.warning(
-                        f"Datapoint validation failed: {e}, "
-                        f"retrying... ({retries + 1}/{max_retries})"
-                    )
-                    retries += 1
-                    continue
-
-                valid_data_points.append(new_datapoint)
-
-            except Exception as e:
-                logger.warning(
-                    f"Unexpected error: {e}, retrying..."
-                    f" ({retries + 1}/{max_retries})"
+            if len(valid_data_points) < n:
+                raise RuntimeError(
+                    f"Failed to generate {n} valid datapoints "
+                    f"after {max_retries} retries."
                 )
-                retries += 1
 
-        if len(valid_data_points) < n:
-            raise RuntimeError(
-                f"Failed to generate {n} valid datapoints "
-                f"after {max_retries} retries."
-            )
-
-        self._data.extend(valid_data_points)
-        return valid_data_points
+            self._data.extend(valid_data_points)
+            return valid_data_points
+        finally:
+            # Ensure teardown happens even if generation fails
+            await self.teardown()
