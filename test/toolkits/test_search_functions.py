@@ -183,6 +183,7 @@ def test_search_duckduckgo_images():
             keywords="test query", max_results=2
         )
 
+
 @patch('requests.get')
 def test_search_baidu_free(mock_get, search_toolkit):
     # Mock the response from Baidu search
@@ -248,6 +249,7 @@ def test_search_baidu_free(mock_get, search_toolkit):
         },
         params={"wd": "test query", "rn": "5"}
     )
+
 
 @patch('requests.get')
 @patch('wolframalpha.Client')
