@@ -17,14 +17,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from camel.datasets import StaticDataset
 from camel.environments.base import (
     Action,
     Observation,
     StepResult,
 )
 from camel.environments.multi_step import MultiStepEnv
-from camel.verifiers.models import VerificationOutcome, VerificationResult
+
 
 class MockMultiStepEnv(MultiStepEnv):
     def _get_initial_state(self) -> Dict[str, Any]:
@@ -58,6 +57,7 @@ class MockMultiStepEnv(MultiStepEnv):
     async def _close(self) -> None:
         """Perform any cleanup tasks (empty for this mock)."""
         pass
+
 
 @pytest.mark.asyncio
 async def test_multi_step_env_lifecycle():
@@ -116,7 +116,10 @@ async def test_multi_step_env_error_handling():
 
     # **Test Case 1: Environment not set up**
     # Attempt to step without setup, expect RuntimeError
-    with pytest.raises(RuntimeError, match=re.escape("Environment not set up. Call setup() first.")):
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape("Environment not set up. Call setup() first."),
+    ):
         await env.step(action)
 
     # **Test Case 2: Episode has ended**
@@ -124,19 +127,26 @@ async def test_multi_step_env_error_handling():
     await env.setup()
     await env.reset()
     env._episode_ended = True
-    with pytest.raises(RuntimeError, match=re.escape("Episode has ended. Call reset() first.")):
+    with pytest.raises(
+        RuntimeError, match=re.escape("Episode has ended. Call reset() first.")
+    ):
         await env.step(action)
 
     # **Test Case 3: No current observation**
     # Reset to initialize, then clear last observation
     await env.reset()
     env._last_observation = None
-    with pytest.raises(RuntimeError, match=re.escape("No current observation. Call reset() first.")):
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape("No current observation. Call reset() first."),
+    ):
         await env.step(action)
 
     # **Test Case 4: Extractor failure**
     # Configure extractor to raise an exception
-    mock_extractor.extract = MagicMock(side_effect=Exception("Extractor error"))
+    mock_extractor.extract = MagicMock(
+        side_effect=Exception("Extractor error")
+    )
     await env.reset()
     with pytest.raises(Exception, match="Extractor error"):
         await env.step(action)
@@ -150,7 +160,11 @@ async def test_multi_step_env_error_handling():
     await env_max_steps.reset()
     # First step should end the episode due to max_steps
     result1 = await env_max_steps.step(action)
-    assert result1.done is True, "Episode should be done after reaching max_steps"
+    assert (
+        result1.done is True
+    ), "Episode should be done after reaching max_steps"
     assert env_max_steps._current_step == 1, "Current step should be 1"
     assert env_max_steps.max_steps == 1, "Max steps should be 1"
-    assert result1.observation.question == "Episode ended", "Should reach terminal observation"
+    assert (
+        result1.observation.question == "Episode ended"
+    ), "Should reach terminal observation"
