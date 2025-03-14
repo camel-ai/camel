@@ -1150,6 +1150,54 @@ out the information you need. Sometimes they are extremely useful.
 
             return False
 
+        def _fix_action_code(action_code: str) -> str:
+            r"""Fix potential missing quotes in action code"""
+    
+            match = re.match(r'(\w+)\((.*)\)', action_code)
+            if not match:
+                return action_code
+                
+            func_name, args_str = match.groups()
+    
+            args = []
+            current_arg = ""
+            in_quotes = False
+            quote_char = None
+            
+            for char in args_str:
+                if char in ['"', "'"]:
+                    if not in_quotes:
+                        in_quotes = True
+                        quote_char = char
+                        current_arg += char
+                    elif char == quote_char:
+                        in_quotes = False
+                        quote_char = None
+                        current_arg += char
+                    else:
+                        current_arg += char
+                elif char == ',' and not in_quotes:
+                    args.append(current_arg.strip())
+                    current_arg = ""
+                else:
+                    current_arg += char
+                    
+            if current_arg:
+                args.append(current_arg.strip())
+                
+            fixed_args = []
+            for arg in args:
+                if (arg.startswith('"') and arg.endswith('"')) or \
+                   (arg.startswith("'") and arg.endswith("'")) or \
+                   re.match(r'^-?\d+(\.\d+)?$', arg):
+                    fixed_args.append(arg)
+    
+                else:
+                    fixed_args.append(f"'{arg}'")
+                    
+            return f"{func_name}({', '.join(fixed_args)})"
+
+        action_code = _fix_action_code(action_code)
         prefix = "self.browser."
         code = f"{prefix}{action_code}"
 
