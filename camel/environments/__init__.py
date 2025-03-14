@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
-from .base import BaseEnvironment
-from .models import Action, Observation, StepResult
+from .models import Action, Observation, StepResult, Environment
 from .single_step import SingleStepEnv
+from .multi_step import MultiStepEnv
 
 __all__ = [
-    "BaseEnvironment",
+    "Environment",
     "SingleStepEnv",
     "MultiStepEnv",
     "Action",
