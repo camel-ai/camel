@@ -432,8 +432,7 @@ class GenerativeDataset(Dataset):
         self.verifier = verifier
         self.agent = agent
 
-        self.seed = seed
-        random.seed(self.seed)
+        self._rng = random.Random(seed)
 
         self._data: List[DataPoint] = []
 
@@ -607,9 +606,9 @@ class GenerativeDataset(Dataset):
         return self._data[idx]
 
     def sample(self) -> DataPoint:
-        if self._length == 0:
+        if len(self._data) == 0:
             raise RuntimeError("Dataset is empty, cannot sample.")
-        idx = self._rng.randint(0, self._length - 1)
+        idx = self._rng.randint(0, len(self._data) - 1)
         return self[idx]
 
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
