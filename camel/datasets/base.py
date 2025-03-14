@@ -606,6 +606,12 @@ class GenerativeDataset(Dataset):
             )
         return self._data[idx]
 
+    def sample(self) -> DataPoint:
+        if self._length == 0:
+            raise RuntimeError("Dataset is empty, cannot sample.")
+        idx = self._rng.randint(0, self._length - 1)
+        return self[idx]
+
     def save_to_jsonl(self, file_path: Union[str, Path]) -> None:
         r"""Saves the dataset to a JSONL (JSON Lines) file.
 
