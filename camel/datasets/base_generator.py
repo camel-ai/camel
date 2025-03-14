@@ -25,6 +25,7 @@ from typing import (
 from pydantic import ValidationError
 
 from camel.agents import ChatAgent
+from camel.extractors import BaseExtractor
 from camel.logger import get_logger
 from camel.verifiers import BaseVerifier
 from camel.verifiers.models import VerifierInput
@@ -50,25 +51,68 @@ class BaseGenerator(abc.ABC):
             **kwargs: Additional generator parameters.
         """
         self._rng = random.Random(seed)
-
         self._data: List[DataPoint] = []
+        self._is_setup: bool = False
+        self._metadata = kwargs
 
-    @abc.abstractmethod
     async def setup(self) -> None:
         r"""Set up resources needed for generation.
 
-        This method should be called before generation starts.
-        Override this method to initialize any resources needed for generation.
+        This method ensures that the generator is ready for data generation.
+        It initializes necessary resources and sets up the generator state.
+
+        Raises:
+            RuntimeError: If setup fails due to an internal error.
         """
-        pass
+        if self._is_setup:
+            logger.debug(f"{self.__class__.__name__} already initialized")
+            return
+
+        try:
+            await self._setup()
+            self._is_setup = True
+            logger.info(f"{self.__class__.__name__} initialized successfully")
+        except Exception as e:
+            error_msg = (
+                f"Failed to initialize {self.__class__.__name__}: {e!s}"
+            )
+            logger.error(error_msg, exc_info=True)
+            await self.cleanup()
+            raise RuntimeError(error_msg) from e
 
     @abc.abstractmethod
-    async def teardown(self) -> None:
+    async def _setup(self) -> None:
+        r"""Implement generator-specific setup logic."""
+        pass
+
+    async def cleanup(self) -> None:
         r"""Clean up resources after generation.
 
-        This method should be called after generation is complete.
-        Override this method to clean up any resources used during generation.
+        This method ensures that all resources are properly released
+        and the generator state is reset.
+
+        Raises:
+            RuntimeError: If cleanup fails.
         """
+        if not self._is_setup:
+            logger.debug(
+                f"{self.__class__.__name__} not initialized, skipping cleanup"
+            )
+            return
+
+        try:
+            await self._cleanup()
+            logger.info(f"{self.__class__.__name__} cleaned up successfully")
+        except Exception as e:
+            error_msg = f"Failed to cleanup {self.__class__.__name__}: {e!s}"
+            logger.error(error_msg, exc_info=True)
+            raise RuntimeError(error_msg) from e
+        finally:
+            self._is_setup = False
+
+    @abc.abstractmethod
+    async def _cleanup(self) -> None:
+        r"""Implement generator-specific cleanup logic."""
         pass
 
     @abc.abstractmethod
@@ -158,6 +202,7 @@ class FewShotGenerator(BaseGenerator):
         seed_dataset: StaticDataset,
         verifier: BaseVerifier,
         agent: ChatAgent,
+        extractor: BaseExtractor,
         seed: int = 42,
         **kwargs,
     ):
@@ -168,6 +213,7 @@ class FewShotGenerator(BaseGenerator):
                 use for examples.
             verifier (BaseVerifier): Verifier to validate generated content.
             agent (ChatAgent): Agent to generate new datapoints.
+            extractor (BaseExtractor): Extractor to process responses.
             seed (int): Random seed for reproducibility. (default: :obj:`42`)
             **kwargs: Additional generator parameters.
         """
@@ -178,6 +224,7 @@ class FewShotGenerator(BaseGenerator):
         except Exception:
             raise RuntimeError("Seed Data does not follow Datapoint format")
         self.verifier = verifier
+        self.extractor = extractor
         self.agent = agent
 
     # TODO: Validate that seed dataset contains rationale
@@ -208,33 +255,21 @@ class FewShotGenerator(BaseGenerator):
         prompt += "New datapoint:"
         return prompt
 
-    async def setup(self) -> None:
+    async def _setup(self) -> None:
         r"""Set up resources needed for generation.
 
-        Initializes the agent and verifier if needed.
+        Initializes the verifier.
         """
-        # Initialize agent if it has a setup method
-        if hasattr(self.agent, "setup") and callable(self.agent.setup):
-            await self.agent.setup()
+        await self.verifier.setup()
+        await self.extractor.setup()
 
-        # Initialize verifier if it has a setup method
-        if hasattr(self.verifier, "setup") and callable(self.verifier.setup):
-            await self.verifier.setup()
-
-    async def teardown(self) -> None:
+    async def _cleanup(self) -> None:
         r"""Clean up resources after generation.
 
-        Cleans up the agent and verifier if needed.
+        Cleans up the verifier.
         """
-        # Clean up agent if it has a teardown method
-        if hasattr(self.agent, "teardown") and callable(self.agent.teardown):
-            await self.agent.teardown()
-
-        # Clean up verifier if it has a teardown method
-        if hasattr(self.verifier, "teardown") and callable(
-            self.verifier.teardown
-        ):
-            await self.verifier.teardown()
+        await self.verifier.cleanup()
+        await self.extractor.cleanup()
 
     async def generate_new(
         self,
@@ -391,5 +426,4 @@ class FewShotGenerator(BaseGenerator):
             self._data.extend(valid_data_points)
             return valid_data_points
         finally:
-            # Ensure teardown happens even if generation fails
-            await self.teardown()
+            await self.cleanup()
