@@ -17,6 +17,39 @@ from pydantic import BaseModel
 from camel.agents import ChatAgent
 from camel.toolkits import FunctionTool, SearchToolkit
 
+agent = ChatAgent(
+    system_message="""You are a helpful assistant that can use baidu search 
+        engine to answer questions.""",
+    tools=[FunctionTool(SearchToolkit().search_baidu)],
+)
+
+usr_msg = "今天北京的天气如何"
+
+response = agent.step(input_message=usr_msg, response_format=None)
+
+print(response.msgs[0].content)
+
+"""
+===============================================================================
+今天北京的天气信息可以通过以下链接查看:
+
+1. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=AJhE9PhEO3TmkJ70CUcRsR3NVB3m6wxN5Imdp0ZVsEBK1t8YhtM6YMxrQy3_vRN6dJv4FLHkBCe
+fZURnzHTm9gio-dS4-4MwGVgJe40m7prOoggce2eB0h-3DsllbKMm)
+2. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=1vhNOfl9tV65_104GMQbDnU_fdCZPXDV2BtTJelxdd6isdSZjAHvtoXqOWG3n7D1N-m9zAmOhQG
+c-jEGqiXe9K)
+3. [中国天气网 - 北京天气预报](http://www.baidu.com/link?
+url=Q0URfpodXDpUe1TKBPpToKIyIuCcjSGUR5jorx81g8Pni5XH-Tbc6AXMa7EwCWjBG3jysTZb43S
+6ZCsJOKvPw2EbIlQ_bMu42-5sCraqXlS)
+4. [中国天气网 - 北京天气预报一周](http://www.baidu.com/link?
+url=TtFe8QryJFuwX1kx50YF5WijRcd2TMJRhPudDQvqW7TG4siah68gUZd_frsVWPi1xkYvrxoYL87
+QMH0wSjDYOq)
+
+请点击链接查看详细的天气预报信息。
+===============================================================================
+"""
+
 res_simple = SearchToolkit().query_wolfram_alpha(
     query="solve 3x-7=11", is_detailed=False
 )

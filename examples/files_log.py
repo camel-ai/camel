@@ -11,15 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========
+import os
 
-from camel.logger import disable_logging, enable_logging, set_log_level
+from camel.logger import get_logger, set_log_file, set_log_level
 
-__version__ = '0.2.30'
+# Set log output to a file using an absolute path
+log_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'camel.log',
+)
+set_log_file(log_path)
 
-__all__ = [
-    '__version__',
-    'camel',
-    'disable_logging',
-    'enable_logging',
-    'set_log_level',
-]
+# Set the logging level
+set_log_level('DEBUG')
+
+# Use the logger
+logger = get_logger(__name__)
+logger.debug('This is a debug message')
+logger.info('This is an info message')
+logger.warning('This is a warning message')

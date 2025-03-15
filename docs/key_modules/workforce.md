@@ -60,7 +60,7 @@ has been failed for a certain number of times (3 by default).
 
 Here is a diagram illustrating the workflow with a simple example.
 
-![Workforce Example](https://i.postimg.cc/261dDM9W/work-force.png)
+![Workforce Example](https://i.postimg.cc/jSnjsN57/Wechat-IMG1592.jpg)
 
 ## Get Started
 
