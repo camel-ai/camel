@@ -510,7 +510,7 @@ wheels = [
 
 [[package]]
 name = "camel-ai"
-version = "0.2.29"
+version = "0.2.30"
 source = { editable = "." }
 dependencies = [
     { name = "colorama" },
@@ -759,6 +759,7 @@ test = [
 ]
 web-tools = [
     { name = "apify-client" },
+    { name = "beautifulsoup4" },
     { name = "dappier" },
     { name = "duckduckgo-search" },
     { name = "fastapi" },
@@ -796,6 +797,7 @@ requires-dist = [
     { name = "azure-storage-blob", marker = "extra == 'storage'", specifier = ">=12.21.0,<13" },
     { name = "beautifulsoup4", marker = "extra == 'all'", specifier = ">=4,<5" },
     { name = "beautifulsoup4", marker = "extra == 'document-tools'", specifier = ">=4,<5" },
+    { name = "beautifulsoup4", marker = "extra == 'web-tools'", specifier = ">=4,<5" },
     { name = "botocore", marker = "extra == 'all'", specifier = ">=1.35.3,<2" },
     { name = "botocore", marker = "extra == 'storage'", specifier = ">=1.35.3,<2" },
     { name = "cohere", marker = "extra == 'all'", specifier = ">=5.11.0,<6" },
