@@ -204,6 +204,8 @@ class VideoAnalysisToolkit(BaseToolkit):
         base_path = os.path.splitext(video_path)[0]
         output_path = f"{base_path}.{output_format}"
 
+        if os.path.exists(output_path):
+            return output_path
         try:
             (
                 ffmpeg.input(video_path)
@@ -217,8 +219,90 @@ class VideoAnalysisToolkit(BaseToolkit):
             error_message = f"FFmpeg-Python failed: {e}"
             logger.error(error_message)
             raise RuntimeError(error_message)
+        
 
-    def _transcribe_audio(self, audio_path: str) -> str:
+    def convert_webm_to_mp4(self, video_path: str) -> str:
+        r"""Convert a .webm video file to .mp4 format.
+
+        Args:
+            video_path (str): The path to the .webm video file.
+
+        Returns:
+            str: The path to the converted .mp4 file.
+
+        Raises:
+            RuntimeError: If the conversion fails.
+        """
+        import ffmpeg
+        # 检查文件是否存在
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+
+        # 检查文件是否为 .webm 格式
+        if not video_path.lower().endswith(".webm"):
+            raise ValueError(f"File is not a .webm video: {video_path}")
+
+        # 生成输出文件路径
+        output_path = video_path.rsplit('.', 1)[0]  ".mp4"
+
+        # 如果输出文件已存在，直接返回
+        if os.path.exists(output_path):
+            return output_path
+
+        try:
+            # 使用 FFmpeg 转换格式
+            (
+                ffmpeg.input(video_path)
+                .output(output_path, vcodec="libx264", acodec="aac")
+                .run()
+            )
+            return output_path
+        except ffmpeg.Error as e:
+            raise RuntimeError(f"FFmpeg-Python failed: {e}")
+
+    def split_audio_segments(self, video_path, segment_duration=60 * 2, sample_rate=16000):
+        """
+        将视频中的音频拆分为多个大小相同的片段，并保存为 WAV 格式。
+
+        Args:
+            video_path (str): 视频文件路径。
+            output_dir (str): 输出目录路径。
+            segment_duration (int): 每个音频片段的时长（秒）。
+            sample_rate (int): 音频采样率（Hz）。
+
+        Returns:
+            List[str]: 生成的音频片段文件路径列表。
+        """
+        import os
+        # 确保输出目录存在
+        output_dir = os.path.dirname(video_path)
+
+        # 生成输出文件模板
+        output_template = os.path.join(output_dir, "segment_%03d.wav")
+
+        # 使用 FFmpeg 拆分音频
+        import ffmpeg
+        try:
+            (
+                ffmpeg.input(video_path)
+                .output(
+                    output_template,
+                    f="segment",  # 使用 segment 过滤器
+                    segment_time=segment_duration,  # 每个片段的时长
+                    acodec="pcm_s16le",  # 使用 WAV 格式的编码器
+                    ar=sample_rate,  # 设置采样率
+                    ac=1,  # 单声道（可选）
+                )
+                .run()
+            )
+        except ffmpeg.Error as e:
+            raise RuntimeError(f"FFmpeg failed: {e}")
+ 
+        # 返回生成的音频片段文件列表
+        return sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.startswith("segment_")])
+ 
+
+    def _transcribe_audio(self, segments: list[str]) -> str:
         r"""Transcribe the audio of the video."""
         # Check if audio transcription is enabled and audio models are
         # available
@@ -227,14 +311,53 @@ class VideoAnalysisToolkit(BaseToolkit):
             return "No audio transcription available."
 
         try:
-            audio_transcript = self.audio_models.speech_to_text(audio_path)
+            result = ''
+            for segment in segments:
+                audio_transcript = self.audio_models.speech_to_text(segment)
+                result += audio_transcript
             if not audio_transcript:
                 logger.warning("Audio transcription returned empty result")
                 return "No audio transcription available."
             return audio_transcript
         except Exception as e:
             logger.error(f"Audio transcription failed: {e}")
-            return "Audio transcription failed."
+            try:
+                audio_transcript = self.transcribe_audio_whisper(segments=segments)
+                return audio_transcript
+            except Exception as e:
+                logger.warning("Audio transcription failed.")
+                return None
+
+    def transcribe_audio_whisper(self, segments, type='tiny'):
+        import whisper
+        from concurrent.futures import ProcessPoolExecutor
+        import os
+        import time
+
+        # 设置 OpenMP 为单线程模式
+        os.environ["OMP_NUM_THREADS"] = "1"
+
+        # 加载 Whisper 模型
+        start = time.time()
+          # 显式使用 FP32
+
+        def transcribe_segment(segment_path):
+            # 禁用 FFmpeg 日志输出
+            import whisper
+            # whisper.transcribe = whisper.transcribe.DisableFFmpegLogging()
+            model = whisper.load_model(type, device="cpu")
+            # 转录音频片段
+            result = model.transcribe(segment_path)
+            return result['text']
+
+        # 使用线程池并行转录
+        results = []
+        for segment_path in segments:
+            result = transcribe_segment(segment_path)
+            results.append(result)
+
+        print(f'audio to txt cost {time.time() - start}')
+        return results
 
     def _extract_keyframes(
         self, video_path: str, num_frames: int, threshold: float = 25.0
@@ -365,8 +488,12 @@ class VideoAnalysisToolkit(BaseToolkit):
 
             audio_transcript = "No audio transcription available."
             if self._use_audio_transcription:
-                audio_path = self._extract_audio_from_video(video_path)
-                audio_transcript = self._transcribe_audio(audio_path)
+                
+                if video_path.lower().endswith(".webm"):
+                    video_path = self.convert_webm_to_mp4(video_path=video_path)
+
+                segments = self.split_audio_segments(video_path)
+                audio_transcript = self._transcribe_audio(segments)
 
             video_frames = self._extract_keyframes(video_path, num_frames)
             prompt = VIDEO_QA_PROMPT.format(

@@ -129,8 +129,12 @@ class VideoDownloaderToolkit(BaseToolkit):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 # Download the video and get the filename
                 logger.info(f"Downloading video from {url}...")
-                info = ydl.extract_info(url, download=True)
-                return ydl.prepare_filename(info)
+                info = ydl.extract_info(url, download=False)
+                filename =  ydl.prepare_filename(info)
+                import os
+                if not os.path.exists(filename):
+                    ydl.extract_info(url, download=True)
+                return filename
         except yt_dlp.utils.DownloadError as e:
             raise RuntimeError(f"Failed to download video from {url}: {e}")
 
