@@ -18,7 +18,7 @@ from typing import IO, TYPE_CHECKING, Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.loaders import UnstructuredIO
+from camel.loaders import Chunk
 from camel.retrievers.base import BaseRetriever
 from camel.storages import (
     BaseVectorStorage,
@@ -26,6 +26,7 @@ from camel.storages import (
     VectorDBQuery,
     VectorRecord,
 )
+from camel.types.enums import ChunkToolType
 from camel.utils import Constants
 
 if TYPE_CHECKING:
@@ -67,11 +68,115 @@ class VectorRetriever(BaseRetriever):
                 vector_dim=self.embedding_model.get_output_dim()
             )
         )
-        self.uio: UnstructuredIO = UnstructuredIO()
+
+    def load_chunks(
+        self,
+        chunks: List[Chunk],
+        content_path_info: str,
+        embed_batch: int = 50,
+    ) -> None:
+        r"""Loads chunks into the vector storage.
+
+        Embeds the text in each chunk using the configured embedding model and
+        creates vector records with the embedding, content path, metadata, and
+        text. Processes chunks in batches for efficiency.
+
+        Args:
+            chunks (List[Chunk]): A list of chunks.
+            content_path_info (str): The content path information to be
+                included in each vector record's payload.
+            embed_batch (int, optional): The number of chunks to process in
+                each batch. Defaults to 50.
+
+        Returns:
+            None
+        """
+        # Process chunks in batches and store embeddings
+        for i in range(0, len(chunks), embed_batch):
+            batch_chunks = chunks[i : i + embed_batch]
+            batch_vectors = self.embedding_model.embed_list(
+                objs=[chunk.text for chunk in batch_chunks]
+            )
+
+            records = []
+            # Prepare the payload for each vector record, includes the
+            # content path, chunk metadata, and chunk text
+            for vector, chunk in zip(batch_vectors, batch_chunks):
+                combined_dict = {
+                    "content path": content_path_info,
+                    **(chunk.metadata or {}),
+                    "text": chunk.text,
+                }
+
+                records.append(
+                    VectorRecord(vector=vector, payload=combined_dict)
+                )
+
+            self.storage.add(records=records)
+
+    def _get_content_path_info_uio(
+        self, content: Union[str, "Element", IO[bytes]]
+    ) -> str:
+        from unstructured.documents.elements import Element
+
+        if isinstance(content, Element):
+            return (
+                content.metadata.file_directory[:100]
+                if content.metadata.file_directory
+                else ""
+            )
+        elif isinstance(content, IOBase):
+            return "From file bytes"
+        elif isinstance(content, str):
+            return content[:100]
+        return ""
+
+    def _parse_content_uio(
+        self,
+        content: Union[str, "Element", IO[bytes]],
+        metadata_filename: Optional[str],
+        **kwargs,
+    ) -> list["Element"]:
+        from unstructured.documents.elements import Element
+
+        if isinstance(content, Element):
+            return [content]
+        elif isinstance(content, IOBase):
+            try:
+                return (
+                    self.uio.parse_bytes(
+                        file=content,
+                        metadata_filename=metadata_filename,
+                        **kwargs,
+                    )
+                    or []
+                )
+            finally:
+                content.close()
+        elif isinstance(content, str):
+            parsed_url = urlparse(content)
+            is_url = all([parsed_url.scheme, parsed_url.netloc])
+
+            if is_url or os.path.exists(content):
+                return (
+                    self.uio.parse_file_or_url(
+                        input_path=content,
+                        metadata_filename=metadata_filename,
+                        **kwargs,
+                    )
+                    or []
+                )
+            return [
+                self.uio.create_element_from_text(
+                    text=content, filename=metadata_filename
+                )
+            ]
+        raise ValueError(f"Unsupported content type: {type(content)}")
 
     def process(
         self,
         content: Union[str, "Element", IO[bytes]],
+        chunk_tool_type: ChunkToolType = ChunkToolType.UNSTRUCTURED_IO,
         chunk_type: str = "chunk_by_title",
         max_characters: int = 500,
         embed_batch: int = 50,
@@ -101,94 +206,39 @@ class VectorRetriever(BaseRetriever):
                 used for storing metadata. Defaults to None.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
-        from unstructured.documents.elements import Element
+        if chunk_tool_type == ChunkToolType.UNSTRUCTURED_IO:
+            from camel.loaders import UnstructuredIO
 
-        if isinstance(content, Element):
-            elements = [content]
-        elif isinstance(content, IOBase):
-            elements = (
-                self.uio.parse_bytes(
-                    file=content, metadata_filename=metadata_filename, **kwargs
-                )
-                or []
+            self.uio: UnstructuredIO = UnstructuredIO()
+            content_path_info = self._get_content_path_info_uio(content)
+            elements = self._parse_content_uio(
+                content, metadata_filename, **kwargs
             )
-        elif isinstance(content, str):
-            # Check if the content is URL
-            parsed_url = urlparse(content)
-            is_url = all([parsed_url.scheme, parsed_url.netloc])
-            if is_url or os.path.exists(content):
-                elements = (
-                    self.uio.parse_file_or_url(
-                        input_path=content,
-                        metadata_filename=metadata_filename,
-                        **kwargs,
-                    )
-                    or []
+            if not elements:
+                warnings.warn(
+                    f"No elements were extracted from the content: {content}"
                 )
             else:
-                elements = [
-                    self.uio.create_element_from_text(
-                        text=content,
-                        filename=metadata_filename,
+                # Chunk the content if required
+                uio_chunks = (
+                    self.uio.chunk_elements(
+                        chunk_type=chunk_type,
+                        elements=elements,
+                        max_characters=max_characters,
                     )
-                ]
+                    if should_chunk
+                    else elements
+                )
 
-        if not elements:
-            warnings.warn(
-                f"No elements were extracted from the content: {content}"
-            )
+                chunks = Chunk.from_uio_chunks(uio_chunks, extra_info)
         else:
-            # Chunk the content if required
-            chunks = (
-                self.uio.chunk_elements(
-                    chunk_type=chunk_type,
-                    elements=elements,
-                    max_characters=max_characters,
-                )
-                if should_chunk
-                else elements
-            )
+            raise ValueError(f"Unsupported chunk tool type: {chunk_tool_type}")
 
-            # Process chunks in batches and store embeddings
-            for i in range(0, len(chunks), embed_batch):
-                batch_chunks = chunks[i : i + embed_batch]
-                batch_vectors = self.embedding_model.embed_list(
-                    objs=[str(chunk) for chunk in batch_chunks]
-                )
-
-                records = []
-                # Prepare the payload for each vector record, includes the
-                # content path, chunk metadata, and chunk text
-                for vector, chunk in zip(batch_vectors, batch_chunks):
-                    if isinstance(content, str):
-                        content_path_info = {"content path": content[:100]}
-                    elif isinstance(content, IOBase):
-                        content_path_info = {"content path": "From file bytes"}
-                    elif isinstance(content, Element):
-                        content_path_info = {
-                            "content path": content.metadata.file_directory[
-                                :100
-                            ]
-                            if content.metadata.file_directory
-                            else ""
-                        }
-
-                    chunk_metadata = {"metadata": chunk.metadata.to_dict()}
-                    # Remove the 'orig_elements' key if it exists
-                    chunk_metadata["metadata"].pop("orig_elements", "")
-                    chunk_metadata["extra_info"] = extra_info or {}
-                    chunk_text = {"text": str(chunk)}
-                    combined_dict = {
-                        **content_path_info,
-                        **chunk_metadata,
-                        **chunk_text,
-                    }
-
-                    records.append(
-                        VectorRecord(vector=vector, payload=combined_dict)
-                    )
-
-                self.storage.add(records=records)
+        self.load_chunks(
+            chunks=chunks,
+            content_path_info=content_path_info,
+            embed_batch=embed_batch,
+        )
 
     def query(
         self,

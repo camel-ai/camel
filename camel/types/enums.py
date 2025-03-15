@@ -1065,3 +1065,7 @@ class HuggingFaceRepoType(str, Enum):
     DATASET = "dataset"
     MODEL = "model"
     SPACE = "space"
+
+
+class ChunkToolType(str, Enum):
+    UNSTRUCTURED_IO = "unstructured_io"
