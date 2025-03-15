@@ -851,7 +851,8 @@ class SearchToolkit(BaseToolkit):
             Dict[str, Any]: A dictionary containing search results or error
                 message.
                 Each dictionary contains the following keys:
-                - 'snippet': A brief description or snippet of the search result.
+                - 'snippet': A brief description or snippet of 
+                             the search result.
                 - 'title': The title of the search result.
                 - 'link': The URL of the search result.
         """
