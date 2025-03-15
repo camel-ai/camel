@@ -17,7 +17,7 @@ import asyncio
 import json
 import logging
 from collections import deque
-from typing import Deque, Dict, List, Optional
+from typing import Any, Callable, Deque, Dict, List, Optional, Union
 
 from colorama import Fore
 
@@ -41,7 +41,12 @@ from camel.societies.workforce.utils import (
 )
 from camel.societies.workforce.worker import Worker
 from camel.tasks.task import Task, TaskState
-from camel.toolkits import GoogleMapsToolkit, SearchToolkit, WeatherToolkit
+from camel.toolkits import (
+    FunctionTool,
+    GoogleMapsToolkit,
+    SearchToolkit,
+    WeatherToolkit,
+)
 from camel.types import ModelPlatformType, ModelType
 
 logger = logging.getLogger(__name__)
@@ -64,6 +69,15 @@ class Workforce(BaseNode):
         task_agent_kwargs (Optional[Dict], optional): Keyword arguments for
             the task agent, e.g. `model`, `api_key`, `tools`, etc.
             (default: :obj:`None`)
+        new_worker_tools (Optional[List[Union[FunctionTool, Callable]]],
+            optional): List of available :obj:`FunctionTool` or
+            :obj:`Callable` for new workers. (default: :obj:`None`)
+        new_worker_external_tools (Optional[List[Union[FunctionTool, Callable,
+            Dict[str, Any]]]], optional): List of external tools
+            (:obj:`FunctionTool` or :obj:`Callable` or :obj:`Dict[str, Any]`)
+            bind to one new worker. When these tools are called, the agent will
+            directly return the request instead of processing it.
+            (default: :obj:`None`)
         new_worker_agent_kwargs (Optional[Dict]): Default keyword arguments
             for the worker agent that will be created during runtime to
             handle failed tasks, e.g. `model`, `api_key`, `tools`, etc.
@@ -76,12 +90,18 @@ class Workforce(BaseNode):
         children: Optional[List[BaseNode]] = None,
         coordinator_agent_kwargs: Optional[Dict] = None,
         task_agent_kwargs: Optional[Dict] = None,
+        new_worker_tools: Optional[List[Union[FunctionTool, Callable]]] = None,
+        new_worker_external_tools: Optional[
+            List[Union[FunctionTool, Callable, Dict[str, Any]]]
+        ] = None,
         new_worker_agent_kwargs: Optional[Dict] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children or []
-        self.new_worker_agent_kwargs = new_worker_agent_kwargs
+        self.new_worker_tools = new_worker_tools
+        self.new_worker_external_tools = new_worker_external_tools
+        self.new_worker_agent_kwargs = new_worker_agent_kwargs or {}
 
         coord_agent_sys_msg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
@@ -342,7 +362,19 @@ class Workforce(BaseNode):
             content=sys_msg,
         )
 
-        if self.new_worker_agent_kwargs is not None:
+        if any(
+            [
+                self.new_worker_agent_kwargs,
+                self.new_worker_tools,
+                self.new_worker_external_tools,
+            ]
+        ):
+            if self.new_worker_external_tools:
+                self.new_worker_agent_kwargs["tools"] = self.new_worker_tools
+            if self.new_worker_external_tools:
+                self.new_worker_agent_kwargs["external_tools"] = (
+                    self.new_worker_external_tools
+                )
             return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
 
         # Default tools for a new agent
