@@ -369,7 +369,7 @@ class Workforce(BaseNode):
                 self.new_worker_external_tools,
             ]
         ):
-            if self.new_worker_external_tools:
+            if self.new_worker_tools:
                 self.new_worker_agent_kwargs["tools"] = self.new_worker_tools
             if self.new_worker_external_tools:
                 self.new_worker_agent_kwargs["external_tools"] = (
