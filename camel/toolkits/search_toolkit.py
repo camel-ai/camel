@@ -836,6 +836,25 @@ class SearchToolkit(BaseToolkit):
             return {"error": f"Baidu scraping error: {e!s}"}
 
     def search_bing(self, query: str, max_results: int = 5) -> Dict[str, Any]:
+        r"""Use Bing search engine to search information for the given query.
+
+        This function queries the Bing search engine using web scraping to
+        retrieve relevant search results. It extracts search results including
+        titles, snippets, and URLs.
+
+        Args:
+            query (str): The search query string to submit to Bing.
+            max_results (int): Maximum number of results to return.
+                (default: :obj:`5`)
+
+        Returns:
+            Dict[str, Any]: A dictionary containing search results or error
+                message.
+                Each dictionary contains the following keys:
+                - 'snippet': A brief description or snippet of the search result.
+                - 'title': The title of the search result.
+                - 'link': The URL of the search result.
+        """
         from urllib.parse import urlencode
 
         from bs4 import BeautifulSoup
@@ -863,12 +882,18 @@ class SearchToolkit(BaseToolkit):
             results = []
             for i in range(min(len(b_results), max_results)):
                 row = b_results[i]
-                if len(row.find_all("h2")) == 0:
+                h2 = row.find("h2")
+                if h2 is None:
                     continue
 
-                h2 = row.find("h2")
                 title = h2.text.strip()
-                link = h2.find("a").get("href")
+                link_tag = h2.find("a")
+                if link_tag is None:
+                    continue
+
+                link = link_tag.get("href")
+                if link is None:
+                    continue
 
                 content = row.find("p", class_="b_algoSlug")
                 content_format = content.text if content else ""
@@ -881,16 +906,15 @@ class SearchToolkit(BaseToolkit):
                 results.append(row_data)
 
             if not results:
-                    print(
-                        "Warning: No results found. Check "
-                        "if Bing HTML structure has changed."
-            )
+                print(
+                    "Warning: No results found. Check "
+                    "if Bing HTML structure has changed."
+                )
 
             return {"results": results}
 
         except Exception as e:
             return {"error": f"Bing scraping error: {e!s}"}
-
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
