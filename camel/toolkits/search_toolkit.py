@@ -840,46 +840,57 @@ class SearchToolkit(BaseToolkit):
 
         from bs4 import BeautifulSoup
 
-        query = urlencode({"q": query})
-        url = f'https://cn.bing.com/search?{query}'
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            ),
-        }
-        html = requests.get(url, headers=headers)
-        html.encoding = 'utf-8'
-        soup = BeautifulSoup(html.text, 'html.parser')
-
-        results = soup.find("ol", id="b_results")
-        if results is None:
-            return {"results": []}
-
-        results = results.find_all("li")
-
-        search_data = []
-        for i in range(min(len(results), max_results)):
-            row = results[i]
-            if len(row.find_all("h2")) == 0:
-                continue
-
-            h2 = row.find("h2")
-            title = h2.text.strip()
-            link = h2.find("a").get("href")
-
-            content = row.find("p", class_="b_algoSlug")
-            content_format = content.text if content else ""
-
-            row_data = {
-                "snippet": content_format,
-                "title": title,
-                "link": link,
+        try:
+            query = urlencode({"q": query})
+            url = f'https://cn.bing.com/search?{query}'
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
             }
-            search_data.append(row_data)
+            html = requests.get(url, headers=headers)
+            html.encoding = 'utf-8'
+            soup = BeautifulSoup(html.text, 'html.parser')
 
-        return {"results": search_data}
+            b_results = soup.find("ol", id="b_results")
+            if b_results is None:
+                return {"results": []}
+
+            b_results = b_results.find_all("li")
+
+            results = []
+            for i in range(min(len(b_results), max_results)):
+                row = b_results[i]
+                if len(row.find_all("h2")) == 0:
+                    continue
+
+                h2 = row.find("h2")
+                title = h2.text.strip()
+                link = h2.find("a").get("href")
+
+                content = row.find("p", class_="b_algoSlug")
+                content_format = content.text if content else ""
+
+                row_data = {
+                    "snippet": content_format,
+                    "title": title,
+                    "link": link,
+                }
+                results.append(row_data)
+
+            if not results:
+                    print(
+                        "Warning: No results found. Check "
+                        "if Bing HTML structure has changed."
+            )
+
+            return {"results": results}
+
+        except Exception as e:
+            return {"error": f"Bing scraping error: {e!s}"}
+
 
     def get_tools(self) -> List[FunctionTool]:
         r"""Returns a list of FunctionTool objects representing the
