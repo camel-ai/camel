@@ -16,7 +16,7 @@ from typing import Dict, Optional, Type, Union
 
 from camel.prompts.output_format.base import OutputFormat, OutputFormatHandler
 from camel.types.enums import OutputFormatType
-from camel.prompts.output_format.output_format_handlers import (
+from camel.prompts.output_format.handlers import (
     JsonOutputFormatHandler, DefaultOutputFormatHandler
 )
 

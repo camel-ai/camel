@@ -16,8 +16,8 @@ from typing import Any, Dict
 
 from camel.prompts.base import TextPrompt
 from camel.prompts.output_format.base import OutputFormat, OutputFormatHandler
-from camel.prompts.output_format.output_format_factory import OutputFormatHandlerFactory
-from camel.prompts.output_format.enhance_output_prompt_templates import (
+from camel.prompts.output_format.handler_factory import OutputFormatHandlerFactory
+from camel.prompts.output_format.prompt_templates import (
     OUTPUT_FORMAT_INSTRUCTION_TEMPLATE,
     OUTPUT_FORMAT_SPEC_INSTRUCTION_TEMPLATE,
 )

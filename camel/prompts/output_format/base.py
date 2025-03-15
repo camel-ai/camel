@@ -16,7 +16,7 @@
 from typing import Optional, Union, List, Any, TypeVar, Generic
 from abc import ABC, abstractmethod
 
-from camel.types.enums import OutputFormatType
+from camel.types.enums import OutputFormatType, OutputExtractionErrorType
 
 
 class OutputFormat:
@@ -86,34 +86,6 @@ class OutputFormat:
         self._output_format_spec = output_format_spec
 
 
-# Validation result class
-class ValidationResult:
-    """Validation result class representing the result of data validation.
-
-    Attributes:
-        is_valid (bool): Whether the data is valid
-        error_message (Optional[str]): Error message if the data is invalid
-    """
-
-    def __init__(self, is_valid: bool, error_message: Optional[str] = None) -> None:
-        """Initialize a ValidationResult instance.
-
-        Args:
-            is_valid (bool): Whether the data is valid
-            error_message (Optional[str], optional): Error message if the data is invalid. Defaults to None.
-        """
-        self.is_valid = is_valid
-        self.error_message = error_message
-
-    def __bool__(self) -> bool:
-        """Return boolean representation for conditional evaluation.
-
-        Returns:
-            bool: Whether the data is valid
-        """
-        return self.is_valid
-
-
 # Data type
 T = TypeVar('T')
 
@@ -125,8 +97,9 @@ class ExtractionResult(Generic[T]):
     Attributes:
         data (Optional[T]): The extracted data, or None if extraction or validation failed
         is_success (bool): Whether extraction and validation succeeded
+        error_message (Optional[str]): Error message
         error_messages (List[str]): List of error messages containing extraction and validation errors
-        error_type (Optional[str]): Error type, can be 'extraction' or 'validation'
+        error_type (Optional[OutputExtractionErrorType]): Error type, can be ErrorType.EXTRACTION or ErrorType.VALIDATION
     """
     
     def __init__(
@@ -134,7 +107,8 @@ class ExtractionResult(Generic[T]):
         data: Optional[T] = None, 
         is_success: bool = False, 
         error_message: Optional[str] = None,
-        error_type: Optional[str] = None
+        error_messages: Optional[List[str]] = None,
+        error_type: Optional[OutputExtractionErrorType] = None
     ) -> None:
         """Initialize an ExtractionResult instance.
         
@@ -142,23 +116,29 @@ class ExtractionResult(Generic[T]):
             data (Optional[T], optional): The extracted data. Defaults to None.
             is_success (bool, optional): Whether extraction and validation succeeded. Defaults to False.
             error_message (Optional[str], optional): Error message. Defaults to None.
-            error_type (Optional[str], optional): Error type. Defaults to None.
+            error_messages (Optional[List[str]], optional): List of error messages. Defaults to None.
+            error_type (Optional[ErrorType], optional): Error type. Defaults to None.
         """
         self.data = data
         self.is_success = is_success
-        self.error_messages: List[str] = [error_message] if error_message else []
+        self.error_messages: List[str] = error_messages or []
+        if error_message:
+            self.error_messages.append(error_message)
         self.error_type = error_type
     
-    def add_error(self, message: str, error_type: str) -> None:
+    def add_error(self, message: str, error_type: Union[str, OutputExtractionErrorType]) -> None:
         """Add an error message.
         
         Args:
             message (str): Error message
-            error_type (str): Error type
+            error_type (Union[str, OutputExtractionErrorType]): Error type
         """
         self.is_success = False
         self.error_messages.append(message)
-        self.error_type = error_type
+        if isinstance(error_type, str):
+            self.error_type = OutputExtractionErrorType(error_type)
+        else:
+            self.error_type = error_type
     
     def __bool__(self) -> bool:
         """Return boolean representation for conditional evaluation.
@@ -174,11 +154,12 @@ class Extractor(Generic[T], ABC):
     """Abstract base class for data extractors that extract specific types of data from text."""
 
     @abstractmethod
-    def extract(self, text: str) -> ExtractionResult[T]:
+    def extract(self, text: str, output_format: OutputFormat) -> ExtractionResult[T]:
         """Extract data from text.
 
         Args:
             text (str): The text to extract data from
+            output_format (Optional[OutputFormat], optional): The output format. Defaults to None.
 
         Returns:
             ExtractionResult[T]: Extraction result containing the extracted data or error information
@@ -191,42 +172,47 @@ class Validator(ABC):
     """Abstract base class for data validators that validate whether data conforms to specific rules."""
 
     @abstractmethod
-    def validate(self, data: Any) -> ValidationResult:
+    def validate(self, data: Any) -> ExtractionResult:
         """Validate data.
 
         Args:
             data (Any): The data to validate
 
         Returns:
-            ValidationResult: Validation result containing whether the data is valid and error information
+            ExtractionResult: Validation result containing whether the data is valid and error information
         """
         pass
 
 
-class OutputFormatHandler(ABC):
-    """Abstract base class for output format handlers that handle extraction, validation, and formatting for different format types.
+class OutputFormatHandler:
+    """base class for output format handlers that handle extraction, validation, and formatting for different format types.
 
     Attributes:
         output_format (OutputFormat): The output format object
-        extractors (List[Extractor]): List of data extractors
-        validators (List[Validator]): Optional list of data validators
+        extractors (List[Extractor]): Optional list of data extractors, which are executed in sequence to attempt extracting data from LLM output. If one extractor succeeds, the remaining extractors will be skipped.
+        validators (List[Validator]): Optional list of data validators, which are used to validate the extracted data.
     """
 
     def __init__(
         self,
-        output_format: OutputFormat
+        output_format: OutputFormat,
+        extractors: Optional[List[Extractor]] = None,
+        validators: Optional[List[Validator]] = None,
+        at_least_one_extractor: bool = True
     ) -> None:
         """Initialize an OutputFormatHandler instance.
 
         Args:
             output_format (OutputFormat): The output format object
+            extractors (Optional[List[Extractor]], optional): Optional list of data extractors, which are executed in sequence to attempt extracting data from LLM output. If one extractor succeeds, the remaining extractors will be skipped.
+            validators (Optional[List[Validator]], optional): Optional list of data validators, which are used to validate the extracted data.
+            at_least_one_extractor (bool, optional): Whether at least one extractor is required. If True, the handler will return an error if no extractors are provided.
         """
         self.output_format = output_format
-        self.extractors: List[Extractor] = []
-        self.validators: List[Validator] = []
-        self._setup_extractors()
-        self._setup_validators()
-        
+        self.extractors: List[Extractor] = extractors or []
+        self.validators: List[Validator] = validators or []
+        self.at_least_one_extractor = at_least_one_extractor
+
     @property
     def format_type(self) -> OutputFormatType:
         """Get the format type.
@@ -244,22 +230,45 @@ class OutputFormatHandler(ABC):
             Optional[str]: The format specification
         """
         return self.output_format.output_format_spec
+    
+    @property
+    def extractors(self) -> List[Extractor]:
+        """Get the list of extractors."""
+        return self._extractors
+    
+    @property
+    def validators(self) -> List[Validator]:
+        """Get the list of validators."""
+        return self._validators
+    
+    @extractors.setter
+    def extractors(self, extractors: List[Extractor]) -> None:
+        """Set the list of extractors."""
+        self._extractors = extractors
+    
+    @validators.setter
+    def validators(self, validators: List[Validator]) -> None:
+        """Set the list of validators."""
+        self._validators = validators
+    
+    def add_extractor(self, extractor: Extractor) -> None:
+        """Add an extractor to the list of extractors."""
+        if not self.extractors:
+            self.extractors = []
+        self.extractors.append(extractor)
 
-    @abstractmethod
-    def _setup_extractors(self) -> None:
-        """Set up the list of extractors, implemented by subclasses."""
-        pass
 
-    @abstractmethod
-    def _setup_validators(self) -> None:
-        """Set up the list of validators, implemented by subclasses."""
-        pass
+    def add_validator(self, validator: Validator) -> None:
+        """Add a validator to the list of validators."""
+        if not self.validators:
+            self.validators = []
+        self.validators.append(validator)
 
-    def _try_vadiate_result_data(
+    def _try_validate_result_data(
         self, 
         validate: bool,
         result: ExtractionResult
-    ) -> ValidationResult:
+    ) -> ExtractionResult:
         """Try to validate the extracted data.
         
         Args:
@@ -267,7 +276,7 @@ class OutputFormatHandler(ABC):
             result (ExtractionResult): The extraction result containing the data to validate
             
         Returns:
-            ValidationResult: The validation result
+            ExtractionResult: The validated extraction result
         """
         # If extraction failed or validation is not needed, return directly
         if not validate or not self.validators:
@@ -276,10 +285,10 @@ class OutputFormatHandler(ABC):
         # Validate the extracted data
         for validator in self.validators:
             validation_result = validator.validate(result.data)
-            if not validation_result:
+            if not validation_result.is_success:
                 result.add_error(
-                    f"Validation failed: {validation_result.error_message}. The extracted data that failed validation was: {result.data}. This may be due to invalid LLM output or improper extractor handling.",
-                    "validation"
+                    f"Validation failed: {validation_result.error_messages[0] if validation_result.error_messages else 'Unknown error'}. The extracted data that failed validation was: {result.data}. This may be due to invalid LLM output or improper extractor handling.",
+                    OutputExtractionErrorType.VALIDATION
                 )
                 return result
         return result
@@ -299,20 +308,27 @@ class OutputFormatHandler(ABC):
             ExtractionResult: The extraction result containing the extracted and validated data or error information
         """
         if not self.extractors:
-            return ExtractionResult(
-                is_success=False,
-                error_message="No extractors configured. Please configure extractors by overriding _setup_extractors() method.",
-                error_type="extraction"
-            )
+            if self.at_least_one_extractor:
+                return ExtractionResult(
+                    is_success=False,
+                    error_message="No extractors configured. Please configure extractors using the constructor or add_extractor() method.",
+                    error_type=OutputExtractionErrorType.EXTRACTION
+                )
+            else:
+                return ExtractionResult(
+                    is_success=True,
+                    data=text
+                )
+
             
         extraction_errors = []
         
         # Try each extractor
         for i, extractor in enumerate(self.extractors):
-            result = extractor.extract(text)
+            result = extractor.extract(text, self.output_format)
             if result.is_success:
                 # Validate data
-                return self._try_vadiate_result_data(validate, result)
+                return self._try_validate_result_data(validate, result)
             
             # Record extraction errors
             extractor_name = extractor.__class__.__name__
@@ -322,6 +338,6 @@ class OutputFormatHandler(ABC):
         return ExtractionResult(
             is_success=False,
             error_message=f"All extractors failed. This may be because the LLM output does not follow the specified format. Original text:\n{text}\n\nError information:\n" + "\n".join(extraction_errors),
-            error_type="extraction"
+            error_type=OutputExtractionErrorType.EXTRACTION
         )
 

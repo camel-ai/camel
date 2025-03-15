@@ -1066,6 +1066,7 @@ class HuggingFaceRepoType(str, Enum):
     MODEL = "model"
     SPACE = "space"
 
+
 class OutputFormatType(Enum):
     """Output format type enumeration.
 
@@ -1119,4 +1120,18 @@ class OutputFormatType(Enum):
         Returns:
             str: String representation of the enum value.
         """
+        return self.value
+
+
+class OutputExtractionErrorType(Enum):
+    """Error type enumeration for extraction and validation processes.
+    
+    Defines the types of errors that can occur during data extraction and validation.
+    This enumeration is used in ExtractionResult to specify the error type.
+    """
+    
+    EXTRACTION = "extraction"
+    VALIDATION = "validation"
+    
+    def __str__(self) -> str:
         return self.value

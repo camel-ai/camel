@@ -22,7 +22,6 @@ formats like JSON.
 # Base classes and interfaces
 from camel.prompts.output_format.base import (
     OutputFormat,
-    ValidationResult,
     ExtractionResult,
     Extractor,
     Validator,
@@ -30,21 +29,31 @@ from camel.prompts.output_format.base import (
 )
 
 # Factory for creating output format handlers
-from camel.prompts.output_format.output_format_factory import (
+from camel.prompts.output_format.handler_factory import (
     OutputFormatHandlerFactory,
 )
 
 # Concrete handler implementations
-from camel.prompts.output_format.output_format_handlers import (
+from camel.prompts.output_format.handlers import (
     DefaultOutputFormatHandler,
-    JsonOutputFormatHandler,
+    JsonOutputFormatHandler
+)
+
+# Extractors
+from camel.prompts.output_format.extractors import (
+    DirectExtractor,
+    CodeBlockExtractor,
     JsonDirectExtractor,
     JsonCodeBlockExtractor,
+)
+
+# Validators
+from camel.prompts.output_format.validators import (
     JsonRequiredKeysValidator,
 )
 
 # Prompt templates for output formats
-from camel.prompts.output_format.enhance_output_prompt_templates import (
+from camel.prompts.output_format.prompt_templates import (
     OUTPUT_FORMAT_INSTRUCTION_TEMPLATE,
     OUTPUT_FORMAT_SPEC_INSTRUCTION_TEMPLATE,
 )
@@ -55,7 +64,6 @@ from camel.prompts.output_format.prompts import OutputFormatPrompt, JsonOutputFo
 __all__ = [
     # Base classes
     'OutputFormat',
-    'ValidationResult',
     'ExtractionResult',
     'Extractor',
     'Validator',
@@ -69,6 +77,8 @@ __all__ = [
     'JsonOutputFormatHandler',
     
     # Extractors
+    'DirectExtractor',
+    'CodeBlockExtractor',
     'JsonDirectExtractor',
     'JsonCodeBlockExtractor',
     
