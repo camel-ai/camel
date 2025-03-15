@@ -307,7 +307,8 @@ class SambaModel(BaseModelBackend):
                     {
                         "conversation_id": str(uuid.uuid4()),
                         "messages": messages,
-                    }
+                    },
+                    ensure_ascii=False,
                 ),
                 "params": {
                     "do_sample": {"type": "bool", "value": "true"},
@@ -537,7 +538,8 @@ class SambaModel(BaseModelBackend):
                     {
                         "conversation_id": str(uuid.uuid4()),
                         "messages": messages,
-                    }
+                    },
+                    ensure_ascii=False,
                 ),
                 "params": {
                     "do_sample": {"type": "bool", "value": "true"},

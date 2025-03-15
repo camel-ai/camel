@@ -751,7 +751,8 @@ class SearchToolkit(BaseToolkit):
                 "summary": summary,
                 "count": count,
                 "page": page,
-            }
+            },
+            ensure_ascii=False,
         )
         try:
             response = requests.post(url, headers=headers, data=payload)
