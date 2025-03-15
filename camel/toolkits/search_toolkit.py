@@ -838,23 +838,26 @@ class SearchToolkit(BaseToolkit):
     def search_bing(self, query: str, max_results: int = 5) -> Dict[str, Any]:
         r"""Use Bing search engine to search information for the given query.
 
-        This function queries the Bing search engine using web scraping to
-        retrieve relevant search results. It extracts search results including
-        titles, snippets, and URLs.
+        This function queries the Chinese version of Bing search engine (cn.
+        bing.com) using web scraping to retrieve relevant search results. It
+        extracts search results including titles, snippets, and URLs. This
+        function is particularly useful when the query is in Chinese or when
+        Chinese search results are desired.
 
         Args:
-            query (str): The search query string to submit to Bing.
+            query (str): The search query string to submit to Bing. Works best
+                with Chinese queries or when Chinese results are preferred.
             max_results (int): Maximum number of results to return.
                 (default: :obj:`5`)
 
         Returns:
-            Dict[str, Any]: A dictionary containing search results or error
-                message.
-                Each dictionary contains the following keys:
-                - 'snippet': A brief description or snippet of
-                        the search result.
-                - 'title': The title of the search result.
-                - 'link': The URL of the search result.
+            Dict ([str, Any]): A dictionary containing either:
+                - 'results': A list of dictionaries, each with:
+                    - 'result_id': The index of the result.
+                    - 'snippet': A brief description of the search result.
+                    - 'title': The title of the search result.
+                    - 'link': The URL of the search result.
+                - or 'error': An error message if something went wrong.
         """
         from typing import Any, Dict, List, cast
         from urllib.parse import urlencode
@@ -871,9 +874,20 @@ class SearchToolkit(BaseToolkit):
                     "Chrome/120.0.0.0 Safari/537.36"
                 ),
             }
-            html = requests.get(url, headers=headers)
-            html.encoding = 'utf-8'
-            soup = BeautifulSoup(html.text, 'html.parser')
+            # Add timeout to prevent hanging
+            response = requests.get(url, headers=headers, timeout=10)
+
+            # Check if the request was successful
+            if response.status_code != 200:
+                return {
+                    "error": (
+                        f"Bing returned status code: "
+                        f"{response.status_code}"
+                    )
+                }
+
+            response.encoding = 'utf-8'
+            soup = BeautifulSoup(response.text, 'html.parser')
 
             b_results_element = soup.find("ol", id="b_results")
             if b_results_element is None:
@@ -921,10 +935,10 @@ class SearchToolkit(BaseToolkit):
                 results.append(row_data)
 
             if not results:
-                print(
-                    "Warning: No results found. Check "
-                    "if Bing HTML structure has changed."
-                )
+                return {
+                    "warning": "No results found. Check if "
+                    "Bing HTML structure has changed."
+                }
 
             return {"results": results}
 
