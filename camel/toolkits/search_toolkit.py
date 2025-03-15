@@ -899,6 +899,7 @@ class SearchToolkit(BaseToolkit):
                 content_format = content.text if content else ""
 
                 row_data = {
+                    "result_id": i + 1,
                     "snippet": content_format,
                     "title": title,
                     "link": link,
